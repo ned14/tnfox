@@ -1800,19 +1800,20 @@ void FXString::findLowestInsert(int &pos, int &len) throw()
 
 FXString FXString::numToText(FXulong num, FXint fw, FXint base)
 {
-	FXString buff;
-	if(!num) buff.append('0');
+	FXString buff; buff.length(20);	// Maximum it could be
+	int l=20;
+	if(!num) buff[--l]='0';
 	while(num)
 	{
 		FXchar c;
 		int d=(int)(num % base);
 		num=num/base;
 		if(d>9) c='A'+d-10; else c='0'+d;
-		buff.prepend(c);
+		buff[--l]=c;
 	}
-	while(buff.length()<abs(fw))
-		buff.prepend((fw<0) ? '0' : ' ');
-	return buff;
+	while(20-l<abs(fw))
+		buff[--l]=((fw<0) ? '0' : ' ');
+	return buff.mid(l);
 }
 
 FXString &FXString::arg(const FXString &str, FXint fw)
