@@ -994,7 +994,7 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 #endif
 #ifdef USE_POSIX
 	h.unlock();
-	struct timeval *tv=0, _tv;
+	struct ::timeval *tv=0, _tv;
 	if(waitfor!=FXINFINITE)
 	{
 		_tv.tv_sec=waitfor/1000;
@@ -1024,7 +1024,7 @@ FXuval FXBlkSocket::waitForMore(int msecs, bool *timeout)
 	if(isOpen())
 	{
 		FXThread_DTHold dth;
-		struct timeval tv;
+		struct ::timeval tv;
 		tv.tv_sec=msecs/1000;
 		tv.tv_usec=(msecs % 1000)*1000;
 		fd_set fds;
