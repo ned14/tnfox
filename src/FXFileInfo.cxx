@@ -44,12 +44,12 @@ namespace FX {
 
 struct FXDLLLOCAL FXFileInfoPrivate
 {
-	bool dirty, cached, exists;
+	bool cached, exists;
 	bool readable, writeable, executable;
 	FXString pathname, linkedto;
 	struct stat pathstat;
 	FXACL permissions;
-	FXFileInfoPrivate(const FXString &path) : dirty(true), cached(true), exists(false), 
+	FXFileInfoPrivate(const FXString &path) : cached(true), exists(false), 
 		readable(false), writeable(false), executable(false),
 		pathname(path), permissions() { memset(&pathstat, 0, sizeof(struct stat)); }
 };
@@ -133,19 +133,16 @@ bool FXFileInfo::operator>(const FXFileInfo &o) const
 void FXFileInfo::setFile(const FXString &path)
 {
 	p->pathname=path;
-	p->dirty=true;
 	refresh();
 }
 void FXFileInfo::setFile(const FXFile &file)
 {
 	p->pathname=file.name();
-	p->dirty=true;
 	refresh();
 }
 void FXFileInfo::setFile(const FXDir &dir, const FXString &leafname)
 {
 	p->pathname=dir.path()+FXDir::separator()+leafname;
-	p->dirty=true;
 	refresh();
 }
 bool FXFileInfo::exists() const
@@ -155,7 +152,7 @@ bool FXFileInfo::exists() const
 }
 void FXFileInfo::refresh()
 {
-	if(p->cached && p->dirty)
+	if(p->cached)
 	{
 		if((p->exists=FXFile::info(p->pathname, p->pathstat)!=0))
 		{
@@ -182,7 +179,6 @@ bool FXFileInfo::caching() const
 }
 void FXFileInfo::setCaching(bool newon)
 {
-	if(newon && !p->cached) p->dirty=true;
 	p->cached=newon;
 }
 const FXString &FXFileInfo::filePath() const
