@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxjpegio.cpp,v 1.47 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: fxjpegio.cpp,v 1.47.2.1 2005/02/08 21:22:31 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -305,6 +305,7 @@ FXbool fxsaveJPG(FXStream& store,const FXColor* data,FXint width,FXint height,FX
   if(!FXMALLOC(&buffer,JSAMPLE,width*3)) return FALSE;
 
   // Specify the error manager
+  memset(&dstinfo,0,sizeof(dstinfo));
   dstinfo.err=jpeg_std_error(&jerr.error_mgr);
   jerr.error_mgr.error_exit=fatal_error;
 
@@ -316,7 +317,6 @@ FXbool fxsaveJPG(FXStream& store,const FXColor* data,FXint width,FXint height,FX
     }
 
   // initialize the structure
-  memset(&dstinfo,0,sizeof(dstinfo));
   jpeg_create_compress(&dstinfo);
 
   // Specify the use of our destination manager
