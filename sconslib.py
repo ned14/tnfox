@@ -194,6 +194,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if sys.byteorder=="big": env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
+    if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
     if debugmode: env['CPPDEFINES']+=["FXDISABLE_GLOBALALLOCATORREPLACEMENTS"]
     if architecture=="i486":
         env['CPPDEFINES']+=[("FX_X86PROCESSOR", i486_version)]
