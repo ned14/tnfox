@@ -256,8 +256,8 @@ public:
 	void setSaltLen(FXuint salt);
 	//! Returns the asymmetric key encrypting this key. Is zero if none.
 	FXSSLPKey *asymmetricKey() const throw();
-	//! Sets the asymmetric key encrypting this key (0 for no key). A copy is made.
-	void setAsymmetricKey(const FXSSLPKey *pkey);
+	//! Sets the asymmetric key encrypting this key (0 for no key). A copy is made. Returns \c *this.
+	FXSSLKey &setAsymmetricKey(const FXSSLPKey *pkey);
 	//! Returns the length of the key in bytes
 	FXuint bytesLen() const throw();
 	//! Returns the length of the key in bits
@@ -523,6 +523,31 @@ FXStream s(myfile);
 myfile->open(IO_WriteOnly);
 s << "Some text to compress, then encrypt, then write to a memory mapped file";
 myfile->close();
+\endcode
+
+Just especially as a note to myself who keeps forgetting how I'm supposed to use
+asymmetric encryption, here's how you do it:
+\code
+FXSSLPKey &thekey;
+FXSSLPKey pthekey(thekey.publicKey());
+FXMemMap myencryptedfile("myencryptedfile.bin");
+FXSSLDevice myfileencryptor(&myencryptedfile);
+FXSSLKey tempkey(128, FXSSLKey::AES);
+tempkey.setAsymmetricKey(&pthekey);
+myfileencryptor.setKey(tempkey);
+FXGZipDevice myfilecompressor(&myfileencryptor);
+FXIODevice *myfile=&myfilecompressor;
+FXStream s(myfile);
+myfile->open(IO_WriteOnly);
+s << "Some text to compress, then encrypt, then write to a memory mapped file";
+myfile->close();
+\endcode
+To decrypt using asymmetric encryption, indirect via a temporary symmetric key like so:
+\code
+FXSSLPKey &thekey;
+FXSSLDevice &myfileencryptor;
+myfileencryptor.setKey(FXSSLKey().setAsymmetricKey(&thekey));
+...
 \endcode
 
 <h4>File formats:</h4>
