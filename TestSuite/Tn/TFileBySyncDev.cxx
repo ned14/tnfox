@@ -443,6 +443,7 @@ FXuval TFileBySyncDev::fetchData(FXuchar *data, FXuval amount, FXfval offset)
 FXuval TFileBySyncDev::putData(FXfval offset, FXuchar *data, FXuval amount)
 {
 	assert(p->source);
+	//fxmessage("Putting block of %u at offset %u\n", amount, (FXuval) offset);
 	return p->source->writeBlockTo(offset, data, amount);
 }
 
