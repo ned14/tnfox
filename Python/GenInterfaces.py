@@ -57,10 +57,14 @@ includelist={"FXApp.h"          : [ "CArrays.h" ],
              "FXGLTriangleMesh.h" : [ "CArrays.h" ],
              "FXGLViewer.h"     : [ "CArrays.h", "FXGLObject.h", "FXGLVisual.h" ],
              "FXImage.h"        : [ "CArrays.h" ],
+             "FXMat3d.h"        : [ "FXQuatd.h" ],
+             "FXMat3f.h"        : [ "FXQuatf.h" ],
              "FXMat4d.h"        : [ "FXQuatd.h" ],
              "FXMat4f.h"        : [ "FXQuatf.h" ],
              "FXObjectList.h"   : [ "CArrays.h" ],
              "FXProcess.h"      : [ "CArrays.h", "qvaluelist.h" ],
+             "FXQuatd.h"        : [ "FXMat3d.h", "FXVec3d.h" ],
+             "FXQuatf.h"        : [ "FXMat3f.h", "FXVec3f.h" ],
              "FXRanged.h"       : [ "FXSphered.h", "FXVec4d.h" ],
              "FXRangef.h"       : [ "FXSpheref.h", "FXVec3f.h", "FXVec4d.h", "FXVec4f.h" ],
              "FXSphered.h"      : [ "FXSpheref.h", "FXVec4d.h" ],
@@ -155,7 +159,8 @@ print "Generated pyste files"
 herepath=os.getcwd()
 boostpath=os.path.abspath(boostpath)
 pystepath=os.path.abspath(boostpath+"/libs/python/pyste/src/Pyste/pyste.py")+" "
-args="--module="+module+" --multiple --out "+herepath+" --pyste-ns "+module
+args="--module="+module+" --multiple --no-default-include"
+args+=" --out "+herepath+" --pyste-ns "+module
 args+=" -I "+herepath+" -I "+boostpath+" -I "+headerspath
 if sys.platform=="win32": args+=" -DWIN32 "
 else: pystepath="python "+pystepath
