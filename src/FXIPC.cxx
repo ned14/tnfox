@@ -369,7 +369,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				assert(tmsg.msgType());
 				if(p->maxMsgSize && tmsg.length()>p->maxMsgSize)
 				{
-					FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded"), FXIPCCHANNEL_MSGTOOBIG, 0);
+					FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(tmsg.length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 				}
 				if(p->buffer.size()<tmsg.length())
 					p->buffer.truncate(tmsg.length());
@@ -829,7 +829,7 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 	assert(msgheader->msgType());
 	if(p->maxMsgSize && msgheader->length()>p->maxMsgSize)
 	{
-		FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded"), FXIPCCHANNEL_MSGTOOBIG, 0);
+		FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msgheader->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 	}
 	msgheader->write(p->endianiser);
 	if(p->unreliable)
