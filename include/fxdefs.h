@@ -142,13 +142,16 @@
   #define FXEXCEPTIONAPI(api)
 #endif
 
-// Forcing inlines is a non-portable extension
+// Forcing inlines and marking deprecation are non-portable extensions
 #if defined(_MSC_VER)
  #define FXFORCEINLINE __forceinline
+ #define FXDEPRECATED __declspec(deprecated)
 #elif defined(__GNUC__)
  #define FXFORCEINLINE inline __attribute__ ((always_inline))
+ #define FXDEPRECATED __attribute ((deprecated))
 #else
  #define FXFORCEINLINE inline
+ #define FXDEPRECATED
 #endif
 
 // Callback
