@@ -604,7 +604,7 @@ and running on older C++ compilers.
 
 TnFOX's Python bindings are almost entirely automatically generated and you can
 find the necessary files in the Python directory. You will also need Python v2.3
-or later and the Boost library v1.31.
+or later and the Boost library v1.31 or later.
 
 You'll also need a very new compiler. Supposedly MSVC6 works, but it made errors
 when I tried it and I haven't investigated further. I use MSVC7.1 (.NET 2003) so
@@ -667,48 +667,11 @@ as bugs in MSVC7.1 make it not work) it shrinks to about 20 minutes. On GCC
 v3.4 with a uniprocessor Athon 1700, it takes about six hours (less than
 two with precompiled headers enabled).
 
-\note Consider very strongly if you want to apply my \c -fvisibility patch
-to GCC which you can get off the TnFOX homepage. After applying to the sources
-of GCC v3.4, enable the \c GCChasVisibility variable in \c config.py and
-rebuild everything, including TnFOX. If you do apply this patch, you will
-reduce the size of the TnFOX shared object by around 20Mb and you will
-reduce load times for anything linked against TnFOX.so from six minutes
-to four seconds :) You will also need to patch Boost: find the header file
-\c boost/boost/python/detail/config.hpp. Modify the dllexport section to:
-\code
-#if defined(BOOST_PYTHON_DYNAMIC_LIB)
-#  if (defined(_WIN32) || defined(__CYGWIN__))
-#     if defined(BOOST_PYTHON_SOURCE)
-#        define BOOST_PYTHON_DECL __declspec(dllexport)
-#        define BOOST_PYTHON_BUILD_DLL
-#     else
-#        define BOOST_PYTHON_DECL __declspec(dllimport)
-#     endif
-#  elif (defined(__GNUC__) && __GNUC__ >= 3 && __GNUC_MINOR__ >=4)
-#     if defined(BOOST_PYTHON_SOURCE)
-#        define BOOST_PYTHON_DECL __attribute__ ((visibility("default")))
-#        define BOOST_PYTHON_BUILD_DLL
-#     else
-#        define BOOST_PYTHON_DECL
-#     endif
-#  endif
-#endif
-\endcode
-Also change \c boost/boost/python/module_init.hpp inserting the following before
-the last definition of the \c BOOST_PYTHON_MODULE_INIT macro:
-\code
-# elif (defined(__GNUC__) && __GNUC__ >= 3 && __GNUC_MINOR__ >=4)
-
-#   define BOOST_PYTHON_MODULE_INIT(name)                               \
-void init_module_##name();                                              \
-extern "C" __attribute__ ((visibility("default"))) void init##name()    \
-{                                                                       \
-    boost::python::detail::init_module(#name, &init_module_##name);     \
-}                                                                       \
-void init_module_##name()
-
-# else
-\endcode
+\note You \b really want to use a \c -fvisibility enabled version of GCC
+if possible as it will reduce the size of the TnFOX shared object by around
+20Mb and you will reduce load times for anything linked against TnFOX.so from
+six minutes to four seconds :). Suitable versions include v3.4.2 and v4.0 and
+you will also need v1.3.2 or later of Boost.
 
 Afterwards, it's as simple as
 \code
