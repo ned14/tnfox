@@ -15,13 +15,10 @@ a kernel bug.
 happening when thread termination is disabled. Likely a glibc or NPTL
 bug reenabling thread termination during internal code or a kernel bug.
 
-FreeBSD v5.2.1 Failures:
-  1. TestDeviceIO in socket i/o test hangs (same place in TestSSL). Unfortunately
-as there is no kse threads support in gdb under FreeBSD v5.3 I can't tell what's
-going on.
-  2. TestEventLoops, starting the timer somehow shags that window, causing it to
+FreeBSD v5.3 Failures:
+  1. TestEventLoops, starting the timer somehow shags that window, causing it to
 become unresponsive. Almost certainly a bug in KSE threads.
-  3. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
+  2. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
 timings are off - therefore the events don't open as they should.
 
 Known bugs:
