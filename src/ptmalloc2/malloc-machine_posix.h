@@ -45,7 +45,7 @@ static inline int mutex_lock(mutex_t *m) {
 
   for(;;) {
     __asm__ __volatile__
-      ("pause\txchgl %0, %1"
+      ("pause\n\txchgl %0, %1"
        : "=r"(r), "=m"(m->lock)
        : "0"(1), "m"(m->lock)
        : "memory");
