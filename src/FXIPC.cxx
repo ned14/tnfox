@@ -25,7 +25,7 @@
 #include "FXBuffer.h"
 #include "FXProcess.h"
 #include "FXGZipDevice.h"
-#include "FXIODeviceS.h"
+#include "FXPipe.h"
 #include "FXErrCodes.h"
 #include <qintdict.h>
 #include <qptrvector.h>
@@ -891,13 +891,26 @@ void *FXIPCChannel::cleanup()
 		ae->wc->wakeAll();
 	}
 	h.unlock();
-	/* 8th March 2004 ned: Strangely on Linux RH9 trying to do any fifo i/o from
-	within a cleanup handler causes immediate thread exit. Sockets, files etc. are
-	all fine - just fifos :( */
-#ifndef __linux__
-	// Send quit message
+//#ifndef __linux__
+	// Send quit message for graceful shutdown
 	if(!p->noquitmsg && p->registry->isValid())
 	{
+#ifdef USE_POSIX
+		/* 29th January 2005 ned: I've had problems with this code on POSIX since day
+		one when the device is a pipe. FXPipe lazily creates the write side of the pipe
+		which causes a stall until the read end reads on POSIX and the problem was that
+		various systems don't seem to like this being done in a cancellation handler much.
+		So, having failed to come up with a solution, if it's a pipe we simply SIGPIPE it */
+		FXPipe *mypipe=dynamic_cast<FXPipe *>(p->dev);
+		if(mypipe)
+		{	// Don't send the message
+			return 0;
+			//mypipe->int_hack_makeWriteNonblocking();
+		}
+#endif
+#ifdef DEBUG
+		fxmessage("Attempting to send Disconnect message to other end of IPC connection\n");
+#endif
 		FXERRH_TRY
 		{
 			FXIPCMsg_Disconnect byebye;
@@ -907,8 +920,11 @@ void *FXIPCChannel::cleanup()
 		{	// sink all - it's not important
 		}
 		FXERRH_ENDTRY;
-	}
+#ifdef DEBUG
+		fxmessage("Succeeded in sending Disconnect message to other end of IPC connection!\n");
 #endif
+	}
+//#endif
 	return 0;
 }
 
