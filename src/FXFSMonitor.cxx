@@ -265,7 +265,7 @@ void FXFSMon::Watcher::Path::callHandlers()
 	newpathdir->entryInfoList();
 	QStringList rawchanges=FXDir::extractChanges(*pathdir, *newpathdir);
 	QValueList<Change> changes;
-	for(QStringList::const_iterator it=rawchanges.begin(); it!=rawchanges.end(); ++it)
+	for(QStringList::iterator it=rawchanges.begin(); it!=rawchanges.end(); ++it)
 	{
 		const FXString &name=*it;
 		Change ch(findFIByName(pathdir->entryInfoList(), name), findFIByName(newpathdir->entryInfoList(), name));
@@ -275,13 +275,22 @@ void FXFSMon::Watcher::Path::callHandlers()
 		}
 		else if(ch.oldfi && ch.newfi)
 		{	// Same file name
-			ch.change.modified=(ch.oldfi->lastModified()!=ch.newfi->lastModified()
-				|| ch.oldfi->size()			!=ch.newfi->size());
-			ch.change.attrib=(ch.oldfi->isReadable()!=ch.newfi->isReadable()
-				|| ch.oldfi->isWriteable()	!=ch.newfi->isWriteable()
-				|| ch.oldfi->isExecutable()	!=ch.newfi->isExecutable()
-				|| ch.oldfi->isHidden()		!=ch.newfi->isHidden());
-			ch.change.security=(ch.oldfi->permissions()!=ch.newfi->permissions());
+			if(ch.oldfi->created()!=ch.newfi->created())
+			{	// File was deleted and recreated, so split into two entries
+				Change ch2(ch);
+				ch.oldfi=0; ch2.newfi=0;
+				changes.append(ch2);
+			}
+			else
+			{
+				ch.change.modified=(ch.oldfi->lastModified()!=ch.newfi->lastModified()
+					|| ch.oldfi->size()			!=ch.newfi->size());
+				ch.change.attrib=(ch.oldfi->isReadable()!=ch.newfi->isReadable()
+					|| ch.oldfi->isWriteable()	!=ch.newfi->isWriteable()
+					|| ch.oldfi->isExecutable()	!=ch.newfi->isExecutable()
+					|| ch.oldfi->isHidden()		!=ch.newfi->isHidden());
+				ch.change.security=(ch.oldfi->permissions()!=ch.newfi->permissions());
+			}
 		}
 		changes.append(ch);
 	}
