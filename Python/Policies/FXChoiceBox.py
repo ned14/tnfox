@@ -17,16 +17,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXPacker
+import FXDialogBox
 
-def baseFXToolBar():
-    return "FXPacker"
+def baseFXChoiceBox():
+    return "FXDialogBox"
 
-def applyFXToolBar(g, cclass):
+def applyFXChoiceBox(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXPacker.applyFXPacker(g, cclass)
-    set_policy(cclass.getDryDock,       return_value_policy(reference_existing_object))
-    set_policy(cclass.getWetDock,       return_value_policy(reference_existing_object))
-    set_policy(cclass.findDockAtSide,   return_value_policy(reference_existing_object))
-    set_policy(cclass.findDockNear,     return_value_policy(reference_existing_object))
+    FXDialogBox.applyFXDialogBox(g, cclass)
+    

@@ -19,14 +19,11 @@
 
 import FXPacker
 
-def baseFXToolBar():
+def baseFXToolBarDock():
     return "FXPacker"
 
-def applyFXToolBar(g, cclass):
+def applyFXToolBarDock(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     FXPacker.applyFXPacker(g, cclass)
-    set_policy(cclass.getDryDock,       return_value_policy(reference_existing_object))
-    set_policy(cclass.getWetDock,       return_value_policy(reference_existing_object))
-    set_policy(cclass.findDockAtSide,   return_value_policy(reference_existing_object))
-    set_policy(cclass.findDockNear,     return_value_policy(reference_existing_object))
+    
