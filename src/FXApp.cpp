@@ -75,6 +75,9 @@
 static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
+// Minor hack to force use of ::timeval instead of FX::timeval
+#define timeval ::timeval
+
 /*
   Notes:
 
