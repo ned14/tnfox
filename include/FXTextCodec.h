@@ -37,6 +37,7 @@ class FXTextCodecDict;
  */
 class FXTextCodec {
 protected:
+  friend struct DeleteFXTextCodecs;
   static FXTextCodecDict* codecs;
 protected:
   FXTextCodec(){}
