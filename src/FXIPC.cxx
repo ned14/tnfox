@@ -757,8 +757,12 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		assert(p->dev);
 		FXERRH_TRY
 		{
+			FXuval written=0, writ;
 			//fxmessage("IPCWrite %s", fxdump8(data.data(), len).text());
-			p->dev->writeBlock(data.data(), len);
+			while(written+=(writ=p->dev->writeBlock(data.data()+written, len-written)), written<len)
+			{
+				fxmessage("Partial write of %u bytes, %u to go\n", (FXuint) writ, (FXuint)(len-written));
+			}
 		}
 		FXERRH_CATCH(FXConnectionLostException &)
 		{	// Quit
@@ -843,8 +847,12 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 	assert(p->dev);
 	FXERRH_TRY
 	{
+		FXuval written=0, writ, len=msgheader->length();
 		//fxmessage("IPCWrite %s", fxdump8(data.data(), len).text());
-		p->dev->writeBlock(data.data(), msgheader->length());
+		while(written+=(writ=p->dev->writeBlock(data.data()+written, len-written)), written<len)
+		{
+			fxmessage("Partial write of %u bytes, %u to go\n", (FXuint) writ, (FXuint)(len-written));
+		}
 	}
 	FXERRH_CATCH(FXConnectionLostException &)
 	{	// Quit
