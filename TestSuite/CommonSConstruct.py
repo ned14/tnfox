@@ -33,13 +33,21 @@ env['CPPPATH']+=[ ".",
                  "../../Python"
                  ]
 env['LIBPATH']+=[dir+"/../lib"]
-env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
+if PYTHON_INCLUDE:
+    env['CPPPATH'].append(PYTHON_INCLUDE)
+else:
+    try:
+        env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
+    except: pass
 
 if not onWindows: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/lib"+libtnfox+".la")] #, "-static", "/lib/libselinux.so.1"]
 try:
     if wantPython:
-        env['LINKFLAGS']+=[ os.environ["PYTHON_LIB"] ]
+        if PYTHON_LIB:
+            env['LINKFLAGS'].append(PYTHON_LIB)
+        else:
+            env['LINKFLAGS'].append(os.environ["PYTHON_LIB"])
         if onWindows:
             env['LIBS']+=[ "TnFOX" ]
         else:
