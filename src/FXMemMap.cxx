@@ -637,7 +637,7 @@ FXfval FXMemMap::size() const
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		// FXMtxHold h(p); can do without
 		return (File==p->type) ? p->file->size() : p->size;
 	}
 	return 0;
