@@ -123,8 +123,7 @@ env['CPPFLAGS']+=cppflags
 
 
 # Linkage
-env['LINKFLAGS']=["-pthread"            # Ensure no libc on BSD
-                  #"-Wl,--version-script=gnuld.script" # Specify symbol exports
+env['LINKFLAGS']=[ #"-Wl,--version-script=gnuld.script" # Specify symbol exports
                   ]
 
 if debugmode:
