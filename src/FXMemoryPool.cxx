@@ -64,12 +64,17 @@ purposes (especially memory leak checking) */
  #endif
 #endif
 
-/* Customise global allocator replacements according to system. On Win32,
-replace crappy Win32 allocator with our own */
-#ifdef _MSC_VER
+/* Customise global allocator replacements according to system.
+On all systems except Linux, replace system allocator with our own
+superior implementation (which is the same as Linux's) */
+#ifndef __linux__
  #define MYMALLOC(size)       ptmalloc2::dlmalloc(size)
  #define MYREALLOC(ptr, size) ptmalloc2::dlrealloc(ptr, size)
  #define MYFREE(ptr)          ptmalloc2::dlfree(ptr)
+ #ifndef _MSC_VER
+  // Python bindings need this on POSIX
+  #define FXDISABLE_GLOBAL_MARKER 0
+ #endif
 #else
  #define MYMALLOC(size)       ::malloc(size)
  #define MYREALLOC(ptr, size) ::realloc(ptr, size)
