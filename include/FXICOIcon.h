@@ -40,7 +40,7 @@ private:
   FXICOIcon(const FXICOIcon&);
   FXICOIcon &operator=(const FXICOIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in Microsoft icon format

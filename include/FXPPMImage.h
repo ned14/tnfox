@@ -40,7 +40,7 @@ private:
   FXPPMImage(const FXPPMImage&);
   FXPPMImage &operator=(const FXPPMImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in Portable Pixmap format

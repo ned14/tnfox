@@ -40,7 +40,7 @@ private:
   FXXBMImage(const FXXBMImage&);
   FXXBMImage &operator=(const FXXBMImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct image from memory stream formatted in X Bitmap format

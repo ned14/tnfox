@@ -40,7 +40,7 @@ private:
   FXRASIcon(const FXRASIcon&);
   FXRASIcon &operator=(const FXRASIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in SUN Raster Image format

@@ -40,7 +40,7 @@ private:
   FXPNGIcon(const FXPNGIcon&);
   FXPNGIcon &operator=(const FXPNGIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an icon from memory stream formatted in PNG format

@@ -40,7 +40,7 @@ private:
   FXRGBImage(const FXRGBImage&);
   FXRGBImage &operator=(const FXRGBImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct image from memory stream formatted in IRIS-RGB format

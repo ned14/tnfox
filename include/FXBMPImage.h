@@ -47,7 +47,7 @@ private:
   FXBMPImage(const FXBMPImage&);
   FXBMPImage &operator=(const FXBMPImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct image from memory stream formatted in Microsoft BMP format

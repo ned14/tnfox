@@ -40,7 +40,7 @@ private:
   FXXBMIcon(const FXXBMIcon&);
   FXXBMIcon &operator=(const FXXBMIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in X Bitmap format

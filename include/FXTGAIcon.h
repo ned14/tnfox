@@ -40,7 +40,7 @@ private:
   FXTGAIcon(const FXTGAIcon&);
   FXTGAIcon &operator=(const FXTGAIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in TARGA format

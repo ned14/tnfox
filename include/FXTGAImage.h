@@ -40,7 +40,7 @@ private:
   FXTGAImage(const FXTGAImage&);
   FXTGAImage &operator=(const FXTGAImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct image from memory stream formatted in TARGA file

@@ -40,7 +40,7 @@ private:
   FXRASImage(const FXRASImage&);
   FXRASImage &operator=(const FXRASImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct image from memory stream formatted in SUN Raster Image format

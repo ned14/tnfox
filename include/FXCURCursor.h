@@ -39,7 +39,7 @@ private:
   FXCURCursor(const FXCURCursor&);
   FXCURCursor &operator=(const FXCURCursor&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /**

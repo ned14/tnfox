@@ -39,7 +39,7 @@ private:
   FXGIFIcon(const FXGIFIcon&);
   FXGIFIcon &operator=(const FXGIFIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an icon from memory stream formatted as GIF format

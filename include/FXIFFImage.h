@@ -42,7 +42,7 @@ private:
   FXIFFImage(const FXIFFImage&);
   FXIFFImage &operator=(const FXIFFImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an image from memory stream formatted as IFF format

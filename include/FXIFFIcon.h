@@ -42,7 +42,7 @@ private:
   FXIFFIcon(const FXIFFIcon&);
   FXIFFIcon &operator=(const FXIFFIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an icon from memory stream formatted as IFF format

@@ -39,7 +39,7 @@ private:
   FXGIFImage(const FXGIFImage&);
   FXGIFImage &operator=(const FXGIFImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an image from memory stream formatted as CompuServe GIF format

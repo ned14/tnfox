@@ -42,7 +42,7 @@ private:
   FXJPGImage(const FXJPGImage&);
   FXJPGImage &operator=(const FXJPGImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an image from memory stream formatted in JPEG format

@@ -40,7 +40,7 @@ private:
   FXXPMIcon(const FXXPMIcon&);
   FXXPMIcon &operator=(const FXXPMIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from compiled-in X Pixmap format

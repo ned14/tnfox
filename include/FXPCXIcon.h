@@ -39,7 +39,7 @@ private:
   FXPCXIcon(const FXPCXIcon&);
   FXPCXIcon &operator=(const FXPCXIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in PCX file format

@@ -40,7 +40,7 @@ private:
   FXRGBIcon(const FXRGBIcon&);
   FXRGBIcon &operator=(const FXRGBIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in IRIS-RGB format

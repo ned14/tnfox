@@ -47,7 +47,7 @@ private:
   FXBMPIcon(const FXBMPIcon&);
   FXBMPIcon &operator=(const FXBMPIcon&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct icon from memory stream formatted in Microsoft BMP format

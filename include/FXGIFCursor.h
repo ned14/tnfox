@@ -40,7 +40,7 @@ private:
   FXGIFCursor(const FXGIFCursor&);
   FXGIFCursor &operator=(const FXGIFCursor&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /**

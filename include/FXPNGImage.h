@@ -40,7 +40,7 @@ private:
   FXPNGImage(const FXPNGImage&);
   FXPNGImage &operator=(const FXPNGImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct an image from memory stream formatted in PNG format

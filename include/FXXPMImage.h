@@ -40,7 +40,7 @@ private:
   FXXPMImage(const FXXPMImage&);
   FXXPMImage &operator=(const FXXPMImage&);
 public:
-  static const FXchar fileExt[];
+  static const FXchar *fileExt;
 public:
 
   /// Construct image from compiled-in X Pixmap format
