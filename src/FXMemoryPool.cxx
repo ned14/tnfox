@@ -146,10 +146,15 @@ static void delHeap(ptmalloc2::mstate h)
 	FXERRH(!ptmalloc2::delete_heap(heap), "Unknown error deleting ptmalloc2 heap", 0, FXERRH_ISDEBUG);
 }
 struct FXMemoryPoolPrivate;
-static volatile bool enabled;
-static FXMutex mempoolslock;
-static QPtrDict<FXMemoryPoolPrivate> mempools(1);
-static FXThreadLocalStorage<FXMemoryPoolPrivate> currentPool;
+static struct MemPoolsList
+{
+	volatile bool enabled;
+	FXMutex lock;
+	QPtrDict<FXMemoryPoolPrivate> pools;
+	FXThreadLocalStorage<FXMemoryPoolPrivate> current;
+	MemPoolsList() : enabled(true), pools(1) { }
+	~MemPoolsList() { enabled=false; }
+} mempools;
 
 struct FXDLLLOCAL FXMemoryPoolPrivate
 {
@@ -166,14 +171,17 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 #endif
 	FXMemoryPoolPrivate(FXMemoryPool *_parent, FXuval _maxsize, const char *_identifier, FXThread *_owner, bool _lazydeleted)
 		: parent(_parent), heap(0), maxsize(_maxsize), deleted(false), lazydeleted(_lazydeleted), identifier(_identifier), owner(_owner), threadId(_owner ? _owner->myId() : 0), cleanupcall(0)
-	{
-		FXMtxHold h(mempoolslock);
-		mempools.insert(this, this);
-		QDICTDYNRESIZE(mempools);
+	{	// NOTE TO SELF: Must be safe to be called during static init/deinit!!!
+		if(mempools.enabled)
+		{
+			FXMtxHold h(mempools.lock);
+			mempools.pools.insert(this, this);
+			QDICTDYNRESIZE(mempools.pools);
+		}
 	}
 	~FXMemoryPoolPrivate()
-	{
-		if(currentPool==this) currentPool=0;
+	{	// NOTE TO SELF: Must be safe to be called during static init/deinit!!!
+		if(mempools.enabled && mempools.current==this) mempools.current=0;
 		if(cleanupcall)
 		{
 			owner->removeCleanupCall(cleanupcall);
@@ -184,9 +192,12 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 			delHeap(heap);
 			heap=0;
 		}
-		FXMtxHold h(mempoolslock);
-		mempools.remove(this);
-		QDICTDYNRESIZE(mempools);
+		if(mempools.enabled)
+		{
+			FXMtxHold h(mempools.lock);
+			mempools.pools.remove(this);
+			QDICTDYNRESIZE(mempools.pools);
+		}
 	}
 	FXuval size() const throw()
 	{
@@ -275,15 +286,14 @@ FXMemoryPool::FXMemoryPool(FXuval maxsize, const char *identifier, FXThread *own
 	p->heap->data=p;
 	if(owner)
 	{
-		if(FXThread::current()==owner)
-			currentPool=p;
+		if(mempools.enabled && FXThread::current()==owner)
+			mempools.current=p;
 		p->cleanupcall=owner->addCleanupCall(Generic::BindFuncN(&callfree, p));
 	}
-	enabled=true;
 }
 FXMemoryPool::~FXMemoryPool()
 { FXEXCEPTIONDESTRUCT1 {
-	if(currentPool==p) currentPool=0;
+	if(mempools.enabled && mempools.current==p) mempools.current=0;
 	if(p->lazydeleted && p->size())
 	{
 		p->parent=0;
@@ -370,45 +380,49 @@ FXString FXMemoryPool::glstatsAsString()
 
 FXMemoryPool *FXMemoryPool::current()
 {
-	return currentPool->parent;
+	return mempools.enabled ? mempools.current->parent : 0;
 }
 void FXMemoryPool::setCurrent(FXMemoryPool *heap)
 {
-	currentPool=heap->p;
+	if(mempools.enabled) mempools.current=heap->p;
 }
 
 QMemArray<FXMemoryPool::MemoryPoolInfo> FXMemoryPool::statistics()
 {
-	FXMtxHold h(mempoolslock);
-	FXuint len=mempools.count();
-	QMemArray<MemoryPoolInfo> ret(len+1);
-	FXuint n=0;
-#ifndef FXDISABLE_SEPARATE_POOLS
-	// Add global heap
-	FXMemoryPool::Statistics stats=FXMemoryPool::glstats();
-	ret[n].deleted=false;
-	ret[n].owner=0;
-	ret[n].identifier="Global heap";
-	ret[n].maximum=(FXuval) -1;
-	ret[n].allocated=(FXuval) stats.totalAlloc;
-	n++;
-#else
-	ret.resize(len);
-#endif
-	FXMemoryPoolPrivate *mp;
-	for(QPtrDictIterator<FXMemoryPoolPrivate> it(mempools); (mp=it.current()); ++it, ++n)
+	if(mempools.enabled)
 	{
-		ret[n].deleted=mp->deleted;
-		ret[n].owner=mp->owner;
-		ret[n].identifier=mp->identifier;
-		ret[n].maximum=mp->maxsize;
+		FXMtxHold h(mempools.lock);
+		FXuint len=mempools.pools.count();
+		QMemArray<MemoryPoolInfo> ret(len+1);
+		FXuint n=0;
 #ifndef FXDISABLE_SEPARATE_POOLS
-		ret[n].allocated=mp->size();
+		// Add global heap
+		FXMemoryPool::Statistics stats=FXMemoryPool::glstats();
+		ret[n].deleted=false;
+		ret[n].owner=0;
+		ret[n].identifier="Global heap";
+		ret[n].maximum=(FXuval) -1;
+		ret[n].allocated=(FXuval) stats.totalAlloc;
+		n++;
 #else
-		ret[n].allocated=mp->size()+(FXuval) mp->allocated;
+		ret.resize(len);
 #endif
+		FXMemoryPoolPrivate *mp;
+		for(QPtrDictIterator<FXMemoryPoolPrivate> it(mempools.pools); (mp=it.current()); ++it, ++n)
+		{
+			ret[n].deleted=mp->deleted;
+			ret[n].owner=mp->owner;
+			ret[n].identifier=mp->identifier;
+			ret[n].maximum=mp->maxsize;
+#ifndef FXDISABLE_SEPARATE_POOLS
+			ret[n].allocated=mp->size();
+#else
+			ret[n].allocated=mp->size()+(FXuval) mp->allocated;
+#endif
+		}
+		return ret;
 	}
-	return ret;
+	return QMemArray<FXMemoryPool::MemoryPoolInfo>();
 }
 
 
@@ -428,7 +442,7 @@ static FXMutex failOnFreesLock;
 void *malloc(size_t size, FXMemoryPool *heap) throw()
 {
 	void *ret;
-	FXMemoryPoolPrivate *mp=!heap ? (!enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) currentPool) : heap->p;
+	FXMemoryPoolPrivate *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
 	//fxmessage("FX::malloc(%u, %p)", size, mp);
 	if(!size) size=1;	// BSD allocator doesn't like zero allocations
 #if !FXDISABLE_SEPARATE_POOLS
@@ -470,7 +484,7 @@ void *calloc(size_t no, size_t _size, FXMemoryPool *heap) throw()
 {
 	FXuval size=no*_size;
 	void *ret;
-	FXMemoryPoolPrivate *mp=!heap ? (!enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) currentPool) : heap->p;
+	FXMemoryPoolPrivate *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
 	//fxmessage("FX::calloc(%u, %p)", size, mp);
 	if(!size) size=1;	// BSD allocator doesn't like zero allocations
 #if !FXDISABLE_SEPARATE_POOLS
@@ -515,7 +529,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 {
 	if(!p) return malloc(size, heap);
 	void *ret;
-	FXMemoryPoolPrivate *realmp=0, *mp=!heap ? (!enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) currentPool) : heap->p;
+	FXMemoryPoolPrivate *realmp=0, *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
 	FXuval *_p=(FXuval *) p;
 	//fxmessage("FX::realloc(%p, %u, %p)", p, size, mp);
 	if(!size) size=1;	// BSD allocator doesn't like zero allocations
@@ -667,7 +681,7 @@ void free(void *p, FXMemoryPool *) throw()
 	if(realmp && realmp->deleted && realmp->allocated==0)
 	{
 #ifdef DEBUG
-		fxmessage("Deleting FXMemoryPoolPrivate %p as it is empty and pending deletion (%u remaining)\n", realmp, mempools.count());
+		fxmessage("Deleting FXMemoryPoolPrivate %p as it is empty and pending deletion (%u remaining)\n", realmp, mempools.pools.count());
 #endif
 		FXDELETE(realmp);
 	}
@@ -678,7 +692,7 @@ void free(void *p, FXMemoryPool *) throw()
 void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw()
 {
 	void *ret;
-	FXMemoryPoolPrivate *mp=!enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) currentPool;
+	FXMemoryPoolPrivate *mp=!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current;
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
