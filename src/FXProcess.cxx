@@ -42,46 +42,69 @@
 
 // Decide which API to use
 #ifndef USE_POSIX
-#define USE_WINAPI
-#include "WindowsGubbins.h"
-#include "psapi.h"
-#include "DbgHelp.h"
-#include <sys/timeb.h>
+ #define USE_WINAPI
+ #include "WindowsGubbins.h"
+ #include "psapi.h"
+ #include "DbgHelp.h"
+ #include <sys/timeb.h>
+ #if defined(_M_IX86)
+  // MSVC does give us some idea of what we are compiling
+  #if _M_IX86>=800
+   #define ARCHITECTURE "AMD64"
+  #elif _M_IX86>=600
+   #define ARCHITECTURE "i686"
+  #elif _M_IX86>=500
+   #define ARCHITECTURE "i586"
+  #elif _M_IX86>=400
+   #define ARCHITECTURE "i486"
+  #else
+   #error Unknown x86 architecture
+  #endif
+ #elif defined(_M_ALPHA)
+  #define ARCHITECTURE "Alpha"
+ #elif defined(_M_IA64)
+  #define ARCHITECTURE "ia64"
+ #else
+  #define ARCHITECTURE "i486"
+ #endif
 #else
-#include <sys/time.h>
-#include <unistd.h>
-#include <errno.h>
-#include <signal.h>
-#include <dlfcn.h>
-#include <sys/mman.h>
-#ifdef __linux__
-#include <sys/fsuid.h>
-#endif
-#ifdef __FreeBSD__
-#include <sys/sysctl.h>
-#include <sys/vmmeter.h>
-#endif
-// GCC lets us know what it's compiling
-#if defined(__i386__)
-#define ARCHITECTURE "i486"
-#elif defined(__amd64__)
-// No idea if that's the right macro
-#define ARCHITECTURE "AMD64"
-#elif defined(__ia64__)
-#define ARCHITECTURE "ia64"
-#elif defined(__alpha__)
-#define ARCHITECTURE "Alpha"
-#elif defined(__mips__)
-#define ARCHITECTURE "MIPS"
-#elif defined(__hppa__)
-#define ARCHITECTURE "PA_RISC"
-#elif defined(__powerpc__)
-#define ARCHITECTURE "PPC"
-#elif defined(__sparc__)
-#define ARCHITECTURE "SPARC"
-#else
-#error Unknown architecture
-#endif
+ #include <sys/time.h>
+ #include <unistd.h>
+ #include <errno.h>
+ #include <signal.h>
+ #include <dlfcn.h>
+ #include <sys/mman.h>
+ #ifdef __linux__
+  #include <sys/fsuid.h>
+ #endif
+ #ifdef __FreeBSD__
+  #include <sys/sysctl.h>
+  #include <sys/vmmeter.h>
+ #endif
+ // GCC lets us know what it's compiling
+ #if defined(__x86_64__)
+  #define ARCHITECTURE "AMD64"
+ #elif defined(__i686__)
+  #define ARCHITECTURE "i686"
+ #elif defined(__i586__)
+  #define ARCHITECTURE "i586"
+ #elif defined(__i386__)
+  #define ARCHITECTURE "i486"
+ #elif defined(__ia64__)
+  #define ARCHITECTURE "ia64"
+ #elif defined(__alpha__)
+  #define ARCHITECTURE "Alpha"
+ #elif defined(__mips__)
+  #define ARCHITECTURE "MIPS"
+ #elif defined(__hppa__)
+  #define ARCHITECTURE "PA_RISC"
+ #elif defined(__powerpc__)
+  #define ARCHITECTURE "PPC"
+ #elif defined(__sparc__)
+  #define ARCHITECTURE "SPARC"
+ #else
+  #error Unknown architecture
+ #endif
 #endif
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
@@ -1081,7 +1104,7 @@ FXString FXProcess::hostOS()
 
 	PIMAGE_NT_HEADERS headers;
 	headers=ImageNtHeader(execbase);
-	if     (IMAGE_FILE_MACHINE_I386   ==headers->FileHeader.Machine) desc="Win32/i386";
+	if     (IMAGE_FILE_MACHINE_I386   ==headers->FileHeader.Machine) desc="Win32/" ARCHITECTURE;
 	else if(IMAGE_FILE_MACHINE_ALPHA  ==headers->FileHeader.Machine) desc="Win32/Alpha";
 	else if(IMAGE_FILE_MACHINE_POWERPC==headers->FileHeader.Machine) desc="Win32/PowerPC";
 #ifdef IMAGE_FILE_MACHINE_IA64
@@ -1140,7 +1163,7 @@ FXString FXProcess::hostOSDescription()
 	desc.arg(ovi.szCSDVersion);
 	desc.arg((FXint) ovi.dwMajorVersion).arg((FXint) ovi.dwMinorVersion);
 
-	if     (PROCESSOR_ARCHITECTURE_INTEL==si.wProcessorArchitecture) desc+="i386";
+	if     (PROCESSOR_ARCHITECTURE_INTEL==si.wProcessorArchitecture) desc+=ARCHITECTURE;
 	else if(PROCESSOR_ARCHITECTURE_ALPHA==si.wProcessorArchitecture) desc+="Alpha";
 	else if(PROCESSOR_ARCHITECTURE_PPC  ==si.wProcessorArchitecture) desc+="PowerPC";
 #ifdef PROCESSOR_ARCHITECTURE_IA64
