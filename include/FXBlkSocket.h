@@ -56,8 +56,9 @@ becomes too full to allow insertion of a writeBlock(), writeBlock() will
 stall until enough data has been sent. This may take seconds and occasionally
 minutes. The receive buffer size is also important because it limits the
 maximum data length you can pass to readBlock() which will never return
-more than readBufferSize() bytes. Both values are set to 49152 bytes by
-default.
+more than readBufferSize() bytes. On Win32, the default read and write
+buffer sizes appear to be 8192 bytes which is a little small. On Linux on
+FreeBSD, they are a much more reasonable 49152 bytes.
 
 To create the server end of a socket, instantiate a FXBlkSocket just as
 type and optionally port (if port is zero, it chooses any free port which isn't
