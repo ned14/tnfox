@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSplashWindow.h,v 1.6 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXSplashWindow.h,v 1.8 2005/02/04 21:54:30 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXSPLASHWINDOW_H
 #define FXSPLASHWINDOW_H

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.h,v 1.87 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXIconList.h,v 1.88 2005/02/06 17:20:00 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXICONLIST_H
 #define FXICONLIST_H
@@ -91,19 +91,19 @@ public:
   FXIconItem(const FXString& text,FXIcon* bi=NULL,FXIcon* mi=NULL,void* ptr=NULL):label(text),bigIcon(bi),miniIcon(mi),data(ptr),state(0){}
 
   /// Change item's text label
-  virtual void setText(const FXString& txt){ label=txt; }
+  virtual void setText(const FXString& txt);
 
   /// Return item's text label
   const FXString& getText() const { return label; }
 
-  /// Change item's big icon
-  virtual void setBigIcon(FXIcon* icn){ bigIcon=icn; }
+  /// Change item's big icon, deleting the old icon if it was owned
+  virtual void setBigIcon(FXIcon* icn,FXbool owned=FALSE);
 
   /// Return item's big icon
   FXIcon* getBigIcon() const { return bigIcon; }
 
-  /// Change item's mini icon
-  virtual void setMiniIcon(FXIcon* icn){ miniIcon=icn; }
+  /// Change item's mini icon, deleting the old icon if it was owned
+  virtual void setMiniIcon(FXIcon* icn,FXbool owned=FALSE);
 
   /// Return item's mini icon
   FXIcon* getMiniIcon() const { return miniIcon; }
@@ -137,12 +137,6 @@ public:
 
   /// Return true if this item is draggable
   FXbool isDraggable() const { return (state&DRAGGABLE)!=0; }
-
-  /// Make icons owned by the item
-  virtual void setIconOwned(FXuint owned=(BIGICONOWNED|MINIICONOWNED));
-
-  /// Return icons ownership status
-  FXuint isIconOwned() const { return (state&(BIGICONOWNED|MINIICONOWNED)); }
 
   /// Return width of item as drawn in list
   virtual FXint getWidth(const FXIconList* list) const;
@@ -472,13 +466,13 @@ public:
   FXString getItemText(FXint index) const;
 
   /// Change item big icon
-  void setItemBigIcon(FXint index,FXIcon* icon);
+  void setItemBigIcon(FXint index,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return big icon of item at index
   FXIcon* getItemBigIcon(FXint index) const;
 
   /// Change item mini icon
-  void setItemMiniIcon(FXint index,FXIcon* icon);
+  void setItemMiniIcon(FXint index,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return mini icon of item at index
   FXIcon* getItemMiniIcon(FXint index) const;

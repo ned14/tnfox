@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.h,v 1.64 2005/01/25 06:30:46 fox Exp $                          *
+* $Id: FXHeader.h,v 1.65 2005/02/06 17:20:00 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXHEADER_H
 #define FXHEADER_H
@@ -85,13 +85,13 @@ public:
   FXHeaderItem(const FXString& text,FXIcon* ic=NULL,FXint s=0,void* ptr=NULL):label(text),icon(ic),data(ptr),size(s),pos(0),state(LEFT|BEFORE){}
 
   /// Change item's text label
-  virtual void setText(const FXString& txt){ label=txt; }
+  virtual void setText(const FXString& txt);
 
   /// Return item's text label
   const FXString& getText() const { return label; }
 
   /// Change item's icon
-  virtual void setIcon(FXIcon* icn){ icon=icn; }
+  virtual void setIcon(FXIcon* icn);
 
   /// Return item's icon
   FXIcon* getIcon() const { return icon; }
@@ -329,11 +329,11 @@ public:
   FXbool getArrowDir(FXint index) const;
 
   /**
-  * Change item justification.  Horizontal justification is controlled by passing 
-  * FXHeaderItem::RIGHT, FXHeaderItem::LEFT, or FXHeaderItem::CENTER_X. 
-  * Vertical justification is controlled by FXHeaderItem::TOP, FXHeaderItem::BOTTOM, 
+  * Change item justification.  Horizontal justification is controlled by passing
+  * FXHeaderItem::RIGHT, FXHeaderItem::LEFT, or FXHeaderItem::CENTER_X.
+  * Vertical justification is controlled by FXHeaderItem::TOP, FXHeaderItem::BOTTOM,
   * or FXHeaderItem::CENTER_Y.
-  * The default is a combination of FXHeaderItem::LEFT and FXHeaderItem::CENTER_Y.  
+  * The default is a combination of FXHeaderItem::LEFT and FXHeaderItem::CENTER_Y.
   */
   void setItemJustify(FXint index,FXuint justify);
 

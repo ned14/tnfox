@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXListBox.h,v 1.37 2005/01/16 16:06:06 fox Exp $                         *
+* $Id: FXListBox.h,v 1.38 2005/02/06 17:20:00 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXLISTBOX_H
 #define FXLISTBOX_H
@@ -190,8 +190,8 @@ public:
   /// Get text for specified item
   FXString getItemText(FXint index) const;
 
-  /// Change item icon
-  void setItemIcon(FXint index,FXIcon* icon);
+  /// Change item icon, deleting old one if it was owned
+  void setItemIcon(FXint index,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return icon of item at index
   FXIcon* getItemIcon(FXint index) const;

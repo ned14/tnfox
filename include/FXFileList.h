@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.h,v 1.45 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXFileList.h,v 1.50 2005/02/08 03:23:28 fox Exp $                        *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -36,14 +36,17 @@ struct FXFileAssoc;
 class FXFileDict;
 class FXFileList;
 class FXIcon;
+class FXIconSource;
+class FXIconDict;
 
 
-// File List options
+/// File List options
 enum {
   FILELIST_SHOWHIDDEN   = 0x04000000, /// Show hidden files or directories
   FILELIST_SHOWDIRS     = 0x08000000, /// Show only directories
   FILELIST_SHOWFILES    = 0x10000000, /// Show only files
-  FILELIST_NO_OWN_ASSOC = 0x20000000  /// Do not create associations for files
+  FILELIST_SHOWIMAGES   = 0x20000000, /// Show preview of images
+  FILELIST_NO_OWN_ASSOC = 0x40000000  /// Do not create associations for files
   };
 
 
@@ -124,33 +127,34 @@ public:
 class FXAPI FXFileList : public FXIconList {
   FXDECLARE(FXFileList)
 protected:
-  FXString     directory;             // Current directory
-  FXString     orgdirectory;          // Original directory
-  FXString     dropdirectory;         // Drop directory
-  FXDragAction dropaction;            // Drop action
-  FXString     dragfiles;             // Dragged files
-  FXFileDict  *associations;          // Association table
-  FXFileItem  *list;                  // File item list
-  FXString     pattern;               // Pattern of file names
-  FXuint       matchmode;             // File wildcard match mode
-  FXuint       counter;               // Refresh counter
-  FXTime       timestamp;             // Time when last refreshed
-  FXIcon      *big_folder;            // Big folder icon
-  FXIcon      *mini_folder;           // Mini folder icon
-  FXIcon      *big_doc;               // Big document icon
-  FXIcon      *mini_doc;              // Mini document icon
-  FXIcon      *big_app;               // Big application icon
-  FXIcon      *mini_app;              // Mini application icon
+  FXString      directory;      // Current directory
+  FXString      orgdirectory;   // Original directory
+  FXString      dropdirectory;  // Drop directory
+  FXDragAction  dropaction;     // Drop action
+  FXString      dragfiles;      // Dragged files
+  FXFileDict   *associations;   // Association table
+  FXFileItem   *list;           // File item list
+  FXString      pattern;        // Pattern of file names
+  FXuint        matchmode;      // File wildcard match mode
+  FXuint        counter;        // Refresh counter
+  FXint         imagesize;      // Image size
+  FXTime        timestamp;      // Time when last refreshed
+  FXIcon       *big_folder;     // Big folder icon
+  FXIcon       *mini_folder;    // Mini folder icon
+  FXIcon       *big_doc;        // Big document icon
+  FXIcon       *mini_doc;       // Mini document icon
+  FXIcon       *big_app;        // Big application icon
+  FXIcon       *mini_app;       // Mini application icon
 protected:
   FXFileList();
   virtual FXIconItem *createItem(const FXString& text,FXIcon *big,FXIcon* mini,void* ptr);
-  void listItems();
+  void listItems(FXbool force);
 private:
   FXFileList(const FXFileList&);
   FXFileList &operator=(const FXFileList&);
 public:
-  long onRefreshTimer(FXObject*,FXSelector,void*);
   long onOpenTimer(FXObject*,FXSelector,void*);
+  long onRefreshTimer(FXObject*,FXSelector,void*);
   long onDNDEnter(FXObject*,FXSelector,void*);
   long onDNDLeave(FXObject*,FXSelector,void*);
   long onDNDMotion(FXObject*,FXSelector,void*);
@@ -190,6 +194,8 @@ public:
   long onUpdShowHidden(FXObject*,FXSelector,void*);
   long onCmdHideHidden(FXObject*,FXSelector,void*);
   long onUpdHideHidden(FXObject*,FXSelector,void*);
+  long onCmdToggleImages(FXObject*,FXSelector,void*);
+  long onUpdToggleImages(FXObject*,FXSelector,void*);
   long onCmdHeader(FXObject*,FXSelector,void*);
   long onUpdHeader(FXObject*,FXSelector,void*);
   long onCmdRefresh(FXObject*,FXSelector,void*);
@@ -212,21 +218,22 @@ public:
   enum {
     ID_REFRESHTIMER=FXIconList::ID_LAST,
     ID_OPENTIMER,
-    ID_SORT_BY_NAME,
-    ID_SORT_BY_TYPE,
-    ID_SORT_BY_SIZE,
-    ID_SORT_BY_TIME,
-    ID_SORT_BY_USER,
-    ID_SORT_BY_GROUP,
-    ID_SORT_REVERSE,
-    ID_SORT_CASE,
-    ID_DIRECTORY_UP,
-    ID_SET_PATTERN,
-    ID_SET_DIRECTORY,
-    ID_SHOW_HIDDEN,
-    ID_HIDE_HIDDEN,
-    ID_TOGGLE_HIDDEN,
-    ID_REFRESH,
+    ID_SORT_BY_NAME,    /// Sort by name
+    ID_SORT_BY_TYPE,    /// Sort by type
+    ID_SORT_BY_SIZE,    /// Sort by size
+    ID_SORT_BY_TIME,    /// Sort by access time
+    ID_SORT_BY_USER,    /// Sort by owner name
+    ID_SORT_BY_GROUP,   /// Sort by group name
+    ID_SORT_REVERSE,    /// Reverse sort order
+    ID_SORT_CASE,       /// Toggle sort case sensitivity
+    ID_DIRECTORY_UP,    /// Move up one directory
+    ID_SET_PATTERN,     /// Set match pattern
+    ID_SET_DIRECTORY,   /// Set directory
+    ID_SHOW_HIDDEN,     /// Show hidden files
+    ID_HIDE_HIDDEN,     /// Hide hidden files
+    ID_TOGGLE_HIDDEN,   /// Toggle display of hidden files
+    ID_TOGGLE_IMAGES,   /// Toggle display of images
+    ID_REFRESH,         /// Refresh immediately
     ID_LAST
     };
 public:
@@ -309,6 +316,18 @@ public:
   /// Show files only
   void showOnlyFiles(FXbool shown);
 
+  /// Return TRUE if image preview on
+  FXbool showImages() const;
+
+  /// Show or hide preview images
+  void showImages(FXbool showing);
+
+  /// Return images preview size
+  FXint getImageSize() const { return imagesize; }
+  
+  /// Change images preview size
+  void setImageSize(FXint size);
+  
   /// Change file associations
   void setAssociations(FXFileDict* assoc);
 

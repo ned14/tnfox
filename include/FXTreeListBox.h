@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeListBox.h,v 1.36 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXTreeListBox.h,v 1.37 2005/02/06 17:20:00 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXTREELISTBOX_H
 #define FXTREELISTBOX_H
@@ -210,14 +210,14 @@ public:
   /// Return item label
   FXString getItemText(const FXTreeItem* item) const;
 
-  /// Change item's open icon
-  void setItemOpenIcon(FXTreeItem* item,FXIcon* icon);
+  /// Change item's open icon, delete old one if it was owned
+  void setItemOpenIcon(FXTreeItem* item,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return item's open icon
   FXIcon* getItemOpenIcon(const FXTreeItem* item) const;
 
-  /// Change item's closed icon
-  void setItemClosedIcon(FXTreeItem* item,FXIcon* icon);
+  /// Change item's closed icon, delete old one if it was owned
+  void setItemClosedIcon(FXTreeItem* item,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return item's closed icon
   FXIcon* getItemClosedIcon(const FXTreeItem* item) const;

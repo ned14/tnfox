@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.h,v 1.149 2005/01/25 06:30:46 fox Exp $                          *
+* $Id: FXTable.h,v 1.150 2005/02/06 17:20:00 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABLE_H
 #define FXTABLE_H
@@ -117,13 +117,13 @@ public:
   FXTableItem(const FXString& text,FXIcon* ic=NULL,void* ptr=NULL):label(text),icon(ic),data(ptr),state(RIGHT|CENTER_Y){}
 
   /// Change item's text label
-  virtual void setText(const FXString& txt){ label=txt; }
+  virtual void setText(const FXString& txt);
 
   /// Return item's text label
   virtual FXString getText() const { return label; }
 
-  /// Change item's icon
-  virtual void setIcon(FXIcon* icn){ icon=icn; }
+  /// Change item's icon, deleting the old icon if it was owned
+  virtual void setIcon(FXIcon* icn,FXbool owned=FALSE);
 
   /// Return item's icon
   virtual FXIcon* getIcon() const { return icon; }
@@ -181,12 +181,6 @@ public:
 
   /// Return item background stipple
   FXStipplePattern getStipple() const;
-
-  /// Make icon owned by item
-  virtual void setIconOwned(FXuint owned=ICONOWNED);
-
-  /// Return icon owned state
-  FXuint isIconOwned() const { return (state&ICONOWNED); }
 
   /// Create input control for editing this item
   virtual FXWindow *getControlFor(FXTable* table);
@@ -695,10 +689,14 @@ public:
 
   /// Modify cell text
   void setItemText(FXint r,FXint c,const FXString& text);
+  
+  /// Return cell text
   FXString getItemText(FXint r,FXint c) const;
 
-  /// Modify cell icon
-  void setItemIcon(FXint r,FXint c,FXIcon* icon);
+  /// Modify cell icon, deleting the old icon if it was owned
+  void setItemIcon(FXint r,FXint c,FXIcon* icon,FXbool owned=FALSE);
+  
+  /// Return cell icon
   FXIcon* getItemIcon(FXint r,FXint c) const;
 
   /// Modify cell user-data
@@ -730,11 +728,11 @@ public:
   FXbool isItemEnabled(FXint r,FXint c) const;
 
   /**
-  * Change item justification.  Horizontal justification is controlled by passing 
-  * FXTableItem::RIGHT,  FXTableItem::LEFT, or FXTableItem::CENTER_X. 
-  * Vertical justification is controlled by FXTableItem::TOP, FXTableItem::BOTTOM, 
+  * Change item justification.  Horizontal justification is controlled by passing
+  * FXTableItem::RIGHT,  FXTableItem::LEFT, or FXTableItem::CENTER_X.
+  * Vertical justification is controlled by FXTableItem::TOP, FXTableItem::BOTTOM,
   * or FXTableItem::CENTER_Y.
-  * The default is a combination of FXTableItem::RIGHT and FXTableItem::CENTER_Y.  
+  * The default is a combination of FXTableItem::RIGHT and FXTableItem::CENTER_Y.
   */
   void setItemJustify(FXint r,FXint c,FXuint justify);
 
@@ -754,8 +752,8 @@ public:
   FXuint getItemIconPosition(FXint r,FXint c) const;
 
   /**
-  * Change item borders style.  Borders on each side of the item can be turned 
-  * controlled individually using FXTableItem::LBORDER, FXTableItem::RBORDER, 
+  * Change item borders style.  Borders on each side of the item can be turned
+  * controlled individually using FXTableItem::LBORDER, FXTableItem::RBORDER,
   * FXTableItem::TBORDER and FXTableItem::BBORDER.
   */
   void setItemBorders(FXint r,FXint c,FXuint borders);

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDialog.h,v 1.30 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXFileDialog.h,v 1.31 2005/02/08 03:23:28 fox Exp $                      *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -142,6 +142,18 @@ public:
 
   /// Show or hide hidden files
   void showHiddenFiles(FXbool showing);
+
+  /// Return TRUE if image preview on
+  FXbool showImages() const;
+
+  /// Show or hide preview images
+  void showImages(FXbool showing);
+
+  /// Return images preview size
+  FXint getImageSize() const;
+
+  /// Change images preview size
+  void setImageSize(FXint size);
 
   /// Show readonly button
   void showReadOnly(FXbool show);

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileSelector.h,v 1.53 2005/01/16 16:06:06 fox Exp $                    *
+* $Id: FXFileSelector.h,v 1.55 2005/02/08 06:12:35 fox Exp $                    *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -113,6 +113,8 @@ public:
   long onCmdDelete(FXObject*,FXSelector,void*);
   long onUpdSelected(FXObject*,FXSelector,void*);
   long onPopupMenu(FXObject*,FXSelector,void*);
+  long onCmdImageSize(FXObject*,FXSelector,void*);
+  long onUpdImageSize(FXObject*,FXSelector,void*);
 public:
   enum {
     ID_FILEFILTER=FXPacker::ID_LAST,
@@ -120,6 +122,9 @@ public:
     ID_FILELIST,
     ID_DIRECTORY_UP,
     ID_DIRTREE,
+    ID_NORMAL_SIZE,
+    ID_MEDIUM_SIZE,
+    ID_GIANT_SIZE,
     ID_HOME,
     ID_WORK,
     ID_BOOKMARK,
@@ -251,6 +256,18 @@ public:
 
   /// Show or hide hidden files
   void showHiddenFiles(FXbool showing);
+
+  /// Return TRUE if image preview on
+  FXbool showImages() const;
+
+  /// Show or hide preview images
+  void showImages(FXbool showing);
+
+  /// Return images preview size
+  FXint getImageSize() const;
+
+  /// Change images preview size
+  void setImageSize(FXint size);
 
   /// Show readonly button
   void showReadOnly(FXbool show);

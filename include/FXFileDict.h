@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.h,v 1.24 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXFileDict.h,v 1.26 2005/02/05 06:56:08 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXFILEDICT_H
 #define FXFILEDICT_H
@@ -35,6 +35,9 @@ class FXIcon;
 class FXApp;
 class FXSettings;
 
+class FXIconDict;
+
+
 /// Registers stuff to know about the extension
 struct FXFileAssoc {
   FXString   command;           /// Command to execute
@@ -48,66 +51,6 @@ struct FXFileAssoc {
   FXuint     flags;             /// Flags
   };
 
-
-/**
-* The Icon Dictionary manages a collection of icons.  The icons are referenced
-* by their file name.  When first encountering a new file name, the icon is
-* located by searching the icon search path for the icon file.  If found, the
-* type of the icon is determined by means of the extension, and then the icon
-* is loaded.  Subsequent queries for the same icon will return immediately with
-* the cached icon.
-* Icons are managed by the icon dictionary and when an the dictionary is deleted
-* all the icons stored in it are released.
-*/
-class FXAPI FXIconDict : public FXDict {
-  FXDECLARE(FXIconDict)
-private:
-  FXApp        *app;            // Application object
-  FXString      path;           // Where to search icons
-protected:
-  FXIconDict(){}
-  virtual void *createData(const void*);
-  virtual void deleteData(void*);
-private:
-  FXIconDict(const FXIconDict&);
-  FXIconDict &operator=(const FXIconDict&);
-public:
-
-  /// Default icon search path
-  static const FXchar *defaultIconPath;
-
-public:
-
-  /// Construct an icon dictionary, with given path
-  FXIconDict(FXApp* a,const FXString& p=defaultIconPath);
-
-  /// Get application
-  FXApp* getApp() const { return app; }
-
-  /// Set icon search path
-  void setIconPath(const FXString& p){ path=p; }
-
-  /// Return current icon search path
-  const FXString& getIconPath() const { return path; }
-
-  /// Insert unique icon loaded from filename into dictionary
-  FXIcon* insert(const FXchar* name){ return (FXIcon*)FXDict::insert(name,name); }
-
-  /// Remove icon from dictionary
-  FXIcon* remove(const FXchar* name){ return (FXIcon*)FXDict::remove(name); }
-
-  /// Find icon by name
-  FXIcon* find(const FXchar* name){ return (FXIcon*)FXDict::find(name); }
-
-  /// Save to stream
-  virtual void save(FXStream& store) const;
-
-  /// Load from stream
-  virtual void load(FXStream& store);
-
-  /// Destructor
-  virtual ~FXIconDict();
-  };
 
 
 /**
@@ -142,9 +85,8 @@ public:
 class FXAPI FXFileDict : public FXDict {
   FXDECLARE(FXFileDict)
 private:
-  FXApp        *app;            // Application object
-  FXSettings   *settings;       // Settings database where to get bindings
-  FXIconDict   *icons;          // Icon table
+  FXSettings *settings; // Settings database where to get bindings
+  FXIconDict *icons;    // Icon dictionary which keeps track of loaded icons
 protected:
   FXFileDict(){}
   virtual void *createData(const void*);
@@ -162,22 +104,30 @@ public:
 
   /// Registry key used to find fallback document icons
   static const FXchar *defaultFileBinding;
+
 public:
 
   /**
   * Construct a dictionary mapping file-extension to file associations,
   * using the application registry settings as a source for the bindings.
+  * The pointer to the application class is passed down to the icon source
+  * which is inside the icon dictionary.
   */
-  FXFileDict(FXApp* a);
+  FXFileDict(FXApp* app);
 
   /**
   * Construct a dictionary mapping file-extension to file associations,
   * using the specified settings database as a source for the bindings.
+  * The pointer to the application class is passed down to the icon source
+  * which is inside the icon dictionary.
   */
-  FXFileDict(FXApp* a,FXSettings* db);
+  FXFileDict(FXApp* app,FXSettings* db);
 
-  /// Get application
-  FXApp* getApp() const { return app; }
+  /// Change icon dictionary
+  void setIconDict(FXIconDict *icns){ icons=icns; }
+
+  /// Return icon dictionary
+  FXIconDict* getIconDict() const { return icons; }
 
   /**
   * Set icon search path; the initial search path is determined by the

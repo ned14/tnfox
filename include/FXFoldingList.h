@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFoldingList.h,v 1.26 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXFoldingList.h,v 1.27 2005/02/06 17:20:00 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXFOLDINGLIST_H
 #define FXFOLDINGLIST_H
@@ -114,19 +114,19 @@ public:
   FXint getNumChildren() const;
 
   /// Change item label
-  virtual void setText(const FXString& txt){ label=txt; }
+  virtual void setText(const FXString& txt);
 
   /// Get item label
   const FXString& getText() const { return label; }
 
-  /// Change open icon
-  virtual void setOpenIcon(FXIcon* icn){ openIcon=icn; }
+  /// Change open icon, deleting old icon if it was owned
+  virtual void setOpenIcon(FXIcon* icn,FXbool owned=FALSE);
 
   /// Get open icon
   FXIcon* getOpenIcon() const { return openIcon; }
 
-  /// Change closed icon
-  virtual void setClosedIcon(FXIcon* icn){ closedIcon=icn; }
+  /// Change closed icon, deleting old icon if it was owned
+  virtual void setClosedIcon(FXIcon* icn,FXbool owned=FALSE);
 
   /// Get closed icon
   FXIcon* getClosedIcon() const { return closedIcon; }
@@ -172,12 +172,6 @@ public:
 
   /// Return true if this item is draggable
   FXbool isDraggable() const { return (state&DRAGGABLE)!=0; }
-
-  /// Make open and or icon owned by the item
-  virtual void setIconOwned(FXuint owned=(OPENICONOWNED|CLOSEDICONOWNED));
-
-  /// Return open icon and closed icon ownership status
-  FXuint isIconOwned() const { return (state&(OPENICONOWNED|CLOSEDICONOWNED)); }
 
   /// Return TRUE if subitems, real or imagined
   FXbool hasItems() const { return (state&HASITEMS)!=0; }
@@ -481,14 +475,14 @@ public:
   /// Return item's text
   FXString getItemText(const FXFoldingItem* item) const;
 
-  /// Change item's open icon
-  void setItemOpenIcon(FXFoldingItem* item,FXIcon* icon);
+  /// Change item's open icon, deleting old icon if it was owned
+  void setItemOpenIcon(FXFoldingItem* item,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return item's open icon
   FXIcon* getItemOpenIcon(const FXFoldingItem* item) const;
 
-  /// Chance item's closed icon
-  void setItemClosedIcon(FXFoldingItem* item,FXIcon* icon);
+  /// Chance item's closed icon, deleting old icon if it was owned
+  void setItemClosedIcon(FXFoldingItem* item,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return item's closed icon
   FXIcon* getItemClosedIcon(const FXFoldingItem* item) const;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFrame.h,v 1.22 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXFrame.h,v 1.23 2005/02/03 20:12:46 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXFRAME_H
 #define FXFRAME_H
@@ -158,9 +158,6 @@ public:
 
   /// Load from stream
   virtual void load(FXStream& store);
-
-  /// Destructor
-  virtual ~FXFrame();
   };
 
 }

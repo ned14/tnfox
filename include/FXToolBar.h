@@ -19,79 +19,42 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBar.h,v 1.14 2005/01/30 21:32:19 fox Exp $                         *
+* $Id: FXToolBar.h,v 1.20 2005/02/03 04:00:59 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXTOOLBAR_H
 #define FXTOOLBAR_H
 
-#ifndef FXPACKER_H
-#include "FXPacker.h"
+#ifndef FXDOCKBAR_H
+#include "FXDockBar.h"
 #endif
-#include "FXRectangle.h"
 
 namespace FX {
 
-class FXToolBarDock;
+class FXDockSite;
 
 
 /**
-* Toolbar control.
-* The toolbar control automatically adjusts the orientation of toolbar
-* grips or separator widgets embedded inside of it.
+* A tool bar widget can be docked in a dock site; it automatically
+* adjusts its orientation based on the orientation of the dock site,
+* and adjusts the layout options accordingly.
+* See dock bar widget for more information on the docking behavior.
 */
-class FXAPI FXToolBar : public FXPacker {
+class FXAPI FXToolBar : public FXDockBar {
   FXDECLARE(FXToolBar)
 protected:
-  FXComposite *drydock;	        // Parent when docked
-  FXComposite *wetdock;	        // Parent when floating
-  FXint        gripx;           // Grip offset
-  FXint        gripy;
-protected:
-  FXToolBar();
+  FXToolBar(){}
 private:
   FXToolBar(const FXToolBar&);
   FXToolBar &operator=(const FXToolBar&);
 public:
-  long onCmdUndock(FXObject*,FXSelector,void*);
-  long onUpdUndock(FXObject*,FXSelector,void*);
-  long onCmdDockTop(FXObject*,FXSelector,void*);
-  long onUpdDockTop(FXObject*,FXSelector,void*);
-  long onCmdDockBottom(FXObject*,FXSelector,void*);
-  long onUpdDockBottom(FXObject*,FXSelector,void*);
-  long onCmdDockLeft(FXObject*,FXSelector,void*);
-  long onUpdDockLeft(FXObject*,FXSelector,void*);
-  long onCmdDockRight(FXObject*,FXSelector,void*);
-  long onUpdDockRight(FXObject*,FXSelector,void*);
-  long onBeginDragGrip(FXObject*,FXSelector,void*);
-  long onEndDragGrip(FXObject*,FXSelector,void*);
-  long onDraggedGrip(FXObject*,FXSelector,void*);
-  long onPopupMenu(FXObject*,FXSelector,void*);
-  long onDockTimer(FXObject*,FXSelector,void*);
-public:
-  enum {
-    ID_UNDOCK=FXPacker::ID_LAST,  /// Undock the toolbar
-    ID_DOCK_TOP,                  /// Dock on the top
-    ID_DOCK_BOTTOM,               /// Dock on the bottom
-    ID_DOCK_LEFT,                 /// Dock on the left
-    ID_DOCK_RIGHT,                /// Dock on the right
-    ID_TOOLBARGRIP,               /// Notifications from toolbar grip
-    ID_DOCK_TIMER,
-    ID_LAST
-    };
+  long onCmdDockFlip(FXObject*,FXSelector,void*);
+  long onUpdDockFlip(FXObject*,FXSelector,void*);
 public:
 
-  /**
-  * Construct a floatable toolbar.
-  * Normally, the toolbar is docked under a window p of type FXToolBarDock.
-  * When floated, the toolbar can be docked under window q, which is
-  * usually an kind of FXToolBarShell window.
-  */
+  /// Construct floatable toolbar, initially docked under parent p
   FXToolBar(FXComposite* p,FXComposite* q,FXuint opts=LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=3,FXint pr=3,FXint pt=2,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 
-  /**
-  * Construct a non-floatable toolbar.
-  * The toolbar can not be undocked.
-  */
+  /// Construct a non-floatable toolbar
   FXToolBar(FXComposite* p,FXuint opts=LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=2,FXint pr=3,FXint pt=3,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 
   /// Perform layout
@@ -103,70 +66,19 @@ public:
   /// Return default height
   virtual FXint getDefaultHeight();
 
-  /// Return true if docked
-  FXbool isDocked() const;
+  /// Dock and optionally flip orientation of toolbar
+  virtual void dock(FXDockSite* docksite,FXWindow* before=NULL);
 
-  /**
-  * Set parent when docked.
-  * If it was docked, reparent under the new docking window.
-  */
-  void setDryDock(FXComposite* dry);
-
-  /**
-  * Set parent when floating.
-  * If it was undocked, then reparent under the new floating window.
-  */
-  void setWetDock(FXComposite* wet);
-
-  /// Return parent when docked
-  FXComposite* getDryDock() const { return drydock; }
-
-  /// Return parent when floating
-  FXComposite* getWetDock() const { return wetdock; }
-
-  /// Search for dock against given side of main window
-  FXToolBarDock* findDockAtSide(FXuint side=LAYOUT_SIDE_TOP);
-
-  /// Search for dock close to coordinates rootx, rooty
-  FXToolBarDock* findDockNear(FXint rootx,FXint rooty);
-
-  /**
-  * Dock the bar against the given side, after some other widget.
-  * However, if after is -1, it will be docked as the innermost bar just before
-  * the work-area, while if after is 0, if will be docked as the outermost bar.
-  */
-  virtual void dock(FXToolBarDock* docksite,FXWindow* before=NULL);
-
-  /**
-  * Dock the bar against the given side, near the given position relative
-  * to the toolbar dock's origin.
-  */
-  virtual void dock(FXToolBarDock* docksite,FXint localx,FXint localy);
-
-  /**
-  * Undock or float the bar.
-  * The initial position of the wet dock is a few pixels
-  * below and to the right of the original docked position.
-  */
-  virtual void undock(FXint rootx,FXint rooty);
+  /// Dock and optionally flip orientation of toolbar
+  virtual void dock(FXDockSite* docksite,FXint localx,FXint localy);
 
   /// Set docking side
   void setDockingSide(FXuint side=LAYOUT_SIDE_TOP);
 
   /// Return docking side
   FXuint getDockingSide() const;
-
-  /// Save toolbar to a stream
-  virtual void save(FXStream& store) const;
-
-  /// Load toolbar from a stream
-  virtual void load(FXStream& store);
-
-  /// Destroy
-  virtual ~FXToolBar();
   };
 
 }
 
 #endif
-

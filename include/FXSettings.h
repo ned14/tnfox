@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.h,v 1.23 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXSettings.h,v 1.24 2005/02/02 16:37:40 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXSETTINGS_H
 #define FXSETTINGS_H
@@ -68,7 +68,7 @@ public:
   /// Obtain the string dictionary for the given section
   FXStringDict* data(FXuint pos) const { return (FXStringDict*)FXDict::data(pos); }
 
-  /// Find string dictionary for the given section
+  /// Find string dictionary for the given section; may be NULL
   FXStringDict* find(const FXchar *section) const { return (FXStringDict*)FXDict::find(section); }
 
   /// Read a formatted registry entry, using scanf-style format

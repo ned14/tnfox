@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fx.h,v 1.86 2005/01/26 15:08:53 fox Exp $                                *
+* $Id: fx.h,v 1.90 2005/02/05 20:52:07 fox Exp $                                *
 ********************************************************************************/
 #ifndef FX_H
 #define FX_H
@@ -94,6 +94,8 @@
 #include "FXDC.h"
 #include "FXDCWindow.h"
 #include "FXDCPrint.h"
+#include "FXIconSource.h"
+#include "FXIconDict.h"
 #include "FXFileDict.h"
 #include "FXWindow.h"
 #include "FXFrame.h"
@@ -197,8 +199,11 @@
 #include "FXMDIClient.h"
 #include "FXMDIChild.h"
 #include "FXDocument.h"
+#include "FXDockSite.h"
+#include "FXDockBar.h"
 #include "FXToolBar.h"
-#include "FXToolBarDock.h"
+#include "FXDockHandler.h"
+#include "FXDockTitle.h"
 #include "FXToolBarGrip.h"
 #include "FXToolBarShell.h"
 #include "FXToolBarTab.h"

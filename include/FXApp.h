@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.h,v 1.194 2005/01/31 01:22:58 fox Exp $                            *
+* $Id: FXApp.h,v 1.195 2005/02/04 03:41:00 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXAPP_H
 #define FXAPP_H
@@ -155,7 +155,7 @@ protected:
   friend class FXApp;
   friend class FXPopup;
   friend class FXWindow;
-  friend class FXToolBarGrip;
+  friend class FXDockHandler;
   template<typename type> friend class FXEventLoop_Static;
 
   FXApp           *app;                 // Back link to application object

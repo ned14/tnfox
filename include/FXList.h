@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.h,v 1.81 2005/01/16 16:06:06 fox Exp $                            *
+* $Id: FXList.h,v 1.82 2005/02/06 17:20:00 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXLIST_H
 #define FXLIST_H
@@ -78,13 +78,13 @@ public:
   FXListItem(const FXString& text,FXIcon* ic=NULL,void* ptr=NULL):label(text),icon(ic),data(ptr),state(0),x(0),y(0){}
 
   /// Change item's text label
-  virtual void setText(const FXString& txt){ label=txt; }
+  virtual void setText(const FXString& txt);
 
   /// Return item's text label
   const FXString& getText() const { return label; }
 
-  /// Change item's icon
-  virtual void setIcon(FXIcon* icn){ icon=icn; }
+  /// Change item's icon, deleting the old icon if it was owned
+  virtual void setIcon(FXIcon* icn,FXbool owned=FALSE);
 
   /// Return item's icon
   FXIcon* getIcon() const { return icon; }
@@ -118,12 +118,6 @@ public:
 
   /// Return true if this item is draggable
   FXbool isDraggable() const { return (state&DRAGGABLE)!=0; }
-
-  /// Make icon owned by the item
-  virtual void setIconOwned(FXuint owned=ICONOWNED);
-
-  /// Return icon ownership status
-  FXuint isIconOwned() const { return (state&ICONOWNED); }
 
   /// Return width of item as drawn in list
   virtual FXint getWidth(const FXList* list) const;
@@ -374,8 +368,8 @@ public:
   /// Return item text
   FXString getItemText(FXint index) const;
 
-  /// Change item icon
-  void setItemIcon(FXint index,FXIcon* icon);
+  /// Change item icon, deleting the old icon if it was owned
+  void setItemIcon(FXint index,FXIcon* icon,FXbool owned=FALSE);
 
   /// Return item icon, if any
   FXIcon* getItemIcon(FXint index) const;

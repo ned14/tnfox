@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.h,v 1.129 2005/02/01 04:10:23 fox Exp $                         *
+* $Id: FXWindow.h,v 1.130 2005/02/02 16:37:40 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXWINDOW_H
 #define FXWINDOW_H
@@ -499,6 +499,9 @@ public:
 
   /// Return true if this window has the focus
   FXbool hasFocus() const;
+  
+  /// Return true if this window is in focus chain
+  FXbool inFocusChain() const;
 
   /// Move the focus to this window
   virtual void setFocus();
