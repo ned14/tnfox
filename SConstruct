@@ -20,6 +20,8 @@
 EnsurePythonVersion(2,3)
 execfile("sconslib.py")
 init(globals())
+if "hgfs/D" in os.getcwd() or "kate/D" in os.getcwd():
+    raise IOError, "You don't want to run me on the Windows share!"
 targetname="lib/"+tnfoxname
 env['CPPDEFINES']+=[ "FOXDLL_EXPORTS" ]
 doConfTests(env)
