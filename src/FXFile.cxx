@@ -200,7 +200,7 @@ FXFile::~FXFile()
 
 const FXString &FXFile::name() const
 {
-	FXMtxHold h(p);
+	// FXMtxHold h(p);	can do without
 	return p->filename;
 }
 
@@ -345,7 +345,7 @@ void FXFile::flush()
 
 FXfval FXFile::size() const
 {
-	FXMtxHold h(p);
+	// FXMtxHold h(p); can do without
 	if(isOpen() && !p->amStdio)
 		return p->size;
 	else
