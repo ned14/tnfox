@@ -146,11 +146,6 @@ static const char *decodeWinsockErr(int code)
 #include <netinet/in.h>
 #include <netdb.h>
 
-// Work around Linux only functionality
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
-#endif
-
 #define FXERRHSKT(exp) { int __res=(exp); if(__res<0) { \
 	if(EPIPE==errno) \
 		{ FXERRGCONLOST("Connection Lost", 0); } \
@@ -589,6 +584,15 @@ void FXBlkSocket::zeroAddrs()
 	p->mine.port=p->peer.port=0;
 }
 
+void FXBlkSocket::setupSocket()
+{	// Called to "fix up" any newly created socket handles
+#ifdef SO_NOSIGPIPE
+	// Use FreeBSD extension to disable broken pipe signals
+	int val=1;
+	FXERRHSKT(::setsockopt(p->handle, SOL_SOCKET, SO_NOSIGPIPE, (char *) &val, sizeof(val)));
+#endif
+}
+
 bool FXBlkSocket::create(FXuint mode)
 {
 	FXMtxHold h(p);
@@ -602,6 +606,7 @@ bool FXBlkSocket::create(FXuint mode)
 		FXERRHWIN(INVALID_HANDLE_VALUE!=(p->olr.hEvent=CreateEvent(NULL, TRUE, FALSE, NULL)));
 	}
 #endif
+	setupSocket();
 	if(Stream==p->type)
 	{
 		struct linger l;
@@ -645,6 +650,7 @@ bool FXBlkSocket::open(FXuint mode)
 			FXERRHWIN(INVALID_HANDLE_VALUE!=(p->olw.hEvent=CreateEvent(NULL, TRUE, FALSE, NULL)));
 		}
 #endif
+		setupSocket();
 		if(Stream==p->type)
 		{
 			struct linger l;
@@ -819,7 +825,13 @@ FXuval FXBlkSocket::readBlock(char *data, FXuval maxlen)
 #endif
 #ifdef USE_POSIX
 		h.unlock();
+#ifdef __linux__
+		// recv() is a cancellable point on Linux
 		readed=::recv(p->handle, data, maxlen, MSG_NOSIGNAL);
+#else
+		// recv() isn't a cancellable point on all platforms, so use read()
+		readed=::read(p->handle, data, maxlen);
+#endif
 		h.relock();
 		FXERRHSKT(readed);
 #endif
@@ -870,7 +882,13 @@ FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
 #ifdef USE_POSIX
 		FXIODeviceS_SignalHandler::lockWrite();
 		h.unlock();
+#ifdef __linux__
+		// send() is a cancellable point on Linux
 		written=::send(p->handle, data, maxlen, MSG_NOSIGNAL);
+#else
+		// send() isn't a cancellable point on all platforms, so use write()
+		written=::write(p->handle, data, maxlen);
+#endif
 		h.relock();
 		FXERRHSKT(written);
 		if(FXIODeviceS_SignalHandler::unlockWrite())		// Nasty this
@@ -994,6 +1012,7 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 	FXERRHSKT(newskt);
 	FXAutoPtr<FXBlkSocket> ret;
 	FXERRHM(ret=new FXBlkSocket(*this, newskt));
+	ret->setupSocket();
 #endif
 	readSockAddr(ret->p->peer.addr, ret->p->peer.port, sa6addr);
 	ret->p->connected=true;
