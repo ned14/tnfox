@@ -143,9 +143,18 @@ public:
 		Write=2
 	} lastop;
 	QByteArray ungetchbuffer;
-	FXACL acl;
-	FXFilePrivate(bool _amStdio=false)
-		: amStdio(_amStdio), handle(0), size(0), lastop(NoOp), acl(FXACL::default_(FXACL::File)), FXMutex() { }
+	FXACL *acl;
+	FXFilePrivate(bool _amStdio, bool doacl) : amStdio(_amStdio), handle(0), size(0), lastop(NoOp), acl(0)
+	{
+		if(doacl)
+		{
+			FXERRHM(acl=new FXACL(FXACL::default_(FXACL::File)));
+		}
+	}
+	~FXFilePrivate()
+	{
+		FXDELETE(acl);
+	}
 };
 static FXPtrHold<FXFile> stdiofile;
 
@@ -156,20 +165,29 @@ int FXFile::int_fileDescriptor() const
 
 FXFile::FXFile() : p(0), FXIODevice()
 {
-	FXERRHM(p=new FXFilePrivate);
+	FXERRHM(p=new FXFilePrivate(false, true));
 }
 
 FXFile::FXFile(WantStdioType) : p(0), FXIODevice()
 {	// Special FXFile talking to stdin/stdout
-	FXERRHM(p=new FXFilePrivate(true));
+	FXERRHM(p=new FXFilePrivate(true, true));
 	p->handle=fileno(stdout);
 	setFlags(IO_ReadWrite|IO_Append|IO_Truncate|IO_Open);
+}
+
+FXFile::FXFile(const FXString &name, WantLightFXFile) : p(0), FXIODevice()
+{	// Special FXFile for a "light" instance. This instance is much faster to create
+	// and destroy but does not implement ACL's and so is private
+	FXRBOp unconstr=FXRBConstruct(this);
+	FXERRHM(p=new FXFilePrivate(false, false));
+	p->filename=name;
+	unconstr.dismiss();
 }
 
 FXFile::FXFile(const FXString &name) : p(0), FXIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXFilePrivate);
+	FXERRHM(p=new FXFilePrivate(false, true));
 	p->filename=name;
 	unconstr.dismiss();
 }
@@ -250,11 +268,15 @@ bool FXFile::open(FXuint mode)
 		// be able to write the ACL so a bit of a workaround here
 		HANDLE h;
 		SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
+		SECURITY_ATTRIBUTES *psa=&sa;
 		DWORD accessw=STANDARD_RIGHTS_ALL, creation=0;
 		if((O_RDONLY & access)==O_RDONLY) accessw|=GENERIC_READ;
 		if((O_WRONLY & access)==O_WRONLY) accessw|=GENERIC_WRITE;
 		if((O_RDWR & access)==O_RDWR) accessw|=GENERIC_READ|GENERIC_WRITE;
-		sa.lpSecurityDescriptor=(SECURITY_DESCRIPTOR *) p->acl.int_toWin32SecurityDescriptor();
+		if(p->acl)
+			sa.lpSecurityDescriptor=(SECURITY_DESCRIPTOR *) p->acl->int_toWin32SecurityDescriptor();
+		else
+			psa=0;
 		switch((O_CREAT|O_TRUNC) & access)
 		{
 		case O_CREAT:
@@ -266,7 +288,7 @@ bool FXFile::open(FXuint mode)
 		default:
 			creation|=OPEN_EXISTING; break;
 		}
-		FXERRHWIN(INVALID_HANDLE_VALUE!=(h=CreateFile(p->filename.text(), accessw, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, &sa,
+		FXERRHWIN(INVALID_HANDLE_VALUE!=(h=CreateFile(p->filename.text(), accessw, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, psa,
 			creation, FILE_ATTRIBUTE_NORMAL, NULL)));
 		FXERRHIO(p->handle=_open_osfhandle((intptr_t) h, access));
 #endif
@@ -279,9 +301,9 @@ bool FXFile::open(FXuint mode)
 #endif
 		if(access & O_CREAT)
 		{	// Set the perms
-			p->acl.writeTo(p->handle);
+			if(p->acl) p->acl->writeTo(p->handle);
 		}
-		p->acl=FXACL(p->handle, FXACL::File);
+		if(p->acl) *p->acl=FXACL(p->handle, FXACL::File);
 		setFlags((mode & IO_ModeMask)|IO_Open);
 		p->lastop=FXFilePrivate::NoOp;
 		p->size=size(p->filename);
@@ -389,12 +411,14 @@ bool FXFile::atEnd() const
 
 const FXACL &FXFile::permissions() const
 {
-	return p->acl;
+	assert(p->acl);
+	return *p->acl;
 }
 void FXFile::setPermissions(const FXACL &perms)
 {
+	assert(p->acl);
 	if(isOpen()) perms.writeTo(p->handle);
-	p->acl=perms;
+	*p->acl=perms;
 }
 FXACL FXFile::permissions(const FXString &path)
 {
