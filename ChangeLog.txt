@@ -17,6 +17,8 @@ source files
 * Removed locking in various places where it wasn't needed
 + Added FXProcess::getNsCount()
 + Added operator!= to FXHostAddress
+- Removed the FXHostAddress::isLoopback() method
++ Added the FXHostAddress::isLocalMachine() method
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
