@@ -23,6 +23,7 @@ fatal app exit
 B Fixed memory leak in FXTextCodecs inherited from FOX
 B Fixed occasional segfault in FXFSMonitor due to insufficient data locking
 B Fixed failure to maintain wait counts in FXWaitCondition on Win32
+B Fixed FXBlkSocket not being cancellable on FreeBSD
 
 
 * Made FXMemMap::mappedRegion() return current and following region
