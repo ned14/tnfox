@@ -66,7 +66,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-#if defined(_M_IX86) || defined(__i386__) || defined(_X86_)
+#if defined(_M_IX86) || defined(__i386__) || defined(_X86_) || defined(__x86_64__)
 #define USE_X86 FX_X86PROCESSOR
 #define USE_OURMUTEX
 #if !defined(_MSC_VER) && !defined(__GNUC__)
@@ -109,7 +109,7 @@ inline int FXAtomicInt::set(int i) throw()
 #ifdef __GNUC__
 	int d;
 
-	__asm__ __volatile__ ("xchg %2,(%1)" : "=r" (d) : "r" (&value), "0" (i));
+	__asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (d) : "r" (&value), "0" (i));
 #endif
 #elif defined(USE_WINAPI)
 	InterlockedExchange((PLONG) &value, i);
@@ -138,9 +138,9 @@ inline int FXAtomicInt::incp() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xadd %2,(%1)"
+		"lock xaddl %2,(%1)"
 #else
-		"xadd %2,(%1)"
+		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (1));
 #endif
@@ -172,9 +172,9 @@ inline int FXAtomicInt::pinc() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xadd %2,(%1)\n\tinc %%eax"
+		"lock xaddl %2,(%1)\n\tinc %%eax"
 #else
-		"xadd %2,(%1)\n\tinc %%eax"
+		"xaddl %2,(%1)\n\tinc %%eax"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (1));
 #endif
@@ -248,9 +248,9 @@ inline int FXAtomicInt::inc(int i) throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xadd %2,(%1)"
+		"lock xaddl %2,(%1)"
 #else
-		"xadd %2,(%1)"
+		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (i));
 #endif
@@ -281,9 +281,9 @@ inline int FXAtomicInt::decp() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xadd %2,(%1)"
+		"lock xaddl %2,(%1)"
 #else
-		"xadd %2,(%1)"
+		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (-1));
 #endif
@@ -315,9 +315,9 @@ inline int FXAtomicInt::pdec() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xadd %2,(%1)\n\tdec %%eax"
+		"lock xaddl %2,(%1)\n\tdec %%eax"
 #else
-		"xadd %2,(%1)\n\tdec %%eax"
+		"xaddl %2,(%1)\n\tdec %%eax"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (-1));
 #endif
@@ -392,9 +392,9 @@ inline int FXAtomicInt::dec(int i) throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xadd %2,(%1)"
+		"lock xaddl %2,(%1)"
 #else
-		"xadd %2,(%1)"
+		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (i));
 #endif
@@ -419,7 +419,7 @@ inline int FXAtomicInt::swapI(int i) throw()
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("xchg %2,(%1)" : "=r" (myret) : "r" (&value), "0" (i));
+	__asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (myret) : "r" (&value), "0" (i));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -449,9 +449,9 @@ inline int FXAtomicInt::cmpXI(int compare, int newval) throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"pause\n\tlock cmpxchg %2,(%1)"
+		"pause\n\tlock cmpxchgl %2,(%1)"
 #else
-		"pause\n\tcmpxchg %2,(%1)"
+		"pause\n\tcmpxchgl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "r" (newval), "a" (compare));
 #endif
@@ -493,9 +493,9 @@ exitloop:
 #error todo
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"pause\n\tlock cmpxchg %2,(%1)"
+		"pause\n\tlock cmpxchgl %2,(%1)"
 #else
-		"pause\n\tcmpxchg %2,(%1)"
+		"pause\n\tcmpxchgl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "r" (newval), "a" (compare));
 #endif
