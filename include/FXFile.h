@@ -86,8 +86,11 @@ class FXAPIR FXFile : public FXIODevice
 	{
 		typedef int foo;
 	};
+	struct WantLightFXFile { };
 	FXFile(WantStdioType);
+	FXFile(const FXString &name, WantLightFXFile);
 	friend class FXMemMap;
+	friend class FXProcess;
 	FXDLLLOCAL int int_fileDescriptor() const;
 public:
 	FXFile();
