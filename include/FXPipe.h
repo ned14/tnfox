@@ -113,7 +113,8 @@ class FXAPIR FXPipe : public FXIODeviceS
 	FXPipe(const FXPipe &);
 	FXPipe &operator=(const FXPipe &);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
-	FXDLLLOCAL void beginRead();
+	friend class FXIPCChannel;
+	void FXDLLLOCAL int_hack_makeWriteNonblocking() const;
 public:
 	FXPipe();
 	/*! \param name Name you wish this pipe to refer to. If null, the pipe is set as anonymous
