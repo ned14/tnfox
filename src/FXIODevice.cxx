@@ -279,7 +279,7 @@ bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **
 	FXERRHWIN(ret);
 	return false;
 #else
-	struct timeval *tv=0, _tv;
+	struct ::timeval *tv=0, _tv;
 	if(waitfor!=FXINFINITE)
 	{
 		_tv.tv_sec=waitfor/1000;
