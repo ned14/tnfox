@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDialog.cpp,v 1.41 2005/01/16 16:06:07 fox Exp $                    *
+* $Id: FXFileDialog.cpp,v 1.42 2005/02/08 03:23:28 fox Exp $                    *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -255,6 +255,30 @@ void FXFileDialog::showHiddenFiles(FXbool showing){
   filebox->showHiddenFiles(showing);
   }
 
+
+// Return TRUE if image preview on
+FXbool FXFileDialog::showImages() const {
+  return filebox->showImages();
+  }
+
+
+// Show or hide preview images
+void FXFileDialog::showImages(FXbool showing){
+  filebox->showImages(showing);
+  }
+
+
+// Return images preview size
+FXint FXFileDialog::getImageSize() const {
+  return filebox->getImageSize();
+  }
+
+
+// Change images preview size
+void FXFileDialog::setImageSize(FXint size){
+  filebox->setImageSize(size);
+  }
+  
 
 // Show readonly button
 void FXFileDialog::showReadOnly(FXbool show){

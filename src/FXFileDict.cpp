@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.cpp,v 1.52 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXFileDict.cpp,v 1.55 2005/02/05 07:40:03 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -36,37 +36,14 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXApp.h"
-#include "FXFileDict.h"
 #include "FXIcon.h"
-#include "FXGIFIcon.h"
-#include "FXBMPIcon.h"
-#include "FXXBMIcon.h"
-#include "FXXPMIcon.h"
-#include "FXPCXIcon.h"
-#include "FXTGAIcon.h"
-#include "FXICOIcon.h"
-#include "FXRGBIcon.h"
-
-// Formats requiring external libraries may be suppressed
-#ifndef CORE_IMAGE_FORMATS
-#ifdef HAVE_JPEG_H
-#include "FXJPGIcon.h"
-#endif
-#ifdef HAVE_PNG_H
-#include "FXPNGIcon.h"
-#endif
-#ifdef HAVE_TIFF_H
-#include "FXTIFIcon.h"
-#endif
-#endif
+#include "FXIconDict.h"
+#include "FXFileDict.h"
 
 
 /*
   Notes:
 
-  - FXIconDict should keep path in an FXString; path should be settable
-    from outside, rather than automatically from registry; this will make
-    FXIconDict a little bit more generally applicable.
   - FXFileDict needs additional fields, e.g. a print command.
   - The associate member function should be virtual so we can overload it.
   - FXFileDict is solely responsible for determining mime-type, and
@@ -168,153 +145,12 @@
 #define MIMETYPELEN  64
 #define ICONNAMELEN  256
 
-// You can override the default icon locations to search for your
-// particular platform by specifying -DDEFAULTICONPATH="path" on
-// the command line.
-#ifndef DEFAULTICONPATH
-#define DEFAULTICONPATH   "~/.foxicons:/usr/local/share/icons:/usr/share/icons"
-#endif
 
 
 
 /*******************************************************************************/
 
 namespace FX {
-
-
-// Object implementation
-FXIMPLEMENT(FXIconDict,FXDict,NULL,0)
-
-
-// Default icon path
-const FXchar *FXIconDict::defaultIconPath=DEFAULTICONPATH;
-
-
-// Build icon table
-FXIconDict::FXIconDict(FXApp* a,const FXString& p):app(a),path(p){
-  FXTRACE((100,"FXIconDict::FXIconDict\n"));
-  }
-
-
-// Try and load the icon
-void *FXIconDict::createData(const void* ptr){
-
-  // Try only if we have a filename
-  if(ptr){
-
-    // Find icon in the icon directory
-    FXString iconfile=FXFile::search(path,(const char*)ptr);
-
-    FXTRACE((150,"FXIconDict: search icon %s in %s; found at %s\n",(const char*)ptr,path.text(),iconfile.text()));
-
-    // Found icon
-    if(!iconfile.empty()){
-
-      // Get file extension
-      const FXchar *ext=strrchr((const char*)ptr,'.');
-
-      // Determine what type
-      if(ext){
-        FXIcon *icon=NULL;
-
-        // Create icon of the right type
-        if(comparecase(".gif",ext)==0){
-          icon=new FXGIFIcon(getApp());
-          }
-        else if(comparecase(".bmp",ext)==0){
-          icon=new FXBMPIcon(getApp());
-          }
-        else if(comparecase(".xpm",ext)==0){
-          icon=new FXXPMIcon(getApp());
-          }
-        else if(comparecase(".pcx",ext)==0){
-          icon=new FXPCXIcon(getApp());
-          }
-        else if(comparecase(".ico",ext)==0){
-          icon=new FXICOIcon(getApp());
-          }
-        else if(comparecase(".tga",ext)==0){
-          icon=new FXTGAIcon(getApp());
-          }
-        else if(comparecase(".rgb",ext)==0){
-          icon=new FXRGBIcon(getApp());
-          }
-        else if(comparecase(".xbm",ext)==0){
-          icon=new FXXBMIcon(getApp());
-          }
-#ifndef CORE_IMAGE_FORMATS
-#ifdef HAVE_JPEG_H
-        else if(comparecase(".jpg",ext)==0){
-          icon=new FXJPGIcon(getApp());
-          }
-#endif
-#ifdef HAVE_PNG_H
-        else if(comparecase(".png",ext)==0){
-          icon=new FXPNGIcon(getApp());
-          }
-#endif
-#ifdef HAVE_TIFF_H
-        else if(comparecase(".tif",ext)==0){
-          icon=new FXTIFIcon(getApp());
-          }
-#endif
-#endif
-        // Got icon
-        if(icon){
-          FXFileStream str;
-
-          // Try open the file
-          if(str.open(iconfile,FXStreamLoad)){
-
-            FXTRACE((150,"FXIconDict: loading = %s\n",iconfile.text()));
-
-            // Load it
-            icon->loadPixels(str);
-
-            // Done
-            str.close();
-
-            return icon;
-            }
-          }
-        }
-      }
-    }
-  return NULL;
-  }
-
-
-// Free the icon
-void FXIconDict::deleteData(void* ptr){
-  delete ((FXIcon*)ptr);
-  }
-
-
-// Save data
-void FXIconDict::save(FXStream& store) const {
-  FXDict::save(store);
-  store << app;
-  store << path;
-  }
-
-
-// Load data
-void FXIconDict::load(FXStream& store){
-  FXDict::load(store);
-  store >> app;
-  store >> path;
-  }
-
-
-// Destructor
-FXIconDict::~FXIconDict(){
-  FXTRACE((100,"FXIconDict::~FXIconDict\n"));
-  app=(FXApp*)-1L;
-  clear();
-  }
-
-
-/*******************************************************************************/
 
 
 // These registry keys are used for default bindings.
@@ -328,16 +164,16 @@ FXIMPLEMENT(FXFileDict,FXDict,NULL,0)
 
 
 // Construct an file-extension association table
-FXFileDict::FXFileDict(FXApp* a):app(a),settings(&a->reg()){
+FXFileDict::FXFileDict(FXApp* app):settings(&app->reg()){
   FXTRACE((100,"FXFileDict::FXFileDict\n"));
-  icons=new FXIconDict(a,settings->readStringEntry("SETTINGS","iconpath",FXIconDict::defaultIconPath));
+  icons=new FXIconDict(app,settings->readStringEntry("SETTINGS","iconpath",FXIconDict::defaultIconPath));
   }
 
 
 // Construct an file-extension association table, and alternative settings database
-FXFileDict::FXFileDict(FXApp* a,FXSettings* db):app(a),settings(db){
+FXFileDict::FXFileDict(FXApp* app,FXSettings* db):settings(db){
   FXTRACE((100,"FXFileDict::FXFileDict\n"));
-  icons=new FXIconDict(a,settings->readStringEntry("SETTINGS","iconpath",FXIconDict::defaultIconPath));
+  icons=new FXIconDict(app,settings->readStringEntry("SETTINGS","iconpath",FXIconDict::defaultIconPath));
   }
 
 
@@ -483,7 +319,7 @@ FXFileAssoc* FXFileDict::associate(const FXchar* key){
     if((record=find(key))!=NULL) return record;
 
     // See if this entry is known in FILETYPES
-    association=settings->readStringEntry("FILETYPES",key,"");
+    association=settings->readStringEntry("FILETYPES",key,FXString::null);
 
     // If not an empty string, make a record for it now
     if(association[0]) return (FXFileAssoc*)FXDict::insert(key,association);
@@ -492,7 +328,6 @@ FXFileAssoc* FXFileDict::associate(const FXchar* key){
   }
 
 
-#define MAXICONSIZE 64
 
 // Find file association from registry
 FXFileAssoc* FXFileDict::findFileBinding(const FXchar* pathname){
@@ -506,66 +341,6 @@ FXFileAssoc* FXFileDict::findFileBinding(const FXchar* pathname){
   filename=strchr(filename,'.');
   while(filename){
     record=associate(filename+1);
-/*
-     // Experimental thumbnail support
-     if(record){
-       FXIcon* icon=NULL;
-       if(record->mimetype=="image/gif"){
-         FXFileStream str;
-         if(str.open(pathname,FXStreamLoad)){
-           icon=new FXGIFIcon(getApp());
-           icon->loadPixels(str);
-           str.close();
-           FXTRACE((140,"FXFileDict: making thumbnail for: %s\n",pathname));
-           if((icon->getWidth()>MAXICONSIZE) || (icon->getHeight()>MAXICONSIZE)){
-             if(icon->getWidth()>icon->getHeight()){
-               icon->scale(MAXICONSIZE,(MAXICONSIZE*icon->getHeight())/icon->getWidth());
-               }
-             else{
-               icon->scale((MAXICONSIZE*icon->getWidth())/icon->getHeight(),MAXICONSIZE);
-               }
-             }
-           record->bigicon=icon;
-           }
-         }
-       else if(record->mimetype=="image/x-xpm"){
-         FXFileStream str;
-         if(str.open(pathname,FXStreamLoad)){
-           icon=new FXXPMIcon(getApp());
-           icon->loadPixels(str);
-           str.close();
-           FXTRACE((140,"FXFileDict: making thumbnail for: %s\n",pathname));
-           if((icon->getWidth()>MAXICONSIZE) || (icon->getHeight()>MAXICONSIZE)){
-             if(icon->getWidth()>icon->getHeight()){
-               icon->scale(MAXICONSIZE,(MAXICONSIZE*icon->getHeight())/icon->getWidth());
-               }
-             else{
-               icon->scale((MAXICONSIZE*icon->getWidth())/icon->getHeight(),MAXICONSIZE);
-               }
-             }
-           record->bigicon=icon;
-           }
-         }
-       else if(record->mimetype=="image/x-bmp"){
-         FXFileStream str;
-         if(str.open(pathname,FXStreamLoad)){
-           icon=new FXBMPIcon(getApp(),NULL,0,IMAGE_ALPHAGUESS);
-           icon->loadPixels(str);
-           str.close();
-           FXTRACE((140,"FXFileDict: making thumbnail for: %s\n",pathname));
-           if((icon->getWidth()>MAXICONSIZE) || (icon->getHeight()>MAXICONSIZE)){
-             if(icon->getWidth()>icon->getHeight()){
-               icon->scale(MAXICONSIZE,(MAXICONSIZE*icon->getHeight())/icon->getWidth());
-               }
-             else{
-               icon->scale((MAXICONSIZE*icon->getWidth())/icon->getHeight(),MAXICONSIZE);
-               }
-             }
-           record->bigicon=icon;
-           }
-         }
-       }
-*/
     if(record) return record;
     filename=strchr(filename+1,'.');
     }
@@ -574,7 +349,7 @@ FXFileAssoc* FXFileDict::findFileBinding(const FXchar* pathname){
 
 
 // Find directory association from registry
-FXFileAssoc* FXFileDict::findDirBinding(const FXchar* pathname){        // FIXME use GetDriveType(pathname) to find hard-wired icons here
+FXFileAssoc* FXFileDict::findDirBinding(const FXchar* pathname){
   register const FXchar* path=pathname;
   register FXFileAssoc* record;
   FXTRACE((300,"FXFileDict: searching dir binding for: %s\n",pathname));
@@ -598,7 +373,7 @@ FXFileAssoc* FXFileDict::findExecBinding(const FXchar* pathname){
 // Save data
 void FXFileDict::save(FXStream& store) const {
   FXDict::save(store);
-  store << app;
+  store << settings;
   store << icons;
   }
 
@@ -606,7 +381,7 @@ void FXFileDict::save(FXStream& store) const {
 // Load data
 void FXFileDict::load(FXStream& store){
   FXDict::load(store);
-  store >> app;
+  store >> settings;
   store >> icons;
   }
 
@@ -615,9 +390,8 @@ void FXFileDict::load(FXStream& store){
 FXFileDict::~FXFileDict(){
   FXTRACE((100,"FXFileDict::~FXFileDict\n"));
   delete icons;
-  clear();
-  app=(FXApp*)-1L;
   icons=(FXIconDict*)-1L;
+  clear();
   }
 
 }

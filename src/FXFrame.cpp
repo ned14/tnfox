@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFrame.cpp,v 1.33 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXFrame.cpp,v 1.34 2005/02/03 20:12:46 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -228,8 +228,8 @@ void FXFrame::drawFrame(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h){
 
 // Handle repaint
 long FXFrame::onPaint(FXObject*,FXSelector,void* ptr){
-  FXEvent *ev=(FXEvent*)ptr;
-  FXDCWindow dc(this,ev);
+  FXEvent* event=static_cast<FXEvent*>(ptr);
+  FXDCWindow dc(this,event);
   dc.setForeground(backColor);
   dc.fillRectangle(border,border,width-(border<<1),height-(border<<1));
   drawFrame(dc,0,0,width,height);
@@ -363,10 +363,6 @@ void FXFrame::load(FXStream& store){
   store >> border;
   }
 
-
-// Destructor
-FXFrame::~FXFrame(){
-  }
 
 }
 

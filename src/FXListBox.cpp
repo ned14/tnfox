@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXListBox.cpp,v 1.53 2005/01/16 16:06:07 fox Exp $                       *
+* $Id: FXListBox.cpp,v 1.54 2005/02/06 17:20:00 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -471,9 +471,9 @@ FXString FXListBox::getItemText(FXint index) const {
 
 
 // Set item icon
-void FXListBox::setItemIcon(FXint index,FXIcon* icon){
+void FXListBox::setItemIcon(FXint index,FXIcon* icon,FXbool owned){
   if(isItemCurrent(index))field->setIcon(icon);
-  list->setItemIcon(index,icon);
+  list->setItemIcon(index,icon,owned);
   recalc();
   }
 

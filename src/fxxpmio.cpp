@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxxpmio.cpp,v 1.49 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: fxxpmio.cpp,v 1.50 2005/02/04 06:12:58 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -123,6 +123,7 @@ FXbool fxloadXPM(const FXchar **pixels,FXColor*& data,FXint& width,FXint& height
   data=NULL;
   width=0;
   height=0;
+  color=0;
 
   // NULL pointer passed in
   if(!pixels) return FALSE;
@@ -221,6 +222,7 @@ FXbool fxloadXPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   data=NULL;
   width=0;
   height=0;
+  color=0;
 
   // Read header line
   readline(store,name,sizeof(name));

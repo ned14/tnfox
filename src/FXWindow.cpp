@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.cpp,v 1.296 2005/02/01 04:31:55 fox Exp $                       *
+* $Id: FXWindow.cpp,v 1.298 2005/02/02 16:37:40 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -957,6 +957,12 @@ FXbool FXWindow::hasFocus() const {
   }
 
 
+// Window is in focus chain
+FXbool FXWindow::inFocusChain() const {
+  return parent->focus==this;
+  }
+  
+  
 // Set focus to this widget.
 // The chain of focus from shell down to a control is changed.
 // Widgets now in the chain may or may not gain real focus,
@@ -2291,6 +2297,7 @@ FXbool FXWindow::shown() const {
 
 // Reparent window under a new parent
 void FXWindow::reparent(FXWindow* father,FXWindow* other){
+  FXbool hadfocus=inFocusChain();
   if(father==NULL){ fxerror("%s::reparent: NULL parent specified.\n",getClassName()); }
   if(parent==NULL){ fxerror("%s::reparent: cannot reparent root window.\n",getClassName()); }
   if(parent==getRoot() || father==getRoot()){ fxerror("%s::reparent: cannot reparent toplevel window.\n",getClassName()); }
@@ -2305,7 +2312,7 @@ void FXWindow::reparent(FXWindow* father,FXWindow* other){
     if(!xid && father->id()){ fxerror("%s::reparent: window not created yet.\n",getClassName()); }
 
     // Kill focus chain through this window
-    killFocus();
+    if(hadfocus) killFocus();
 
     // Recalc old path
     recalc();
@@ -2360,11 +2367,12 @@ void FXWindow::reparent(FXWindow* father,FXWindow* other){
 #endif
       }
     }
+      
+    // Set focus back if we had it
+    if(hadfocus) setFocus();
 
     // Recalc new path
     recalc();
-
-    update();
     }
   }
 
@@ -3216,7 +3224,7 @@ FXDragAction FXWindow::endDrag(FXbool drop){
 
             // Got the finish message; we now know which action was taken
             if(WM_DND_FINISH_REJECT<=msg.message && msg.message<=WM_DND_FINISH_PRIVATE){
-              action=(FXDragAction)(msg.message-WM_DND_FINISH_REJECT); 
+              action=(FXDragAction)(msg.message-WM_DND_FINISH_REJECT);
               FXTRACE((100,"Got XdndFinish action=%d\n",action));
               break;
               }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeListBox.cpp,v 1.51 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXTreeListBox.cpp,v 1.52 2005/02/06 17:20:00 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -530,24 +530,30 @@ FXString FXTreeListBox::getItemText(const FXTreeItem* item) const {
   return tree->getItemText(item);
   }
 
-void FXTreeListBox::setItemOpenIcon(FXTreeItem* item,FXIcon* icon){
-  tree->setItemOpenIcon(item,icon);
+
+// Change open icon
+void FXTreeListBox::setItemOpenIcon(FXTreeItem* item,FXIcon* icon,FXbool owned){
+  tree->setItemOpenIcon(item,icon,owned);
   }
 
 
+// Get open icon
 FXIcon* FXTreeListBox::getItemOpenIcon(const FXTreeItem* item) const {
   return tree->getItemOpenIcon(item);
   }
 
 
-void FXTreeListBox::setItemClosedIcon(FXTreeItem* item,FXIcon* icon){
-  tree->setItemClosedIcon(item,icon);
+// Set closed icon
+void FXTreeListBox::setItemClosedIcon(FXTreeItem* item,FXIcon* icon,FXbool owned){
+  tree->setItemClosedIcon(item,icon,owned);
   }
 
 
+// Get closed icon
 FXIcon* FXTreeListBox::getItemClosedIcon(const FXTreeItem* item) const{
   return tree->getItemClosedIcon(item);
   }
+
 
 // Set item data
 void FXTreeListBox::setItemData(FXTreeItem* item,void* ptr) const {

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.cpp,v 1.127 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXDCWindow.cpp,v 1.128 2005/02/03 22:06:11 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1330,6 +1330,7 @@ void FXDCWindow::drawArcs(const FXArc* arcs,FXuint narcs){
 void FXDCWindow::drawEllipse(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::drawEllipse: DC not connected to drawable.\n"); }
   if(needsNewBrush) updateBrush();
+  if(needsNewPen) updatePen();
   w+=1;
   h+=1;
   if(needsPath){

@@ -71,6 +71,9 @@ extern const unsigned char dockright[];
 /* created by reswrap from file dockfree.gif */
 extern const unsigned char dockfree[];
 
+/* created by reswrap from file dockflip.gif */
+extern const unsigned char dockflip[];
+
 /* created by reswrap from file entericon.gif */
 extern const unsigned char entericon[];
 

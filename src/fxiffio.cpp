@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxiffio.cpp,v 1.10 2005/01/16 16:06:07 fox Exp $                          *
+* $Id: fxiffio.cpp,v 1.11 2005/02/04 06:12:58 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -117,19 +117,22 @@ FXbool fxcheckIFF(FXStream& store){
 
 // Load IFF image from stream
 FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
-  FXlong pos,end;
   FXuint pixels,bit,view,tag,size,type,colors,i,bytesperline,value,plane,remainingbytes,fmt;
-  FXint x,y;
   FXuchar *buffer,*ptr,planes,masking,compress,padding,c1,c2,c3,color,count;
   FXColor colormap[256],*dest,pixelcolor;
+  FXlong pos,end;
+  FXint x,y;
 
   // Init
   data=NULL;
   buffer=NULL;
   width=0;
   height=0;
+  pixels=0;
   view=0;
   colors=0;
+  bytesperline=0;
+  pixelcolor=0;
   fmt=ILBM_NORMAL;
 
   // Read tag

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.cpp,v 1.183 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXIconList.cpp,v 1.184 2005/02/06 17:20:00 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -363,9 +363,36 @@ void FXIconItem::setDraggable(FXbool draggable){
   if(draggable) state|=DRAGGABLE; else state&=~DRAGGABLE;
   }
 
-// Icons owner by item
-void FXIconItem::setIconOwned(FXuint owned){
-  state=(state&~(BIGICONOWNED|MINIICONOWNED))|(owned&(BIGICONOWNED|MINIICONOWNED));
+
+// Change item's text label
+void FXIconItem::setText(const FXString& txt){
+  label=txt;
+  }
+
+
+// Change item's big icon
+void FXIconItem::setBigIcon(FXIcon* icn,FXbool owned){
+  if(bigIcon && (state&BIGICONOWNED)){
+    if(bigIcon!=icn) delete bigIcon;
+    state&=~BIGICONOWNED;
+    }
+  bigIcon=icn;
+  if(bigIcon && owned){
+    state|=BIGICONOWNED;
+    }
+  }
+
+
+// Change item's mini icon
+void FXIconItem::setMiniIcon(FXIcon* icn,FXbool owned){
+  if(miniIcon && (state&MINIICONOWNED)){
+    if(miniIcon!=icn) delete miniIcon;
+    state&=~MINIICONOWNED;
+    }
+  miniIcon=icn;
+  if(miniIcon && owned){
+    state|=MINIICONOWNED;
+    }
   }
 
 
@@ -391,7 +418,7 @@ void FXIconItem::detach(){
 
 
 // Get item width
-FXint FXIconItem::getWidth(const FXIconList* list) const {      // FIXME maybe add index of section which to measure
+FXint FXIconItem::getWidth(const FXIconList* list) const {
   register FXuint options=list->getListStyle();
   register FXFont *font=list->getFont();
   register FXint iw=0,tw=0,w=0,tlen;
@@ -923,12 +950,10 @@ FXString FXIconList::getItemText(FXint index) const {
 
 
 // Set item icon
-void FXIconList::setItemBigIcon(FXint index,FXIcon* icon){
+void FXIconList::setItemBigIcon(FXint index,FXIcon* icon,FXbool owned){
   if(index<0 || items.no()<=index){ fxerror("%s::setItemBigIcon: index out of range.\n",getClassName()); }
-  if(items[index]->getBigIcon()!=icon){
-    items[index]->setBigIcon(icon);
-    recalc();
-    }
+  if(items[index]->getBigIcon()!=icon) recalc();
+  items[index]->setBigIcon(icon,owned);
   }
 
 
@@ -940,12 +965,10 @@ FXIcon* FXIconList::getItemBigIcon(FXint index) const {
 
 
 // Set item icon
-void FXIconList::setItemMiniIcon(FXint index,FXIcon* icon){
+void FXIconList::setItemMiniIcon(FXint index,FXIcon* icon,FXbool owned){
   if(index<0 || items.no()<=index){ fxerror("%s::setItemMiniIcon: index out of range.\n",getClassName()); }
-  if(items[index]->getMiniIcon()!=icon){
-    items[index]->setMiniIcon(icon);
-    recalc();
-    }
+  if(items[index]->getMiniIcon()!=icon) recalc();
+  items[index]->setMiniIcon(icon,owned);
   }
 
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObject.cpp,v 1.39 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXObject.cpp,v 1.40 2005/02/06 17:20:00 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -27,6 +27,7 @@
 #include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
+#include "FXException.h"
 #include "FXString.h"
 #include "FXTrans.h"
 
@@ -287,9 +288,10 @@ FXbool FXObject::isMemberOf(const FXMetaClass* metaclass) const {
   }
 
 
-// Try handle message safely
+// Try handle message safely; we catch only resource exceptions, things like 
+// running out of memory, window handles, system resources; others are ignored.
 long FXObject::tryHandle(FXObject* sender,FXSelector sel,void* ptr){
-  try { return handle(sender,sel,ptr); } catch(...) { return 0; }
+  try { return handle(sender,sel,ptr); } catch(const FXResourceException&) { return 0; }
   }
 
 

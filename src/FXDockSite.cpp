@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarDock.cpp,v 1.12 2005/02/01 07:02:49 fox Exp $                   *
+* $Id: FXDockSite.cpp,v 1.63 2005/02/04 06:12:58 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -34,14 +34,12 @@
 #include "FXRegistry.h"
 #include "FXApp.h"
 #include "FXPacker.h"
-#include "FXToolBar.h"
-#include "FXToolBarDock.h"
+#include "FXDockBar.h"
+#include "FXDockSite.h"
 
 
 /*
   Notes:
-  - This layout manager probably has the most complicated algorithm of all
-    the layout managers in FOX.
   - Use "Box-Car" algorithm when sliding horizontally (vertically).
   - Vertical arrangement is very tricky; we don't insert in between
     galleys when dragging since its not so easy to use; but this remains
@@ -52,11 +50,11 @@
     can call getHeightForWidth() and thereby wrap the item in on the
     galley.  Thus we have both wrapping of the toobars as well as
     wrapping inside the toolbar.
+  - FIXME we should look at LAYOUT_DOCK_NEXT before shown() because
+    if you hide a bar, we want to keep stuff in the same place.
 */
 
-// How close to edge before considered docked
-#define PROXIMITY    10
-#define TOLERANCE    30
+#define FUDGE 20        // Amount to move down/up before jumping into next galley
 
 using namespace FX;
 
@@ -65,84 +63,24 @@ using namespace FX;
 namespace FX {
 
 // Map
-FXDEFMAP(FXToolBarDock) FXToolBarDockMap[]={
-  FXMAPFUNC(SEL_FOCUS_PREV,0,FXToolBarDock::onFocusLeft),
-  FXMAPFUNC(SEL_FOCUS_NEXT,0,FXToolBarDock::onFocusRight),
+FXDEFMAP(FXDockSite) FXDockSiteMap[]={
+  FXMAPFUNC(SEL_FOCUS_PREV,0,FXDockSite::onFocusLeft),
+  FXMAPFUNC(SEL_FOCUS_NEXT,0,FXDockSite::onFocusRight),
   };
 
 
 // Object implementation
-FXIMPLEMENT(FXToolBarDock,FXPacker,FXToolBarDockMap,ARRAYNUMBER(FXToolBarDockMap))
+FXIMPLEMENT(FXDockSite,FXPacker,FXDockSiteMap,ARRAYNUMBER(FXDockSiteMap))
 
 
 // Make a dock site
-FXToolBarDock::FXToolBarDock(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
+FXDockSite::FXDockSite(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
   FXPacker(p,opts,x,y,w,h,pl,pr,pt,pb,hs,vs){
   }
 
 
-// Return width for given height (vertical orientation)
-FXint FXToolBarDock::getWidthForHeight(FXint givenheight){
-  register FXint space,total,galh,galw,any,w,h;
-  register FXWindow *child,*begin;
-  register FXuint hints;
-  total=galh=galw=any=0;
-  space=givenheight-padtop-padbottom-(border<<1);
-  for(child=begin=getFirst(); child; child=child->getNext()){
-    if(child->shown()){
-      hints=child->getLayoutHints();
-      w=(hints&LAYOUT_FIX_WIDTH)?child->getWidth():child->getDefaultWidth();
-      h=(hints&LAYOUT_FIX_HEIGHT)?child->getHeight():child->getDefaultHeight();
-      if(any && ((galh+h>space) || (hints&LAYOUT_DOCK_NEXT))){
-        total+=galw+hspacing;
-        begin=child;
-        galw=w;
-        galh=h+vspacing;
-        }
-      else{
-        galh+=h+vspacing;
-        if(w>galw) galw=w;
-        }
-      any=1;
-      }
-    }
-  total+=galw;
-  return padleft+padright+total+(border<<1);
-  }
-
-
-// Return height for given width (horizontal orientation)
-FXint FXToolBarDock::getHeightForWidth(FXint givenwidth){
-  register FXint space,total,galh,galw,any,w,h;
-  register FXWindow *child,*begin;
-  register FXuint hints;
-  total=galh=galw=any=0;
-  space=givenwidth-padleft-padright-(border<<1);
-  for(child=begin=getFirst(); child; child=child->getNext()){
-    if(child->shown()){
-      hints=child->getLayoutHints();
-      w=(hints&LAYOUT_FIX_WIDTH)?child->getWidth():child->getDefaultWidth();
-      h=(hints&LAYOUT_FIX_HEIGHT)?child->getHeight():child->getDefaultHeight();
-      if(any && ((galw+w>space) || (hints&LAYOUT_DOCK_NEXT))){
-        total+=galh+vspacing;
-        begin=child;
-        galw=w+hspacing;
-        galh=h;
-        }
-      else{
-        galw+=w+hspacing;
-        if(h>galh) galh=h;
-        }
-      any=1;
-      }
-    }
-  total+=galh;
-  return padtop+padbottom+total+(border<<1);
-  }
-
-
 // Compute minimum width based on child layout hints
-FXint FXToolBarDock::getDefaultWidth(){
+FXint FXDockSite::getDefaultWidth(){
   register FXint total=0,galw=0,any=0,w;
   register FXWindow *child,*begin;
   register FXuint hints;
@@ -192,7 +130,7 @@ FXint FXToolBarDock::getDefaultWidth(){
 
 
 // Compute minimum height based on child layout hints
-FXint FXToolBarDock::getDefaultHeight(){
+FXint FXDockSite::getDefaultHeight(){
   register FXint total=0,galh=0,any=0,h;
   register FXWindow *child,*begin;
   register FXuint hints;
@@ -241,8 +179,68 @@ FXint FXToolBarDock::getDefaultHeight(){
   }
 
 
+// Return width for given height (vertical orientation)
+FXint FXDockSite::getWidthForHeight(FXint givenheight){
+  register FXint space,total,galh,galw,any,w,h;
+  register FXWindow *child,*begin;
+  register FXuint hints;
+  total=galh=galw=any=0;
+  space=givenheight-padtop-padbottom-(border<<1);
+  for(child=begin=getFirst(); child; child=child->getNext()){
+    if(child->shown()){
+      hints=child->getLayoutHints();
+      w=(hints&LAYOUT_FIX_WIDTH)?child->getWidth():child->getDefaultWidth();
+      h=(hints&LAYOUT_FIX_HEIGHT)?child->getHeight():child->getDefaultHeight();
+      if(any && ((galh+h>space) || (hints&LAYOUT_DOCK_NEXT))){
+        total+=galw+hspacing;
+        begin=child;
+        galw=w;
+        galh=h+vspacing;
+        }
+      else{
+        galh+=h+vspacing;
+        if(w>galw) galw=w;
+        }
+      any=1;
+      }
+    }
+  total+=galw;
+  return padleft+padright+total+(border<<1);
+  }
+
+
+// Return height for given width (horizontal orientation)
+FXint FXDockSite::getHeightForWidth(FXint givenwidth){
+  register FXint space,total,galh,galw,any,w,h;
+  register FXWindow *child,*begin;
+  register FXuint hints;
+  total=galh=galw=any=0;
+  space=givenwidth-padleft-padright-(border<<1);
+  for(child=begin=getFirst(); child; child=child->getNext()){
+    if(child->shown()){
+      hints=child->getLayoutHints();
+      w=(hints&LAYOUT_FIX_WIDTH)?child->getWidth():child->getDefaultWidth();
+      h=(hints&LAYOUT_FIX_HEIGHT)?child->getHeight():child->getDefaultHeight();
+      if(any && ((galw+w>space) || (hints&LAYOUT_DOCK_NEXT))){
+        total+=galh+vspacing;
+        begin=child;
+        galw=w+hspacing;
+        galh=h;
+        }
+      else{
+        galw+=w+hspacing;
+        if(h>galh) galh=h;
+        }
+      any=1;
+      }
+    }
+  total+=galh;
+  return padtop+padbottom+total+(border<<1);
+  }
+
+
 // Determine vertical galley size
-FXint FXToolBarDock::galleyWidth(FXWindow *begin,FXWindow*& end,FXint space,FXint& require,FXint& expand) const {
+FXint FXDockSite::galleyWidth(FXWindow *begin,FXWindow*& end,FXint space,FXint& require,FXint& expand) const {
   register FXint galley,any,w,h;
   register FXWindow *child;
   register FXuint hints;
@@ -273,7 +271,7 @@ FXint FXToolBarDock::galleyWidth(FXWindow *begin,FXWindow*& end,FXint space,FXin
 
 
 // Determine horizontal galley size
-FXint FXToolBarDock::galleyHeight(FXWindow *begin,FXWindow*& end,FXint space,FXint& require,FXint& expand) const {
+FXint FXDockSite::galleyHeight(FXWindow *begin,FXWindow*& end,FXint space,FXint& require,FXint& expand) const {
   register FXint galley,any,w,h;
   register FXWindow *child;
   register FXuint hints;
@@ -304,7 +302,7 @@ FXint FXToolBarDock::galleyHeight(FXWindow *begin,FXWindow*& end,FXint space,FXi
 
 
 // Recalculate layout
-void FXToolBarDock::layout(){
+void FXDockSite::layout(){
   FXint expand,remain,require,left,right,top,bottom,galx,galy,galw,galh,e,t,x,y,w,h;
   FXWindow *begin,*end,*child;
   FXuint hints;
@@ -449,7 +447,7 @@ void FXToolBarDock::layout(){
 
 
 // Move bar vertically
-void FXToolBarDock::moveVerBar(FXWindow* bar,FXWindow *begin,FXWindow* end,FXint bx,FXint by){
+void FXDockSite::moveVerBar(FXWindow* bar,FXWindow *begin,FXWindow* end,FXint bx,FXint by){
   FXint minpos,maxpos,pos;
   FXWindow *child,*other;
 
@@ -535,7 +533,7 @@ void FXToolBarDock::moveVerBar(FXWindow* bar,FXWindow *begin,FXWindow* end,FXint
 
 
 // Move bar horizontally
-void FXToolBarDock::moveHorBar(FXWindow* bar,FXWindow *begin,FXWindow* end,FXint bx,FXint by){
+void FXDockSite::moveHorBar(FXWindow* bar,FXWindow *begin,FXWindow* end,FXint bx,FXint by){
   FXint minpos,maxpos,pos;
   FXWindow *child,*other;
 
@@ -621,12 +619,20 @@ void FXToolBarDock::moveHorBar(FXWindow* bar,FXWindow *begin,FXWindow* end,FXint
 
 
 // Move dock bar, changing its options to suit position
-FXbool FXToolBarDock::moveToolBar(FXToolBar* bar,FXint barx,FXint bary){
-  FXint left,right,top,bottom,galx,galy,galw,galh,dockx,docky,barw,barh,expand,require,cx,cy,w,h;
+void FXDockSite::moveToolBar(FXDockBar* bar,FXint barx,FXint bary){
+  FXint left,right,top,bottom,galx,galy,galw,galh,dockx,docky,barw,barh,expand,require,w,h;
   FXWindow *begin,*end,*cur,*curend,*nxt,*nxtend,*prv,*prvend;
 
   // We insist this bar hangs under this dock site
   if(bar && bar->getParent()==this){
+
+    // Proposed location
+    dockx=barx;
+    docky=bary;
+
+    // Bar size
+    barw=bar->getWidth();
+    barh=bar->getHeight();
 
     // Interior
     top=border+padtop;
@@ -634,21 +640,16 @@ FXbool FXToolBarDock::moveToolBar(FXToolBar* bar,FXint barx,FXint bary){
     left=border+padleft;
     right=width-padright-border;
 
-    dockx=barx;
-    docky=bary;
-    barw=bar->getWidth();
-    barh=bar->getHeight();
-
     // Vertically oriented
     if(options&LAYOUT_SIDE_LEFT){
 
-      cx=barx+barw/2;
-
       // Determine galley sizes
-      for(begin=getFirst(),cur=prv=nxt=NULL; begin; begin=end->getNext()){
+      galx=left; 
+      galw=0;
+      for(begin=getFirst(),cur=prv=nxt=curend=prvend=nxtend=NULL; begin; begin=end->getNext()){
         w=galleyWidth(begin,end,bottom-top,require,expand);
-        if(!after(end,bar)){ if(left<=cx && cx<left+w){ prv=begin; prvend=end; } }
-        else if(!after(bar,begin)){ if(left<=cx && cx<left+w){ nxt=begin; nxtend=end; }  }
+        if(!after(end,bar)){ if(left<=barx && barx<left+w){ prv=begin; prvend=end; } }
+        else if(!after(bar,begin)){ if(left<=barx+barw && barx+barw<left+w){ nxt=begin; nxtend=end; }  }
         else{ cur=begin; curend=end; galx=left; galw=w; }
         left+=w+hspacing;
         }
@@ -661,38 +662,34 @@ FXbool FXToolBarDock::moveToolBar(FXToolBar* bar,FXint barx,FXint bary){
       moveVerBar(bar,cur,curend,dockx,docky);
 
       // Moving bar right
-      if(cx>=galx+galw){
+      if(barx+barw>=galx+galw+FUDGE){
         if(nxt){                                  // Hang at end of next galley
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           nxt->setLayoutHints(nxt->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
           bar->reparent(this,nxtend->getNext());
-          return TRUE;
           }
         else{                                     // Hang below last
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           else cur->setLayoutHints(cur->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->reparent(this,NULL);
-          return barx<=width+PROXIMITY;
           }
         }
 
       // Moving bar left
-      else if(cx<galx){
+      else if(barx<galx-FUDGE){
         if(prv){                                  // Hang at end of previous galley
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           prv->setLayoutHints(prv->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
           bar->reparent(this,prvend->getNext());
-          return TRUE;
           }
         else{                                     // Hand above first
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           else cur->setLayoutHints(cur->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->reparent(this,getFirst());
-          return barx+barw+PROXIMITY>=0;
           }
         }
       }
@@ -700,13 +697,13 @@ FXbool FXToolBarDock::moveToolBar(FXToolBar* bar,FXint barx,FXint bary){
     // Horizontally oriented
     else{
 
-      cy=bary+barh/2;
-
       // Determine galley sizes
-      for(begin=getFirst(),cur=prv=nxt=NULL; begin; begin=end->getNext()){
+      galy=top;
+      galh=0;
+      for(begin=getFirst(),cur=prv=nxt=curend=prvend=nxtend=NULL; begin; begin=end->getNext()){
         h=galleyHeight(begin,end,right-left,require,expand);
-        if(!after(end,bar)){ if(top<=cy && cy<top+h){ prv=begin; prvend=end; } }
-        else if(!after(bar,begin)){ if(top<=cy && cy<top+h){ nxt=begin; nxtend=end; }  }
+        if(!after(end,bar)){ if(top<=bary && bary<top+h){ prv=begin; prvend=end; } }
+        else if(!after(bar,begin)){ if(top<=bary+barh && bary+barh<top+h){ nxt=begin; nxtend=end; }  }
         else{ cur=begin; curend=end; galy=top; galh=h; }
         top+=h+vspacing;
         }
@@ -719,104 +716,211 @@ FXbool FXToolBarDock::moveToolBar(FXToolBar* bar,FXint barx,FXint bary){
       moveHorBar(bar,cur,curend,dockx,docky);
 
       // Moving bar down
-      if(cy>=galy+galh){
+      if(bary+barh>=galy+galh+FUDGE){
         if(nxt){                                  // Hang at end of next galley
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           nxt->setLayoutHints(nxt->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
           bar->reparent(this,nxtend->getNext());
-          return TRUE;
           }
         else{                                     // Hang below last
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           else cur->setLayoutHints(cur->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->reparent(this,NULL);
-          return bary<=height+PROXIMITY;
           }
         }
 
       // Moving bar up
-      else if(cy<galy){
+      else if(bary<galy-FUDGE){
         if(prv){                                  // Hang at end of previous galley
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           prv->setLayoutHints(prv->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
           bar->reparent(this,prvend->getNext());
-          return TRUE;
           }
         else{                                     // Hand above first
           if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
           else cur->setLayoutHints(cur->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
           bar->reparent(this,getFirst());
-          return bary+barh+PROXIMITY>=0;
           }
         }
-        
       }
     }
-  return TRUE;
   }
 
-/*
-      // Pull left
-      if(barx<-TOLERANCE){
-        if(cur==bar && bar!=curend) cur->getNext()->setLayoutHints(cur->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
-        else cur->setLayoutHints(cur->getLayoutHints()|LAYOUT_DOCK_NEXT);
-        bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
-        bar->reparent(this,NULL);
-        return FALSE;
+
+// Fix layouts for undocking given bar
+void FXDockSite::undockToolBar(FXDockBar* bar){
+  FXint space,expand,require;
+  FXWindow *begin,*end;
+
+  // We insist this bar hangs under this dock site
+  if(bar && bar->getParent()==this){
+
+    // Vertically oriented
+    if(options&LAYOUT_SIDE_LEFT){
+
+      // Space
+      space=height-padbottom-padtop-border-border;
+
+      // Determine galley sizes
+      for(begin=getFirst(); begin; begin=end->getNext()){
+        galleyWidth(begin,end,space,require,expand);
+        if(before(begin,bar) && before(bar,end)) break;
         }
 
-
-      // Bar or dock "sticks out" too much 
-      if(barw>width){
-        if((barx>TOLERANCE) || (width>barx+barw+TOLERANCE)) return FALSE;
-        }
-      else{
-        if((-TOLERANCE>barx) || (barx+barw>width+TOLERANCE)) return FALSE;
-        }
-*/
-
-// Attempt docking of bar inside this dock
-FXbool FXToolBarDock::dockToolBar(FXToolBar* bar,FXint barx,FXint bary){
-
-  // Vertically oriented dock
-  if(getLayoutHints()&LAYOUT_SIDE_LEFT){
-
-    // Right or left edge of bar inside dock
-    if((xpos-PROXIMITY<=barx && barx<xpos+width+PROXIMITY) || (xpos-PROXIMITY<=barx+bar->getWidth() && barx+bar->getWidth()<=xpos+width+PROXIMITY)){
-
-      // Test if either bar or dock "sticks out" too much to dock
-      if(bar->getHeight()>height){
-        if(bary-TOLERANCE<=ypos && ypos+height<=bary+bar->getHeight()+TOLERANCE) return TRUE;
-        }
-      else{
-        if(ypos-TOLERANCE<=bary && bary+bar->getHeight()<=ypos+height+TOLERANCE) return TRUE;
-        }
+      // Adjust layout options
+      if(begin==bar && bar!=end)
+        begin->getNext()->setLayoutHints(begin->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
+      else
+        begin->setLayoutHints(begin->getLayoutHints()|LAYOUT_DOCK_NEXT);
       }
-    }
 
-  // Horizontally oriented dock
-  else{
+    // Horizontally oriented
+    else{
 
-    // Upper or lower edge of bar inside dock
-    if((ypos-PROXIMITY<=bary && bary<=ypos+height+PROXIMITY) || (ypos-PROXIMITY<=bary+bar->getHeight() && bary+bar->getHeight()<=ypos+height+PROXIMITY)){
+      // Space
+      space=width-padright-padleft-border-border;
 
-      // Test if either bar or dock "sticks out" too much to dock
-      if(bar->getWidth()>width){
-        if(barx-TOLERANCE<=xpos && xpos+width<=barx+bar->getWidth()+TOLERANCE) return TRUE;
+      // Determine galley sizes
+      for(begin=getFirst(); begin; begin=end->getNext()){
+        galleyHeight(begin,end,space,require,expand);
+        if(before(begin,bar) && before(bar,end)) break;
         }
-      else{
-        if(xpos-TOLERANCE<=barx && barx+bar->getWidth()<=xpos+width+TOLERANCE) return TRUE;
-        }
+
+      // Adjust layout options
+      if(begin==bar && bar!=end)
+        begin->getNext()->setLayoutHints(begin->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
+      else
+        begin->setLayoutHints(begin->getLayoutHints()|LAYOUT_DOCK_NEXT);
       }
-    }
 
-  return FALSE;
+    // Fix bar's layout hints too
+    bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
+    }
   }
 
+
+// Fix layouts for docking given bar at given position
+void FXDockSite::dockToolBar(FXDockBar* bar,FXWindow* before){
+
+  // We insist this bar hangs under this dock site
+  if(bar && bar->getParent()==this){
+
+    // New galley just for bar
+    bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
+    if(before) before->setLayoutHints(bar->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
+    }
+  }
+
+
+// Fix layouts for docking given bar at given position
+void FXDockSite::dockToolBar(FXDockBar* bar,FXint barx,FXint bary){
+  FXint left,right,top,bottom,barw,barh,expand,require,cx,cy,w,h;
+  FXWindow *begin,*end,*child;
+
+  // We insist this bar hangs under this dock site
+  if(bar && bar->getParent()==this){
+
+    // Interior
+    top=border+padtop;
+    bottom=height-padbottom-border;
+    left=border+padleft;
+    right=width-padright-border;
+
+    // Bar size
+    barw=bar->getWidth();
+    barh=bar->getHeight();
+
+    // Vertically oriented
+    if(options&LAYOUT_SIDE_LEFT){
+
+      cx=barx+barw/2;
+
+      // Tentatively
+      bar->reparent(this,getFirst());
+      bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
+      if(bar->getNext()) bar->getNext()->setLayoutHints(bar->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
+
+      // Link at the left
+      if(cx<left || !bar->getNext()) goto ver;
+
+      // Determine galley
+      for(begin=bar->getNext(); begin; begin=end->getNext()){
+        w=galleyWidth(begin,end,bottom-top,require,expand);
+        if(left<=cx && cx<left+w){
+
+          // Find spot on galley
+          for(child=begin; child!=end->getNext() && (!child->shown() || bary>=child->getY()); child=child->getNext());
+
+          // At the front
+          if((child==begin) && (child->getLayoutHints()&LAYOUT_DOCK_NEXT)){
+            child->setLayoutHints(child->getLayoutHints()&~LAYOUT_DOCK_NEXT);
+            }
+          else{
+            bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
+            }
+
+          // hang in front
+          bar->reparent(this,child);
+          goto ver;
+          }
+        left+=w+hspacing;
+        }
+
+      // Link at the bottom
+      bar->reparent(this,NULL);
+
+      // Move horizontally
+ver:  bar->move(left,bary);
+      }
+
+    // Horizontally oriented
+    else{
+
+      cy=bary+barh/2;
+
+      // Tentatively
+      bar->reparent(this,getFirst());
+      bar->setLayoutHints(bar->getLayoutHints()|LAYOUT_DOCK_NEXT);
+      if(bar->getNext()) bar->getNext()->setLayoutHints(bar->getNext()->getLayoutHints()|LAYOUT_DOCK_NEXT);
+
+      // Link at the top
+      if(cy<top || !bar->getNext()) goto hor;
+
+      // Determine galley
+      for(begin=bar->getNext(); begin; begin=end->getNext()){
+        h=galleyHeight(begin,end,right-left,require,expand);
+        if(top<=cy && cy<top+h){
+
+          // Find spot on galley
+          for(child=begin; child!=end->getNext() && (!child->shown() || barx>=child->getX()); child=child->getNext());
+
+          // At the front
+          if((child==begin) && (child->getLayoutHints()&LAYOUT_DOCK_NEXT)){
+            child->setLayoutHints(child->getLayoutHints()&~LAYOUT_DOCK_NEXT);
+            }
+          else{
+            bar->setLayoutHints(bar->getLayoutHints()&~LAYOUT_DOCK_NEXT);
+            }
+
+          // hang in front
+          bar->reparent(this,child);
+          goto hor;
+          }
+        top+=h+vspacing;
+        }
+
+      // Link at the bottom
+      bar->reparent(this,NULL);
+
+      // Move horizontally
+hor:  bar->move(barx,top);
+      }
+    }
+  }
 
 
 }

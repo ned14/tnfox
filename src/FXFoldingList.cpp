@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFoldingList.cpp,v 1.53 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXFoldingList.cpp,v 1.55 2005/02/06 19:24:47 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -211,9 +211,36 @@ void FXFoldingItem::setDraggable(FXbool draggable){
   if(draggable) state|=DRAGGABLE; else state&=~DRAGGABLE;
   }
 
-// Icons owner by item
-void FXFoldingItem::setIconOwned(FXuint owned){
-  state=(state&~(OPENICONOWNED|CLOSEDICONOWNED))|(owned&(OPENICONOWNED|CLOSEDICONOWNED));
+
+// Change item label
+void FXFoldingItem::setText(const FXString& txt){
+  label=txt;
+  }
+
+
+// Change item's open icon
+void FXFoldingItem::setOpenIcon(FXIcon* icn,FXbool owned){
+  if(openIcon && (state&OPENICONOWNED)){
+    if(openIcon!=icn) delete openIcon;
+    state&=~OPENICONOWNED;
+    }
+  openIcon=icn;
+  if(openIcon && owned){
+    state|=OPENICONOWNED;
+    }
+  }
+
+
+// Change item's mini icon
+void FXFoldingItem::setClosedIcon(FXIcon* icn,FXbool owned){
+  if(closedIcon && (state&CLOSEDICONOWNED)){
+    if(closedIcon!=icn) delete closedIcon;
+    state&=~CLOSEDICONOWNED;
+    }
+  closedIcon=icn;
+  if(closedIcon && owned){
+    state|=CLOSEDICONOWNED;
+    }
   }
 
 
@@ -706,12 +733,10 @@ FXString FXFoldingList::getItemText(const FXFoldingItem* item) const {
 
 
 // Set item open icon
-void FXFoldingList::setItemOpenIcon(FXFoldingItem* item,FXIcon* icon){
+void FXFoldingList::setItemOpenIcon(FXFoldingItem* item,FXIcon* icon,FXbool owned){
   if(item==NULL){ fxerror("%s::setItemOpenIcon: item is NULL.\n",getClassName()); }
-  if(item->getOpenIcon()!=icon){
-    item->setOpenIcon(icon);
-    recalc();
-    }
+  if(item->getOpenIcon()!=icon) recalc();
+  item->setOpenIcon(icon,owned);
   }
 
 
@@ -723,12 +748,10 @@ FXIcon* FXFoldingList::getItemOpenIcon(const FXFoldingItem* item) const {
 
 
 // Set item closed icon
-void FXFoldingList::setItemClosedIcon(FXFoldingItem* item,FXIcon* icon){
+void FXFoldingList::setItemClosedIcon(FXFoldingItem* item,FXIcon* icon,FXbool owned){
   if(item==NULL){ fxerror("%s::setItemClosedIcon: item is NULL.\n",getClassName()); }
-  if(item->getClosedIcon()!=icon){
-    item->setClosedIcon(icon);
-    recalc();
-    }
+  if(item->getClosedIcon()!=icon) recalc();
+  item->setClosedIcon(icon,owned);
   }
 
 

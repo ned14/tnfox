@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.cpp,v 1.93 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXHeader.cpp,v 1.94 2005/02/06 17:20:00 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -286,6 +286,18 @@ FXint FXHeaderItem::getHeight(const FXHeader* header) const {
   else
     h=FXMAX(ih,th);
   return h+mt+mb;
+  }
+
+
+// Change item's text label
+void FXHeaderItem::setText(const FXString& txt){ 
+  label=txt; 
+  }
+
+
+// Change item's icon
+void FXHeaderItem::setIcon(FXIcon* icn){ 
+  icon=icn; 
   }
 
 

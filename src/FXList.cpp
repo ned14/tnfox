@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.cpp,v 1.147 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXList.cpp,v 1.148 2005/02/06 17:20:00 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -185,9 +185,22 @@ void FXListItem::setDraggable(FXbool draggable){
   }
 
 
-// Icons owner by item
-void FXListItem::setIconOwned(FXuint owned){
-  state=(state&~ICONOWNED)|(owned&ICONOWNED);
+// Change item's text label
+void FXListItem::setText(const FXString& txt){
+  label=txt;
+  }
+
+
+// Change item's icon
+void FXListItem::setIcon(FXIcon* icn,FXbool owned){
+  if(icon && (state&ICONOWNED)){
+    if(icon!=icn) delete icon;
+    state&=~ICONOWNED;
+    }
+  icon=icn;
+  if(icon && owned){
+    state|=ICONOWNED;
+    }
   }
 
 
@@ -483,12 +496,10 @@ FXString FXList::getItemText(FXint index) const {
 
 
 // Set item icon
-void FXList::setItemIcon(FXint index,FXIcon* icon){
+void FXList::setItemIcon(FXint index,FXIcon* icon,FXbool owned){
   if(index<0 || items.no()<=index){ fxerror("%s::setItemIcon: index out of range.\n",getClassName()); }
-  if(items[index]->getIcon()!=icon){
-    items[index]->setIcon(icon);
-    recalc();
-    }
+  if(items[index]->getIcon()!=icon) recalc();
+  items[index]->setIcon(icon,owned);
   }
 
 

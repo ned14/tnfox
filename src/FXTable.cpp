@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.cpp,v 1.212 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXTable.cpp,v 1.213 2005/02/06 17:20:00 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -417,9 +417,22 @@ void FXTableItem::setDraggable(FXbool draggable){
   }
 
 
-// Icons owner by item
-void FXTableItem::setIconOwned(FXuint owned){
-  state=(state&~ICONOWNED)|(owned&ICONOWNED);
+// Change item's text label
+void FXTableItem::setText(const FXString& txt){
+  label=txt;
+  }
+
+
+// Change item's icon, deleting the old icon if it was owned
+void FXTableItem::setIcon(FXIcon* icn,FXbool owned){
+  if(icon && (state&ICONOWNED)){
+    if(icon!=icn) delete icon;
+    state&=~ICONOWNED;
+    }
+  icon=icn;
+  if(icon && owned){
+    state|=ICONOWNED;
+    }
   }
 
 
@@ -1125,17 +1138,15 @@ FXString FXTable::getItemText(FXint r,FXint c) const {
 
 
 // Set item icon
-void FXTable::setItemIcon(FXint r,FXint c,FXIcon* icon){
+void FXTable::setItemIcon(FXint r,FXint c,FXIcon* icon,FXbool owned){
   if(r<0 || c<0 || nrows<=r || ncols<=c){ fxerror("%s::setItemIcon: index out of range.\n",getClassName()); }
   register FXTableItem* item=cells[r*ncols+c];
   if(item==NULL){
     cells[r*ncols+c]=item=createItem(NULL,NULL,NULL);
     if(isItemSelected(r,c)) item->setSelected(FALSE);
     }
-  if(item->getIcon()!=icon){
-    item->setIcon(icon);
-    updateItem(r,c);
-    }
+  if(item->getIcon()!=icon) updateItem(r,c);
+  item->setIcon(icon,owned);
   }
 
 

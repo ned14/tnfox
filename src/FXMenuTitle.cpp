@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuTitle.cpp,v 1.44 2005/01/29 05:31:39 fox Exp $                     *
+* $Id: FXMenuTitle.cpp,v 1.45 2005/02/01 21:29:58 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -256,12 +256,22 @@ long FXMenuTitle::onCmdPost(FXObject*,FXSelector,void*){
     translateCoordinatesTo(x,y,getRoot(),0,0);
     side=getParent()->getLayoutHints();
     if(side&LAYOUT_SIDE_LEFT){  // Vertical
-      x+=width;
       y-=1;
+      if(side&LAYOUT_SIDE_BOTTOM){      // On right
+        x-=pane->getDefaultWidth();
+        }
+      else{                             // On left
+        x+=width;
+        }
       }
     else{                       // Horizontal
-      x-=1; 
-      y+=height;
+      x-=1;
+      if(side&LAYOUT_SIDE_BOTTOM){      // On bottom
+        y-=pane->getDefaultHeight();
+        }
+      else{                             // On top
+        y+=height;
+        }
       }
     pane->popup(getParent(),x,y);
     if(!getParent()->grabbed()) getParent()->grab();

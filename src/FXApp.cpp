@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.507 2005/02/01 04:10:23 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.508 2005/02/07 04:11:56 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -2354,12 +2354,12 @@ FXbool FXEventLoop::peekEventI(){
 // Dispatch event to widget
 FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
   FXWindow *window,*ancestor;
+  FXint     tmp_x,tmp_y,n;
   char      buf[20];
   KeySym    sym;
   Atom      answer;
   XEvent    se;
   Window    tmp;
-  FXint     n;
 
   // Get window
   window=findWindowWithId(ev.xany.window);
@@ -2951,16 +2951,21 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
 
       // Property change
       case PropertyNotify:
+        FXTRACE((100,"PropertyNotify %d\n",ev.xproperty.atom));
+
         event.time=ev.xproperty.time;
-//{char* atomname=XGetAtomName((Display*)display,ev.xproperty.atom);
-//FXTRACE((100,"PropertyNotify %s\n",atomname));
-//XFree(atomname);
-//}
-        if(ev.xproperty.atom==app->wmState){
+        
+        // Update window position after minimize/maximize/restore whatever
+        if(ev.xproperty.atom==app->wmState || ev.xproperty.atom==app->wmNetState){
           FXTRACE((100,"Window wmState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));
-          }
-        if(ev.xproperty.atom==app->wmNetState){
-          FXTRACE((100,"Window wmNetState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));
+          event.type=SEL_CONFIGURE;
+          XTranslateCoordinates((Display*)display,ev.xproperty.window,XDefaultRootWindow((Display*)display),0,0,&tmp_x,&tmp_y,&tmp);
+          event.rect.x=tmp_x;
+          event.rect.y=tmp_y;
+          event.rect.w=window->getWidth();
+          event.rect.h=window->getHeight();
+          event.synthetic=ev.xproperty.send_event;
+          if(window->handle(this,FXSEL(SEL_CONFIGURE,0),&event)) refresh();
           }
         return TRUE;
 

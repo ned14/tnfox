@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileSelector.cpp,v 1.170 2005/01/16 16:06:07 fox Exp $                 *
+* $Id: FXFileSelector.cpp,v 1.173 2005/02/08 06:12:35 fox Exp $                 *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -166,6 +166,8 @@ FXDEFMAP(FXFileSelector) FXFileSelectorMap[]={
   FXMAPFUNC(SEL_UPDATE,FXFileSelector::ID_MOVE,FXFileSelector::onUpdSelected),
   FXMAPFUNC(SEL_UPDATE,FXFileSelector::ID_LINK,FXFileSelector::onUpdSelected),
   FXMAPFUNC(SEL_UPDATE,FXFileSelector::ID_DELETE,FXFileSelector::onUpdSelected),
+  FXMAPFUNCS(SEL_COMMAND,FXFileSelector::ID_NORMAL_SIZE,FXFileSelector::ID_GIANT_SIZE,FXFileSelector::onCmdImageSize),
+  FXMAPFUNCS(SEL_UPDATE,FXFileSelector::ID_NORMAL_SIZE,FXFileSelector::ID_GIANT_SIZE,FXFileSelector::onUpdImageSize),
   };
 
 
@@ -602,6 +604,30 @@ long FXFileSelector::onUpdSelected(FXObject* sender,FXSelector,void*){
   }
 
 
+// Change image size
+long FXFileSelector::onCmdImageSize(FXObject*,FXSelector sel,void*){
+  switch(FXSELID(sel)){
+    case ID_NORMAL_SIZE: setImageSize(32); break;
+    case ID_MEDIUM_SIZE: setImageSize(48); break;
+    case ID_GIANT_SIZE: setImageSize(64); break;
+    }
+  return 1;
+  }
+
+
+// Update image size
+long FXFileSelector::onUpdImageSize(FXObject* sender,FXSelector sel,void*){
+  FXbool check=FALSE;
+  switch(FXSELID(sel)){
+    case ID_NORMAL_SIZE: check=(getImageSize()==32); break;
+    case ID_MEDIUM_SIZE: check=(getImageSize()==48); break;
+    case ID_GIANT_SIZE: check=(getImageSize()==64); break;
+    }
+  sender->handle(this,check?FXSEL(SEL_COMMAND,ID_CHECK):FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
+  return 1;
+  }
+
+
 // Popup menu for item in file list
 long FXFileSelector::onPopupMenu(FXObject*,FXSelector,void* ptr){
   FXEvent *event=(FXEvent*)ptr;
@@ -636,6 +662,10 @@ long FXFileSelector::onPopupMenu(FXObject*,FXSelector,void* ptr){
   new FXMenuRadio(&viewmenu,"Columns",filebox,FXFileList::ID_ARRANGE_BY_COLUMNS);
   new FXMenuSeparator(&viewmenu);
   new FXMenuCheck(&viewmenu,"Hidden files",filebox,FXFileList::ID_TOGGLE_HIDDEN);
+  new FXMenuCheck(&viewmenu,"Preview images",filebox,FXFileList::ID_TOGGLE_IMAGES);
+  new FXMenuRadio(&viewmenu,"Normal images",this,ID_NORMAL_SIZE);
+  new FXMenuRadio(&viewmenu,"Medium images",this,ID_MEDIUM_SIZE);
+  new FXMenuRadio(&viewmenu,"Giant images",this,ID_GIANT_SIZE);
 
   FXMenuPane bookmenu(this);
   new FXMenuCascade(&filemenu,"Bookmarks",NULL,&bookmenu);
@@ -960,6 +990,30 @@ FXbool FXFileSelector::showHiddenFiles() const {
 // Show or hide hidden files
 void FXFileSelector::showHiddenFiles(FXbool showing){
   filebox->showHiddenFiles(showing);
+  }
+
+
+// Return TRUE if image preview on
+FXbool FXFileSelector::showImages() const {
+  return filebox->showImages();
+  }
+
+
+// Show or hide preview images
+void FXFileSelector::showImages(FXbool showing){
+  filebox->showImages(showing);
+  }
+
+
+// Return images preview size
+FXint FXFileSelector::getImageSize() const {
+  return filebox->getImageSize();
+  }
+
+
+// Change images preview size
+void FXFileSelector::setImageSize(FXint size){
+  filebox->setImageSize(size);
   }
 
 
