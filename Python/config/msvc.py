@@ -52,4 +52,4 @@ else:
 env['LIBS']+=["kernel32"]
 
 # Set where the BPL *objects* live (which is platform dependent)
-BPLObjectsHome="../../boost/bin/boost/libs/python/build/boost_python.dll/vc7.1/"+ternary(debugmode, "debug", "release")
+BPLObjectsHome="../../boost/bin/boost/libs/python/build/boost_python.dll/vc-7_1/"+ternary(debugmode, "debug", "release")+"/threading-multi"
