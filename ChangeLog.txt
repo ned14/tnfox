@@ -16,6 +16,8 @@ B FXMemMap::mapIn() would map a zero extent if the file was empty.
 B If an FXException was being rethrown, stacklevel wasn't being reset on
 transference up a stack level and thus causing a segfault on that exception's
 destruction
+B Fixed some bad assembler in ptmalloc2 and FXThread.cxx which GCC 3.4.x was
+complaining about
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
