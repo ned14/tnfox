@@ -52,7 +52,7 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
     target,suffix=VersionedSharedLibraryName(env, target, version, debug)
     libtool=sys.platform!="win32"
     DLL=env.SharedLibrary(target+suffix, sources, SHLIBSUFFIX=suffix, **args)
-    basetarget=str(DLL[-1])
+    basetarget=str(DLL[0])
     print "basetarget=",basetarget
     stem,ext=os.path.split(targetorig)
     mpos=string.rfind(basetarget, '-')
