@@ -79,6 +79,24 @@ FXStream::FXStream(FXIODevice *_dev, const FXObject *cont){
   dev=_dev;
   }
 
+// Create PersistentStore object
+FXStream::FXStream(const FXObject *cont){
+  parent=cont;
+  begptr=NULL;
+  endptr=NULL;
+  wrptr=NULL;
+  rdptr=NULL;
+  pos=0;
+  dir=FXStreamDead;
+  code=FXStreamOK;
+  seq=0x80000000;
+  swap=FALSE;
+  owns=FALSE;
+
+  // TnFOX stuff
+  hash=0;
+  dev=0;
+  }
 
 // Destroy PersistentStore object
 FXStream::~FXStream(){
@@ -94,6 +112,11 @@ FXStream::~FXStream(){
   dev=(FXIODevice *)-1L;
   }
 
+
+void FXStream::setError(FXStreamStatus err)
+{
+	code=err;
+}
 
 unsigned long FXStream::getSpace() const
 {
