@@ -141,6 +141,10 @@ public:
 	static FXString join(const FXString &a, const FXString &b, const FXString &c) { return join(join(a,b), c); }
 	//! \overload
 	static FXString join(const FXString &a, const FXString &b, const FXString &c, const FXString &d) { return join(join(join(a,b), c), d); }
+	/*! Stamps the path entry with metadata consistent with the entry having been
+	created at \em creationdate. Needed to work around the Windows "file tunnelling"
+	misfeature. */
+	static void stampCreationMetadata(const FXString &path, FXTime creationdate=FXFile::now());
 
 
 	// These are directly copied from FOX
