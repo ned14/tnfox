@@ -1053,7 +1053,12 @@ FXHostAddress FXNetwork::dnsLookup(const FXString &name)
 	// MS Platform SDK 2003 has the right header files and links fine, but the DLL is missing the code :(
 	addrinfo *res=0;
 	int errcode=::getaddrinfo(name.text(), NULL, NULL, &res);
-	if(EAI_NONAME==errcode || EAI_NODATA==errcode) return ret;
+	if(EAI_NONAME==errcode
+#ifdef EAI_NODATA
+		// EAI_NODATA has been obsoleted on newer platforms
+		|| EAI_NODATA==errcode
+#endif
+		) return ret;
 	if(errcode)
 	{
 		FXERRGIO(FXString(gai_strerror(errcode)));
