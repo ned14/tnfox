@@ -9,17 +9,36 @@ if debugmode:
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
-conf=Configure(env)
+def CheckMSVC71(cc):
+    cc.Message("Checking for MSVC7.1 ...")
+    result=cc.TryCompile('#if !defined(_MSC_VER) || _MSC_VER<1310\n#error Too old!\n#endif\n', '.cpp')
+    cc.Result(result)
+    return result
+def CheckMSVC80(cc):
+    cc.Message("Checking for MSVC8.0 ...")
+    result=cc.TryCompile('#if !defined(_MSC_VER) || _MSC_VER<1400\n#error Too old!\n#endif\n', '.cpp')
+    cc.Result(result)
+    return result
+conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
+assert conf.CheckMSVC71()
+MSVCVersion=710
+if conf.CheckMSVC80():
+    MSVCVersion=800
 env=conf.Finish()
 
 env['CPPPATH']+=[prefixpath+"windows"]
 
 # Warnings, synchronous exceptions, enable RTTI, pool strings, ANSI for scoping,
-# only functions may alias, types defined before pointers to members used,
-# virtual inheritance not used
-cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Ow /vmb /vmm /vd0')
+# types defined before pointers to members used
+cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /vmb /vmm')
 assert architecture=="i486"
-cppflags+=[ "/G%d" % i486_version ]
+if MSVCVersion==710:
+    cppflags+=[ "/Ow",                   # Only functions may alias
+                "/G%d" % i486_version    # Optimise for given processor revision
+              ]
+else:
+    # Stop the stupid STDC function deprecated warnings
+    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
 if   i486_SSE==1: cppflags+=[ "/arch:SSE" ]
 elif i486_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
@@ -58,9 +77,11 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/STACK:524288,65536"
                   ]
 if debugmode:
-    env['LINKFLAGS']+=["/INCREMENTAL:NO",
-                       "/NODEFAULTLIB:MSVCRT"
-                       ]
+    if MSVCVersion==710:
+        env['LINKFLAGS']+=["/INCREMENTAL:NO"]
+    else:
+        env['LINKFLAGS']+=["/INCREMENTAL"]
+    env['LINKFLAGS']+=["/NODEFAULTLIB:MSVCRT"]
 else:
     env['LINKFLAGS']+=["/INCREMENTAL:NO",
                        "/OPT:REF",
