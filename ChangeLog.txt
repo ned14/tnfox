@@ -18,6 +18,10 @@ transference up a stack level and thus causing a segfault on that exception's
 destruction
 B Fixed some bad assembler in ptmalloc2 and FXThread.cxx which GCC 3.4.x was
 complaining about
+B FXThread wasn't setting up default nested exception handling frame causing
+fatal app exit
+B Fixed memory leak in FXTextCodecs inherited from FOX
+
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
@@ -51,8 +55,10 @@ more efficient and handle multiple nested exception throws simultaneously
 a reason :)
 + Added FXException::setConstructionBreak()
 + Added FXFile::join()
++ Added support for FreeBSD v5.3
 + Added FXFile::stampCreationMetadata()
 + Added #define FXREFINGOBJECT_DEBUGKNOWALLOC
++ Added support for 64 bit x86 architectures
 
 
 v0.80 12th July 2004:
