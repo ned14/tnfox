@@ -3,7 +3,7 @@
 *                         M e n u R a d i o   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuRadio.h,v 1.10 2004/02/08 17:17:33 fox Exp $                        *
+* $Id: FXMenuRadio.h,v 1.11 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXMENURADIO_H
 #define FXMENURADIO_H

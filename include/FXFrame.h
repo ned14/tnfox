@@ -3,7 +3,7 @@
 *                       F r a m e   W i n d o w   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFrame.h,v 1.21 2004/09/24 17:34:02 fox Exp $                           *
+* $Id: FXFrame.h,v 1.22 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXFRAME_H
 #define FXFRAME_H
@@ -52,8 +52,8 @@ enum {
 /**
 * The Frame widget provides borders around some contents. Borders may be raised, sunken,
 * thick, ridged or etched.  They can also be turned off completely.
-* In addition, a certain amount of padding may be specified between the contents of 
-* the widget and the borders.  The contents may be justified inside the widget using the 
+* In addition, a certain amount of padding may be specified between the contents of
+* the widget and the borders.  The contents may be justified inside the widget using the
 * justification options.
 * The Frame widget is sometimes used by itself as a place holder, but most often is used
 * as a convenient base class for simple controls.

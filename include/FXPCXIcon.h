@@ -3,7 +3,7 @@
 *                        P C X   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPCXIcon.h,v 1.13 2004/11/10 16:22:05 fox Exp $                         *
+* $Id: FXPCXIcon.h,v 1.15 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXPCXICON_H
 #define FXPCXICON_H
@@ -54,6 +54,12 @@ public:
   /// Destroy icon
   virtual ~FXPCXIcon();
   };
+
+
+/**
+* Check if stream contains a PCX, return TRUE if so.
+*/
+extern FXAPI FXbool fxcheckPCX(FXStream& store);
 
 
 /**

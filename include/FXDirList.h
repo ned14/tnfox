@@ -3,7 +3,7 @@
 *                     D i r e c t o r y   L i s t   W i d g e t                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirList.h,v 1.62 2004/10/15 04:49:09 fox Exp $                         *
+* $Id: FXDirList.h,v 1.66 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -55,10 +55,10 @@ protected:
   FXFileAssoc  *assoc;                // File association
   FXDirItem    *link;                 // Link to next item
   FXDirItem    *list;                 // List of child items
-  unsigned long size;                 // File size (if a file)
+  FXlong        size;                 // File size (if a file)
   FXTime        date;                 // Time of item
 protected:
-  FXDirItem():assoc(NULL),link(NULL),list(NULL),size(0),date(0){}
+  FXDirItem():assoc(NULL),link(NULL),list(NULL),size(0L),date(0){}
 public:
   enum {
     FOLDER      = 512,          /// Directory item
@@ -102,7 +102,7 @@ public:
   FXFileAssoc* getAssoc() const { return assoc; }
 
   /// Return the file size for this item
-  unsigned long getSize() const { return size; }
+  FXlong getSize() const { return size; }
 
   /// Return the date for this item
   FXTime getDate() const { return date; }

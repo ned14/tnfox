@@ -3,7 +3,7 @@
 *        F O X   K e y b o a r d   S y m b o l   D e f i n i t i o n s          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxkeys.h,v 1.11 2004/08/01 00:08:36 fox Exp $                            *
+* $Id: fxkeys.h,v 1.12 2005/01/16 16:06:06 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXKEYS_H
 #define FXKEYS_H

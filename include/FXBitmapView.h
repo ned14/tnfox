@@ -3,7 +3,7 @@
 *                    B i t m a p   V i e w   W i d g e t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBitmapView.h,v 1.5 2004/09/24 17:34:02 fox Exp $                       *
+* $Id: FXBitmapView.h,v 1.6 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXBITMAPVIEW_H
 #define FXBITMAPVIEW_H
@@ -45,8 +45,8 @@ enum {
   };
 
 /**
-* The Bitmap View widget display a scrollable view of a monochrome bitmap image; 
-* the bitmap is not owned by the bitmap frame so it must be explicitly deleted 
+* The Bitmap View widget display a scrollable view of a monochrome bitmap image;
+* the bitmap is not owned by the bitmap frame so it must be explicitly deleted
 * elsewhere.  Thus, a single bitmap image can be displayed inside multiple bitmap
 * view widgets.
 */

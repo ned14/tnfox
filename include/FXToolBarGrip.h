@@ -3,7 +3,7 @@
 *                     T o o l   B a r   G r i p   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarGrip.h,v 1.8 2004/10/19 00:48:59 fox Exp $                      *
+* $Id: FXToolBarGrip.h,v 1.13 2005/01/29 05:02:02 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXTOOLBARGRIP_H
 #define FXTOOLBARGRIP_H
@@ -34,8 +34,7 @@ namespace FX {
 /// Tool Bar Grip styles
 enum {
   TOOLBARGRIP_SINGLE     = 0,             /// Single bar mode for movable toolbars
-  TOOLBARGRIP_DOUBLE     = 0x00008000,    /// Double bar mode for dockable toolbars
-  TOOLBARGRIP_SEPARATOR  = 0x00010000     /// Separator mode
+  TOOLBARGRIP_DOUBLE     = 0x00008000     /// Double bar mode for dockable toolbars
   };
 
 class FXToolBar;
@@ -48,7 +47,7 @@ class FXToolBar;
 * and use the double-bar when the toolbar needs to be floated
 * or docked.
 * The toolbar grip is automatically oriented properly by the
-* the toolbar widget.
+* the toolbar widget, similar to the FXSeparator widget.
 */
 class FXAPI FXToolBarGrip : public FXWindow {
   FXDECLARE(FXToolBarGrip)
@@ -57,6 +56,8 @@ protected:
   FXColor  hiliteColor; // Highlight color
   FXColor  shadowColor; // Shadow color
   FXString tip;         // Tooltip
+private:
+  FXID     xxx;
 protected:
   FXToolBarGrip();
 private:
@@ -75,7 +76,7 @@ public:
 public:
 
   /// Construct toolbar grip
-  FXToolBarGrip(FXToolBar* p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=TOOLBARGRIP_SINGLE,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
+  FXToolBarGrip(FXComposite* p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=TOOLBARGRIP_SINGLE,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
 
   /// Return default width
   virtual FXint getDefaultWidth();
@@ -111,7 +112,7 @@ public:
   void setTipText(const FXString& text){ tip=text; }
 
   /// Get the tool tip message for the toolbar grip
-  FXString getTipText() const { return tip; }
+  const FXString& getTipText() const { return tip; }
 
   /// Save to stream
   virtual void save(FXStream& store) const;

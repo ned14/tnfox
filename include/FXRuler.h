@@ -3,7 +3,7 @@
 *                            R u l e r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRuler.h,v 1.26 2004/08/22 19:03:07 fox Exp $                           *
+* $Id: FXRuler.h,v 1.28 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXRULER_H
 #define FXRULER_H
@@ -224,13 +224,13 @@ public:
   void setHelpText(const FXString& text);
 
   /// Get the status line help text for this label
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Set the tool tip message for this label
   void setTipText(const FXString&  text);
 
   /// Get the tool tip message for this label
-  FXString getTipText() const { return tip; }
+  const FXString& getTipText() const { return tip; }
 
   /// Save label to a stream
   virtual void save(FXStream& store) const;

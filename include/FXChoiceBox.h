@@ -3,7 +3,7 @@
 *                            C h o i c e   B o x                                *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXChoiceBox.h,v 1.5 2004/10/29 05:10:04 fox Exp $                        *
+* $Id: FXChoiceBox.h,v 1.6 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXCHOICEBOX_H
 #define FXCHOICEBOX_H
@@ -63,18 +63,18 @@ public:
   /// Construct choice box with given caption, icon, message text, and with choices from array of strings
   FXChoiceBox(FXWindow* owner,const FXString& caption,const FXString& text,FXIcon* icon,const FXchar** choices,FXuint opts=0,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
 
-  /// Construct choice box with given caption, icon, message text, and with choices from newline separated strings 
+  /// Construct choice box with given caption, icon, message text, and with choices from newline separated strings
   FXChoiceBox(FXWindow* owner,const FXString& caption,const FXString& text,FXIcon* icon,const FXString& choices,FXuint opts=0,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
 
   /// Construct free floating choice box with given caption, icon, message text, and with choices from array of strings
   FXChoiceBox(FXApp* app,const FXString& caption,const FXString& text,FXIcon* icon,const FXchar** choices,FXuint opts=0,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
 
-  /// Construct free floating choice box with given caption, icon, message text, and with choices from newline separated strings 
+  /// Construct free floating choice box with given caption, icon, message text, and with choices from newline separated strings
   FXChoiceBox(FXApp* app,const FXString& caption,const FXString& text,FXIcon* icon,const FXString& choices,FXuint opts=0,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
 
   /**
   * Show a modal choice dialog.
-  * Prompt the user using a dialog with given caption, icon, 
+  * Prompt the user using a dialog with given caption, icon,
   * message text, and with choices from newline array of strings.
   * The return value is -1 if cancelled, or the given choice.
   */
@@ -82,7 +82,7 @@ public:
 
   /**
   * Show a modal choice dialog.
-  * Prompt the user using a dialog with given caption, icon, 
+  * Prompt the user using a dialog with given caption, icon,
   * message text, and with choices from newline separated strings.
   * The return value is -1 if cancelled, or the given choice
   */
@@ -90,7 +90,7 @@ public:
 
   /**
   * Show modal choice message, in free floating window.
-  * Prompt the user using a dialog with given caption, icon, 
+  * Prompt the user using a dialog with given caption, icon,
   * message text, and with choices from newline array of strings.
   * The return value is -1 if cancelled, or the given choice
   */
@@ -98,7 +98,7 @@ public:
 
   /**
   * Show modal choice message, in free floating window.
-  * Prompt the user using a dialog with given caption, icon, 
+  * Prompt the user using a dialog with given caption, icon,
   * message text, and with choices from newline separated strings.
   * The return value is -1 if cancelled, or the given choice
   */

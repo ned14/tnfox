@@ -3,7 +3,7 @@
 *                         C u r s o r - O b j e c t                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCursor.h,v 1.24 2004/09/26 18:02:28 fox Exp $                          *
+* $Id: FXCursor.h,v 1.25 2005/01/16 16:06:06 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXCURSOR_H
 #define FXCURSOR_H
@@ -85,7 +85,7 @@ public:
 
   /// Get hotspot x; returns 0 for stock cursors
   void setHotX(FXint x){ hotx=x; }
-  
+
   /// Get hotspot x; returns 0 for stock cursors
   FXint getHotX() const { return hotx; }
 

@@ -3,7 +3,7 @@
 *                         I c o n   L i s t   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.h,v 1.83 2004/10/30 06:19:36 fox Exp $                        *
+* $Id: FXIconList.h,v 1.87 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXICONLIST_H
 #define FXICONLIST_H
@@ -171,6 +171,9 @@ public:
 typedef FXint (*FXIconListSortFunc)(const FXIconItem*,const FXIconItem*);
 
 
+typedef FXObjectListOf<FXIconItem> FXIconItemList;
+
+
 /**
 * A Icon List Widget displays a list of items, each with a text and
 * optional icon.  Icon List can display its items in essentially three
@@ -195,8 +198,7 @@ class FXAPI FXIconList : public FXScrollArea {
   FXDECLARE(FXIconList)
 protected:
   FXHeader          *header;            // Header control
-  FXIconItem       **items;             // Item list
-  FXint              nitems;            // Number of items
+  FXIconItemList     items;		// Item list
   FXint              nrows;             // Number of rows
   FXint              ncols;             // Number of columns
   FXint              anchor;            // Anchor item
@@ -333,7 +335,7 @@ public:
   virtual void position(FXint x,FXint y,FXint w,FXint h);
 
   /// Return number of items
-  FXint getNumItems() const { return nitems; }
+  FXint getNumItems() const { return items.no(); }
 
   /// Return number of rows
   FXint getNumRows() const { return nrows; }
@@ -585,7 +587,7 @@ public:
   void setHelpText(const FXString& text);
 
   /// Get the status line help text for this widget
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Save list to a stream
   virtual void save(FXStream& store) const;

@@ -3,7 +3,7 @@
 *                       R e a l S l i d e r   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRealSlider.h,v 1.5 2004/03/25 16:30:25 fox Exp $                       *
+* $Id: FXRealSlider.h,v 1.7 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXREALSLIDER_H
 #define FXREALSLIDER_H
@@ -181,13 +181,13 @@ public:
   void setHelpText(const FXString& text){ help=text; }
 
   /// Get the current help text
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Set the tip text to be displayed in the tooltip
   void setTipText(const FXString& text){ tip=text; }
 
   /// Get the current tooltip text value
-  FXString getTipText() const { return tip; }
+  const FXString& getTipText() const { return tip; }
 
   /// Save to stream
   virtual void save(FXStream& store) const;

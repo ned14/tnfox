@@ -3,7 +3,7 @@
 *       S i n g l e - P r e c i s i o n   2 - E l e m e n t   V e c t o r       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec2f.h,v 1.4 2004/06/09 06:05:23 fox Exp $                            *
+* $Id: FXVec2f.h,v 1.6 2005/01/20 07:14:03 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXVEC2F_H
 #define FXVEC2F_H
@@ -43,7 +43,7 @@ public:
   /// Copy constructor
   FXVec2f(const FXVec2f& v){x=v.x;y=v.y;}
 
-  // Initialize from array of floats
+  /// Initialize from array of floats
   FXVec2f(const FXfloat v[]){x=v[0];y=v[1];}
 
   /// Initialize with components

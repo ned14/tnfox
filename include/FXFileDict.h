@@ -3,7 +3,7 @@
 *                  F i l e - A s s o c i a t i o n   T a b l e                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.h,v 1.22 2004/09/26 18:02:28 fox Exp $                        *
+* $Id: FXFileDict.h,v 1.24 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXFILEDICT_H
 #define FXFILEDICT_H
@@ -88,7 +88,7 @@ public:
   void setIconPath(const FXString& p){ path=p; }
 
   /// Return current icon search path
-  FXString getIconPath() const { return path; }
+  const FXString& getIconPath() const { return path; }
 
   /// Insert unique icon loaded from filename into dictionary
   FXIcon* insert(const FXchar* name){ return (FXIcon*)FXDict::insert(name,name); }
@@ -111,8 +111,8 @@ public:
 
 
 /**
-* The File Association dictionary associates a file extension with a File 
-* Association record which contains command name, mime type, icons, and other 
+* The File Association dictionary associates a file extension with a File
+* Association record which contains command name, mime type, icons, and other
 * information about the file type.  The icons referenced by the file association
 * are managed by the Icon Dictionary; this guarantees that each icon is loaded
 * only once into memory.
@@ -126,13 +126,13 @@ public:
 *
 *   xv %s &;JPEG Image;bigimage.xpm;miniimage.xpm;image/jpeg
 *
-* The association for a file name is determined by first looking at the entire 
+* The association for a file name is determined by first looking at the entire
 * file name, then at the whole extension, and then at sub-extensions.
 * For example, "name.tar.gz", "tar.gz", and "gz" can each be given a different
 * file association.  Directory names may also be given associations; there is
 * no command-line association for a directory, however.  The association for a
 * directory is found by first checking the whole pathname, then checking the
-* pathname less the first component, and so on.  So, "/usr/local/include", 
+* pathname less the first component, and so on.  So, "/usr/local/include",
 * "/local/include", and "/include" can each be given their own file associations.
 * If the above lookup procedure has not found a file association, the system
 * uses a fallback associations: for files, the fallback association is determined
@@ -186,7 +186,7 @@ public:
   void setIconPath(const FXString& path);
 
   /// Return current icon search path
-  FXString getIconPath() const;
+  const FXString& getIconPath() const;
 
   /**
   * Replace file association.

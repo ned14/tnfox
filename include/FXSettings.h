@@ -3,7 +3,7 @@
 *                           S e t t i n g s   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.h,v 1.22 2004/09/26 18:02:28 fox Exp $                        *
+* $Id: FXSettings.h,v 1.23 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXSETTINGS_H
 #define FXSETTINGS_H
@@ -36,7 +36,7 @@ class FXStringDict;
 
 /**
 * The Settings class manages a key-value database.  This is normally used as
-* part of Registry, but can also be used separately in applications that need 
+* part of Registry, but can also be used separately in applications that need
 * to maintain a key-value database in a file of their own.
 */
 class FXAPI FXSettings : public FXDict {

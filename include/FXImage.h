@@ -3,7 +3,7 @@
 *                             I m a g e    O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImage.h,v 1.60 2004/11/18 15:58:56 fox Exp $                           *
+* $Id: FXImage.h,v 1.61 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXIMAGE_H
 #define FXIMAGE_H
@@ -116,17 +116,17 @@ public:
   FXuint getOptions() const { return options; }
 
   /**
-  * Populate the image with new pixel data of the same size; it will assume 
-  * ownership of the pixel data if image IMAGE_OWNED option is passed.  
+  * Populate the image with new pixel data of the same size; it will assume
+  * ownership of the pixel data if image IMAGE_OWNED option is passed.
   * The server-side representation of the image, if it exists, is not updated.
   * This can be done by calling render().
   */
   virtual void setData(FXColor *pix,FXuint opts=0);
 
   /**
-  * Populate the image with new pixel data of a new size; it will assume ownership 
+  * Populate the image with new pixel data of a new size; it will assume ownership
   * of the pixel data if image IMAGE_OWNED option is passed.  The size of the server-
-  * side representation of the image, if it exists, is adjusted but the contents are 
+  * side representation of the image, if it exists, is adjusted but the contents are
   * not updated yet. This can be done by calling render().
   */
   virtual void setData(FXColor *pix,FXuint opts,FXint w,FXint h);

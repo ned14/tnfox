@@ -3,7 +3,7 @@
 *                G L  C a n v a s   W i n d o w   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLCanvas.h,v 1.30 2004/04/28 16:29:07 fox Exp $                        *
+* $Id: FXGLCanvas.h,v 1.31 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXGLCANVAS_H
 #define FXGLCANVAS_H
@@ -89,7 +89,7 @@ public:
 
   // Return current context, if any
   static void* getCurrentContext();
-  
+
   /// Get GL context handle
   void* getContext() const { return ctx; }
 

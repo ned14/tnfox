@@ -3,7 +3,7 @@
 *                        F i l e    L i s t   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.h,v 1.43 2004/09/26 18:02:28 fox Exp $                        *
+* $Id: FXFileList.h,v 1.45 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -55,7 +55,7 @@ class FXAPI FXFileItem : public FXIconItem {
 protected:
   FXFileAssoc  *assoc;                  // File association record
   FXFileItem   *link;                   // Link to next item
-  unsigned long size;                   // File size
+  FXlong        size;                   // File size
   FXTime        date;                   // File time
 protected:
   FXFileItem():assoc(NULL),link(NULL),size(0),date(0){}
@@ -72,7 +72,7 @@ protected:
     };
 public:
   /// Constructor
-  FXFileItem(const FXString& text,FXIcon* bi=NULL,FXIcon* mi=NULL,void* ptr=NULL):FXIconItem(text,bi,mi,ptr),assoc(NULL),link(NULL),size(0),date(0){}
+  FXFileItem(const FXString& text,FXIcon* bi=NULL,FXIcon* mi=NULL,void* ptr=NULL):FXIconItem(text,bi,mi,ptr),assoc(NULL),link(NULL),size(0L),date(0){}
 
   /// Return true if this is a file item
   FXbool isFile() const { return (state&(FOLDER|BLOCKDEV|CHARDEV|FIFO|SOCK|SHARE))==0; }
@@ -105,7 +105,7 @@ public:
   FXFileAssoc* getAssoc() const { return assoc; }
 
   /// Return the file size for this item
-  unsigned long getSize() const { return size; }
+  FXlong getSize() const { return size; }
 
   /// Return the date for this item
   FXTime getDate() const { return date; }
@@ -118,8 +118,8 @@ public:
 * for any changes.  As it scans the displayed directory, it automatically
 * determines the icons to be displayed by consulting the file associations registry
 * settings.  A number of messages can be sent to the File List to control the
-* filter pattern, sort category, sorting order, case sensitivity, and hidden file 
-* display mode.  
+* filter pattern, sort category, sorting order, case sensitivity, and hidden file
+* display mode.
 */
 class FXAPI FXFileList : public FXIconList {
   FXDECLARE(FXFileList)

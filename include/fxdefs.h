@@ -3,7 +3,7 @@
 *                     FOX Definitions, Types, and Macros                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxdefs.h,v 1.140 2004/10/13 22:28:23 fox Exp $                           *
+* $Id: fxdefs.h,v 1.145 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXDEFS_H
 #define FXDEFS_H
@@ -382,14 +382,17 @@ typedef int                    FXint;
 typedef float                  FXfloat;
 typedef double                 FXdouble;
 typedef FXObject              *FXObjectPtr;
-#if defined(_MSC_VER) || (defined(__BCPLUSPLUS__) && __BORLANDC__ > 0x500) || defined(__WATCOM_INT64__)
-#define FX_LONG
+#if defined(__LP64__) || defined(_LP64) || (_MIPS_SZLONG == 64) || (__WORDSIZE == 64)
+typedef unsigned long          FXulong;
+typedef long                   FXlong;
+#elif defined(_MSC_VER) || (defined(__BCPLUSPLUS__) && __BORLANDC__ > 0x500) || defined(__WATCOM_INT64__)
 typedef unsigned __int64       FXulong;
 typedef __int64                FXlong;
-#elif defined(__GNUG__) || defined(__GNUC__) || defined(__SUNPRO_CC) || defined(__MWERKS__) || defined(__SC__)
-#define FX_LONG
-typedef unsigned long long int FXulong;
-typedef long long int          FXlong;
+#elif defined(__GNUG__) || defined(__GNUC__) || defined(__SUNPRO_CC) || defined(__MWERKS__) || defined(__SC__) || defined(_LONGLONG)
+typedef unsigned long long     FXulong;
+typedef long long              FXlong;
+#else
+#error "FXlong and FXulong not defined for this architecture!"
 #endif
 
 // Integral types large enough to hold value of a pointer
@@ -403,12 +406,7 @@ typedef unsigned long          FXuval;
 #endif
 
 // Integral types large enough to hold value of a file pointer
-#ifdef FX_LONG
 typedef FXulong                FXfval;
-#else
-typedef unsigned long          FXfval;
-#endif
-
 
 // Handle to something in server
 #ifndef WIN32

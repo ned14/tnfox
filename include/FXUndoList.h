@@ -3,7 +3,7 @@
 *                  U n d o / R e d o - a b l e   C o m m a n d                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXUndoList.h,v 1.33 2004/02/08 17:17:34 fox Exp $                        *
+* $Id: FXUndoList.h,v 1.36 2005/01/26 19:11:41 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXUNDOLIST_H
 #define FXUNDOLIST_H
@@ -87,6 +87,21 @@ public:
   * for example, "Redo Delete".
   */
   virtual FXString redoName() const;
+
+  /**
+  * Return TRUE if this command can be merged with previous undo
+  * commands.  This is useful to combine e.g. multiple consecutive
+  * single-character text changes into a single block change.
+  * The default implementation returns FALSE.
+  */
+  virtual FXbool canMerge() const;
+
+  /**
+  * Called by the undo system to try and merge the new incoming command
+  * with this command; should return TRUE if merging was possible.
+  * The default implementation returns FALSE.
+  */
+  virtual FXbool mergeWith(FXCommand* command);
 
   /// Delete undo command
   virtual ~FXCommand(){}
@@ -186,11 +201,15 @@ public:
   void cut();
 
   /**
-  * Add new command, executing it if desired. The new command
-  * will be appended after the last undo command.  All redo commands
-  * will be deleted.
+  * Add new command, executing it if desired. The new command will be merged
+  * with the previous command if merge is TRUE and we're not at a marked position
+  * and the commands are mergeable.  Otherwise the new command will be appended
+  * after the last undo command in the currently active undo group.
+  * If the new command is successfully merged, it will be deleted.  Furthermore,
+  * all redo commands will be deleted since it is no longer possible to redo
+  * from this point.
   */
-  void add(FXCommand* command,FXbool doit=FALSE);
+  void add(FXCommand* command,FXbool doit=FALSE,FXbool merge=TRUE);
 
   /**
   * Begin undo command sub-group. This begins a new group of commands that

@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStream.h,v 1.34 2004/11/08 15:35:10 fox Exp $                          *
+* $Id: FXStream.h,v 1.37 2005/01/16 16:06:06 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSTREAM_H
 #define FXSTREAM_H
@@ -135,7 +135,7 @@ protected:
   FXuchar           *endptr;    // End of buffer
   FXuchar           *wrptr;     // Write pointer
   FXuchar           *rdptr;     // Read pointer
-  unsigned long      pos;       // Position
+  FXlong             pos;       // Position
   FXStreamDirection  dir;       // Direction of current transfer
   FXStreamStatus     code;      // Status code
   FXuint             seq;       // Sequence number
@@ -266,8 +266,17 @@ public:
   /// Get swap bytes flag
   FXbool swapBytes() const { return swap; }
 
-  /// Return implementation's endianness
-  static FXbool isLittleEndian(){ return !FOX_BIGENDIAN; }
+  /**
+  * Set stream to big endian mode if TRUE.  Byte swapping will
+  * be enabled if the machine native byte order is not equal to
+  * the desired byte order.
+  */
+  void setBigEndian(FXbool big){ swap=(big^FOX_BIGENDIAN); }
+
+  /**
+  * Return TRUE if big endian mode.
+  */
+  FXbool isBigEndian() const { return (swap^FOX_BIGENDIAN); }
 
   /// Save single items to stream
   FXStream& operator<<(const FXuchar& v);
@@ -278,10 +287,8 @@ public:
   FXStream& operator<<(const FXint& v){ return *this << reinterpret_cast<const FXuint&>(v); }
   FXStream& operator<<(const FXfloat& v);
   FXStream& operator<<(const FXdouble& v);
-#ifdef FX_LONG
   FXStream& operator<<(const FXlong& v){ return *this << reinterpret_cast<const FXulong&>(v); }
   FXStream& operator<<(const FXulong& v);
-#endif
   FXStream& operator<<(const char *v);
   FXStream& operator<<(const bool& v);
 
@@ -294,11 +301,8 @@ public:
   FXStream& save(const FXint* p,unsigned long n){ return save(reinterpret_cast<const FXuint*>(p),n); }
   FXStream& save(const FXfloat* p,unsigned long n);
   FXStream& save(const FXdouble* p,unsigned long n);
-
-#ifdef FX_LONG
   FXStream& save(const FXlong* p,unsigned long n){ return save(reinterpret_cast<const FXulong*>(p),n); }
   FXStream& save(const FXulong* p,unsigned long n);
-#endif
 
   /// Load single items from stream
   FXStream& operator>>(FXuchar& v);
@@ -309,10 +313,8 @@ public:
   FXStream& operator>>(FXint& v){ return *this >> reinterpret_cast<FXuint&>(v); }
   FXStream& operator>>(FXfloat& v);
   FXStream& operator>>(FXdouble& v);
-#ifdef FX_LONG
   FXStream& operator>>(FXlong& v){ return *this >> reinterpret_cast<FXulong&>(v); }
   FXStream& operator>>(FXulong& v);
-#endif
   FXStream& operator>>(bool& v);
 
   /// Load arrays of items from stream
@@ -324,10 +326,8 @@ public:
   FXStream& load(FXint* p,unsigned long n){ return load(reinterpret_cast<FXuint*>(p),n); }
   FXStream& load(FXfloat* p,unsigned long n);
   FXStream& load(FXdouble* p,unsigned long n);
-#ifdef FX_LONG
   FXStream& load(FXlong* p,unsigned long n){ return load(reinterpret_cast<FXulong*>(p),n); }
   FXStream& load(FXulong* p,unsigned long n);
-#endif
 
   /// Save object
   FXStream& saveObject(const FXObject* v);

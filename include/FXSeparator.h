@@ -3,7 +3,7 @@
 *                      S e p a r a t o r   W i d g e t s                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSeparator.h,v 1.16 2004/09/26 18:02:28 fox Exp $                       *
+* $Id: FXSeparator.h,v 1.17 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXSEPARATOR_H
 #define FXSEPARATOR_H
@@ -43,7 +43,7 @@ enum {
 /**
 * A Separator widget is used to draw a horizontal or vertical divider between
 * groups of controls.  It is purely decorative.  The separator may be drawn
-* in various styles as determined by the SEPARATOR_NONE, SEPARATOR_GROOVE, 
+* in various styles as determined by the SEPARATOR_NONE, SEPARATOR_GROOVE,
 * SEPARATOR_RIDGE, and SEPARATOR_LINE options.  Since its derived from Frame,
 * it can also have the frame's border styles.
 */

@@ -3,7 +3,7 @@
 *                         T o p l e v el   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObject.h,v 1.31 2004/10/07 17:13:49 fox Exp $                          *
+* $Id: FXObject.h,v 1.33 2005/01/22 21:55:40 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXOBJECT_H
 #define FXOBJECT_H
@@ -180,7 +180,7 @@ public:
 
   /// Try handle message safely
   virtual long tryHandle(FXObject* sender,FXSelector sel,void* ptr);
-  
+
   /// Save object to stream
   virtual void save(FXStream& store) const;
 
@@ -195,9 +195,6 @@ public:
   virtual ~FXObject();
   };
 
-
-
 }
-
 
 #endif

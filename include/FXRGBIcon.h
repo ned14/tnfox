@@ -3,7 +3,7 @@
 *                      I R I S   R G B   I c o n   O b j e c t                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRGBIcon.h,v 1.9 2004/11/10 16:22:05 fox Exp $                          *
+* $Id: FXRGBIcon.h,v 1.11 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXRGBICON_H
 #define FXRGBICON_H
@@ -55,6 +55,12 @@ public:
   /// Destroy icon
   virtual ~FXRGBIcon();
   };
+
+
+/**
+* Check if stream contains a RGB, return TRUE if so.
+*/
+extern FXAPI FXbool fxcheckRGB(FXStream& store);
 
 
 /**

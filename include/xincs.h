@@ -3,7 +3,7 @@
 *              F O X   P r i v a t e   I n c l u d e   F i l e s                *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: xincs.h,v 1.61 2004/10/22 04:57:21 fox Exp $                             *
+* $Id: xincs.h,v 1.65 2005/01/28 23:07:35 fox Exp $                             *
 ********************************************************************************/
 #ifndef XINCS_H
 #define XINCS_H
@@ -36,6 +36,18 @@
 
 #define __USE_LARGEFILE64
 #define __USE_FILE_OFFSET64		// for GNU lib
+
+// GNU extras if we can get them
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+// Use 64-bit files
+#ifndef WIN32
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+#endif
 
 // Basic includes
 #include <stdio.h>
@@ -59,7 +71,9 @@
 #include <grp.h>
 #include <pwd.h>
 #include <sys/ioctl.h>
-
+#ifdef HAVE_SYS_FILIO_H         // Get FIONREAD on Solaris
+#include <sys/filio.h>
+#endif
 #else
 
 #include <io.h>                 // For _access()

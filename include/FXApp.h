@@ -3,7 +3,7 @@
 *                     A p p l i c a t i o n   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.h,v 1.185 2004/10/19 19:48:18 fox Exp $                            *
+* $Id: FXApp.h,v 1.194 2005/01/31 01:22:58 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXAPP_H
 #define FXAPP_H
@@ -218,6 +218,8 @@ protected:
   void setup();
   static void signalhandler(int sig);
   static void immediatesignalhandler(int sig);
+  void leaveWindow(FXWindow *window,FXWindow *ancestor);
+  void enterWindow(FXWindow *window,FXWindow *ancestor);
   void selectionSetData(const FXWindow* window,FXDragType type,FXuchar* data,FXuint size);
   void selectionGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size);
   void selectionGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes);
@@ -232,8 +234,6 @@ protected:
   void removeRepaints(FXID win,FXint x,FXint y,FXint w,FXint h);
   void scrollRepaints(FXID win,FXint dx,FXint dy);
 #else
-  void leaveWindow(FXWindow *win,FXWindow *anc);
-  void enterWindow(FXWindow *win,FXWindow *anc);
   static long CALLBACK wndproc(FXID hwnd,unsigned int iMsg,unsigned int wParam,long lParam);
 protected:
   long dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,long lParam);
@@ -540,6 +540,8 @@ class FXAPI FXApp : public FXLockable, public FXObject {
   friend class FXGLContext;
   friend class FXDC;
   friend class FXDCWindow;
+  friend class FXToolBarGrip;
+  friend class FXEmbedderWindow;
 protected:
   mutable FXEventLoop *eventLoop;       // Event loop
 
@@ -577,6 +579,8 @@ private:
   FXColor          selbackColor;        // Select background color
   FXColor          tipforeColor;        // Tooltip foreground color
   FXColor          tipbackColor;        // Tooltip background color
+  FXColor          selMenuTextColor;    // Select foreground color in menus
+  FXColor          selMenuBackColor;    // Select background color in menus
   FXCursor        *waitCursor;          // Current wait cursor
   FXuint           waitCount;           // Number of times wait cursor was called
   FXCursor        *cursor[DEF_ROTATE_CURSOR+1];
@@ -600,6 +604,9 @@ private:
   FXID             wmNetState;          // Extended Window Manager window state
   FXID             wmNetHMaximized;     // Extended Window Manager horizontally maximized
   FXID             wmNetVMaximized;     // Extended Window Manager vertically maximized
+  FXID             embedAtom;           // XEMBED support
+  FXID             embedInfoAtom;       // XEMBED info support
+  FXID             timestampAtom;       // Server time
   FXID             ddeTargets;          // DDE targets atom
   FXID             ddeAtom;             // DDE exchange atom
   FXID             ddeDelete;           // DDE delete target atom
@@ -689,13 +696,15 @@ protected:
 public:
   long onCmdQuit(FXObject*,FXSelector,void*);
   long onCmdDump(FXObject*,FXSelector,void*);
+  long onCmdHover(FXObject*,FXSelector,void*);
 
 public:
 
   /// Messages applications understand
   enum {
-    ID_QUIT=0,    /// Terminate the application normally
+    ID_QUIT=1,    /// Terminate the application normally
     ID_DUMP,      /// Dump the current widget tree
+    ID_HOVER,
     ID_LAST
     };
 
@@ -714,10 +723,10 @@ public:
   FXApp(const FXString& name="Application",const FXString& vendor="FoxDefault");
 
   /// Get application name
-  FXString getAppName() const { return registry.getAppKey(); }
+  const FXString& getAppName() const { return registry.getAppKey(); }
 
   /// Get vendor name
-  FXString getVendorName() const { return registry.getVendorKey(); }
+  const FXString& getVendorName() const { return registry.getVendorKey(); }
 
   /// Connection to display; this is called by init()
   FXbool openDisplay(const FXchar* dpyname=NULL);
@@ -1062,6 +1071,8 @@ public:
   FXColor getSelbackColor() const { return selbackColor; }
   FXColor getTipforeColor() const { return tipforeColor; }
   FXColor getTipbackColor() const { return tipbackColor; }
+  FXColor getSelMenuTextColor() const { return selMenuTextColor; }
+  FXColor getSelMenuBackColor() const { return selMenuBackColor; }
 
   /// Change default colors
   void setBorderColor(FXColor color);
@@ -1074,6 +1085,8 @@ public:
   void setSelbackColor(FXColor color);
   void setTipforeColor(FXColor color);
   void setTipbackColor(FXColor color);
+  void setSelMenuTextColor(FXColor color);
+  void setSelMenuBackColor(FXColor color);
 
   /// Save
   virtual void save(FXStream& store) const;

@@ -3,7 +3,7 @@
 *                   U n i c o d e   T e x t   C o d e c                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2004 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 2002,2005 by Lyle Johnson.   All Rights Reserved.               *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextCodec.h,v 1.7 2004/02/08 17:17:34 fox Exp $                        *
+* $Id: FXTextCodec.h,v 1.8 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXTEXTCODEC_H
 #define FXTEXTCODEC_H

@@ -3,7 +3,7 @@
 *                         T e x t   F i e l d   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextField.h,v 1.56 2004/10/28 14:37:23 fox Exp $                       *
+* $Id: FXTextField.h,v 1.58 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTEXTFIELD_H
 #define FXTEXTFIELD_H
@@ -281,7 +281,7 @@ public:
 
   /**
   * Change the default width of the text field in terms of a number
-  * of columns times the width of the numeral '8'. 
+  * of columns times the width of the numeral '8'.
   */
   void setNumColumns(FXint cols);
 
@@ -310,13 +310,13 @@ public:
   void setHelpText(const FXString& text){ help=text; }
 
   /// Get the status line help text for this label
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Set the tool tip message for this text field
   void setTipText(const FXString& text){ tip=text; }
 
   /// Get the tool tip message for this text field
-  FXString getTipText() const { return tip; }
+  const FXString& getTipText() const { return tip; }
 
   /// Change text style
   void setTextStyle(FXuint style);

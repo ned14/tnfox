@@ -1,9 +1,9 @@
 /********************************************************************************
 *                                                                               *
-*                                  X - O b j e c t                              *
+*                        S i g n a l   G U I   T h r e a d                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2005 by Jeroen van der Zijp.   All Rights Reserved.             *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,67 +19,90 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXId.h,v 1.17 2005/01/16 16:06:06 fox Exp $                              *
+* $Id: FXGUISignal.h,v 1.4 2005/01/28 14:05:36 fox Exp $                        *
 ********************************************************************************/
-#ifndef FXID_H
-#define FXID_H
+#ifndef FXGUISIGNAL_H
+#define FXGUISIGNAL_H
 
-#include "FXApp.h"
+#ifndef FXOBJECT_H
+#include "FXObject.h"
+#endif
 
 namespace FX {
 
-/// Encapsulates server side resource
-class FXAPI FXId : public FXObject {
-  FXDECLARE_ABSTRACT(FXId)
+class FXApp;
+
+
+/**
+* A GUI Signal is an object used by a worker thread to signal the
+* user interface thread of some event; it wakes up the user interface
+* thread from the blocking state and causes it to send the given message
+* to the GUI Signal object's target.
+*/
+class FXGUISignal : public FXObject {
+  FXDECLARE(FXGUISignal)
 private:
-  FXApp *app;             // Back link to application object
-  FXEventLoop *eventLoop; // Back link to event loop
-  void  *data;            // User data
+  FXApp     *app;       // Application
 protected:
-  FXID   xid;
+  FXObject  *target;    // Target object
+  void      *data;      // User data
+  FXSelector message;   // Message id
 private:
-  FXId(const FXId&);
-  FXId &operator=(const FXId&);
+#ifndef WIN32
+  FXInputHandle fd[2];
+#else
+  FXInputHandle event;
+#endif
 protected:
-  FXId():app((FXApp*)-1L),eventLoop((FXEventLoop*)-1L),data(NULL),xid(0){}
-  FXId(FXApp* a):app(a),eventLoop(a->getEventLoop()),data(NULL),xid(0){}
+  FXGUISignal();
+private:
+  FXGUISignal(const FXGUISignal&);
+  FXGUISignal& operator=(const FXGUISignal&);
 public:
+  enum{
+    ID_IO_READ=0,
+    ID_LAST
+    };
+public:
+  long onSignal(FXObject*,FXSelector,void*);
+public:
+
+  /// Constructor
+  FXGUISignal(FXApp* a,FXObject* tgt=NULL,FXSelector sel=0,void* ptr=NULL);
 
   /// Get application
   FXApp* getApp() const { return app; }
 
-  /// Get event loop which owns this
-  FXEventLoop* getEventLoop() const { return eventLoop; }
+  /// Set the message target object
+  void setTarget(FXObject *t){ target=t; }
 
-  /// Get XID handle
-  FXID id() const { return xid; }
+  /// Get the message target object, if any
+  FXObject* getTarget() const { return target; }
 
-  /// Create resource
-  virtual void create(){}
+  /// Set the message identifier
+  void setSelector(FXSelector sel){ message=sel; }
 
-  /// Detach resource
-  virtual void detach(){}
-
-  /// Destroy resource
-  virtual void destroy(){}
+  /// Get the message identifier
+  FXSelector getSelector() const { return message; }
 
   /// Set user data pointer
-  void setUserData(void *ptr){ data=ptr; }
+  void setData(void *ptr){ data=ptr; }
 
   /// Get user data pointer
-  void* getUserData() const { return data; }
+  void* getData() const { return data; }
 
-  /// Save object to stream
-  virtual void save(FXStream& store) const;
-
-  /// Load object from stream
-  virtual void load(FXStream& store);
+  /**
+  * Signal the event; this API may be called by the worker thread
+  * to send a message to the user-interface thread.
+  */
+  void signal();
 
   /// Destructor
-  virtual ~FXId(){app=(FXApp*)-1L;}
+  virtual ~FXGUISignal();
   };
 
 }
 
 #endif
+
 

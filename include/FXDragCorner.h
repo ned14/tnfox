@@ -3,7 +3,7 @@
 *                       D r a g   C o r n e r   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDragCorner.h,v 1.12 2004/10/05 15:53:31 fox Exp $                      *
+* $Id: FXDragCorner.h,v 1.13 2005/01/16 16:06:06 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXDRAGCORNER_H
 #define FXDRAGCORNER_H

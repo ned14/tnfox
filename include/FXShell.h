@@ -3,7 +3,7 @@
 *                     S h e l l   W i n d o w   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXShell.h,v 1.29 2004/09/26 18:02:28 fox Exp $                           *
+* $Id: FXShell.h,v 1.30 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXSHELL_H
 #define FXSHELL_H
@@ -32,7 +32,7 @@ namespace FX {
 
 
 /**
-* The Shell widget is used as the base class for top level windows, i.e. 
+* The Shell widget is used as the base class for top level windows, i.e.
 * windows which are direct children of the root window.
 */
 class FXAPI FXShell : public FXComposite {

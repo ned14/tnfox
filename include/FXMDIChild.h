@@ -3,7 +3,7 @@
 *          M u l t i p l e   D o c u m e n t   C h i l d   W i n d o w          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.h,v 1.39 2004/09/20 16:25:54 fox Exp $                        *
+* $Id: FXMDIChild.h,v 1.40 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXMDICHILD_H
 #define FXMDICHILD_H
@@ -48,10 +48,10 @@ enum {
 
 
 /**
-* The MDI child window contains the application work area in a Multiple Document 
+* The MDI child window contains the application work area in a Multiple Document
 * Interface application.  GUI Controls are connected to the MDI child via delegation
 * through the MDI client, which forwards messages it receives to the active MDI child.
-* The MDI child itself tries to further delegate messages to its single content window, 
+* The MDI child itself tries to further delegate messages to its single content window,
 * and if not handled there, to its target object.
 * When the MDI child is maximized, it sends a SEL_MAXIMIZE message; when the MDI
 * child is minimized, it sends a SEL_MINIMIZE message.  When it is restored, it
@@ -67,7 +67,7 @@ enum {
 * The target has an opportunity to object to the closing; if the MDI child should
 * not be closed, it should return 1 (objection). If the MDI child should be closed,
 * the target can either just return 0 or simply not handle the SEL_CLOSE message.
-* The SEL_UPDATE message can be used to modify the MDI child's title (via 
+* The SEL_UPDATE message can be used to modify the MDI child's title (via
 * ID_SETSTRINGVALUE), and window icon (via ID_SETICONVALUE).
 */
 class FXAPI FXMDIChild : public FXComposite {

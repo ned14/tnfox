@@ -3,7 +3,7 @@
 *      A d d i t i o n a l   F O X   I n c l u d e   F i l e   F o r   3 D      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fx3d.h,v 1.19 2004/02/24 06:40:49 fox Exp $                              *
+* $Id: fx3d.h,v 1.20 2005/01/16 16:06:06 fox Exp $                              *
 ********************************************************************************/
 #ifndef FX3D_H
 #define FX3D_H

@@ -3,7 +3,7 @@
 *          D o u b l e - P r e c i s i o n    R a n g e    C l a s s            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRanged.h,v 1.8 2004/11/08 13:26:59 fox Exp $                           *
+* $Id: FXRanged.h,v 1.9 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXRANGED_H
 #define FXRANGED_H

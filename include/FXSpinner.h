@@ -3,7 +3,7 @@
 *                        S p i n   B u t t o n   W i d g e t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 1998,2005 by Lyle Johnson.   All Rights Reserved.               *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSpinner.h,v 1.41 2004/10/01 07:09:30 fox Exp $                         *
+* $Id: FXSpinner.h,v 1.43 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXSPINNER_H
 #define FXSPINNER_H
@@ -151,13 +151,13 @@ public:
   void setHelpText(const FXString& text);
 
   /// Get the status line help text for this spinner
-  FXString getHelpText() const;
+  const FXString& getHelpText() const;
 
   /// Set the tool tip message for this spinner
   void setTipText(const FXString& text);
 
   /// Get the tool tip message for this spinner
-  FXString getTipText() const;
+  const FXString& getTipText() const;
 
   /// Change spinner style
   void setSpinnerStyle(FXuint style);

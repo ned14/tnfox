@@ -3,7 +3,7 @@
 *                          R e c t a n g l e    C l a s s                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRectangle.h,v 1.11 2004/02/11 20:33:36 fox Exp $                       *
+* $Id: FXRectangle.h,v 1.12 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXRECTANGLE_H
 #define FXRECTANGLE_H

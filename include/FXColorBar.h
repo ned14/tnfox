@@ -3,7 +3,7 @@
 *                         C o l o r B a r   W i d g e t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2001,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorBar.h,v 1.17 2004/09/24 17:34:02 fox Exp $                        *
+* $Id: FXColorBar.h,v 1.19 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXCOLORBAR_H
 #define FXCOLORBAR_H
@@ -121,13 +121,13 @@ public:
   void setHelpText(const FXString& text){ help=text; }
 
   /// Get status line help text for this color bar
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Set tool tip message for this color bar
   void setTipText(const FXString& text){ tip=text; }
 
   /// Get tool tip message for this color bar
-  FXString getTipText() const { return tip; }
+  const FXString& getTipText() const { return tip; }
 
   /// Save color bar to a stream
   virtual void save(FXStream& store) const;

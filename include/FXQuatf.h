@@ -3,7 +3,7 @@
 *              S i n g l e - P r e c i s i o n  Q u a t e r n i o n             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatf.h,v 1.12 2004/11/11 17:29:39 fox Exp $                           *
+* $Id: FXQuatf.h,v 1.13 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXQUATF_H
 #define FXQUATF_H
@@ -37,7 +37,7 @@ class FXMat3f;
 class FXAPI FXQuatf : public FXVec4f {
 public:
 
-  /// Construct 
+  /// Construct
   FXQuatf(){}
 
   /// Copy constructor
@@ -57,7 +57,7 @@ public:
 
   /// Construct quaternion from axes
   FXQuatf(const FXVec3f& ex,const FXVec3f& ey,const FXVec3f& ez);
-  
+
   /// Construct quaternion from 3x3 matrix
   FXQuatf(const FXMat3f& mat);
 

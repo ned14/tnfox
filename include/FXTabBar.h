@@ -3,7 +3,7 @@
 *                           T a b  B a r   W i d g e t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBar.h,v 1.9 2004/10/14 07:27:18 fox Exp $                           *
+* $Id: FXTabBar.h,v 1.10 2005/01/16 16:06:06 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXTABBAR_H
 #define FXTABBAR_H

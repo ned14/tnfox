@@ -3,7 +3,7 @@
 *                        P P M   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2003,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPPMIcon.h,v 1.4 2004/11/10 16:22:05 fox Exp $                          *
+* $Id: FXPPMIcon.h,v 1.6 2005/01/16 16:06:06 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXPPMICON_H
 #define FXPPMICON_H
@@ -55,6 +55,12 @@ public:
   /// Destroy icon
   virtual ~FXPPMIcon();
   };
+
+
+/**
+* Check if stream contains a PPM, return TRUE if so.
+*/
+extern FXAPI FXbool fxcheckPPM(FXStream& store);
 
 
 /**

@@ -3,7 +3,7 @@
 *                            L i s t   W i d g e t                              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.h,v 1.78 2004/10/30 06:19:36 fox Exp $                            *
+* $Id: FXList.h,v 1.81 2005/01/16 16:06:06 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXLIST_H
 #define FXLIST_H
@@ -152,6 +152,9 @@ public:
 typedef FXint (*FXListSortFunc)(const FXListItem*,const FXListItem*);
 
 
+typedef FXObjectListOf<FXListItem> FXListItemList;
+
+
 /**
 * A List Widget displays a list of items, each with a text and
 * optional icon.  When an item's selected state changes, the list sends
@@ -168,8 +171,7 @@ typedef FXint (*FXListSortFunc)(const FXListItem*,const FXListItem*);
 class FXAPI FXList : public FXScrollArea {
   FXDECLARE(FXList)
 protected:
-  FXListItem   **items;             // Item list
-  FXint          nitems;            // Number of items
+  FXListItemList items;             // Item list
   FXint          anchor;            // Anchor item
   FXint          current;           // Current item
   FXint          extent;            // Extent item
@@ -269,7 +271,7 @@ public:
   virtual void killFocus();
 
   /// Return the number of items in the list
-  FXint getNumItems() const { return nitems; }
+  FXint getNumItems() const { return items.no(); }
 
   /// Return number of visible items
   FXint getNumVisible() const { return visible; }
@@ -470,7 +472,7 @@ public:
   void setHelpText(const FXString& text);
 
   /// Get the status line help text for this list
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Save list to a stream
   virtual void save(FXStream& store) const;

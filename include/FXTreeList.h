@@ -3,7 +3,7 @@
 *                         T r e e   L i s t   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeList.h,v 1.91 2004/10/31 16:14:07 fox Exp $                        *
+* $Id: FXTreeList.h,v 1.93 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXTREELIST_H
 #define FXTREELIST_H
@@ -386,9 +386,9 @@ public:
   /// Prepend item with given text and optional icons, and user-data pointer as first child of father
   FXTreeItem* prependItem(FXTreeItem* father,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
 
-  /// Move item under father before other item 
+  /// Move item under father before other item
   FXTreeItem *moveItem(FXTreeItem* other,FXTreeItem* father,FXTreeItem* item);
-  
+
   /// Remove item
   void removeItem(FXTreeItem* item,FXbool notify=FALSE);
 
@@ -594,7 +594,7 @@ public:
   void setHelpText(const FXString& text);
 
   /// Get the status line help text for this list
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Save object to a stream
   virtual void save(FXStream& store) const;

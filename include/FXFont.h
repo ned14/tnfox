@@ -3,7 +3,7 @@
 *                               F o n t   O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFont.h,v 1.45 2004/10/06 07:36:33 fox Exp $                            *
+* $Id: FXFont.h,v 1.47 2005/01/16 16:06:06 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXFONT_H
 #define FXFONT_H
@@ -267,10 +267,10 @@ public:
   virtual void destroy();
 
   /// Get font family name
-  FXString getName() const { return wantedName; }
+  const FXString& getName() const { return wantedName; }
 
   /// Get actual family name
-  FXString getActualName() const { return actualName; }
+  const FXString& getActualName() const { return actualName; }
 
   /// Get size in deci-points
   FXuint getSize() const { return wantedSize; }

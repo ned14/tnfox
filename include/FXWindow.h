@@ -3,7 +3,7 @@
 *                            W i n d o w   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.h,v 1.121 2004/10/31 16:14:07 fox Exp $                         *
+* $Id: FXWindow.h,v 1.129 2005/02/01 04:10:23 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXWINDOW_H
 #define FXWINDOW_H
@@ -51,8 +51,9 @@ enum {
   LAYOUT_BOTTOM      = 0x00000010,                          /// Stick on bottom
   LAYOUT_CENTER_Y    = 0x00000020,                          /// Center vertically
   LAYOUT_FIX_Y       = LAYOUT_BOTTOM|LAYOUT_CENTER_Y,       /// Y fixed
-  LAYOUT_RESERVED_1  = 0x00000040,
-  LAYOUT_RESERVED_2  = 0x00000080,
+  LAYOUT_DOCK_SAME   = 0,                                   /// Dock on same galley if it fits
+  LAYOUT_DOCK_NEXT   = 0x00000040,                          /// Dock on next galley
+  LAYOUT_RESERVED_1  = 0x00000080,
   LAYOUT_FIX_WIDTH   = 0x00000100,                          /// Width fixed
   LAYOUT_FIX_HEIGHT  = 0x00000200,                          /// height fixed
   LAYOUT_MIN_WIDTH   = 0,                                   /// Minimum width is the default
@@ -416,7 +417,7 @@ public:
   void setHelpTag(const FXString&  text){ tag=text; }
 
   /// Get the help tag for this widget
-  FXString getHelpTag() const { return tag; }
+  const FXString& getHelpTag() const { return tag; }
 
   /// Return true if window is a shell window
   FXbool isShell() const;
@@ -453,6 +454,12 @@ public:
 
   /// Return the common ancestor of window a and window b
   static FXWindow* commonAncestor(FXWindow* a,FXWindow* b);
+
+  /// Return TRUE if sibling a <= sibling b in list
+  static FXbool before(const FXWindow *a,const FXWindow* b);
+
+  /// Return TRUE if sibling a >= sibling b in list
+  static FXbool after(const FXWindow *a,const FXWindow* b);
 
   /// Get number of existing windows
   static FXint getWindowCount(){ return windowCount; }
@@ -574,8 +581,8 @@ public:
   /// Force a GUI update of this window and its children
   void forceRefresh();
 
-  /// Reparent this window under new father
-  virtual void reparent(FXWindow* father);
+  /// Reparent this window under new father before other
+  virtual void reparent(FXWindow* father,FXWindow *other=NULL);
 
   /// Scroll rectangle x,y,w,h by a shift of dx,dy
   void scroll(FXint x,FXint y,FXint w,FXint h,FXint dx,FXint dy) const;
@@ -667,8 +674,11 @@ public:
   */
   FXbool handleDrag(FXint x,FXint y,FXDragAction action=DRAG_COPY);
 
-  /// Terminate the drag operation with or without actually dropping the data
-  FXbool endDrag(FXbool drop=TRUE);
+  /**
+  * Terminate the drag operation with or without actually dropping the data
+  * Returns the action performed by the target
+  */
+  FXDragAction endDrag(FXbool drop=TRUE);
 
   /// Return true if this window is the target of a drop
   FXbool isDropTarget() const;
@@ -726,12 +736,6 @@ public:
 
   /// Get background color
   FXColor getBackColor() const { return backColor; }
-
-  /// Relink this window before sibling in the window list
-  void linkBefore(FXWindow* sibling);
-
-  /// Relink this window after sibling in the window list
-  void linkAfter(FXWindow* sibling);
 
   virtual FXbool doesSaveUnder() const;
 

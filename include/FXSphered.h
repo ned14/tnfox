@@ -3,7 +3,7 @@
 *           D o u b l e - P r e c i s i o n    S p h e r e    C l a s s         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSphered.h,v 1.9 2004/10/28 18:29:14 fox Exp $                          *
+* $Id: FXSphered.h,v 1.10 2005/01/16 16:06:06 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSPHERED_H
 #define FXSPHERED_H

@@ -3,7 +3,7 @@
 *                         G I F   I m a g e   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGIFImage.h,v 1.18 2004/11/10 16:22:05 fox Exp $                        *
+* $Id: FXGIFImage.h,v 1.20 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXGIFIMAGE_H
 #define FXGIFIMAGE_H
@@ -58,6 +58,12 @@ public:
 
 #ifndef FXLOADGIF
 #define FXLOADGIF
+
+/**
+* Check if stream contains a GIF, return TRUE if so.
+*/
+extern FXAPI FXbool fxcheckGIF(FXStream& store);
+
 
 /**
 * Load an GIF (Graphics Interchange Format) file from a stream.

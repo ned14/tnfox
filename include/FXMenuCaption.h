@@ -3,7 +3,7 @@
 *                         M e n u C a p t i o n   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCaption.h,v 1.28 2004/02/08 17:17:33 fox Exp $                     *
+* $Id: FXMenuCaption.h,v 1.30 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXMENUCAPTION_H
 #define FXMENUCAPTION_H
@@ -156,7 +156,7 @@ public:
   void setHelpText(const FXString& text);
 
   /// Get the status line help text for this menu
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Save menu to a stream
   virtual void save(FXStream& store) const;

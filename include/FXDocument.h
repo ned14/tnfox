@@ -3,7 +3,7 @@
 *                         D o c u m e n t   O b j e c t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDocument.h,v 1.13 2004/02/08 17:17:33 fox Exp $                        *
+* $Id: FXDocument.h,v 1.15 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXDOCUMENT_H
 #define FXDOCUMENT_H
@@ -66,13 +66,13 @@ public:
   void setTitle(const FXString& name);
 
   /// Get document title
-  FXString getTitle() const { return title; }
+  const FXString& getTitle() const { return title; }
 
   /// Set document filename
   void setFilename(const FXString& path);
 
   /// Get document filename
-  FXString getFilename() const { return filename; }
+  const FXString& getFilename() const { return filename; }
 
   /// Save document to a stream
   virtual void save(FXStream& store) const;

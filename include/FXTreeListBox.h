@@ -3,7 +3,7 @@
 *                      T r e e   L i s t   B o x   W i d g e t                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeListBox.h,v 1.34 2004/10/31 16:14:07 fox Exp $                     *
+* $Id: FXTreeListBox.h,v 1.36 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXTREELISTBOX_H
 #define FXTREELISTBOX_H
@@ -253,13 +253,13 @@ public:
   void setHelpText(const FXString& txt);
 
   /// Return help text
-  FXString getHelpText() const;
+  const FXString& getHelpText() const;
 
   /// Change tip text
   void setTipText(const FXString& txt);
 
   /// Return tip text
-  FXString getTipText() const;
+  const FXString& getTipText() const;
 
   /// Save object to a stream
   virtual void save(FXStream& store) const;

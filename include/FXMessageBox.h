@@ -3,7 +3,7 @@
 *                         M e s s a g e   B o x e s                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMessageBox.h,v 1.24 2004/09/26 18:02:28 fox Exp $                      *
+* $Id: FXMessageBox.h,v 1.26 2005/01/16 16:06:06 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXMESSAGEBOX_H
 #define FXMESSAGEBOX_H
@@ -33,13 +33,14 @@ namespace FX {
 
 // Message box buttons
 enum {
-  MBOX_OK                 = 0x10000000, /// Message box has a only an OK button
-  MBOX_OK_CANCEL          = 0x20000000, /// Message box has OK and CANCEL buttons
-  MBOX_YES_NO             = 0x30000000, /// Message box has YES and NO buttons
-  MBOX_YES_NO_CANCEL      = 0x40000000, /// Message box has YES, NO, and CANCEL buttons
-  MBOX_QUIT_CANCEL        = 0x50000000, /// Message box has QUIT and CANCEL buttons
-  MBOX_QUIT_SAVE_CANCEL   = 0x60000000, /// Message box has QUIT, SAVE, and CANCEL buttons
-  MBOX_SKIP_SKIPALL_CANCEL =0x70000000  /// Message box has SKIP, SKIP ALL, and CANCEL buttons
+  MBOX_OK                   = 0x10000000, /// Message box has a only an OK button
+  MBOX_OK_CANCEL            = 0x20000000, /// Message box has OK and CANCEL buttons
+  MBOX_YES_NO               = 0x30000000, /// Message box has YES and NO buttons
+  MBOX_YES_NO_CANCEL        = 0x40000000, /// Message box has YES, NO, and CANCEL buttons
+  MBOX_QUIT_CANCEL          = 0x50000000, /// Message box has QUIT and CANCEL buttons
+  MBOX_QUIT_SAVE_CANCEL     = 0x60000000, /// Message box has QUIT, SAVE, and CANCEL buttons
+  MBOX_SKIP_SKIPALL_CANCEL  = 0x70000000, /// Message box has SKIP, SKIP ALL, and CANCEL buttons
+  MBOX_SAVE_CANCEL_DONTSAVE = 0x80000000, /// Message box has DON'T SAVE,CANCEL and SAVE buttons
   };
 
 
@@ -57,13 +58,13 @@ enum {
 
 
 /**
-* A Message Box is a convenience class which provides a dialog for 
-* very simple common yes/no type interactions with the user.  
+* A Message Box is a convenience class which provides a dialog for
+* very simple common yes/no type interactions with the user.
 * The message box has an optional icon, a title string, and the question
 * which is presented to the user.  It also has up to three buttons which
 * furnish standard responses to the question.
 * Message boxes are usually ran modally: the question must be answered
-* before the program may continue.  
+* before the program may continue.
 */
 class FXAPI FXMessageBox : public FXDialogBox {
   FXDECLARE(FXMessageBox)

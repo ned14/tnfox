@@ -3,7 +3,7 @@
 *                       T o o l   B a r   T a b   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarTab.h,v 1.7 2004/10/19 00:48:59 fox Exp $                       *
+* $Id: FXToolBarTab.h,v 1.9 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTOOLBARTAB_H
 #define FXTOOLBARTAB_H
@@ -128,7 +128,7 @@ public:
   void setTipText(const FXString& text){ tip=text; }
 
   /// Get the tool tip message for the toolbar tab
-  FXString getTipText() const { return tip; }
+  const FXString& getTipText() const { return tip; }
 
   /// Save to a stream
   virtual void save(FXStream& store) const;

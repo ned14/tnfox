@@ -3,7 +3,7 @@
 *                        T o o l B a r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBar.h,v 1.6 2004/04/05 14:49:33 fox Exp $                          *
+* $Id: FXToolBar.h,v 1.14 2005/01/30 21:32:19 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXTOOLBAR_H
 #define FXTOOLBAR_H
@@ -31,19 +31,21 @@
 
 namespace FX {
 
+class FXToolBarDock;
+
 
 /**
-* ToolBar control.
+* Toolbar control.
+* The toolbar control automatically adjusts the orientation of toolbar
+* grips or separator widgets embedded inside of it.
 */
 class FXAPI FXToolBar : public FXPacker {
   FXDECLARE(FXToolBar)
 protected:
-  FXComposite   *drydock;     // Parent when docked
-  FXComposite   *wetdock;     // Parent when floating
-  FXRectangle    outline;     // Outline shown while dragging
-  FXWindow      *dockafter;   // Dock after this window
-  FXuint         dockside;    // Dock on this side
-  FXbool         docking;     // Dock it
+  FXComposite *drydock;	        // Parent when docked
+  FXComposite *wetdock;	        // Parent when floating
+  FXint        gripx;           // Grip offset
+  FXint        gripy;
 protected:
   FXToolBar();
 private:
@@ -63,6 +65,8 @@ public:
   long onBeginDragGrip(FXObject*,FXSelector,void*);
   long onEndDragGrip(FXObject*,FXSelector,void*);
   long onDraggedGrip(FXObject*,FXSelector,void*);
+  long onPopupMenu(FXObject*,FXSelector,void*);
+  long onDockTimer(FXObject*,FXSelector,void*);
 public:
   enum {
     ID_UNDOCK=FXPacker::ID_LAST,  /// Undock the toolbar
@@ -71,15 +75,16 @@ public:
     ID_DOCK_LEFT,                 /// Dock on the left
     ID_DOCK_RIGHT,                /// Dock on the right
     ID_TOOLBARGRIP,               /// Notifications from toolbar grip
+    ID_DOCK_TIMER,
     ID_LAST
     };
 public:
 
   /**
-  * Construct a floatable toolbar
-  * Normally, the toolbar is docked under window p.
+  * Construct a floatable toolbar.
+  * Normally, the toolbar is docked under a window p of type FXToolBarDock.
   * When floated, the toolbar can be docked under window q, which is
-  * typically an FXToolBarShell window.
+  * usually an kind of FXToolBarShell window.
   */
   FXToolBar(FXComposite* p,FXComposite* q,FXuint opts=LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=3,FXint pr=3,FXint pt=2,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 
@@ -88,6 +93,18 @@ public:
   * The toolbar can not be undocked.
   */
   FXToolBar(FXComposite* p,FXuint opts=LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=2,FXint pr=3,FXint pt=3,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
+
+  /// Perform layout
+  virtual void layout();
+
+  /// Return default width
+  virtual FXint getDefaultWidth();
+
+  /// Return default height
+  virtual FXint getDefaultHeight();
+
+  /// Return true if docked
+  FXbool isDocked() const;
 
   /**
   * Set parent when docked.
@@ -107,37 +124,31 @@ public:
   /// Return parent when floating
   FXComposite* getWetDock() const { return wetdock; }
 
-  /// Return true if toolbar is docked
-  FXbool isDocked() const;
+  /// Search for dock against given side of main window
+  FXToolBarDock* findDockAtSide(FXuint side=LAYOUT_SIDE_TOP);
+
+  /// Search for dock close to coordinates rootx, rooty
+  FXToolBarDock* findDockNear(FXint rootx,FXint rooty);
 
   /**
   * Dock the bar against the given side, after some other widget.
   * However, if after is -1, it will be docked as the innermost bar just before
   * the work-area, while if after is 0, if will be docked as the outermost bar.
   */
-  virtual void dock(FXuint side=LAYOUT_SIDE_TOP,FXWindow* after=(FXWindow*)-1L);
+  virtual void dock(FXToolBarDock* docksite,FXWindow* before=NULL);
+
+  /**
+  * Dock the bar against the given side, near the given position relative
+  * to the toolbar dock's origin.
+  */
+  virtual void dock(FXToolBarDock* docksite,FXint localx,FXint localy);
 
   /**
   * Undock or float the bar.
   * The initial position of the wet dock is a few pixels
   * below and to the right of the original docked position.
   */
-  virtual void undock();
-
-  /// Return default width
-  virtual FXint getDefaultWidth();
-
-  /// Return default height
-  virtual FXint getDefaultHeight();
-
-  /// Perform layout
-  virtual void layout();
-
-  /// Return width for given height
-  virtual FXint getWidthForHeight(FXint h);
-
-  /// Return height for given width
-  virtual FXint getHeightForWidth(FXint w);
+  virtual void undock(FXint rootx,FXint rooty);
 
   /// Set docking side
   void setDockingSide(FXuint side=LAYOUT_SIDE_TOP);

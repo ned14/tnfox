@@ -3,7 +3,7 @@
 *                           S t r i n g   O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 * TnFOX extensions (C) 2003 Niall Douglas                                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXString.h,v 1.70 2004/09/17 07:46:20 fox Exp $                          *
+* $Id: FXString.h,v 1.74 2005/01/16 16:06:06 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSTRING_H
 #define FXSTRING_H
@@ -518,6 +518,13 @@ public:
   friend FXAPI FXString FXStringVal(FXuint num,FXint base=10);
 
   /**
+  * Convert long integer number to a string, using the given number
+  * base, which must be between 2 and 16.
+  */
+  friend FXAPI FXString FXStringVal(FXlong num,FXint base=10);
+  friend FXAPI FXString FXStringVal(FXulong num,FXint base=10);
+
+  /**
   * Convert real number to a string, using the given procision and
   * exponential notation mode, which may be FALSE (never), TRUE (always), or
   * MAYBE (when needed).
@@ -528,6 +535,10 @@ public:
   /// Convert string to a integer number, assuming given number base
   friend FXAPI FXint FXIntVal(const FXString& s,FXint base=10);
   friend FXAPI FXuint FXUIntVal(const FXString& s,FXint base=10);
+
+  /// Convert string to long integer number, assuming given number base
+  friend FXAPI FXlong FXLongVal(const FXString& s,FXint base=10);
+  friend FXAPI FXulong FXULongVal(const FXString& s,FXint base=10);
 
   /// Convert string into real number
   friend FXAPI FXfloat FXFloatVal(const FXString& s);

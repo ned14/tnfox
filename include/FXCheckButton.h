@@ -3,7 +3,7 @@
 *                    C h e c k   B u t t o n   W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCheckButton.h,v 1.28 2004/09/24 17:34:02 fox Exp $                     *
+* $Id: FXCheckButton.h,v 1.29 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXCHECKBUTTON_H
 #define FXCHECKBUTTON_H
@@ -47,10 +47,10 @@ enum {
 * by the user, or that the state is ambiguous.
 * When pressed, the Check Button sends a SEL_COMMAND to its target, and the
 * message data represents the state of the check button.
-* The option CHECKBUTTON_AUTOGRAY (CHECKBUTTON_AUTOHIDE) causes the button to be 
+* The option CHECKBUTTON_AUTOGRAY (CHECKBUTTON_AUTOHIDE) causes the button to be
 * grayed out (hidden) if its handler does not respond to the SEL_UPDATE message.
-* With the CHECKBUTTON_PLUS option, the Check Button will draw a + or - sign instead 
-* of a check.  You can use this to make collapsable panels, by hooking up a Check 
+* With the CHECKBUTTON_PLUS option, the Check Button will draw a + or - sign instead
+* of a check.  You can use this to make collapsable panels, by hooking up a Check
 * Button to a layout manager via the ID_TOGGLE_SHOWN message.  This will give a
 * similar visual element as collapsing folders in a Tree List.
 */

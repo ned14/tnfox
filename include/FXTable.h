@@ -3,7 +3,7 @@
 *                            T a b l e   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.h,v 1.144 2004/10/28 14:37:23 fox Exp $                          *
+* $Id: FXTable.h,v 1.149 2005/01/25 06:30:46 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABLE_H
 #define FXTABLE_H
@@ -51,7 +51,7 @@ enum {
   TABLE_HEADERS_SIZABLE = 0x00400000,   /// Headers are sizable
   TABLE_NO_COLSELECT    = 0x00900000,   /// Disallow column selections
   TABLE_NO_ROWSELECT    = 0x01000000,   /// Disallow row selections
-  TABLE_READONLY        = 0x02000000,   /// Table is NOT editable
+  TABLE_READONLY        = 0x02000000    /// Table is NOT editable
   };
 
 
@@ -114,7 +114,7 @@ public:
 public:
 
   /// Construct new table item
-  FXTableItem(const FXString& text,FXIcon* ic=NULL,void* ptr=NULL):label(text),icon(ic),data(ptr),state(FXTableItem::RIGHT){}
+  FXTableItem(const FXString& text,FXIcon* ic=NULL,void* ptr=NULL):label(text),icon(ic),data(ptr),state(RIGHT|CENTER_Y){}
 
   /// Change item's text label
   virtual void setText(const FXString& txt){ label=txt; }
@@ -159,7 +159,7 @@ public:
   FXbool isDraggable() const { return (state&DRAGGABLE)!=0; }
 
   /// Change item content justification
-  virtual void setJustify(FXuint justify);
+  virtual void setJustify(FXuint justify=RIGHT|CENTER_Y);
 
   /// Return item content justification
   FXuint getJustify() const { return state&(RIGHT|LEFT|TOP|BOTTOM); }
@@ -171,7 +171,7 @@ public:
   FXuint getIconPosition() const { return state&(BEFORE|AFTER|ABOVE|BELOW); }
 
   /// Change item borders
-  virtual void setBorders(FXuint borders);
+  virtual void setBorders(FXuint borders=0);
 
   /// Return item borders
   FXuint getBorders() const { return state&(LBORDER|RBORDER|TBORDER|BBORDER); }
@@ -729,19 +729,35 @@ public:
   /// Is item enabled
   FXbool isItemEnabled(FXint r,FXint c) const;
 
-  /// Change item justification
+  /**
+  * Change item justification.  Horizontal justification is controlled by passing 
+  * FXTableItem::RIGHT,  FXTableItem::LEFT, or FXTableItem::CENTER_X. 
+  * Vertical justification is controlled by FXTableItem::TOP, FXTableItem::BOTTOM, 
+  * or FXTableItem::CENTER_Y.
+  * The default is a combination of FXTableItem::RIGHT and FXTableItem::CENTER_Y.  
+  */
   void setItemJustify(FXint r,FXint c,FXuint justify);
 
   /// Return item justification
   FXuint getItemJustify(FXint r,FXint c) const;
 
-  /// Change relative position of icon and text of item
+  /**
+  * Change relative position of icon and text of item.
+  * Passing FXTableItem::BEFORE or FXTableItem::AFTER places the icon
+  * before or after the text, and passing FXTableItem::ABOVE or
+  * FXTableItem::BELOW places it above or below the text, respectively.
+  * The default is 0 which places the text on top of the icon.
+  */
   void setItemIconPosition(FXint r,FXint c,FXuint mode);
 
   /// Return relative icon and text position
   FXuint getItemIconPosition(FXint r,FXint c) const;
 
-  /// Change item border style
+  /**
+  * Change item borders style.  Borders on each side of the item can be turned 
+  * controlled individually using FXTableItem::LBORDER, FXTableItem::RBORDER, 
+  * FXTableItem::TBORDER and FXTableItem::BBORDER.
+  */
   void setItemBorders(FXint r,FXint c,FXuint borders);
 
   /// Return item border style
@@ -863,7 +879,7 @@ public:
 
   /// Change help text
   void setHelpText(const FXString& text){ help=text; }
-  FXString getHelpText() const { return help; }
+  const FXString& getHelpText() const { return help; }
 
   /// Serialize
   virtual void save(FXStream& store) const;

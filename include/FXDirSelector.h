@@ -3,7 +3,7 @@
 *              D i r e c t o r y   S e l e c t i o n   W i d g e t              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirSelector.h,v 1.18 2004/09/23 15:22:24 fox Exp $                     *
+* $Id: FXDirSelector.h,v 1.20 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -43,9 +43,9 @@ class FXButton;
 
 /**
 * The Directory Selector widget is the reusable mega-widget component which
-* is the core of the Directory Dialog.  The function of the directory selector widget 
-* is very similar to the file selector widget, except that the directory selector widget 
-* displays a tree-structured view of the file system, and thereby makes up and down 
+* is the core of the Directory Dialog.  The function of the directory selector widget
+* is very similar to the file selector widget, except that the directory selector widget
+* displays a tree-structured view of the file system, and thereby makes up and down
 * navigation through the file system significantly easier.
 */
 class FXAPI FXDirSelector : public FXPacker {

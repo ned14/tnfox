@@ -3,7 +3,7 @@
 *                 S h u t t e r   C o n t a i n e r   W i d g e t               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Charles W. Warren.   All Rights Reserved.          *
+* Copyright (C) 1998,2005 by Charles W. Warren.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXShutter.h,v 1.23 2004/09/26 18:02:28 fox Exp $                         *
+* $Id: FXShutter.h,v 1.24 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXSHUTTER_H
 #define FXSHUTTER_H
@@ -92,7 +92,7 @@ public:
 
 
 /**
-* The Shutter widget provides a set of foldable sub panels.  Each subpanel 
+* The Shutter widget provides a set of foldable sub panels.  Each subpanel
 * consists of a Shutter Item which contains a button and some contents.
 * A sub panel can be unfolded by pressing on that panel's button.
 */
