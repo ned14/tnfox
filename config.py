@@ -35,6 +35,9 @@ toolset=None             # Let scons pick which compiler/linker to use
 #    else:
 #        toolset=["intel"]
 
+PYTHON_INCLUDE=None      # Sets where the python header  files can be found (=None for get from environment)
+PYTHON_LIB=None          # Sets where the python library files can be found (=None for get from environment)
+
 tnfoxname="TnFOX"
 tnfoxversion="0.85"      # Increment each release the interface is removed from
 tnfoxinterfaceidx=0      # Increment each release the interface is added to
