@@ -4,6 +4,8 @@ B FXMemMap was unintentially broken on Linux for shared memory usage
 B FXMemMap wasn't detecting mmap() failures at all on POSIX!
 B FXMemoryPool contained a use of static data after static data deinit
 B FXMtxHold wasn't being inlined on Win32
+B Various FXException macros were using "e" as their temporary exception
+which could cause conflict with local definitions of "e"
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -13,6 +15,8 @@ other times not :(
 + Made it possible for FXAtomicInt and FXMutex to be inlineable to all
 source files
 * Removed locking in various places where it wasn't needed
++ Added FXProcess::getNsCount()
++ Added operator!= to FXHostAddress
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
