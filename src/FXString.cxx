@@ -1783,7 +1783,7 @@ void FXString::findLowestInsert(int &pos, int &len) throw()
 		}
 		char buff[32];
 		FXuint i;
-		for(i=1; p[i] && i<sizeof(buff) && isdigit(p[i]); i++)
+		for(i=1; p[i] && i<sizeof(buff) && p[i]>='0' && p[i]<='9'; i++)
 			buff[i]=p[i];
 		if(1==i) { p++; continue; }
 		buff[i]=0;
