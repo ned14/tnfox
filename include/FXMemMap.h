@@ -90,11 +90,11 @@ you don't want this, specify IO_DontUnlink in the flags to open().
 <h4>Usage:</h4>
 Simply instantiate, set filename or name and open(). Once open, use mapIn() to
 map in a specified section and mapOut() to map it out. On 32 bit architectures,
-files bigger than ~2Gb on some operating systems will fail to map in so be aware
+files bigger than ~1Gb on some operating systems will fail to map in so be aware
 of the consequences of the defaults in mapIn() which map everything in. Failures to map in due to address
 space exhaustion cause mapIn() to return zero rather than an exception - however,
 the mapping remains on the books and may get mapped in silently the next time
-something is mapped out.
+something is mapped out. See FX::FXProcess::virtualAddrSpaceLeft().
 
 This is done this way because the other important facility FXMemMap offers is
 transparently using the mapped section(s) when the file pointer is within
@@ -118,6 +118,9 @@ free memory is tight, the operating system will write out dirty pages sooner
 rather than later thus getting the best of all possible worlds. On my development
 system running Win2k I get a three-fold speed increase copying one file to another
 over FXFile and that's even with NTFS's excellent caching of buffered i/o.
+
+\note I've found that memory mapped file i/o is considerably faster on Linux when
+using ReiserFS rather than ext3.
 
 Extending the file size with truncate() works as expected - however depending
 on the host OS, it can require recreating the map which implies deletion and
