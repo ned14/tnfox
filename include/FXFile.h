@@ -161,7 +161,9 @@ public:
 	/// Return the home directory for the current user.
 	static FXString  getHomeDirectory();
 
-	/// Return the home directory for a given user.
+	/*! Return the home directory for a given user.
+	\deprecated This call doesn't work correctly, use FX::FXACLEntity::homeDirectory()
+	instead */
 	static FXString  getUserDirectory(const FXString& user);
 
 	/// Return temporary directory.
