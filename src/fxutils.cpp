@@ -458,7 +458,7 @@ void fxsleep(unsigned int n){
   nanosleep(&value,NULL);
 #else
 #ifndef BROKEN_SELECT
-  struct timeval value;
+  struct ::timeval value;
   value.tv_usec = n % 1000000;
   value.tv_sec = n / 1000000;
   select(1,0,0,0,&value);
