@@ -117,10 +117,10 @@ namespace Secure
 	\brief A source of true entropy
 
 	For cryptographic work, a source of good randomness is essential. On modern Unices,
-	\c /dev/random does the job but on Windows there is no such facility. This class
+	\c /dev/urandom does the job but on Windows there is no such facility. This class
 	fixes this problem portably.
 
-	On Linux or BSD/MacOS X, it just uses \c /dev/random. On Windows NT, it creates
+	On Linux or BSD/MacOS X, it just uses \c /dev/urandom. On Windows NT, it creates
 	randomness from the following sources:
 	\li The disc i/o delta NT performance counter + salt
 	\li The network i/o delta NT performance counter
@@ -128,7 +128,7 @@ namespace Secure
 
 	This should provide adequate randomness on both server and home machines, but
 	especially on dual-purpose machines. Obviously if an attacker could access these
-	values you would have a problem, but the same goes for \c /dev/random. If the
+	values you would have a problem, but the same goes for \c /dev/urandom. If the
 	attacker has an intercept directly on the network connection of the secure
 	machine, they could probably guess the network i/o counter & machine uptime -
 	however in today's modern computer installations, disc i/o is relatively
@@ -164,7 +164,6 @@ namespace Secure
 	public:
 		/*! Reads up to 1024 bytes (8192 bits) of randomness. Blocks until
 		sufficient random data is available if necessary
-		\warning On Linux, this is not a fast operation
 		*/
 		static FXuval readBlock(FXuchar *buffer, FXuval length);
 		//! Returns how much randomness is already available
