@@ -25,6 +25,9 @@
 
 #include "FXProcess.h"
 #include "xincs.h"
+#ifndef WIN32
+#include <dlfcn.h>
+#endif
 
 
 #ifndef RTLD_GLOBAL

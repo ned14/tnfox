@@ -1784,7 +1784,7 @@ FXbool FXWindow::acquireSelection(const FXDragType *types,FXuint numtypes){
     }
   if(xid){
 #ifndef WIN32
-    XSetSelectionOwner(DISPLAY(getApp()),XA_PRIMARY,xid,getApp()->event.time);
+    XSetSelectionOwner(DISPLAY(getApp()),XA_PRIMARY,xid,getEventLoop()->event.time);
     if(XGetSelectionOwner(DISPLAY(getApp()),XA_PRIMARY)!=xid) return FALSE;
 #endif
     }
@@ -1808,7 +1808,7 @@ FXbool FXWindow::releaseSelection(){
     getApp()->xselNumTypes=0;
     if(xid){
 #ifndef WIN32
-      XSetSelectionOwner(DISPLAY(getApp()),XA_PRIMARY,None,getApp()->event.time);
+      XSetSelectionOwner(DISPLAY(getApp()),XA_PRIMARY,None,getEventLoop()->event.time);
 #endif
       }
     return TRUE;
@@ -1857,14 +1857,14 @@ FXbool FXWindow::acquireClipboard(const FXDragType *types,FXuint numtypes){
     getEventLoop()->clipboardWindow->handle(getApp(),FXSEL(SEL_CLIPBOARD_LOST,0),&getEventLoop()->event);
     getEventLoop()->clipboardWindow=NULL;
 #ifndef WIN32
-    FXFREE(&getEventLoop()->xcbTypeList);
-    getEventLoop()->xcbNumTypes=0;
+    FXFREE(&getApp()->xcbTypeList);
+    getApp()->xcbNumTypes=0;
 #endif
     }
   if(xid){
 #ifndef WIN32
-    XSetSelectionOwner(DISPLAY(getApp()),getEventLoop()->xcbSelection,xid,getApp()->event.time);
-    if(XGetSelectionOwner(DISPLAY(getApp()),getEventLoop()->xcbSelection)!=xid) return FALSE;
+    XSetSelectionOwner(DISPLAY(getApp()),getApp()->xcbSelection,xid,getEventLoop()->event.time);
+    if(XGetSelectionOwner(DISPLAY(getApp()),getApp()->xcbSelection)!=xid) return FALSE;
 #else
     if(!OpenClipboard((HWND)xid)) return FALSE;
     EmptyClipboard();
@@ -1877,9 +1877,9 @@ FXbool FXWindow::acquireClipboard(const FXDragType *types,FXuint numtypes){
     getEventLoop()->clipboardWindow=this;
     getEventLoop()->clipboardWindow->handle(getApp(),FXSEL(SEL_CLIPBOARD_GAINED,0),&getEventLoop()->event);
 #ifndef WIN32
-    FXRESIZE(&getEventLoop()->xcbTypeList,FXDragType,numtypes);
-    memcpy(getEventLoop()->xcbTypeList,types,sizeof(FXDragType)*numtypes);
-    getEventLoop()->xcbNumTypes=numtypes;
+    FXRESIZE(&getApp()->xcbTypeList,FXDragType,numtypes);
+    memcpy(getApp()->xcbTypeList,types,sizeof(FXDragType)*numtypes);
+    getApp()->xcbNumTypes=numtypes;
 #endif
     }
   return TRUE;
@@ -1892,12 +1892,12 @@ FXbool FXWindow::releaseClipboard(){
     getEventLoop()->clipboardWindow->handle(getApp(),FXSEL(SEL_CLIPBOARD_LOST,0),&getEventLoop()->event);
     getEventLoop()->clipboardWindow=NULL;
 #ifndef WIN32
-    FXFREE(&getEventLoop()->xcbTypeList);
-    getEventLoop()->xcbNumTypes=0;
+    FXFREE(&getApp()->xcbTypeList);
+    getApp()->xcbNumTypes=0;
 #endif
     if(xid){
 #ifndef WIN32
-      XSetSelectionOwner(DISPLAY(getApp()),getEventLoop()->xcbSelection,None,getApp()->event.time);
+      XSetSelectionOwner(DISPLAY(getApp()),getApp()->xcbSelection,None,getEventLoop()->event.time);
 #else
       if(OpenClipboard((HWND)xid)){EmptyClipboard();CloseClipboard();}
 #endif
