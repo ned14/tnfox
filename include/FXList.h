@@ -155,6 +155,11 @@ typedef FXint (*FXListSortFunc)(const FXListItem*,const FXListItem*);
 typedef FXObjectListOf<FXListItem> FXListItemList;
 
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 /**
 * A List Widget displays a list of items, each with a text and
 * optional icon.  When an item's selected state changes, the list sends
@@ -483,6 +488,10 @@ public:
   /// Destructor
   virtual ~FXList();
   };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }
 

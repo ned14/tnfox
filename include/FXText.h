@@ -27,7 +27,6 @@
 #ifndef FXSCROLLAREA_H
 #include "FXScrollArea.h"
 #endif
-#include "FXCharset.h"
 
 namespace FX {
 

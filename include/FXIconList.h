@@ -174,6 +174,11 @@ typedef FXint (*FXIconListSortFunc)(const FXIconItem*,const FXIconItem*);
 typedef FXObjectListOf<FXIconItem> FXIconItemList;
 
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 /**
 * A Icon List Widget displays a list of items, each with a text and
 * optional icon.  Icon List can display its items in essentially three
@@ -598,6 +603,10 @@ public:
   /// Destructor
   virtual ~FXIconList();
   };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }
 

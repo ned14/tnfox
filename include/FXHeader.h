@@ -162,6 +162,11 @@ public:
 typedef FXObjectListOf<FXHeaderItem> FXHeaderItemList;
 
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
+
 /**
 * Header control may be placed over a table or list to provide a resizable
 * captions above a number of columns.
@@ -389,6 +394,10 @@ public:
   /// Destructor
   virtual ~FXHeader();
   };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }
 

@@ -503,7 +503,7 @@ public:
   static void postAsyncMessage(FXId* tgt,FXuint message,void *ptr=NULL,FXObject* src=NULL);
 
   /// Returns the id of the thread this event loop runs in (only valid in subclasses)
-  virtual FXuint getThreadId() const { return 0; }
+  virtual FXulong getThreadId() const { return 0; }
 
   /*! Requests that a recalc() be issued for the sender before the next event fetch
   \warning You should avoid this call except where absolutely necessary */
