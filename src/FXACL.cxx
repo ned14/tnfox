@@ -37,6 +37,7 @@
 #include "Aclapi.h"
 #include "Lm.h"
 #include "shlobj.h"
+#include "Userenv.h"
 #define SECURITY_WIN32
 #include "Security.h"
 #include <io.h>
@@ -519,6 +520,12 @@ FXString FXACLEntity::homeDirectory(bool filesdir) const
 		return FXString(outpath);
 	}
 	else
+	{
+		TCHAR temp[1024];
+		DWORD templen=sizeof(temp)/sizeof(TCHAR);
+		FXERRHWIN(GetUserProfileDirectory(p->token, temp, &templen));
+		return FXString(temp);
+#if 0
 	{	/* Here comes the "official" method of obtaining a user's home directory.
 		As is usual on Windows, it's far too long-winded :( */
 
@@ -542,14 +549,16 @@ FXString FXACLEntity::homeDirectory(bool filesdir) const
 		FXRBOp undomainw=FXRBFunc(NetApiBufferFree, domainw);
 
 		// Finally, go get the user info
-		USER_INFO_1 *usrinfo=0;
-		FXERRHWIN(NERR_Success==NetUserGetInfo((LPWSTR) domainw, accountw, 1, (LPBYTE *) &usrinfo));
+		USER_INFO_3 *usrinfo=0;
+		FXERRHWIN(NERR_Success==NetUserGetInfo((LPWSTR) domainw, accountw, 3, (LPBYTE *) &usrinfo));
 		FXRBOp unusrinfo=FXRBFunc(NetApiBufferFree, usrinfo);
 
 		// Convert it back to ASCII
 		char temp[1024];
-		FXERRHWIN(WideCharToMultiByte(CP_ACP, 0, usrinfo->usri1_home_dir, -1, temp, sizeof(temp), NULL, NULL));
+		FXERRHWIN(WideCharToMultiByte(CP_ACP, 0, usrinfo->usri3_profile, -1, temp, sizeof(temp), NULL, NULL));
 		return FXString(temp);
+	}
+#endif
 	}
 #endif
 #ifdef USE_POSIX
@@ -577,21 +586,31 @@ const FXACLEntity &FXACLEntity::currentUser()
 	if(ret.p) return ret;
 	FXMtxHold lh(staticmethodlock);
 #ifdef USE_WINAPI
+	HANDLE token;
 	DWORD userinfolen=0, groupinfolen=0;
-	// Take a copy of the process token for the current user token
-	FXERRHWIN(DuplicateTokenEx(fxaclinit->myprocessh, 0, NULL, SecurityImpersonation, TokenImpersonation, &ret.p->token));
+	if(&(*fxaclinit))
+	{	// Take a copy of the process token for the current user token
+		FXERRHWIN(DuplicateTokenEx(fxaclinit->myprocessh, 0, NULL, SecurityImpersonation, TokenImpersonation, &token));
+	}
+	else
+	{	// This gets called at static init, so fxaclinit may not exist yet
+		FXERRHWIN(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY|TOKEN_DUPLICATE|TOKEN_ADJUST_PRIVILEGES, &token));
+	}
+	FXRBOp untoken=FXRBFunc(&CloseHandle, token);
 	// Go get the SIDs for the process token's user and group
-	GetTokenInformation(ret.p->token, TokenUser, NULL, userinfolen, &userinfolen);
-	GetTokenInformation(ret.p->token, TokenPrimaryGroup, NULL, groupinfolen, &groupinfolen);
+	GetTokenInformation(token, TokenUser, NULL, userinfolen, &userinfolen);
+	GetTokenInformation(token, TokenPrimaryGroup, NULL, groupinfolen, &groupinfolen);
 	TOKEN_USER *userinfo;
 	TOKEN_PRIMARY_GROUP *groupinfo;
 	FXERRHM(userinfo=(TOKEN_USER *) malloc(userinfolen));
 	FXRBOp unalloc1=FXRBAlloc(userinfo);
-	FXERRHWIN(GetTokenInformation(fxaclinit->myprocessh, TokenUser, userinfo, userinfolen, &userinfolen));
+	FXERRHWIN(GetTokenInformation(token, TokenUser, userinfo, userinfolen, &userinfolen));
 	FXERRHM(groupinfo=(TOKEN_PRIMARY_GROUP *) malloc(groupinfolen));
 	FXRBOp unalloc2=FXRBAlloc(groupinfo);
-	FXERRHWIN(GetTokenInformation(fxaclinit->myprocessh, TokenPrimaryGroup, groupinfo, groupinfolen, &groupinfolen));
+	FXERRHWIN(GetTokenInformation(token, TokenPrimaryGroup, groupinfo, groupinfolen, &groupinfolen));
 	FXERRHM(ret.p=new FXACLEntityPrivate((SID *) userinfo->User.Sid, (SID *) groupinfo->PrimaryGroup, FXString::nullStr()));
+	ret.p->token=token;
+	untoken.dismiss();
 #endif
 #ifdef USE_POSIX
 	FXERRHM(ret.p=new FXACLEntityPrivate(getuid(), getgid(), false, FXString::nullStr()));
