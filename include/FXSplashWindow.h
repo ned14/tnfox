@@ -24,8 +24,8 @@
 #ifndef FXSPLASHWINDOW_H
 #define FXSPLASHWINDOW_H
 
-#ifndef FXSHELL_H
-#include "FXShell.h"
+#ifndef FXTOPWINDOW_H
+#include "FXTopWindow.h"
 #endif
 
 namespace FX {
