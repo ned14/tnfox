@@ -631,9 +631,10 @@ FXuval FXPipe::writeBlock(const char *data, FXuval maxlen)
 		DWORD bwritten=0;
 		h.unlock();
 		BOOL ret=WriteFile(p->writeh, data, (DWORD) maxlen, &bwritten, NULL);
+		DWORD getlasterror=GetLastError();
 		FXThread::current()->checkForTerminate();
 		h.relock();
-		FXERRHWIN(ret);
+		FXERRHWIN2(ret, getlasterror);
 		written=(FXuval) bwritten;
 #endif
 #ifdef USE_POSIX
