@@ -112,15 +112,16 @@ int main(int argc, char *argv[])
 			FXuint after=FXProcess::getMsCount();
 			fxmessage("Wrote raw file at %fKb/sec\n", (1000.0*testfile.size()/(after-before))/1024);
 			before=FXProcess::getMsCount();
-			FXuint foo=0;
-			for(FXfval n=0; n<testfile.size(); n+=4)
+			FXulong foo=0;
+			FXfval testfilelen=testfile.size();
+			for(FXfval n=0; n<testfilelen; n+=8)
 			{
-				foo+=*(FXuint *)&data[n];
+				foo+=*(FXulong *)&data[n];
 			}
 			after=FXProcess::getMsCount();
 			fxmessage("Read raw file at %fKb/sec\n", (1000.0*testfile.size()/(after-before))/1024);
 			int cnt=0;
-			for(char *ptr=data; ptr<data+testfile.size()-64;)
+			for(char *ptr=data; ptr<data+testfilelen-64;)
 			{
 				sprintf(ptr, "There are %d bottles on the wall!\r\n", cnt++);
 				ptr=strchr(ptr,0);
