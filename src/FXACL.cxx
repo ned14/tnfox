@@ -32,6 +32,7 @@
 #ifndef USE_POSIX
 #define USE_WINAPI
 #include "WindowsGubbins.h"
+#include "WinIoCtl.h"
 #include "Sddl.h"
 #include "Aclapi.h"
 #include "Lm.h"
