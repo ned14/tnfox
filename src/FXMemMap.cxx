@@ -521,7 +521,7 @@ bool FXMemMap::open(FXuint mode)
 			{
 				if(p->unique)
 					p->name=FXString("%1_%2").arg(FXProcess::id()).arg(rand(),0,16);
-				name=FXString("/TnFOX_"+p->name);
+				name=FXString("/tmp/TnFOX_"+p->name);
 				p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE);
 				if(p->unique && -1!=p->filefd)
 				{
@@ -568,7 +568,7 @@ void FXMemMap::close()
 			if(p->creator && !(flags() & IO_DontUnlink))
 			{
 				FXThread_DTHold dth;
-				FXString name("/TnFOX_"+p->name);
+				FXString name("/tmp/TnFOX_"+p->name);
 				FXERRHIO(::close(p->filefd));
 				FXERRHIO(::shm_unlink(name.text()));
 			}
@@ -705,7 +705,7 @@ FXACL FXMemMap::permissions(const FXString &name)
 #endif
 #ifdef USE_POSIX
 	int fd;
-	FXString sname("/TnFOX_"+name);
+	FXString sname("/tmp/TnFOX_"+name);
 	FXERRHIO(fd=::shm_open(sname.text(), O_RDWR, 0));
 	FXRBOp unfd=FXRBFunc(::close, fd);
 	return FXACL(fd, FXACL::MemMap);
@@ -719,7 +719,7 @@ void FXMemMap::setPermissions(const FXString &name, const FXACL &perms)
 #endif
 #ifdef USE_POSIX
 	int fd;
-	FXString sname("/TnFOX_"+name);
+	FXString sname("/tmp/TnFOX_"+name);
 	FXERRHIO(fd=::shm_open(sname.text(), O_RDWR, 0));
 	FXRBOp unfd=FXRBFunc(::close, fd);
 	perms.writeTo(fd);
