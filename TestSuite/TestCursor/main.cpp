@@ -29,7 +29,6 @@ protected:
 	TestWindow(){}
 public:
 	FXGroupBox *a, *b;
-	FXTimer *timer;
 	enum
 	{
 		ID_AREA1=FXMainWindow::ID_LAST,
@@ -50,11 +49,11 @@ public:
 		resize(320,256);
 		recalc();
 		
-		timer=app->addTimeout(this, ID_TIMER, 100);
+		app->addTimeout(this, ID_TIMER, 100);
 	}
 	~TestWindow()
 	{
-		getApp()->removeTimeout(timer);
+		getApp()->removeTimeout(this, ID_TIMER);
 		Tn::THourglass::smash(a);
 		Tn::THourglass::smash(b);
 	}
@@ -84,7 +83,7 @@ public:
 			if(++val>100) val=0;
 			Tn::THourglass::setWritingLED(a, (val & 1)!=0);
 		}
-		timer=getApp()->addTimeout(this, ID_TIMER, 1000);
+		getApp()->addTimeout(this, ID_TIMER, 1000);
 		return 1;
 	}
 };
