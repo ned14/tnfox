@@ -360,7 +360,7 @@ FXEventLoop *TnFXApp::getEventLoop() const
 			FXThread::current()->addCleanupCall(Generic::BindFuncN(deleteEventLoop, el), true);
 			el->setup();
 #ifdef DEBUG
-			fxmessage("Created event loop 0x%p in thread %d\n", el, FXThread::id());
+			fxmessage("Created event loop 0x%p in thread %u\n", el, (FXuint) FXThread::id());
 #endif
 		}
 	} FXEXCEPTION_FOXCALLING2;
@@ -370,7 +370,7 @@ FXEventLoop *TnFXApp::getEventLoop() const
 long TnFXApp::onCmdQuit(FXObject*,FXSelector,void*)
 {	// Exit loop
 #ifdef DEBUG
-	fxmessage("Loop 0x%p in thread %d wants to quit\n", getEventLoop(), FXThread::id());
+	fxmessage("Loop 0x%p in thread %u wants to quit\n", getEventLoop(), (FXuint) FXThread::id());
 #endif
 	stop(0); // Stop the calling event loop
 	return 1;
