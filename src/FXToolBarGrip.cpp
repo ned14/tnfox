@@ -280,7 +280,7 @@ long FXToolBarGrip::onLeftBtnPress(FXObject*,FXSelector,void*){
     wattr.colormap=DefaultColormap(display,DefaultScreen(display));
     wattr.cursor=None;
     xxx=XCreateWindow(display,RootWindow(display,DefaultScreen(display)),0,0,1,1,0,DefaultDepth(display,DefaultScreen(display)),InputOutput,DefaultVisual(display,DefaultScreen(display)),mask,&wattr);
-    getApp()->hash.insert((void*)xxx,this);
+    getEventLoop()->hash.insert((void*)xxx,this);
     XMapWindow(display,xxx);
     xid=xxx;
     grab();
@@ -305,7 +305,7 @@ long FXToolBarGrip::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     xid=xxx;
     ungrab();
     xid=tempxid;    
-    getApp()->hash.remove((void*)xxx);
+    getEventLoop()->hash.remove((void*)xxx);
     XDestroyWindow(display,xxx);
     xxx=0;
 #else    

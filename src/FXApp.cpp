@@ -2956,10 +2956,10 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
 //FXTRACE((100,"PropertyNotify %s\n",atomname));
 //XFree(atomname);
 //}
-        if(ev.xproperty.atom==wmState){
+        if(ev.xproperty.atom==app->wmState){
           FXTRACE((100,"Window wmState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));
           }
-        if(ev.xproperty.atom==wmNetState){
+        if(ev.xproperty.atom==app->wmNetState){
           FXTRACE((100,"Window wmNetState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));
           }
         return TRUE;

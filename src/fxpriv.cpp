@@ -258,7 +258,7 @@ void FXEventLoop::selectionSetData(const FXWindow*,FXDragType,FXuchar* data,FXui
 
 
 // Retrieve PRIMARY selection data
-void FXEventLoop::selectionGetData(const FXWindow*,FXDragType type,FXuchar*& data,FXuint& size){
+void FXEventLoop::selectionGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size){
   FXID answer;
   data=NULL;
   size=0;
@@ -281,7 +281,7 @@ void FXEventLoop::selectionGetData(const FXWindow*,FXDragType type,FXuchar*& dat
 
 
 // Retrieve PRIMARY selection types
-void FXEventLoop::selectionGetTypes(const FXWindow*,FXDragType*& types,FXuint& numtypes){
+void FXEventLoop::selectionGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes){
   FXID answer;
   types=NULL;
   numtypes=0;
