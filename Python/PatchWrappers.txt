@@ -1,6 +1,6 @@
 diff -Naur old/_FXApp.cpp new/_FXApp.cpp
---- old/_FXApp.cpp	2005-02-04 16:33:08.000000000 +0000
-+++ new/_FXApp.cpp	2005-02-04 16:48:08.000000000 +0000
+--- old/_FXApp.cpp	2005-02-05 16:29:18.000000000 +0000
++++ new/_FXApp.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -67,16 +67,6 @@
          return FX::FXApp::getMetaClass();
      }
@@ -56,7 +56,7 @@ diff -Naur old/_FXApp.cpp new/_FXApp.cpp
          .def("exit", &FX::FXApp::exit, &TnFOX::FX_FXApp_Wrapper::default_exit_1)
          .def("exit", &TnFOX::FX_FXApp_Wrapper::default_exit_0)
          .def("save", (void (FX::FXApp::*)(FX::FXStream&) const)&FX::FXApp::save, (void (TnFOX::FX_FXApp_Wrapper::*)(FX::FXStream&) const)&TnFOX::FX_FXApp_Wrapper::default_save)
-@@ -257,8 +232,8 @@
+@@ -258,8 +233,8 @@
          .def("closeDisplay", &FX::FXApp::closeDisplay)
          .def("isInitialized", &FX::FXApp::isInitialized)
          .def("getArgc", &FX::FXApp::getArgc)
@@ -68,8 +68,8 @@ diff -Naur old/_FXApp.cpp new/_FXApp.cpp
          .def("setDefaultVisual", &FX::FXApp::setDefaultVisual)
          .def("getMonoVisual", &FX::FXApp::getMonoVisual, return_internal_reference< 1 >())
 diff -Naur old/_FXBitmap.cpp new/_FXBitmap.cpp
---- old/_FXBitmap.cpp	2005-02-04 16:33:14.000000000 +0000
-+++ new/_FXBitmap.cpp	2005-02-04 16:45:45.000000000 +0000
+--- old/_FXBitmap.cpp	2005-02-05 16:29:24.000000000 +0000
++++ new/_FXBitmap.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -262,7 +262,7 @@
          .def("onDefault", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::onDefault), &TnFOX::FX_FXBitmap_Wrapper::default_onDefault)
          .def("tryHandle", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::tryHandle), &TnFOX::FX_FXBitmap_Wrapper::default_tryHandle)
@@ -80,8 +80,8 @@ diff -Naur old/_FXBitmap.cpp new/_FXBitmap.cpp
          .def("setOptions", &FX::FXBitmap::setOptions)
          .def("getPixel", &FX::FXBitmap::getPixel)
 diff -Naur old/_FXDCPrint.cpp new/_FXDCPrint.cpp
---- old/_FXDCPrint.cpp	2005-02-04 16:34:18.000000000 +0000
-+++ new/_FXDCPrint.cpp	2005-02-04 16:45:45.000000000 +0000
+--- old/_FXDCPrint.cpp	2005-02-05 16:30:26.000000000 +0000
++++ new/_FXDCPrint.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -782,8 +782,6 @@
          .def("beginPage", &FX::FXDCPrint::beginPage, TnFOX::FX_FXDCPrint_beginPage_overloads_0_1())
          .def("endPage", &FX::FXDCPrint::endPage)
@@ -92,8 +92,8 @@ diff -Naur old/_FXDCPrint.cpp new/_FXDCPrint.cpp
  
  }
 diff -Naur old/_FXFile.cpp new/_FXFile.cpp
---- old/_FXFile.cpp	2005-02-04 16:35:12.000000000 +0000
-+++ new/_FXFile.cpp	2005-02-04 16:45:46.000000000 +0000
+--- old/_FXFile.cpp	2005-02-05 16:31:14.000000000 +0000
++++ new/_FXFile.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -268,7 +268,7 @@
          .def("exists", (bool (FX::FXFile::*)() const)&FX::FXFile::exists)
          .def("remove", (bool (FX::FXFile::*)() )&FX::FXFile::remove)
@@ -113,8 +113,8 @@ diff -Naur old/_FXFile.cpp new/_FXFile.cpp
          .def("modified", &FX::FXFile::modified)
          .def("accessed", &FX::FXFile::accessed)
 diff -Naur old/_FXFunctorTarget.cpp new/_FXFunctorTarget.cpp
---- old/_FXFunctorTarget.cpp	2005-02-04 16:35:50.000000000 +0000
-+++ new/_FXFunctorTarget.cpp	2005-02-04 16:52:09.000000000 +0000
+--- old/_FXFunctorTarget.cpp	2005-02-05 16:31:48.000000000 +0000
++++ new/_FXFunctorTarget.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -19,9 +19,6 @@
      FX_FXFunctorTarget_Wrapper(PyObject* py_self_):
          FX::FXFunctorTarget(), py_self(py_self_) {}
@@ -134,9 +134,9 @@ diff -Naur old/_FXFunctorTarget.cpp new/_FXFunctorTarget.cpp
          .def("getMetaClass", (const FX::FXMetaClass* (FX::FXFunctorTarget::*)() const)&FX::FXFunctorTarget::getMetaClass, (const FX::FXMetaClass* (TnFOX::FX_FXFunctorTarget_Wrapper::*)() const)&TnFOX::FX_FXFunctorTarget_Wrapper::default_getMetaClass, return_internal_reference< 1 >())
          .def("onDefault", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::onDefault), &TnFOX::FX_FXFunctorTarget_Wrapper::default_onDefault)
 diff -Naur old/_FXGLCanvas.cpp new/_FXGLCanvas.cpp
---- old/_FXGLCanvas.cpp	2005-02-04 16:36:02.000000000 +0000
-+++ new/_FXGLCanvas.cpp	2005-02-04 16:45:55.000000000 +0000
-@@ -559,7 +559,7 @@
+--- old/_FXGLCanvas.cpp	2005-02-05 16:32:00.000000000 +0000
++++ new/_FXGLCanvas.cpp	2005-02-05 16:52:31.000000000 +0000
+@@ -565,7 +565,7 @@
          .def("tryHandle", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::tryHandle), &TnFOX::FX_FXGLCanvas_Wrapper::default_tryHandle)
          .def("manufacture", &FX::FXGLCanvas::manufacture, return_value_policy< manage_new_object >())
          .def("isShared", &FX::FXGLCanvas::isShared)
@@ -146,8 +146,8 @@ diff -Naur old/_FXGLCanvas.cpp new/_FXGLCanvas.cpp
          .staticmethod("getCurrentContext")
      );
 diff -Naur old/_FXGLTriangleMesh.cpp new/_FXGLTriangleMesh.cpp
---- old/_FXGLTriangleMesh.cpp	2005-02-04 16:36:35.000000000 +0000
-+++ new/_FXGLTriangleMesh.cpp	2005-02-04 16:45:55.000000000 +0000
+--- old/_FXGLTriangleMesh.cpp	2005-02-05 16:32:32.000000000 +0000
++++ new/_FXGLTriangleMesh.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -212,13 +212,13 @@
          .def("setVertexNumber", &FX::FXGLTriangleMesh::setVertexNumber)
          .def("getVertexNumber", &FX::FXGLTriangleMesh::getVertexNumber)
@@ -167,8 +167,8 @@ diff -Naur old/_FXGLTriangleMesh.cpp new/_FXGLTriangleMesh.cpp
      );
  
 diff -Naur old/_FXGLViewer.cpp new/_FXGLViewer.cpp
---- old/_FXGLViewer.cpp	2005-02-04 16:36:40.000000000 +0000
-+++ new/_FXGLViewer.cpp	2005-02-04 16:54:11.000000000 +0000
+--- old/_FXGLViewer.cpp	2005-02-05 16:32:36.000000000 +0000
++++ new/_FXGLViewer.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -136,16 +136,6 @@
          FX::FXGLViewer::layout();
      }
@@ -186,7 +186,7 @@ diff -Naur old/_FXGLViewer.cpp new/_FXGLViewer.cpp
      FX::FXGLObject* pick(FX::FXint p0, FX::FXint p1) {
          FXPython_DoPython ctxhold;
          return call_method2< FX::FXGLObject* >(py_self, "pick", p0, p1);
-@@ -570,7 +560,7 @@
+@@ -575,7 +565,7 @@
          .def("create", (void (FX::FXGLViewer::*)() )&FX::FXGLViewer::create, (void (TnFOX::FX_FXGLViewer_Wrapper::*)())&TnFOX::FX_FXGLViewer_Wrapper::default_create)
          .def("detach", (void (FX::FXGLViewer::*)() )&FX::FXGLViewer::detach, (void (TnFOX::FX_FXGLViewer_Wrapper::*)())&TnFOX::FX_FXGLViewer_Wrapper::default_detach)
          .def("layout", (void (FX::FXGLViewer::*)() )&FX::FXGLViewer::layout, (void (TnFOX::FX_FXGLViewer_Wrapper::*)())&TnFOX::FX_FXGLViewer_Wrapper::default_layout)
@@ -195,7 +195,7 @@ diff -Naur old/_FXGLViewer.cpp new/_FXGLViewer.cpp
          .def("pick", &FX::FXGLViewer::pick, &TnFOX::FX_FXGLViewer_Wrapper::default_pick, return_internal_reference< 1 >())
          .def("setBounds", &FX::FXGLViewer::setBounds, &TnFOX::FX_FXGLViewer_Wrapper::default_setBounds)
          .def("save", (void (FX::FXGLViewer::*)(FX::FXStream&) const)&FX::FXGLViewer::save, (void (TnFOX::FX_FXGLViewer_Wrapper::*)(FX::FXStream&) const)&TnFOX::FX_FXGLViewer_Wrapper::default_save)
-@@ -708,7 +698,7 @@
+@@ -714,7 +704,7 @@
          .def("onQueryTip", (long int (FX::FXGLViewer::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXGLViewer::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXGLViewer::onQueryTip))
          .def("worldPix", &FX::FXGLViewer::worldPix)
          .def("modelPix", &FX::FXGLViewer::modelPix)
@@ -205,8 +205,8 @@ diff -Naur old/_FXGLViewer.cpp new/_FXGLViewer.cpp
          .def("getViewport", &FX::FXGLViewer::getViewport)
          .def("eyeToScreen", &FX::FXGLViewer::eyeToScreen)
 diff -Naur old/_FXIODeviceS.cpp new/_FXIODeviceS.cpp
---- old/_FXIODeviceS.cpp	2005-02-04 16:37:34.000000000 +0000
-+++ new/_FXIODeviceS.cpp	2005-02-04 16:45:58.000000000 +0000
+--- old/_FXIODeviceS.cpp	2005-02-05 16:33:25.000000000 +0000
++++ new/_FXIODeviceS.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -211,8 +211,8 @@
          .def("size", pure_virtual(&FX::FXIODevice::size))
          .def("permissions", &FX::FXIODevice::permissions, &TnFOX::FX_FXIODeviceS_Wrapper::default_permissions, return_internal_reference< 1 >())
@@ -219,8 +219,8 @@ diff -Naur old/_FXIODeviceS.cpp new/_FXIODeviceS.cpp
          .def("getch", &FX::FXIODevice::getch, &TnFOX::FX_FXIODeviceS_Wrapper::default_getch)
          .def("putch", &FX::FXIODevice::putch, &TnFOX::FX_FXIODeviceS_Wrapper::default_putch)
 diff -Naur old/_FXImage.cpp new/_FXImage.cpp
---- old/_FXImage.cpp	2005-02-04 16:37:22.000000000 +0000
-+++ new/_FXImage.cpp	2005-02-04 16:55:16.000000000 +0000
+--- old/_FXImage.cpp	2005-02-05 16:33:14.000000000 +0000
++++ new/_FXImage.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -404,7 +404,7 @@
          .def("manufacture", &FX::FXImage::manufacture, return_value_policy< manage_new_object >())
          .def("setOptions", &FX::FXImage::setOptions)
@@ -231,8 +231,8 @@ diff -Naur old/_FXImage.cpp new/_FXImage.cpp
          .def("setPixel", &FX::FXImage::setPixel)
          .def("hasAlpha", &FX::FXImage::hasAlpha)
 diff -Naur old/_FXMemMap.cpp new/_FXMemMap.cpp
---- old/_FXMemMap.cpp	2005-02-04 16:38:11.000000000 +0000
-+++ new/_FXMemMap.cpp	2005-02-04 16:56:17.000000000 +0000
+--- old/_FXMemMap.cpp	2005-02-05 16:33:58.000000000 +0000
++++ new/_FXMemMap.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -272,7 +272,7 @@
          .def("mapOut", (void (FX::FXMemMap::*)(FX::FXfval, FX::FXfval) )&FX::FXMemMap::mapOut, TnFOX::FX_FXMemMap_mapOut_overloads_0_2())
          .def("mapOut", (void (FX::FXMemMap::*)(void_*) )((void (FX::FXMemMap::*)(void*) )&FX::FXMemMap::mapOut))
@@ -243,8 +243,8 @@ diff -Naur old/_FXMemMap.cpp new/_FXMemMap.cpp
          .staticmethod("setPermissions")
          .staticmethod("permissions")
 diff -Naur old/_FXObjectList.cpp new/_FXObjectList.cpp
---- old/_FXObjectList.cpp	2005-02-04 16:38:53.000000000 +0000
-+++ new/_FXObjectList.cpp	2005-02-04 16:45:58.000000000 +0000
+--- old/_FXObjectList.cpp	2005-02-05 16:34:38.000000000 +0000
++++ new/_FXObjectList.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -37,8 +37,7 @@
          .def("no", (FX::FXint (FX::FXObjectList::*)() const)&FX::FXObjectList::no)
          .def("no", (void (FX::FXObjectList::*)(FX::FXint) )&FX::FXObjectList::no)
@@ -256,8 +256,8 @@ diff -Naur old/_FXObjectList.cpp new/_FXObjectList.cpp
          .def("assign", (FX::FXObjectList& (FX::FXObjectList::*)(FX::FXObject**, FX::FXint) )&FX::FXObjectList::assign, return_self<>())
          .def("assign", (FX::FXObjectList& (FX::FXObjectList::*)(FX::FXObjectList&) )&FX::FXObjectList::assign, return_self<>())
 diff -Naur old/_FXPipe.cpp new/_FXPipe.cpp
---- old/_FXPipe.cpp	2005-02-04 16:39:10.000000000 +0000
-+++ new/_FXPipe.cpp	2005-02-04 16:45:58.000000000 +0000
+--- old/_FXPipe.cpp	2005-02-05 16:34:55.000000000 +0000
++++ new/_FXPipe.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -281,7 +281,7 @@
          .def("isUnique", &FX::FXPipe::isUnique)
          .def("setUnique", &FX::FXPipe::setUnique)
@@ -268,8 +268,8 @@ diff -Naur old/_FXPipe.cpp new/_FXPipe.cpp
          .def("maxAtomicLength", &FX::FXPipe::maxAtomicLength)
          .def("waitForData", &FX::FXIODeviceS::waitForData, TnFOX::FX_FXIODeviceS_waitForData_overloads_3_4())
 diff -Naur old/_FXThread.cpp new/_FXThread.cpp
---- old/_FXThread.cpp	2005-02-04 16:41:59.000000000 +0000
-+++ new/_FXThread.cpp	2005-02-04 16:58:36.000000000 +0000
+--- old/_FXThread.cpp	2005-02-05 16:37:41.000000000 +0000
++++ new/_FXThread.cpp	2005-02-05 16:52:31.000000000 +0000
 @@ -42,13 +42,12 @@
      }
  
