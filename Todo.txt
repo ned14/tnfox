@@ -1,10 +1,10 @@
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
-* Merge latest FOX development
 * Regenerate python bindings on all platforms
 * Update web page + completed listing + write release email
 * Lots of testing with release builds
 * Release!
+* If have time, release ptmalloc2
 
 
 NT v5.0 Failures:
@@ -32,8 +32,6 @@ which blocks belong to the system allocator.
 * TestGeneric fails to compile with GCC
 * FXLocalPipe has some problem when running under FXSSLDevice. Will investigate
 later.
-* TestEmbedPython fails on Linux & FreeBSD as exceptions won't traverse the
-shared object boundary. This is either a bug in GCC or ld.
 * TestPython on exit fails with a segfault on all platforms. This appears to be
 due to a bad memory block free.
 * TnFOX and Intel's C++ compiler for Linux currently don't play nice. You'll
