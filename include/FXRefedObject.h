@@ -297,6 +297,7 @@ namespace FXRefingObjectImpl {
 	template<class type> class refedObject
 		: private lastUsedI<Generic::convertible<Pol::hasLastUsed &, type &>::value, type>
 	{
+		template<bool, class> friend struct FXRefingObjectImpl::dataHolderI;
 		typedef lastUsedI<Generic::convertible<Pol::hasLastUsed &, type &>::value, type> Base;
 		void inc()
 		{
