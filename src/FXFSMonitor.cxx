@@ -109,7 +109,7 @@ struct FXFSMon : public FXRWMutex
 		void *cleanup();
 	};
 #ifdef USE_POSIX
-	bool nofam;
+	bool nofam, fambroken;
 	FAMConnection fc;
 #endif
 	QPtrList<Watcher> watchers;
@@ -124,8 +124,9 @@ FXFSMon::FXFSMon() : watchers(true), FXRWMutex()
 {
 #ifdef USE_POSIX
 	nofam=true;
+	fambroken=false;
 	int ret=FAMOpen(&fc);
-	if(-1==ret)
+	if(ret)
 	{
 		fxwarning("Disabling FXFSMonitor due to FAMOpen() throwing error %d (%s) syserror: %s\nIs the famd daemon running?\n", FAMErrno, FamErrlist[FAMErrno], strerror(errno));
 	}
@@ -216,19 +217,35 @@ void FXFSMon::Watcher::run()
 {
 	int ret;
 	FAMEvent fe;
-	while((ret=FAMNextEvent(&fxfsmon->fc, &fe)))
+	for(;;)
 	{
-		FXERRHFAM(ret);
-		if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
-			|| FAMAcknowledge==fe.code) continue;
-		FXMtxHold h(fxfsmon, false);
-		Path *p;
-		for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
+		FXERRH_TRY
 		{
-			if(p->h.reqnum==fe.fr.reqnum) break;
+			while((ret=FAMNextEvent(&fxfsmon->fc, &fe)))
+			{
+				FXERRHFAM(ret);
+				if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
+					|| FAMAcknowledge==fe.code) continue;
+				FXMtxHold h(fxfsmon, false);
+				Path *p;
+				for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
+				{
+					if(p->h.reqnum==fe.fr.reqnum) break;
+				}
+				if(p)
+					p->callHandlers();
+			}
 		}
-		if(p)
-			p->callHandlers();
+		FXERRH_CATCH(FXException &)
+		{
+			if(3==FAMErrno)
+			{	// libgamin on Fedora Core 3 seems totally broken so exit the thread :(
+				fxfsmon->fambroken=true;
+				fxwarning("WARNING: FAMNextEvent() returned Connection Failed, assuming broken FAM implementation and exiting thread - FXFSMonitor will no longer work for the remainder of this program's execution\n");
+				return;
+			}
+		}
+		FXERRH_ENDTRY
 	}
 }
 #endif
@@ -247,7 +264,10 @@ FXFSMon::Watcher::Path::~Path()
 	}
 #endif
 #ifdef USE_POSIX
-	FXERRHFAM(FAMCancelMonitor(&fxfsmon->fc, &h));
+	if(!fxfsmon->fambroken)
+	{
+		FXERRHFAM(FAMCancelMonitor(&fxfsmon->fc, &h));
+	}
 #endif
 }
 
@@ -422,7 +442,10 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 		FXERRHWIN(SetEvent(w->latch));
 #endif
 #ifdef USE_POSIX
-		FXERRHFAM(FAMMonitorDirectory(&fc, path.text(), &p->h, 0));
+		if(!fambroken)
+		{
+			FXERRHFAM(FAMMonitorDirectory(&fc, path.text(), &p->h, 0));
+		}
 #endif
 		w->paths.insert(path, p);
 		unnew.dismiss();
