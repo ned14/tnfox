@@ -758,6 +758,45 @@ void FXProcess::getTimeOfDay(struct timeval *tv)
 #endif
 }
 
+FXulong FXProcess::getNsCount()
+{
+#ifdef USE_WINAPI
+	static LARGE_INTEGER ticksPerSec, mfactor, dfactor;
+	if(!dfactor.QuadPart)
+	{
+		if(QueryPerformanceFrequency(&ticksPerSec))
+		{
+			if(ticksPerSec.QuadPart>1000000000LL)
+			{
+				mfactor.QuadPart=1;
+				dfactor.QuadPart=ticksPerSec.QuadPart/1000000000LL;
+			}
+			else
+			{
+				mfactor.QuadPart=1000000000LL/ticksPerSec.QuadPart;
+				dfactor.QuadPart=1;
+			}
+		}
+		else
+		{
+			mfactor.QuadPart=1;
+			dfactor.QuadPart=1;
+		}
+	}
+	LARGE_INTEGER val;
+	if(!QueryPerformanceCounter(&val))
+		return (FXulong) GetTickCount() * 1000000;
+	return (FXulong) val.QuadPart * (FXulong) mfactor.QuadPart / (FXulong) dfactor.QuadPart;
+#endif
+#ifdef USE_POSIX
+	// It's only as good as POSIX can make it, which is pretty good on most
+	// x86 based platforms which have a RTDSC
+	struct timeval tv;
+	FXERRHOS(gettimeofday((::timeval *) &tv, 0));
+	return ((FXulong) tv.tv_sec*1000000000LL)+tv.tv_usec;
+#endif
+}
+
 FXuint FXProcess::id()
 {
 #ifdef USE_WINAPI
