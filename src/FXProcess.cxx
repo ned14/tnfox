@@ -761,32 +761,21 @@ void FXProcess::getTimeOfDay(struct timeval *tv)
 FXulong FXProcess::getNsCount()
 {
 #ifdef USE_WINAPI
-	static LARGE_INTEGER ticksPerSec, mfactor, dfactor;
-	if(!dfactor.QuadPart)
+	static LARGE_INTEGER ticksPerSec;
+	static double scalefactor;
+	// It's faster to use the FPU than a 128 bit MulDiv implementation
+	// though this would change if SSE2 became more prevalent
+	if(!scalefactor)
 	{
 		if(QueryPerformanceFrequency(&ticksPerSec))
-		{
-			if(ticksPerSec.QuadPart>1000000000LL)
-			{
-				mfactor.QuadPart=1;
-				dfactor.QuadPart=ticksPerSec.QuadPart/1000000000LL;
-			}
-			else
-			{
-				mfactor.QuadPart=1000000000LL/ticksPerSec.QuadPart;
-				dfactor.QuadPart=1;
-			}
-		}
+			scalefactor=ticksPerSec.QuadPart/1000000000.0;
 		else
-		{
-			mfactor.QuadPart=1;
-			dfactor.QuadPart=1;
-		}
+			scalefactor=1;
 	}
 	LARGE_INTEGER val;
 	if(!QueryPerformanceCounter(&val))
 		return (FXulong) GetTickCount() * 1000000;
-	return (FXulong) val.QuadPart * (FXulong) mfactor.QuadPart / (FXulong) dfactor.QuadPart;
+	return (FXulong) (val.QuadPart/scalefactor);
 #endif
 #ifdef USE_POSIX
 	// It's only as good as POSIX can make it, which is pretty good on most
