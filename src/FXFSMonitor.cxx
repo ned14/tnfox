@@ -19,6 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
+#include "FXThread.h"		// May undefine USE_WINAPI and USE_POSIX
 #ifndef USE_POSIX
 #define USE_WINAPI
 #include "WindowsGubbins.h"
@@ -31,7 +32,6 @@
 #include "FXFSMonitor.h"
 #include "FXString.h"
 #include "FXProcess.h"
-#include "FXThread.h"
 #include "FXRollback.h"
 #include "FXFile.h"
 #include "FXDir.h"
