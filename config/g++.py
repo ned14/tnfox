@@ -111,7 +111,7 @@ if debugmode:
                "-g"                     # Debug info
                ]
 else:
-    cppflags+=["-Os",                   # Optimise for small code
+    cppflags+=["-O2",                   # Optimise for fast code
                "-fomit-frame-pointer"   # No frame pointer
                #"-fno-default-inline",
                #"-fno-inline-functions",
