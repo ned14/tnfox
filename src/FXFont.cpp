@@ -1496,7 +1496,7 @@ void FXFont::create(){
       lf.lfClipPrecision=CLIP_DEFAULT_PRECIS;
 
       // Quality
-      lf.lfQuality=DEFAULT_QUALITY;
+      lf.lfQuality=ANTIALIASED_QUALITY|CLEARTYPE_QUALITY;
 
       // Pitch and Family
       lf.lfPitchAndFamily=0;
