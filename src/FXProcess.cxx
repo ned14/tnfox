@@ -1414,7 +1414,7 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 	}
 	else
 	{	// Maps grow downwards (Linux 2.6)
-		return ((FXuval)map)+chunk-(FXuval)sbrk();
+		return ((FXuval)map)+chunk-(FXuval)sbrk(0);
 	}
 #endif
 }
