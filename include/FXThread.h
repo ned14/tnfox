@@ -35,6 +35,26 @@ Defining this replaces threading classes implementation with static defaults
 ie; sufficient to make code run. Note that creating an FXThread causes an
 exception.
 */
+/*!
+\def FXINLINE_MUTEX_IMPLEMENTATION
+Defining this causes the implementation of FX::FXAtomicInt and FX::FXMutex
+to be defined inline. This can give substantial speed improvements but also
+increases code bloat.
+*/
+
+#ifdef FXINLINE_MUTEX_IMPLEMENTATION
+ #define FXMUTEX_FXAPI
+ #define FXMUTEX_GLOBALS_FXAPI FXAPI
+ // Testing has found that force inlining public declarations makes
+ // the code go slower so we leave it up to the compiler
+ #define FXMUTEX_INLINEI FXFORCEINLINE
+ #define FXMUTEX_INLINEP inline
+#else
+ #define FXMUTEX_FXAPI FXAPI
+ #define FXMUTEX_GLOBALS_FXAPI
+ #define FXMUTEX_INLINEI FXFORCEINLINE	// internally inlined inside FXThread.cxx
+ #define FXMUTEX_INLINEP				// publicly inlined
+#endif
 
 //! For compatibility with FOX
 typedef FXuint FXThreadID;
@@ -64,59 +84,63 @@ for uniprocessor systems. Setting makeSMPBuild to False in config.py will around
 double the FXAtomicInt performance. As an example of how expensive locked memory
 bus operations are, write a simple loop incrementing a FXAtomicInt and watch how
 slow your machine becomes!
+
+As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
+to all code including FXThread.h. This can cause substantial performance
+improvement at the cost of code size.
 */
-class FXAPI FXAtomicInt
+class FXMUTEX_FXAPI FXAtomicInt
 {
 	volatile int lock;		// Unused on systems with atomic increment/decrement/exchange-compare
 	volatile int value;
 	friend class FXMutex;
 	friend class FXShrdMemMutex;
-	inline FXDLLLOCAL int get() const throw();
-	inline FXDLLLOCAL int set(int i) throw();
-	inline FXDLLLOCAL int incp() throw();
-	inline FXDLLLOCAL int pinc() throw();
-	inline FXDLLLOCAL int finc() throw();
-	inline FXDLLLOCAL int inc(int i) throw();
-	inline FXDLLLOCAL int decp() throw();
-	inline FXDLLLOCAL int pdec() throw();
-	inline FXDLLLOCAL int fdec() throw();
-	inline FXDLLLOCAL int dec(int i) throw();
-	inline FXDLLLOCAL int swapI(int newval) throw();
-	inline FXDLLLOCAL int cmpXI(int compare, int newval) throw();
-	inline FXDLLLOCAL int spinI(int count) throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int get() const throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int set(int i) throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int incp() throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int pinc() throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int finc() throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int inc(int i) throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int decp() throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int pdec() throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int fdec() throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int dec(int i) throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int swapI(int newval) throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int cmpXI(int compare, int newval) throw();
+	FXMUTEX_INLINEI FXDLLLOCAL int spinI(int count) throw();
 public:
 	//! Constructs an atomic int with the specified initial value
-	FXAtomicInt(int i=0) throw() : lock(0), value(i) { }
-	FXAtomicInt(const FXAtomicInt &o) throw() : lock(0), value(o.value) { }
-	FXAtomicInt &operator=(const FXAtomicInt &o) throw() { lock=0; value=o.value; return *this; }
+	FXMUTEX_INLINEP FXAtomicInt(int i=0) throw() : lock(0), value(i) { }
+	FXMUTEX_INLINEP FXAtomicInt(const FXAtomicInt &o) throw() : lock(0), value(o.value) { }
+	FXMUTEX_INLINEP FXAtomicInt &operator=(const FXAtomicInt &o) throw() { lock=0; value=o.value; return *this; }
 	//! Returns the current value
-	operator int() const throw();
+	FXMUTEX_INLINEP operator int() const throw();
 	//! Atomically sets the value, bypassing caches and write buffers
-	int operator=(int i) throw();
+	FXMUTEX_INLINEP int operator=(int i) throw();
 	//! Atomically post-increments the value
-	int operator++(int) throw();
+	FXMUTEX_INLINEP int operator++(int) throw();
 	//! Atomically pre-increments the value
-	int operator++() throw();
+	FXMUTEX_INLINEP int operator++() throw();
 	/*! Atomically fast pre-increments the value, returning a negative number if
 	result is negative, zero if result is zero and a positive number of result is
 	positive */
-	int fastinc() throw();
+	FXMUTEX_INLINEP int fastinc() throw();
 	//! Atomically adds an amount to the value
-	int operator+=(int i) throw();
+	FXMUTEX_INLINEP int operator+=(int i) throw();
 	//! Atomically post-decrements the value
-	int operator--(int) throw();
+	FXMUTEX_INLINEP int operator--(int) throw();
 	//! Atomically pre-decrements the value
-	int operator--() throw();
+	FXMUTEX_INLINEP int operator--() throw();
 	/*! Atomically fast pre-decrements the value, returning a negative number if
 	result is negative, zero if result is zero and a positive number of result is
 	positive */
-	int fastdec() throw();
+	FXMUTEX_INLINEP int fastdec() throw();
 	//! Atomically subtracts an amount from the value
-	int operator-=(int i) throw();
+	FXMUTEX_INLINEP int operator-=(int i) throw();
 	//! Atomically swaps \em newval for the int, returning the previous value
-	int swap(int newval) throw();
+	FXMUTEX_INLINEP int swap(int newval) throw();
 	//! Atomically compares the int to \em compare which if the same, stores \em newval. Returns the previous value.
-	int cmpX(int compare, int newval) throw();
+	FXMUTEX_INLINEP int cmpX(int compare, int newval) throw();
 };
 
 /*! \class FXShrdMemMutex
@@ -139,24 +163,28 @@ FX::FXDoUndo.
 
 Because of all these problems, it is advisable that for anything more than trivial
 use of shared memory, another synchronisation method should be used eg; IPC messaging.
+
+As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
+to all code including FXThread.h. This can cause substantial performance
+improvement at the cost of code size.
 */
-class FXAPI FXShrdMemMutex
+class FXMUTEX_FXAPI FXShrdMemMutex
 {
 	FXAtomicInt lockvar;
 	FXuint timeout;
 public:
 	//! Constructs an instance. Using FXINFINITE means infinite waits
-	FXShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout) { }
+	FXMUTEX_INLINEP FXShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout) { }
 	//! Returns the time after which a lock succeeds anyway
-	FXuint timeOut() const throw() { return timeout; }
+	FXMUTEX_INLINEP FXuint timeOut() const throw() { return timeout; }
 	//! Sets the time after which a lock succeeds anyway
-	void setTimeOut(FXuint to) throw() { timeout=to; }
+	FXMUTEX_INLINEP void setTimeOut(FXuint to) throw() { timeout=to; }
 	//! Locks the shared memory mutex
-	void lock();
+	FXMUTEX_INLINEP void lock();
 	//! Unlocks the shared memory mutex
-	void unlock() throw() { lockvar=0; }
+	FXMUTEX_INLINEP void unlock() throw() { lockvar=0; }
 	//! Tries the shared memory mutex
-	bool tryLock();
+	FXMUTEX_INLINEP bool tryLock();
 };
 
 /*! \class FXMutex
@@ -235,7 +263,8 @@ can inspect the situation using the debugger. Obviously this can severely degrad
 performance so only set for certain periods around the area you require it.
 
 <h3>Performance:</h3>
-Now that FXMutex has been hand tuned and optimised, we can present some figures:
+Now that FXMutex has been hand tuned and optimised, we can present some figures
+(which were valid for v0.85):
 \code
                         FXAtomicInt   FXMutex
     SMP Build, 1 thread :  51203277  18389113
@@ -258,51 +287,56 @@ two threads.
 
 Non-SMP builds' FXMutex is between 48% and 106% faster than the SMP build's.
 
+As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
+to all code including FXThread.h. This can cause substantial performance
+improvement at the cost of code size.
+
 \sa FXRWMutex
 */
 struct FXMutexPrivate;
-class FXAPI FXMutex
+class FXMUTEX_FXAPI FXMutex
 {
 	FXMutexPrivate *p;
 	FXMutex(const FXMutex &);
 	FXMutex &operator=(const FXMutex &);
 	friend class FXRWMutex;
-	inline FXDLLLOCAL void int_lock();
-	inline FXDLLLOCAL void int_unlock();
+	FXMUTEX_INLINEI FXDLLLOCAL void int_lock();
+	FXMUTEX_INLINEI FXDLLLOCAL void int_unlock();
 public:
 	//! Constructs a mutex with the given spin count
-	FXMutex(FXuint spinCount=4000);
-	~FXMutex();
+	FXMUTEX_INLINEP FXMutex(FXuint spinCount=4000);
+	FXMUTEX_INLINEP ~FXMutex();
 	//! Returns if the mutex is locked
-	bool isLocked() const;
+	FXMUTEX_INLINEP bool isLocked() const;
 	/*! \overload For FOX compatibility
 	*/
-	FXbool locked() const { return (FXbool) isLocked(); }
+	FXMUTEX_INLINEP FXbool locked() const { return (FXbool) isLocked(); }
 	//! Returns the current spin count
-	FXuint spinCount() const;
+	FXMUTEX_INLINEP FXuint spinCount() const;
 	//! Sets the spin count
-	void setSpinCount(FXuint c);
+	FXMUTEX_INLINEP void setSpinCount(FXuint c);
 	/*! If free, claims the mutex and returns immediately. If not, waits until
 	the current holder releases it and then claims it before returning
 	\warning Do not use this directly unless \b absolutely necessary. Use FXMtxHold instead.
 	*/
-	void lock();
+	FXMUTEX_INLINEP void lock();
 	/*! Releases the mutex for other to claim. Must be called as many times
 	as lock() is called
 	\warning Do not use this directly unless \b absolutely necessary. Use FXMtxHold instead.
 	*/
-	void unlock();
+	FXMUTEX_INLINEP void unlock();
 	/*! Claims the mutex if free and returns true. If already taken, immediately
 	returns false without waiting
 	*/
-	bool tryLock();
+	FXMUTEX_INLINEP bool tryLock();
 	/*! \overload For FOX compatibility
 	*/
-	FXbool trylock() { return (FXbool) tryLock(); }
+	FXMUTEX_INLINEP FXbool trylock() { return (FXbool) tryLock(); }
 	/*! Sets the debugging flag for mutexs in this process. See the main description
 	above */
-	static bool setMutexDebugYield(bool v);
+	FXMUTEX_INLINEP static bool setMutexDebugYield(bool v);
 };
+
 
 /*! \class FXWaitCondition
 \brief An OS/2 style event object (Qt compatible)
@@ -484,27 +518,27 @@ public:
 		UnlockAndRelock		//!< The opposite (very rarely used)
 	};
 	//! Constructs an instance holding the lock to mutex \em m
-	inline FXMtxHold(const FXMutex *m, Hold type=LockAndUnlock)
+	FXFORCEINLINE FXMtxHold(const FXMutex *m, Hold type=LockAndUnlock)
 		: rw(false), inverted(type==UnlockAndRelock), mutex(const_cast<FXMutex *>(m))
 	{
 		if(inverted) mutex->unlock(); else mutex->lock();
 		locked=true;
 	}
 	//! \overload
-	inline FXMtxHold(const FXMutex &m, Hold type=LockAndUnlock)
+	FXFORCEINLINE FXMtxHold(const FXMutex &m, Hold type=LockAndUnlock)
 		: rw(false), inverted(type==UnlockAndRelock), mutex(const_cast<FXMutex *>(&m))
 	{
 		if(inverted) mutex->unlock(); else mutex->lock();
 		locked=true;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	inline FXMtxHold(FXRWMutex *m, bool write=true) : rw(true), rwmutex(m), rwmutexwrite(write)
+	FXFORCEINLINE FXMtxHold(FXRWMutex *m, bool write=true) : rw(true), rwmutex(m), rwmutexwrite(write)
 		{ locklost=rwmutex->lock(rwmutexwrite); locked=true; }
 	//! \overload
-	inline FXMtxHold(FXRWMutex &m, bool write=true) : rw(true), rwmutex(&m), rwmutexwrite(write)
+	FXFORCEINLINE FXMtxHold(FXRWMutex &m, bool write=true) : rw(true), rwmutex(&m), rwmutexwrite(write)
 		{ locklost=rwmutex->lock(rwmutexwrite); locked=true; }
 	//! Used to unlock the held mutex earlier than destruction.
-	inline void unlock()
+	FXFORCEINLINE void unlock()
 	{
 		if(locked)
 		{
@@ -518,7 +552,7 @@ public:
 		}
 	}
 	//! Used to relock a previously unlocked held mutex
-	inline void relock()
+	FXFORCEINLINE void relock()
 	{
 		if(!locked)
 		{
@@ -533,10 +567,10 @@ public:
 	}
 	/*! \overload
 	\deprecated For FOX compatibility only */
-	inline void lock() { relock(); }
+	FXFORCEINLINE void lock() { relock(); }
 	//! Returns true if when during a read-to-write lock transition the lock was lost
-	inline bool lockLost() const { return locklost; }
-	inline ~FXMtxHold() { unlock(); }
+	FXFORCEINLINE bool lockLost() const { return locklost; }
+	FXFORCEINLINE ~FXMtxHold() { unlock(); }
 };
 //! For FOX compatibility only
 typedef FXMtxHold FXMutexLock;
@@ -1081,7 +1115,26 @@ public:
 	//! Waits for a job to complete
 	bool wait(Generic::BoundFunctorV *code, FXuint period=FXINFINITE);
 };
+
 } // namespace
+
+#ifndef FXBEING_INCLUDED_BY_FXTHREAD
+ #ifdef FXINLINE_MUTEX_IMPLEMENTATION
+  #define FXBEING_INCLUDED_BY_FXTHREAD
+  #include "int_FXMutexImpl.h"
+  #undef FXBEING_INCLUDED_BY_FXTHREAD
+
+  // Also undef stuff from FXMutexImpl.h
+  #undef USE_WINAPI
+  #undef USE_OURMUTEX
+  #undef USE_X86
+  #undef __CLEANUP_C
+  #undef MUTEX_USESEMA
+ #endif
+ #undef FXMUTEX_FXAPI
+ #undef FXMUTEX_INLINE
+ #undef FXMUTEX_GLOBALS_FXAPI
+#endif
 
 #endif
 
