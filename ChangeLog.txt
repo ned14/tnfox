@@ -32,6 +32,7 @@ B FXThread::id() wasn't returning correct value on FreeBSD
 B FXPipe::maxAtomicLength() was incorrect on FreeBSD
 B Finally fixed FXPipe::readBlock() causing segfault on Linux 2.6 kernels
 when library was being used dynamically
+B Fixed fatal exception in FXFSMonitor on POSIX when shut down
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
@@ -78,6 +79,9 @@ a reason :)
 * FXThread::id() and myId() now return 64 bit quantities as it was not
 possible to fit a thread id on FreeBSD into a 32 bit container (due to
 process local threads not being a kernel process)
+* Improved error reporting in FXFSMonitor
+* Moved FXSecure to use /dev/urandom instead of /dev/random on POSIX
+as the latter never had enough data on Linux 2.6 kernels
 
 
 v0.80 12th July 2004:
