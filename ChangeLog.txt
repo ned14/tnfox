@@ -33,6 +33,8 @@ B FXPipe::maxAtomicLength() was incorrect on FreeBSD
 B Finally fixed FXPipe::readBlock() causing segfault on Linux 2.6 kernels
 when library was being used dynamically
 B Fixed fatal exception in FXFSMonitor on POSIX when shut down
+B Fixed "no registered converter to void *" error from BPL on thread exit
+B Fixed no top-level FXERRH_TRY fatal error when exception thrown inside python
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
@@ -82,6 +84,8 @@ process local threads not being a kernel process)
 * Improved error reporting in FXFSMonitor
 * Moved FXSecure to use /dev/urandom instead of /dev/random on POSIX
 as the latter never had enough data on Linux 2.6 kernels
+* Updated python bindings for latest TnFOX
+* Updated to use Boost v1.32
 
 
 v0.80 12th July 2004:
