@@ -2082,6 +2082,8 @@ Summary of what is not supported from FOX:
 useful anyway)
 \li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
 FX::FXWaitCondition. Also consider FX::FXZeroedWait)
+\li FXMemMap (rewrite your code to use TnFOX's FX::FXMemMap, it's also superior
+anyway)
 \li There are some API thunks for FX::FXMutex, FX::FXMutexLock and FX::FXThread.
 But you'll have to try and see for yourself
 */
@@ -2161,9 +2163,10 @@ here and there which may not work.
 
 \section supported Supported configuration:
 MSVC6 is \b not supported, nor is MSVC7.0 (Visual Studio .NET). You need MSVC7.1 minimum
-(Visual Studio .NET 2003). GCC v3.2.2 or v3.4 is known to compile working binaries on Linux
+(Visual Studio .NET 2003). GCC v3.2.2 to v4.0 is known to compile working binaries on Linux
 but is untested on Windows. The Digital Mars compiler has config files but currently the
-compiler itself is not yet up to the job. Intel's C++ compiler v8 for Windows works fine.
+compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ compiler
+v8 for Windows works fine.
 
 As both FOX and TnFOX use very low-level and old API's in Windows, no libraries above those
 supplied by default with the system are required. It is recommended you have the latest
@@ -2243,10 +2246,10 @@ against Apple's X11 thunking layer and TnFOX is happy on FreeBSD it should be fi
 at least the problems will be minor.
 
 \section supported Supported configuration:
-TnFOX is primarily tested against GCC v4.0 on:
-\li A RedHat 9 (2.4 kernel) installation
-\li A RedHat Fedora Core 2 (2.6 kernel) installation
-\li A FreeBSD v5.3 installation
+TnFOX is primarily tested against:
+\li A RedHat 9 (2.4 kernel) installation with GCC v4.0 from CVS
+\li A RedHat Fedora Core 2 (2.6 kernel) installation with stock GCC v3.4.2
+\li A FreeBSD v5.3 installation with GCC v4.0 from CVS
 
 GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
@@ -2336,12 +2339,14 @@ file.
     <ol>
     <li>One of many dialog boxes based on FX::FXDialogBox listed below
     <li>FX::FXMainWindow, a main window in your application
+	<li>FX::FXSplashWindow, a temporary window shown during startup of your application
     <li>FX::FXToolBarShell, contains a number of toolbar items (see operational below)
     </ol>
   <li>FX::FXMenuPane, a popup menu window hovering above all others
   </ol>
 <li><b>Representation:</b>
   <ol>
+  <li>FX::FX7Segment, displays a number as a digital display
   <li>FX::FXBitmapFrame, displays a third-party bitmap
   <li>FX::FXBitmapView, displays a third-party bitmap in a scrollable box
   <li>FX::FXCanvas, displays an image drawn into by other code
@@ -2372,6 +2377,7 @@ file.
     <li>FX::FXCheckButton, a tri-state button (on, off, and neither)
     <li>FX::FXPrimaryButton, a master button in a dialog
     </ol>
+  <li>FX::FXDockSite, a place where toolbars and such can be docked
   <li>FX::FXMenuBar, a menu bar at the top of a top-level window
   <li>FX::FXMenuButton, a button opening a popup menu
   <li>FX::FXMenuCaption, an item in a menu
@@ -2413,6 +2419,7 @@ file.
   <li>FX::FXText, edits multiple lines of text
   <li>FX::FXMenuPane, a popup list of selectable menu options
 
+  <li>FX::FXChoiceBox, chooses an option from a drop-down dialog box
   <li>FX::FXComboBox, chooses from a drop down menu
   <li>FX::FXDial, chooses a number by rotation of a dial
   <li>FX::FXFontSelector, chooses a font
@@ -2501,10 +2508,12 @@ describes such a font.
   <li>FX::FXBMPIcon, contains an icon in Windows BMP format
   <li>FX::FXGIFIcon, contains an icon in GIF format
   <li>FX::FXICOIcon, contains an icon in Windows ICO format
+  <li>FX::FXIFFIcon, contains an icon in EA/Amiga format
   <li>FX::FXJPGIcon, contains an icon in JPEG format
   <li>FX::FXPCXIcon, contains an icon in PCX format
   <li>FX::FXPNGIcon, contains an icon in PNG format
   <li>FX::FXPPMIcon, contains an icon in PPM format
+  <li>FX::FXRASIcon, contains an icon in SUN Raster format
   <li>FX::FXRGBIcon, contains an icon in raw RGB format
   <li>FX::FXTGAIcon, contains an icon in TGA format
   <li>FX::FXTIFIcon, contains an icon in TIFF format
@@ -2516,10 +2525,12 @@ describes such a font.
   <li>FX::FXBMPImage, contains an image in Windows BMP format
   <li>FX::FXGIFImage, contains an image in GIF format
   <li>FX::FXICOImage, contains an image in Windows ICO format
+  <li>FX::FXIFFImage, contains an image in EA/Amiga format
   <li>FX::FXJPGImage, contains an image in JPEG format
   <li>FX::FXPCXImage, contains an image in PCX format
   <li>FX::FXPNGImage, contains an image in PNG format
   <li>FX::FXPPMImage, contains an image in PPM format
+  <li>FX::FXRASImage, contains an image in SUN Raster format
   <li>FX::FXRGBImage, contains an image in raw RGB format
   <li>FX::FXTGAImage, contains an image in TGA format
   <li>FX::FXTIFImage, contains an image in TIFF format
