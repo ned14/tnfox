@@ -68,14 +68,15 @@ struct FXFSMon : public FXRWMutex
 				Handler(FXFSMonitor::ChangeHandler _handler) : handler(_handler), callv(0) { }
 				~Handler()
 				{
-					while(FXThreadPool::WasRunning==FXProcess::threadPool().cancel(callv));
+					FXThreadPool::CancelledState state;
+					assert(!callv || dynamic_cast<void *>(callv));
+					while(FXThreadPool::WasRunning==(state=FXProcess::threadPool().cancel(callv)));
 					FXDELETE(callv);
 				}
-				void invoke(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi)
-				{
-					callv=0;
-					handler(change, oldfi, newfi);
-				}
+				void invoke(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi);
+			private:
+				Handler(const Handler &);
+				Handler &operator=(const Handler &);
 			};
 			QPtrVector<Handler> handlers;
 			Path(const FXString &_path)
@@ -248,6 +249,16 @@ FXFSMon::Watcher::Path::~Path()
 #endif
 }
 
+void FXFSMon::Watcher::Path::Handler::invoke(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi)
+{
+	//fxmessage("FXFSMonitor dispatch %p\n", callv);
+	fxfsmon->lock();	// necessary as dispatch may execute before callv gets written
+	callv=0;
+	fxfsmon->unlock();
+	handler(change, oldfi, newfi);
+}
+
+
 static const FXFileInfo *findFIByName(const QFileInfoList *list, const FXString &name)
 {
 	for(QFileInfoList::const_iterator it=list->begin(); it!=list->end(); ++it)
@@ -356,14 +367,17 @@ void FXFSMon::Watcher::Path::callHandlers()
 			const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
 			const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
 #ifdef DEBUG
-			fxmessage("File %s had changes 0x%x old=%s, new=%s\n", oldfi.filePath().text(), *(int *) &ch.change,
-				oldfi.createdAsString().text(), newfi.createdAsString().text());
+			//fxmessage("File %s had changes 0x%x old=%s, new=%s\n", oldfi.filePath().text(), *(int *) &ch.change,
+			//	oldfi.createdAsString().text(), newfi.createdAsString().text());
 #endif
 			for(QPtrVectorIterator<Watcher::Path::Handler> it(handlers); (handler=it.current()); ++it)
 			{
 				if(!handler->callv)
 				{
 					handler->callv=FXProcess::threadPool().dispatch(new Generic::BoundFunctor<FXFSMonitor::ChangeHandlerPars>(Generic::Functor<FXFSMonitor::ChangeHandlerPars>(*handler, &Watcher::Path::Handler::invoke), ch.change, oldfi, newfi));
+#ifdef DEBUG
+					fxmessage("Dispatched FXFSMonitor change %p\n", handler->callv);
+#endif
 				}
 			}
 		}
