@@ -230,14 +230,14 @@ finish:
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock inc dword ptr (%1)\n"
+		"lock incl (%1)\n"
 #else
-		"inc dword ptr (%1)\n"
+		"incl (%1)\n"
 #endif
-		"\tjl retm1\n\tjg retp1\n"
-		"\tmov 0, %%eax\n\tjmp finish\n"
-		"retm1:\tmov -1, %%eax\n\tjmp finish\n"
-		"retp1:\tmov 1, %%eax\nfinish:\n"
+		"\tjl retm1a\n\tjg retp1a\n"
+		"\tmov 0, %%eax\n\tjmp finisha\n"
+		"retm1a:\tmov -1, %%eax\n\tjmp finisha\n"
+		"retp1a:\tmov 1, %%eax\nfinisha:\n"
 		: "=a" (myret) : "r" (&value));
 #endif
 	return myret;
@@ -391,14 +391,14 @@ finish:
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock dec dword ptr (%1)\n"
+		"lock decl (%1)\n"
 #else
-		"dec dword ptr (%1)\n"
+		"decl (%1)\n"
 #endif
-		"\tjl retm1\n\tjg retp1\n"
-		"\tmov 0, %%eax\n\tjmp finish\n"
-		"retm1:\tmov -1, %%eax\n\tjmp finish\n"
-		"retp1:\tmov 1, %%eax\nfinish:\n"
+		"\tjl retm1b\n\tjg retp1b\n"
+		"\tmov 0, %%eax\n\tjmp finishb\n"
+		"retm1b:\tmov -1, %%eax\n\tjmp finishb\n"
+		"retp1b:\tmov 1, %%eax\nfinishb:\n"
 		: "=a" (myret) : "r" (&value));
 #endif
 	return myret;
