@@ -29,6 +29,9 @@
 #ifndef FXPACKER_H
 #include "FXPacker.h"
 #endif
+#ifndef FXRECENTFILES_H
+#include "FXRecentFiles.h"
+#endif
 
 namespace FX {
 
