@@ -68,7 +68,14 @@ struct FXDLLLOCAL FXPipePrivate : public FXMutex
 #endif
 #ifdef USE_POSIX
 	int readh, writeh;
-	FXPipePrivate(bool deepPipe) : acl(FXACL::Pipe), bufferLength(PIPE_BUF), readh(0), writeh(0), FXMutex() { }
+	FXPipePrivate(bool deepPipe) : acl(FXACL::Pipe),
+#ifdef __FreeBSD__
+		// PIPE_BUF lies on FreeBSD :(
+		bufferLength(16384),	// =PIPE_SIZE from sys/pipe.h, could even go to 64Kb (BIG_PIPE_SIZE)
+#else
+		bufferLength(PIPE_BUF),
+#endif
+		readh(0), writeh(0), FXMutex() { }
 #endif
 	void makePerms()
 	{
@@ -594,12 +601,16 @@ doread:
 		readed=(FXuval) bread;
 #endif
 #ifdef USE_POSIX
-		fd_set fds;
-		FD_ZERO(&fds);
-		FD_SET(p->readh, &fds);
+		fd_set rfds, efds;
+		FD_ZERO(&rfds);
+		FD_ZERO(&efds);
+		FD_SET(p->readh, &rfds);
+		FD_SET(p->readh, &efds);
 		h.unlock();
-		FXERRHIO(::select(p->readh+1, &fds, 0, 0, NULL));
-		assert(FD_ISSET(p->readh, &fds));
+		FXERRHIO(::select(p->readh+1, &rfds, 0, &efds, NULL));
+		if(FD_ISSET(p->readh, &efds))	// error occurred (eg; widowed pipe)
+			return 0;
+		assert(FD_ISSET(p->readh, &rfds));
 		readed=::read(p->readh, data, maxlen);
 		h.relock();
 		FXERRHIO(readed);
