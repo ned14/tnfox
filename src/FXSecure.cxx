@@ -245,7 +245,7 @@ class RandomnessPrivate : public FXThread, public FXMutex
 public:
 	RandomnessPrivate() :
 #ifdef USE_POSIX
-		random("/dev/random"),
+		random("/dev/urandom"),
 #else
 		shrdmem("TnFOX_Randomness1", sizeof(SharedMemLayout)), data(0), offset(0), query(0), randomness(0), randomnesslen(0),
 #endif
@@ -300,7 +300,7 @@ public:
 #ifdef USE_POSIX
 		random.open(IO_ReadOnly);
 		FXRBOp unopen=FXRBObj(random, &FXFile::close);
-		FXERRH(length==random.readBlock((char *) buffer, length), FXTrans::tr("FX::Secure::Randomness", "Failed to read /dev/random"), FXSECURE_RANDOMNESS_READFAILURE, 0);
+		FXERRH(length==random.readBlock((char *) buffer, length), FXTrans::tr("FX::Secure::Randomness", "Failed to read /dev/urandom"), FXSECURE_RANDOMNESS_READFAILURE, 0);
 #else
 		FXERRH(length<=RANDOMNESS_SIZE, FXTrans::tr("FX::Secure::Randomness", "Too much random data requested"), FXSECURE_RANDOMNESS_TOOBIG, 0);
 		while(length>data->size)
