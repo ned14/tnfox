@@ -1,12 +1,5 @@
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
-* Regenerate python bindings on all platforms
-* Update web page + completed listing + write release email
-* Lots of testing with release builds
-* Release!
-* If have time, release ptmalloc2
-
-
 NT v5.0 Failures:
   None known.
 
