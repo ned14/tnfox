@@ -112,12 +112,12 @@ if debugmode:
                ]
 else:
     cppflags+=["-O2",                   # Optimise for fast code
-               "-fomit-frame-pointer"   # No frame pointer
                #"-fno-default-inline",
                #"-fno-inline-functions",
                #"-fno-inline",
                #"-finline-limit=0",
-               #"-g"
+               #"-g",
+               "-fomit-frame-pointer"   # No frame pointer
                ]
 env['CPPFLAGS']+=cppflags
 
