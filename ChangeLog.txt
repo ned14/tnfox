@@ -35,6 +35,7 @@ when library was being used dynamically
 B Fixed fatal exception in FXFSMonitor on POSIX when shut down
 B Fixed "no registered converter to void *" error from BPL on thread exit
 B Fixed no top-level FXERRH_TRY fatal error when exception thrown inside python
+B Fixed python threads not being able to find TnFOX import library
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
@@ -88,6 +89,7 @@ as the latter never had enough data on Linux 2.6 kernels
 * Updated to use Boost v1.32
 * Modified FXScrollBar to use 64 bit ranges - as suggested by jayn on
 tnfox-discussion
+* Merged FOX v1.3.26
 
 
 v0.80 12th July 2004:
