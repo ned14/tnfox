@@ -825,13 +825,11 @@ FXuval FXBlkSocket::readBlock(char *data, FXuval maxlen)
 #endif
 #ifdef USE_POSIX
 		h.unlock();
-#ifdef __linux__
-		// recv() is a cancellable point on Linux
-		readed=::recv(p->handle, data, maxlen, MSG_NOSIGNAL);
-#else
-		// recv() isn't a cancellable point on all platforms, so use read()
+		/* 31st Jan 2005 ned: Finally fixed segfault on Linux 2.6 kernels when
+		library was being using dynamically. For some odd reason it doesn't like
+		being thread cancelled during a recv(), so I've moved permanently to
+		read() which FreeBSD needed anyway */
 		readed=::read(p->handle, data, maxlen);
-#endif
 		h.relock();
 		FXERRHSKT(readed);
 #endif
