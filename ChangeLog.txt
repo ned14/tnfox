@@ -61,6 +61,8 @@ a reason :)
 + Added #define FXREFINGOBJECT_DEBUGKNOWALLOC
 + Added support for 64 bit x86 architectures
 + Added failonfree() and unfailonfree()
+- Removed over allocation feature from FXMemMap
++ Added FXMemMap::mappableSize() and FXMemMap::maximiseMappableSize()
 
 
 v0.80 12th July 2004:
