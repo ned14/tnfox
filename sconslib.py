@@ -257,7 +257,7 @@ def doConfTests(env, prefixpath=""):
         conf.env['CPPPATH']+=[prefixpath+"../openssl/inc32"]
         conf.env['LIBPATH']+=[prefixpath+"../openssl/out32dll"]
         conf.env['LIBS']+=["libeay32", "ssleay32"]
-    elif conf.CheckLibWithHeader("ssl", ["openssl/ssl.h"], "c"):
+    elif conf.CheckLibWithHeader("ssl", ["openssl/ssl.h"], "c", "SSL_library_init();"):
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['LIBS']+=["crypto"]
     else:
