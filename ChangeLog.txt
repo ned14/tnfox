@@ -1,3 +1,9 @@
+v0.86 ?
+-=-=-=-=-=-=-=-=-=-=
+B FXMemMap was unintentially broken on Linux for shared memory usage
+B FXMemMap wasn't detecting mmap() failures at all on POSIX!
+B FXMemoryPool contained a use of static data after static data deinit
+
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
 B Fixed compile error in FXRefedObject.h when FXRefedObject subclass defines
