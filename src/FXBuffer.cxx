@@ -72,11 +72,14 @@ FXBuffer::~FXBuffer()
 
 QByteArray &FXBuffer::buffer() const
 {
-	FXMtxHold h(p);
 	if(!p->buffer)
 	{
-		FXERRHM(p->buffer=new QByteArray);
-		p->mine=true;
+		FXMtxHold h(p);
+		if(!p->buffer)
+		{
+			FXERRHM(p->buffer=new QByteArray);
+			p->mine=true;
+		}
 	}
 	return *p->buffer;
 }
@@ -131,7 +134,7 @@ void FXBuffer::flush()
 
 FXfval FXBuffer::size() const
 {
-	FXMtxHold h(p);
+	// FXMtxHold h(p);	can do without
 	return p->buffer->size();
 }
 
