@@ -38,7 +38,8 @@ if PYTHON_INCLUDE:
 else:
     try:
         env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
-    except: pass
+    except:
+        if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
 if not onWindows: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
