@@ -8,10 +8,32 @@ if debugmode:
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
+def CheckMSVC71(cc):
+    cc.Message("Checking for MSVC7.1 ...")
+    result=cc.TryCompile('#if !defined(_MSC_VER) || _MSC_VER<1310\n#error Too old!\n#endif\n', '.cpp')
+    cc.Result(result)
+    return result
+def CheckMSVC80(cc):
+    cc.Message("Checking for MSVC8.0 ...")
+    result=cc.TryCompile('#if !defined(_MSC_VER) || _MSC_VER<1400\n#error Too old!\n#endif\n', '.cpp')
+    cc.Result(result)
+    return result
+conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
+assert conf.CheckMSVC71()
+MSVCVersion=710
+if conf.CheckMSVC80():
+    MSVCVersion=800
+env=conf.Finish()
 # Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope')
 assert architecture=="i486"
-cppflags+=[ "/G%d" % i486_version ]
+if MSVCVersion==710:
+    cppflags+=[ "/Ow",                   # Only functions may alias
+                "/G%d" % i486_version    # Optimise for given processor revision
+              ]
+else:
+    # Stop the stupid STDC function deprecated warnings
+    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
 if   i486_SSE==1: cppflags+=[ "/arch:SSE" ]
 elif i486_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
