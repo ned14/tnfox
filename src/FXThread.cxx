@@ -2339,19 +2339,21 @@ void FXThreadPoolPrivate::Thread::run()
 				}
 				if(goFree)
 				{
+					free=true;
+					assert(!code);
 					if(++parent->free>(int) parent->total)
 					{
 						FXMtxHold h(parent);
 						if(parent->free>(int) parent->total) 
 						{
+							free=false;
 							--parent->free;
 							return;	// Exit thread
 						}
 					}
-					free=true;
 					wc.wait();
-					lock();
 					free=false;
+					lock();
 				}
 
 				FXRBOp unlockme=FXRBObj(*this, &FXThreadPoolPrivate::Thread::unlock);
@@ -2581,9 +2583,9 @@ Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV>
 			{
 				if(t->free && !t->code)
 				{
+					--p->free;
 					t->code=_code=PtrRelease(code);
 					t->wc.wakeAll();
-					--p->free;
 					break;
 				}
 			}
@@ -2598,6 +2600,7 @@ Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV>
 			}
 		}
 	}
+	assert(!code);
 	return _code;
 }
 
