@@ -13,18 +13,22 @@ make64bit=False
 # Set to true to create a SMP architecture compatible binary. This
 # is always safe though inefficient on uniprocessor machines.
 makeSMPBuild=True
+# Set to true to cause inlining of FXAtomicInt and FXMutex in all
+# source files. This can slightly increase code size and also drags
+# in a lot of extra system header files.
+inlineMutex=False  # not debugmode
 GenStaticLib=False       # Set to true to always generate a static library
 SeparateTnLibs=(sys.platform=="win32")
 
 architecture="i486"      # Can currently only be "i486"
 # =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon,
 # =7 for Pentium 4/Athlon XP, =8 for AMD64
-i486_version=4           
-i486_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
-i486_3dnow=0             # =0 (disable), =1 (3dnow)
-#i486_version=6           
-#i486_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
-#i486_3dnow=1             # =0 (disable), =1 (3dnow)
+#i486_version=4           
+#i486_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+#i486_3dnow=0             # =0 (disable), =1 (3dnow)
+i486_version=7           
+i486_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
+i486_3dnow=1             # =0 (disable), =1 (3dnow)
 
 toolset=None             # Let scons pick which compiler/linker to use
 #if sys.platform!="win32":
@@ -39,7 +43,7 @@ PYTHON_INCLUDE=None      # Sets where the python header  files can be found (=No
 PYTHON_LIB=None          # Sets where the python library files can be found (=None for get from environment)
 
 tnfoxname="TnFOX"
-tnfoxversion="0.85"      # Increment each release the interface is removed from
+tnfoxversion="0.86"      # Increment each release the interface is removed from
 tnfoxinterfaceidx=0      # Increment each release the interface is added to
 tnfoxsourceidx=0         # Increment each release the source has changed
 tnfoxbackcompatible=tnfoxinterfaceidx     # Probably correct
