@@ -716,8 +716,8 @@ FXuint FXProcess::getMsCount()
 	return GetTickCount();
 #endif
 #ifdef USE_POSIX
-	struct ::timeval tv;
-	FXERRHOS(gettimeofday(&tv, 0));
+	struct timeval tv;
+	FXERRHOS(gettimeofday((::timeval *) &tv, 0));
 	return (tv.tv_sec*1000)+(tv.tv_usec/1000);
 #endif
 }
