@@ -25,6 +25,7 @@
 #else
 #include <unistd.h>
 #include <fam.h>
+#define FXERRHFAM(ret) if(ret<0) { FXERRG(FXString("FAM Error: %1 (code %2)").arg(FXString(FamErrlist[FAMErrno])).arg(FAMErrno), FXEXCEPTION_OSSPECIFIC, 0); }
 #endif
 
 #include "FXFSMonitor.h"
@@ -144,10 +145,11 @@ FXFSMon::~FXFSMon()
 	{
 		w->wait();
 	}
+	watchers.clear();
 #ifdef USE_POSIX
 	if(!nofam)
 	{
-		FXERRHOS(FAMClose(&fc));
+		FXERRHFAM(FAMClose(&fc));
 	}
 #endif
 } FXEXCEPTIONDESTRUCT2; }
@@ -216,7 +218,7 @@ void FXFSMon::Watcher::run()
 	FAMEvent fe;
 	while((ret=FAMNextEvent(&fxfsmon->fc, &fe)))
 	{
-		FXERRHOS(ret);
+		FXERRHFAM(ret);
 		if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
 			|| FAMAcknowledge==fe.code) continue;
 		FXMtxHold h(fxfsmon, false);
@@ -245,7 +247,7 @@ FXFSMon::Watcher::Path::~Path()
 	}
 #endif
 #ifdef USE_POSIX
-	FXERRHOS(FAMCancelMonitor(&fxfsmon->fc, &h));
+	FXERRHFAM(FAMCancelMonitor(&fxfsmon->fc, &h));
 #endif
 }
 
@@ -420,7 +422,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 		FXERRHWIN(SetEvent(w->latch));
 #endif
 #ifdef USE_POSIX
-		FXERRHOS(FAMMonitorDirectory(&fc, path.text(), &p->h, 0));
+		FXERRHFAM(FAMMonitorDirectory(&fc, path.text(), &p->h, 0));
 #endif
 		w->paths.insert(path, p);
 		unnew.dismiss();
@@ -477,7 +479,7 @@ void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 	FXERRH(FXFile::exists(path), FXTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)
 	{	// Try starting it again
-		FXERRHOS(FAMOpen(&fxfsmon->fc));
+		FXERRHFAM(FAMOpen(&fxfsmon->fc));
 		fxfsmon->nofam=false;
 	}
 #endif
