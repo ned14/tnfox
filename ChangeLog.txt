@@ -27,6 +27,8 @@ source files
 * FXFSMonitor now can disable itself if it detects a broken FAM implementation
 R Issued snapshot 1
 + Added FXACLEntity::homeDirectory()
++ Added FXDEPRECATED macro
++ Added support for MSVC8.0
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
