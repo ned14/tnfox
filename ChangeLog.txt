@@ -26,7 +26,10 @@ B Fixed failure to maintain wait counts in FXWaitCondition on Win32
 B Fixed FXBlkSocket not being cancellable on FreeBSD
 B FXMemMap wasn't using /tmp before its memory names which caused breakage
 on FreeBSD
-
+B Finally fixed problem with FXIPCChannel cleanup causing early thread exit
+on POSIX
+B FXThread::id() wasn't returning correct value on FreeBSD
+B FXPipe::maxAtomicLength() was incorrect on FreeBSD
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
@@ -70,6 +73,9 @@ a reason :)
 * Merged FOX v1.3.20
 + Added ability to set PYTHON_INCLUDE and PYTHON_LIB in config.py
 * Made FXProcess use new fast FXFile instantiations
+* FXThread::id() and myId() now return 64 bit quantities as it was not
+possible to fit a thread id on FreeBSD into a 32 bit container (due to
+process local threads not being a kernel process)
 
 
 v0.80 12th July 2004:
