@@ -74,21 +74,19 @@ namespace FX {
 #endif
 #endif
 
+#ifndef USE_OURMUTEX
+#error Unsupported architecture, please add atomic int support to FXThread.cxx
+#endif
+
 #ifdef USE_WINAPI
 #define DECLARERET int ret=1
 #define ERRCHK FXERRHWIN(ret)
-//#define   LOCK EnterCriticalSection(&p->cs)
-//#define UNLOCK LeaveCriticalSection(&p->cs)
 #elif defined(USE_POSIX)
 #define DECLARERET int ret=0
 #define ERRCHK FXERRHOS(ret)
-//#define   LOCK FXERRHOS(pthread_mutex_lock(&p->m))
-//#define UNLOCK FXERRHOS(pthread_mutex_unlock(&p->m))
 #else
 #define DECLARERET
 #define ERRCHK
-#define LOCK
-#define UNLOCK
 #endif
 
 inline int FXAtomicInt::get() const throw()
@@ -115,11 +113,6 @@ inline int FXAtomicInt::set(int i) throw()
 #endif
 #elif defined(USE_WINAPI)
 	InterlockedExchange((PLONG) &value, i);
-#else
-	LOCK;
-	p->value=i;
-	UNLOCK;
-	return v;
 #endif
 	return i;
 }
@@ -154,12 +147,6 @@ inline int FXAtomicInt::incp() throw()
 	return myret;
 #elif defined(USE_WINAPI)
 	return InterlockedExchangeAdd((PLONG) &value, 1);
-#else
-	int v;
-	LOCK;
-	v=value++;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::operator++(int) throw() { return incp(); }
@@ -194,12 +181,6 @@ inline int FXAtomicInt::pinc() throw()
 	return myret;
 #elif defined(USE_WINAPI)
 	return InterlockedIncrement((PLONG) &value);
-#else
-	int v;
-	LOCK;
-	v=++value;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::operator++() throw() { return pinc(); }
@@ -276,12 +257,6 @@ inline int FXAtomicInt::inc(int i) throw()
 	return myret+i;
 #elif defined(USE_WINAPI)
 	return InterlockedExchangeAdd((PLONG) &value, i)+i;
-#else
-	int v;
-	LOCK;
-	v=value+=i;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::operator+=(int i) throw() { return inc(i); }
@@ -315,12 +290,6 @@ inline int FXAtomicInt::decp() throw()
 	return myret;
 #elif defined(USE_WINAPI)
 	return InterlockedExchangeAdd((PLONG) &value, -1);
-#else
-	int v;
-	LOCK;
-	v=value--;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::operator--(int) throw() { return decp(); }
@@ -355,12 +324,6 @@ inline int FXAtomicInt::pdec() throw()
 	return myret;
 #elif defined(USE_WINAPI)
 	return InterlockedDecrement((PLONG) &value);
-#else
-	int v;
-	LOCK;
-	v=--value;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::operator--() throw() { return pdec(); }
@@ -438,12 +401,6 @@ inline int FXAtomicInt::dec(int i) throw()
 	return myret+i;
 #elif defined(USE_WINAPI)
 	return InterlockedExchangeAdd((PLONG) &value, -i)-i;
-#else
-	int v;
-	LOCK;
-	v=value-=i;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::operator-=(int i) throw() { return dec(i); }
@@ -467,13 +424,6 @@ inline int FXAtomicInt::swapI(int i) throw()
 	return myret;
 #elif defined(USE_WINAPI)
 	return InterlockedExchange((PLONG) &value, i);
-#else
-	int v;
-	LOCK;
-	v=value;
-	p->value=i;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::swap(int i) throw() { return swapI(i); }
@@ -508,13 +458,6 @@ inline int FXAtomicInt::cmpXI(int compare, int newval) throw()
 	return myret;
 #elif defined(USE_WINAPI)
 	return InterlockedExchange((PLONG) &value, i);
-#else
-	int v;
-	LOCK;
-	v=value;
-	p->value=i;
-	UNLOCK;
-	return v;
 #endif
 }
 int FXAtomicInt::cmpX(int compare, int newval) throw() { return cmpXI(compare, newval); }
@@ -559,16 +502,6 @@ exitloop:
 	return myret;
 #elif defined(USE_WINAPI)
 	for(int n=0; n<count && (myret=InterlockedExchange((PLONG) &value, 1)); n++)
-	return myret;
-#else
-	for(int n=0; n<count; n++)
-	{
-		LOCK;
-		myret=value;
-		value=1;
-		UNLOCK;
-		if(!myret) return myret;
-	}
 	return myret;
 #endif
 }
