@@ -30,6 +30,8 @@ B Finally fixed problem with FXIPCChannel cleanup causing early thread exit
 on POSIX
 B FXThread::id() wasn't returning correct value on FreeBSD
 B FXPipe::maxAtomicLength() was incorrect on FreeBSD
+B Finally fixed FXPipe::readBlock() causing segfault on Linux 2.6 kernels
+when library was being used dynamically
 
 * Made FXMemMap::mappedRegion() return current and following region
 + Added FXProcess::virtualAddrSpaceLeft()
@@ -70,7 +72,7 @@ a reason :)
 + Added failonfree() and unfailonfree()
 - Removed over allocation feature from FXMemMap
 + Added FXMemMap::mappableSize() and FXMemMap::maximiseMappableSize()
-* Merged FOX v1.3.20
+* Merged FOX v1.3.20 and updated docs
 + Added ability to set PYTHON_INCLUDE and PYTHON_LIB in config.py
 * Made FXProcess use new fast FXFile instantiations
 * FXThread::id() and myId() now return 64 bit quantities as it was not
