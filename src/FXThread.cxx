@@ -1523,7 +1523,7 @@ static void cleanup_thread(void *t)
 {
 	FXThread *tt=(FXThread *) t;
 #ifdef DEBUG
-	fxmessage("Thread %d (%s) cleanup\n", FXThread::id(), tt->name());
+	fxmessage("Thread %u (%s) cleanup\n", FXThread::id(), tt->name());
 #endif
 	FXThreadPrivate::cleanup(tt);
 }
@@ -1553,7 +1553,7 @@ static void *start_thread(void *t)
 	FXERRH_CATCH(FXException &e)
 	{
 #ifdef DEBUG
-		fxmessage("Exception occurred in thread %d (%s): %s\n", FXThread::id(), tt->name(), e.report().text());
+		fxmessage("Exception occurred in thread %u (%s): %s\n", FXThread::id(), tt->name(), e.report().text());
 #endif
 		if(e.flags() & FXERRH_ISFATAL)
 		{
@@ -1572,7 +1572,7 @@ static void *start_thread(void *t)
 			catch(FXException &e)
 			{
 #ifdef DEBUG
-				fxmessage("Exception occurred in cleanup of thread %d (%s) after other exception\n", FXThread::id(), tt->name());
+				fxmessage("Exception occurred in cleanup of thread %u (%s) after other exception\n", FXThread::id(), tt->name());
 #endif
 				if(e.flags() & FXERRH_ISFATAL)
 				{
@@ -1625,7 +1625,7 @@ void FXThreadPrivate::run(FXThread *t)
 	}
 	FXMtxHold h(t->p);
 #ifdef DEBUG
-	fxmessage("Thread %d (%s) started\n", FXThread::id(), t->name());
+	fxmessage("Thread %u (%s) started\n", FXThread::id(), t->name());
 #endif
 #ifdef USE_POSIX
 #ifdef _MSC_VER
@@ -1680,7 +1680,7 @@ void FXThreadPrivate::cleanup(FXThread *t)
 		h.relock();
 		forceCleanup(t);
 #ifdef DEBUG
-		fxmessage("Thread %d (%s) cleanup exits with code %d\n", FXThread::id(), t->name(), (int) *t->p->result);
+		fxmessage("Thread %u (%s) cleanup exits with code %d\n", FXThread::id(), t->name(), (int) *t->p->result);
 #endif
 		{
 #ifdef USE_OURTHREADID
