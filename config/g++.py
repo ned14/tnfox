@@ -22,7 +22,7 @@ def CheckGCCHasVisibility(cc):
     except:
         temp=[]
     cc.env['CPPFLAGS']=temp+["-fvisibility=hidden"]
-    result=cc.TryCompile('int main(void) { struct __attribute__ ((visibility("default"))) Foo { int foo; } foo; return 0; }\n', '.c')
+    result=cc.TryCompile('struct __attribute__ ((visibility("default"))) Foo { int foo; };\nint main(void) { Foo foo; return 0; }\n', '.cpp')
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
