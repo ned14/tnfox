@@ -46,7 +46,7 @@ enum {
 * used as the shape of the window if SPLASH_SHAPED is passed;
 * with the SPLASH_SIMPLE option the window will be simply rectangular.
 */
-class FXSplashWindow : public FXTopWindow {
+class FXAPI FXSplashWindow : public FXTopWindow {
   FXDECLARE(FXSplashWindow)
 protected:
   FXIcon *icon;         // Really big icon
