@@ -1,4 +1,4 @@
-TnFOX v0.80 12th July 2004:
+TnFOX v0.85 ?:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas
@@ -13,19 +13,12 @@ to manually define constants etc. Furthermore, on POSIX exceptions won't
 traverse shared object boundaries due to a problem with typeinfo and so
 the problems v0.75 had with the python bindings module on POSIX remain.
 
-Alpha Xft2 (anti aliased fonts) support from FOX has been enabled - this
-can produce the wrong size of text on some X font servers. Check your DPI
-settings!
-
 Any python code creating children of a FXObject (or anything derived from
 it eg; FXWindow) MUST ensure that the children are deleted before deleting
 the parent. This is due to python reference counting interacting with
 FOX's auto-destruction of children ie; FOX will delete objects without
 telling python so when python tries to delete them, you get at best heap
 corruption and at worst a fault. This may be fixable in the future.
-
-FXBlkSocket hangs on FreeBSD. The cause is unknown but we're waiting for
-KSE threads support to be added to gdb in the upcoming FreeBSD v5.3.
 
 FXProcess::virtualAddrSpaceLeft() currently doesn't understand 64 bit
 Linux and FreeBSD architectures. Any advice here would be greatly
@@ -37,7 +30,7 @@ Installation:
 -=-=-=-=-=-=-
 If you're installing the binary only on POSIX, simply do:
 
-libtool --mode=install cp libTnFOX-0.80.la /usr/local/lib
+libtool --mode=install cp libTnFOX-0.85.la /usr/local/lib
 
 
 You will need a make tool called scons from http://www.scons.org/ v0.95 or
@@ -95,8 +88,8 @@ Before this release, every program in the TestSuite was compiled and tested
 in both debug and release modes on:
 
 1. Microsoft Windows 2000 SP3 with MSVC7.1 (Visual Studio .NET 2003)
-2. RedHat Fedora Core 2 with GCC & libstdc++ 3.4
-3. FreeBSD v5.2.1 with GCC & libstdc++ 3.4
+2. RedHat Fedora Core 3 with GCC & libstdc++ 4.0
+3. FreeBSD v5.3 with GCC & libstdc++ 4.0
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings
 in its compiler have forced me to drop it.
