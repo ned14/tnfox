@@ -1632,24 +1632,14 @@ FXString FXStringVal(FXdouble num,FXint prec,FXbool exp){
   }
 
 
-#ifndef HAVE_STRTOLL
-extern "C" FXlong strtoll(const char *nptr, char **endptr, int base);
-#endif
-
-
-#ifndef HAVE_STRTOULL
-extern "C" FXulong strtoull(const char *nptr, char **endptr, int base);
-#endif
-
-
 // Conversion of string to integer
 FXlong FXLongVal(const FXString& s,FXint base){
-  return (FXlong)strtoll(s.str,NULL,base);
+  return s.toLong(0, base);
   }
 
 // Conversion of string to unsigned integer
 FXulong FXULongVal(const FXString& s,FXint base){
-  return (FXulong)strtoull(s.str,NULL,base);
+  return s.toULong(0, base);
   }
 
 // Conversion of string to integer
