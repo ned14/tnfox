@@ -26,13 +26,24 @@
 #include "FXString.h"
 #include "FXGenericTools.h"
 
-struct timeval;
-
 namespace FX {
 
 /*! \file FXProcess.h
 \brief Defines classes used in using processes
 */
+
+/*! \struct timeval
+\brief A duplicate of the BSD timeval structure
+
+This is only defined in the FX namespace so that code may always find it -
+thus working around a problem on Windows where struct timeval may or may
+not be defined
+*/
+typedef struct timeval
+{
+	long tv_sec;
+	long tv_usec;
+} timeval;
 
 class FXThreadPool;
 class FXACL;
