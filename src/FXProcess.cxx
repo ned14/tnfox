@@ -850,7 +850,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 #ifdef USE_POSIX
 #ifdef __linux__
 	FXString procpath=FXString("/proc/%1/maps").arg(FXProcess::id());
-	FXFile fh(procpath);
+	FXFile fh(procpath, FXFile::WantLightFXFile());
 	fh.open(IO_ReadOnly|IO_Translate);
 	char rawbuffer[4096];
 	while(fh.readLine(rawbuffer, sizeof(rawbuffer)))
@@ -886,7 +886,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 	char rawbuffer[131072 /* WARNING: This value derived by experimentation */ ];
 	char *ptr=rawbuffer, *end;
 	{
-		FXFile fh(procpath);
+		FXFile fh(procpath, FXFile::WantLightFXFile());
 		fh.open(IO_ReadOnly|IO_Translate);
 		FXuval read=fh.readBlock(rawbuffer, sizeof(rawbuffer)-2);
 		assert(read>0 && read<sizeof(rawbuffer)-2);
@@ -1254,7 +1254,7 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 #endif
 #ifdef USE_POSIX
 #ifdef __linux__
-	FXFile fh("/proc/meminfo");
+	FXFile fh("/proc/meminfo", FXFile::WantLightFXFile());
 	fh.open(IO_ReadOnly|IO_Translate);
 	char rawbuffer[4096];
 	rawbuffer[fh.readBlock(rawbuffer, sizeof(rawbuffer)+1)]=0;
