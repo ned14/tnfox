@@ -52,7 +52,8 @@ about the matter which you should consult.
 Some mapping though is provided. IPv4 maps to IPv6 where an IPv4 address
 \c AA.BB.CC.DD (if the numbers were in hex) becomes in IPv6 
 \c ::FFFF:AABB:CCDD. Also loopback is treated specially:
-127.0.0.1 is equivalent to ::1 and vice versa.
+127.0.0.1 is equivalent to ::1 and vice versa. In the comparison operators,
+0.0.0.0 is treated as being equivalent to loopback.
 */
 struct FXHostAddressPrivate;
 class FXAPIR FXHostAddress
@@ -102,7 +103,7 @@ public:
 	*/
 	FXString toString() const;
 	//! Returns true if the address is the local machine
-	bool isLoopback() const;
+	bool isLocalMachine() const;
 	friend FXStream &operator<<(FXStream &s, const FXHostAddress &i);
 	friend FXStream &operator>>(FXStream &s, FXHostAddress &i);
 };
