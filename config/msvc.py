@@ -25,7 +25,7 @@ elif i486_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=["/w34701",    # Report uninitialized variable use
                "/Od",        # Optimisation off
-               #"/O2",
+               #"/O2", "/Oy-",
                "/Zi",        # Program database debug info
                ####"/GL",
                "/Gm",        # Minimum rebuild
@@ -42,6 +42,7 @@ else:
                #"/Zi",
                "/MD"         # Select MSVCRT.dll
                ]
+    #env['CCWPOOPTS']=["/Og-"]
 env['CPPFLAGS']=cppflags
 
 # Sets version, base address
