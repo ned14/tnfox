@@ -17,22 +17,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXObject
+import FXPacker
 
-def baseFXFileDict():
-    return "FXObject"
+def baseFXDockBar():
+    return "FXPacker"
 
-def applyFXFileDict(g, cclass):
+def applyFXDockBar(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXObject.applyFXObject(g, cclass)
-    set_policy(cclass.getIconDict,      return_internal_reference())
-    set_policy(cclass.replace,          return_internal_reference())
-    set_policy(cclass.remove,           return_internal_reference())
-    set_policy(cclass.find,             return_internal_reference())
-    set_policy(cclass.associate,        return_internal_reference())
-    set_policy(cclass.findFileBinding,  return_internal_reference())
-    set_policy(cclass.findDirBinding,   return_internal_reference())
-    set_policy(cclass.findExecBinding,  return_internal_reference())
-    exclude(cclass.data)
-    
+    FXPacker.applyFXPacker(g, cclass)
+    set_policy(cclass.getDryDock,     return_value_policy(reference_existing_object))
+    set_policy(cclass.getWetDock,     return_value_policy(reference_existing_object))
+    set_policy(cclass.findDockAtSide, return_value_policy(reference_existing_object))
+    set_policy(cclass.findDockNear,   return_value_policy(reference_existing_object))
