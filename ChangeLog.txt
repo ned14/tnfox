@@ -1,5 +1,5 @@
-v0.85 ?:
--=-=-=-=-=-=-=-=-=-=-
+v0.85 13th Feb 2005:
+-=-=-=-=-=-=-=-=-=-=
 B Fixed compile error in FXRefedObject.h when FXRefedObject subclass defines
 its own noMoreReferrers().
 B FXIPCChannel should have thrown away ack messages when sender did not
@@ -94,7 +94,6 @@ tnfox-discussion
 * Merged FOX v1.4.1
 * Changed FXThread assembly to use GCC local labels
 * Updated embedded translation file
-
 
 v0.80 12th July 2004:
 -=-=-=-=-=-=-=-=-=-=-
