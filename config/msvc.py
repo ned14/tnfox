@@ -27,6 +27,8 @@ if conf.CheckMSVC80():
 env=conf.Finish()
 
 env['CPPPATH']+=[prefixpath+"windows"]
+if not os.path.exists(builddir):
+    os.mkdir(builddir)
 
 # Warnings, synchronous exceptions, enable RTTI, pool strings, ANSI for scoping,
 # types defined before pointers to members used
