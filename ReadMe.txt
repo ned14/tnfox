@@ -7,11 +7,13 @@ For full documentation, please consult the index.html file.
 
 Issues:
 -=-=-=-
+1: THE PYTHON BINDINGS ARE NOT FINISHED
 The python bindings remain incomplete until pyste gets its AllFromHeader()
 function working again. There is enough for most things but you'll need
 to manually define constants etc. Furthermore, on POSIX exceptions won't
 traverse shared object boundaries due to a problem with typeinfo and so
 the problems v0.75 had with the python bindings module on POSIX remain.
+Interestingly, debug builds let exceptions traverse just fine :(
 
 Any python code creating children of a FXObject (or anything derived from
 it eg; FXWindow) MUST ensure that the children are deleted before deleting
@@ -20,10 +22,13 @@ FOX's auto-destruction of children ie; FOX will delete objects without
 telling python so when python tries to delete them, you get at best heap
 corruption and at worst a fault. This may be fixable in the future.
 
+2: 64 BIT ARCHITECTURES ARE NOT FULLY SUPPORTED
 FXProcess::virtualAddrSpaceLeft() currently doesn't understand 64 bit
 Linux and FreeBSD architectures. Any advice here would be greatly
-appreciated.
+appreciated. This problem won't affect any code which doesn't use this
+function (which is no other code in TnFOX at all)
 
+3: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
 See Todo.txt for a list of known bugs.
 
 Installation:

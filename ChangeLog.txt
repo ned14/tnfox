@@ -93,6 +93,7 @@ tnfox-discussion
 * Merged FOX v1.4.0
 * Merged FOX v1.4.1
 * Changed FXThread assembly to use GCC local labels
+* Updated embedded translation file
 
 
 v0.80 12th July 2004:

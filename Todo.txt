@@ -16,7 +16,8 @@ in Tn (see the cleanup() in FXIPCChannel).
 
 Linux Kernel v2.6.10 Failures:
   1. TestMultithreading, there is a segfault as the threads quit in sem_post()
-in glibc. As this doesn't happen on other platforms, it's likely an OS bug.
+in glibc but ONLY when being used as a shared library. As this doesn't happen
+on other platforms or when built statically, it's likely an OS bug.
 
 FreeBSD v5.3 Failures:
   1. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
