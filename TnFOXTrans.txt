@@ -1,5 +1,5 @@
 # TnFOX human language string literal translation file
-# Last updated: Wed, 28 Jul 2004 17:00:48 +0000
+# Last updated: Mon, 31 Jan 2005 20:51:10 +0000
 
 version=1:
 
@@ -196,8 +196,8 @@ langids="ES":
 	srcfile="FXException.cxx":class="FXException":
 		ES: up
 
-"Failed to read /dev/random":
-	ES: "Hay fracaso para leer /dev/random"
+"Failed to read /dev/urandom":
+	ES: "Hay fracaso para leer /dev/urandom"
 	srcfile="FXSecure.cxx":class="FX::Secure::Randomness":
 		ES: up
 
