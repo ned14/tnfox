@@ -42,7 +42,8 @@ in FX::FXFile, it can be useful to have a container knowing everything there is 
 about an entry in a file system, particularly for purposes of comparison.
 
 Like Qt's QFileInfo, this class also caches its information by default and thus after
-construction or \c refresh(), queries are far quicker (this is the default). API compatibility with QFileInfo has been mostly
+construction or \c refresh(), queries are far quicker (this is the default). API
+compatibility with QFileInfo has been mostly
 maintained - however, the old system of permissions has been replaced with an ACL based
 one so that NT file permissions are available. On Linux or BSD, suitable entries are
 created to reflect the much simpler POSIX security model though it could be easily
