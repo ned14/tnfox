@@ -1718,6 +1718,7 @@ Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV>
 					--p->free;
 					t->code=_code=PtrRelease(code);
 					t->wc.wakeAll();
+					//fxmessage("waking %p\n", t);
 					break;
 				}
 			}
@@ -1726,6 +1727,7 @@ Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV>
 		else
 		{
 			p->waiting.append((_code=PtrRelease(code)));
+			//fxmessage("appending\n");
 			if(p->dynamic && p->total<p->maximum)
 			{
 				startThreads(p->total+1);
