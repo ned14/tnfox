@@ -215,10 +215,11 @@ finish:
 #else
 		"incl (%1)\n"
 #endif
-		"\tjl retm1a\n\tjg retp1a\n"
-		"\tmov $0, %%eax\n\tjmp finisha\n"
-		"retm1a:\tmov $-1, %%eax\n\tjmp finisha\n"
-		"retp1a:\tmov $1, %%eax\nfinisha:\n"
+		"\tjl 1f\n\tjg 2f\n"
+		"\tmov $0, %%eax\n\tjmp 3f\n"
+		"1:\tmov $-1, %%eax\n\tjmp 3f\n"
+		"2:\tmov $1, %%eax\n"
+		"3:\n"
 		: "=a" (myret) : "r" (&value));
 #endif
 	return myret;
@@ -358,10 +359,11 @@ finish:
 #else
 		"decl (%1)\n"
 #endif
-		"\tjl retm1b\n\tjg retp1b\n"
-		"\tmov $0, %%eax\n\tjmp finishb\n"
-		"retm1b:\tmov $-1, %%eax\n\tjmp finishb\n"
-		"retp1b:\tmov $1, %%eax\nfinishb:\n"
+		"\tjl 1f\n\tjg 2f\n"
+		"\tmov $0, %%eax\n\tjmp 3f\n"
+		"1:\tmov $-1, %%eax\n\tjmp 3f\n"
+		"2:\tmov $1, %%eax\n"
+		"3:\n"
 		: "=a" (myret) : "r" (&value));
 #endif
 	return myret;
