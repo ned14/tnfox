@@ -142,6 +142,15 @@
   #define FXEXCEPTIONAPI(api)
 #endif
 
+// Forcing inlines is a non-portable extension
+#if defined(_MSC_VER)
+ #define FXFORCEINLINE __forceinline
+#elif defined(__GNUC__)
+ #define FXFORCEINLINE inline __attribute__ ((always_inline))
+#else
+ #define FXFORCEINLINE inline
+#endif
+
 // Callback
 #ifdef WIN32
 #ifndef CALLBACK
