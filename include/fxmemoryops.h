@@ -103,15 +103,15 @@ namespace FX
 	// STDC export "C" versions. Also more convenient to use from C++.
 	/*! \ingroup fxmemoryops
 	Allocates memory */
-	template<typename T> inline T *malloc(size_t size, FXMemoryPool *heap=0) throw() FXMALLOCATTR;
+	template<typename T> inline FXMALLOCATTR T *malloc(size_t size, FXMemoryPool *heap=0) throw();
 	template<typename T> inline T *malloc(size_t size, FXMemoryPool *heap) throw() { return (T *) FX::malloc(size, heap); }
 	/*! \ingroup fxmemoryops
 	Allocates memory */
-	template<typename T> inline T *calloc(size_t no, size_t size, FXMemoryPool *heap=0) throw() FXMALLOCATTR;
+	template<typename T> inline FXMALLOCATTR T *calloc(size_t no, size_t size, FXMemoryPool *heap=0) throw();
 	template<typename T> inline T *calloc(size_t no, size_t size, FXMemoryPool *heap) throw() { return (T *) FX::calloc(no, size, heap); }
 	/*! \ingroup fxmemoryops
 	Resizes memory */
-	template<typename T> inline T *realloc(T *p, size_t size, FXMemoryPool *heap=0) throw() FXMALLOCATTR;
+	template<typename T> inline FXMALLOCATTR T *realloc(T *p, size_t size, FXMemoryPool *heap=0) throw();
 	template<typename T> inline T *realloc(T *p, size_t size, FXMemoryPool *heap) throw() { return (T *) FX::realloc((void *) p, size, heap); }
 	/*! \ingroup fxmemoryops
 	Frees memory */
@@ -120,7 +120,7 @@ namespace FX
 	// This one caught me out for a while
 	/*! \ingroup fxmemoryops
 	Duplicates a string */
-	inline char *strdup(const char *str) throw() FXMALLOCATTR;
+	inline FXMALLOCATTR char *strdup(const char *str) throw();
 	inline char *strdup(const char *str) throw()
 	{
 		int len=strlen(str);
@@ -137,7 +137,7 @@ namespace FX
 // in each binary. Ensure it's public visibility on ELF.
 /*! \ingroup fxmemoryops
 Global operator new replacement */
-inline FXDLLPUBLIC void *operator new(size_t size) throw(std::bad_alloc) FXMALLOCATTR;
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size) throw(std::bad_alloc);
 inline FXDLLPUBLIC void *operator new(size_t size) throw(std::bad_alloc)
 {
 	void *ret;
@@ -146,7 +146,7 @@ inline FXDLLPUBLIC void *operator new(size_t size) throw(std::bad_alloc)
 }
 /*! \ingroup fxmemoryops
 Global operator new replacement */
-inline FXDLLPUBLIC void *operator new[](size_t size) throw(std::bad_alloc) FXMALLOCATTR;
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size) throw(std::bad_alloc);
 inline FXDLLPUBLIC void *operator new[](size_t size) throw(std::bad_alloc)
 {
 	void *ret;
@@ -166,14 +166,14 @@ inline FXDLLPUBLIC void operator delete[](void *p) throw()
 	if(p) FX::free(p);
 }
 #if defined(DEBUG) && defined(_MSC_VER)		// The MSVC CRT debug allocators
-inline FXDLLPUBLIC void *operator new(size_t size, int blockuse, const char *file, int lineno) FXMALLOCATTR;
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, int blockuse, const char *file, int lineno);
 inline FXDLLPUBLIC void *operator new(size_t size, int blockuse, const char *file, int lineno)
 {
 	void *ret;
 	if(!(ret=FX::_malloc_dbg(size, blockuse, file, lineno))) throw std::bad_alloc();
 	return ret;
 }
-inline FXDLLPUBLIC void *operator new[](size_t size, int blockuse, const char *file, int lineno) FXMALLOCATTR;
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, int blockuse, const char *file, int lineno);
 inline FXDLLPUBLIC void *operator new[](size_t size, int blockuse, const char *file, int lineno)
 {
 	void *ret;
@@ -185,7 +185,7 @@ inline FXDLLPUBLIC void *operator new[](size_t size, int blockuse, const char *f
 
 /*! \ingroup fxmemoryops
 operator new with a specific pool */
-inline FXDLLPUBLIC void *operator new(size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc) FXMALLOCATTR;
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc);
 inline FXDLLPUBLIC void *operator new(size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc)
 {
 	void *ret;
@@ -194,7 +194,7 @@ inline FXDLLPUBLIC void *operator new(size_t size, FX::FXMemoryPool *heap) throw
 }
 /*! \ingroup fxmemoryops
 operator new with a specific pool */
-inline FXDLLPUBLIC void *operator new[](size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc) FXMALLOCATTR;
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc);
 inline FXDLLPUBLIC void *operator new[](size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc)
 {
 	void *ret;

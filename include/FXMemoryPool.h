@@ -38,6 +38,9 @@ template<class type> class QMemArray;
 class FXMemoryPool;
 class FXThread;
 
+#if defined(_MSC_VER) && _MSC_VER>=1400
+#define FXMALLOCATTR __declspec(restrict)
+#endif
 #ifdef __GNUC__
 #define FXMALLOCATTR __attribute__ ((malloc))
 #endif
@@ -47,18 +50,18 @@ class FXThread;
 
 /*! \ingroup fxmemoryops
 Allocates memory */
-extern FXAPI void *malloc(size_t size, FXMemoryPool *heap=0) throw() FXMALLOCATTR;
+extern FXAPI FXMALLOCATTR void *malloc(size_t size, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
 Allocates memory */
-extern FXAPI void *calloc(size_t no, size_t size, FXMemoryPool *heap=0) throw() FXMALLOCATTR;
+extern FXAPI FXMALLOCATTR void *calloc(size_t no, size_t size, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
 Resizes memory */
-extern FXAPI void *realloc(void *p, size_t size, FXMemoryPool *heap=0) throw() FXMALLOCATTR;
+extern FXAPI FXMALLOCATTR void *realloc(void *p, size_t size, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
 Frees memory */
 extern FXAPI void free(void *p, FXMemoryPool *heap=0) throw();
 #if defined(DEBUG) && defined(_MSC_VER)
-extern FXAPI void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw() FXMALLOCATTR;
+extern FXAPI FXMALLOCATTR void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw();
 #endif
 /*! \ingroup fxmemoryops
 Causes an assertion failure when the specified memory block is freed */
@@ -226,29 +229,29 @@ public:
 	//! Returns the maximum size of the pool
 	FXuval maxsize() const throw();
 	//! Allocates a block, returning zero if unable
-	void *malloc(FXuval size) throw() FXMALLOCATTR;
+	FXMALLOCATTR void *malloc(FXuval size) throw();
 	//! Allocates a zero initialised block, returning zero if unable
-	void *calloc(FXuint no, FXuval size) throw() FXMALLOCATTR;
+	FXMALLOCATTR void *calloc(FXuint no, FXuval size) throw();
 	//! Frees a block
 	void free(void *blk) throw();
 	/*! Extends a block, returning zero if unable. Note that like the
 	ANSI \c realloc() you must still free \em blk on failure.
 	*/
-	void *realloc(void *blk, FXuval size) throw() FXMALLOCATTR;
+	FXMALLOCATTR void *realloc(void *blk, FXuval size) throw();
 	//! Returns the memory pool associated with a memory chunk (=0 if from system pool)
 	static FXMemoryPool *poolFromBlk(void *blk) throw();
 public:
 	//! Allocates a block from the global heap, returning zero if unable
-	static void *glmalloc(FXuval size) throw() FXMALLOCATTR;
+	static FXMALLOCATTR void *glmalloc(FXuval size) throw();
 	/*! Allocates zero-filled \em no of blocks of size \em size from the
 	global heap, returning zero if unable */
-	static void *glcalloc(FXuval no, FXuval size) throw() FXMALLOCATTR;
+	static FXMALLOCATTR void *glcalloc(FXuval no, FXuval size) throw();
 	//! Frees a block from the global heap
 	static void glfree(void *blk) throw();
 	/*! Extends a block in the global heap, returning zero if unable.
 	Note that like the ANSI \c realloc() you must still free \em blk on failure.
 	*/
-	static void *glrealloc(void *blk, FXuval size) throw() FXMALLOCATTR;
+	static FXMALLOCATTR void *glrealloc(void *blk, FXuval size) throw();
 	//! Trims the heap down to the minimum possible, releasing memory back to the system
 	static bool gltrim(FXuval left) throw();
 	//! Returns a set of usage statistics about the heap
