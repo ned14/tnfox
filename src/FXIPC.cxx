@@ -154,7 +154,7 @@ struct FXDLLLOCAL FXIPCChannelPrivate
 	};
 	QIntDict<AckEntry> msgs;
 	FXuint msgidcount;
-	FXuint monitorThreadId;
+	FXulong monitorThreadId;
 	QPtrVector<FXIPCChannel::MsgFilterSpec> premsgfilters;
 	FXThreadPool *threadPool;
 	QPtrList<Generic::BoundFunctorV> msgHandlings;
@@ -352,7 +352,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 			read+=(justread=p->dev->readBlock(data.data()+read, pageSize-read));
 			if(!justread) return true;
 		}
-		//fxmessage("Thread %d channel read=%d bytes\n", FXThread::id(), read);
+		//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) FXThread::id(), read);
 		{
 			FXThread_DTHold dthold;
 			FXIPCMsg tmsg(0);
@@ -382,7 +382,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						if(!FXIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
 					}
 					read+=p->dev->readBlock(data.data()+read, togo);
-					//fxmessage("Thread %d channel read=%d bytes\n", FXThread::id(), read);
+					//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) FXThread::id(), read);
 					h.relock();
 					togo=tmsg.length()-read;
 				}
@@ -445,7 +445,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					p->endianiser.setDevice(0);
 #endif
 					if(p->printstats)
-						fxmessage("Thread %d received msg 0x%x (%s), len=%d bytes\n", FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), msg->length());
+						fxmessage("Thread %u received msg 0x%x (%s), len=%d bytes\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), msg->length());
 
 					if(FXIPCMsg_Disconnect::id::code==msg->msgType())
 					{
@@ -508,7 +508,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						case NotHandled:
 							{
 								if(p->printstats)
-									fxmessage("Thread %d msg 0x%x (%s) not handled\n", FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
+									fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
 								if(tmsg.hasAck())
 								{
 									FXIPCMsg_Unhandled badmsg(tmsg.msgId());
@@ -534,7 +534,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				else
 				{	// If has ack, reply we don't know this
 					if(p->printstats)
-						fxmessage("Thread %d msg 0x%x (%s) unknown\n", FXThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
+						fxmessage("Thread %u msg 0x%x (%s) unknown\n", (FXuint) FXThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
 					HandledCode handled=unknownMsgReceived(&tmsg, data.data());
 					if(NotHandled==handled && tmsg.hasAck())
 					{
@@ -546,7 +546,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				if(read)
 				{
 					memmove(data.data(), data.data()+tmsg.length(), read);
-					//fxmessage("Thread %d channel loop read=%d bytes\n", FXThread::id(), read);
+					//fxmessage("Thread %u channel loop read=%d bytes\n", (FXuint) FXThread::id(), read);
 				}
 				else break;
 			}
@@ -753,7 +753,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 #endif
 		h.unlock();
 		if(p->printstats)
-			fxmessage("Thread %d sending msg 0x%x (%s), len=%d bytes\n", FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), (int) len);
+			fxmessage("Thread %u sending msg 0x%x (%s), len=%d bytes\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), (int) len);
 		assert(p->dev);
 		FXERRH_TRY
 		{
@@ -839,7 +839,7 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 #endif
 	h.unlock();
 	if(p->printstats)
-		fxmessage("Thread %d resending msg 0x%x (%s), len=%d bytes\n", FXThread::id(), msgheader->msgType(), p->registry->decodeType(msgheader->msgType()).text(), (int) msgheader->length());
+		fxmessage("Thread %u resending msg 0x%x (%s), len=%d bytes\n", (FXuint) FXThread::id(), msgheader->msgType(), p->registry->decodeType(msgheader->msgType()).text(), (int) msgheader->length());
 	assert(p->dev);
 	FXERRH_TRY
 	{
@@ -860,7 +860,7 @@ void FXIPCChannel::doAsyncHandled(FXIPCMsg *msg, HandledCode handled)
 	if(NotHandled==handled)
 	{
 		if(p->printstats)
-			fxmessage("Thread %d msg 0x%x (%s) not handled\n", FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
+			fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
 		if(msg->hasAck())
 		{
 			FXIPCMsg_Unhandled badmsg(msg->msgId());

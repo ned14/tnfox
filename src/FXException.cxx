@@ -269,7 +269,7 @@ FXException::FXException(const FXException &o)
 		FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 		if(stacklevel>=0 && le->uniqueId==uniqueId)
 		{
-			//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", FXThread::id(), this, uniqueId, stacklevel);
+			//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel);
 			le->currentExceptions.append(this);
 		}
 	}
@@ -281,7 +281,7 @@ FXException &FXException::operator=(const FXException &o)
 	FXException_TIB *tib=mytib;
 	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
 	{
-		//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", FXThread::id(), this, uniqueId, stacklevel, tib->stack.at(stacklevel)->currentExceptions.count()-1);
+		//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel, tib->stack.at(stacklevel)->currentExceptions.count()-1);
 		tib->stack.at(stacklevel)->currentExceptions.removeRef(this);
 	}
 	uniqueId=o.uniqueId; _message=o._message; _code=o._code; _flags=o._flags;
@@ -305,7 +305,7 @@ FXException &FXException::operator=(const FXException &o)
 	stacklevel=o.stacklevel;
 	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
 	{
-		//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", FXThread::id(), this, uniqueId, stacklevel);
+		//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel);
 		tib->stack.at(stacklevel)->currentExceptions.append(this);
 	}
 	return *this;
@@ -322,7 +322,7 @@ FXException::~FXException()
 			FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 			if(le && le->uniqueId==uniqueId)
 			{
-				//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", FXThread::id(), this, uniqueId, stacklevel, le->currentExceptions.count()-1);
+				//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel, le->currentExceptions.count()-1);
 				le->currentExceptions.removeRef(this);
 				if(le->currentExceptions.isEmpty()) le->uniqueId=0;
 			}
@@ -459,13 +459,13 @@ void FXException::int_setThrownException(FXException &e)
 				if(!le->uniqueId)
 				{
 					assert(le->currentExceptions.isEmpty());
-					//fxmessage("Thread %u setting primary exception=%p, id=%u in stack level %d\n", FXThread::id(), &e, e.uniqueId, e.stacklevel);
+					//fxmessage("Thread %u setting primary exception=%p, id=%u in stack level %d\n", (FXuint) FXThread::id(), &e, e.uniqueId, e.stacklevel);
 					le->currentExceptions.append(&e);
 					le->uniqueId=e.uniqueId;
 				}
 				else if(le->uniqueId==e.uniqueId)
 				{	// Same exception rethrown
-					//fxmessage("Thread %u rethrowing primary exception=%p, id=%u in stack level %d\n", FXThread::id(), &e, e.uniqueId, e.stacklevel);
+					//fxmessage("Thread %u rethrowing primary exception=%p, id=%u in stack level %d\n", (FXuint) FXThread::id(), &e, e.uniqueId, e.stacklevel);
 					le->currentExceptions.append(&e);
 				}
 				else
@@ -483,7 +483,7 @@ void FXException::int_setThrownException(FXException &e)
 						assert(!e.nestedlist);
 					}
 					//fxmessage("Thread %u throwing nested exception=%p, id=%d into primary exception id=%d in stack level %d, nestingCount=%d\n",
-					//	FXThread::id(), &e, e.uniqueId, le->uniqueId, e.stacklevel, le->nestingCount);
+					//	(FXuint) FXThread::id(), &e, e.uniqueId, le->uniqueId, e.stacklevel, le->nestingCount);
 					assert(le->nestingCount>0);
 				}
 			}
@@ -507,7 +507,7 @@ void FXException::int_enterTryHandler(const char *srcfile, int lineno)
 		tib->stack.append(le);
 		unle.dismiss();
 		//fxmessage("Thread %u entering try handler stack level %d (file %s line %d)\n",
-		//	FXThread::id(), tib->stack.count()-1, srcfile, lineno);
+		//	(FXuint) FXThread::id(), tib->stack.count()-1, srcfile, lineno);
 	}
 }
 
@@ -537,18 +537,18 @@ void FXException::int_exitTryHandler() throw()
 						ee->setFatal(true);
 						ee->nestedlist->push_back(*currenterror);
 					}
-					//fxmessage("Thread %u reentering exception %d as nested into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, FXThread::id(), stackcount-1);
+					//fxmessage("Thread %u reentering exception %d as nested into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, (FXuint) FXThread::id(), stackcount-1);
 				}
 				else
 				{	// Enter as primary
 					ple->currentExceptions=le->currentExceptions;
 					ple->uniqueId=currenterror->uniqueId;
-					//fxmessage("Thread %u reentering exception %d as primary into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, FXThread::id(), stackcount-1);
+					//fxmessage("Thread %u reentering exception %d as primary into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, (FXuint) FXThread::id(), stackcount-1);
 				}
 				currenterror->stacklevel=stackcount-2;
 			}
 		}
-		//fxmessage("Thread %u exiting try handler stack level %d\n", FXThread::id(), stackcount-1);
+		//fxmessage("Thread %u exiting try handler stack level %d\n", (FXuint) FXThread::id(), stackcount-1);
 		tib->stack.removeLast();
 	}
 }
@@ -570,7 +570,7 @@ bool FXException::int_nestedException(FXException &e)
 		FXException_TIB *tib=mytib;
 		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		//fxmessage("Thread %u destructor caught exception %d in stack level %d, throwing already=%d, nestingCount=%d\n",
-		//	FXThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
+		//	(FXuint) FXThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
 		if(!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED))
 		{	// If just one exception being thrown, always throw upwards
 			return true;
