@@ -86,6 +86,16 @@ void *FXPipe::int_getOSHandle() const
 #endif
 }
 
+void FXPipe::int_hack_makeWriteNonblocking() const
+{
+#ifdef USE_POSIX
+	if(p->writeh)
+	{
+		::fcntl(p->writeh, F_SETFL, O_NONBLOCK);
+	}
+#endif
+}
+
 FXPipe::FXPipe() : p(0), creator(false), FXIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
