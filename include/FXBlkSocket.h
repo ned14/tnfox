@@ -133,8 +133,9 @@ class FXAPIR FXBlkSocket : public FXIODeviceS
 {
 	FXBlkSocketPrivate *p;
 	FXBlkSocket &operator=(const FXBlkSocket &);
-	void fillInAddrs(bool incPeer);
-	void zeroAddrs();
+	FXDLLLOCAL void fillInAddrs(bool incPeer);
+	FXDLLLOCAL void zeroAddrs();
+	FXDLLLOCAL void setupSocket();
 	FXBlkSocket(const FXBlkSocket &o, int h);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 public:
