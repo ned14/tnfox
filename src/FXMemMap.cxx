@@ -46,6 +46,13 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 #ifdef USE_POSIX
 #include <sys/mman.h>
+#ifndef __linux__
+// Linux's /dev/shm doesn't have a /tmp directory defined :(
+#define POSIX_SHARED_MEM_PREFIX "/TnFOX_"
+#else
+// BSD and other systems map shm_open() to normal open() so use /tmp
+#define POSIX_SHARED_MEM_PREFIX "/tmp/TnFOX_"
+#endif
 #endif
 
 namespace FX {
@@ -129,10 +136,28 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 				if(m->copyOnWrite) pageacc|=FILE_MAP_COPY;
 				m->addr=MapViewOfFileEx(mappingh, pageacc, (DWORD)(m->offset>>32),
 					(DWORD)(m->offset), (DWORD) m->len, m->oldaddr);
+#ifdef DEBUG
+				if(!m->addr)
+				{
+					DWORD code=GetLastError();
+					TCHAR buffer[1024];
+					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, code, 0, buffer, sizeof(buffer)/sizeof(TCHAR), 0);
+					fxmessage("NOTE: FXMemMap map of %s (%x:%x) failed with %s (%d)\n",
+						name.text(), (FXuint) m->offset, m->len, buffer, code);
+				}
+#endif
 #endif
 #ifdef USE_POSIX
 				int flags=(m->copyOnWrite) ? MAP_PRIVATE : MAP_SHARED;
-				m->addr=::mmap(m->oldaddr, (size_t) m->len, pageaccess, flags, filefd, m->offset);
+				if(MAP_FAILED==(m->addr=::mmap(m->oldaddr, (size_t) m->len, pageaccess,
+					flags, filefd, m->offset))) m->addr=0;
+#ifdef DEBUG
+				if(!m->addr)
+				{
+					fxmessage("NOTE: FXMemMap map of %s (%x:%x) failed with %s (%d)\n",
+						name.text(), (FXuint) m->offset, m->len, strerror(errno), errno);
+				}
+#endif
 #endif
 			}
 			if(!m->addr) mappingsFailed=true;
@@ -521,7 +546,7 @@ bool FXMemMap::open(FXuint mode)
 			{
 				if(p->unique)
 					p->name=FXString("%1_%2").arg(FXProcess::id()).arg(rand(),0,16);
-				name=FXString("/tmp/TnFOX_"+p->name);
+				name=FXString(POSIX_SHARED_MEM_PREFIX+p->name);
 				p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE);
 				if(p->unique && -1!=p->filefd)
 				{
@@ -568,7 +593,7 @@ void FXMemMap::close()
 			if(p->creator && !(flags() & IO_DontUnlink))
 			{
 				FXThread_DTHold dth;
-				FXString name("/tmp/TnFOX_"+p->name);
+				FXString name(POSIX_SHARED_MEM_PREFIX+p->name);
 				FXERRHIO(::close(p->filefd));
 				FXERRHIO(::shm_unlink(name.text()));
 			}
@@ -705,7 +730,7 @@ FXACL FXMemMap::permissions(const FXString &name)
 #endif
 #ifdef USE_POSIX
 	int fd;
-	FXString sname("/tmp/TnFOX_"+name);
+	FXString sname(POSIX_SHARED_MEM_PREFIX+name);
 	FXERRHIO(fd=::shm_open(sname.text(), O_RDWR, 0));
 	FXRBOp unfd=FXRBFunc(::close, fd);
 	return FXACL(fd, FXACL::MemMap);
@@ -719,7 +744,7 @@ void FXMemMap::setPermissions(const FXString &name, const FXACL &perms)
 #endif
 #ifdef USE_POSIX
 	int fd;
-	FXString sname("/tmp/TnFOX_"+name);
+	FXString sname(POSIX_SHARED_MEM_PREFIX+name);
 	FXERRHIO(fd=::shm_open(sname.text(), O_RDWR, 0));
 	FXRBOp unfd=FXRBFunc(::close, fd);
 	perms.writeTo(fd);
@@ -751,7 +776,8 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 			{	// Use section
 				FXfval offset=ioIndex-m->offset;
 				FXuval left=FXMIN((maxlen-readed), (FXuval)(m->len-offset));
-				memcpy(data+readed, (void *)(FXuval)(((FXfval)(FXuval) m->addr)+offset), left);
+				void *from=(void *)(FXuval)(((FXfval)(FXuval) m->addr)+offset);
+				memcpy(data+readed, from, left);
 				setIoIndex(ioIndex+left); readed+=left;
 				if(readed==maxlen) break;
 			}
@@ -821,7 +847,8 @@ FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
 			{	// Use section
 				FXfval offset=ioIndex-m->offset;
 				FXuval left=FXMIN((maxlen-written), (FXuval)(m->len-offset));
-				memcpy((void *)(FXuval)(((FXfval)(FXuval) m->addr)+offset), data+written, left);
+				void *to=(void *)(FXuval)(((FXfval)(FXuval) m->addr)+offset);
+				memcpy(to, data+written, left);
 				setIoIndex(ioIndex+left); written+=left;
 				if(written==maxlen) break;
 			}
