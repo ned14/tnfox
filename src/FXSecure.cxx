@@ -252,7 +252,6 @@ public:
 		FXThread("Randomness monitor"), FXMutex()
 	{
 #ifndef USE_POSIX
-		shrdmem.setOverAllocation(0);
 		shrdmem.open(IO_ReadWrite|IO_DontUnlink);
 		data=(SharedMemLayout *) shrdmem.mapIn();
 		if(*(FXuint *)"FXRN"==data->magic)

@@ -74,10 +74,8 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 	FXuint pageSize;		// Page size of machine
 	Mapping *cmapping;		// Mapping ioIndex is in, or zero if it isn't
 	QSortedListIterator<Mapping> cmappingit;
-	FXfval overAllocation;
 #ifdef USE_WINAPI
 	HANDLE mappingh;
-	FXfval mappingsize;
 	DWORD pageaccess;
 #endif
 #ifdef USE_POSIX
@@ -87,7 +85,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 		mappingsFailed(false), unique(false), file(f), filefd(0), size(0), acl(FXACL::MemMap), mappings(true),
 		pageSize(FXProcess::pageSize()), cmapping(0), cmappingit(mappings),
 #ifdef USE_WINAPI
-		overAllocation(FXProcess::pageSize()*4), mappingh(0), mappingsize(0),
+		mappingh(0),
 #endif
 		pageaccess(0), FXMutex() { }
 	~FXMemMapPrivate() { if(myfile) FXDELETE(file); }
@@ -276,28 +274,36 @@ bool FXMemMap::remove()
 	return true;
 }
 
-FXfval FXMemMap::overAllocation() const
+FXfval FXMemMap::mappableSize() const
 {
 	FXMtxHold h(p);
-	return p->overAllocation;
+	return p->size;
 }
 
-void FXMemMap::setOverAllocation(FXfval newsize)
-{	// Heh, reminds me of my assembler days this! :)
-	bool goHigher=false;
-	int topbit=0;
-	for(int n=0; n<32; n++)
-	{
-		if(((newsize>>n) & 1)==1)
-		{
-			if(topbit) goHigher=true;
-			topbit=n;
+void FXMemMap::maximiseMappableSize()
+{
+	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for writing"));
+	if(isOpen() && File==p->type)
+	{	// NOTE TO SELF: Keep consistent with truncate()
+		FXMtxHold h(p);
+#ifdef USE_WINAPI
+		{	// Ok, close mapping and reopen
+			p->unmap(0, p->size, false);
+			FXERRHWIN(CloseHandle(p->mappingh));
+			p->mappingh=0;
+			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
+			p->size=p->file->size();
+			winopen(mode());
+			closeit.dismiss();
+			p->map();	// In theory maps everything back to where it was (hopefully)
 		}
+#endif
+#ifdef USE_POSIX
+		{	// Considerably easier this, as it should be in fact
+			p->size=p->file->size();
+		}
+#endif
 	}
-	if(goHigher) topbit++;
-	newsize=1<<topbit;
-	FXMtxHold h(p);
-	p->overAllocation=newsize;
 }
 
 void *FXMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
@@ -412,12 +418,8 @@ void FXMemMap::winopen(int mode)
 		access|=PAGE_READONLY;
 		p->pageaccess|=FILE_MAP_READ;
 	}
-	p->mappingsize=p->size;
-	if(File==p->type && (mode & IO_WriteOnly))
-	{	// Over allocate the file to avoid costly remaps (substantial fault in NT this :( )
-		p->mappingsize+=p->overAllocation;
-	}
-	if(!p->mappingsize) p->mappingsize=1;
+	FXfval mappingsize=p->size;
+	if(!mappingsize) mappingsize=1;
 	if(INVALID_HANDLE_VALUE==fileh)
 	{	
 		FXString name;
@@ -431,7 +433,7 @@ void FXMemMap::winopen(int mode)
 				SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
 				sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
 				p->mappingh=CreateFileMapping(fileh, &sa, access,
-					(DWORD)(p->mappingsize>>32), (DWORD) p->mappingsize, name.text());
+					(DWORD)(mappingsize>>32), (DWORD) mappingsize, name.text());
 				if(p->unique && ERROR_ALREADY_EXISTS==GetLastError())
 				{
 					CloseHandle(p->mappingh);
@@ -450,7 +452,7 @@ void FXMemMap::winopen(int mode)
 		sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
 		FXERRHWIN(p->mappingh=CreateFileMapping(fileh,
 			&sa, access,
-			(DWORD)(p->mappingsize>>32), (DWORD) p->mappingsize, NULL));
+			(DWORD)(mappingsize>>32), (DWORD) mappingsize, NULL));
 		// Interestingly, trying to read the security descriptor of an
 		// unnamed section does not work :(
 	}
@@ -574,7 +576,6 @@ void FXMemMap::close()
 #endif
 		if(File==p->type)
 		{
-			if(isWriteable()) p->file->truncate(p->size);
 			if(p->myfile) p->file->close();
 		}
 		p->size=0;
@@ -611,7 +612,7 @@ FXfval FXMemMap::size() const
 	if(isOpen())
 	{
 		FXMtxHold h(p);
-		return p->size;
+		return (File==p->type) ? p->file->size() : p->size;
 	}
 	return 0;
 }
@@ -620,7 +621,7 @@ void FXMemMap::truncate(FXfval newsize)
 {
 	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for writing"));
 	if(isOpen())
-	{
+	{	// NOTE TO SELF: Keep consistent with maximiseMappableSize()
 		FXMtxHold h(p);
 		if(newsize<p->size)
 		{
@@ -629,25 +630,23 @@ void FXMemMap::truncate(FXfval newsize)
 			mapOut(newsize);
 		}
 #ifdef USE_WINAPI
-		if(newsize>p->mappingsize)
 		{	// Ok, close mapping and reopen
 			p->unmap(0, p->size, false);
 			FXERRHWIN(CloseHandle(p->mappingh));
 			p->mappingh=0;
 			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
+			if(File==p->type) p->file->truncate(newsize);
 			p->size=newsize;
-			winopen(mode());	// Extends it for you
+			winopen(mode());
 			closeit.dismiss();
 			p->map();	// In theory maps everything back to where it was (hopefully)
 		}
-		else p->size=newsize;
 #endif
 #ifdef USE_POSIX
-		if(newsize>p->size)
 		{	// Considerably easier this, as it should be in fact
 			FXERRHIO(::ftruncate(p->filefd, newsize));
+			p->size=newsize;
 		}
-		p->size=newsize;
 #endif
 		if(ioIndex>p->size) setIoIndex(p->size);
 	}
@@ -675,7 +674,7 @@ bool FXMemMap::atEnd() const
 {
 	if(isOpen())
 	{
-		return ioIndex>=p->size;
+		return ioIndex>=((File==p->type) ? p->file->size() : p->size);
 	}
 	return false;
 }
@@ -731,7 +730,8 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
 	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for reading"));
-	if(isOpen() && ioIndex<p->size && maxlen)
+	FXfval mysize=(File==p->type) ? p->file->size() : p->size;
+	if(isOpen() && ioIndex<mysize && maxlen)
 	{
 		FXuval readed=0;
 		if(!p->ungetchbuffer.isEmpty())
@@ -759,7 +759,7 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 			FXERRH(p->file, FXTrans::tr("FXMemMap", "Unable to read unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
 			// Ok do file read
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
-			FXfval tillnextsection=((nextm) ? nextm->offset : p->size)-ioIndex;
+			FXfval tillnextsection=((nextm) ? nextm->offset : mysize)-ioIndex;
 			p->file->at(ioIndex);
 			FXuval left=FXMIN((maxlen-readed), (FXuval)(tillnextsection));
 			FXuval read=p->file->readBlock(data+readed, left);
@@ -835,7 +835,6 @@ FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
 			FXuval writ=p->file->writeBlock(data+written, left);
 			setIoIndex(ioIndex+writ); written+=writ;
 		}
-		if(ioIndex>p->size) truncate(ioIndex);
 		if(isRaw()) flush();
 		return isTranslated() ? trmaxlen : written;
 	}
