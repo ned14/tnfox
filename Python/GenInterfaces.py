@@ -33,7 +33,7 @@ processors=1
 
 # List of files to be excluded
 excludelist=["FXArray.h", "FXDict.h",
-             "FXErrCodes.h", "FXGenericTools.h", "FXHash.h",
+             "FXErrCodes.h", "FXGenericTools.h", "FXHash.h", "FXIconDict.h",
              "FXLRUCache.h", "FXMemDbg.h", "FXMemoryPool.h", "FXPolicies.h",
              "FXPtrHold.h", "FXRefedObject.h", "FXRollback.h", "FXSecure.h",
              "FXString.h", "FXStringDict.h",
