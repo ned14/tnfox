@@ -68,7 +68,7 @@ env['LINKFLAGS']=["-fPIC",              # Link shared
 if debugmode:
     env['LINKFLAGS']+=[]
 else:
-    env['LINKFLAGS']+=["-O"             # Optimise
+    env['LINKFLAGS']+=[ #"-O"             # Optimise
                        ]
 
 # Set where the BPL *objects* live (which is platform dependent)
