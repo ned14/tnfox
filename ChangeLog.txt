@@ -7,6 +7,7 @@ B FXMtxHold wasn't being inlined on Win32
 B Various FXException macros were using "e" as their temporary exception
 which could cause conflict with local definitions of "e"
 B FXIPCChannel wasn't retrying message sends if they part completed
+R Issued snapshot 1
 B FXPipe::writeBlock() wasn't detecting write errors on win32
 
 + Added ability to set external array directly in QMemArray and QByteArray
@@ -24,6 +25,7 @@ source files
 * Changed FXFont to always specify anti-aliased and cleartype on Win32
 * Now replaces system allocator on FreeBSD too
 * FXFSMonitor now can disable itself if it detects a broken FAM implementation
+R Issued snapshot 1
 + Added FXACLEntity::homeDirectory()
 
 v0.85 13th Feb 2005:
