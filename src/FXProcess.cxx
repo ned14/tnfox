@@ -1422,10 +1422,13 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 
 FXThreadPool &FXProcess::threadPool()
 {
-	FXMtxHold h(myprocess->p);
 	if(!myprocess->p->threadpool)
 	{
-		FXERRHM(myprocess->p->threadpool=new FXThreadPool(FXPROCESS_POOLTHREADS));
+		FXMtxHold h(myprocess->p);
+		if(!myprocess->p->threadpool)
+		{
+			FXERRHM(myprocess->p->threadpool=new FXThreadPool(FXPROCESS_POOLTHREADS));
+		}
 	}
 	return *myprocess->p->threadpool;
 }
