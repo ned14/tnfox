@@ -72,5 +72,5 @@ else:
 env['LIBS']+=["kernel32", "user32", "gdi32", "advapi32", "shell32",
               "comctl32", "winspool",
               "delayimp", "wsock32", "ws2_32", "psapi", "dbghelp",
-              "pdh", "netapi32", "secur32"
+              "pdh", "netapi32", "secur32", "userenv"
               ]
