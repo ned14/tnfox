@@ -33,7 +33,7 @@ public:
 		}
 		catch(FXException &e)
 		{
-			if(FXException::int_nestedException(e, true)) throw;
+			if(FXException::int_nestedException(e)) throw;
 		}
 		FXException::int_decDestructorCnt();
 	}
