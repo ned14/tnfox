@@ -1893,10 +1893,13 @@ void FXThread::start(bool waitTillStarted)
 		DWORD threadId;
 		p->plsCancel=false;
 		FXERRHWIN(ResetEvent(p->plsCancelWaiter));
+#ifdef FX_SMPBUILD
 		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
-#ifndef FX_SMPBUILD
+#else
 		// Keep on processor 0 if not SMP build
+		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, CREATE_SUSPENDED, &threadId)));
 		FXERRHWIN(SetThreadAffinityMask(p->threadh, 1));
+		FXERRHWIN(ResumeThread(p->threadh));
 #endif
 	}
 #endif
