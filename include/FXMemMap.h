@@ -119,27 +119,20 @@ rather than later thus getting the best of all possible worlds. On my developmen
 system running Win2k I get a three-fold speed increase copying one file to another
 over FXFile and that's even with NTFS's excellent caching of buffered i/o.
 
-Extending the file size with truncate() works as expected - however
-shortening the file requires wholly unmapping any mapped sections which straddle
+Extending the file size with truncate() works as expected - however depending
+on the host OS, it can require recreating the map which implies deletion and
+recreation of all mapped sections (which may move position). Shortening the file
+requires wholly unmapping any mapped sections which straddle
 between the old length and the new. Any sections lost this way
 must be remapped by you if you want them to (this could not
 be done automatically because the mapping address which you may be relying
-upon could change). You should be cautious of using truncate() to extend files
-as it can cause severe file system fragmentation on some systems - better
-to write the requisite amount wanted onto the end before mapping it in (see
-your host OS documentation).
+upon could change). There is a difference between writing off the end of the file
+and truncate()-ing it - only the latter extends the ability to map the new data.
 
 Lastly the mapOffset() method lets you see if any arbitrary file ptr offset
 maps into the currently mapped sections. It returns the address of the
 corresponding location in memory or zero if that section is not mapped.
 
-\note Due to limitations in Windows NT, on that operating system FXMemMap
-over-extends the mapped section by a certain quantity so that truncate()'s
-extending the map within that amount don't require completely closing and
-reopening the map (which stupidly NT requires). The default of four page sizes
-was chosen as a reasonable amount but if you are doing a lot of sequential
-writing of large quantities of data you should set something larger like 1Mb
-using setOverAllocation(). Unix has no such troubles and it works as expected.
 \note Other minor thing is that if you access memory directly using the
 return from mapIn() no character translation has been performed (IO_Translate)
 */
@@ -196,10 +189,11 @@ public:
 	bool exists() const;
 	//! Deletes the file name, closing the file first if open. Returns false if file doesn't exist
 	bool remove();
-	//! Returns the over-allocation amount (only useful on WinNT)
-	FXfval overAllocation() const;
-	//! Sets the over-allocation amount (only useful on WinNT). Rounded up to a power of two if not so already.
-	void setOverAllocation(FXfval newsize);
+	//! Returns the current mappable extent of the file (which may be shorter than the file length)
+	FXfval mappableSize() const;
+	//! Extends the mappable extent of the file to the current file length
+	void maximiseMappableSize();
+
 	/*! \return Where in memory the section was mapped to. Zero if could not be mapped
 	(eg; ran out of address space which is common on 32 bit architectures).
 	\param offset From where in the file to map (should be zero for shared memory).
@@ -239,9 +233,8 @@ public:
 	virtual void flush();
 	virtual FXfval size() const;
 	/*! Sets a new length of file, unmapping any sections containing the part being removed
-	\note Due to host implementation restrictions, shortening the file does nothing until
-	close(). Extending the file works correctly but may be extremely slow on Windows NT
-	and remember that mapped sections do not automatically extend to include the new space
+	\note This is not especially a fast call as the mapped sections must be recreated. On the
+	other hand, it is the only way to make newly written data off the end mappable.
 	*/
 	virtual void truncate(FXfval size);
 	virtual FXfval at() const;
