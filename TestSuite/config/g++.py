@@ -22,7 +22,7 @@ def CheckGCCHasVisibility(cc):
     except:
         temp=[]
     cc.env['CPPFLAGS']=temp+["-fvisibility=hidden"]
-    result=cc.TryCompile('int main(void) { struct __attribute__ ((visibility("default"))) Foo { int foo; } foo; return 0; }\n', '.c')
+    result=cc.TryCompile('int main(void) { struct __attribute__ ((visibility("default"))) Foo { int foo; } foo; return 0; }\n', '.cpp')
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
@@ -68,8 +68,7 @@ env['CPPFLAGS']+=cppflags
 if "freebsd" in sys.platform:
     env['LINK']="libtool --tag=CXX --mode=link g++"
 else: env['LINK']="libtool --mode=link g++"
-env['LINKFLAGS']=["-pthread"            # Ensure no libc on BSD
-                  ]
+env['LINKFLAGS']=[]
 
 if debugmode:
     env['LINKFLAGS']+=[ #"-static"        # Don't use shared objects
