@@ -211,6 +211,19 @@ template<class type> struct itCompare
 		return *a<*b;
 	}
 };
+/*! \struct itRevCompare
+\brief Policy specifying how to compare iterator referenced data
+
+This compares two items by dereferencing them and calling the >
+operator
+*/
+template<class type> struct itRevCompare
+{
+	template<class L, class I> bool compare(L &list, I &a, I &b) const
+	{
+		return *a>*b;
+	}
+};
 
 } // namespace
 
