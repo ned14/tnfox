@@ -155,7 +155,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	_threadId=FXThread::id();
 	reporttxt=0;
 	uniqueId=GetCreationCnt();
-#ifdef BUILDING_TCOMMON
+#if defined(DEBUG) || defined(BUILDING_TCOMMON)
 	fxmessage("FXException id %d created, '%s' at line %d in %s thread %d\n", uniqueId, msg.text(), _lineno, _filename, _threadId);
 #endif
 #if defined(WIN32) && defined(_MSC_VER)
