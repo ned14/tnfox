@@ -43,9 +43,11 @@
 #define FXERRGWIN(code, flags) { FXException::int_throwWinError(__FILE__, __LINE__, code, flags); }
 #endif
 #ifdef DEBUG
-#define FXERRHWIN(exp)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FXException::int_testCondition()) FXERRGWIN(GetLastError(), 0); }
+#define FXERRHWIN(exp)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FXException::int_testCondition()) FXERRGWIN(GetLastError(), 0); }
+#define FXERRHWIN2(exp, getlasterror)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FXException::int_testCondition()) FXERRGWIN(getlasterror, 0); }
 #else
-#define FXERRHWIN(exp)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(GetLastError(), 0); }
+#define FXERRHWIN(exp)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(GetLastError(), 0); }
+#define FXERRHWIN2(exp, getlasterror)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(getlasterror, 0); }
 #endif
 #define FXERRGCOM(code, flags) { FXERRMAKE(e, tr("COM error 0x%1 occurred").arg(code), FXEXCEPTION_OSSPECIFIC, flags); \
 	FXERRH_THROW(e); }
