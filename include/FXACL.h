@@ -81,7 +81,14 @@ public:
 	eg; on NT you can set it as owner of anything
 	*/
 	bool isLoginPassword(const FXchar *password) const;
-	//! Returns an entity representing the current user (ie; the user who created this process)
+	/*! Returns the home directory of the entity if it has one, if not a blank string
+	is returned rather than an error. If \em filesdir is true, returns the path where
+	the entity stores its files (this is the same as the home directory on POSIX, but
+	on Windows it is "My Documents" in the system locale). Note that the entity must
+	be authenticated before you can retrieve its home directory */
+	FXString homeDirectory(bool filesdir=false) const;
+	/*! Returns an entity representing the current user (ie; the user who created this process)
+	This entity is already authenticated, so you don't need to call isLoginPassword() */
 	static const FXACLEntity &currentUser();
 	//! Returns the special entity representing everything (ie; the public)
 	static const FXACLEntity &everything();
