@@ -68,11 +68,17 @@ else:
     env['LINKFLAGS'].append(os.path.abspath("../lib/lib"+libtnfox+libtnfoxsuffix))
 if not os.path.exists("../../boost"):
     raise IOError, "There must be a copy of the Boost library next to the TnFOX directory"
-if not os.environ.has_key("PYTHON_INCLUDE"): raise IOError, "PYTHON_INCLUDE needs to be defined"
-env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
+if PYTHON_INCLUDE:
+    env['CPPPATH'].append(PYTHON_INCLUDE)
+else:
+    if not os.environ.has_key("PYTHON_INCLUDE"): raise IOError, "PYTHON_INCLUDE needs to be defined"
+    env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
 if onWindows:
-    if not os.environ.has_key("PYTHON_LIB"): raise IOError, "PYTHON_LIB needs to be defined"
-    env['LINKFLAGS'].append(os.environ["PYTHON_LIB"])
+    if PYTHON_LIB:
+        env['LINKFLAGS'].append(PYTHON_LIB)
+    else:
+        if not os.environ.has_key("PYTHON_LIB"): raise IOError, "PYTHON_LIB needs to be defined"
+        env['LINKFLAGS'].append(os.environ["PYTHON_LIB"])
 
 conf=Configure(env)
 if sys.byteorder=="big": conf.env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
