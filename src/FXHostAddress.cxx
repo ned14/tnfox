@@ -80,7 +80,7 @@ FXHostAddress::~FXHostAddress()
 
 bool FXHostAddress::operator==(const FXHostAddress &o) const
 {
-	if(p->isLoopback && o.p->isLoopback) return true;
+	if((p->isLoopback || p->isNull) && (o.p->isLoopback || o.p->isNull)) return true;
 	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4==o.p->IPv4);
 	// Compare the IPv6 as IPv4 sets the IPv6
 	return (0==memcmp(p->IPv6, o.p->IPv6, sizeof(p->IPv6)));
@@ -238,9 +238,9 @@ FXString FXHostAddress::toString() const
 	return ret;
 }
 
-bool FXHostAddress::isLoopback() const
+bool FXHostAddress::isLocalMachine() const
 {
-	return p->isLoopback;
+	return p->isLoopback || p->isNull;
 }
 
 FXStream &operator<<(FXStream &s, const FXHostAddress &i)
