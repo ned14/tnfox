@@ -323,12 +323,12 @@ void FXIPCChannel::setPrintStatistics(bool v)
 }
 void FXIPCChannel::requestClose()
 {
-	forceClose();
 	if(!p->noquitmsg && p->dev)
 	{
 		FXIPCMsg_Disconnect byebye;
 		sendMsg(byebye);
 	}
+	forceClose();	// must be after the above!
 }
 
 bool FXIPCChannel::doReception(FXuint waitfor)
