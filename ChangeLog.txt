@@ -7,6 +7,7 @@ B FXMtxHold wasn't being inlined on Win32
 B Various FXException macros were using "e" as their temporary exception
 which could cause conflict with local definitions of "e"
 B FXIPCChannel wasn't retrying message sends if they part completed
+B FXPipe::writeBlock() wasn't detecting write errors on win32
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
