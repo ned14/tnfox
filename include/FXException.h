@@ -377,7 +377,7 @@ private:
   FXuint _flags;
   const char *srcfilename;
   int srclineno;
-  FXuint _threadId;
+  FXulong _threadId;
   mutable FXString *reporttxt;
   QValueList<FXException> *nestedlist;
 #ifdef WIN32
@@ -428,7 +428,7 @@ public:
   //! Returns the flags of the exception
   FXuint flags() const throw() { return _flags; }
   //! Returns the id of the thread in which the exception was thrown
-  FXuint threadId() const throw() { return _threadId; }
+  FXulong threadId() const throw() { return _threadId; }
   /*!
   Returns a string fully describing the exception, including its cause, location (file and
   line number) and a stack backtrace if supported or possible

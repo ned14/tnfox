@@ -184,7 +184,7 @@ namespace Pol {
 		struct ReferrerEntry
 		{
 			FXRefingObjectBase *ref;
-			FXuint threadId;
+			FXulong threadId;
 			ReferrerEntry(FXRefingObjectBase *_ref) : ref(_ref), threadId(FXThread::id()) { }
 			bool operator==(const ReferrerEntry &o) const throw() { return ref==o.ref; }
 		};
