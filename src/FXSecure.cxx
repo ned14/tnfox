@@ -253,44 +253,54 @@ public:
 	{
 #ifndef USE_POSIX
 		shrdmem.open(IO_ReadWrite|IO_DontUnlink);
-		data=(SharedMemLayout *) shrdmem.mapIn();
-		if(*(FXuint *)"FXRN"==data->magic)
-		{	// Indicate our claim to try and prevent async destruction
-			data->lock.lock();
-			data->usercountlatch++;
-			data->lock.unlock();
+		if(!(data=(SharedMemLayout *) shrdmem.mapIn()))
+		{	// This should never happen except in testing, so don't bother with translation
+			fxwarning("WARNING: Failed to map in randomness shared memory patch - there will\n"
+				"be no randomness available for the remainder of this program's operation\n");
 		}
-		if(*(FXuint *)"FXRN"!=data->magic)
-		{	// Init
-			new(&data->lock) FXShrdMemMutex;
-			new(&data->usercount) FXAtomicInt;
-			data->usercountlatch=1;
-			data->lastupdate=0;
-			data->offset=0;
-			data->size=0;
-			memset(data->data, 0, RANDOMNESS_SIZE);
-			data->magic=*(FXuint *)"FXRN";
+		else
+		{
+			if(*(FXuint *)"FXRN"==data->magic)
+			{	// Indicate our claim to try and prevent async destruction
+				data->lock.lock();
+				data->usercountlatch++;
+				data->lock.unlock();
+			}
+			if(*(FXuint *)"FXRN"!=data->magic)
+			{	// Init
+				new(&data->lock) FXShrdMemMutex;
+				new(&data->usercount) FXAtomicInt;
+				data->usercountlatch=1;
+				data->lastupdate=0;
+				data->offset=0;
+				data->size=0;
+				memset(data->data, 0, RANDOMNESS_SIZE);
+				data->magic=*(FXuint *)"FXRN";
+			}
+			setStackSize(128*1024);		// 128Kb
+			start();
 		}
-		setStackSize(128*1024);		// 128Kb
-		start();
 #endif
 		myrandomness=this;
 	}
 	~RandomnessPrivate()
 	{
 #ifndef USE_POSIX
-		requestTermination();
-		wait();
-		FXMtxHold h(this);
-		data->lock.lock();
-		if(0==--data->usercountlatch)
-		{	// Destroy
-			data->magic=0;
-			data->usercount.~FXAtomicInt();
-			data->lock.~FXShrdMemMutex();
+		if(data)
+		{
+			requestTermination();
+			wait();
+			FXMtxHold h(this);
+			data->lock.lock();
+			if(0==--data->usercountlatch)
+			{	// Destroy
+				data->magic=0;
+				data->usercount.~FXAtomicInt();
+				data->lock.~FXShrdMemMutex();
+			}
+			else data->lock.unlock();
+			data=0;
 		}
-		else data->lock.unlock();
-		data=0;
 		shrdmem.close();
 #endif
 	}
@@ -303,6 +313,7 @@ public:
 		FXERRH(length==random.readBlock((char *) buffer, length), FXTrans::tr("FX::Secure::Randomness", "Failed to read /dev/urandom"), FXSECURE_RANDOMNESS_READFAILURE, 0);
 #else
 		FXERRH(length<=RANDOMNESS_SIZE, FXTrans::tr("FX::Secure::Randomness", "Too much random data requested"), FXSECURE_RANDOMNESS_TOOBIG, 0);
+		if(!data) return;
 		while(length>data->size)
 		{
 			FXThread::msleep(RANDOMNESS_TICK);
@@ -327,13 +338,14 @@ public:
 		char buffer[4096];
 		return random.readBlock(buffer, sizeof(buffer));
 #else
-		return data->size;
+		return data ? data->size : 0;
 #endif
 	}
 	void run()
 	{
 #ifndef USE_POSIX
 		bool amMaster=false;	// Goes true when this thread becomes the one maintaining the data
+		assert(data);
 		for(;;)
 		{
 			++data->usercount;
