@@ -55,7 +55,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXRASImage::fileExt[]="ras";
+const FXchar *FXRASImage::fileExt="ras";
 
 
 // Object implementation

@@ -53,7 +53,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXCURCursor::fileExt[]="cur";
+const FXchar *FXCURCursor::fileExt="cur";
 
 
 // Object implementation

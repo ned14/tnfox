@@ -51,7 +51,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXPNGImage::fileExt[]="png";
+const FXchar *FXPNGImage::fileExt="png";
 
 
 // Object implementation

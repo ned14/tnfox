@@ -49,7 +49,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXICOIcon::fileExt[]="ico";
+const FXchar *FXICOIcon::fileExt="ico";
 
 
 // Object implementation

@@ -49,7 +49,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXXPMIcon::fileExt[]="xpm";
+const FXchar *FXXPMIcon::fileExt="xpm";
 
 
 // Object implementation

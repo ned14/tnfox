@@ -56,7 +56,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXPCXIcon::fileExt[]="pcx";
+const FXchar *FXPCXIcon::fileExt="pcx";
 
 
 // Object implementation

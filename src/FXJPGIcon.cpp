@@ -50,7 +50,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXJPGIcon::fileExt[]="jpg";
+const FXchar *FXJPGIcon::fileExt="jpg";
 
 
 // Object implementation

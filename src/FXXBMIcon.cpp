@@ -55,7 +55,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXXBMIcon::fileExt[]="xbm";
+const FXchar *FXXBMIcon::fileExt="xbm";
 
 
 // Object implementation

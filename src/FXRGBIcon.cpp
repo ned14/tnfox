@@ -55,7 +55,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXRGBIcon::fileExt[]="rgb";
+const FXchar *FXRGBIcon::fileExt="rgb";
 
 
 // Object implementation

@@ -55,7 +55,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXPPMImage::fileExt[]="ppm";
+const FXchar *FXPPMImage::fileExt="ppm";
 
 
 // Object implementation

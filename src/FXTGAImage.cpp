@@ -50,7 +50,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXTGAImage::fileExt[]="tga";
+const FXchar *FXTGAImage::fileExt="tga";
 
 
 // Object implementation

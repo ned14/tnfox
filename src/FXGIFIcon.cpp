@@ -54,7 +54,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXGIFIcon::fileExt[]="gif";
+const FXchar *FXGIFIcon::fileExt="gif";
 
 
 // Object implementation

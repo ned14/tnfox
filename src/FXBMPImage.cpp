@@ -55,7 +55,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXBMPImage::fileExt[]="bmp";
+const FXchar *FXBMPImage::fileExt="bmp";
 
 
 // Object implementation

@@ -50,7 +50,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXPNGIcon::fileExt[]="png";
+const FXchar *FXPNGIcon::fileExt="png";
 
 
 // Object implementation

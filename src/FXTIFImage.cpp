@@ -51,7 +51,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXTIFImage::fileExt[]="tif";
+const FXchar *FXTIFImage::fileExt="tif";
 
 
 // Object implementation

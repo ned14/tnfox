@@ -68,7 +68,7 @@ namespace FX {
 
 
 // Suggested file extension
-const FXchar FXTGAIcon::fileExt[]="tga";
+const FXchar *FXTGAIcon::fileExt="tga";
 
 
 // Object implementation
