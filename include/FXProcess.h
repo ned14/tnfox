@@ -154,6 +154,12 @@ public:
 	static FXuint getMsCount();
 	//! Fills in the specified timeval structure with the current time
 	static void getTimeOfDay(struct timeval *ts);
+	/*! Returns a nanosecond count. It is highly unlikely that this timer is actually
+	nanosecond accurate, but you have a good chance it is at least microsecond accurate.
+	On systems which do not support high resolution timers, this returns getMsCount()
+	multiplied by one million. You should not rely on this counter having its full
+	64 bit range ie; it may wrap sooner on some systems */
+	static FXulong getNsCount();
 	//! Returns the unique id of this process within the system
 	static FXuint id();
 	//! Returns the number of processors available to this process
