@@ -46,7 +46,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 #ifdef USE_POSIX
 #include <sys/mman.h>
-#ifndef __linux__
+#ifdef __linux__
 // Linux's /dev/shm doesn't have a /tmp directory defined :(
 #define POSIX_SHARED_MEM_PREFIX "/TnFOX_"
 #else
@@ -136,6 +136,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 				if(m->copyOnWrite) pageacc|=FILE_MAP_COPY;
 				m->addr=MapViewOfFileEx(mappingh, pageacc, (DWORD)(m->offset>>32),
 					(DWORD)(m->offset), (DWORD) m->len, m->oldaddr);
+				//m->addr=0; // for debugging purposes
 #ifdef DEBUG
 				if(!m->addr)
 				{
@@ -785,7 +786,7 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 			FXERRH(p->file, FXTrans::tr("FXMemMap", "Unable to read unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
 			// Ok do file read
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
-			FXfval tillnextsection=((nextm) ? nextm->offset : mysize)-ioIndex;
+			FXfval tillnextsection=((nextm && nextm->addr) ? nextm->offset : mysize)-ioIndex;
 			p->file->at(ioIndex);
 			FXuval left=FXMIN((maxlen-readed), (FXuval)(tillnextsection));
 			FXuval read=p->file->readBlock(data+readed, left);
@@ -856,7 +857,7 @@ FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
 			FXERRH(p->file, FXTrans::tr("FXMemMap", "Unable to write unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
 			// Ok do file write
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
-			FXfval tillnextsection=((nextm) ? nextm->offset-ioIndex : (FXfval)-1);
+			FXfval tillnextsection=((nextm && nextm->addr) ? nextm->offset-ioIndex : (FXfval)-1);
 			p->file->at(ioIndex);
 			FXuval left=FXMIN((maxlen-written), (FXuval)(tillnextsection));
 			FXuval writ=p->file->writeBlock(data+written, left);
