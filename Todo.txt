@@ -1,19 +1,20 @@
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
+* Email tnfox-discussion to ask for SVN test
+* Integrate boost v1.32
+* Merge latest FOX development
+
+
 NT v5.0 Failures:
   None known.
 
 Linux Kernel v2.4.20 (RH9) Failures:
-  None known, but thread cancellation is a little flaky in Tn (see the
-cleanup() in FXIPCChannel).
+  None known, but thread cancellation during pipe operations is a little flaky
+in Tn (see the cleanup() in FXIPCChannel).
 
-Linux Kernel v2.6.6 Failures:
-  1. TestDeviceIO in socket i/o test segfaults in FXBlkSocket::readBlock() just
-after thread termination has been processed. TestSSL fails similarly. Likely
-a kernel bug.
-  2. TestMultithreading, almost certainly due to thread termination
-happening when thread termination is disabled. Likely a glibc or NPTL
-bug reenabling thread termination during internal code or a kernel bug.
+Linux Kernel v2.6.10 Failures:
+  1. TestMultithreading, there is a segfault as the threads quit in sem_post()
+in glibc. As this doesn't happen on other platforms, it's likely an OS bug.
 
 FreeBSD v5.3 Failures:
   1. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
