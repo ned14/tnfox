@@ -24,6 +24,8 @@ B Fixed memory leak in FXTextCodecs inherited from FOX
 B Fixed occasional segfault in FXFSMonitor due to insufficient data locking
 B Fixed failure to maintain wait counts in FXWaitCondition on Win32
 B Fixed FXBlkSocket not being cancellable on FreeBSD
+B FXMemMap wasn't using /tmp before its memory names which caused breakage
+on FreeBSD
 
 
 * Made FXMemMap::mappedRegion() return current and following region
@@ -67,6 +69,7 @@ a reason :)
 + Added FXMemMap::mappableSize() and FXMemMap::maximiseMappableSize()
 * Merged FOX v1.3.20
 + Added ability to set PYTHON_INCLUDE and PYTHON_LIB in config.py
+* Made FXProcess use new fast FXFile instantiations
 
 
 v0.80 12th July 2004:
