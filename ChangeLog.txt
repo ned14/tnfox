@@ -1,4 +1,56 @@
-v0.80 10th July 2004:
+v0.85 ?:
+-=-=-=-=-=-=-=-=-=-=-
+B Fixed compile error in FXRefedObject.h when FXRefedObject subclass defines
+its own noMoreReferrers().
+B FXIPCChannel should have thrown away ack messages when sender did not
+specifiy ack location
+B FXPipe was redefining FXERRHWIN for itself and thus losing the changes
+implemented in FXException::int_throwWinError()
+B FXMemMap::mappedRegion() was failing when offset was in last mapped
+region
+B Anything in FXDir or FXFile taking an "acceptAbs" parameter wasn't
+accepting absolute paths even when this parameter was true
+B Failure to truncate a FXFile or FXMemMap didn't generate an error code
+on Win32
+B FXMemMap::mapIn() would map a zero extent if the file was empty.
+B If an FXException was being rethrown, stacklevel wasn't being reset on
+transference up a stack level and thus causing a segfault on that exception's
+destruction
+
+* Made FXMemMap::mappedRegion() return current and following region
++ Added FXProcess::virtualAddrSpaceLeft()
+* Added a SMP build option which defines FX_SMPBUILD. Altered FXAtomicInt
+to use non locked instructions when not defined.
++ Added fastinc() and fastdec() to FXAtomicInt. Made FXMutex use them instead.
++ Made build system define FX_X86PROCESSOR to be processor revision wanted.
+* Modified FXMutex to use exchange instead of compare exchange (faster). Now
+FXMutex lock/unlock is 18.3% faster when contended and 3.3% faster uncontended.
+* Modified QDictBase::resize() to use vector::swap instead of a deep copy.
+* Added QDictBase::safeResize() and modified QDICTDYNRESIZE() to use it
+* Modified FXRefedObject and FXRefingObject to not allow opening of new
+references after destruction due to zero reference count has begun.
++ Added CPPMUNGE_NOEXTRACTERRORCODES to CppMunge.py
++ Added removeRef() and takeRef() to QSortedList
++ Added equality and comparison operators to QPtrListIterator and
+QVectorListIterator (and thus QSortedListIterator)
+* More or less rewrote nested exception framework runtime support to be both
+more efficient and handle multiple nested exception throws simultaneously
++ Added QPtrList::sort() with user supplied predicate function
++ Added QDictBase::append() and operator+=
+* Modified all code using HAVE_MOVECONSTRUCTORS to disable copy constructor
++ Added QValueList::append()
+* Modified FXTransString to have translate() taking a language id
+* Changed FXProcess::dllpath() to be dllPath()
++ Added push_back() and append() to QMemArray
++ Added operator=() to FXTransString
++ Added isUnique() and setUnique() to FXMemMap
++ Added the most useful setMutex() to FXRollback
+- Removed FXDir's fast constructor as the nearly static functions aren't for
+a reason :)
++ Added FXException::setConstructionBreak()
++ Added FXFile::join()
+
+v0.80 12th July 2004:
 -=-=-=-=-=-=-=-=-=-=-
 B FXPython.h wasn't observing the -fvisibility GCC extension
 B QDictBase was never deleting keys, so key list was always growing

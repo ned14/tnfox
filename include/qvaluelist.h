@@ -73,6 +73,16 @@ public:
 	}
 	bool isEmpty() const { return std::list<type>::empty(); }
 	typename std::list<type>::iterator append(const type &d) { FXEXCEPTION_STL1 { std::list<type>::push_back(d); } FXEXCEPTION_STL2; return --std::list<type>::end(); }
+	typename std::list<type>::iterator append(const QValueList &l)
+	{
+		FXEXCEPTION_STL1 {
+			for(const_iterator it=l.begin(); it!=l.end(); ++it)
+			{
+				std::list<type>::push_back(*it);
+			}
+		} FXEXCEPTION_STL2;
+		return --std::list<type>::end();
+	}
 	typename std::list<type>::iterator prepend(const type &d) { FXEXCEPTION_STL1 { std::list<type>::push_front(d); } FXEXCEPTION_STL2; return std::list<type>::begin(); }
 	typename std::list<type>::iterator remove(typename std::list<type>::iterator it) { typename std::list<type>::iterator itafter=it; ++itafter; std::list<type>::erase(it); return itafter; }
 	typename std::list<type>::iterator at(typename std::list<type>::size_type i) { typename std::list<type>::iterator it; for(it=std::list<type>::begin(); i; --i, ++it); return it; }

@@ -24,6 +24,8 @@
 #ifndef FXWSTRING_H
 #define FXWSTRING_H
 
+#include "fxdefs.h"
+
 namespace FX {
 
 

@@ -41,11 +41,17 @@ searches. On a 1024 item list, this means a maximum of ten compares as against 1
 
 \note This QSortedList does not bear ANY resemblance to Qt's one of the same name.
 This one is MUCH more useful!
+
+\warning You want to be cautious of remove() and take() - this uses the same comparator as the find()
+function which means if your comparator is loose for easier searching, often the wrong
+item will get deleted. Use removeRef() and takeRef() for these situations - you still get
+most of the speed of the binary search but with guaranteed removal of a particular pointer.
 */
 template<class type> class QSortedListIterator;
 template<class type> class QSortedList : private QPtrList<type>
 {
 	bool findInternal(QSortedListIterator<type> *itout, int *idx, const type *d) const;
+	QSortedListIterator<type> findRefInternal(const type *d) const;
 public:
 	QSortedList(bool wantAutoDel=false) : QPtrList<type>(wantAutoDel) {}
 	QSortedList(const QSortedList<type> &o) : QPtrList<type>(o) {}
@@ -78,10 +84,14 @@ public:
 	need to implement these operators.
 	*/
 	virtual int compareItems(type *a, type *b) const;
-	//! Removes an item
+	//! Removes an item by binary search
 	bool remove(const type *d);
-	//! Removes an item without auto-deletion
+	//! Removes an item by binary search and then by pointer value
+	bool removeRef(const type *d);
+	//! Removes an item by binary search without auto-deletion
 	bool take(const type *d);
+	//! Removes an item by binary search and then by pointer value without auto-deletion
+	bool takeRef(const type *d);
 	//! Same as QList::find() except a much more efficient binary search is used
 	int find(const type *d) const { int idx; if(findInternal(0, &idx, d)) return idx; else return -1; }
 	//! Finds \em d by binary searching, returning an iterator pointing to it or a null iterator if not found.
@@ -134,7 +144,33 @@ public:
 	QSortedListIterator() { }
 	QSortedListIterator(const QSortedList<type> &l)
 		: QPtrListIterator<type>((const QPtrList<type> &) l) {}
+	//! Makes the iterator dead (ie; point to nothing)
+	QSortedListIterator<type> &makeDead()
+	{
+		return static_cast<QSortedListIterator<type> &>(QPtrListIterator<type>::makeDead());
+	}
 };
+
+template<class type> inline QSortedListIterator<type> QSortedList<type>::findRefInternal(const type *d) const
+{
+	QSortedListIterator<type> it(*this);
+	if(!findInternal(&it, 0, d)) return it.makeDead();
+	QSortedListIterator<type> it1(it), it2(it);
+	type *a;
+	// Step backwards while comparitor is equal
+	for(--it; (a=it.current()) && !compareItems(const_cast<type *>(d), a); it1=it, --it);
+	for(it=it1; (a=it.current()); ++it)
+	{
+		if(a==d) return it;
+		if(it==it2) break;
+	}
+	// Step forwards while comparitor is equal
+	for(; (a=it.current()) && !compareItems(const_cast<type *>(d), a); ++it)
+	{
+		if(a==d) return it;
+	}
+	return it.makeDead();
+}
 
 template<class type> inline bool QSortedList<type>::remove(const type *d)
 {
@@ -143,10 +179,24 @@ template<class type> inline bool QSortedList<type>::remove(const type *d)
 	return QPtrList<type>::removeByIter(it);
 }
 
+template<class type> inline bool QSortedList<type>::removeRef(const type *d)
+{
+	QSortedListIterator<type> it(findRefInternal(d));
+	if(!it.current()) return false;
+	return QPtrList<type>::removeByIter(it);
+}
+
 template<class type> inline bool QSortedList<type>::take(const type *d)
 {
 	QSortedListIterator<type> it(*this);
 	if(!findInternal(&it, 0, d)) return false;
+	return QPtrList<type>::takeByIter(it);
+}
+
+template<class type> inline bool QSortedList<type>::takeRef(const type *d)
+{
+	QSortedListIterator<type> it(findRefInternal(d));
+	if(!it.current()) return false;
 	return QPtrList<type>::takeByIter(it);
 }
 

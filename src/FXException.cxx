@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#include <qlist.h>
+#include <qptrlist.h>
 #include <qvaluelist.h>
 #include "FXException.h"
 #if defined(WIN32) && defined(_MSC_VER)
@@ -46,12 +46,19 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 //static TThreadLocalStorageBase exceptionCount;
-static int creationCnt;
+static FXAtomicInt creationCnt;
 struct FXException_TIB
 {
-	int nestingCount;	// How far away we are from a real (ie; non-wrapper) try...catch block
-	int uniqueId;		// The id of the primary exception currently being thrown
-	QList<FXException> currentException;	// A list of known copies of the primary exception currently being thrown
+	struct LevelEntry
+	{
+		const char *srcfile;						// Where the FXERRH_TRY block is in the source
+		int lineno;
+		int nestingCount;							// How many FXEXCEPTIONDESTRUCT's we are from this FXERRH_TRY block
+		int uniqueId;								// Id of primary exception being thrown
+		QPtrList<FXException> currentExceptions;	// A list of known copies of the primary exception currently being thrown
+		LevelEntry(const char *_srcfile, int _lineno) : srcfile(_srcfile), lineno(_lineno), nestingCount(0), uniqueId(0) { }
+	};
+	QPtrList<LevelEntry> stack;					// One of these exist per nesting level of FXERRH_TRY blocks
 	struct GlobalErrorCreationCount
 	{
 		FXint master;
@@ -59,10 +66,11 @@ struct FXException_TIB
 		FXint count;
 		GlobalErrorCreationCount() : master(0), latch(0), count(0) {}
 	} GECC;
-	FXException_TIB() : nestingCount(0), uniqueId(0) { }
+	FXException_TIB() : stack(true) { }
 };
 static bool mytibenabled;
 static FXThreadLocalStorage<FXException_TIB> mytib;
+static bool GlobalPause;
 
 static void DestroyTIB()
 {
@@ -84,7 +92,8 @@ static inline bool CheckTIB()
 
 static inline int GetCreationCnt()
 {
-	if(0==++creationCnt) creationCnt++;
+	int ret;
+	if(!(ret=++creationCnt)) ret=++creationCnt;
 	return creationCnt;
 }
 
@@ -132,9 +141,10 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	{	// Purely for breakpointing
 		int a=1;
 	}
-#endif
-#ifdef BUILDING_TCOMMON
-	fxmessage("FXException created, '%s' at line %d in %s thread %d\n", msg.text(), _lineno, _filename, FXThread::id());
+	if(GlobalPause)
+	{	// Also breakpointing
+		int a=1;
+	}
 #endif
 	FXRBOp unconstr=FXRBConstruct(this);
 	_message=msg;
@@ -142,8 +152,12 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	_flags=__flags;
 	srcfilename=_filename;
 	srclineno=_lineno;
+	_threadId=FXThread::id();
 	reporttxt=0;
 	uniqueId=GetCreationCnt();
+#ifdef BUILDING_TCOMMON
+	fxmessage("FXException id %d created, '%s' at line %d in %s thread %d\n", uniqueId, msg.text(), _lineno, _filename, _threadId);
+#endif
 #if defined(WIN32) && defined(_MSC_VER)
 	memset(stack, 0, sizeof(stack));
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
@@ -225,17 +239,14 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	}
 #endif
 #endif
-	if(!CheckTIB())
-	{	// We're in a state without static data, so likelihood is there's no catch handlers
-		setFatal(true);
-		fxerror("DURING STATIC DATA INITIALISATION/DESTRUCTION %s\n", report().text());
-	}
+	stacklevel=-1;
 	unconstr.dismiss();
 }
 
 FXException::FXException(const FXException &o)
 	: uniqueId(o.uniqueId), _message(o._message), _code(o._code), _flags(o._flags),
-	srcfilename(o.srcfilename), srclineno(o.srclineno), _threadId(FXThread::id()), reporttxt(0), nestedlist(0)
+	srcfilename(o.srcfilename), srclineno(o.srclineno), _threadId(FXThread::id()), reporttxt(0), nestedlist(0),
+	stacklevel(o.stacklevel)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	if(o.reporttxt)
@@ -254,10 +265,12 @@ FXException::FXException(const FXException &o)
 #endif
 	if(CheckTIB())
 	{
-		if(mytib->uniqueId==uniqueId)
+		FXException_TIB *tib=mytib;
+		FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
+		if(stacklevel>=0 && le->uniqueId==uniqueId)
 		{
-			//printf("Copy construction of primary exception. Original=%x, Copy=%x\n", &o, this);
-			mytib->currentException.append(this);
+			//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", FXThread::id(), this, uniqueId, stacklevel);
+			le->currentExceptions.append(this);
 		}
 	}
 	unconstr.dismiss();
@@ -265,9 +278,11 @@ FXException::FXException(const FXException &o)
 
 FXException &FXException::operator=(const FXException &o)
 {
-	if(mytib->uniqueId==uniqueId)
+	FXException_TIB *tib=mytib;
+	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
 	{
-		mytib->currentException.removeRef(this);
+		//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", FXThread::id(), this, uniqueId, stacklevel, tib->stack.at(stacklevel)->currentExceptions.count()-1);
+		tib->stack.at(stacklevel)->currentExceptions.removeRef(this);
 	}
 	uniqueId=o.uniqueId; _message=o._message; _code=o._code; _flags=o._flags;
 	srcfilename=o.srcfilename; srclineno=o.srclineno; _threadId=o._threadId;
@@ -287,21 +302,30 @@ FXException &FXException::operator=(const FXException &o)
 		stack[n]=o.stack[n];
 #endif
 #endif
-	if(mytib->uniqueId==uniqueId)
+	stacklevel=o.stacklevel;
+	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
 	{
-		mytib->currentException.append(this);
+		//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", FXThread::id(), this, uniqueId, stacklevel);
+		tib->stack.at(stacklevel)->currentExceptions.append(this);
 	}
 	return *this;
 }
 
 FXException::~FXException()
 { FXEXCEPTIONDESTRUCT1 {
-	if(uniqueId && CheckTIB())
+	if(uniqueId)
 	{
-		if(mytib->uniqueId==uniqueId)
+		if(CheckTIB() && stacklevel>=0)
 		{
-			//printf("Destruction of copy of primary exception=%x\n", this);
-			mytib->currentException.removeRef(this);
+			FXException_TIB *tib=mytib;
+			assert(stacklevel<tib->stack.count());
+			FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
+			if(le && le->uniqueId==uniqueId)
+			{
+				//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", FXThread::id(), this, uniqueId, stacklevel, le->currentExceptions.count()-1);
+				le->currentExceptions.removeRef(this);
+				if(le->currentExceptions.isEmpty()) le->uniqueId=0;
+			}
 		}
 		uniqueId=0;
 	}
@@ -391,7 +415,7 @@ const FXString &FXException::report() const
 
 bool FXException::isPrimary() const
 {
-	return mytib->uniqueId==uniqueId;
+	return stacklevel>=0 && mytib->stack.at(stacklevel)->uniqueId==uniqueId;
 }
 
 FXint FXException::nestedLen() const
@@ -414,26 +438,118 @@ void FXException::int_setThrownException(FXException &e)
 {
 	if(CheckTIB())
 	{
-		if(!mytib->uniqueId && e.code()!=FXEXCEPTION_INTTHREADCANCEL)
+		if(e.code()!=FXEXCEPTION_INTTHREADCANCEL)
 		{
-			assert(mytib->currentException.isEmpty());
-			//printf("Setting primary exception=%x\n", &e);
-			mytib->currentException.append(&e);
-			mytib->uniqueId=e.uniqueId;
+			FXException_TIB *tib=mytib;
+			// Set this exception's stack level to the current level
+			e.stacklevel=tib->stack.count()-1;
+			if(e.stacklevel<0)
+			{	// Oh dear, there's no FXERRH_TRY above me
+				e.setFatal(true);
+				fxerror("NO FXERRH_TRY ABOVE %s\n", e.report().text());
+				assert(0);
+			}
+			else
+			{
+				FXException_TIB::LevelEntry *le=tib->stack.getLast();
+				//if(8==e.uniqueId)
+				//{
+				//	int a=1;
+				//}
+				if(!le->uniqueId)
+				{
+					assert(le->currentExceptions.isEmpty());
+					//fxmessage("Thread %u setting primary exception=%p, id=%u in stack level %d\n", FXThread::id(), &e, e.uniqueId, e.stacklevel);
+					le->currentExceptions.append(&e);
+					le->uniqueId=e.uniqueId;
+				}
+				else if(le->uniqueId==e.uniqueId)
+				{	// Same exception rethrown
+					//fxmessage("Thread %u rethrowing primary exception=%p, id=%u in stack level %d\n", FXThread::id(), &e, e.uniqueId, e.stacklevel);
+					le->currentExceptions.append(&e);
+				}
+				else
+				{	// New exception thrown during handling of primary exception (bad)
+					FXException *ee;
+					for(QPtrListIterator<FXException> it(le->currentExceptions); (ee=it.current()); ++it)
+					{
+						if(!ee->nestedlist)
+						{
+							FXERRHM(ee->nestedlist=new QValueList<FXException>);
+							ee->_flags|=FXERRH_HASNESTED;
+						}
+						ee->setFatal(true);
+						ee->nestedlist->push_back(e);
+						assert(!e.nestedlist);
+					}
+					//fxmessage("Thread %u throwing nested exception=%p, id=%d into primary exception id=%d in stack level %d, nestingCount=%d\n",
+					//	FXThread::id(), &e, e.uniqueId, le->uniqueId, e.stacklevel, le->nestingCount);
+					assert(le->nestingCount>0);
+				}
+			}
 		}
+	}
+	else
+	{	// We're in a state without static data, so likelihood is there's no catch handlers
+		e.setFatal(true);
+		fxerror("DURING STATIC DATA INITIALISATION/DESTRUCTION %s\n", e.report().text());
 	}
 }
 
-void FXException::int_resetThrownException()
-{
+void FXException::int_enterTryHandler(const char *srcfile, int lineno)
+{	// Called by FXERRH_TRY before each iteration of the tryable code
 	if(CheckTIB())
 	{
-		if(mytib->uniqueId)
+		FXException_TIB *tib=mytib;
+		FXException_TIB::LevelEntry *le;
+		FXERRHM(le=new FXException_TIB::LevelEntry(srcfile, lineno));
+		FXRBOp unle=FXRBNew(le);
+		tib->stack.append(le);
+		unle.dismiss();
+		//fxmessage("Thread %u entering try handler stack level %d (file %s line %d)\n",
+		//	FXThread::id(), tib->stack.count()-1, srcfile, lineno);
+	}
+}
+
+void FXException::int_exitTryHandler() throw()
+{	// Called by FXERRH_TRY at the end of each iteration of the tryable code
+	if(CheckTIB())
+	{
+		FXException_TIB *tib=mytib;
+		FXException_TIB::LevelEntry *le=tib->stack.getLast();
+		FXuint stackcount=tib->stack.count();
+		if(le && !le->currentExceptions.isEmpty())
 		{
-			mytib->currentException.clear();
-			mytib->uniqueId=0;
+			if(stackcount>0)
+			{	// The only exceptions left are those being thrown or rethrown so transfer upwards
+				FXException_TIB::LevelEntry *ple=tib->stack.at(stackcount-2);
+				FXException *currenterror=le->currentExceptions.getFirst();
+				if(ple->uniqueId)
+				{	// Enter as nested
+					FXException *ee;
+					for(QPtrListIterator<FXException> it(ple->currentExceptions); (ee=it.current()); ++it)
+					{
+						if(!ee->nestedlist)
+						{
+							if(!(ee->nestedlist=new QValueList<FXException>)) std::terminate();
+							ee->_flags|=FXERRH_HASNESTED;
+						}
+						ee->setFatal(true);
+						ee->nestedlist->push_back(*currenterror);
+					}
+					//fxmessage("Thread %u reentering exception %d as nested into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, FXThread::id(), stackcount-1);
+				}
+				else
+				{	// Enter as primary
+					ple->currentExceptions=le->currentExceptions;
+					ple->uniqueId=currenterror->uniqueId;
+					//fxmessage("Thread %u reentering exception %d as primary into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, FXThread::id(), stackcount-1);
+				}
+				currenterror->stacklevel=stackcount-2;
+			}
 		}
-		mytib->nestingCount=0;
+		//fxmessage("Thread %u exiting try handler stack level %d\n", FXThread::id(), stackcount-1);
+		tib->stack.removeLast();
 	}
 }
 
@@ -441,28 +557,28 @@ void FXException::int_incDestructorCnt()
 {
 	if(CheckTIB())
 	{
+		FXException_TIB::LevelEntry *le=mytib->stack.getLast();
 		//assert(mytib->nestingCount>=0);
-		mytib->nestingCount++;
+		if(le) le->nestingCount++;
 	}
 }
 
-bool FXException::int_nestedException(FXException &e, bool amAuto)
+bool FXException::int_nestedException(FXException &e)
 {	// Returns true if exception should be rethrown
 	if(CheckTIB())
 	{
-		if(mytib->uniqueId)
-		{	// Modify all copies of primary exception
-			for(QListIterator<FXException> it(mytib->currentException); it.current(); ++it)
-			{
-				if(!(*it)->nestedlist)
-				{
-					FXERRHM((*it)->nestedlist=new QValueList<FXException>);
-					(*it)->_flags|=FXERRH_HASNESTED;
-				}
-				if(amAuto) (*it)->setFatal(true);
-				(*it)->nestedlist->push_back(e);
-			}
-			return (mytib->nestingCount>1) ? true : false;
+		FXException_TIB *tib=mytib;
+		FXException_TIB::LevelEntry *le=tib->stack.getLast();
+		//fxmessage("Thread %u destructor caught exception %d in stack level %d, throwing already=%d, nestingCount=%d\n",
+		//	FXThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
+		if(!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED))
+		{	// If just one exception being thrown, always throw upwards
+			return true;
+		}
+		else
+		{	// Must never throw during handling of throw (as it would call terminate()).
+			// This unfortunately doesn't mean quite correct behaviour :(
+			return (le->nestingCount>1) ? true : false;
 		}
 	}
 	return true;
@@ -472,7 +588,8 @@ void FXException::int_decDestructorCnt()
 {
 	if(CheckTIB())
 	{
-		mytib->nestingCount--;
+		FXException_TIB::LevelEntry *le=mytib->stack.getLast();
+		if(le) le->nestingCount--;
 		//assert(mytib->nestingCount>=0);
 	}
 }
@@ -480,11 +597,12 @@ void FXException::int_decDestructorCnt()
 bool FXException::int_testCondition()
 {
 #ifdef DEBUG
-	if(!mytib || mytib==(FXException_TIB *)((FXuval)-1)) return false;
-	if(!mytib->GECC.master) return false;
-	if(mytib->GECC.count++>=mytib->GECC.latch)
+	FXException_TIB *tib=mytib;
+	if(!tib || tib==(FXException_TIB *)((FXuval)-1)) return false;
+	if(!tib->GECC.master) return false;
+	if(tib->GECC.count++>=tib->GECC.latch)
 	{
-		setGlobalErrorCreationCount(mytib->GECC.master);
+		setGlobalErrorCreationCount(tib->GECC.master);
 		return true;
 	}
 #endif
@@ -496,31 +614,41 @@ FXint FXException::setGlobalErrorCreationCount(FXint no)
 #ifdef DEBUG
 	if(CheckTIB())
 	{
-		FXint ret=mytib->GECC.master;
-		mytib->GECC.master=no;
-		mytib->GECC.latch=(no<0) ? ((FXint) (rand()*abs(no)/RAND_MAX)) : abs(no);
-		mytib->GECC.count=0;
+		FXException_TIB *tib=mytib;
+		FXint ret=tib->GECC.master;
+		tib->GECC.master=no;
+		tib->GECC.latch=(no<0) ? ((FXint) (rand()*abs(no)/RAND_MAX)) : abs(no);
+		tib->GECC.count=0;
 		return ret;
 	}
 #endif
 	return 0;
 }
 
+bool FXException::setConstructionBreak(bool v)
+{
+	bool t=GlobalPause;
+	GlobalPause=v;
+	return t;
+}
+
 void FXException::int_throwOSError(const char *file, int lineno, int code, FXuint flags)
 {
+	FXString errstr(strerror(code));
+	errstr.append(" ("+FXString::number(code)+")");
 	if(ENOENT==code || ENOTDIR==code)
 	{
-		FXNotFoundException e(file, lineno, strerror(code), flags);
+		FXNotFoundException e(file, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(EACCES==code)
 	{
-		FXNoPermissionException e(strerror(code), flags);
+		FXNoPermissionException e(errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else
 	{
-		FXException e(file, lineno, strerror(code), FXEXCEPTION_OSSPECIFIC, flags);
+		FXException e(file, lineno, errstr, FXEXCEPTION_OSSPECIFIC, flags);
 		FXERRH_THROW(e);
 	}
 }
@@ -538,21 +666,36 @@ void FXException::int_throwWinError(const char *file, int lineno, FXuint code, F
 	TCHAR buffer[1024];
 	len=FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, code, 0, buffer, sizeof(buffer)/sizeof(TCHAR), 0);
 	// Remove annoying CRLF at end of message sometimes
-	if(10==buffer[len-1]) buffer[len-1]=0;
-	if(13==buffer[len-2]) buffer[len-2]=0;
+	while(10==buffer[len-1])
+	{
+		buffer[len-1]=0;
+		len--;
+		if(13==buffer[len-1])
+		{
+			buffer[len-1]=0;
+			len--;
+		}
+	}
+	FXString errstr(buffer, len);
+	errstr.append(" ("+FXString::number(code)+")");
 	if(ERROR_FILE_NOT_FOUND==code || ERROR_PATH_NOT_FOUND==code)
 	{
-		FXNotFoundException e(file, lineno, buffer, flags);
+		FXNotFoundException e(file, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(ERROR_ACCESS_DENIED==code || ERROR_EA_ACCESS_DENIED==code)
 	{
-		FXNoPermissionException e(buffer, flags);
+		FXNoPermissionException e(errstr, flags);
+		FXERRH_THROW(e);
+	}
+	else if(ERROR_NO_DATA==code || ERROR_BROKEN_PIPE==code || ERROR_PIPE_NOT_CONNECTED==code || ERROR_PIPE_LISTENING==code)
+	{
+		FXConnectionLostException e(errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else
 	{
-		FXException e(file, lineno, buffer, FXEXCEPTION_OSSPECIFIC, flags);
+		FXException e(file, lineno, errstr, FXEXCEPTION_OSSPECIFIC, flags);
 		FXERRH_THROW(e);
 	}
 #endif

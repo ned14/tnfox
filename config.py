@@ -1,13 +1,20 @@
 # Simple config file, everything else is automatic
 
-debugmode=False
+debugmode=True
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
 #    debugmode=False
-make64bit=False          # Set to true if to use a 64 bit memory model
+
+### Global build options
+# Set to true to enable code optimised for a 64 bit address space
+# including asking the compiler to generate 64 bit code.
+make64bit=False
+# Set to true to create a SMP architecture compatible binary. This
+# is always safe though inefficient on uniprocessor machines.
+makeSMPBuild=True
 GenStaticLib=False       # Set to true to always generate a static library
-SeparateTnLibs=False
+SeparateTnLibs=(sys.platform=="win32")
 
 architecture="i486"      # Can currently only be "i486"
 # =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon,
@@ -20,15 +27,16 @@ i486_3dnow=0             # =0 (disable), =1 (3dnow)
 #i486_3dnow=1             # =0 (disable), =1 (3dnow)
 
 toolset=None             # Let scons pick which compiler/linker to use
-#if sys.platform=="win32":
+#if sys.platform!="win32":
 #    i486_version=6
 #    i486_SSE=1
-#    toolset=["icl"]
-#else:
-#    toolset=["intel"]
+#    if sys.platform=="win32":
+#        toolset=["icl"]
+#    else:
+#        toolset=["intel"]
 
 tnfoxname="TnFOX"
-tnfoxversion="0.80"      # Increment each release the interface is removed from
+tnfoxversion="0.85"      # Increment each release the interface is removed from
 tnfoxinterfaceidx=0      # Increment each release the interface is added to
 tnfoxsourceidx=0         # Increment each release the source has changed
 tnfoxbackcompatible=tnfoxinterfaceidx     # Probably correct

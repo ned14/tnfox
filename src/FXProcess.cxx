@@ -452,9 +452,10 @@ void FXProcess::init(int &argc, char *argv[])
 				temp=FXTrans::tr("FXProcess", "The millisecond count is %1, process id is %2 and this machine has %3 processors\n")
 					.arg(FXProcess::getMsCount()).arg(FXProcess::id()).arg(FXProcess::noOfProcessors());
 				sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "System load: processor=%1, memory=%2, disc i/o=%3\n")
+				temp=FXTrans::tr("FXProcess", "System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n")
 					.arg(FXProcess::hostOSProcessorLoad(), 0, 'f', 2).arg(FXProcess::hostOSMemoryLoad(), 0, 'f', 2)
-					.arg(FXProcess::hostOSDiscIOLoad(FXProcess::execpath()), 0, 'f', 2);
+					.arg(FXProcess::hostOSDiscIOLoad(FXProcess::execpath()), 0, 'f', 2)
+					.arg(fxstrfval(FXProcess::virtualAddrSpaceLeft()));
 				sstdio << temp.text();
 				temp=FXTrans::tr("FXProcess", "This process was created by the user %1 (group %2)\n")
 					.arg(FXACLEntity::currentUser().asString()).arg(FXACLEntity::currentUser().group().asString());
@@ -943,7 +944,7 @@ const FXString &FXProcess::execpath()
 	return myexecpath;
 }
 
-FXString FXProcess::dllpath(void *_addr, void **dllstart, void **dllend)
+FXString FXProcess::dllPath(void *_addr, void **dllstart, void **dllend)
 {
 	FXuval addr=(FXuval) _addr;
 	QValueList<MappedFileInfo> list=mappedFiles();
@@ -1340,6 +1341,84 @@ void FXProcess::overrideFreeResources(FXfloat memory, FXfloat processor, FXfloat
     myprocess->p->overrides.processor=processor;
     myprocess->p->overrides.discio=discio;
 }
+
+FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
+{
+	FXuval pagesize=pageSize();
+	if(chunk<pagesize) chunk=pagesize;
+	/* Some notes:
+	Linux 2.4		Linux 2.6		FreeBSD 5.2		NT 5.0
+	0xbfffffff		0xffffffff		0xbfffffff		0x7fffffff
+	|| stacks		|| stacks		|| stacks		|| DLLs
+	\/				\/				\/				\/
+	/\ anon maps	0xf7050000		/\ anon maps	/\ anon maps
+	|| DLLs			|| anon maps	|| DLLs			|| sbrk()
+	0x40000000		\/				0x28240000		0x00300000
+	/\				/\				/\				0x00130000
+	|| sbrk()		|| sbrk()		|| sbrk()		|| stacks
+	0x08000000		0x08000000		0x08000000		\/
+
+	* On Linux 2.6 DLLs live between 0x00111000-0x00f18000 and 0x0350d000-0x03d0000
+	growing upwars. Furthermore anon maps are always high growing downards. Some
+	144Mb is reserved for stacks.
+	* On NT 5.0 main program image usually lives at 0x00400000. Between
+	0x00130000-0x00300000 appear to get allocated to system DLLs and resources.
+*/
+#ifdef USE_WINAPI
+	void *map1, *map2;
+	map1=VirtualAlloc(NULL, chunk, MEM_RESERVE, PAGE_NOACCESS);
+	if(!map1) return 0;
+	map2=VirtualAlloc(NULL, chunk, MEM_RESERVE|MEM_TOP_DOWN, PAGE_NOACCESS);
+	VirtualFree(map1, 0, MEM_RELEASE);
+	if(!map2) return 0;
+	VirtualFree(map2, 0, MEM_RELEASE);
+	return chunk+(FXuval) map2-(FXuval) map1;
+#endif
+#ifdef USE_POSIX
+	if(sizeof(void *)>4)
+	{
+		fxwarning("WARNING: FXProcess::virtualAddrSpaceLeft() does not support 64 bit architectures yet\n");
+		return 0;
+	}
+	FXuval stackaddr; stackaddr=((FXuval) &stackaddr) & ~(0x10000-1);	// Round down to Mb boundary
+	// On all supported POSIX implementations stacks live at the highest address
+	// but on Linux 2.6 the end of mapping space is 144Mb lower
+	int flags=MAP_PRIVATE|MAP_NORESERVE;	// Don't actually allocate memory
+	// MAP_AUTORESRV;
+	bool mapsGoUp=true;
+#ifdef __linux__
+	flags|=MAP_ANONYMOUS;
+	static int linuxver;
+	if(!linuxver)
+	{
+		char buffer[64];
+		FILE *ih=fopen("/proc/sys/kernel/osrelease", "rt");
+		if(!ih) FXERRGOS(errno, 0);
+		len=fread(buffer, 1, 64, ih);
+		buffer[len-1]=0;
+		fclose(ih);
+		linuxver=(buffer[0]-'0')*10+(buffer[2]-'0');
+	}
+	if(linuxver>=25)
+		mapsGoUp=false;
+#endif
+#ifdef __FreeBSD__
+	flags|=MAP_ANON;
+#endif
+	void *map=::mmap(0, chunk, PROT_NONE, flags, -1, 0);
+	if(!map) return 0;
+	::munmap(map, chunk);
+	if(mapsGoUp)
+	{	// Maps grow upwards (Linux 2.4 and FreeBSD 5.2)
+		return stackaddr-(FXuval) map;
+	}
+	else
+	{	// Maps grow downwards (Linux 2.6)
+		return ((FXuval)map)+chunk-(FXuval)sbrk();
+	}
+#endif
+}
+
 
 FXThreadPool &FXProcess::threadPool()
 {

@@ -170,7 +170,7 @@ public:
 	optional return of start and end addresses of the binary map
 	\warning This is not an especially fast call
 	*/
-	static FXString dllpath(void *addr, void **dllstart=0, void **dllend=0);
+	static FXString dllPath(void *addr, void **dllstart=0, void **dllend=0);
 	/*! \warning Copies of this object delete the source. If you want a separate copy, call dllLoad() again. */
 	class dllHandle
 	{
@@ -189,6 +189,9 @@ public:
 		{
 #endif
 #else
+	private:
+		dllHandle(const dllHandle &);		// disable copy constructor
+	public:
 		dllHandle(dllHandle &&o) : h(o.h)
 		{
 #endif
@@ -297,6 +300,17 @@ public:
     /*! Lets you override the values returned by the free system resources functions.
     Use a negative number to reset to dynamic calculation */
     static void overrideFreeResources(FXfloat memory=-1, FXfloat processor=-1, FXfloat discio=-1);
+	/*! Returns an estimation of virtual address space remaining in this process if chunks
+	are allocated in size \em chunk. How this is implemented is highly system specific and
+	for some systems is quite hackish so the value can vary by +-5% depending on what thread
+	is calling it and such. At least two allocations of size \em chunk will need to be
+	temporarily made and the returned value assumes that there are no other allocations
+	between that chunk and the end of address space which clearly can be wildly out.
+	On all supported platforms actual increases in the memory usage of your process can be
+	avoided. You probably want to avoid calling this too frequently as it involves multiple
+	calls into kernel space. */
+	static FXuval virtualAddrSpaceLeft(FXuval chunk=1);
+
 	//! Returns the process-wide thread pool
 	static FXThreadPool &threadPool();
 	//! Indicates which hand the user is

@@ -158,6 +158,9 @@ public:
 	FXBlkSocket(FXBlkSocket &o);
 #endif
 #else
+private:
+	FXBlkSocket(const FXBlkSocket &);	// disable copy constructor
+public:
 	FXBlkSocket(FXBlkSocket &&o);
 #endif
 	~FXBlkSocket();

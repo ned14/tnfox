@@ -39,6 +39,76 @@ namespace FXRefingObjectImpl {
 	template<class type> class refedObject;
 }
 
+namespace FXRefedObjectImpl
+{
+	template<typename type> class countHolder
+	{
+		type myrefcount;
+		bool mydying;
+	protected:
+		bool int_increfcount()		// Returns true if not dead
+		{
+			if(mydying) return false;
+			++myrefcount;
+			return true;
+		}
+		bool int_decrefcount()		// Returns false if kill me now please
+		{
+			if(!--myrefcount && !mydying)
+			{
+				mydying=true;
+				return false;
+			}
+			return true;
+		}
+	public:
+		countHolder() : myrefcount(0), mydying(false) { }
+		countHolder(const countHolder &o) : myrefcount(0), mydying(false) { }
+		//! Returns the reference count of this object
+		type &refCount() throw() { return myrefcount; }
+		//! \overload
+		const type &refCount() const throw() { return myrefcount; }
+	};
+	template<> class countHolder<FXAtomicInt>
+	{	/* This specialisation for FXAtomicInt features a serialised checking and
+		setting of dying so we can know when you can't create a new reference safely
+		in a threadsafe fashion. */
+		FXShrdMemMutex myrefcountlock;
+		int myrefcount;
+		bool mydying;
+	protected:
+		bool int_increfcount()		// Returns true if not dead
+		{
+			myrefcountlock.lock();
+			if(mydying)
+			{
+				myrefcountlock.unlock();
+				return false;
+			}
+			++myrefcount;
+			myrefcountlock.unlock();
+			return true;
+		}
+		bool int_decrefcount()		// Returns false if kill me now please
+		{
+			myrefcountlock.lock();
+			if(!--myrefcount && !mydying)
+			{
+				mydying=true;
+				myrefcountlock.unlock();
+				return false;
+			}
+			myrefcountlock.unlock();
+			return true;
+		}
+	public:
+		countHolder() : myrefcountlock(FXINFINITE), myrefcount(0), mydying(false) { }
+		countHolder(const countHolder &o) : myrefcountlock(FXINFINITE), myrefcount(0), mydying(false) { }
+		// Deliberately prevent direct alteration
+		const int &refCount() const throw() { return myrefcount; }
+	};
+}
+
 namespace Pol {
 	/*! \struct unknownReferrers
 	\brief Policy specifying that the refed object does not know its referrers
@@ -114,30 +184,31 @@ namespace Pol {
 This is the base class for something which is reference counted - when the count
 reaches zero, the virtual method noMoreReferrers() is called which by default calls
 <tt>delete this</tt>. You of course should override this with anything you like.
+noMoreReferrers() will never be called more than once and once it has been called,
+even if the object is not deleted all attempts to open a new reference upon it
+will return a null reference. If you don't want this, specialise FX::FXRefedObjectImpl::countHolder
+(see the header file)
+
+A specialisation exists for FX::FXAtomicInt which implements an atomic reference
+count (despite not actually using FX::FXAtomicInt directly to do it). 
 \sa FX::FXRefingObject
 */
 template<typename intType,
 	class lastUsed=Pol::None0,
-	class referrersPolicy=Pol::unknownReferrers> class FXRefedObject : public lastUsed, private referrersPolicy
+	class referrersPolicy=Pol::unknownReferrers> class FXRefedObject : public FXRefedObjectImpl::countHolder<intType>, public lastUsed, private referrersPolicy
 {
 	template<class type> friend class FXRefingObjectImpl::refedObject;
 	template<bool mutexed, class type> friend struct FXRefingObjectImpl::dataHolderI;
-	bool dying;
-	intType myrefcount;
+	typedef FXRefedObject MyFXRefedObjectSpec;
 public:
-	FXRefedObject() : dying(false), myrefcount(0) { }
+	FXRefedObject() { }
 	virtual ~FXRefedObject() { }
-	FXRefedObject(const FXRefedObject &o) : lastUsed(o), referrersPolicy(), dying(false), myrefcount(0) { /* new instance */ }
+	FXRefedObject(const FXRefedObject &o) : lastUsed(o), referrersPolicy() { /* new instance */ }
 protected:
 	//! Called when the reference count reaches zero
 	virtual void noMoreReferrers() { delete this; }
 	using referrersPolicy::ReferrerEntry;
 	using referrersPolicy::int_referrers;
-public:
-	//! Returns the reference count of this object
-	intType &refCount() throw() { return myrefcount; }
-	//! \overload
-	const intType &refCount() const throw() { return myrefcount; }
 };
 
 namespace FXRefingObjectImpl {
@@ -192,8 +263,10 @@ namespace FXRefingObjectImpl {
 		{
 			if(Base::data)
 			{
-				++Base::data->refCount();
-				Base::addRef();
+				if(Base::data->int_increfcount())
+					Base::addRef();
+				else
+					Base::data=0;
 			}
 		}
 		void dec()
@@ -201,12 +274,9 @@ namespace FXRefingObjectImpl {
 			if(Base::data)
 			{
 				Base::delRef();
-				if(!--Base::data->refCount() && !Base::data->dying)
-				{
-					Base::data->dying=true;
-					Base::data->noMoreReferrers();
-					Base::data=0;
-				}
+				if(!Base::data->int_decrefcount())
+					static_cast<typename type::MyFXRefedObjectSpec *>(Base::data)->noMoreReferrers();
+				Base::data=0;			// No longer usuable
 			}
 		}
 	public:

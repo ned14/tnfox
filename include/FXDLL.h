@@ -26,6 +26,8 @@
 #ifndef FXDLL_H
 #define FXDLL_H
 
+#include "fxdefs.h"
+
 namespace FX {
 
 /**

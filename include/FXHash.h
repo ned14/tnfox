@@ -24,6 +24,8 @@
 #ifndef FXHASH_H
 #define FXHASH_H
 
+#include "fxdefs.h"
+
 namespace FX {
 
 

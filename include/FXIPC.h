@@ -477,9 +477,12 @@ HandledCode msgReceived(FXIPCMsg *rawmsg)
       {
          MyMsg *i=(MyMsg *) rawmsg;
          // Do processing ...
-         MyMsgAck ia(i->msgId());
-         // Maybe set members in ia?
-         sendMsg(ia, i->wantsAck());
+         if(i->wantsAck())
+         {
+            MyMsgAck ia(i->msgId());
+            // Maybe set members in ia?
+            sendMsg(ia);
+         }
          return Handled;
       }
 ...
@@ -693,16 +696,16 @@ public:
 		return sendMsgI(&msgack, &msg, &msgtype::regtype::endianise, waitfor);
 	}
 	//! \overload
-	template<class msgtype> bool sendMsg(msgtype *msg, bool doEndianise=true)
+	template<class msgtype> bool sendMsg(msgtype *msg)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck, Cannot_Send_Msgs_With_Ack);
-		return sendMsgI(0, msg, doEndianise ? &msgtype::regtype::endianise : 0, 0);
+		return sendMsgI(0, msg, &msgtype::regtype::endianise, 0);
 	}
 	//! \overload
-	template<class msgtype> bool sendMsg(msgtype &msg, bool doEndianise=true)
+	template<class msgtype> bool sendMsg(msgtype &msg)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck, Cannot_Send_Msgs_With_Ack);
-		return sendMsgI(0, &msg, doEndianise ? &msgtype::regtype::endianise : 0, 0);
+		return sendMsgI(0, &msg, &msgtype::regtype::endianise, 0);
 	}
 	/*! This is used to poll for the receipt of the ack to a previously
 	sent message and uses the same parameters as sendMsg(). You must pass
@@ -786,16 +789,17 @@ private:
 	template<typename myrealtype, typename fntype, typename msgtype> void int_handlerIndirect(fntype fnptr, FXAutoPtr<msgtype> msg, Generic::BoundFunctorV *v)
 	{	// Called in context of other thread
 		int_removeMsgHandler(v);
-		try
+		FXERRH_TRY
 		{
 			doAsyncHandled(PtrPtr(msg), (static_cast<myrealtype &>(*this).*fnptr)(PtrPtr(msg)));
 		}
-		catch(FXException &e)
+		FXERRH_CATCH(FXException &e)
 		{
 			if(msg->hasAck())
 				doAsyncHandled(PtrPtr(msg), e);
 			// Else I suppose I just throw it away?
 		}
+		FXERRH_ENDTRY
 	}
 };
 

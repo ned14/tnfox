@@ -3,7 +3,7 @@ Platform-specific issues:
 NT v5.0 Failures:
   None known.
 
-Linux Kernel v2.4 Failures:
+Linux Kernel v2.4.20 (RH9) Failures:
   None known, but thread cancellation is a little flaky in Tn (see the
 cleanup() in FXIPCChannel).
 
@@ -19,7 +19,9 @@ FreeBSD v5.2.1 Failures:
   1. TestDeviceIO in socket i/o test hangs (same place in TestSSL). Unfortunately
 as there is no kse threads support in gdb under FreeBSD v5.3 I can't tell what's
 going on.
-  2. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
+  2. TestEventLoops, starting the timer somehow shags that window, causing it to
+become unresponsive. Almost certainly a bug in KSE threads.
+  3. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
 timings are off - therefore the events don't open as they should.
 
 Known bugs:

@@ -53,7 +53,10 @@ env.Alias("tnfox", DLL)
 env.Alias("python", env.Command("python_", DLL, "cd Python && scons"))
 env.Alias("tests",  env.Command("tests_", DLL, "cd TestSuite && scons"))
 env.Alias("all", ["tnfox", "python", "tests"])
-#env.Command("synopsis", None, "synopsis 
+def runSynopsis(target, source, env):
+    syns=genSynopsis("include", getTnFOXIncludes())
+    callSynopsis(syns)
+env.Command("synopsis", None, runSynopsis)
 # env.Command("install", DLL, "chown root::root "+libAsLA()+" && chmod a+s "+libAsLA()+" && libtool --mode=install cp "+libAsLA()+" /usr/local/lib")
 env.Command("install", DLL, "libtool --mode=install cp "+libAsLA()+" /usr/local/lib")
 env.Command("uninstall", DLL, "libtool --mode=uninstall rm /usr/local/lib/"+libAsLA(True))

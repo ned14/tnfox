@@ -46,7 +46,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 #define TESTABS(path) \
-	FXERRH(!acceptAbs && FXFile::isAbsolute(path)!=0, FXTrans::tr("FXDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
+	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, FXTrans::tr("FXDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
 
 struct FXDLLLOCAL FXDirPrivate
 {
@@ -155,7 +155,7 @@ void FXDirPrivate::doLeafInfos()
 		FXERRHM(leafinfos=new QFileInfoList);
 		for(QStringList::iterator it=leafs.begin(); it!=leafs.end(); ++it)
 		{
-			leafinfos->append(FXFileInfo(path+PATHSEP+*it));
+			leafinfos->append(FXFileInfo(FXFile::join(path, *it)));
 		}
 	}
 }
@@ -343,7 +343,7 @@ FXString FXDir::dirName() const
 }
 FXString FXDir::filePath(const FXString &file, bool acceptAbs) const
 {
-	TESTABS(file);
+	if(acceptAbs && FXFile::isAbsolute(file)) return file;
 	return p->path+FXDir::separator()+file;
 }
 FXString FXDir::absFilePath(const FXString &file, bool acceptAbs) const

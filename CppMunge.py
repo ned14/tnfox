@@ -20,7 +20,7 @@
 # $Id:                                                                          *
 #*******************************************************************************/
 
-myversion="0.92"
+myversion="0.93"
 import sys
 import string
 import os
@@ -498,6 +498,7 @@ currentclass=None   # The current class
 classbracketidx=0   # bracketcnt when class began
 currentmethod=None  # The current method
 moddestructdisabled=False # For TERRH_NOTHROW
+extracterrorcodesdisabled=False
 def deathDump():
     if linecnt>0:
         printError(options.source, linecnt, "PROGRAM FAILED!!!")
@@ -557,9 +558,11 @@ for line in inh:
                         line=line[:-1]+" FXEXCEPTIONDESTRUCT1 {\n"
                         infilechanged=True
                         print "Modified destructor for class",currentclass,"at line",linecnt
+    if string.find(line, "CPPMUNGE_NOEXTRACTERRORCODES")!=-1: extracterrorcodesdisabled=True
+    if string.find(line, "CPPMUNGE_EXTRACTERRORCODES")!=-1: extracterrorcodesdisabled=False
     #if not (options.flags & 4):
     #    mod_throws(line)
-    if not (options.flags & 2):
+    if not (options.flags & 2) and not extracterrorcodesdisabled:
         errcodes.process(line)
     textliterals.process(line)
     infile+=[line]

@@ -164,8 +164,10 @@ public:
 	{
 		FXfval offset;	//!< Offset into the file
 		FXfval length;	//!< Length of mapped region
+		FXfval end;		//!< End offset into the file (=offset+length)
 		void *addr;		//!< Address of mapped region
-		MappedRegion(FXfval _offset, FXfval _length, void *_addr) : offset(_offset), length(_length), addr(_addr) { }
+		MappedRegion() { }
+		MappedRegion(FXfval _offset, FXfval _length, void *_addr) : offset(_offset), length(_length), end(_offset+_length), addr(_addr) { }
 		//! Returns true if structure is null
 		bool operator!() const throw() { return !offset && !length && !addr; }
 	};
@@ -174,7 +176,7 @@ public:
 	FXMemMap(const FXString &filename);
 	//! Constructs an instance using an external FX::FXFile
 	FXMemMap(FXFile &file);
-	//! Constructs an instance working with named shared memory of length \em len
+	//! Constructs an instance working with named shared memory of length \em len. If name is empty, sets to be unique
 	FXMemMap(const FXString &name, FXuval len);
 	~FXMemMap();
 
@@ -182,6 +184,10 @@ public:
 	const FXString &name() const;
 	//! Sets the filename or shared memory name being addressed by this device. Closes the old file first.
 	void setName(const FXString &name);
+	//! Returns true if the shared memory name is unique
+	bool isUnique() const;
+	//! Sets if the shared memory name is unique
+	void setUnique(bool v);
 	//! Returns the type of the memory map
 	Type type() const;
 	//! Sets whether to interpret the name as a filename or shared memory.
@@ -216,15 +222,16 @@ public:
 	Maps out a section based on the address returned from a previous mapIn().
 	*/
 	void mapOut(void *area);
-	/*! Returns a description of the mapped region containing the specified offset,
-	returning zero in all members if that offset is not within a region which has been
-	mapped. The default offset is the current file pointer. */
-	MappedRegion mappedRegion(FXfval offset=(FXfval) -1);
+	/*! Returns a description of the mapped region containing the specified offset plus
+	that of the region following, returning zero in all members if that offset is not within
+	a region which has been mapped. The default offset is the current file pointer. Returns
+	false if no region exists between the specified offset and the end of the file. */
+	bool mappedRegion(MappedRegion *current, MappedRegion *next=0, FXfval offset=(FXfval) -1) const;
 	/*! Returns the address within memory of where the specified offset into the file
 	is mapped (which by default is the current file pointer). Returns zero if that
 	place is not mapped into memory.
 	*/
-	void *mapOffset(FXfval offset=(FXfval) -1);
+	void *mapOffset(FXfval offset=(FXfval) -1) const;
 
 	virtual bool open(FXuint mode);
 	virtual void close();

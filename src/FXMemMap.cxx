@@ -62,7 +62,7 @@ struct FXDLLLOCAL Mapping
 struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 {
 	FXMemMap::Type type;
-	bool myfile, creator, mappingsFailed;
+	bool myfile, creator, mappingsFailed, unique;
 	FXFile *file;
 	int filefd;				// Either than of file (all platforms) or shared memory object (POSIX)
 	FXString name;
@@ -84,7 +84,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 	int pageaccess;
 #endif
 	FXMemMapPrivate(FXMemMap::Type _type, FXFile *f=0) : type(_type), myfile(0==f), creator(false),
-		mappingsFailed(false), file(f), filefd(0), size(0), acl(FXACL::MemMap), mappings(true),
+		mappingsFailed(false), unique(false), file(f), filefd(0), size(0), acl(FXACL::MemMap), mappings(true),
 		pageSize(FXProcess::pageSize()), cmapping(0), cmappingit(mappings),
 #ifdef USE_WINAPI
 		overAllocation(FXProcess::pageSize()*4), mappingh(0), mappingsize(0),
@@ -144,6 +144,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 	{
 		QSortedListIterator<Mapping> it=mappings.findClosestIter(&Mapping(offset));
 		if(!it.atFirst()) --it;
+		if(!amount) amount=1;
 		for(Mapping *m=0; (m=it.current()) && m->offset<offset+amount;)
 		{
 			if((offset-m->offset)<amount || (offset+amount)>m->offset)
@@ -231,6 +232,19 @@ void FXMemMap::setName(const FXString &name)
 	FXMtxHold h(p);
 	close();
 	p->name=name;
+	p->unique=!!name.empty();
+}
+
+bool FXMemMap::isUnique() const
+{
+	FXMtxHold h(p);
+	return p->unique;
+}
+
+void FXMemMap::setUnique(bool v)
+{
+	FXMtxHold h(p);
+	p->unique=v;
 }
 
 FXMemMap::Type FXMemMap::type() const
@@ -291,6 +305,7 @@ void *FXMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
 	FXMtxHold h(p);
 	Mapping *m;
 	if((FXfval) -1==amount) amount=p->size;
+	if(!amount) return 0;	// Can't have null maps
 	offset&=p->pageSize-1;	// Round down to page size
 	p->unmap(offset, amount);
 	bool noMappings=p->mappings.isEmpty();
@@ -327,23 +342,44 @@ void FXMemMap::mapOut(void *area)
 	}
 }
 
-FXMemMap::MappedRegion FXMemMap::mappedRegion(FXfval offset)
+bool FXMemMap::mappedRegion(FXMemMap::MappedRegion *current, FXMemMap::MappedRegion *next, FXfval offset) const
 {
+	bool ret=false;
 	FXMtxHold h(p);
 	if((FXfval) -1==offset)
+		offset=ioIndex;
+	QSortedListIterator<Mapping> it=p->mappings.findClosestIter(&Mapping(offset));
+	Mapping *m=it.current();
+	if(!m)
+		m=it.toLast();
+	else if(m->offset>offset && !it.atFirst())
+		m=--it;
+	if(m && offset>=m->offset && offset<m->offset+m->len)
 	{
-		if(p->cmapping)
-			return MappedRegion(p->cmapping->offset, p->cmapping->len, p->cmapping->addr);
+		if(current)
+			*current=MappedRegion(m->offset, m->len, m->addr);
+		m=++it;
+		ret=true;
 	}
 	else
 	{
-		Mapping *m=p->findMapping(offset);
-		if(m)
-			return MappedRegion(m->offset, m->len, m->addr);
+		if(current)
+			*current=MappedRegion(0, 0, 0);
 	}
-	return MappedRegion(0,0,0);
+	if(m && m->offset>offset)
+	{
+		if(next)
+			*next=MappedRegion(m->offset, m->len, m->addr);
+		ret=true;
+	}
+	else
+	{
+		if(next)
+			*next=MappedRegion(0, 0, 0);
+	}
+	return ret;
 }
-void *FXMemMap::mapOffset(FXfval offset)
+void *FXMemMap::mapOffset(FXfval offset) const
 {
 	FXMtxHold h(p);
 	if((FXfval) -1==offset)
@@ -382,21 +418,30 @@ void FXMemMap::winopen(int mode)
 		p->mappingsize+=p->overAllocation;
 	}
 	if(!p->mappingsize) p->mappingsize=1;
-	FXString name="Global\\"+p->name;
 	if(INVALID_HANDLE_VALUE==fileh)
 	{	
-		if(mode & IO_WriteOnly)
+		FXString name;
+		do
 		{
-			SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
-			sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
-			FXERRHWIN(p->mappingh=CreateFileMapping(fileh,
-				&sa, access,
-				(DWORD)(p->mappingsize>>32), (DWORD) p->mappingsize, name.text()));
-		}
-		else
-		{
-			FXERRHWIN(p->mappingh=OpenFileMapping(access, FALSE, name.text()));
-		}
+			if(p->unique)
+				p->name=FXString("%1_%2").arg(FXProcess::id()).arg(rand(),0,16);
+			name=FXString("Global\\"+p->name);
+			if(mode & IO_WriteOnly)
+			{
+				SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
+				sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
+				p->mappingh=CreateFileMapping(fileh, &sa, access,
+					(DWORD)(p->mappingsize>>32), (DWORD) p->mappingsize, name.text());
+				if(p->unique && ERROR_ALREADY_EXISTS==GetLastError())
+				{
+					CloseHandle(p->mappingh);
+					continue;
+				}
+			}
+			else
+				p->mappingh=OpenFileMapping(access, FALSE, name.text());
+		} while(false);
+		FXERRHWIN(p->mappingh);
 		p->acl=FXACL(p->mappingh, FXACL::MemMap);
 	}
 	else
@@ -467,20 +512,33 @@ bool FXMemMap::open(FXuint mode)
 		}
 		if(Memory==p->type)
 		{
-			FXString name("/TnFOX_"+p->name);
-			p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE);
-			if(-1==p->filefd)
+			FXString name;
+			static FXMutex locallock;	// Lock to prevent race between determining name doesn't exist and creating it
+			FXMtxHold h(locallock);
+			do
 			{
-				if(mode & IO_WriteOnly)
+				if(p->unique)
+					p->name=FXString("%1_%2").arg(FXProcess::id()).arg(rand(),0,16);
+				name=FXString("/TnFOX_"+p->name);
+				p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE);
+				if(p->unique && -1!=p->filefd)
 				{
-					access|=O_CREAT;
-					p->creator=true;
-					FXERRHIO(p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE));
-					FXERRHIO(::ftruncate(p->filefd, p->size));
-					p->acl.writeTo(p->filefd);
+					::close(p->filefd);
+					continue;
 				}
-				else { FXERRHIO(-1); }
-			}
+				if(-1==p->filefd)
+				{
+					if(mode & IO_WriteOnly)
+					{
+						access|=O_CREAT;
+						p->creator=true;
+						FXERRHIO(p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE));
+						FXERRHIO(::ftruncate(p->filefd, p->size));
+						p->acl.writeTo(p->filefd);
+					}
+					else { FXERRHIO(-1); }
+				}
+			} while(false);
 		}
 #endif
 		setFlags((mode & IO_ModeMask)|IO_Open);

@@ -52,6 +52,7 @@ for more information.
 
 To get you started, here are a list of common start points:
 <ol>
+\htmlinclude DOxygenStuff/searchbox.html
 <li> <a class="el" target="_self" href="classes.html">All classes in TnFOX</a> and <a class="el" target="_self" href="modules.html">Non-class entities</a>
 <ul>
 <li> \ref guiclasses

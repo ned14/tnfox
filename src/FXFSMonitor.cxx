@@ -346,6 +346,10 @@ void FXFSMon::Watcher::Path::callHandlers()
 		{	// Don't bother if it's just accessed time change (non portable anyway)
 			const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
 			const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
+#ifdef DEBUG
+			fxmessage("File %s had changes 0x%x old=%s, new=%s\n", oldfi.filePath().text(), *(int *) &ch.change,
+				oldfi.createdAsString().text(), newfi.createdAsString().text());
+#endif
 			for(QPtrVectorIterator<Watcher::Path::Handler> it(handlers); (handler=it.current()); ++it)
 			{
 				if(!handler->callv)

@@ -402,6 +402,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					FXIPCChannelPrivate::AckEntry *ae=tmsg.hasAck() ? 0 : p->msgs.find(tmsg.msgId());
 					if(ae)
 					{
+						assert(ae->ack);
 						if(ae->msg->msgType()+1!=tmsg.msgType())
 						{
 							if(tmsg.msgType()>FXIPCMsg_ErrorOccurred::id::code)
@@ -581,7 +582,7 @@ FXIPCChannel::HandledCode FXIPCChannel::invokeMsgReceived(FXIPCChannel::MsgFilte
 	}
 	FXERRH_CATCH(FXException &e)
 	{
-		if(tmsg.hasAck())
+		if(tmsg.hasAck() && tmsg.wantsAck())
 		{
 			FXIPCMsg_ErrorOccurred errocc(tmsg.msgId(), e);
 			sendMsg(errocc);
@@ -656,20 +657,23 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		FXIPCChannelPrivate::AckEntry *ae=0;
 		if(msg->hasAck())
 		{
-			if(msgack) msg->myflags|=FXIPCMsg::FlagsWantAck;		// Tell other end to please bother serialising ack
-			msg->myid=int_makeUniqueMsgId();
-			FXWaitCondition *wc=p->wcsFree.getFirst(); p->wcsFree.takeFirst();
-			if(!wc)
+			if(msgack)
 			{
-				FXERRHM(wc=new FXWaitCondition);
+				msg->myflags|=FXIPCMsg::FlagsWantAck;		// Tell other end we do want the ack
+				msg->myid=int_makeUniqueMsgId();
+				FXWaitCondition *wc=p->wcsFree.getFirst(); p->wcsFree.takeFirst();
+				if(!wc)
+				{
+					FXERRHM(wc=new FXWaitCondition);
+				}
+				FXRBOp unwc=FXRBNew(wc);
+				FXERRHM(ae=new FXIPCChannelPrivate::AckEntry(msg, msgack, wc));
+				unwc.dismiss();
+				FXRBOp unae=FXRBNew(ae);
+				p->msgs.insert(msg->myid, ae);
+				unae.dismiss();
+				QDICTDYNRESIZEAGGR(p->msgs);
 			}
-			FXRBOp unwc=FXRBNew(wc);
-			FXERRHM(ae=new FXIPCChannelPrivate::AckEntry(msg, msgack, wc));
-			unwc.dismiss();
-			FXRBOp unae=FXRBNew(ae);
-			p->msgs.insert(msg->myid, ae);
-			unae.dismiss();
-			QDICTDYNRESIZEAGGR(p->msgs);
 		}
 		FXRBOp unackentry=FXRBObj(*this, &FXIPCChannel::removeAck, ae);
 		FXBuffer buffer(pageSize);

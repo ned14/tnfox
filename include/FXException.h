@@ -69,16 +69,20 @@ release versions
 Defining this prevents source file information being compiled in with every generation
 of a FXException
 */
+#ifdef FXEXCEPTION_DISABLESOURCEINFO
+#define FXEXCEPTION_FILE(p) (const char *) 0
+#define FXEXCEPTION_LINE(p) 0
+#else
+#define FXEXCEPTION_FILE(p) __FILE__
+#define FXEXCEPTION_LINE(p) __LINE__
+#endif
+
 /*!
 The preferred way to create a FXException, this constructs one into \em e2
 with message \em msg, code \em code and \em flags being the usual exception flags
 \sa FXExceptionFlags
 */
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRMAKE(e2, msg, code, flags)		FXException e2(0, 0, msg, code, flags);
-#else
-#define FXERRMAKE(e2, msg, code, flags)		FXException e2(__FILE__, __LINE__, msg, code, flags);
-#endif
+#define FXERRMAKE(e2, msg, code, flags)		FXException e2(FXEXCEPTION_FILE(e2), FXEXCEPTION_LINE(e2), msg, code, flags);
 
 //! Throws the specified exception
 #define FXERRH_THROW(e)						{ FXException::int_setThrownException(e); throw e; }
@@ -116,15 +120,11 @@ enum FXExceptionCodes
 	FXEXCEPTION_INTTHREADCANCEL=(FXEXCEPTION_SYSCODE_BASE - 256)
 };
 
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGOS(code, flags)		{ FXException::int_throwOSError(0, 0, code, flags); }
-#else
 /*! Use this macro to generate a FXException representing the CLib/POSIX error code \em code. Flags are as
 for usual exceptions
 \sa FX::FXExceptionFlags
 */
-#define FXERRGOS(code, flags)		{ FXException::int_throwOSError(__FILE__, __LINE__, code, flags); }
-#endif
+#define FXERRGOS(code, flags)		{ FXException::int_throwOSError(FXEXCEPTION_FILE(code), FXEXCEPTION_LINE(code), code, flags); }
 #ifdef DEBUG
 #define FXERRHOS(exp)				{ int __errcode=(exp); if(__errcode<0 || FXException::int_testCondition()) FXERRGOS(errno, 0); }
 #else
@@ -136,7 +136,7 @@ MSVCRT which sets errno
 
 //@(
 //! Enters a section of code guarded against exceptions
-#define FXERRH_TRY			{ bool __retryerrorh; do { __retryerrorh=false; FXException::int_resetThrownException(); try
+#define FXERRH_TRY			{ bool __retryerrorh; do { __retryerrorh=false; FXException_TryHandler __newtryhandler(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); try
 //! Catches a specific exception
 #define FXERRH_CATCH(e)		catch(e)
 /*! \param owner Either a FXApp or FXWindow
@@ -155,7 +155,7 @@ Reports the exception \em e to the user
 
 #define FXERRH_NODESTRUCTORMOD
 #define FXEXCEPTIONDESTRUCT1 FXException::int_incDestructorCnt(); try
-#define FXEXCEPTIONDESTRUCT2 catch(FXException &e) { if(FXException::int_nestedException(e, true)) throw; } FXException::int_decDestructorCnt()
+#define FXEXCEPTIONDESTRUCT2 catch(FXException &e) { if(FXException::int_nestedException(e)) throw; } FXException::int_decDestructorCnt()
 //@(
 //! Enters a section of code guarded against \c std::bad_alloc exceptions
 #define FXEXCEPTION_STL1 try {
@@ -243,9 +243,6 @@ each and every destructor it processes (this can be prevented via placing \c FXE
 destructor definition). The wrap checks to see if an exception is currently being thrown for the
 current thread and if so, it appends the new exception and sets the FXERRH_HASNESTED and
 FXERRH_ISFATAL flags. Thus by default the program will report the error, clean up and exit.
-
-You can nest exceptions using your own wraps, in this case FXERRH_ISFATAL isn't set and so you
-can implement handling code.
 
 \note The nested exception framework is disabled during static data initialisation and destruction.
 
@@ -392,6 +389,7 @@ private:
 	} stack[FXEXCEPTION_STACKBACKTRACEDEPTH];
 #endif
 #endif
+  int stacklevel;
 private:
 	void init(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
 public:
@@ -455,13 +453,17 @@ public:
   The exceptions will keep being thrown until disabled ie; the count restarts or rerandomises.
   */
   static FXint setGlobalErrorCreationCount(FXint no);
+  /*! Sets an internal flag causing the construction of a FXException to breakpoint.
+  Has no effect on release builds */
+  static bool setConstructionBreak(bool v);
 
   // Internal and not to be publicly used
   static FXDLLLOCAL void int_enableNestedExceptionFramework(bool yes=true);
   static void int_setThrownException(FXException &e);
-  static void int_resetThrownException();
+  static void int_enterTryHandler(const char *srcfile, int lineno);
+  static void int_exitTryHandler() throw();
   static void int_incDestructorCnt();
-  static bool int_nestedException(FXException &e, bool amAuto=false);
+  static bool int_nestedException(FXException &e);
   static void int_decDestructorCnt();
   static bool int_testCondition();
   static void int_throwWinError(const char *file, int lineno, FXuint code, FXuint flags);
@@ -474,6 +476,18 @@ public:
 FXAPI FXStream &operator<<(FXStream &s, const FXException &i);
 //! Reads an exception from stream \em s
 FXAPI FXStream &operator>>(FXStream &s, FXException &i);
+
+struct FXException_TryHandler
+{
+	FXException_TryHandler(const char *srcfile, int lineno)
+	{
+		FXException::int_enterTryHandler(0,0);
+	}
+	~FXException_TryHandler()
+	{
+		FXException::int_exitTryHandler();
+	}
+};
 
 
 /*! \class FXRangeException
@@ -495,11 +509,7 @@ Use this macro to generically indicate a parameter exceedin te permitted range. 
 failure in all code, this should greatly help intuitive writing of handlers for this
 common error
 */
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGNF(msg, flags)		{ FXNotFoundException e(0, 0, msg, flags); FXERRH_THROW(e); }
-#else
-#define FXERRGNF(msg, flags)		{ FXNotFoundException e(__FILE__, __LINE__, msg, flags); FXERRH_THROW(e); }
-#endif
+#define FXERRGNF(msg, flags)		{ FXNotFoundException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(e); }
 
 /*! \class FXPointerException
 \brief An unexpected null pointer error
@@ -514,11 +524,7 @@ public:
 	FXPointerException(const FXchar *msg)
 		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, 0) { }
 };
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGPTR(flags)	{ FXPointerException e(0, 0, flags); FXERRH_THROW(e); }
-#else
-#define FXERRGPTR(flags)	{ FXPointerException e(__FILE__, __LINE__, flags); FXERRH_THROW(e); }
-#endif
+#define FXERRGPTR(flags)	{ FXPointerException e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(e); }
 /*! \return A FXPointerException
 
 Use this macro to test for null pointers
@@ -557,11 +563,7 @@ public:
 	FXMemoryException(const FXchar *msg)
 		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, 0) { }
 };
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGM				{ FXMemoryException e(0, 0); FXERRH_THROW(e); }
-#else
-#define FXERRGM				{ FXMemoryException e(__FILE__, __LINE__); FXERRH_THROW(e); }
-#endif
+#define FXERRGM				{ FXMemoryException e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(e); }
 /*! \return A FXMemoryException
 
 Use this macro to wrap malloc, calloc and new eg;
@@ -587,11 +589,7 @@ public:
 	FXNotSupportedException(const char *_filename, int _lineno, const FXString &msg)
 		: FXException(_filename, _lineno, msg, FXEXCEPTION_NOTSUPPORTED, FXERRH_ISNORETRY|FXERRH_ISDEBUG) { }
 };
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGNOTSUPP(msg)	{ FXNotSupportedException e(0, 0, msg); FXERRH_THROW(e); }
-#else
-#define FXERRGNOTSUPP(msg)	{ FXNotSupportedException e(__FILE__, __LINE__, msg); FXERRH_THROW(e); }
-#endif
+#define FXERRGNOTSUPP(msg)	{ FXNotSupportedException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(e); }
 
 /*! \class FXNotFoundException
 \brief A failure to find something (eg; a file, handle, etc)
@@ -609,11 +607,7 @@ Use this macro to generically indicate failures to find things. As this is a com
 failure in all code, this should greatly help intuitive writing of handlers for this
 common error
 */
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGNF(msg, flags)		{ FXNotFoundException e(0, 0, msg, flags); FXERRH_THROW(e); }
-#else
-#define FXERRGNF(msg, flags)		{ FXNotFoundException e(__FILE__, __LINE__, msg, flags); FXERRH_THROW(e); }
-#endif
+#define FXERRGNF(msg, flags)		{ FXNotFoundException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(e); }
 
 /*! \class FXIOException
 \brief A failure to perform i/o
@@ -625,11 +619,7 @@ public:
 	FXIOException(const char *_filename, int _lineno, const FXString &msg, FXuint code=FXEXCEPTION_IOERROR, FXuint flags=0)
 		: FXResourceException(_filename, _lineno, msg, code, flags) { }
 };
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGIO(msg)		{ FXIOException e(0, 0, msg); FXERRH_THROW(e); }
-#else
-#define FXERRGIO(msg)		{ FXIOException e(__FILE__, __LINE__, msg); FXERRH_THROW(e); }
-#endif
+#define FXERRGIO(msg)		{ FXIOException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(e); }
 /*! \return A FXIOException
 
 Use this macro to wrap standard C library type calls eg;

@@ -19,6 +19,9 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
+#ifndef FXDEFS_H
+#include "fxdefs.h"
+#else
 
 #ifndef FXMEMORYPOOL_H
 #define FXMEMORYPOOL_H
@@ -280,4 +283,5 @@ public:
 
 } // namespace
 
+#endif
 #endif

@@ -149,6 +149,9 @@ def ternary(val, A, B):
 def getBase(file):
     base,ext=os.path.splitext(file)
     base,leaf=os.path.split(base)
+    # If it's in a dir other than src, include that
+    if len(base)>3:
+        leaf=os.path.join(base[ternary(base[:3]=="src", 4, 0):], leaf)
     return leaf
     
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
@@ -173,7 +176,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     onWindows=(env['PLATFORM']=="win32")
     if tcommonopts:
         libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname, tncommonversioninfo, debug=debugmode)
-        libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"tn", tncommonversioninfo, debug=debugmode)
+        libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn", tncommonversioninfo, debug=debugmode)
     else:
         libtnfox,libtnfoxsuffix=VersionedSharedLibraryName(env, tnfoxname, tnfoxversioninfo, debug=debugmode)
     if debugmode:
@@ -188,6 +191,9 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     execfile(platformconfig)
     if sys.byteorder=="big": env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
+    if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
+    if architecture=="i486":
+        env['CPPDEFINES']+=[("FX_X86PROCESSOR", i486_version)]
     if tcommonopts==2: env['CPPDEFINES']+=["BUILDING_TCOMMON"]
     for key,value in locals().items():
         cglobals[key]=value
@@ -279,6 +285,18 @@ def addBind(DLL):
                 os.chdir(oldpath)
         AddPostAction(DLL, Action(runBind))
 
+def genSynopsis(headersloc, headers):
+    syns=["Synopsis_syn/"+x[:string.find(x, '.')]+".syn" for x in headers]
+    for idx in range(0, len(headers)):
+        os.system("synopsis -p Cxx -D__GNUC__=1 -I"+headersloc+" -o "+syns[idx]+" "+headersloc+"/"+headers[idx])
+    return syns
 
+def callSynopsis(syns):
+    print "Linking synopsis AST files"
+    cmd="synopsis \"-Wl,comment_processors(['qt','java','summary'])\" -o Synopsis_syn/combined.syn "+string.join(syns, " ")
+    #print cmd
+    os.system(cmd)
+    print "Generating HTML"
+    os.system("synopsis -f HTML -o Synopsis Synopsis_syn/combined.syn")
 
-
+    

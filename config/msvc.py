@@ -38,8 +38,8 @@ if debugmode:
     #env['CCWPOOPTS']=["/W4"] # Maximum warnings for TnFOX files only
 else:
     cppflags+=["/O2",        # Optimise for fast code
-               #"/Zd",        # Line no debug info only
-               "/Zi",
+               "/Zd",        # Line no debug info only
+               #"/Zi",
                "/MD"         # Select MSVCRT.dll
                ]
 env['CPPFLAGS']=cppflags

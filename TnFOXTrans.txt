@@ -1,12 +1,12 @@
 # TnFOX human language string literal translation file
-# Last updated: Fri, 25 Jun 2004 18:26:05 +0000
+# Last updated: Wed, 28 Jul 2004 17:00:48 +0000
 
 version=1:
 
 # If the line below says =Yes, then there are still text literals in here
 # which have not been translated yet. Search for "!TODO!" to find them
 
-needsupdating=No:
+needsupdating=Yes:
 
 # Enter the list of all language ids used in the file
 
@@ -453,6 +453,10 @@ langids="ES":
 	ES: "Los sockets no estan disponibles en este machina"
 	srcfile="FXBlkSocket.cxx":class="FXBlkSocket":
 		ES: up
+
+"System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n":
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: "!TODO! enter translation here"
 
 "System load: processor=%1, memory=%2, disc i/o=%3\n":
 	ES: "Carga de sistema: processadora=%1, memoria=%2, discos=%3\n"

@@ -52,11 +52,11 @@ To aid porting of Qt programs to FOX.
 
 Note that the following are not quite the same:
 \li data() assumes that the STL's std::vector<> class stores its elements contiguously
-(as does begin() and end()). This isn't guaranteed by the ISO standard.
+(as does begin() and end()). This isn't guaranteed by the ISO standard (though it is
+in a standard amendment, so it shall be very soon).
 \li Setting QMemArray to use an external array is mostly supported, but not
 entirely (some methods aren't implemented).
-\li The STL's std::vector<> always uses over allocation for speed ie; QMemArray's
-optimisation setting is always on.
+\li Useful functions such as push_back() and pop_back() are implemented
 */
 template<typename type> class QMemArray : private std::vector<type>
 {
@@ -81,6 +81,11 @@ public:
 	QMemArray(FXuval size) : extArray(0), extArrayLen(0), std::vector<type>(size) { }
 	QMemArray(const QMemArray<type> &o) : extArray(o.extArray), extArrayLen(o.extArrayLen), std::vector<type>(o) { }
 	QMemArray<type> &operator=(const QMemArray<type> &o) { extArray=o.extArray; extArrayLen=o.extArrayLen; std::vector<type>::operator=(o); return *this; }
+
+	using std::vector<type>::capacity;
+	//using std::vector<type>::clear;
+	using std::vector<type>::empty;
+	using std::vector<type>::reserve;
 
 	//! Returns a pointer to the array
 	type *data() const { return (extArray) ? extArray : const_cast<type *>(&std::vector<type>::front()); }
@@ -201,6 +206,13 @@ public:
 	ConstIterator begin() const { return data(); }
 	//! Returns a const iterator pointing one past the last element
 	ConstIterator end() const { return data()+size(); }
+
+	//! Appends an item onto the end
+	void push_back(const type &v) { FXEXCEPTION_STL1 { std::vector<type>::push_back(v); } FXEXCEPTION_STL2; }
+	//! \overload
+	void append(const type &v) { push_back(v); }
+	//! Removes an item from the end
+	using std::vector<type>::pop_back;
 };
 
 //! Writes the contents of the array to stream \em s

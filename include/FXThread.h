@@ -54,16 +54,16 @@ incrementing counter. In these cases, FXAtomicInt can provide
 substantially improved performance. Indeed, FXMutex is implemented using it.
 
 On all Intel x86 architectures, FXAtomicInt is written directly in assembler
-which due to the 80486 and later's full support, requires only one instruction.
+which due to the 80486 and later's full support, requires only one core instruction.
 On all non-x86 MS Windows builds, it is written using the Interlocked*
-functions.
+functions. On other architectures for POSIX, it requires FXAtomicInt to be modified.
 
-\warning All FXAtomicInt operations apart from read are \em extremely expensive
-when compared to normal integer operations
-because they bypass all caches and write buffers and thus slow all your processors
-in your machine to at least main memory speed (plus hanging all processors). If you
-want an example of this, write a simple loop incrementing a FXAtomicInt and watch
-how slow your machine becomes!
+As of v0.85, the macro FX_SMPBUILD when defined causes the CPU to take exclusive
+control of the memory bus during the operation which is correct for SMP but overkill
+for uniprocessor systems. Setting makeSMPBuild to False in config.py will around
+double the FXAtomicInt performance. As an example of how expensive locked memory
+bus operations are, write a simple loop incrementing a FXAtomicInt and watch how
+slow your machine becomes!
 */
 class FXAPI FXAtomicInt
 {
@@ -75,12 +75,15 @@ class FXAPI FXAtomicInt
 	inline FXDLLLOCAL int set(int i) throw();
 	inline FXDLLLOCAL int incp() throw();
 	inline FXDLLLOCAL int pinc() throw();
+	inline FXDLLLOCAL int finc() throw();
 	inline FXDLLLOCAL int inc(int i) throw();
 	inline FXDLLLOCAL int decp() throw();
 	inline FXDLLLOCAL int pdec() throw();
+	inline FXDLLLOCAL int fdec() throw();
 	inline FXDLLLOCAL int dec(int i) throw();
 	inline FXDLLLOCAL int swapI(int newval) throw();
 	inline FXDLLLOCAL int cmpXI(int compare, int newval) throw();
+	inline FXDLLLOCAL int spinI(int count) throw();
 public:
 	//! Constructs an atomic int with the specified initial value
 	FXAtomicInt(int i=0) throw() : lock(0), value(i) { }
@@ -94,12 +97,20 @@ public:
 	int operator++(int) throw();
 	//! Atomically pre-increments the value
 	int operator++() throw();
+	/*! Atomically fast pre-increments the value, returning a negative number if
+	result is negative, zero if result is zero and a positive number of result is
+	positive */
+	int fastinc() throw();
 	//! Atomically adds an amount to the value
 	int operator+=(int i) throw();
 	//! Atomically post-decrements the value
 	int operator--(int) throw();
 	//! Atomically pre-decrements the value
 	int operator--() throw();
+	/*! Atomically fast pre-decrements the value, returning a negative number if
+	result is negative, zero if result is zero and a positive number of result is
+	positive */
+	int fastdec() throw();
 	//! Atomically subtracts an amount from the value
 	int operator-=(int i) throw();
 	//! Atomically swaps \em newval for the int, returning the previous value
@@ -134,7 +145,8 @@ class FXAPI FXShrdMemMutex
 	FXAtomicInt lockvar;
 	FXuint timeout;
 public:
-	FXShrdMemMutex() : timeout(1000) { }
+	//! Constructs an instance. Using FXINFINITE means infinite waits
+	FXShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout) { }
 	//! Returns the time after which a lock succeeds anyway
 	FXuint timeOut() const throw() { return timeout; }
 	//! Sets the time after which a lock succeeds anyway
@@ -214,13 +226,37 @@ lock before the count is completed.
 a runtime check performed during construction and is overriden by setSpinCount() (as
 there are some uses for spin counts occasionally on uniprocessor machines).
 
-<h3>Debugging</h3>
+<h3>Debugging:</h3>
 Finding where data is being altered without holding a lock can be difficult - this
 is where setting the debug yield flag using FXMutex::setMutexDebugYield() can be
 useful. When set the mutex calls FX::FXThread::yield() directly after any lock
 thus ensuring that anything else wanting that lock will go to sleep on it so you
 can inspect the situation using the debugger. Obviously this can severely degrade
 performance so only set for certain periods around the area you require it.
+
+<h3>Performance:</h3>
+Now that FXMutex has been hand tuned and optimised, we can present some figures:
+\code
+                        FXAtomicInt   FXMutex
+    SMP Build, 1 thread :  51203277  18389113
+    SMP Build, 2 threads:   4793978   5337603
+Non-SMP Build, 1 thread : 103305785  27352297
+Non-SMP Build, 2 threads:  54929964  10978153
+\endcode
+These are the results from TestMutex in the TestSuite directory. As you can see,
+atomic int operations upon which FXMutex is very reliant nosedive when the
+location is in contention with another thread (by around 10.7 times). Indeed, the
+very fact that the mutex which does multiple atomic int operations per lock &
+unlock is faster than a simple increment shows how the CPU isn't optimised for
+running locked data operations.
+
+However we can see that a mutex's performance when free of contention is some 3.4
+times faster than when it is in contention. This is in fact very good and quite
+superior to other fast mutex implementations. On non-SMP builds, it's a factor of
+2.5 but then atomic int operations are around precisely half as you'd expect with
+two threads.
+
+Non-SMP builds' FXMutex is between 48% and 106% faster than the SMP build's.
 
 \sa FXRWMutex
 */

@@ -136,7 +136,7 @@ static const char *decodeWinsockErr(int code)
 #define FXERRHSKT(exp) { int __res=(exp); if(SOCKET_ERROR==__res) { int __errorcode=WSAGetLastError(); \
 	if(WSAENETDOWN==__errorcode || WSAENETRESET==__errorcode || WSAECONNABORTED==__errorcode || WSAECONNRESET==__errorcode || WSAETIMEDOUT==__errorcode) \
 		{ FXERRGCONLOST("Connection Lost", 0); } \
-else { FXERRGIO(decodeWinsockErr(__errorcode)); } } }
+	else { FXERRGIO(decodeWinsockErr(__errorcode)); } } }
 #endif
 #ifdef USE_POSIX
 #include <unistd.h>
@@ -153,8 +153,8 @@ else { FXERRGIO(decodeWinsockErr(__errorcode)); } } }
 
 #define FXERRHSKT(exp) { int __res=(exp); if(__res<0) { \
 	if(EPIPE==errno) \
-	{ FXERRGCONLOST("Connection Lost", 0); } \
-else { FXERRGIO(strerror(errno)); } } }
+		{ FXERRGCONLOST("Connection Lost", 0); } \
+	else { FXERRGIO(strerror(errno)); } } }
 #endif
 
 #include "FXMemDbg.h"

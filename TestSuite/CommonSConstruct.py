@@ -33,13 +33,8 @@ env['CPPPATH']+=[ ".",
                  "../../Python"
                  ]
 env['LIBPATH']+=[dir+"/../lib"]
-env['LIBS']=[]
 env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
 
-if debugmode:
-    builddir="Debug"
-else:
-    builddir="Release"
 if not onWindows: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/lib"+libtnfox+".la")] #, "-static", "/lib/libselinux.so.1"]
 try:

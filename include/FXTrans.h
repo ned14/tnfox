@@ -54,7 +54,6 @@ class FXAPI FXTransString
 	friend class FXTrans;
 	friend struct FXTransStringPrivate;
 	FXTransStringPrivate *p;
-	FXTransString &operator=(const FXTransString &);
 protected:
 	FXTransString() : p(0) { }
 	FXTransString(const char *context, const char *text, const char *hint, const FXString *langid=0);
@@ -66,14 +65,24 @@ protected:
 	GetLangIdSpec *langIdFunc() const throw();
 	//! Sets what to call to determine the destination translation language
 	void setLangIdFunc(GetLangIdSpec *idfunc) throw();
+	/*! Returns a translated FXString. Up until this point all operations are merely
+	stored until this moment. */
+	FXString translate(const FXString *id=0);
+	//! Returns the context, text and hint
+	void contents(const char *&context, const char *&text, const char *&hint) const;
 public:
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
 	FXTransString(const FXTransString &o);
+	FXTransString &operator=(const FXTransString &);
 #else
 	FXTransString(FXTransString &o);
+	FXTransString &operator=(FXTransString &);
 #endif
 #else
+private:
+	FXTransString(const FXTransString &);	// disable copy constructor
+public:
 	FXTransString(FXTransString &&o);
 #endif
 	~FXTransString();
@@ -95,10 +104,13 @@ public:
 	FXTransString &arg(FXuint num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
 	//! \overload
 	FXTransString &arg(double num, FXint fieldwidth=0, FXchar fmt='g', int prec=-1);
-	/*! Casts down to a FXString, performing the translation lookup. Up until this point
-	all operations are merely stored until this moment.
-	*/
-	operator FXString();
+	/*! \overload */
+	operator FXString() { return translate(); }
+
+	//! Stores the translatable string's text plus id to identify this translation
+	void save(FXStream &s) const;
+	//! Loads the translatable string's text plus id to identify this translation
+	void load(FXStream &s);
 };
 
 

@@ -22,6 +22,9 @@
 #ifndef FXMEMORYOPS_H
 #define FXMEMORYOPS_H
 
+#define FXDISABLE_GLOBALALLOCATORREPLACEMENTS
+
+
 #include "FXMemoryPool.h"
 #include <string.h>
 
@@ -128,6 +131,7 @@ namespace FX
 	}
 }
 
+#ifndef FXDISABLE_GLOBALALLOCATORREPLACEMENTS
 // Okay back in the global namespace. Define replacement new/delete but weakly
 // (side effect of inline) so the linker can elide all duplicates and leave one
 // in each binary. Ensure it's public visibility on ELF.
@@ -176,6 +180,7 @@ inline FXDLLPUBLIC void *operator new[](size_t size, int blockuse, const char *f
 	if(!(ret=FX::_malloc_dbg(size, blockuse, file, lineno))) throw std::bad_alloc();
 	return ret;
 }
+#endif
 #endif
 
 /*! \ingroup fxmemoryops

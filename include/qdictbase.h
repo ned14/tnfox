@@ -202,8 +202,39 @@ public:
 		}
 		items=0;
 	}
+	//! Appends the contents of another dictionary
+	void append(const QDictBase<keytype, type> &o);
+	/*! \overload */
+	QDictBase<keytype, type> &operator+=(const QDictBase<keytype, type> &o) { append(o); return *this; }
+private:
+	void resizeI(uint newsize);
+public:
 	//! Resizes the hash table (see QDICTDYNRESIZE()). Invalidates all iterators.
-	inline void resize(uint newsize);
+	void resize(uint newsize)
+	{
+		newsize=mkSize(newsize);
+		if(mysize!=newsize)
+		{
+			FXEXCEPTION_STL1 {
+				resizeI(newsize);
+			} FXEXCEPTION_STL2;
+		}
+	}
+	//! Resizes the hash table with no threat of memory full exceptions. Invalidates all iterators.
+	void safeResize(uint newsize) throw()
+	{
+		newsize=mkSize(newsize);
+		if(mysize!=newsize)
+		{
+			try
+			{
+				resizeI(newsize);
+			}
+			catch(...)
+			{
+			}
+		}
+	}
 	/*! Returns statistics useful for dynamic balancing of the table.
 	If full exceeds 100%, then there are more items than slots and the table is
 	no longer performing at maximum efficiency. If slotsspread is less than 50%
@@ -256,7 +287,11 @@ protected:
 }*/
 template<class keytype, class type> inline void QDictBase<keytype, type>::deleteItem(type *d)
 {
-    if(autodel) delete d;
+    if(autodel)
+	{
+		//fxmessage("QDB delete %p\n", d);
+		delete d;
+	}
 }
 
 /*! \class QDictBaseIterator
@@ -334,8 +369,13 @@ public:
 	//! Returns the key associated with what this iterator points to
 	const keytype &currentKey() const
 	{
-		typename QDictBase<keytype, type>::keyitem &ki=*itkil;
-		return ki.first;
+		if(mydict)
+		{
+			typename QDictBase<keytype, type>::keyitem &ki=*itkil;
+			return ki.first;
+		}
+		// Hopefully this will cause an exception
+		return *((const keytype *) 0);
 	}
 	QDictBaseIterator &operator=(const QDictBaseIterator &it)
 	{
@@ -402,10 +442,11 @@ template<class keytype, class type> inline bool QDictBase<keytype, type>::remove
 	if(it==kil.end()) return false;
 	itemlist &il=(*it).second.second;
 	if(il.empty()) return false;
+	typename itemlist::iterator ilend=il.end(); --ilend;
 	for(typename iteratorlist::iterator it2=iterators.begin(); it2!=iterators.end(); ++it2)
 	{
 		QDictBaseIterator<keytype, type> *dictit=*it2;
-		if(dictit->itil==--il.end())
+		if(dictit->itil==ilend)
 		{	// Advance the iterator
 			++(*dictit);
 		}
@@ -421,37 +462,44 @@ template<class keytype, class type> inline bool QDictBase<keytype, type>::remove
 	return true;
 }
 
-template<class keytype, class type> inline void QDictBase<keytype, type>::resize(uint newsize)
+template<class keytype, class type> void QDictBase<keytype, type>::append(const QDictBase<keytype, type> &o)
 {
-	newsize=mkSize(newsize);
-	if(mysize!=newsize)
+	type *a;
+	for(QDictBaseIterator<keytype, type> it(o); (a=it.current()); ++it)
 	{
-		FXEXCEPTION_STL1 {
-			dictionary newdict(newsize);
-			for(typename dictionary::iterator itdict=dict.begin(); itdict!=dict.end(); ++itdict)
-			{
-				keyitemlist &kil=*itdict;
-				for(typename keyitemlist::iterator itkil=kil.begin(); itkil!=kil.end(); ++itkil)
-				{
-					keyitem &ki=*itkil;
-					hashitemlist &hil=ki.second;
-					FXuint h=hil.first;
-					itemlist &il=hil.second;
+		typename QDictBase<keytype, type>::keyitem &ki=*it.itkil;
+		insert(ki.second.first, ki.first, a);
+	}
+}
 
-					keyitemlist &nkil=newdict[mkIdx(h, newsize)];
-					// Really could do with move semantics here :(
-					nkil.insert(keyitem(ki.first, hashitemlist(h, il)));
-				}
-			}
-			dict=newdict;
-			mysize=newsize;
-			// Kill all iterators
-			for(typename iteratorlist::iterator it2=iterators.begin(); it2!=iterators.end(); ++it2)
-			{
-				QDictBaseIterator<keytype, type> *dictit=*it2;
-				dictit->mydict=0;
-			}
-		} FXEXCEPTION_STL2;
+template<class keytype, class type> void QDictBase<keytype, type>::resizeI(uint newsize)
+{
+	dictionary newdict(newsize);
+	for(typename dictionary::iterator itdict=dict.begin(); itdict!=dict.end(); ++itdict)
+	{
+		keyitemlist &kil=*itdict;
+		for(typename keyitemlist::iterator itkil=kil.begin(); itkil!=kil.end(); ++itkil)
+		{
+			keyitem &ki=*itkil;
+			hashitemlist &hil=ki.second;
+			FXuint h=hil.first;
+			itemlist &il=hil.second;
+
+			keyitemlist &nkil=newdict[mkIdx(h, newsize)];
+			// Really could do with move semantics here :(
+			nkil.insert(keyitem(ki.first, hashitemlist(h, il)));
+		}
+	}
+	dict.swap(newdict);	// Save copying the whole tree. Even better if we had move semantics :(
+	mysize=newsize;
+	// Kill all iterators
+	for(typename iteratorlist::iterator it2=iterators.begin(); it2!=iterators.end(); ++it2)
+	{
+		QDictBaseIterator<keytype, type> *dictit=*it2;
+		dictit->mydict=0;
+#ifdef DEBUG
+		fxmessage("WARNING: QDictBaseIterator at %p made invalid by QDictBase::resize()\n", dictit);
+#endif
 	}
 }
 
@@ -497,7 +545,7 @@ template<class dicttype> inline bool QDictByMemLoadResize(dicttype &dict, const 
 #ifdef DEBUG
 		fxmessage("QDICTDYNRESIZE at %s:%d resizing %p from %u to %u (load %d)\n", file, lineno, &(dict), dictsize, newsize, memload);
 #endif
-		dict.resize(newsize);
+		dict.safeResize(newsize);
 		return true;
 	}
 	return false;
@@ -538,7 +586,7 @@ template<class dicttype> inline bool QDictByMemLoadResizeAggr(dicttype &dict, co
 #ifdef DEBUG
 		fxmessage("QDICTDYNRESIZEAGGR at %s:%d resizing %p from %u to %u (load %d)\n", file, lineno, &(dict), dictsize, newsize, memload);
 #endif
-		dict.resize(newsize);
+		dict.safeResize(newsize);
 		return true;
 	}
 	return false;

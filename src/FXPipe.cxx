@@ -42,19 +42,6 @@
 #define WINMAXATOMICLEN 4096
 #define WINDEEPPIPELEN  65536
 
-// Redefine FXERRHWIN() to throw pipe broken exceptions
-#undef FXERRGWIN
-#define FXERRGWIN(code, flags) { int __len, __ecode=code; FXString __msg((FXchar) 0, 1024); \
-	__len=FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, __ecode, 0, (TCHAR *) __msg.text(), 1024, 0); \
-	__msg.length(__len); \
-	if(ERROR_FILE_NOT_FOUND==__ecode || ERROR_PATH_NOT_FOUND==__ecode) \
-		{ FXERRGNF(__msg, flags); } \
-	else if(ERROR_NO_DATA==__ecode || ERROR_BROKEN_PIPE==__ecode || ERROR_PIPE_NOT_CONNECTED==__ecode \
-		|| ERROR_PIPE_LISTENING==__ecode) \
-		{ FXERRGCONLOST(__msg, flags); } \
-	else \
-		{ FXERRG(__msg, FXEXCEPTION_OSSPECIFIC, flags); } \
-	}
 #endif
 #ifdef USE_POSIX
 #include <sys/poll.h>

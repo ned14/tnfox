@@ -110,12 +110,15 @@ extern "C" static int ftruncate(int fh, FX::FXfval _newsize)
 	HANDLE h=(HANDLE) _h;
 	LARGE_INTEGER current={0}, newsize;
 	current.LowPart=SetFilePointer(h, 0, &current.HighPart, FILE_CURRENT);
-	if((DWORD) -1==current.LowPart) return -1;
+	if((DWORD) -1==current.LowPart) goto err;
 	newsize.QuadPart=_newsize;
-	if((DWORD) -1==SetFilePointer(h, newsize.LowPart, &newsize.HighPart, FILE_BEGIN)) return -1;
-	if(0==SetEndOfFile(h)) return -1;
-	if((DWORD) -1==SetFilePointer(h, current.LowPart, &current.HighPart, FILE_BEGIN)) return -1;
+	if((DWORD) -1==SetFilePointer(h, newsize.LowPart, &newsize.HighPart, FILE_BEGIN)) goto err;
+	if(0==SetEndOfFile(h)) goto err;
+	if((DWORD) -1==SetFilePointer(h, current.LowPart, &current.HighPart, FILE_BEGIN)) goto err;
 	return 0;
+err:
+	errno=EIO;	// Emulate POSIX
+	return -1;
 }
 #endif
 

@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2004 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -18,6 +18,8 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
+
+//#undef FX_SMPBUILD
 
 #include <qvaluelist.h>
 #include <qptrlist.h>
@@ -65,7 +67,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 #if defined(_M_IX86) || defined(__i386__) || defined(_X86_)
-#define USE_X86
+#define USE_X86 FX_X86PROCESSOR
 #define USE_OURMUTEX
 #if !defined(_MSC_VER) && !defined(__GNUC__)
 #error Unknown compiler, therefore do not know how to invoke x86 assembler
@@ -103,13 +105,13 @@ inline int FXAtomicInt::set(int i) throw()
 	{
 		mov ecx, [val]
 		mov edx, [i]
-		lock xchg [ecx], edx
+		xchg edx, [ecx]
 	}
 #endif
 #ifdef __GNUC__
 	int d;
 
-	__asm__ __volatile__ ("lock xchg %2,(%1)" : "=r" (d) : "r" (&value), "0" (i));
+	__asm__ __volatile__ ("xchg %2,(%1)" : "=r" (d) : "r" (&value), "0" (i));
 #endif
 #elif defined(USE_WINAPI)
 	InterlockedExchange((PLONG) &value, i);
@@ -132,12 +134,22 @@ inline int FXAtomicInt::incp() throw()
 	{
 		mov ecx, [val]
 		mov eax, 1
+#ifdef FX_SMPBUILD
 		lock xadd [ecx], eax
+#else
+		xadd [ecx], eax
+#endif
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xadd %2,(%1)" : "=a" (myret) : "r" (&value), "a" (1));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock xadd %2,(%1)"
+#else
+		"xadd %2,(%1)"
+#endif
+		: "=a" (myret) : "r" (&value), "a" (1));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -161,13 +173,23 @@ inline int FXAtomicInt::pinc() throw()
 	{
 		mov ecx, [val]
 		mov eax, 1
+#ifdef FX_SMPBUILD
 		lock xadd [ecx], eax
+#else
+		xadd [ecx], eax
+#endif
 		inc eax
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xadd %2,(%1)\n\tinc %%eax" : "=a" (myret) : "r" (&value), "a" (1));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock xadd %2,(%1)\n\tinc %%eax"
+#else
+		"xadd %2,(%1)\n\tinc %%eax"
+#endif
+		: "=a" (myret) : "r" (&value), "a" (1));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -181,6 +203,49 @@ inline int FXAtomicInt::pinc() throw()
 #endif
 }
 int FXAtomicInt::operator++() throw() { return pinc(); }
+inline int FXAtomicInt::finc() throw()
+{	// Returns -1, 0, +1 on value AFTER inc
+#if defined(USE_X86)
+	int myret;
+#ifdef _MSC_VER
+	volatile int *val=&value;
+	_asm
+	{
+		mov ecx, [val]
+#ifdef FX_SMPBUILD
+		lock inc dword ptr [ecx]
+#else
+		inc dword ptr [ecx]
+#endif
+		jl retm1
+		jg retp1
+		mov [myret], 0
+		jmp finish
+retm1:	mov [myret], -1
+		jmp finish
+retp1:	mov [myret], 1
+finish:
+	}
+#endif
+#ifdef __GNUC__
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock inc dword ptr (%1)\n"
+#else
+		"inc dword ptr (%1)\n"
+#endif
+		"\tjl retm1\n\tjg retp1\n"
+		"\tmov 0, %%eax\n\tjmp finish\n"
+		"retm1:\tmov -1, %%eax\n\tjmp finish\n"
+		"retp1:\tmov 1, %%eax\nfinish:\n"
+		: "=a" (myret) : "r" (&value));
+#endif
+	return myret;
+#else
+	return pinc();
+#endif
+}
+int FXAtomicInt::fastinc() throw() { return finc(); }
 inline int FXAtomicInt::inc(int i) throw()
 {
 #ifdef USE_X86
@@ -191,12 +256,22 @@ inline int FXAtomicInt::inc(int i) throw()
 	{
 		mov ecx, [val]
 		mov eax, [i]
+#ifdef FX_SMPBUILD
 		lock xadd [ecx], eax
+#else
+		xadd [ecx], eax
+#endif
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xadd %2,(%1)" : "=a" (myret) : "r" (&value), "a" (i));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock xadd %2,(%1)"
+#else
+		"xadd %2,(%1)"
+#endif
+		: "=a" (myret) : "r" (&value), "a" (i));
 #endif
 	return myret+i;
 #elif defined(USE_WINAPI)
@@ -220,12 +295,22 @@ inline int FXAtomicInt::decp() throw()
 	{
 		mov ecx, [val]
 		mov eax, 0xffffffff
+#ifdef FX_SMPBUILD
 		lock xadd [ecx], eax
+#else
+		xadd [ecx], eax
+#endif
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xadd %2,(%1)" : "=a" (myret) : "r" (&value), "a" (-1));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock xadd %2,(%1)"
+#else
+		"xadd %2,(%1)"
+#endif
+		: "=a" (myret) : "r" (&value), "a" (-1));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -248,14 +333,24 @@ inline int FXAtomicInt::pdec() throw()
 	_asm
 	{
 		mov ecx, [val]
-		mov eax, 0xffffffff
+		mov eax, -1
+#ifdef FX_SMPBUILD
 		lock xadd [ecx], eax
+#else
+		xadd [ecx], eax
+#endif
 		dec eax
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xadd %2,(%1)\n\tdec %%eax" : "=a" (myret) : "r" (&value), "a" (-1));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock xadd %2,(%1)\n\tdec %%eax"
+#else
+		"xadd %2,(%1)\n\tdec %%eax"
+#endif
+		: "=a" (myret) : "r" (&value), "a" (-1));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -269,6 +364,49 @@ inline int FXAtomicInt::pdec() throw()
 #endif
 }
 int FXAtomicInt::operator--() throw() { return pdec(); }
+inline int FXAtomicInt::fdec() throw()
+{	// Returns -1, 0, +1 on value AFTER inc
+#if defined(USE_X86)
+	int myret;
+#ifdef _MSC_VER
+	volatile int *val=&value;
+	_asm
+	{
+		mov ecx, [val]
+#ifdef FX_SMPBUILD
+		lock dec dword ptr [ecx]
+#else
+		dec dword ptr [ecx]
+#endif
+		jl retm1
+		jg retp1
+		mov [myret], 0
+		jmp finish
+retm1:	mov [myret], -1
+		jmp finish
+retp1:	mov [myret], 1
+finish:
+	}
+#endif
+#ifdef __GNUC__
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock dec dword ptr (%1)\n"
+#else
+		"dec dword ptr (%1)\n"
+#endif
+		"\tjl retm1\n\tjg retp1\n"
+		"\tmov 0, %%eax\n\tjmp finish\n"
+		"retm1:\tmov -1, %%eax\n\tjmp finish\n"
+		"retp1:\tmov 1, %%eax\nfinish:\n"
+		: "=a" (myret) : "r" (&value));
+#endif
+	return myret;
+#else
+	return pdec();
+#endif
+}
+int FXAtomicInt::fastdec() throw() { return fdec(); }
 inline int FXAtomicInt::dec(int i) throw()
 {
 #ifdef USE_X86
@@ -280,12 +418,22 @@ inline int FXAtomicInt::dec(int i) throw()
 	{
 		mov ecx, [val]
 		mov eax, [i]
+#ifdef FX_SMPBUILD
 		lock xadd [ecx], eax
+#else
+		xadd [ecx], eax
+#endif
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xadd %2,(%1)" : "=a" (myret) : "r" (&value), "a" (i));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"lock xadd %2,(%1)"
+#else
+		"xadd %2,(%1)"
+#endif
+		: "=a" (myret) : "r" (&value), "a" (i));
 #endif
 	return myret+i;
 #elif defined(USE_WINAPI)
@@ -308,17 +456,13 @@ inline int FXAtomicInt::swapI(int i) throw()
 	_asm
 	{
 		mov ecx, [val]
-		mov edx, [i]
-		lock xchg [ecx], edx
-//		mov eax, [ecx]
-//loop1:
-//		lock cmpxchg [ecx], edx
-//		jne loop1
-		mov [myret], edx
+		mov eax, [i]
+		xchg eax, [ecx]
+		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("lock xchg %2,(%1)" : "=r" (myret) : "r" (&value), "0" (i));
+	__asm__ __volatile__ ("xchg %2,(%1)" : "=r" (myret) : "r" (&value), "0" (i));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -344,13 +488,22 @@ inline int FXAtomicInt::cmpXI(int compare, int newval) throw()
 		mov ecx, [val]
 		mov edx, [newval]
 		mov eax, [compare]
-		pause					// Hint to newer processors that this is a spin lock, nop otherwise
+#ifdef FX_SMPBUILD
 		lock cmpxchg [ecx], edx
+#else
+		cmpxchg [ecx], edx
+#endif
 		mov [myret], eax
 	}
 #endif
 #ifdef __GNUC__
-	__asm__ __volatile__ ("pause\n\tlock cmpxchg %2,(%1)" : "=a" (myret) : "r" (&value), "r" (newval), "a" (compare));
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"pause\n\tlock cmpxchg %2,(%1)"
+#else
+		"pause\n\tcmpxchg %2,(%1)"
+#endif
+		: "=a" (myret) : "r" (&value), "r" (newval), "a" (compare));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -365,18 +518,77 @@ inline int FXAtomicInt::cmpXI(int compare, int newval) throw()
 #endif
 }
 int FXAtomicInt::cmpX(int compare, int newval) throw() { return cmpXI(compare, newval); }
+#if 0
+/* Optimised spin just for FXMutex. This implementation avoids
+costly xchg instructions which are very expensive on the x86 memory
+bus as they effectively hang multiprocessing */
+inline int FXAtomicInt::spinI(int count) throw()
+{
+	int myret;
+#ifdef USE_X86
+#ifdef _MSC_VER
+	volatile int *val=&value;
+	_asm
+	{
+		xor eax, eax
+		mov ecx, [val]
+		mov edx, count
+loop1:	xchg eax, [ecx]
+		cmp eax, 1
+		je exitloop
+loop2:	dec edx
+		je exitloop
+		pause					// Hint to newer processors that this is a spin lock,
+		cmp [ecx], 1			// nop otherwise
+		jne loop2
+		jmp loop1
+exitloop:
+		mov [myret], eax
+	}
+#endif
+#ifdef __GNUC__
+#error todo
+	__asm__ __volatile__ (
+#ifdef FX_SMPBUILD
+		"pause\n\tlock cmpxchg %2,(%1)"
+#else
+		"pause\n\tcmpxchg %2,(%1)"
+#endif
+		: "=a" (myret) : "r" (&value), "r" (newval), "a" (compare));
+#endif
+	return myret;
+#elif defined(USE_WINAPI)
+	for(int n=0; n<count && (myret=InterlockedExchange((PLONG) &value, 1)); n++)
+	return myret;
+#else
+	for(int n=0; n<count; n++)
+	{
+		LOCK;
+		myret=value;
+		value=1;
+		UNLOCK;
+		if(!myret) return myret;
+	}
+	return myret;
+#endif
+}
+#endif
 
 /**************************************************************************************************************/
 
 void FXShrdMemMutex::lock()
 {
-	FXuint start=FXProcess::getMsCount();
-	while(lockvar.cmpXI(0,1) && FXProcess::getMsCount()-start<timeout);
+	FXuint start=(FXINFINITE==timeout) ? 0 : FXProcess::getMsCount();
+	while(lockvar.swapI(1) && (FXINFINITE==timeout || FXProcess::getMsCount()-start<timeout))
+#ifndef FX_SMPBUILD
+		FXThread::yield()
+#endif
+		;
 }
 
 bool FXShrdMemMutex::tryLock()
 {
-	return !lockvar.cmpXI(0,1);
+	return !lockvar.swapI(1);
 }
 
 /**************************************************************************************************************/
@@ -394,9 +606,10 @@ save on recursion overheads and get spin counts.
 /* 23rd June 2004 ned: Testing shows that a lot of the cost of using FXMutex is
 creating and deleting the kernel wait object. Therefore cache instances here.
 */
-static struct FXDLLLOCAL KernelWaitObjectCache
+static class FXDLLLOCAL KernelWaitObjectCache
 {
-	FXAtomicInt lockvar;
+	FXShrdMemMutex lockvar;
+public:
 #ifdef USE_WINAPI
 	typedef HANDLE WaitObjectType;
 #endif
@@ -412,18 +625,13 @@ static struct FXDLLLOCAL KernelWaitObjectCache
 		WaitObjectType wo;
 		Entry *next;
 	};
-	Entry *entries;
 private:
-	inline void lock() throw() { while(lockvar.cmpX(0,1))
-#ifdef USE_WINAPI
-		Sleep(0);
-#endif
-#ifdef USE_POSIX
-		sched_yield();
-#endif
-	}
-	inline void unlock() throw() { lockvar=0; }
+	Entry *entries;
+	inline void lock() throw() { lockvar.lock(); }
+	inline void unlock() throw() { lockvar.unlock(); }
 public:
+	bool dead;
+	KernelWaitObjectCache() : lockvar(FXINFINITE) { }
 	~KernelWaitObjectCache()
 	{
 		lock();
@@ -444,6 +652,7 @@ public:
 			entries=e->next;
 			FXDELETE(e);
 		}
+		dead=true;
 	}
 	Entry *fetch() throw()
 	{
@@ -461,10 +670,15 @@ public:
 	}
 	void addFreed(Entry *e) throw()
 	{
-		lock();
-		e->next=entries;
-		entries=e;
-		unlock();
+		if(dead)
+			delete e;
+		else
+		{
+			lock();
+			e->next=entries;
+			entries=e;
+			unlock();
+		}
 	}
 } waitObjectCache;
 
@@ -596,11 +810,11 @@ inline void FXMutex::int_lock()
 	if(!p) return;
 #ifdef USE_OURMUTEX
 	FXuint myid=FXThread::id();
-	if(!p->lockCount.pinc())
+	if(!p->lockCount.finc())
 	{	// Nothing owns me
 		assert(p->threadId==0);
-		p->threadId=myid;
 		assert(p->recurseCount==0);
+		p->threadId=myid;
 		p->recurseCount=1;
 	}
 	else
@@ -611,15 +825,19 @@ inline void FXMutex::int_lock()
 		}
 		else
 		{	// Spin & Wait
-			int gotit=0;
-			while(!(gotit=p->wakeSema.cmpXI(1, 0)))
+#if 0
+			// In theory this implementation is meant to be faster, but it wasn't on my
+			// dual Athlon :(
+			int gotit;
+			while(!(gotit=p->wakeSema.swapI(0)))
+			{
+				gotit=p->wakeSema.spinI(p->spinCount*3);
+#else
+			int gotit;
+			while(!(gotit=p->wakeSema.swapI(0)))
 			{
 				for(FXuint n=0; n<p->spinCount; n++)
 				{
-					if((gotit=p->wakeSema.cmpXI(1, 0)))
-					{
-						break;
-					}
 					if(1==systemProcessors)
 					{	// Always give up remaining time slice on uniprocessor machines
 #ifdef USE_WINAPI
@@ -629,7 +847,12 @@ inline void FXMutex::int_lock()
 						sched_yield();
 #endif
 					}
+					if((gotit=p->wakeSema.swapI(0)))
+					{
+						break;
+					}
 				}
+#endif
 				if(gotit)
 					break;
 				else
@@ -673,7 +896,7 @@ void FXMutex::int_unlock()
 	if(--p->recurseCount>0)
 	{
 		assert(p->recurseCount<0x80000000);		// Someone unlocked when not already locked
-		p->lockCount.pdec();
+		p->lockCount.fdec();
 	}
 	else
 	{
@@ -684,7 +907,7 @@ void FXMutex::int_unlock()
 #endif
 		p->threadId=0;
 		//fxmessage(FXString("%1 %6 unlock lc=%2, rc=%3, kc=%4, ti=%5\n").arg(FXThread::id(),0, 16).arg(p->lockCount).arg(p->recurseCount).arg(p->kernelCount).arg(p->threadId, 0, 16).arg((FXuint)this,0,16).text());
-		if(p->lockCount.pdec()>=0)
+		if(p->lockCount.fdec()>=0)
 		{	// Others waiting
 			p->wakeSema.set(1);	// Wake either a spinner or sleeper
 #ifdef USE_WINAPI
@@ -708,7 +931,7 @@ bool FXMutex::tryLock()
 {
 #ifdef USE_OURMUTEX
 	FXuint myid=FXThread::id();
-	if(!p->lockCount.pinc())
+	if(!p->lockCount.finc())
 	{	// Nothing owns me
 		assert(p->threadId==0);
 		p->threadId=myid;
@@ -723,7 +946,7 @@ bool FXMutex::tryLock()
 			return true;
 		}
 		// Restore
-		p->lockCount.pdec();
+		p->lockCount.fdec();
 		return false;
 	}
 #elif defined(USE_POSIX)
@@ -1671,6 +1894,10 @@ void FXThread::start(bool waitTillStarted)
 		p->plsCancel=false;
 		FXERRHWIN(ResetEvent(p->plsCancelWaiter));
 		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
+#ifndef FX_SMPBUILD
+		// Keep on processor 0 if not SMP build
+		FXERRHWIN(SetThreadAffinityMask(p->threadh, 1));
+#endif
 	}
 #endif
 #ifdef USE_POSIX
@@ -2088,55 +2315,66 @@ void FXThreadPoolPrivate::Thread::run()
 {
 	for(;;)
 	{
-		bool goFree=true;
-		if(!parent->waiting.isEmpty())
+		FXERRH_TRY
 		{
-			FXMtxHold h(parent);
-			if(!parent->waiting.isEmpty())
+			for(;;)
 			{
-				code=parent->waiting.getFirst();
-				parent->waiting.takeFirst();
-				assert(code);
-				lock();		// I am now busy
-				goFree=false;
-			}
-		}
-		if(goFree)
-		{
-			if(++parent->free>(int) parent->total)
-			{
-				FXMtxHold h(parent);
-				if(parent->free>(int) parent->total) 
+				bool goFree=true;
+				if(!parent->waiting.isEmpty())
 				{
-					--parent->free;
-					return;	// Exit thread
+					FXMtxHold h(parent);
+					if(!parent->waiting.isEmpty())
+					{
+						code=parent->waiting.getFirst();
+						parent->waiting.takeFirst();
+						assert(code);
+						lock();		// I am now busy
+						goFree=false;
+					}
+				}
+				if(goFree)
+				{
+					if(++parent->free>(int) parent->total)
+					{
+						FXMtxHold h(parent);
+						if(parent->free>(int) parent->total) 
+						{
+							--parent->free;
+							return;	// Exit thread
+						}
+					}
+					free=true;
+					wc.wait();
+					lock();
+					free=false;
+				}
+
+				FXRBOp unlockme=FXRBObj(*this, &FXThreadPoolPrivate::Thread::unlock);
+				FXThread_DTHold dth(this);
+				assert(code);
+				//fxmessage("Thread pool calling %p\n", code);
+				Generic::BoundFunctorV *_code=code;
+				(*_code)();
+				FXDELETE(code);
+				unlockme.dismiss();
+				unlock();
+				//if(!parent->waitingwcs.isEmpty())
+				{
+					FXMtxHold h(parent);
+					FXWaitCondition *codewc=parent->waitingwcs.find(_code);
+					if(codewc)
+					{
+						//fxmessage("Waking %p\n", _code);
+						codewc->wakeAll();
+					}
 				}
 			}
-			free=true;
-			wc.wait();
-			lock();
-			free=false;
 		}
-
-		FXRBOp unlockme=FXRBObj(*this, &FXThreadPoolPrivate::Thread::unlock);
-		FXThread_DTHold dth(this);
-		assert(code);
-		//fxmessage("Thread pool calling %p\n", code);
-		Generic::BoundFunctorV *_code=code;
-		(*_code)();
-		FXDELETE(code);
-		unlockme.dismiss();
-		unlock();
-		//if(!parent->waitingwcs.isEmpty())
+		FXERRH_CATCH(FXException &e)
 		{
-			FXMtxHold h(parent);
-			FXWaitCondition *codewc=parent->waitingwcs.find(_code);
-			if(codewc)
-			{
-				//fxmessage("Waking %p\n", _code);
-				codewc->wakeAll();
-			}
+			fxwarning("Exception thrown during thread pool dispatch: %s\n", e.report().text());
 		}
+		FXERRH_ENDTRY
 	}
 }
 
@@ -2231,7 +2469,7 @@ FXThreadPool::~FXThreadPool()
 			if(this==entry->which)
 			{
 				++it;
-				mastertimekeeper->entries.remove(entry);
+				mastertimekeeper->entries.removeRef(entry);
 			}
 			else ++it;
 		}
@@ -2362,7 +2600,7 @@ FXThreadPool::CancelledState FXThreadPool::cancel(Generic::BoundFunctorV *code, 
 				if(this==entry->which && PtrPtr(entry->code)==code)
 				{
 					PtrRelease(entry->code);
-					mastertimekeeper->entries.remove(entry);
+					mastertimekeeper->entries.removeRef(entry);
 					//fxmessage("Thread pool cancel %p found\n", code);
 					return Cancelled;
 				}

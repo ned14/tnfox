@@ -59,46 +59,36 @@
 
 // Use inline assembly where possible
 #if defined(_M_IX86)
-static INLINE LONG interlockedcompareexchange(LONG volatile *data, LONG exchange, LONG comparand)
-{
-	LONG myret;
-	__asm
-	{
-		mov ecx, [data]
-		mov edx, [exchange]
-		mov eax, [comparand]
-		lock cmpxchg [ecx], edx
-		mov [myret], eax
-	}
-	return myret;
-}
 static INLINE LONG interlockedexchange(LONG volatile *data, LONG value)
 {
 	LONG myret;
 	__asm
 	{
 		mov ecx, [data]
-		mov edx, [value]
-		lock xchg [ecx], edx
+		mov eax, [value]
+		pause
+		xchg eax, [ecx]
 		mov [myret], eax
 	}
 	return myret;
 }
 #else
-#define interlockedcompareexchange InterlockedCompareExchange
 #define interlockedexchange InterlockedExchange
 #endif
 
 /* Wait for spin lock */
 static INLINE long slwait (volatile long *sl) {
-    while (interlockedcompareexchange (sl, 1, 0) != 0) 
-	    Sleep (0);
+    while (interlockedexchange (sl, 1) != 0) 
+#ifndef FX_SMPBUILD		// Faster not to sleep on multiprocessor machines
+	    Sleep (0)
+#endif
+		;
     return 0;
 }
 
 /* Try waiting for spin lock */
 static INLINE long sltrywait (volatile long *sl) {
-    return (interlockedcompareexchange (sl, 1, 0) != 0);
+    return (interlockedexchange (sl, 1) != 0);
 }
 
 /* Release spin lock */

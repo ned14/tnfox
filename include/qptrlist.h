@@ -226,10 +226,15 @@ private:
 		return compareItems(a, b)==-1;
 	}
 public:
+	//! Sorts the list using a user supplied callable entity taking two pointers of type \em type
+	template<class SortFunc> void sort(SortFunc sortfunc)
+	{
+		std::list<type *>::sort(sortfunc);
+	}
 	//! Sorts the list
 	void sort()
 	{
-		std::sort(std::list<type *>::begin(), std::list<type *>::end(), sortPredicate);
+		std::list<type *>::sort(sortPredicate);
 	}
 	//! Returns the index of the position of item \em d via compareItems(), or -1 if not found
 	int find(const type *d)
@@ -341,6 +346,10 @@ public:
 		me=it;
 		return *this;
 	}
+	bool operator==(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)==o; }
+	bool operator!=(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)!=o; }
+	bool operator<(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)<o; }
+	bool operator>(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)>o; }
 	//! Returns the number of items in the list this iterator references
 	uint count() const   { return mylist->count(); }
 	//! Returns true if the list this iterator references is empty
@@ -496,6 +505,9 @@ public:
 	{
 #endif
 #else
+private:
+	QQuickList(const QQuickList &);		// disable copy constructor
+public:
 	QQuickList(QQuickList &&o) : QPtrList<type>(true)
 	{
 #endif

@@ -216,6 +216,11 @@ private:
 		return compareItems(a, b)==-1;
 	}
 public:
+	//! Sorts the list using a user supplied callable entity taking two pointers of type \em type
+	template<class SortFunc> void sort(SortFunc sortfunc)
+	{
+		std::sort(std::vector<type *>::begin(), std::vector<type *>::end(), sortfunc);
+	}
 	//! Sorts the list
 	void sort()
 	{
@@ -335,6 +340,10 @@ public:
 		me=it;
 		return *this;
 	}
+	bool operator==(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)==o; }
+	bool operator!=(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)!=o; }
+	bool operator<(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)<o; }
+	bool operator>(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)>o; }
 	//! Returns the number of items in the list this iterator references
 	uint count() const   { return myvector->count(); }
 	//! Returns true if the list this iterator references is empty

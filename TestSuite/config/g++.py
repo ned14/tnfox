@@ -59,6 +59,7 @@ if debugmode:
 else:
     cppflags+=["-Os",                   # Optimise for small code
                "-fomit-frame-pointer"   # No frame pointer
+               #"-g"
                ]
 env['CPPFLAGS']+=cppflags
 

@@ -113,6 +113,11 @@ if debugmode:
 else:
     cppflags+=["-Os",                   # Optimise for small code
                "-fomit-frame-pointer"   # No frame pointer
+               #"-fno-default-inline",
+               #"-fno-inline-functions",
+               #"-fno-inline",
+               #"-finline-limit=0",
+               #"-g"
                ]
 env['CPPFLAGS']+=cppflags
 

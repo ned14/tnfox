@@ -27,6 +27,10 @@ corruption and at worst a fault. This may be fixable in the future.
 FXBlkSocket hangs on FreeBSD. The cause is unknown but we're waiting for
 KSE threads support to be added to gdb in the upcoming FreeBSD v5.3.
 
+FXProcess::virtualAddrSpaceLeft() currently doesn't understand 64 bit
+Linux and FreeBSD architectures. Any advice here would be greatly
+appreciated.
+
 See Todo.txt for a list of known bugs.
 
 Installation:

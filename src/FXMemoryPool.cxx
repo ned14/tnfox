@@ -21,6 +21,7 @@
 
 //#define DEBUG
 //#define FXDISABLE_GLOBAL_MARKER 0
+//#define FXDISABLE_SEPARATE_POOLS 1
 
 #ifdef USE_POSIX
 // Force a "real" copy of global operators new & delete to satisfy GNU

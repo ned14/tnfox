@@ -45,16 +45,19 @@ static inline int mutex_lock(mutex_t *m) {
 
   for(;;) {
     __asm__ __volatile__
-      ("xchgl %0, %1"
+      ("pause\txchgl %0, %1"
        : "=r"(r), "=m"(m->lock)
        : "0"(1), "m"(m->lock)
        : "memory");
     if(!r)
       return 0;
+#ifndef FX_SMPBUILD		// Faster not to sleep on multiprocessor machines
     if(cnt < 50) {
       sched_yield();
       cnt++;
-    } else {
+    } else
+#endif
+    {
       tm.tv_sec = 0;
       tm.tv_nsec = 2000001;
       nanosleep(&tm, NULL);

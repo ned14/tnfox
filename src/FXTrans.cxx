@@ -300,6 +300,24 @@ FXTransString::FXTransString(FXTransString &&o) : p(o.p)
 	o.p=0;
 }
 
+#ifndef HAVE_MOVECONSTRUCTORS
+#ifdef HAVE_CONSTTEMPORARIES
+FXTransString &FXTransString::operator=(const FXTransString &other)
+{
+	FXTransString &o=const_cast<FXTransString &>(other);
+#else
+FXTransString &FXTransString::operator=(FXTransString &o)
+{
+#endif
+#else
+#error Unsure what to do here
+#endif
+	FXDELETE(p);
+	p=o.p;
+	o.p=0;
+	return *this;
+}
+
 FXTransString::~FXTransString()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
@@ -351,12 +369,14 @@ FXTransString &FXTransString::arg(double num, FXint fieldwidth, FXchar fmt, int 
 	return *this;
 }
 
-FXTransString::operator FXString()
+FXString FXTransString::translate(const FXString *langid)
 {	// Threadsafe when using langid functor
 	assert(p);
 	if(p->translation) return *p->translation;
 	FXString translation;
-	const FXString *langid=(p->langidfunc) ? (*p->langidfunc)() : p->langid;
+	bool store=!langid;
+	if(!langid)
+		langid=(p->langidfunc) ? (*p->langidfunc)() : p->langid;
 	if(me) me->int_translateString(translation, *this, langid);
 	else translation=p->text;
 	FXTSArgBase *arg;
@@ -364,9 +384,41 @@ FXTransString::operator FXString()
 	{
 		arg->doInsert(translation);
 	}
-	if(!p->langidfunc) { FXERRHM(p->translation=new FXString(translation)); }
+	if(store) { FXERRHM(p->translation=new FXString(translation)); }
 	return translation;
 }
+
+void FXTransString::contents(const char *&context, const char *&text, const char *&hint) const
+{
+	if(p)
+	{
+		context=p->context;
+		text=p->text;
+		hint=p->hint;
+	}
+}
+
+void FXTransString::save(FXStream &s) const
+{
+	s << (FXulong) p->context << (FXulong) p->text << (FXulong) p->hint;
+	s << FXString(p->text);
+}
+void FXTransString::load(FXStream &s)
+{
+	if(!p)
+	{
+		FXERRHM(p=new FXTransStringPrivate(0,0,0,0));
+	}
+	FXulong context, text, hint;
+	s >> context >> text >> hint;
+	p->context=(const char *) context; p->text=(const char *) text; p->hint=(const char *) hint;
+	p->langidfunc=0; p->langid=0;
+	p->args.clear();
+	FXDELETE(p->translation);
+	FXERRHM(p->translation=new FXString);
+	s >> *p->translation;
+}
+
 
 //*****************************************************************************************
 
@@ -409,7 +461,7 @@ public:
 static DataInfo getData(FXTransEmbeddedFile &data)
 {
 	DataInfo di;
-	if(data.dllpath.empty()) data.dllpath=FXProcess::dllpath(data.staticaddr, &data.dllstart, &data.dllend);
+	if(data.dllpath.empty()) data.dllpath=FXProcess::dllPath(data.staticaddr, &data.dllstart, &data.dllend);
 	FXString transfilepath=FXFile::stripExtension(data.dllpath), leaf;
 	if(FXFile::exists((leaf=transfilepath+"Trans.txt.gz")))
 	{

@@ -22,6 +22,7 @@
 #include <qptrlist.h>
 #include "FXRollback.h"
 #include "FXException.h"
+#include "FXThread.h"
 
 namespace FX {
 
@@ -30,7 +31,13 @@ void FXRollbackBase::makeCall()
 	FXEXCEPTIONDESTRUCT1
 	{
 		FXRollbackBase &me=*this;
-		(me.*calladdr)();
+		if(mutex)
+		{
+			FXMtxHold h(mutex);
+			(me.*calladdr)();
+		}
+		else
+			(me.*calladdr)();
 	}
 	FXEXCEPTIONDESTRUCT2;
 }

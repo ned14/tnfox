@@ -129,6 +129,20 @@ public:
 	virtual FXuval writeBlockTo(FXfval pos, const char *data, FXuval maxlen);
 	virtual int ungetch(int c);
 public:
+	//! Joins two parts of a path separated by the system-specific path separator
+	static FXString join(const FXString &a, const FXString &b)
+	{
+		if(PATHSEP!=a[a.length()-1] && PATHSEP!=b[0])
+			return a+PATHSEP+b;
+		else
+			return a+b;
+	}
+	//! \overload
+	static FXString join(const FXString &a, const FXString &b, const FXString &c) { return join(join(a,b), c); }
+	//! \overload
+	static FXString join(const FXString &a, const FXString &b, const FXString &c, const FXString &d) { return join(join(join(a,b), c), d); }
+
+
 	// These are directly copied from FOX
 
 	/// Return value of environment variable name

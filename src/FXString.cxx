@@ -88,11 +88,17 @@ void FXString::length(FXint len){
       FXchar *newstr;
       if(str==EMPTY)
       {
-        FXERRHM(newstr=(FXchar*)malloc(sizeof(FXint)+ROUNDUP(1+len)));
+        if(!(newstr=(FXchar*)malloc(sizeof(FXint)+ROUNDUP(1+len))))
+        {
+          FXERRHM(newstr);
+        }
       }
       else
       {
-        FXERRHM(newstr=(FXchar*)realloc(str-sizeof(FXint),sizeof(FXint)+ROUNDUP(1+len)));
+        if(!(newstr=(FXchar*)realloc(str-sizeof(FXint),sizeof(FXint)+ROUNDUP(1+len))))
+        {
+          FXERRHM(newstr);
+        }
       }
       str=sizeof(FXint)+newstr;
       str[len]=0;

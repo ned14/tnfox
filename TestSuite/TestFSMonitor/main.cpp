@@ -98,8 +98,6 @@ int main(int argc, char *argv[])
 	FXFile::remove("MyTestFile.txt");
 	FXFile::remove("MyTestFile2.txt");
 	fxmessage("\nAll Done!\n");
-#ifdef _MSC_VER
 	getchar();
-#endif
 	return 0;
 }

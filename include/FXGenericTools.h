@@ -1399,6 +1399,9 @@ public:
 	{
 #endif
 #else
+private:
+	Functor(const Functor &);		// disable copy constructor
+public:
 	Functor(Functor &&o) : fnimpl(o.fnimpl)
 	{
 #endif
