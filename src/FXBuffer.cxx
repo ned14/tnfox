@@ -172,9 +172,10 @@ FXuval FXBuffer::writeBlock(const char *data, FXuval maxlen)
 	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for writing"));
 	if(isOpen())
 	{
-		FXuval left=(FXuval)(p->buffer->size()-ioIndex);
-		if(left<maxlen || ioIndex>p->buffer->size())
-			p->buffer->resize(p->buffer->size()+maxlen-left);
+		FXuval buffersize=p->buffer->size();
+		FXuval left=(FXuval)(buffersize-ioIndex);
+		if(left<maxlen || ioIndex>buffersize)
+			p->buffer->resize(buffersize+maxlen-left);
 		memcpy(&p->buffer->data()[ioIndex], data, maxlen);
 		ioIndex+=maxlen;
 		return maxlen;
@@ -215,9 +216,10 @@ int FXBuffer::putch(int c)
 	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for writing"));
 	if(isOpen())
 	{
-		FXuval left=(FXuval)(p->buffer->size()-ioIndex);
-		if(left<1 || ioIndex>p->buffer->size())
-			p->buffer->resize(p->buffer->size()+1-left);
+		FXuval buffersize=p->buffer->size();
+		FXuval left=(FXuval)(buffersize-ioIndex);
+		if(left<1 || ioIndex>buffersize)
+			p->buffer->resize(buffersize+1-left);
 		p->buffer->data()[ioIndex++]=(char) c;
 		return c;
 	}
