@@ -27,8 +27,13 @@
 #endif
 
 // We want across the board APIs
+#undef _WIN32_WINNT
 #define _WIN32_WINNT 0x600
 
+#ifndef FXWINDOWSGUBBINS_INCLUDE_EVERYTHING
+// Cut out large portions
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include "windows.h"
 
 // Define a special kind of error handler for Win32
