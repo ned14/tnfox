@@ -273,7 +273,8 @@ particular problem soaked up over a day of my time as I couldn't figure
 out what was going wrong. Hence I mention it here now and hope to save
 you all some time! :)
 
-\sa FX::QValueList, FX::Pol::itMove, FX::Pol::itSwap, FX::Pol::itCompare
+\sa FX::QValueList, FX::Pol::itMove, FX::Pol::itSwap, FX::Pol::itCompare,
+FX::Pol::itRevCompare
 */
 template<class type,
 	template<class> class movePolicy=Pol::itMove,
