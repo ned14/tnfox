@@ -65,6 +65,7 @@ a reason :)
 - Removed over allocation feature from FXMemMap
 + Added FXMemMap::mappableSize() and FXMemMap::maximiseMappableSize()
 * Merged FOX v1.3.20
++ Added ability to set PYTHON_INCLUDE and PYTHON_LIB in config.py
 
 
 v0.80 12th July 2004:
