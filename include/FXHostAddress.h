@@ -70,6 +70,8 @@ public:
 	~FXHostAddress();
 	//! Returns true if both addresses are the same by ruleset
 	bool operator==(const FXHostAddress &o) const;
+	//! Returns true if both addresses are not the same
+	bool operator!=(const FXHostAddress &o) const { return !(*this==o); }
 
 	//! Sets the contents to the specified IPv4 address
 	void setAddress(FXuint ip4addr);
