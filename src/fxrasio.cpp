@@ -3,7 +3,7 @@
 *             S U N   R A S T E R   I M A G E   I n p u t / O u t p u t         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxrasio.cpp,v 1.10 2004/09/17 07:46:22 fox Exp $                          *
+* $Id: fxrasio.cpp,v 1.13 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -183,6 +183,7 @@ struct HEADER {                         // File header
   };
 
 
+extern FXAPI FXbool fxcheckRAS(FXStream& store);
 extern FXAPI FXbool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 extern FXAPI FXbool fxsaveRAS(FXStream& store,const FXColor *data,FXint width,FXint height);
 
@@ -192,6 +193,15 @@ static inline FXuint read32(FXStream& store){
   FXuchar c1,c2,c3,c4;
   store >> c1 >> c2 >> c3 >> c4;
   return ((FXuint)c4) | (((FXuint)c3)<<8) | (((FXuint)c2)<<16) | (((FXuint)c1)<<24);
+  }
+
+
+// Check if stream contains a RAS
+FXbool fxcheckRAS(FXStream& store){
+  FXint signature;
+  signature=read32(store);
+  store.position(-4,FXFromCurrent);
+  return signature==RAS_MAGIC;
   }
 
 

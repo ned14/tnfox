@@ -3,7 +3,7 @@
 *                     P o p u p   W i n d o w   O b j e c t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.cpp,v 1.77 2004/09/29 20:07:23 fox Exp $                         *
+* $Id: FXPopup.cpp,v 1.82 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -219,30 +219,22 @@ FXint FXPopup::getDefaultHeight(){
 // Recalculate layout
 void FXPopup::layout(){
   register FXWindow *child;
+  register FXint w,h,x,y,remain,t;
   register FXuint hints;
-  register FXint w,h,x,y,remain,t,mw,mh;
   register FXint sumexpand=0;
   register FXint numexpand=0;
+  register FXint mw=0;
+  register FXint mh=0;
   register FXint e=0;
 
   // Horizontal
   if(options&POPUP_HORIZONTAL){
 
     // Get maximum size if uniform packed
-    if(options&PACK_UNIFORM_WIDTH) mh=maxChildWidth();
+    if(options&PACK_UNIFORM_WIDTH) mw=maxChildWidth();
 
     // Space available
     remain=width-(border<<1);
-
-    // Get maximum size
-    for(child=getFirst(),mw=0; child; child=child->getNext()){
-      if(child->shown()){
-        hints=child->getLayoutHints();
-        if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
-        else w=child->getDefaultWidth();
-        if(mw<w) mw=w;
-        }
-      }
 
     // Find number of paddable children and total space remaining
     for(child=getFirst(); child; child=child->getNext()){
@@ -293,18 +285,11 @@ void FXPopup::layout(){
   // Vertical
   else{
 
+    // Get maximum size if uniform packed
+    if(options&PACK_UNIFORM_HEIGHT) mh=maxChildHeight();
+
     // Space available
     remain=height-(border<<1);
-
-    // Get maximum size
-    for(child=getFirst(),mh=0; child; child=child->getNext()){
-      if(child->shown()){
-        hints=child->getLayoutHints();
-        if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
-        else h=child->getDefaultHeight();
-        if(mh<h) mh=h;
-        }
-      }
 
     // Find number of paddable children and total space remaining
     for(child=getFirst(); child; child=child->getNext()){
@@ -541,11 +526,11 @@ long FXPopup::onEnter(FXObject* sender,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXint px, py;
   FXShell::onEnter(sender,sel,ptr);
-  if(event->code==CROSSINGNORMAL){
+//  if(event->code==CROSSINGNORMAL){
   //if(((FXEvent*)ptr)->code!=CROSSINGGRAB){
     translateCoordinatesTo(px,py,getParent(),event->win_x,event->win_y); // Patch from Michael Nold <mn@sol-3.de>
     if(contains(px,py) && getGrabOwner()->grabbed()) getGrabOwner()->ungrab();
-    }
+//    }
   return 1;
   }
 
@@ -555,11 +540,11 @@ long FXPopup::onLeave(FXObject* sender,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXint px,py;
   FXShell::onLeave(sender,sel,ptr);
-  if(event->code==CROSSINGNORMAL){
+//  if(event->code==CROSSINGNORMAL){
   //if(((FXEvent*)ptr)->code!=CROSSINGGRAB){
     translateCoordinatesTo(px,py,getParent(),event->win_x,event->win_y); // Patch from Michael Nold <mn@sol-3.de>
     if(!contains(px,py) && shown() && !getGrabOwner()->grabbed() && getGrabOwner()->shown()) getGrabOwner()->grab();
-    }
+//    }
   return 1;
   }
 
@@ -745,12 +730,11 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   rw=getRoot()->getWidth();
   rh=getRoot()->getHeight();
 #else
-  OSVERSIONINFO vinfo;
   RECT rect;
-  memset(&vinfo,0,sizeof(vinfo));
-  vinfo.dwOSVersionInfoSize=sizeof(vinfo);
-  GetVersionEx(&vinfo);
-
+//OSVERSIONINFO vinfo;
+//memset(&vinfo,0,sizeof(vinfo));
+//vinfo.dwOSVersionInfoSize=sizeof(vinfo);
+//GetVersionEx(&vinfo);
 #if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
   HINSTANCE user32;
   typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);

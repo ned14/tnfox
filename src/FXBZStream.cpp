@@ -3,7 +3,7 @@
 *                         B Z S t r e a m   C l a s s e s                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Lyle Johnson. All Rights Reserved.                 *
+* Copyright (C) 1999,2005 by Lyle Johnson. All Rights Reserved.                 *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBZStream.cpp,v 1.8 2004/09/19 20:06:05 fox Exp $                       *
+* $Id: FXBZStream.cpp,v 1.9 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"

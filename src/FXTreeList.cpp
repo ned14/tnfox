@@ -3,7 +3,7 @@
 *                          T r e e L i s t   O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeList.cpp,v 1.153 2004/10/31 16:14:07 fox Exp $                     *
+* $Id: FXTreeList.cpp,v 1.154 2005/01/16 16:06:07 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -2090,16 +2090,16 @@ FXint FXTreeList::fillItems(FXTreeItem* father,const FXString& strings,FXIcon* o
   }
 
 
-// Move item under father before other item 
+// Move item under father before other item
 FXTreeItem *FXTreeList::moveItem(FXTreeItem* other,FXTreeItem* father,FXTreeItem* item){
 
   // Verify arguments
   if(!item){ fxerror("%s::moveItem: NULL item argument.\n",getClassName()); }
   if(other && other->parent!=father){ fxerror("%s::moveItem: bad argument.\n",getClassName()); }
-  
+
   // Can't move in front of itself
   if(item!=other){
-  
+
     // Unlink from current spot
     if(item->prev) item->prev->next=item->next; else if(item->parent) item->parent->first=item->next; else firstitem=item->next;
     if(item->next) item->next->prev=item->prev; else if(item->parent) item->parent->last=item->prev; else lastitem=item->prev;
@@ -2140,8 +2140,8 @@ FXTreeItem *FXTreeList::moveItem(FXTreeItem* other,FXTreeItem* father,FXTreeItem
     }
   return item;
   }
-  
-  
+
+
 // Remove all siblings from [fm,to]
 void FXTreeList::removeItems(FXTreeItem* fm,FXTreeItem* to,FXbool notify){
   register FXTreeItem *olditem=currentitem;

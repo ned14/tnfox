@@ -3,7 +3,7 @@
 *                           O p e n G L   V i e w e r                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLViewer.cpp,v 1.149 2004/11/16 17:50:18 fox Exp $                     *
+* $Id: FXGLViewer.cpp,v 1.150 2005/01/16 16:06:07 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1223,7 +1223,7 @@ FXVec3f FXGLViewer::spherePoint(FXint px,FXint py){
   v.x=2.0f*(px-0.5f*wvt.w)/screenmin;
   v.y=2.0f*(0.5f*wvt.h-py)/screenmin;
   d=v.x*v.x+v.y*v.y;
-  if(d<0.75){
+  if(d<0.75f){
     v.z=sqrtf(1.0-d);
     }
   else if(d<3.0f){

@@ -3,7 +3,7 @@
 *                            V i s u a l   C l a s s                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,12 +19,11 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLVisual.cpp,v 1.58 2004/11/02 17:38:45 fox Exp $                      *
+* $Id: FXGLVisual.cpp,v 1.61 2005/01/31 17:53:07 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
-#include "fxpriv.h"
 #include "FXHash.h"
 #include "FXThread.h"
 #include "FXStream.h"
@@ -447,8 +446,8 @@ void FXGLVisual::create(){
       setupcolormap();
 
       // Make GC's for this visual
-      gc=fxmakegc(DISPLAY(getApp()),(Visual*)visual,depth,FALSE);
-      scrollgc=fxmakegc(DISPLAY(getApp()),(Visual*)visual,depth,TRUE);
+      gc=setupgc(FALSE);
+      scrollgc=setupgc(TRUE);
 
       xid=1;
 
@@ -1016,7 +1015,7 @@ FXGLVisual::~FXGLVisual(){
 /*******************************************************************************/
 
 
-#ifdef HAVE_XFT_H                       // Using XFT
+#if defined(HAVE_XFT_H) && defined(HAVE_GL_H)  
 
 // Xft version
 static void glXUseXftFont(XftFont* font,int first,int count,int listBase){
@@ -1045,7 +1044,7 @@ static void glXUseXftFont(XftFont* font,int first,int count,int listBase){
 
   // Get face info
   face=XftLockFace(font);
-  
+
   // Render font glyphs; use FreeType to render to bitmap
   for(i=first; i<count; i++){
     list=listBase+i;
@@ -1060,16 +1059,16 @@ static void glXUseXftFont(XftFont* font,int first,int count,int listBase){
 
     // Pitch may be negative, its the stride between rows
     size=FXABS(face->glyph->bitmap.pitch) * face->glyph->bitmap.rows;
-    
+
     // Glyph coordinates; note info in freetype is 6-bit fixed point
     x0=-(face->glyph->metrics.horiBearingX>>6);
     y0=(face->glyph->metrics.height-face->glyph->metrics.horiBearingY)>>6;
     dx=face->glyph->metrics.horiAdvance>>6;
     dy=0;
-    
+
     // Allocate glyph data
     FXMALLOC(&glyph,FXuchar,size);
-    
+
     // Copy into OpenGL bitmap format; note OpenGL upside down
     for(y=0; y<face->glyph->bitmap.rows; y++){
       for(x=0; x<face->glyph->bitmap.pitch; x++){
@@ -1081,7 +1080,7 @@ static void glXUseXftFont(XftFont* font,int first,int count,int listBase){
     glNewList(list,GL_COMPILE);
     glBitmap(FXABS(face->glyph->bitmap.pitch)<<3,face->glyph->bitmap.rows,x0,y0,dx,dy,glyph);
     glEndList();
-    
+
     // Free glyph data
     FXFREE(&glyph);
     }

@@ -3,7 +3,7 @@
 *                               T a b   O b j e c t                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBar.cpp,v 1.21 2004/10/14 07:27:18 fox Exp $                        *
+* $Id: FXTabBar.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -206,7 +206,7 @@ void FXTabBar::layout(){
         else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
         else h=tab->getDefaultHeight();
         if(current==i){
-          if(options&TABBOOK_BOTTOMTABS)      
+          if(options&TABBOOK_BOTTOMTABS)
             tab->position(-2,y,w,h);
           else
             tab->position(width-w+2,y,w,h);
@@ -214,7 +214,7 @@ void FXTabBar::layout(){
           y+=h-3;
           }
         else{
-          if(options&TABBOOK_BOTTOMTABS)      
+          if(options&TABBOOK_BOTTOMTABS)
             tab->position(-4,y+2,w,h);
           else
             tab->position(width-w+4,y+2,w,h);
@@ -238,7 +238,7 @@ void FXTabBar::layout(){
         else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
         else h=tab->getDefaultHeight();
         if(current==i){
-          if(options&TABBOOK_BOTTOMTABS)      
+          if(options&TABBOOK_BOTTOMTABS)
             tab->position(x,-2,w,h);
           else
             tab->position(x,height-h+2,w,h);
@@ -246,7 +246,7 @@ void FXTabBar::layout(){
           x+=w-3;
           }
         else{
-          if(options&TABBOOK_BOTTOMTABS)   
+          if(options&TABBOOK_BOTTOMTABS)
             tab->position(x+2,-4,w,h);
           else
             tab->position(x+2,height-h+4,w,h);
@@ -255,10 +255,10 @@ void FXTabBar::layout(){
         }
       }
     }
-    
-  // Raise tab 
+
+  // Raise tab
   if(raisetab) raisetab->raise();
-  
+
   flags&=~FLAG_DIRTY;
   }
 

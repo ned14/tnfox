@@ -3,7 +3,7 @@
 *                         T o p   W i n d o w   O b j e c t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.146 2004/11/09 04:06:07 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.149 2005/01/29 05:02:02 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -53,17 +53,6 @@
   - Now observes LAYOUT_FIX_X and LAYOUT_FIX_Y hints.
   - LAYOUT_FIX_WIDTH and LAYOUT_FIX_HEIGHT take precedence over PACK_UNIFORM_WIDTH and
     PACK_UNIFORM_HEIGHT!
-  - We need new toolbar layout modes:
-
-      +--------+---+----------+----+
-      |  bar1  |///|  bar2    |////|
-      +--------+---+-------+--+----+
-      |      bar3          |///////|
-      +--------------------+-------+
-
-  - Do not assume root window is at (0,0); multi-monitor machines may
-    have secondary monitor anywhere relative to primary display.
-
 */
 
 // Definitions for Motif-style WM Hints.
@@ -376,12 +365,11 @@ void FXTopWindow::place(FXuint placement){
   rw=getRoot()->getWidth();
   rh=getRoot()->getHeight();
 #else
-  OSVERSIONINFO vinfo;
   RECT rect;
-  memset(&vinfo,0,sizeof(vinfo));
-  vinfo.dwOSVersionInfoSize=sizeof(vinfo);
-  GetVersionEx(&vinfo);
-
+//OSVERSIONINFO vinfo;
+//memset(&vinfo,0,sizeof(vinfo));
+//vinfo.dwOSVersionInfoSize=sizeof(vinfo);
+//GetVersionEx(&vinfo);
 #if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
   HINSTANCE user32;
   typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);

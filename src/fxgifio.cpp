@@ -3,7 +3,7 @@
 *                        G I F   I n p u t / O u t p u t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxgifio.cpp,v 1.69 2004/09/17 07:46:22 fox Exp $                         *
+* $Id: fxgifio.cpp,v 1.72 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -59,6 +59,7 @@
 namespace FX {
 
 
+extern FXAPI FXbool fxcheckGIF(FXStream& store);
 extern FXAPI FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 extern FXAPI FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FXbool fast=TRUE);
 
@@ -73,13 +74,22 @@ const FXuchar TAG_IMAGEFLAGS  = 0x00;   // Image flags
 const FXuchar TAG_ZERO        = 0x00;   // Just a zero
 const FXuchar TAG_ENDFILE     = 0x3B;   // End of file
 const FXuchar TAG_TRANSPARENT = 0x01;   // Transparent flag
-const FXuchar TAG_SIG1        = 0x47;   // Extension block
-const FXuchar TAG_SIG2        = 0x49;   // Extension block
-const FXuchar TAG_SIG3        = 0x46;   // Extension block
+const FXuchar TAG_SIG1        = 0x47;   // Signature G
+const FXuchar TAG_SIG2        = 0x49;   // Signature I
+const FXuchar TAG_SIG3        = 0x46;   // Signature F
 const FXuchar TAG_VER         = 0x38;   // Version byte
 const FXuchar TAG_NEW         = 0x39;   // New version
 const FXuchar TAG_OLD         = 0x37;   // Old version
 const FXuchar TAG_SUF         = 0x61;   // Version suffix
+
+
+// Check if stream contains a GIF
+FXbool fxcheckGIF(FXStream& store){
+  FXuchar signature[3];
+  store.load(signature,3);
+  store.position(-3,FXFromCurrent);
+  return signature[0]==TAG_SIG1 && signature[1]==TAG_SIG2 && signature[2]==TAG_SIG3;
+  }
 
 
 // Load image from stream
@@ -121,7 +131,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   store >> c3;
 
   // Check signature
-  if(c1!=TAG_SIG1 || c2!=TAG_SIG2|| c3!=TAG_SIG3) return FALSE;
+  if(c1!=TAG_SIG1 || c2!=TAG_SIG2 || c3!=TAG_SIG3) return FALSE;
 
   // Load version
   store >> c1;

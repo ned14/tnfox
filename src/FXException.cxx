@@ -318,7 +318,7 @@ FXException::~FXException()
 		if(CheckTIB() && stacklevel>=0)
 		{
 			FXException_TIB *tib=mytib;
-			assert(stacklevel<tib->stack.count());
+			assert(stacklevel<(int) tib->stack.count());
 			FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 			if(le && le->uniqueId==uniqueId)
 			{

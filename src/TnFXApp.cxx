@@ -107,7 +107,7 @@ public:
 	void setup() { FXEventLoop::setup(); }
 	virtual void lock() { FXMutex::lock(); }
 	virtual void unlock() { FXMutex::unlock(); }
-	virtual FXuint getThreadId() const { return creator->myId(); }
+	virtual FXulong getThreadId() const { return creator->myId(); }
 };
 FXIMPLEMENT(EventLoopBase,FXEventLoop,NULL,0)
 

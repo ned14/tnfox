@@ -3,7 +3,7 @@
 *                      T A R G A   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxtargaio.cpp,v 1.22 2004/10/08 00:31:17 fox Exp $                       *
+* $Id: fxtargaio.cpp,v 1.27 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -46,6 +46,7 @@
 namespace FX {
 
 
+extern FXAPI FXbool fxcheckTGA(FXStream& store);
 extern FXAPI FXbool fxloadTGA(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 extern FXAPI FXbool fxsaveTGA(FXStream& store,const FXColor *data,FXint width,FXint height);
 
@@ -727,10 +728,19 @@ static FXbool loadTargaGray(FXStream& store,FXColor* data,FXint width,FXint heig
   }
 
 
+// Check if stream contains a TARGA
+FXbool fxcheckTGA(FXStream& store){
+  FXuchar signature[3];
+  store.load(signature,3);
+  store.position(-3,FXFromCurrent);
+  return signature[2]==1 || signature[2]==2 || signature[2]==3 || signature[2]==9 || signature[2]==10 || signature[2]==11 || signature[2]==32 || signature[2]==33;
+  }
+
+
 // Load Targa image from stream
 FXbool fxloadTGA(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   FXuchar IDLength,ColorMapType,ImageType,ColorMapEntrySize,PixelDepth,ImageDescriptor;
-  FXuchar colormap[256][4],c;
+  FXuchar colormap[256][4];
   FXuint rgb16,ColorMapLength,i;
   FXfval start;
 
@@ -762,7 +772,7 @@ FXbool fxloadTGA(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   // 33 - Compressed color-mapped data, using Huffman, Delta, and runlength encoding.
   //      4-pass quadtree-type process.
   store >> ImageType;
-  
+
 //  FXTRACE((1,"fxloadTGA IDLength=%d ColorMapType=%d ImageType=%d\n",IDLength,ColorMapType,ImageType));
 
   // Check for supported image type
@@ -802,7 +812,7 @@ FXbool fxloadTGA(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
   // Don't load too many colors
   if(ColorMapLength>=256) return FALSE;
-  
+
   // Verify sanity
   if(PixelDepth!=1 && PixelDepth!=8 && PixelDepth!=15 && PixelDepth!=16 && PixelDepth!=24 && PixelDepth!=32) return FALSE;
 
@@ -856,7 +866,7 @@ FXbool fxloadTGA(FXStream& store,FXColor*& data,FXint& width,FXint& height){
           }
         break;
 
-      // ?
+      // Huh?
       default:
         return FALSE;
       }

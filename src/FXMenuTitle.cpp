@@ -3,7 +3,7 @@
 *                       M e n u   T i t l e   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuTitle.cpp,v 1.42 2004/10/07 21:49:14 fox Exp $                     *
+* $Id: FXMenuTitle.cpp,v 1.44 2005/01/29 05:31:39 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -43,17 +43,14 @@
 
 /*
   Notes:
-  - Accelerators.
   - Help text from constructor is third part; second part should be
     accelerator key combination.
   - When menu label changes, hotkey might have to be adjusted.
   - Fix it so menu stays up when after Alt-F, you press Alt-E.
   - Menu items should be derived from FXLabel.
   - Look into SEL_FOCUS_SELF some more...
-  - New:- under W2K, the underscores for the accelerators no longer
-    show up until the ALT key is pressed [but not sure if I like this,
-    as it makes the accelerator undiscoverable].
   - GUI update disabled while menu is popped up.
+  - Menu shows besides Menu Title if menubar is vertical.
 */
 
 
@@ -254,10 +251,19 @@ long FXMenuTitle::onHotKeyRelease(FXObject*,FXSelector,void*){
 
 // Post the menu
 long FXMenuTitle::onCmdPost(FXObject*,FXSelector,void*){
-  FXint x,y;
+  FXint x,y,side;
   if(pane && !pane->shown()){
     translateCoordinatesTo(x,y,getRoot(),0,0);
-    pane->popup(getParent(),x-1,y+height);
+    side=getParent()->getLayoutHints();
+    if(side&LAYOUT_SIDE_LEFT){  // Vertical
+      x+=width;
+      y-=1;
+      }
+    else{                       // Horizontal
+      x-=1; 
+      y+=height;
+      }
+    pane->popup(getParent(),x,y);
     if(!getParent()->grabbed()) getParent()->grab();
     }
   flags&=~FLAG_UPDATE;

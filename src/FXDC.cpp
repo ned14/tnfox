@@ -3,7 +3,7 @@
 *               D e v i c e   C o n t e x t   B a s e   C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDC.cpp,v 1.31 2004/09/17 07:46:21 fox Exp $                            *
+* $Id: FXDC.cpp,v 1.33 2005/01/16 16:06:06 fox Exp $                            *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -188,7 +188,7 @@ void FXDC::drawRectangles(const FXRectangle*,FXuint){ }
 
 
 // Draw unfilled rounded rectangle
-void FXDC::drawRoundRectangle(FXint,FXint y,FXint,FXint,FXint,FXint){ }
+void FXDC::drawRoundRectangle(FXint,FXint,FXint,FXint,FXint,FXint){ }
 
 
 // Draw arc

@@ -3,7 +3,7 @@
 *                    O p e n G L   C a n v a s   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLCanvas.cpp,v 1.55 2004/09/17 07:46:21 fox Exp $                      *
+* $Id: FXGLCanvas.cpp,v 1.57 2005/01/16 16:06:07 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -35,6 +35,7 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXApp.h"
+#include "FXException.h"
 #include "FXVisual.h"
 #include "FXGLVisual.h"
 #include "FXCursor.h"
@@ -117,7 +118,11 @@ void FXGLCanvas::create(){
 #ifdef HAVE_GL_H
   if(!ctx){
     void *sharedctx=NULL;
-    if(!visual->info){ fxerror("%s::create(): visual unsuitable for OpenGL.\n",getClassName()); }
+
+    // Must have GL info available
+    if(!visual->info){
+      throw FXWindowException("unable to create GL window.");
+      }
 
     // Sharing display lists with other context
     if(sgnext!=this){
@@ -132,7 +137,7 @@ void FXGLCanvas::create(){
 
       // The visuals have to match, the book says...
       if(sgnext->visual!=canvas->visual){
-        fxerror("%s::create(): trying to share display lists with incompatible visuals\n",getClassName());
+        throw FXWindowException("unable to create GL window.");
         }
       }
 
@@ -140,7 +145,9 @@ void FXGLCanvas::create(){
 
     // Make context
     ctx=glXCreateContext((Display*)getApp()->getDisplay(),(XVisualInfo*)visual->info,(GLXContext)sharedctx,TRUE);
-    if(!ctx){ fxerror("%s::create(): glXCreateContext() failed.\n",getClassName()); }
+    if(!ctx){
+      throw FXWindowException("unable to create GL window.");
+      }
 
 #else
 
@@ -148,18 +155,22 @@ void FXGLCanvas::create(){
     HDC hdc=::GetDC((HWND)xid);
     PIXELFORMATDESCRIPTOR *pfd=(PIXELFORMATDESCRIPTOR*)visual->info;
     if(!SetPixelFormat(hdc,visual->pixelformat,pfd)){
-      fxerror("%s::create(): SetPixelFormat() failed.\n",getClassName());
+      throw FXWindowException("unable to create GL window.");
       }
 
     // Make context
     ctx=(void*)wglCreateContext(hdc);
-    if(!ctx){ fxerror("%s::create(): wglCreateContext() failed.\n",getClassName()); }
+    if(!ctx){
+      throw FXWindowException("unable to create GL window.");
+      }
 
     // I hope I didn't get this backward; the new context obviously has no
     // display lists yet, but the old one may have, as it has already been around
     // for a while.  If you see this fail and can't explain why, then that might
     // be what's going on.  Report this to jeroen@fox-toolkit.org
-    if(sharedctx && !wglShareLists((HGLRC)sharedctx,(HGLRC)ctx)){ fxerror("%s::create(): wglShareLists() failed.\n",getClassName()); }
+    if(sharedctx && !wglShareLists((HGLRC)sharedctx,(HGLRC)ctx)){
+      throw FXWindowException("unable to create GL window.");
+      }
     ::ReleaseDC((HWND)xid,hdc);
 
 #endif

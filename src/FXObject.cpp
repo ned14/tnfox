@@ -3,7 +3,7 @@
 *                         T o p l e v el   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObject.cpp,v 1.38 2004/10/07 17:13:49 fox Exp $                        *
+* $Id: FXObject.cpp,v 1.39 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -291,7 +291,7 @@ FXbool FXObject::isMemberOf(const FXMetaClass* metaclass) const {
 long FXObject::tryHandle(FXObject* sender,FXSelector sel,void* ptr){
   try { return handle(sender,sel,ptr); } catch(...) { return 0; }
   }
-  
+
 
 // Save to stream
 void FXObject::save(FXStream&) const { }

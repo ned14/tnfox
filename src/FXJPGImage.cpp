@@ -3,7 +3,7 @@
 *                      J P E G   I m a g e   O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by David Tyree.   All Rights Reserved.                *
+* Copyright (C) 2000,2005 by David Tyree.   All Rights Reserved.                *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXJPGImage.cpp,v 1.22 2004/11/10 16:22:05 fox Exp $                      *
+* $Id: FXJPGImage.cpp,v 1.24 2005/01/16 16:06:07 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -65,14 +65,11 @@ const FXbool FXJPGImage::supported=FALSE;
 
 
 // Initialize
-FXJPGImage::FXJPGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
-  FXImage(a,NULL,opts,w,h){
-  quality=75;
+FXJPGImage::FXJPGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXImage(a,NULL,opts,w,h),quality(75){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
-    fxloadJPG(ms,data,width,height,quality);
-    options|=IMAGE_OWNED;
+    loadPixels(ms);
     ms.close();
     }
   }
@@ -80,17 +77,21 @@ FXJPGImage::FXJPGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
 
 // Save the pixels only
 FXbool FXJPGImage::savePixels(FXStream& store) const {
-  if(!fxsaveJPG(store,data,width,height,quality)) return FALSE;
-  return TRUE;
+  if(fxsaveJPG(store,data,width,height,quality)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load pixels only
 FXbool FXJPGImage::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){FXFREE(&data);}
-  if(!fxloadJPG(store,data,width,height,quality)) return FALSE;
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadJPG(store,pixels,w,h,quality)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

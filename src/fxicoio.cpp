@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxicoio.cpp,v 1.25 2004/09/17 07:46:22 fox Exp $                         *
+* $Id: fxicoio.cpp,v 1.27 2005/01/15 19:54:15 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -51,6 +51,7 @@
 
 namespace FX {
 
+extern FXAPI FXbool fxcheckICO(FXStream& store);
 extern FXAPI FXbool fxloadICO(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& xspot,FXint& yspot);
 extern FXAPI FXbool fxsaveICO(FXStream& store,const FXColor *data,FXint width,FXint height,FXint xspot=-1,FXint yspot=-1);
 
@@ -67,6 +68,17 @@ static inline FXuint read32(FXStream& store){
   FXuchar c1,c2,c3,c4;
   store >> c1 >> c2 >> c3 >> c4;
   return ((FXuint)c1) | (((FXuint)c2)<<8) | (((FXuint)c3)<<16) | (((FXuint)c4)<<24);
+  }
+
+
+// Check if stream contains ICO
+FXbool fxcheckICO(FXStream& store){
+  FXshort signature[3];
+  signature[0]=read16(store);
+  signature[1]=read16(store);
+  signature[2]=read16(store);
+  store.position(-6,FXFromCurrent);
+  return signature[0]==0 && (signature[1]==1 || signature[1]==2) && signature[2]>=1;
   }
 
 

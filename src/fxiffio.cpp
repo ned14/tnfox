@@ -3,7 +3,7 @@
 *                          I F F   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxiffio.cpp,v 1.7 2004/09/17 07:46:22 fox Exp $                          *
+* $Id: fxiffio.cpp,v 1.10 2005/01/16 16:06:07 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -46,6 +46,7 @@ using namespace FX;
 namespace FX {
 
 
+extern FXAPI FXbool fxcheckIFF(FXStream& store);
 extern FXAPI FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 
 
@@ -105,9 +106,19 @@ static inline FXuint read32(FXStream& store){
   }
 
 
+// Check if stream contains a IFF
+FXbool fxcheckIFF(FXStream& store){
+  FXuint signature;
+  signature=read32(store);
+  store.position(-4,FXFromCurrent);
+  return signature==FORM || signature==FOR1 || signature==FOR2 || signature==FOR3 || signature==FOR4;
+  }
+
+
 // Load IFF image from stream
 FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
-  FXuint pixels,bit,view,tag,size,type,pos,end,colors,i,bytesperline,value,plane,remainingbytes,fmt;
+  FXlong pos,end;
+  FXuint pixels,bit,view,tag,size,type,colors,i,bytesperline,value,plane,remainingbytes,fmt;
   FXint x,y;
   FXuchar *buffer,*ptr,planes,masking,compress,padding,c1,c2,c3,color,count;
   FXColor colormap[256],*dest,pixelcolor;

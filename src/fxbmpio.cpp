@@ -3,7 +3,7 @@
 *                          B M P   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxbmpio.cpp,v 1.47 2004/09/17 07:46:22 fox Exp $                         *
+* $Id: fxbmpio.cpp,v 1.50 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -60,6 +60,7 @@
 namespace FX {
 
 
+extern FXAPI FXbool fxcheckBMP(FXStream& store);
 extern FXAPI FXbool fxloadBMP(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 extern FXAPI FXbool fxsaveBMP(FXStream& store,const FXColor *data,FXint width,FXint height);
 
@@ -79,26 +80,23 @@ static inline FXuint read16(FXStream& store){
   }
 
 
+// Check if stream contains a BMP
+FXbool fxcheckBMP(FXStream& store){
+  FXuchar signature[2];
+  store.load(signature,2);
+  store.position(-2,FXFromCurrent);
+  return signature[0]=='B' && signature[1]=='M';
+  }
+
+
 // Load image from stream
 FXbool fxloadBMP(FXStream& store,FXColor*& data,FXint& width,FXint& height){
-  FXfval base,header;
-  FXColor  colormap[256],*pp;
-  FXshort  biBitCount;
-  FXshort  biPlanes;
-  FXshort  biWidth;
-  FXshort  biHeight;
-  FXushort rgb16;
-  FXint    biXPelsPerMeter;
-  FXint    biYPelsPerMeter;
-  FXint    biClrUsed;
-  FXint    biClrImportant;
-  FXint    biCompression;
-  FXint    biSize;
-  FXint    biSizeImage;
-  FXint    bfOffBits;
-  FXint    i,j,x,y,maxpixels,colormaplen,padw,pad;
-  FXuchar  padding[3];
-  FXuchar  c1,c2;
+  FXint biXPelsPerMeter,biYPelsPerMeter,biClrUsed,biClrImportant,biCompression,biSize;
+  FXint biSizeImage,bfOffBits,i,j,x,y,maxpixels,colormaplen,padw,pad;
+  FXushort biBitCount,biPlanes,biWidth,biHeight,rgb16;
+  FXColor colormap[256],*pp;
+  FXuchar padding[3],c1,c2;
+  FXlong base,header;
 
   // Null out
   data=NULL;
@@ -376,22 +374,19 @@ static inline void write32(FXStream& store,FXuint i){
 
 // Save a bmp file to a stream
 FXbool fxsaveBMP(FXStream& store,const FXColor *data,FXint width,FXint height){
-  const FXshort  biPlanes=1;
-  const FXshort  bfReserved=0;
-  const FXint    biXPelsPerMeter=75*39;
-  const FXint    biYPelsPerMeter=75*39;
-  const FXint    biClrUsed=0;
-  const FXint    biClrImportant=0;
-  const FXint    biCompression=BIH_RGB;
-  const FXint    biSize=40;
-  const FXint    bfHeader=14;
-  const FXuchar  padding[3]={0,0,0};
+  FXint biSizeImage,bfSize,bfOffBits,bperlin,i,j,pad;
+  const FXshort biPlanes=1;
+  const FXshort bfReserved=0;
+  const FXint biXPelsPerMeter=75*39;
+  const FXint biYPelsPerMeter=75*39;
+  const FXint biClrUsed=0;
+  const FXint biClrImportant=0;
+  const FXint biCompression=BIH_RGB;
+  const FXint biSize=40;
+  const FXint bfHeader=14;
+  const FXuchar padding[3]={0,0,0};
   const FXColor *pp;
-  FXshort        biBitCount=24;
-  FXint          biSizeImage;
-  FXint          bfSize;
-  FXint          bfOffBits;
-  FXint          bperlin,i,j,pad;
+  FXshort biBitCount=24;
 
   // Must make sense
   if(!data || width<=0 || height<=0) return FALSE;

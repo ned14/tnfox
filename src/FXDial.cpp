@@ -3,7 +3,7 @@
 *                                D i a l   W i d g e t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDial.cpp,v 1.40 2004/10/07 21:49:14 fox Exp $                          *
+* $Id: FXDial.cpp,v 1.43 2005/01/25 06:30:46 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"

@@ -3,7 +3,7 @@
 *                  U n d o / R e d o - a b l e   C o m m a n d                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXUndoList.cpp,v 1.49 2004/09/17 07:46:22 fox Exp $                      *
+* $Id: FXUndoList.cpp,v 1.52 2005/01/26 19:11:41 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -109,6 +109,14 @@ FXString FXCommand::undoName() const { return "Undo"; }
 
 // Default implementation of redo name is just "Redo"
 FXString FXCommand::redoName() const { return "Redo"; }
+
+
+// Allow merging is false by default
+FXbool FXCommand::canMerge() const { return FALSE; }
+
+
+// Don't merge by default
+FXbool FXCommand::mergeWith(FXCommand*){ return FALSE; }
 
 
 // Default returns size of undo record itself
@@ -248,8 +256,9 @@ void FXUndoList::cut(){
 
 
 // Add new command, executing if desired
-void FXUndoList::add(FXCommand* command,FXbool doit){
+void FXUndoList::add(FXCommand* command,FXbool doit,FXbool merge){
   register FXCommandGroup* g=this;
+  register FXuint size=0;
 
   // Must pass a command
   if(!command){ fxerror("FXCommandGroup::add: NULL command argument.\n"); }
@@ -268,17 +277,34 @@ void FXUndoList::add(FXCommand* command,FXbool doit){
   // Hunt for end of group chain
   while(g->group){ g=g->group; }
 
+  // Old size of previous record
+  if(g->undolist) size=g->undolist->size();
+
+  // Try to merge commands when desired and possible
+  if(merge && g->undolist && !marked() && command->canMerge() && g->undolist->mergeWith(command)){
+
+    // Update space, which is the new size less the old size
+    space=g->undolist->size()-size;
+
+    // Delete incoming command that was merged
+    delete command;
+    }
+
   // Append new command to undo list
-  command->next=g->undolist;
-  g->undolist=command;
+  else{
 
-  // Add new command size
-  space+=command->size();
+    // Update space, add the size of the new command
+    space+=command->size();
 
-  // Update marker and undo count
-  if(this==g){
-    if(marker!=NOMARK) marker++;
-    undocount++;
+    // Append incoming command
+    command->next=g->undolist;
+    g->undolist=command;
+
+    // Account for one more undo step
+    if(this==g){
+      if(marker!=NOMARK) marker++;
+      undocount++;
+      }
     }
 
   FXTRACE((100,"FXUndoList::add: space=%d undocount=%d marker=%d\n",space,undocount,marker));

@@ -3,7 +3,7 @@
 *                            C h o i c e   B o x                                *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXChoiceBox.cpp,v 1.6 2004/10/29 05:10:04 fox Exp $                      *
+* $Id: FXChoiceBox.cpp,v 1.8 2005/01/16 16:06:06 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -31,6 +31,7 @@
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXObjectList.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXApp.h"
@@ -85,7 +86,7 @@ FXChoiceBox::FXChoiceBox(FXWindow* owner,const FXString& caption,const FXString&
   }
 
 
-// Construct choice box with given caption, icon, message text, and with choices from newline separated strings 
+// Construct choice box with given caption, icon, message text, and with choices from newline separated strings
 FXChoiceBox::FXChoiceBox(FXWindow* owner,const FXString& caption,const FXString& text,FXIcon* icon,const FXString& choices,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXDialogBox(owner,caption,opts|DECOR_TITLE|DECOR_BORDER,x,y,w,h,10,10,10,10, 10,10){
   register FXint n;
@@ -105,7 +106,7 @@ FXChoiceBox::FXChoiceBox(FXApp* a,const FXString& caption,const FXString& text,F
   }
 
 
-// Construct free floating choice box with given caption, icon, message text, and with choices from newline separated strings 
+// Construct free floating choice box with given caption, icon, message text, and with choices from newline separated strings
 FXChoiceBox::FXChoiceBox(FXApp* a,const FXString& caption,const FXString& text,FXIcon* icon,const FXString& choices,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXDialogBox(a,caption,opts|DECOR_TITLE|DECOR_BORDER,x,y,w,h,10,10,10,10, 10,10){
   register FXint n;

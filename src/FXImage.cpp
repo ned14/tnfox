@@ -3,7 +3,7 @@
 *                             I m a g e    O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImage.cpp,v 1.141 2004/11/18 15:58:56 fox Exp $                        *
+* $Id: FXImage.cpp,v 1.142 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -2614,7 +2614,7 @@ void FXImage::setData(FXColor *pix,FXuint opts){
 
   // Free old data
   if(options&IMAGE_OWNED){ FXFREE(&data); }
-  
+
   // Only own pixel buffer if one was passed
   if(pix && (opts&IMAGE_OWNED)){
     options|=IMAGE_OWNED;
@@ -2622,7 +2622,7 @@ void FXImage::setData(FXColor *pix,FXuint opts){
   else{
     options&=~IMAGE_OWNED;
     }
-  
+
   // Set the pointer
   data=pix;
   }
@@ -2633,10 +2633,10 @@ void FXImage::setData(FXColor *pix,FXuint opts,FXint w,FXint h){
 
   // Free old data
   if(options&IMAGE_OWNED){ FXFREE(&data); }
-  
+
   // Resize pixmap
   resize(w,h);
-  
+
   // Only own pixel buffer if one was passed
   if(pix && (opts&IMAGE_OWNED)){
     options|=IMAGE_OWNED;
@@ -2644,7 +2644,7 @@ void FXImage::setData(FXColor *pix,FXuint opts,FXint w,FXint h){
   else{
     options&=~IMAGE_OWNED;
     }
-  
+
   // Set the pointer
   data=pix;
   }

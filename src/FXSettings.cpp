@@ -3,7 +3,7 @@
 *                           S e t t i n g s   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,8 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.cpp,v 1.30 2004/09/17 07:46:22 fox Exp $                      *
+* $Id: FXSettings.cpp,v 1.33 2005/02/01 06:19:17 fox Exp $                      *
 ********************************************************************************/
-#ifdef HAVE_VSSCANF
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
-#endif
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -44,7 +39,8 @@
     [Section Key]
     EntryKey=string-with-no-spaces
     EntryKey="string\nwith a\nnewline in it\n"
-    EntryKey="string with spaces and \"embedded\" in it"
+    EntryKey=" string with leading and trailing spaces and \"embedded\" in it  "
+    EntryKey=string with no leading or trailing spaces
 
   - EntryKey may is of the form "ali baba", "ali-baba", "ali_baba", or "ali.baba".
 
@@ -54,6 +50,7 @@
 
   - Escape sequences now allow octal (\377) as well as hex (\xff) codes.
 
+  - EntryKey format should be like values.
 */
 
 #define MAXBUFFER 2000
@@ -91,19 +88,18 @@ void FXSettings::deleteData(void* ptr){
 // Parse filename
 FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
   FXLockHold applock(FXApp::instance());
-  FXchar buffer[MAXBUFFER],name[MAXNAME],value[MAXVALUE];
-  FXStringDict *group;
-  FXchar *ptr,c;
-  FXint lineno;
+  FXchar buffer[MAXBUFFER],value[MAXVALUE];
+  register FXStringDict *group=NULL;
+  register FXchar *name,*ptr,*p;
+  register FXint lineno=1;
   FILE *file;
-  FXint len;
   file=fopen(filename.text(),"r");
   if(file){
     FXTRACE((100,"Reading settings file: %s\n",filename.text()));
-    group=NULL;
-    lineno=1;
+    
+    // Parse one line at a time
     while(fgets(buffer,MAXBUFFER,file)!=NULL){
-
+    
       // Parse buffer
       ptr=buffer;
 
@@ -115,22 +111,15 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
 
       // Parse section name
       if(*ptr=='['){
-        ptr++;
-        len=0;
-        while((c=*ptr)!='\0' && c!=']'){
-          if((FXuchar)c<' '){
-            fxwarning("%s:%d: illegal section name.\n",filename.text(),lineno);
-            goto next;
+        for(name=++ptr; *ptr && *ptr!=']'; ptr++){
+          if((FXuchar)*ptr<' '){ 
+            fxwarning("%s:%d: illegal section name.\n",filename.text(),lineno); 
+            goto next; 
             }
-          if(len>=MAXNAME){
-            fxwarning("%s:%d: section name too long.\n",filename.text(),lineno);
-            goto next;
-            }
-          name[len]=c;
-          len++;
-          ptr++;
           }
-        name[len]='\0';
+
+        // End
+        *ptr='\0';
 
         // Add new section dict
         group=insert(name);
@@ -146,31 +135,27 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
           }
 
         // Transfer key, checking validity
-        len=0;
-        while((c=*ptr)!='\0' && c!='='){
-          if((FXuchar)c<' '){
-            fxwarning("%s:%d: illegal key name.\n",filename.text(),lineno);
-            goto next;
+        for(name=ptr; *ptr && *ptr!='='; ptr++){
+          if((FXuchar)*ptr<' '){ 
+            fxwarning("%s:%d: illegal key name.\n",filename.text(),lineno); 
+            goto next; 
             }
-          if(len>=MAXNAME-1){
-            fxwarning("%s:%d: key name too long.\n",filename.text(),lineno);
-            goto next;
-            }
-          name[len]=c;
-          len++;
-          ptr++;
           }
-
-        // Remove trailing spaces from key
-        while(len && name[len-1]==' ') len--;
-        name[len]='\0';
-
+        
         // Should be a '='
-        if(*ptr++!='='){
+        if(*ptr!='='){
           fxwarning("%s:%d: expected '=' to follow key.\n",filename.text(),lineno);
           goto next;
           }
 
+        // Remove trailing spaces
+        for(p=ptr; name<p && *(p-1)==' '; p--);
+        
+        // End
+        *p='\0';
+        
+        ptr++;
+        
         // Skip more spaces
         while(*ptr && isspace((FXuchar)*ptr)) ptr++;
 
@@ -183,8 +168,12 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
         // Add entry to current section
         group->replace(name,value,mark);
         }
+        
+      // Next line
 next: lineno++;
       }
+      
+    // Done
     fclose(file);
     return TRUE;
     }
@@ -282,11 +271,18 @@ FXbool FXSettings::parseValue(FXchar* value,const FXchar* buffer){
     return FALSE;
     }
 
-  // Non-quoted string copy sequence of non-white space
+  // String not starting or ending with spaces
   else{
-    while(*ptr && !isspace((FXuchar)*ptr) && isprint((FXuchar)*ptr)){
+  
+    // Copy as much as we can
+    while(*ptr && isprint((FXuchar)*ptr)){
       *out++=*ptr++;
       }
+  
+    // Strip spaces at the end
+    while(value<out && *(out-1)==' ') --out;
+    
+    // Terminate
     *out='\0';
     }
   return TRUE;
@@ -368,12 +364,12 @@ FXbool FXSettings::unparseFile(const FXString& filename){
 
 // Unparse value by quoting strings; return TRUE if quote needed
 FXbool FXSettings::unparseValue(FXchar* buffer,const FXchar* value){
-  register FXchar *ptr=buffer;
   register FXbool mustquote=FALSE;
+  register FXchar *ptr=buffer;
   register FXuint v;
   FXASSERT(value);
-  while(*value && ptr<&buffer[MAXVALUE-5]){
-    switch(*value){
+  while((v=*value++) && ptr<&buffer[MAXVALUE-5]){
+    switch(v){
       case '\n':
         *ptr++='\\';
         *ptr++='n';
@@ -425,11 +421,10 @@ FXbool FXSettings::unparseValue(FXchar* buffer,const FXchar* value){
         mustquote=TRUE;
         break;
       case ' ':
+        if((ptr==buffer) || (*value=='\0')) mustquote=TRUE;
         *ptr++=' ';
-        mustquote=TRUE;
         break;
       default:
-        v=(FXuchar)*value;
         if(v<0x20 || 0x7f<v){
           *ptr++='\\';
           *ptr++='x';
@@ -442,7 +437,6 @@ FXbool FXSettings::unparseValue(FXchar* buffer,const FXchar* value){
           }
         break;
       }
-    value++;
     }
   FXASSERT(ptr<&buffer[MAXVALUE]);
   *ptr='\0';

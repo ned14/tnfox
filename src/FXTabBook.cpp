@@ -3,7 +3,7 @@
 *                         T a b   B o o k   W i d g e t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBook.cpp,v 1.17 2004/10/14 07:27:18 fox Exp $                       *
+* $Id: FXTabBook.cpp,v 1.18 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -186,8 +186,8 @@ void FXTabBook::layout(){
   register FXuint hints;
 
   newcurrent=-1;
-  
-  // Measure tabs again 
+
+  // Measure tabs again
   wmaxtab=hmaxtab=0;
   for(tab=getFirst(),i=0; tab && tab->getNext(); tab=tab->getNext()->getNext(),i++){
     pane=tab->getNext();
@@ -212,7 +212,7 @@ void FXTabBook::layout(){
     py=border+padtop;
     pw=width-padleft-padright-(border<<1)-wmaxtab+2;
     ph=height-padtop-padbottom-(border<<1);
-    
+
     // Place all of the children
     for(tab=getFirst(),y=py,i=0; tab && tab->getNext(); tab=tab->getNext()->getNext(),i++){
       pane=tab->getNext();
@@ -226,7 +226,7 @@ void FXTabBook::layout(){
         else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
         else h=tab->getDefaultHeight();
         if(current==i){
-          if(options&TABBOOK_BOTTOMTABS)     
+          if(options&TABBOOK_BOTTOMTABS)
             tab->position(px+pw-2,y,w,h);
           else
             tab->position(px-w+2,y,w,h);
@@ -236,7 +236,7 @@ void FXTabBook::layout(){
           y+=h-3;
           }
         else{
-          if(options&TABBOOK_BOTTOMTABS)       
+          if(options&TABBOOK_BOTTOMTABS)
             tab->position(px+pw-4,y+2,w,h);
           else
             tab->position(px-w+4,y+2,w,h);
@@ -262,7 +262,7 @@ void FXTabBook::layout(){
     py=(options&TABBOOK_BOTTOMTABS) ? border+padtop : border+padtop+hmaxtab-2;
     pw=width-padleft-padright-(border<<1);
     ph=height-padtop-padbottom-(border<<1)-hmaxtab+2;
-    
+
     // Place all of the children
     for(tab=getFirst(),x=px,i=0; tab && tab->getNext(); tab=tab->getNext()->getNext(),i++){
       pane=tab->getNext();

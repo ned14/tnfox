@@ -3,7 +3,7 @@
 *                            V i s u a l   C l a s s                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,12 +19,11 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVisual.cpp,v 1.69 2004/09/17 07:46:22 fox Exp $                        *
+* $Id: FXVisual.cpp,v 1.73 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
-#include "fxpriv.h"
 #include "FXHash.h"
 #include "FXThread.h"
 #include "FXStream.h"
@@ -880,6 +879,31 @@ void FXVisual::setupcolormap(){
     }
   }
 
+
+// Make GC for given visual and depth; graphics exposures optional
+void* FXVisual::setupgc(FXbool gex){
+  XGCValues gval;
+  FXID drawable;
+  GC gg;
+
+  gval.fill_style=FillSolid;
+  gval.graphics_exposures=gex;
+
+  // For default visual; this is easy as we already have a matching window
+  if((Visual*)visual==DefaultVisual(DISPLAY(getApp()),DefaultScreen(DISPLAY(getApp())))){
+    gg=XCreateGC(DISPLAY(getApp()),XDefaultRootWindow(DISPLAY(getApp())),GCFillStyle|GCGraphicsExposures,&gval);
+    }
+
+  // For arbitrary visual; create a temporary pixmap of the same depth as the visual
+  else{
+    drawable=XCreatePixmap(DISPLAY(getApp()),XDefaultRootWindow(DISPLAY(getApp())),1,1,depth);
+    gg=XCreateGC(DISPLAY(getApp()),drawable,GCFillStyle|GCGraphicsExposures,&gval);
+    XFreePixmap(DISPLAY(getApp()),drawable);
+    }
+  return gg;
+  }
+
+
 #else
 
 /*******************************************************************************/
@@ -909,7 +933,7 @@ static inline FXuint findnbits(DWORD n){
 
 
 // Make palette
-static HPALETTE createAllPurposePalette(HDC hdc){
+static HPALETTE createAllPurposePalette(){
   LOGPALETTE256 palette;
   HPALETTE hPalette,hStockPalette;
   FXint num,r,g,b;
@@ -1057,8 +1081,8 @@ void FXVisual::create(){
       setupcolormap();
 
       // Make GC's for this visual
-      gc=fxmakegc(DISPLAY(getApp()),(Visual*)visual,depth,FALSE);
-      scrollgc=fxmakegc(DISPLAY(getApp()),(Visual*)visual,depth,TRUE);
+      gc=setupgc(FALSE);
+      scrollgc=setupgc(TRUE);
 
       xid=1;
 #else
@@ -1073,7 +1097,7 @@ void FXVisual::create(){
 
       // Check for palette mode; assume 8-bit for now
       if(GetDeviceCaps(hdc,RASTERCAPS)&RC_PALETTE){
-        colormap=createAllPurposePalette(hdc);     // FIXME how about 4-bit VGA mode?
+        colormap=createAllPurposePalette();
         depth=8;
         numred=6;               // We have a 6x6x6 ramp, at least...
         numgreen=6;
@@ -1187,7 +1211,6 @@ FXColor FXVisual::getColor(FXPixel pix){
   XColor color;
   color.pixel=pix;
   XQueryColor(DISPLAY(getApp()),colormap,&color);
-//  return FXRGB((color.red>>8),(color.green>>8),(color.blue>>8));
   return FXRGB(((color.red+128)/257),((color.green+128)/257),((color.blue+128)/257));
 #else
   return PALETTEINDEX(pix);

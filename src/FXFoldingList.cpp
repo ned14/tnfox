@@ -3,7 +3,7 @@
 *                    F o l d i n g   L i s t   W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFoldingList.cpp,v 1.51 2004/10/31 16:14:07 fox Exp $                   *
+* $Id: FXFoldingList.cpp,v 1.53 2005/01/16 16:06:07 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -31,6 +31,7 @@
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
+#include "FXObjectList.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXApp.h"
@@ -2233,16 +2234,16 @@ FXint FXFoldingList::fillItems(FXFoldingItem* father,const FXString& strings,FXI
   }
 
 
-// Move item under father before other item 
+// Move item under father before other item
 FXFoldingItem *FXFoldingList::moveItem(FXFoldingItem* other,FXFoldingItem* father,FXFoldingItem* item){
 
   // Verify arguments
   if(!item){ fxerror("%s::moveItem: NULL item argument.\n",getClassName()); }
   if(other && other->parent!=father){ fxerror("%s::moveItem: bad argument.\n",getClassName()); }
-  
+
   // Can't move in front of itself
   if(item!=other){
-  
+
     // Unlink from current spot
     if(item->prev) item->prev->next=item->next; else if(item->parent) item->parent->first=item->next; else firstitem=item->next;
     if(item->next) item->next->prev=item->prev; else if(item->parent) item->parent->last=item->prev; else lastitem=item->prev;

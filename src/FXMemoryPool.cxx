@@ -154,7 +154,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	bool deleted, lazydeleted;
 	const char *identifier;
 	FXThread *owner;
-	FXuint threadId;
+	FXulong threadId;
 	Generic::BoundFunctorV *cleanupcall;
 #ifdef FXDISABLE_SEPARATE_POOLS
 	FXAtomicInt allocated;

@@ -3,7 +3,7 @@
 *                   M a t r i x   C o n t a i n e r   O b j e c t               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMatrix.cpp,v 1.30 2004/09/17 07:46:21 fox Exp $                        *
+* $Id: FXMatrix.cpp,v 1.32 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -61,6 +61,13 @@
     [4] [5] [6]
     [7] [8] [9]
 
+  - Possible solution for spanning rows/columns: have a table
+    containing mapping from FXWindow* to (nr,nc) span.  Consult
+    table during layout.  All children not listed are 1x1, special
+    API add/remove items to the table.  Each layout, any item in the
+    table for which there is no corresponding child is removed.
+    Advantage: no need to add any special info into FXWindow.  Also,
+    no need for any special API to add item into matrix.
 
 */
 

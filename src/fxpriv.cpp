@@ -3,7 +3,7 @@
 *              P r i v a t e   I n t e r n a l   F u n c t i o n s              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpriv.cpp,v 1.36 2004/09/17 07:46:22 fox Exp $                          *
+* $Id: fxpriv.cpp,v 1.39 2005/01/16 16:06:07 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -258,7 +258,7 @@ void FXEventLoop::selectionSetData(const FXWindow*,FXDragType,FXuchar* data,FXui
 
 
 // Retrieve PRIMARY selection data
-void FXEventLoop::selectionGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size){
+void FXEventLoop::selectionGetData(const FXWindow*,FXDragType type,FXuchar*& data,FXuint& size){
   FXID answer;
   data=NULL;
   size=0;
@@ -281,7 +281,7 @@ void FXEventLoop::selectionGetData(const FXWindow* window,FXDragType type,FXucha
 
 
 // Retrieve PRIMARY selection types
-void FXEventLoop::selectionGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes){
+void FXEventLoop::selectionGetTypes(const FXWindow*,FXDragType*& types,FXuint& numtypes){
   FXID answer;
   types=NULL;
   numtypes=0;
@@ -385,31 +385,6 @@ void FXEventLoop::dragdropGetData(const FXWindow* window,FXDragType type,FXuchar
 void FXEventLoop::dragdropGetTypes(const FXWindow*,FXDragType*& types,FXuint& numtypes){
   FXMEMDUP(&types,app->ddeTypeList,FXDragType,app->ddeNumTypes);
   numtypes=app->ddeNumTypes;
-  }
-
-
-// Make GC for given visual and depth; graphics exposures optional
-GC fxmakegc(Display *display,Visual* visual,FXint depth,FXbool gex){
-  XGCValues gval;
-  FXID drawable;
-  GC gg;
-
-  gval.fill_style=FillSolid;
-  gval.graphics_exposures=gex;
-
-  // For default visual; this is easy as we already have a matching window
-  if(visual==DefaultVisual(display,DefaultScreen(display))){
-    gg=XCreateGC(display,XDefaultRootWindow(display),GCFillStyle|GCGraphicsExposures,&gval);
-    }
-
-  // For arbitrary visual; create a temporary pixmap of the same depth as the visual
-  else{
-    drawable=XCreatePixmap(display,XDefaultRootWindow(display),1,1,depth);
-    gg=XCreateGC(display,drawable,GCFillStyle|GCGraphicsExposures,&gval);
-    XFreePixmap(display,drawable);
-    }
-
-  return gg;
   }
 
 

@@ -3,7 +3,7 @@
 *                       C o m b o   B o x   O b j e c t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComboBox.cpp,v 1.56 2004/10/30 15:45:34 fox Exp $                      *
+* $Id: FXComboBox.cpp,v 1.59 2005/01/16 16:06:06 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -32,6 +32,7 @@
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXObjectList.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXApp.h"
@@ -659,8 +660,9 @@ void FXComboBox::setHelpText(const FXString& txt){
   field->setHelpText(txt);
   }
 
+
 // Get help text
-FXString FXComboBox::getHelpText() const {
+const FXString& FXComboBox::getHelpText() const {
   return field->getHelpText();
   }
 
@@ -672,7 +674,7 @@ void FXComboBox::setTipText(const FXString& txt){
 
 
 // Get tip text
-FXString FXComboBox::getTipText() const {
+const FXString& FXComboBox::getTipText() const {
   return field->getTipText();
   }
 

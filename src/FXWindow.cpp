@@ -3,7 +3,7 @@
 *                            W i n d o w   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * Major Contributions for Windows NT by Lyle Johnson                            *
 *********************************************************************************
@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.cpp,v 1.280 2004/10/31 16:14:08 fox Exp $                       *
+* $Id: FXWindow.cpp,v 1.296 2005/02/01 04:31:55 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -107,7 +107,7 @@
 
 
 // Layout modes
-#define LAYOUT_MASK (LAYOUT_SIDE_MASK|LAYOUT_RIGHT|LAYOUT_CENTER_X|LAYOUT_BOTTOM|LAYOUT_CENTER_Y|LAYOUT_FIX_X|LAYOUT_FIX_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT|LAYOUT_FILL_X|LAYOUT_FILL_Y)
+#define LAYOUT_MASK (LAYOUT_SIDE_MASK|LAYOUT_RIGHT|LAYOUT_CENTER_X|LAYOUT_BOTTOM|LAYOUT_CENTER_Y|LAYOUT_FIX_X|LAYOUT_FIX_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT|LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_DOCK_SAME|LAYOUT_DOCK_NEXT)
 
 
 #define DISPLAY(app) ((Display*)((app)->display))
@@ -409,34 +409,6 @@ FXWindow* FXWindow::getRoot() const {
   }
 
 
-// Move window in chain before a sibling
-void FXWindow::linkBefore(FXWindow* sibling){
-  if(sibling!=this){
-    if(prev) prev->next=next; else parent->first=next;
-    if(next) next->prev=prev; else parent->last=prev;
-    next=sibling;
-    prev=sibling?sibling->prev:parent->last;
-    if(prev) prev->next=this; else parent->first=this;
-    if(next) next->prev=this; else parent->last=this;
-    recalc();
-    }
-  }
-
-
-// Move window in chain after a sibling
-void FXWindow::linkAfter(FXWindow* sibling){
-  if(sibling!=this){
-    if(prev) prev->next=next; else parent->first=next;
-    if(next) next->prev=prev; else parent->last=prev;
-    next=sibling?sibling->next:parent->first;
-    prev=sibling;
-    if(prev) prev->next=this; else parent->first=this;
-    if(next) next->prev=this; else parent->last=this;
-    recalc();
-    }
-  }
-
-
 // Test if logically inside
 FXbool FXWindow::contains(FXint parentx,FXint parenty) const {
   return xpos<=parentx && parentx<xpos+width && ypos<=parenty && parenty<ypos+height;
@@ -581,6 +553,20 @@ FXWindow* FXWindow::commonAncestor(FXWindow* a,FXWindow* b){
   }
 
 
+// Return TRUE if sibling a <= sibling b in list
+FXbool FXWindow::before(const FXWindow *a,const FXWindow* b){
+  while(a!=b && a) a=a->next;
+  return a==b;
+  }
+
+
+// Return TRUE if sibling a >= sibling b in list
+FXbool FXWindow::after(const FXWindow *a,const FXWindow* b){
+  while(a!=b && b) b=b->next;
+  return a==b;
+  }
+
+
 // Return true if window is a shell window
 FXbool FXWindow::isShell() const {
   return (flags&FLAG_SHELL)!=0;
@@ -634,7 +620,7 @@ long FXWindow::onDestroy(FXObject*,FXSelector,void*){
   getEventLoop()->hash.remove((void*)xid);
   if(getEventLoop()->mouseGrabWindow==this) getEventLoop()->mouseGrabWindow=NULL;
   if(getEventLoop()->keyboardGrabWindow==this) getEventLoop()->keyboardGrabWindow=NULL;
-  if(getEventLoop()->cursorWindow==this) getEventLoop()->cursorWindow=NULL;
+  if(getEventLoop()->cursorWindow==this) getEventLoop()->cursorWindow=parent;
   if(getEventLoop()->focusWindow==this) getEventLoop()->focusWindow=NULL;
   flags&=~FLAG_FOCUSED;
   xid=0;
@@ -757,7 +743,6 @@ long FXWindow::onEnter(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXTRACE((150,"%s::onEnter %p (%s)\n",getClassName(),this, (event->code==CROSSINGNORMAL) ? "CROSSINGNORMAL" : (event->code==CROSSINGGRAB) ? "CROSSINGGRAB" : (event->code==CROSSINGUNGRAB)? "CROSSINGUNGRAB" : "?"));
   if(event->code!=CROSSINGGRAB){
-    getEventLoop()->cursorWindow=this;
     if(!(event->state&(SHIFTMASK|CONTROLMASK|METAMASK|LEFTBUTTONMASK|MIDDLEBUTTONMASK|RIGHTBUTTONMASK))) flags|=FLAG_TIP;
     flags|=FLAG_HELP;
     }
@@ -771,7 +756,6 @@ long FXWindow::onLeave(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXTRACE((150,"%s::onLeave %p (%s)\n",getClassName(),this, (event->code==CROSSINGNORMAL) ? "CROSSINGNORMAL" : (event->code==CROSSINGGRAB) ? "CROSSINGGRAB" : (event->code==CROSSINGUNGRAB)? "CROSSINGUNGRAB" : "?"));
   if(event->code!=CROSSINGUNGRAB){
-    getEventLoop()->cursorWindow=parent;
     flags&=~(FLAG_TIP|FLAG_HELP);
     }
   if(isEnabled() && target){ target->tryHandle(this,FXSEL(SEL_LEAVE,message),ptr); }
@@ -1223,10 +1207,9 @@ void FXWindow::create(){
       // Set resource and class name for toplevel windows.
       // In a perfect world this would be set in FXTopWindow, but for some strange reasons
       // some window-managers (e.g. fvwm) this will be too late and they will not recognize them.
-      // Patch from axel.kohlmeyer@chemie.uni-ulm.de
       if(flags&FLAG_SHELL){
-        hint.res_name=(char*)"FoxApp";
-        hint.res_class=(char*)"FoxWindow";
+        hint.res_name=(char*)getApp()->getAppName().text();             // "FoxApp";
+        hint.res_class=(char*)getApp()->getVendorName().text();         // "FoxWindow";
         XSetClassHint(DISPLAY(getApp()),xid,&hint);
         }
 
@@ -1396,7 +1379,7 @@ void FXWindow::detach(){
     // No longer grabbed
     if(getEventLoop()->mouseGrabWindow==this) getEventLoop()->mouseGrabWindow=NULL;
     if(getEventLoop()->keyboardGrabWindow==this) getEventLoop()->keyboardGrabWindow=NULL;
-    if(getEventLoop()->cursorWindow==this) getEventLoop()->cursorWindow=NULL;
+    if(getEventLoop()->cursorWindow==this) getEventLoop()->cursorWindow=parent;
     if(getEventLoop()->focusWindow==this) getEventLoop()->focusWindow=NULL;
     flags&=~FLAG_FOCUSED;
     flags&=~FLAG_OWNED;
@@ -1445,7 +1428,7 @@ void FXWindow::destroy(){
     // No longer grabbed
     if(getEventLoop()->mouseGrabWindow==this) getEventLoop()->mouseGrabWindow=NULL;
     if(getEventLoop()->keyboardGrabWindow==this) getEventLoop()->keyboardGrabWindow=NULL;
-    if(getEventLoop()->cursorWindow==this) getEventLoop()->cursorWindow=NULL;
+    if(getEventLoop()->cursorWindow==this) getEventLoop()->cursorWindow=parent;
     if(getEventLoop()->focusWindow==this) getEventLoop()->focusWindow=NULL;
     flags&=~FLAG_FOCUSED;
     flags&=~FLAG_OWNED;
@@ -1727,13 +1710,13 @@ void FXWindow::setDragCursor(FXCursor* cur){
 void FXWindow::setBackColor(FXColor clr){
   if(clr!=backColor){
     backColor=clr;
-//     if(xid){
-// #ifndef WIN32
-//       XSetWindowBackground(DISPLAY(getApp()),xid,visual->getPixel(backColor));
-// #else
-//       FXASSERT(0);
-// #endif
-//       }
+//    if(xid){
+//#ifndef WIN32
+//      XSetWindowBackground(DISPLAY(getApp()),xid,visual->getPixel(backColor));
+//#else
+//      // FIXME //
+//#endif
+//      }
     update();
     }
   }
@@ -2236,7 +2219,6 @@ void FXWindow::scroll(FXint x,FXint y,FXint w,FXint h,FXint dx,FXint dy) const {
 void FXWindow::scroll(FXint x,FXint y,FXint w,FXint h,FXint dx,FXint dy) const {
   if(xid && 0<w && 0<h && (dx || dy)){
     RECT rect;
-    DWORD flags=SW_INVALIDATE;
     rect.left=x;
     rect.top=y;
     rect.right=x+w;
@@ -2308,11 +2290,12 @@ FXbool FXWindow::shown() const {
 
 
 // Reparent window under a new parent
-void FXWindow::reparent(FXWindow* father){
+void FXWindow::reparent(FXWindow* father,FXWindow* other){
   if(father==NULL){ fxerror("%s::reparent: NULL parent specified.\n",getClassName()); }
   if(parent==NULL){ fxerror("%s::reparent: cannot reparent root window.\n",getClassName()); }
   if(parent==getRoot() || father==getRoot()){ fxerror("%s::reparent: cannot reparent toplevel window.\n",getClassName()); }
-  if(father!=parent){
+  if(other && father!=other->getParent()){ fxerror("%s::reparent: other window has different parent.\n",getClassName()); }
+  if(this!=other){
 
     // Check for funny cases
     if(containsChild(father)){ fxerror("%s::reparent: new parent is child of window.\n",getClassName()); }
@@ -2324,27 +2307,44 @@ void FXWindow::reparent(FXWindow* father){
     // Kill focus chain through this window
     killFocus();
 
-    // Flag old parent as to be recalculated
-    parent->recalc();
+    // Recalc old path
+    recalc();
 
     // Unlink from old parent
     if(prev) prev->next=next; else parent->first=next;
     if(next) next->prev=prev; else parent->last=prev;
 
     // Link to new parent
-    parent=father;
-    prev=parent->last;
-    next=NULL;
-    parent->last=this;
-    if(prev) prev->next=this; else parent->first=this;
+    if(other){
+      next=other;
+      prev=other->prev;
+      other->prev=this;
+      }
+    else{
+      next=NULL;
+      prev=father->last;
+      father->last=this;
+      }
+    if(prev){
+      prev->next=this;
+      }
+    else{
+      father->first=this;
+      }
 
-    // New owner is the new parent
-    owner=parent;
+    // Moved between parents
+    if(parent!=father){
+
+      // New parent and owner
+      parent=father;
+      owner=father;
 
     // Hook up to new window in server too
     if(xid && parent->id()){
 #ifndef WIN32
+        // See remarks in FXToolBarGrip
       XReparentWindow(DISPLAY(getApp()),xid,parent->id(),0,0);
+        XFlush(DISPLAY(getApp()));
 #else
       SetParent((HWND)xid,(HWND)parent->id());
 
@@ -2359,9 +2359,12 @@ void FXWindow::reparent(FXWindow* father){
         }
 #endif
       }
+    }
 
-    // Flag as to be recalculated
+    // Recalc new path
     recalc();
+
+    update();
     }
   }
 
@@ -3017,8 +3020,8 @@ static Bool matchxdnd(Display*,XEvent* event,XPointer ptr){
 
 
 // Terminate the drag; if drop flag is false, don't drop even if accepted.
-FXbool FXWindow::endDrag(FXbool drop){
-  FXbool dropped=FALSE;
+FXDragAction FXWindow::endDrag(FXbool drop){
+  FXDragAction action=DRAG_REJECT;
   if(xid==0){ fxerror("%s::endDrag: window has not yet been created.\n",getClassName()); }
   if(isDragging()){
 
@@ -3095,8 +3098,16 @@ FXbool FXWindow::endDrag(FXbool drop){
 
             // Got the finish message; we now know the drop has been completed and processed
             if(se.xclient.type==ClientMessage && se.xclient.message_type==getApp()->xdndFinished){
-              FXTRACE((100,"Got XdndFinish\n"));
-              dropped=TRUE;
+              action=DRAG_REJECT;       // Only for XDnD==5
+              action=DRAG_ACCEPT;       // Only for XDnD<=4
+              if(se.xclient.data.l[1]&1){
+                action=DRAG_ACCEPT;
+                if((FXID)se.xclient.data.l[2]==getApp()->xdndActionCopy) action=DRAG_COPY;
+                else if((FXID)se.xclient.data.l[2]==getApp()->xdndActionMove) action=DRAG_MOVE;
+                else if((FXID)se.xclient.data.l[2]==getApp()->xdndActionLink) action=DRAG_LINK;
+                else if((FXID)se.xclient.data.l[2]==getApp()->xdndActionPrivate) action=DRAG_PRIVATE;
+                }
+              FXTRACE((100,"Got XdndFinish action=%u\n",action));
               break;
               }
 
@@ -3203,10 +3214,10 @@ FXbool FXWindow::endDrag(FXbool drop){
           if(PeekMessage(&msg,NULL,0,0,PM_REMOVE)){
             getEventLoop()->dispatchEvent(msg);
 
-            // Got the finish message; we now know the drop has been completed and processed
-            if(msg.message==WM_DND_FINISH){
-              FXTRACE((100,"Got XdndFinish\n"));
-              dropped=TRUE;
+            // Got the finish message; we now know which action was taken
+            if(WM_DND_FINISH_REJECT<=msg.message && msg.message<=WM_DND_FINISH_PRIVATE){
+              action=(FXDragAction)(msg.message-WM_DND_FINISH_REJECT); 
+              FXTRACE((100,"Got XdndFinish action=%d\n",action));
               break;
               }
 
@@ -3250,7 +3261,7 @@ FXbool FXWindow::endDrag(FXbool drop){
 
 #endif
     }
-  return dropped;
+  return action;
   }
 
 
@@ -3275,6 +3286,7 @@ FXWindow::~FXWindow(){
   if(getEventLoop()->clipboardWindow==this) getEventLoop()->clipboardWindow=NULL;
   if(getEventLoop()->dragWindow==this) getEventLoop()->dragWindow=NULL;
   if(getEventLoop()->dropWindow==this) getEventLoop()->dropWindow=NULL;
+  if(getEventLoop()->refresherstop==this) getEventLoop()->refresherstop=parent;
   if(getEventLoop()->refresher==this) getEventLoop()->refresher=parent;
   if(parent) parent->recalc();
   parent=(FXWindow*)-1L;

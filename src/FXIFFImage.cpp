@@ -3,7 +3,7 @@
 *                         I F F   I m a g e   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIFFImage.cpp,v 1.5 2004/11/10 16:22:05 fox Exp $                       *
+* $Id: FXIFFImage.cpp,v 1.7 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -60,13 +60,11 @@ FXIMPLEMENT(FXIFFImage,FXImage,NULL,0)
 
 
 // Initialize
-FXIFFImage::FXIFFImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
-  FXImage(a,NULL,opts,w,h){
+FXIFFImage::FXIFFImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXImage(a,NULL,opts,w,h){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
-    fxloadIFF(ms,data,width,height);
-    options|=IMAGE_OWNED;
+    loadPixels(ms);
     ms.close();
     }
   }
@@ -80,10 +78,12 @@ FXbool FXIFFImage::savePixels(FXStream&) const {
 
 // Load object from stream
 FXbool FXIFFImage::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){FXFREE(&data);}
-  if(!fxloadIFF(store,data,width,height)) return FALSE;
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadIFF(store,pixels,w,h)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

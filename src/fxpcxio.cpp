@@ -3,7 +3,7 @@
 *                          P C X   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpcxio.cpp,v 1.23 2004/09/17 07:46:22 fox Exp $                         *
+* $Id: fxpcxio.cpp,v 1.26 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -47,6 +47,7 @@
 namespace FX {
 
 
+extern FXAPI FXbool fxcheckPCX(FXStream& store);
 extern FXAPI FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 extern FXAPI FXbool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height);
 
@@ -55,6 +56,15 @@ static inline FXuint read16(FXStream& store){
   FXuchar c1,c2;
   store >> c1 >> c2;
   return ((FXuint)c1) | (((FXuint)c2)<<8);
+  }
+
+
+// Check if stream contains a PCX
+FXbool fxcheckPCX(FXStream& store){
+  FXuchar signature[4];
+  store.load(signature,4);
+  store.position(-4,FXFromCurrent);
+  return signature[0]==10 && (signature[3]==1 || signature[3]==2 || signature[3]==4 || signature[3]==8);
   }
 
 

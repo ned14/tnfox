@@ -3,7 +3,7 @@
 *  D e v i c e   C o n t e x t   F o r   W i n d o w s   a n d   I m a g e s    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.cpp,v 1.126 2004/11/09 04:06:07 fox Exp $                     *
+* $Id: FXDCWindow.cpp,v 1.127 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1699,7 +1699,7 @@ void FXDCWindow::drawImage(const FXImage* image,FXint dx,FXint dy){
   }
 
 
-// Draw bitmap 
+// Draw bitmap
 void FXDCWindow::drawBitmap(const FXBitmap* bitmap,FXint dx,FXint dy) {
   if(!surface) fxerror("FXDCWindow::drawBitmap: DC not connected to drawable.\n");
   if(!bitmap || !bitmap->id()) fxerror("FXDCWindow::drawBitmap: illegal bitmap specified.\n");

@@ -3,7 +3,7 @@
 *                               F o n t   O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFont.cpp,v 1.103 2004/11/02 17:38:45 fox Exp $                         *
+* $Id: FXFont.cpp,v 1.104 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1401,7 +1401,7 @@ void FXFont::create(){
       actualEncoding = desc.encoding;
 
       // Create font
-      font=XftFontOpenPattern(DISPLAY(getApp()),p);    
+      font=XftFontOpenPattern(DISPLAY(getApp()),p);
       xid=(unsigned long)font;
 
       // Destroy pattern
@@ -1731,7 +1731,7 @@ FXbool FXFont::isFontMono() const {
   if(font){
 #ifndef WIN32
 #ifdef HAVE_XFT_H
-    XGlyphInfo i_extents,m_extents;     
+    XGlyphInfo i_extents,m_extents;
     XftTextExtents8(DISPLAY(getApp()),(XftFont*)font,(const FcChar8*)"i",1,&i_extents); // FIXME better than before but no cigar yet
     XftTextExtents8(DISPLAY(getApp()),(XftFont*)font,(const FcChar8*)"M",1,&m_extents);
     return i_extents.xOff==m_extents.xOff;

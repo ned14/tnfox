@@ -1,9 +1,9 @@
 /********************************************************************************
 *                                                                               *
-*                        T o o l   B a r   W i d g e t                          *
+*                        D o c k B a r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBar.cpp,v 1.21 2004/09/17 07:46:22 fox Exp $                       *
+* $Id: FXToolBar.cpp,v 1.34 2005/02/01 07:02:49 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -34,6 +34,7 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXApp.h"
+#include "FXGIFIcon.h"
 #include "FXDCWindow.h"
 #include "FXDrawable.h"
 #include "FXWindow.h"
@@ -41,68 +42,34 @@
 #include "FXComposite.h"
 #include "FXPacker.h"
 #include "FXToolBar.h"
+#include "FXPopup.h"
+#include "FXMenuPane.h"
+#include "FXMenuCaption.h"
+#include "FXMenuCommand.h"
+#include "FXMenuCascade.h"
+#include "FXMenuSeparator.h"
+#include "FXMenuRadio.h"
+#include "FXMenuCheck.h"
 #include "FXShell.h"
+#include "FXSeparator.h"
 #include "FXTopWindow.h"
+#include "FXToolBarDock.h"
 #include "FXToolBarGrip.h"
+#include "FXToolBarShell.h"
+#include "icons.h"
 
 
 /*
   Notes:
-  - Wrapping algorithm not OK yet; use D.P.
-  - Divider widgets and special layout ideas:
-
-      +---------+---------------+
-      | 1 2 3 4 | 5 6 7         |
-      +---------+---------------+
-
-    after wrap:
-
-      +-----+-----+
-      | 1 2 | 5 6 |  Clue: use D.P.
-      | 3 4 | 7   |
-      +-----+-----+
-
-    wrap:
-
-      +-----------------+
-      | L L L L   R R R |
-      +-----------------+
-
-    to:
-
-      +-------------+
-      | L L L   R R |
-      +-------------+
-      | L       R   |
-      +-------------+
-
-  - Toolbars with no wetdock should still be redockable on different sides.
-  - Want to support stretchable items.
-  - Want to support non-equal galley heights.
-
-  - Look at this some more.
-       1       2            3                              4
-    1  w(1)  w(1)+w(2)      w(1)+w(2)+w(3)        w(1)+w(2)+w(3)+w(4)
-    2  0    max(w(1),w(2)) max(w(1),w(2))+w(3)   max(w(1),w(2))+w(3)+w(4)
-    3  0       0           max(w(1),w(2),w(3))   max(w(1),w(2),w(3))+w(4)
-    4  0       0            0                    max(w(1),w(2),w(3),w(4))
-
+  - May want to add support for centered layout mode.
 */
 
-// How close to edge before considered docked
-#define PROXIMITY    30
-#define FUDGE        5
+
 
 // Docking side
 #define LAYOUT_SIDE_MASK (LAYOUT_SIDE_LEFT|LAYOUT_SIDE_RIGHT|LAYOUT_SIDE_TOP|LAYOUT_SIDE_BOTTOM)
 
-// Horizontal placement options
-#define LAYOUT_HORIZONTAL_MASK (LAYOUT_LEFT|LAYOUT_RIGHT|LAYOUT_CENTER_X|LAYOUT_FIX_X|LAYOUT_FILL_X)
-
-// Vertical placement options
-#define LAYOUT_VERTICAL_MASK   (LAYOUT_TOP|LAYOUT_BOTTOM|LAYOUT_CENTER_Y|LAYOUT_FIX_Y|LAYOUT_FILL_Y)
-
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -125,6 +92,8 @@ FXDEFMAP(FXToolBar) FXToolBarMap[]={
   FXMAPFUNC(SEL_BEGINDRAG,FXToolBar::ID_TOOLBARGRIP,FXToolBar::onBeginDragGrip),
   FXMAPFUNC(SEL_ENDDRAG,FXToolBar::ID_TOOLBARGRIP,FXToolBar::onEndDragGrip),
   FXMAPFUNC(SEL_DRAGGED,FXToolBar::ID_TOOLBARGRIP,FXToolBar::onDraggedGrip),
+  FXMAPFUNC(SEL_TIMEOUT,FXToolBar::ID_DOCK_TIMER,FXToolBar::onDockTimer),
+  FXMAPFUNC(SEL_RIGHTBUTTONRELEASE,FXToolBar::ID_TOOLBARGRIP,FXToolBar::onPopupMenu),
   };
 
 
@@ -133,108 +102,83 @@ FXIMPLEMENT(FXToolBar,FXPacker,FXToolBarMap,ARRAYNUMBER(FXToolBarMap))
 
 
 // Deserialization
-FXToolBar::FXToolBar(){
-  drydock=NULL;
-  wetdock=NULL;
-  outline.x=0;
-  outline.y=0;
-  outline.w=0;
-  outline.h=0;
-  dockafter=NULL;
-  dockside=0;
-  docking=FALSE;
+FXToolBar::FXToolBar():drydock(NULL),wetdock(NULL){
+  flags|=FLAG_ENABLED;
   }
 
 
 // Make a dockable and, possibly, floatable toolbar
 FXToolBar::FXToolBar(FXComposite* p,FXComposite* q,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
-  FXPacker(p,opts,x,y,w,h,pl,pr,pt,pb,hs,vs){
-  drydock=p;
-  wetdock=q;
-  outline.x=0;
-  outline.y=0;
-  outline.w=0;
-  outline.h=0;
-  dockafter=NULL;
-  dockside=0;
-  docking=FALSE;
+  FXPacker(p,opts,x,y,w,h,pl,pr,pt,pb,hs,vs),drydock(p),wetdock(q){
+  flags|=FLAG_ENABLED;
   }
 
 
 // Make a non-floatable toolbar
 FXToolBar::FXToolBar(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
-  FXPacker(p,opts,x,y,w,h,pl,pr,pt,pb,hs,vs){
-  drydock=NULL;
-  wetdock=NULL;
-  outline.x=0;
-  outline.y=0;
-  outline.w=0;
-  outline.h=0;
-  dockafter=NULL;
-  dockside=0;
-  docking=FALSE;
+  FXPacker(p,opts,x,y,w,h,pl,pr,pt,pb,hs,vs),drydock(NULL),wetdock(NULL){
+  flags|=FLAG_ENABLED;
   }
 
 
 // Compute minimum width based on child layout hints
 FXint FXToolBar::getDefaultWidth(){
-  register FXint w,wcum,wmax,mw=0,n;
+  register FXint total=0,mw=0,w;
   register FXWindow* child;
   register FXuint hints;
-  wcum=wmax=n=0;
   if(options&PACK_UNIFORM_WIDTH) mw=maxChildWidth();
   for(child=getFirst(); child; child=child->getNext()){
     if(child->shown()){
       hints=child->getLayoutHints();
-      if(child->isMemberOf(FXMETACLASS(FXToolBarGrip))) w=child->getDefaultWidth();
+      if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
       else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
       else if(options&PACK_UNIFORM_WIDTH) w=mw;
       else w=child->getDefaultWidth();
-      if(wmax<w) wmax=w;
-      wcum+=w;
-      n++;
+      if(!(options&LAYOUT_SIDE_LEFT)){  // Horizontal
+        if(total) total+=hspacing;
+        total+=w;
+        }
+      else{                             // Vertical
+        if(total<w) total=w;
+        }
       }
     }
-  if(!(options&LAYOUT_SIDE_LEFT)){      // Horizontal
-    if(n>1) wcum+=(n-1)*hspacing;
-    wmax=wcum;
-    }
-  return padleft+padright+wmax+(border<<1);
+  return padleft+padright+total+(border<<1);
   }
 
 
 // Compute minimum height based on child layout hints
 FXint FXToolBar::getDefaultHeight(){
-  register FXint h,hcum,hmax,mh=0,n;
+  register FXint total=0,mh=0,h;
   register FXWindow* child;
   register FXuint hints;
-  hcum=hmax=n=0;
   if(options&PACK_UNIFORM_HEIGHT) mh=maxChildHeight();
   for(child=getFirst(); child; child=child->getNext()){
     if(child->shown()){
       hints=child->getLayoutHints();
-      if(child->isMemberOf(FXMETACLASS(FXToolBarGrip))) h=child->getDefaultHeight();
+      if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
       else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
       else if(options&PACK_UNIFORM_HEIGHT) h=mh;
       else h=child->getDefaultHeight();
-      if(hmax<h) hmax=h;
-      hcum+=h;
-      n++;
+      if(options&LAYOUT_SIDE_LEFT){     // Vertical
+        if(total) total+=vspacing;
+        total+=h;
+        }
+      else{                             // Horizontal
+        if(total<h) total=h;
+        }
       }
     }
-  if(options&LAYOUT_SIDE_LEFT){         // Vertical
-    if(n>1) hcum+=(n-1)*vspacing;
-    hmax=hcum;
-    }
-  return padtop+padbottom+hmax+(border<<1);
+  return padtop+padbottom+total+(border<<1);
   }
 
 
+/*
 // Return width for given height
 FXint FXToolBar::getWidthForHeight(FXint givenheight){
-  FXint wtot,wmax,hcum,w,h,space,ngalleys,mw=0,mh=0;
-  FXWindow* child;
-  FXuint hints;
+  register FXint wtot,wmax,hcum,w,h,space,ngalleys,mw=0,mh=0;
+  register FXWindow* child;
+  register FXuint hints;
   wtot=wmax=hcum=ngalleys=0;
   space=givenheight-padtop-padbottom-(border<<1);
   if(space<1) space=1;
@@ -243,11 +187,11 @@ FXint FXToolBar::getWidthForHeight(FXint givenheight){
   for(child=getFirst(); child; child=child->getNext()){
     if(child->shown()){
       hints=child->getLayoutHints();
-      if(child->isMemberOf(FXMETACLASS(FXToolBarGrip))) w=child->getDefaultWidth();
+      if(dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
       else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
       else if(options&PACK_UNIFORM_WIDTH) w=mw;
       else w=child->getDefaultWidth();
-      if(child->isMemberOf(FXMETACLASS(FXToolBarGrip))) h=child->getDefaultHeight();
+      if(dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
       else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
       else if(options&PACK_UNIFORM_HEIGHT) h=mh;
       else h=child->getDefaultHeight();
@@ -264,9 +208,9 @@ FXint FXToolBar::getWidthForHeight(FXint givenheight){
 
 // Return height for given width
 FXint FXToolBar::getHeightForWidth(FXint givenwidth){
-  FXint htot,hmax,wcum,w,h,space,ngalleys,mw=0,mh=0;
-  FXWindow* child;
-  FXuint hints;
+  register FXint htot,hmax,wcum,w,h,space,ngalleys,mw=0,mh=0;
+  register FXWindow* child;
+  register FXuint hints;
   htot=hmax=wcum=ngalleys=0;
   space=givenwidth-padleft-padright-(border<<1);
   if(space<1) space=1;
@@ -275,11 +219,11 @@ FXint FXToolBar::getHeightForWidth(FXint givenwidth){
   for(child=getFirst(); child; child=child->getNext()){
     if(child->shown()){
       hints=child->getLayoutHints();
-      if(child->isMemberOf(FXMETACLASS(FXToolBarGrip))) w=child->getDefaultWidth();
+      if(dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
       else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
       else if(options&PACK_UNIFORM_WIDTH) w=mw;
       else w=child->getDefaultWidth();
-      if(child->isMemberOf(FXMETACLASS(FXToolBarGrip))) h=child->getDefaultHeight();
+      if(dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
       else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
       else if(options&PACK_UNIFORM_HEIGHT) h=mh;
       else h=child->getDefaultHeight();
@@ -431,9 +375,465 @@ void FXToolBar::layout(){
   flags&=~FLAG_DIRTY;
   }
 
+*/
+
+
+// Recalculate layout
+void FXToolBar::layout(){
+  register FXint left,right,top,bottom,remain,expand,mw=0,mh=0,x,y,w,h,e,t;
+  register FXWindow *child;
+  register FXuint hints;
+
+  // Placement rectangle; right/bottom non-inclusive
+  left=border+padleft;
+  right=width-border-padright;
+  top=border+padtop;
+  bottom=height-border-padbottom;
+
+  // Get maximum child size
+  if(options&PACK_UNIFORM_WIDTH) mw=maxChildWidth();
+  if(options&PACK_UNIFORM_HEIGHT) mh=maxChildHeight();
+
+  // Vertical toolbar
+  if(options&LAYOUT_SIDE_LEFT){
+
+    // Find stretch
+    for(child=getFirst(),remain=bottom-top,expand=0; child; child=child->getNext()){
+      if(child->shown()){
+        hints=child->getLayoutHints();
+        if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
+        else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
+        else if(options&PACK_UNIFORM_HEIGHT) h=mh;
+        else h=child->getDefaultHeight();
+	if(hints&LAYOUT_FILL_Y)
+	  expand+=h;
+	else
+	  remain-=h;
+	remain-=vspacing;
+        }
+      }
+
+    // Adjust
+    remain+=vspacing;
+
+    // Placement
+    for(child=getFirst(),e=0; child; child=child->getNext()){
+      if(child->shown()){
+
+        hints=child->getLayoutHints();
+
+        // Determine child width
+        if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) w=right-left;
+        else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
+        else if(options&PACK_UNIFORM_WIDTH) w=mw;
+        else if(hints&LAYOUT_FILL_X) w=right-left;
+        else w=child->getDefaultWidth();
+
+        // Determine child x-position
+        if(hints&LAYOUT_CENTER_X) x=left+(right-left-w)/2;
+        else if(hints&LAYOUT_RIGHT) x=right-w;
+        else x=left;
+
+        // Determine child height
+        if(dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
+        else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
+        else if(options&PACK_UNIFORM_HEIGHT) h=mh;
+        else h=child->getDefaultHeight();
+
+        // Account for fill or center
+	if(hints&LAYOUT_FILL_Y){
+          t=h*remain;
+          e+=t%expand;
+          h=t/expand+e/expand;
+          e%=expand;
+          }
+
+        // Determine child x-position
+        if(hints&LAYOUT_BOTTOM){
+          y=bottom-h;
+          bottom-=h+vspacing;
+          }
+        else{
+          y=top;
+          top+=h+vspacing;
+          }
+
+        // Place it
+        child->position(x,y,w,h);
+        }
+      }
+    }
+
+  // Horizontal toolbar
+  else{
+
+    // Find stretch
+    for(child=getFirst(),remain=right-left,expand=0; child; child=child->getNext()){
+      if(child->shown()){
+        hints=child->getLayoutHints();
+        if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
+        else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
+        else if(options&PACK_UNIFORM_WIDTH) w=mw;
+        else w=child->getDefaultWidth();
+	if(hints&LAYOUT_FILL_X)
+	  expand+=w;
+	else
+	  remain-=w;
+	remain-=hspacing;
+        }
+      }
+
+    // Adjust
+    remain+=hspacing;
+
+    // Placement
+    for(child=getFirst(),e=0; child; child=child->getNext()){
+      if(child->shown()){
+
+        hints=child->getLayoutHints();
+
+        // Determine child height
+        if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) h=bottom-top;
+        else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
+        else if(options&PACK_UNIFORM_HEIGHT) h=mh;
+        else if(hints&LAYOUT_FILL_Y) h=bottom-top;
+        else h=child->getDefaultHeight();
+
+        // Determine child y-position
+        if(hints&LAYOUT_CENTER_Y) y=top+(bottom-top-h)/2;
+        else if(hints&LAYOUT_BOTTOM) y=bottom-h;
+        else y=top;
+
+        // Determine child width
+        if(dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
+        else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
+        else if(options&PACK_UNIFORM_WIDTH) w=mw;
+        else w=child->getDefaultWidth();
+
+        // Account for fill or center
+	if(hints&LAYOUT_FILL_X){
+          t=w*remain;
+          e+=t%expand;
+          w=t/expand+e/expand;
+          e%=expand;
+          }
+
+        // Determine child x-position
+        if(hints&LAYOUT_RIGHT){
+          x=right-w;
+          right-=w+hspacing;
+          }
+        else{
+          x=left;
+          left+=w+hspacing;
+          }
+
+        // Place it
+        child->position(x,y,w,h);
+        }
+      }
+    }
+  flags&=~FLAG_DIRTY;
+  }
+
+
+// Return true if toolbar is docked
+FXbool FXToolBar::isDocked() const {
+  return (getParent()!=(FXWindow*)wetdock);
+  }
+
+
+// Set parent when docked, if it was docked it will remain docked
+void FXToolBar::setDryDock(FXComposite* dry){
+  if(dry && dry->id() && getParent()==(FXWindow*)drydock){
+    reparent(dry,NULL);
+    }
+  drydock=dry;
+  }
+
+
+// Set parent when floating
+void FXToolBar::setWetDock(FXComposite* wet){
+  if(wet && wet->id() && getParent()==(FXWindow*)wetdock){
+    reparent(wet,NULL);
+    }
+  wetdock=wet;
+  }
+
+
+// Dock the bar before other window
+void FXToolBar::dock(FXToolBarDock* docksite,FXWindow* before){
+  if(docksite && getParent()!=docksite){
+    setDockingSide(docksite->getLayoutHints());
+    setDryDock(docksite);
+    reparent(docksite,before);
+    wetdock->hide();
+    }
+  }
+
+
+// Dock the bar near position in dock site
+void FXToolBar::dock(FXToolBarDock* docksite,FXint localx,FXint localy){
+  if(docksite && getParent()!=docksite){
+    setDockingSide(docksite->getLayoutHints());
+    setDryDock(docksite);
+    reparent(docksite,NULL);
+    docksite->moveToolBar(this,localx,localy);
+    wetdock->hide();
+    }
+  }
+
+
+// Undock the bar
+void FXToolBar::undock(FXint rootx,FXint rooty){
+  if(wetdock && isDocked()){
+    reparent(wetdock);
+    setLayoutHints(getLayoutHints()&~LAYOUT_DOCK_NEXT);
+    wetdock->position(rootx,rooty,wetdock->getDefaultWidth(),wetdock->getDefaultHeight());
+    wetdock->show();
+    }
+  }
+
+
+// Search siblings of drydock for first dock opportunity
+FXToolBarDock* FXToolBar::findDockAtSide(FXuint side){
+  register FXToolBarDock* docksite;
+  register FXWindow *child;
+  if(drydock){
+    child=drydock->getParent()->getFirst();
+    while(child){
+      docksite=dynamic_cast<FXToolBarDock*>(child);
+      if(docksite && docksite->shown() && side==(docksite->getLayoutHints()&LAYOUT_SIDE_MASK)) return docksite;
+      child=child->getNext();
+      }
+    }
+  return NULL;
+  }
+
+
+// Search siblings of drydock for dock opportunity near given coordinates
+FXToolBarDock* FXToolBar::findDockNear(FXint rootx,FXint rooty){
+  register FXToolBarDock *docksite;
+  register FXWindow *child;
+  FXint localx,localy;
+  if(drydock){
+
+/*
+    // Translate without pain; this can be put pack if we make sure
+    // we always have correct position data in FXTopWindow after a maximize
+    // or minimize operation.
+    for(child=drydock->getParent(),localx=rootx,localy=rooty; child!=getRoot(); child=child->getParent()){
+      localx-=child->getX();
+      localy-=child->getY();
+      }
+*/
+    drydock->getParent()->translateCoordinatesFrom(localx,localy,getRoot(),rootx,rooty);
+
+    // Localize dock site
+    child=drydock->getParent()->getFirst();
+    while(child){
+      docksite=dynamic_cast<FXToolBarDock*>(child);
+      if(docksite && docksite->shown() && docksite->dockToolBar(this,localx,localy)) return docksite;
+      child=child->getNext();
+      }
+    }
+  return NULL;
+  }
+
+
+// Undock
+long FXToolBar::onCmdUndock(FXObject*,FXSelector,void*){
+  FXint rootx,rooty;
+  translateCoordinatesTo(rootx,rooty,getRoot(),8,8);
+  undock(rootx,rooty);
+  return 1;
+  }
+
+
+// Check if undocked
+long FXToolBar::onUpdUndock(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(wetdock && wetdock!=getParent())?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
+// Redock on top
+long FXToolBar::onCmdDockTop(FXObject*,FXSelector,void*){
+  dock(findDockAtSide(LAYOUT_SIDE_TOP),NULL);
+  return 1;
+  }
+
+
+// Check if docked at top
+long FXToolBar::onUpdDockTop(FXObject* sender,FXSelector,void*){
+  FXToolBarDock* docksite=findDockAtSide(LAYOUT_SIDE_TOP);
+  sender->handle(this,(docksite && docksite!=getParent())?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
+// Redock on bottom
+long FXToolBar::onCmdDockBottom(FXObject*,FXSelector,void*){
+  dock(findDockAtSide(LAYOUT_SIDE_BOTTOM),NULL);
+  return 1;
+  }
+
+
+// Check if docked at bottom
+long FXToolBar::onUpdDockBottom(FXObject* sender,FXSelector,void*){
+  FXToolBarDock* docksite=findDockAtSide(LAYOUT_SIDE_BOTTOM);
+  sender->handle(this,(docksite && docksite!=getParent())?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
+// Redock on left
+long FXToolBar::onCmdDockLeft(FXObject*,FXSelector,void*){
+  dock(findDockAtSide(LAYOUT_SIDE_LEFT),NULL);
+  return 1;
+  }
+
+
+// Check if docked at left
+long FXToolBar::onUpdDockLeft(FXObject* sender,FXSelector,void*){
+  FXToolBarDock* docksite=findDockAtSide(LAYOUT_SIDE_LEFT);
+  sender->handle(this,(docksite && docksite!=getParent())?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
+// Redock on right
+long FXToolBar::onCmdDockRight(FXObject*,FXSelector,void*){
+  dock(findDockAtSide(LAYOUT_SIDE_RIGHT),NULL);
+  return 1;
+  }
+
+
+// Check if docked at right
+long FXToolBar::onUpdDockRight(FXObject* sender,FXSelector,void*){
+  FXToolBarDock* docksite=findDockAtSide(LAYOUT_SIDE_RIGHT);
+  sender->handle(this,(docksite && docksite!=getParent())?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
+// Right clicked on bar
+long FXToolBar::onPopupMenu(FXObject*,FXSelector,void* ptr){
+  FXEvent *event=(FXEvent*)ptr;
+  if(event->moved) return 1;
+  FXMenuPane dockmenu(this);
+  FXGIFIcon docktopicon(getApp(),docktop,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
+  FXGIFIcon dockbottomicon(getApp(),dockbottom,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
+  FXGIFIcon docklefticon(getApp(),dockleft,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
+  FXGIFIcon dockrighticon(getApp(),dockright,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
+  FXGIFIcon dockfreeicon(getApp(),dockfree,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
+  new FXMenuCaption(&dockmenu,"Docking");
+  new FXMenuSeparator(&dockmenu);
+  new FXMenuCommand(&dockmenu,"Top",&docktopicon,this,ID_DOCK_TOP);
+  new FXMenuCommand(&dockmenu,"Bottom",&dockbottomicon,this,ID_DOCK_BOTTOM);
+  new FXMenuCommand(&dockmenu,"Left",&docklefticon,this,ID_DOCK_LEFT);
+  new FXMenuCommand(&dockmenu,"Right",&dockrighticon,this,ID_DOCK_RIGHT);
+  new FXMenuCommand(&dockmenu,"Float",&dockfreeicon,this,ID_UNDOCK);
+  dockmenu.create();
+  dockmenu.popup(NULL,event->root_x,event->root_y);
+  // FIXME funny problem: menu doesn't update until move despite call to refresh here
+  getApp()->refresh();
+  getApp()->runModalWhileShown(&dockmenu);
+  return 1;
+  }
+
+
+// Tool bar grip drag started
+long FXToolBar::onBeginDragGrip(FXObject* sender,FXSelector,void* ptr){
+  FXWindow *grip=static_cast<FXWindow*>(sender);
+  FXEvent* event=static_cast<FXEvent*>(ptr);
+  if(dynamic_cast<FXToolBarShell*>(getParent()) || dynamic_cast<FXToolBarDock*>(getParent())){
+    gripx=event->click_x+grip->getX();
+    gripy=event->click_y+grip->getY();
+    raise();
+    return 1;
+    }
+  return 0;
+  }
+
+
+// Tool bar grip drag ended
+long FXToolBar::onEndDragGrip(FXObject*,FXSelector,void* ptr){
+  FXToolBarShell *toolbarshell=dynamic_cast<FXToolBarShell*>(getParent());
+  FXEvent* event=static_cast<FXEvent*>(ptr);
+  FXToolBarDock *toolbardock;
+  FXint rootx,rooty;
+
+  // Root position
+  rootx=event->root_x-gripx;
+  rooty=event->root_y-gripy;
+
+  // Stop dock timer
+  getApp()->removeTimeout(this,ID_DOCK_TIMER);
+
+  // We are floating
+  if(toolbarshell){
+    toolbardock=findDockNear(rootx,rooty);
+    if(toolbardock) dock(toolbardock);
+    }
+  return 1;
+  }
+
+
+// Hovered near dock site:- dock it!
+long FXToolBar::onDockTimer(FXObject*,FXSelector,void* ptr){
+  FXToolBarDock *toolbardock=static_cast<FXToolBarDock*>(ptr);
+  FXint localx,localy;
+  translateCoordinatesTo(localx,localy,toolbardock,0,0);
+  dock(toolbardock,localx,localy);
+  return 1;
+  }
+
+
+// Tool bar grip dragged
+long FXToolBar::onDraggedGrip(FXObject*,FXSelector,void* ptr){
+  FXToolBarShell *toolbarshell=dynamic_cast<FXToolBarShell*>(getParent());
+  FXToolBarDock *toolbardock=dynamic_cast<FXToolBarDock*>(getParent());
+  FXEvent* event=static_cast<FXEvent*>(ptr);
+  FXint rootx,rooty,dockx,docky;
+
+  // Root position
+  rootx=event->root_x-gripx;
+  rooty=event->root_y-gripy;
+
+  // Stop dock timer
+  getApp()->removeTimeout(this,ID_DOCK_TIMER);
+
+  // We are docked
+  if(toolbardock){
+
+    // Get mouse position relative to dock site
+    toolbardock->translateCoordinatesFrom(dockx,docky,getRoot(),rootx,rooty);
+
+    // Move in dock site, undock if we've pulled it out of the dock
+    if(!toolbardock->moveToolBar(this,dockx,docky)){
+      undock(rootx,rooty);
+      }
+    }
+
+  // We are floating
+  else if(toolbarshell){
+
+    // We're near a dock, if we hover around we'll dock there
+    toolbardock=findDockNear(rootx,rooty);
+    if(toolbardock) getApp()->addTimeout(this,ID_DOCK_TIMER,200,toolbardock);
+
+    // Move around freely
+    wetdock->move(rootx,rooty);
+    }
+
+  return 1;
+  }
+
 
 // Change toolbar orientation
 void FXToolBar::setDockingSide(FXuint side){
+  side&=LAYOUT_SIDE_MASK;
   if((options&LAYOUT_SIDE_MASK)!=side){
 
     // New orientation is vertical
@@ -477,360 +877,6 @@ FXuint FXToolBar::getDockingSide() const {
   }
 
 
-// Return true if toolbar is docked
-FXbool FXToolBar::isDocked() const {
-  return (getParent()!=(FXWindow*)wetdock);
-  }
-
-
-// Set parent when docked, if it was docked it will remain docked
-void FXToolBar::setDryDock(FXComposite* dry){
-  if(dry && dry->id() && getParent()==(FXWindow*)drydock){
-    reparent(dry);
-    FXWindow* child=dry->getFirst();
-    FXWindow* after=NULL;
-    while(child){
-      FXuint hints=child->getLayoutHints();
-      if((hints&LAYOUT_FILL_X) && (hints&LAYOUT_FILL_Y)) break;
-      after=child;
-      child=child->getNext();
-      }
-    linkAfter(after);
-    }
-  drydock=dry;
-  }
-
-
-// Set parent when floating
-void FXToolBar::setWetDock(FXComposite* wet){
-  if(wet && wet->id() && getParent()==(FXWindow*)wetdock){
-    reparent(wet);
-    }
-  wetdock=wet;
-  }
-
-
-// Dock the bar
-void FXToolBar::dock(FXuint side,FXWindow* after){
-  setDockingSide(side);
-  if(drydock && !isDocked()){
-    reparent(drydock);
-    wetdock->hide();
-    }
-  if(after==(FXWindow*)-1L){
-    after=NULL;
-    FXWindow* child=getParent()->getFirst();
-    while(child){
-      FXuint hints=child->getLayoutHints();
-      if((hints&LAYOUT_FILL_X) && (hints&LAYOUT_FILL_Y)) break;
-      after=child;
-      child=child->getNext();
-      }
-    }
-  linkAfter(after);
-  }
-
-
-// Undock the bar
-void FXToolBar::undock(){
-  if(wetdock && isDocked()){
-    FXint rootx,rooty;
-    translateCoordinatesTo(rootx,rooty,getRoot(),8,8);
-    reparent(wetdock);
-    wetdock->position(rootx,rooty,wetdock->getDefaultWidth(),wetdock->getDefaultHeight());
-    wetdock->show();
-    }
-  }
-
-
-// Undock
-long FXToolBar::onCmdUndock(FXObject*,FXSelector,void*){
-  undock();
-  return 1;
-  }
-
-long FXToolBar::onUpdUndock(FXObject* sender,FXSelector,void*){
-  sender->handle(this,isDocked()?FXSEL(SEL_COMMAND,ID_UNCHECK):FXSEL(SEL_COMMAND,ID_CHECK),NULL);
-  sender->handle(this,wetdock?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
-  return 1;
-  }
-
-
-// Redock on top
-long FXToolBar::onCmdDockTop(FXObject*,FXSelector,void*){
-  dock(LAYOUT_SIDE_TOP,(FXWindow*)-1L);
-  return 1;
-  }
-
-long FXToolBar::onUpdDockTop(FXObject* sender,FXSelector,void*){
-  if(isDocked() && (options&LAYOUT_SIDE_MASK)==LAYOUT_SIDE_TOP)
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_CHECK),NULL);
-  else
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
-  return 1;
-  }
-
-
-// Redock on bottom
-long FXToolBar::onCmdDockBottom(FXObject*,FXSelector,void*){
-  dock(LAYOUT_SIDE_BOTTOM,(FXWindow*)-1L);
-  return 1;
-  }
-
-long FXToolBar::onUpdDockBottom(FXObject* sender,FXSelector,void*){
-  if(isDocked() && (options&LAYOUT_SIDE_MASK)==LAYOUT_SIDE_BOTTOM)
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_CHECK),NULL);
-  else
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
-  return 1;
-  }
-
-
-// Redock on left
-long FXToolBar::onCmdDockLeft(FXObject*,FXSelector,void*){
-  dock(LAYOUT_SIDE_LEFT,(FXWindow*)-1L);
-  return 1;
-  }
-
-long FXToolBar::onUpdDockLeft(FXObject* sender,FXSelector,void*){
-  if(isDocked() && (options&LAYOUT_SIDE_MASK)==LAYOUT_SIDE_LEFT)
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_CHECK),NULL);
-  else
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
-  return 1;
-  }
-
-
-// Redock on right
-long FXToolBar::onCmdDockRight(FXObject*,FXSelector,void*){
-  dock(LAYOUT_SIDE_RIGHT,(FXWindow*)-1L);
-  return 1;
-  }
-
-long FXToolBar::onUpdDockRight(FXObject* sender,FXSelector,void*){
-  if(isDocked() && (options&LAYOUT_SIDE_MASK)==LAYOUT_SIDE_RIGHT)
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_CHECK),NULL);
-  else
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
-  return 1;
-  }
-
-
-// FXToolBar grip drag started
-long FXToolBar::onBeginDragGrip(FXObject*,FXSelector,void*){
-  FXDCWindow dc(getRoot());
-  FXint x,y;
-  translateCoordinatesTo(x,y,getRoot(),0,0);
-  outline.x=x;
-  outline.y=y;
-  outline.w=width;
-  outline.h=height;
-  dockafter=getPrev();
-  dockside=(options&LAYOUT_SIDE_MASK);
-  docking=isDocked();
-  dc.clipChildren(FALSE);
-  dc.setFunction(BLT_SRC_XOR_DST);
-  dc.setForeground(FXRGB(255,255,255));
-  dc.setLineWidth(3);
-  dc.drawRectangles(&outline,1);
-  getApp()->flush();
-  return 1;
-  }
-
-
-// FXToolBar grip drag ended
-long FXToolBar::onEndDragGrip(FXObject* sender,FXSelector,void* ptr){
-  FXToolBarGrip *grip=(FXToolBarGrip*)sender;
-  FXDCWindow dc(getRoot());
-  FXint x,y;
-  dc.clipChildren(FALSE);
-  dc.setFunction(BLT_SRC_XOR_DST);
-  dc.setForeground(FXRGB(255,255,255));
-  dc.setLineWidth(3);
-  dc.drawRectangles(&outline,1);
-  getApp()->flush();
-  if(docking){
-    dock(dockside,dockafter);
-    }
-  else{
-    undock();
-    x=((FXEvent*)ptr)->root_x-((FXEvent*)ptr)->click_x-grip->getX();
-    y=((FXEvent*)ptr)->root_y-((FXEvent*)ptr)->click_y-grip->getY();
-    wetdock->move(x,y);
-    }
-  return 1;
-  }
-
-
-// FXToolBar grip dragged
-long FXToolBar::onDraggedGrip(FXObject* sender,FXSelector,void* ptr){
-  FXToolBarGrip *grip=(FXToolBarGrip*)sender;
-  FXint left,right,top,bottom,x,y,twx,twy;
-  FXWindow *child,*after,*harbor;
-  FXRectangle newoutline;
-  FXuint hints,opts;
-
-  // Current grip location
-  x=((FXEvent*)ptr)->root_x-((FXEvent*)ptr)->click_x-grip->getX();
-  y=((FXEvent*)ptr)->root_y-((FXEvent*)ptr)->click_y-grip->getY();
-
-  // Move the highlight
-  newoutline.x=x;
-  newoutline.y=y;
-  newoutline.w=width;
-  newoutline.h=height;
-
-  // Initialize
-  if(drydock && wetdock){     // We can float if not close enough to docking spot
-    //newoutline.w=outline.w;
-    //newoutline.h=outline.h;
-    harbor=drydock;
-    dockafter=NULL;
-    docking=FALSE;
-    }
-  else{                       // If too far from docking spot, snap back to original location
-    //newoutline.w=width;
-    //newoutline.h=height;
-    harbor=getParent();
-    dockside=(options&LAYOUT_SIDE_MASK);
-    dockafter=getPrev();
-    docking=TRUE;
-    }
-
-  // Drydock location in root coordinates
-  harbor->translateCoordinatesTo(twx,twy,getRoot(),0,0);
-
-  // Inner bounds
-  left = twx; right  = twx + harbor->getWidth();
-  top  = twy; bottom = twy + harbor->getHeight();
-
-  // Find place where to dock
-  after=NULL;
-  child=harbor->getFirst();
-  while(left<right && top<bottom){
-
-    // Determine docking side
-    if(top<=y && y<bottom){
-      if(FXABS(x-left)<PROXIMITY){
-        opts=options;
-        options=(options&~LAYOUT_SIDE_MASK)|LAYOUT_SIDE_LEFT;
-        if(options&LAYOUT_FIX_HEIGHT) newoutline.h=height;
-        else if(options&(LAYOUT_FILL_Y|LAYOUT_FILL_X)){ newoutline.h=bottom-top; newoutline.y=top; }
-        else newoutline.h=getDefaultHeight();
-        if(options&LAYOUT_FIX_WIDTH) newoutline.w=width;
-        else newoutline.w=getWidthForHeight(newoutline.h);
-        options=opts;
-        newoutline.x=left;
-        dockside=LAYOUT_SIDE_LEFT;
-        dockafter=after;
-        docking=TRUE;
-        }
-      if(FXABS(x-right)<PROXIMITY){
-        opts=options;
-        options=(options&~LAYOUT_SIDE_MASK)|LAYOUT_SIDE_RIGHT;
-        if(options&LAYOUT_FIX_HEIGHT) newoutline.h=height;
-        else if(options&(LAYOUT_FILL_Y|LAYOUT_FILL_X)){ newoutline.h=bottom-top; newoutline.y=top; }
-        else newoutline.h=getDefaultHeight();
-        if(options&LAYOUT_FIX_WIDTH) newoutline.w=width;
-        else newoutline.w=getWidthForHeight(newoutline.h);
-        options=opts;
-        newoutline.x=right-newoutline.w;
-        dockside=LAYOUT_SIDE_RIGHT;
-        dockafter=after;
-        docking=TRUE;
-        }
-      }
-    if(left<=x && x<right){
-      if(FXABS(y-top)<PROXIMITY){
-        opts=options;
-        options=(options&~LAYOUT_SIDE_MASK)|LAYOUT_SIDE_TOP;
-        if(options&LAYOUT_FIX_WIDTH) newoutline.w=width;
-        else if(options&(LAYOUT_FILL_X|LAYOUT_FILL_Y)){ newoutline.w=right-left; newoutline.x=left; }
-        else newoutline.w=getDefaultWidth();
-        if(options&LAYOUT_FIX_HEIGHT) newoutline.h=height;
-        else newoutline.h=getHeightForWidth(newoutline.w);
-        options=opts;
-        newoutline.y=top;
-        dockside=LAYOUT_SIDE_TOP;
-        dockafter=after;
-        docking=TRUE;
-        }
-      if(FXABS(y-bottom)<PROXIMITY){
-        opts=options;
-        options=(options&~LAYOUT_SIDE_MASK)|LAYOUT_SIDE_BOTTOM;
-        if(options&LAYOUT_FIX_WIDTH) newoutline.w=width;
-        else if(options&(LAYOUT_FILL_X|LAYOUT_FILL_Y)){ newoutline.w=right-left; newoutline.x=left; }
-        else newoutline.w=getDefaultWidth();
-        if(options&LAYOUT_FIX_HEIGHT) newoutline.h=height;
-        else newoutline.h=getHeightForWidth(newoutline.w);
-        options=opts;
-        newoutline.y=bottom-newoutline.h;
-        dockside=LAYOUT_SIDE_BOTTOM;
-        dockafter=after;
-        docking=TRUE;
-        }
-      }
-
-    // Done
-    if(!child) break;
-
-    // Get child hints
-    hints=child->getLayoutHints();
-
-    // Some final fully stretched child also marks the end
-    if((hints&LAYOUT_FILL_X) && (hints&LAYOUT_FILL_Y)) break;
-
-    // Advance inward
-    if(child!=this){
-      if(child->shown()){
-
-        // Vertical
-        if(hints&LAYOUT_SIDE_LEFT){
-          if(!((hints&LAYOUT_RIGHT)&&(hints&LAYOUT_CENTER_X))){
-            if(hints&LAYOUT_SIDE_BOTTOM){
-              right=twx+child->getX();
-              }
-            else{
-              left=twx+child->getX()+child->getWidth();
-              }
-            }
-          }
-
-        // Horizontal
-        else{
-          if(!((hints&LAYOUT_BOTTOM)&&(hints&LAYOUT_CENTER_Y))){
-            if(hints&LAYOUT_SIDE_BOTTOM){
-              bottom=twy+child->getY();
-              }
-            else{
-              top=twy+child->getY()+child->getHeight();
-              }
-            }
-          }
-        }
-      }
-    after=child;
-
-    // Next one
-    child=child->getNext();
-    }
-
-  // Did rectangle move?
-  if(newoutline.x!=outline.x || newoutline.y!=outline.y || newoutline.w!=outline.w || newoutline.h!=outline.h){
-    FXDCWindow dc(getRoot());
-    dc.clipChildren(FALSE);
-    dc.setFunction(BLT_SRC_XOR_DST);
-    dc.setForeground(FXRGB(255,255,255));
-    dc.setLineWidth(3);
-    dc.drawRectangles(&outline,1);
-    outline=newoutline;
-    dc.drawRectangles(&outline,1);
-    getApp()->flush();
-    }
-  return 1;
-  }
-
-
 // Save data
 void FXToolBar::save(FXStream& store) const {
   FXPacker::save(store);
@@ -849,9 +895,9 @@ void FXToolBar::load(FXStream& store){
 
 // Destroy
 FXToolBar::~FXToolBar(){
+  getApp()->removeTimeout(this,ID_DOCK_TIMER);
   drydock=(FXComposite*)-1L;
   wetdock=(FXComposite*)-1L;
-  dockafter=(FXWindow*)-1L;
   }
 
 }

@@ -3,7 +3,7 @@
 *             R e a l - V a l u e d   S p i n n e r  W i d g e t                *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003,2004 by Bill Baxter.   All Rights Reserved.                *
+* Copyright (C) 2003,2005 by Bill Baxter.   All Rights Reserved.                *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRealSpinner.cpp,v 1.25 2004/10/07 21:49:14 fox Exp $                   *
+* $Id: FXRealSpinner.cpp,v 1.27 2005/01/16 16:06:07 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -508,7 +508,7 @@ void FXRealSpinner::setHelpText(const FXString&  text){
 
 
 // Get help text
-FXString FXRealSpinner::getHelpText() const {
+const FXString& FXRealSpinner::getHelpText() const {
   return textField->getHelpText();
   }
 
@@ -523,7 +523,7 @@ void FXRealSpinner::setTipText(const FXString&  text){
 
 
 // Get tip text
-FXString FXRealSpinner::getTipText() const {
+const FXString& FXRealSpinner::getTipText() const {
   return textField->getTipText();
   }
 

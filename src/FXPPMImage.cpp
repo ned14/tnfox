@@ -3,7 +3,7 @@
 *                            P P M   I m a g e   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPPMImage.cpp,v 1.7 2004/11/10 16:22:05 fox Exp $                       *
+* $Id: FXPPMImage.cpp,v 1.9 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -63,13 +63,11 @@ FXIMPLEMENT(FXPPMImage,FXImage,NULL,0)
 
 
 // Initialize
-FXPPMImage::FXPPMImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
-  FXImage(a,NULL,opts,w,h){
+FXPPMImage::FXPPMImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXImage(a,NULL,opts,w,h){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
-    fxloadPPM(ms,data,width,height);
-    options|=IMAGE_OWNED;
+    loadPixels(ms);
     ms.close();
     }
   }
@@ -77,17 +75,21 @@ FXPPMImage::FXPPMImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
 
 // Save pixel data only
 FXbool FXPPMImage::savePixels(FXStream& store) const {
-  if(!fxsavePPM(store,data,width,height)) return FALSE;
-  return TRUE;
+  if(fxsavePPM(store,data,width,height)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load pixel data only
 FXbool FXPPMImage::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){FXFREE(&data);}
-  if(!fxloadPPM(store,data,width,height)) return FALSE;
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadPPM(store,pixels,w,h)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

@@ -3,7 +3,7 @@
 *               W i n d o w s   K e y b o a r d   H a n d l i n g               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 * Code written by Daniel Gehriger (gehriger@linkcad.com)                        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxwinkbd.cpp,v 1.19 2004/09/17 07:46:22 fox Exp $                        *
+* $Id: fxwinkbd.cpp,v 1.21 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #ifdef WIN32
 #include "xincs.h"
@@ -203,7 +203,7 @@ static BYTE ksRShft=0, ksRCtrl=0, ksLMenu=0, ksRMenu=0;
 // Retrieves the current input code page
 UINT wkbGetCodePage(){
   static HKL hklOld=NULL;
-  static UINT uCPID=NULL;
+  static UINT uCPID=0;
   HKL hkl=GetKeyboardLayout(0);
   if(hklOld!=hkl || uCPID==0){
     hklOld=hkl;
@@ -270,82 +270,84 @@ unsigned int fxmodifierkeys(){
 
 
 // Map Win32 virtual key codes to FOX key codes
-FXuint wkbMapKeyCode(HWND hWnd,UINT iMsg,WPARAM uVirtKey,LPARAM lParam){
+FXuint wkbMapKeyCode(UINT iMsg,WPARAM uVirtKey,LPARAM lParam){
   BYTE ks[256];
-  UINT uScanCode=HIWORD(lParam)&(KF_EXTENDED|KF_UP|0xff);
   char c;
 
   // Get keyboard state
-  if(GetKeyboardState(ks)==0) return KEY_VoidSymbol;
+  if(GetKeyboardState(ks)!=0){
 
-  // Determine left/right key states
-  BYTE ksOldRShft=ksRShft, ksOldRCtrl=ksRCtrl, ksOldRMenu=ksRMenu;
-  FXuint xt=HIWORD(lParam)&KF_EXTENDED;
-  if(!bNoLR && iMsg == WM_KEYDOWN){
-    if(uVirtKey==VK_CONTROL) bNoLR|=(KEYDOWN(ks,xt?VK_RCONTROL:VK_LCONTROL)^KEYDOWN(ks,VK_CONTROL));
-    if(uVirtKey==VK_MENU) bNoLR|=(KEYDOWN(ks,xt?VK_RMENU:VK_LMENU)^KEYDOWN(ks,VK_MENU));
-    }
+    // Determine left/right key states
+    BYTE ksOldRShft=ksRShft, ksOldRCtrl=ksRCtrl, ksOldRMenu=ksRMenu;
+    FXuint xt=HIWORD(lParam)&KF_EXTENDED;
+    if(!bNoLR && iMsg==WM_KEYDOWN){
+      if(uVirtKey==VK_CONTROL) bNoLR|=(KEYDOWN(ks,xt?VK_RCONTROL:VK_LCONTROL)^KEYDOWN(ks,VK_CONTROL));
+      if(uVirtKey==VK_MENU) bNoLR|=(KEYDOWN(ks,xt?VK_RMENU:VK_LMENU)^KEYDOWN(ks,VK_MENU));
+      }
 
-  if(bNoLR){
     // OS does not save correct left/right key states (most Win95/98/Me)
-    ksRShft = ks[VK_RSHIFT];
-    ksRCtrl = (KEYDOWN(ks,VK_CONTROL) ? (uVirtKey==VK_CONTROL&&xt) ? 0x80 : ksRCtrl : 0x00);
-    ksRMenu = (KEYDOWN(ks,VK_MENU) ? (uVirtKey==VK_MENU && xt) ? 0x80 : ksRMenu : 0x00);
-    ksLMenu = (KEYDOWN(ks,VK_MENU) ? (uVirtKey==VK_MENU && !xt) ? 0x80 : ksLMenu : 0x00);
-    }
-  else {
+    if(bNoLR){
+      ksRShft = ks[VK_RSHIFT];
+      ksRCtrl = (KEYDOWN(ks,VK_CONTROL) ? (uVirtKey==VK_CONTROL&&xt) ? 0x80 : ksRCtrl : 0x00);
+      ksRMenu = (KEYDOWN(ks,VK_MENU) ? (uVirtKey==VK_MENU && xt) ? 0x80 : ksRMenu : 0x00);
+      ksLMenu = (KEYDOWN(ks,VK_MENU) ? (uVirtKey==VK_MENU && !xt) ? 0x80 : ksLMenu : 0x00);
+      }
+
     // OS saves correct left/right key states
-    ksRShft = KEYDOWN(ks,VK_RSHIFT);
-    ksRCtrl = KEYDOWN(ks,VK_RCONTROL);
-    ksRMenu = KEYDOWN(ks,VK_RMENU);
-    ksLMenu = KEYDOWN(ks,VK_LMENU);
-    }
+    else{
+      ksRShft = KEYDOWN(ks,VK_RSHIFT);
+      ksRCtrl = KEYDOWN(ks,VK_RCONTROL);
+      ksRMenu = KEYDOWN(ks,VK_RMENU);
+      ksLMenu = KEYDOWN(ks,VK_LMENU);
+      }
 
-  // Map virtual key code
-  switch(uVirtKey){
-    case VK_SHIFT:
-      if(iMsg==WM_KEYDOWN && HIWORD(lParam)&KF_REPEAT)
-        return KEY_VoidSymbol;
-      else
-        return (ksRShft^ksOldRShft) ? KEY_Shift_R : KEY_Shift_L;
+    // Map virtual key code
+    switch(uVirtKey){
+      case VK_SHIFT:
+        if(iMsg==WM_KEYDOWN && HIWORD(lParam)&KF_REPEAT)
+          return KEY_VoidSymbol;
+        else
+          return (ksRShft^ksOldRShft) ? KEY_Shift_R : KEY_Shift_L;
 
-    case VK_CONTROL:
-      if(iMsg==WM_KEYDOWN && HIWORD(lParam)&KF_REPEAT)
-        return KEY_VoidSymbol;
-      else
-        return (ksRCtrl^ksOldRCtrl) ? KEY_Control_R : KEY_Control_L;
+      case VK_CONTROL:
+        if(iMsg==WM_KEYDOWN && HIWORD(lParam)&KF_REPEAT)
+          return KEY_VoidSymbol;
+        else
+          return (ksRCtrl^ksOldRCtrl) ? KEY_Control_R : KEY_Control_L;
 
-    case VK_MENU:
-      if(iMsg==WM_SYSKEYDOWN && HIWORD(lParam)&KF_REPEAT)
-        return KEY_VoidSymbol;
-      else
-        return (ksRMenu^ksOldRMenu) ? KEY_Alt_R : KEY_Alt_L;
+      case VK_MENU:
+        if(iMsg==WM_SYSKEYDOWN && HIWORD(lParam)&KF_REPEAT)
+          return KEY_VoidSymbol;
+        else
+          return (ksRMenu^ksOldRMenu) ? KEY_Alt_R : KEY_Alt_L;
 
-    case VK_RETURN:
-      if(uVirtKey==VK_RETURN && (HIWORD(lParam)&KF_EXTENDED))
-        return KEY_KP_Enter;
-      else
-        return KEY_Return;
+      case VK_RETURN:
+        if(uVirtKey==VK_RETURN && (HIWORD(lParam)&KF_EXTENDED))
+          return KEY_KP_Enter;
+        else
+          return KEY_Return;
 
-    default:
+      default:
 
-      // Map remaining special keys
-      for(FXuint i=0; i<ARRAYNUMBER(keymapCtl)/2; ++i){
-        if(keymapCtl[2*i]==uVirtKey){
-          return keymapCtl[2*i+1];
+        // Map remaining special keys
+        for(FXuint i=0; i<ARRAYNUMBER(keymapCtl)/2; ++i){
+          if(keymapCtl[2*i]==uVirtKey){
+            return keymapCtl[2*i+1];
+            }
           }
-        }
 
-      // Map characters (they come in as uppercase,
-      // but FOX wants them converted according the current shift state...
-      if('A'<=uVirtKey && uVirtKey<='Z'){
-        return (FXuint)(KEYDOWN(ks,VK_SHIFT) ? uVirtKey : uVirtKey-'A'+KEY_a);
-        }
+        // Map characters (they come in as uppercase,
+        // but FOX wants them converted according the current shift state...
+        if('A'<=uVirtKey && uVirtKey<='Z'){
+          return (FXuint)(KEYDOWN(ks,VK_SHIFT) ? uVirtKey : uVirtKey-'A'+KEY_a);
+          }
 
-      // Ask Windows to map remaining characters
-      c=(char)LOWORD(MapVirtualKeyEx(uVirtKey,2,GetKeyboardLayout(0))); // FIXME ";" and ":" map to same keysym; this is wrong!
-      return (c ? c : KEY_VoidSymbol);
+        // Ask Windows to map remaining characters
+        c=(char)LOWORD(MapVirtualKeyEx(uVirtKey,2,GetKeyboardLayout(0))); // FIXME ";" and ":" map to same keysym; this is wrong!
+        if(c) return c;
+      }
     }
+  return KEY_VoidSymbol;
   }
 
 }

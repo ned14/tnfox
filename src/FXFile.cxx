@@ -3,7 +3,7 @@
 *      F i l e   I n f o r m a t i o n   a n d   M a n i p u l a t i o n        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * Contributed by: Sean Hubbell & Niall Douglas                                  *
 *********************************************************************************
@@ -973,6 +973,7 @@ FXString FXFile::expand(const FXString& file){
 //  /////./././     -> /
 //  c:/../          -> c:/
 //  c:a/..          -> c:
+//  /.              -> /
 FXString FXFile::simplify(const FXString& file){
   if(!file.empty()){
     FXString result=file;
@@ -1007,7 +1008,10 @@ FXString FXFile::simplify(const FXString& file){
       while(result[q] && !ISPATHSEP(result[q])){
         result[p++]=result[q++];
         }
-      if(2<=p && result[p-1]=='.' && ISPATHSEP(result[p-2]) && ISPATHSEP(result[q])){
+      if(2<=p && result[p-1]=='.' && ISPATHSEP(result[p-2]) && result[q]==0){
+        p-=1;
+        }
+      else if(2<=p && result[p-1]=='.' && ISPATHSEP(result[p-2]) && ISPATHSEP(result[q])){
         p-=2;
         }
       else if(3<=p && result[p-1]=='.' && result[p-2]=='.' && ISPATHSEP(result[p-3]) && !(5<=p && result[p-4]=='.' && result[p-5]=='.')){
@@ -1031,41 +1035,39 @@ FXString FXFile::simplify(const FXString& file){
 
 // Build absolute pathname
 FXString FXFile::absolute(const FXString& file){
-  FXString pathfile=FXFile::expand(file);
-  if(pathfile.empty()) return FXFile::getCurrentDirectory();
+  if(file.empty()) return FXFile::getCurrentDirectory();
 #ifndef WIN32
-  if(ISPATHSEP(pathfile[0])) return FXFile::simplify(pathfile);
+  if(ISPATHSEP(file[0])) return FXFile::simplify(file);
 #else
-  if(ISPATHSEP(pathfile[0])){
-    if(ISPATHSEP(pathfile[1])) return FXFile::simplify(pathfile);   // UNC
-    return FXFile::simplify(FXFile::getCurrentDrive()+pathfile);
+  if(ISPATHSEP(file[0])){
+    if(ISPATHSEP(file[1])) return FXFile::simplify(file);   // UNC
+    return FXFile::simplify(FXFile::getCurrentDrive()+file);
     }
-  if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':'){
-    if(ISPATHSEP(pathfile[2])) return FXFile::simplify(pathfile);
-    return FXFile::simplify(pathfile.mid(0,2)+PATHSEPSTRING+pathfile.mid(2,2147483647));
+  if(isalpha((FXuchar)file[0]) && file[1]==':'){
+    if(ISPATHSEP(file[2])) return FXFile::simplify(file);
+    return FXFile::simplify(file.mid(0,2)+PATHSEPSTRING+file.mid(2,2147483647));
     }
 #endif
-  return FXFile::simplify(FXFile::getCurrentDirectory()+PATHSEPSTRING+pathfile);
+  return FXFile::simplify(FXFile::getCurrentDirectory()+PATHSEPSTRING+file);
   }
 
 
 // Build absolute pathname from parts
 FXString FXFile::absolute(const FXString& base,const FXString& file){
-  FXString pathfile=FXFile::expand(file);
-  if(pathfile.empty()) return FXFile::absolute(base);
+  if(file.empty()) return FXFile::absolute(base);
 #ifndef WIN32
-  if(ISPATHSEP(pathfile[0])) return FXFile::simplify(pathfile);
+  if(ISPATHSEP(file[0])) return FXFile::simplify(file);
 #else
-  if(ISPATHSEP(pathfile[0])){
-    if(ISPATHSEP(pathfile[1])) return FXFile::simplify(pathfile);   // UNC
-    return FXFile::simplify(FXFile::getCurrentDrive()+pathfile);
+  if(ISPATHSEP(file[0])){
+    if(ISPATHSEP(file[1])) return FXFile::simplify(file);   // UNC
+    return FXFile::simplify(FXFile::getCurrentDrive()+file);
     }
-  if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':'){
-    if(ISPATHSEP(pathfile[2])) return FXFile::simplify(pathfile);
-    return FXFile::simplify(pathfile.mid(0,2)+PATHSEPSTRING+pathfile.mid(2,2147483647));
+  if(isalpha((FXuchar)file[0]) && file[1]==':'){
+    if(ISPATHSEP(file[2])) return FXFile::simplify(file);
+    return FXFile::simplify(file.mid(0,2)+PATHSEPSTRING+file.mid(2,2147483647));
     }
 #endif
-  return FXFile::simplify(FXFile::absolute(base)+PATHSEPSTRING+pathfile);
+  return FXFile::simplify(FXFile::absolute(base)+PATHSEPSTRING+file);
   }
 
 
@@ -1182,30 +1184,25 @@ FXString FXFile::unique(const FXString& file){
 // Search pathlist for file
 FXString FXFile::search(const FXString& pathlist,const FXString& file){
   if(!file.empty()){
-    FXString pathfile=FXFile::simplify(FXFile::expand(file));
     FXString path;
     FXint beg,end;
 #ifndef WIN32
-    if(ISPATHSEP(pathfile[0])){
-      if(exists(pathfile)) return pathfile;
+    if(ISPATHSEP(file[0])){
+      if(exists(file)) return file;
       return FXString::null;
       }
 #else
-    if(ISPATHSEP(pathfile[0]) && ISPATHSEP(pathfile[1])){
-      if(exists(pathfile)) return pathfile;   // UNC
+    if(ISPATHSEP(file[0])){
+      if(ISPATHSEP(file[1])){
+        if(exists(file)) return file;   // UNC
+        return FXString::null;
+        }
+      path=FXFile::getCurrentDrive()+file;
+      if(exists(path)) return path;
       return FXString::null;
       }
-    if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':'){
-      if(exists(pathfile)) return pathfile;
-      return FXString::null;
-      }
-  //  if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':' && ISPATHSEP(pathfile[2])){
-  //    if(exists(pathfile)) return pathfile;
-  //    return FXString::null;
-  //    }
-    if(ISPATHSEP(pathfile[0])){
-      pathfile=getCurrentDrive()+pathfile;
-      if(exists(pathfile)) return pathfile;
+    if(isalpha((FXuchar)file[0]) && file[1]==':'){
+      if(exists(file)) return file;
       return FXString::null;
       }
 #endif
@@ -1213,7 +1210,7 @@ FXString FXFile::search(const FXString& pathlist,const FXString& file){
       while(pathlist[beg]==PATHLISTSEP) beg++;
       for(end=beg; pathlist[end] && pathlist[end]!=PATHLISTSEP; end++);
       if(beg==end) break;
-      path=absolute(pathlist.mid(beg,end-beg),pathfile);
+      path=absolute(pathlist.mid(beg,end-beg),file);
       if(exists(path)) return path;
       }
     }

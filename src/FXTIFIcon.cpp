@@ -3,7 +3,7 @@
 *                          T I F F  I c o n   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 Eric Gillet.   All Rights Reserved.                   *
+* Copyright (C) 2001,2005 Eric Gillet.   All Rights Reserved.                   *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTIFIcon.cpp,v 1.22 2004/11/10 16:22:05 fox Exp $                       *
+* $Id: FXTIFIcon.cpp,v 1.24 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -65,9 +65,7 @@ const FXbool FXTIFIcon::supported=FALSE;
 
 
 // Initialize
-FXTIFIcon::FXTIFIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):
-  FXIcon(a,NULL,clr,opts,w,h){
-  codec=0;
+FXTIFIcon::FXTIFIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):FXIcon(a,NULL,clr,opts,w,h),codec(0){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
@@ -79,18 +77,22 @@ FXTIFIcon::FXTIFIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FX
 
 // Save pixels only
 FXbool FXTIFIcon::savePixels(FXStream& store) const {
-  if(!fxsaveTIF(store,data,width,height,codec)) return FALSE;
-  return TRUE;
+  if(fxsaveTIF(store,data,width,height,codec)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load pixels only
 FXbool FXTIFIcon::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){ FXFREE(&data); }
-  if(!fxloadTIF(store,data,width,height,codec)) return FALSE;
-  if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadTIF(store,pixels,w,h,codec)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

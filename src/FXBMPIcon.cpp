@@ -3,7 +3,7 @@
 *                        B M P   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBMPIcon.cpp,v 1.29 2004/11/10 16:22:05 fox Exp $                       *
+* $Id: FXBMPIcon.cpp,v 1.31 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -66,8 +66,7 @@ FXIMPLEMENT(FXBMPIcon,FXIcon,NULL,0)
 
 
 // Initialize nicely
-FXBMPIcon::FXBMPIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):
-  FXIcon(a,NULL,clr,opts,w,h){
+FXBMPIcon::FXBMPIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):FXIcon(a,NULL,clr,opts,w,h){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
@@ -79,18 +78,22 @@ FXBMPIcon::FXBMPIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FX
 
 // Save object to stream
 FXbool FXBMPIcon::savePixels(FXStream& store) const {
-  if(!fxsaveBMP(store,data,width,height)) return FALSE;
-  return TRUE;
+  if(fxsaveBMP(store,data,width,height)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load object from stream
 FXbool FXBMPIcon::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){ FXFREE(&data); }
-  if(!fxloadBMP(store,data,width,height)) return FALSE;
-  if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadBMP(store,pixels,w,h)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

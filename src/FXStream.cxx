@@ -3,7 +3,7 @@
 *       P e r s i s t e n t   S t o r a g e   S t r e a m   C l a s s e s       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 * TnFOX Extensions (C) 2003, 2004 Niall Douglas                                 *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
@@ -86,7 +86,7 @@ FXStream::FXStream(const FXObject *cont){
   endptr=NULL;
   wrptr=NULL;
   rdptr=NULL;
-  pos=0;
+  pos=0L;
   dir=FXStreamDead;
   code=FXStreamOK;
   seq=0x80000000;
@@ -321,7 +321,6 @@ FXStream& FXStream::operator<<(const FXdouble &_v)
 	return *this;
 }
 
-#ifdef FX_LONG
 FXStream& FXStream::operator<<(const FXulong &_v)
 {
 	FXulong v=_v;
@@ -329,7 +328,6 @@ FXStream& FXStream::operator<<(const FXulong &_v)
 	dev->writeBlock((char *) &v,8);
 	return *this;
 }
-#endif
 
 FXStream& FXStream::operator<<(const char *str)
 {
@@ -400,7 +398,6 @@ FXStream& FXStream::save(const FXdouble* p,unsigned long n){
   return *this;
   }
 
-#ifdef FX_LONG
 FXStream& FXStream::save(const FXulong* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(swap && n)
@@ -412,7 +409,6 @@ FXStream& FXStream::save(const FXulong* p,unsigned long n){
   dev->writeBlock((char *) p,n<<3);
   return *this;
   }
-#endif
 
 
 /*****************************  Load Basic Types  ******************************/
@@ -448,13 +444,11 @@ FXStream& FXStream::operator>>(FXdouble& v){
   return *this;
   }
 
-#ifdef FX_LONG
 FXStream& FXStream::operator>>(FXulong& v){
   if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap){swap8(&v);}
   return *this;
   }
-#endif
 
 FXStream& FXStream::operator>>(bool& v){
   int _v=dev->getch();
@@ -500,14 +494,12 @@ FXStream& FXStream::load(FXdouble* p,unsigned long n){
   return *this;
   }
 
-#ifdef FX_LONG
 FXStream& FXStream::load(FXulong* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap&&n){do{swap8(p++);}while(--n);}
   return *this;
   }
-#endif
 
 
 /*********************************  Add Object  ********************************/

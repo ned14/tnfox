@@ -3,7 +3,7 @@
 *                        C U R   C u r s o r    O b j e c t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 by Sander Jansen.   All Rights Reserved.              *
+* Copyright (C) 2001,2005 by Sander Jansen.   All Rights Reserved.              *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCURCursor.cpp,v 1.19 2004/11/10 16:22:05 fox Exp $                     *
+* $Id: FXCURCursor.cpp,v 1.21 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -75,17 +75,21 @@ FXCURCursor::FXCURCursor(FXApp* a,const void *pix):FXCursor(a,NULL,0,0,0,0){
 
 // Save pixel data only, in CUR format
 FXbool FXCURCursor::savePixels(FXStream& store) const {
-  if(!fxsaveICO(store,data,width,height,hotx,hoty)) return FALSE;
-  return TRUE;
+  if(fxsaveICO(store,data,width,height,hotx,hoty)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load cursor mask and image
 FXbool FXCURCursor::loadPixels(FXStream & store){
   if(options&CURSOR_OWNED){FXFREE(&data);}
-  if(!fxloadICO(store,data,width,height,hotx,hoty)) return FALSE;
-  options|=CURSOR_OWNED;
-  return TRUE;
+  if(fxloadICO(store,data,width,height,hotx,hoty)){
+    options|=CURSOR_OWNED;
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

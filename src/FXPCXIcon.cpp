@@ -3,7 +3,7 @@
 *                        P C X   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2004 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPCXIcon.cpp,v 1.20 2004/11/10 16:22:05 fox Exp $                       *
+* $Id: FXPCXIcon.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -64,8 +64,7 @@ FXIMPLEMENT(FXPCXIcon,FXIcon,NULL,0)
 
 
 // Initialize nicely
-FXPCXIcon::FXPCXIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):
-  FXIcon(a,NULL,clr,opts,w,h){
+FXPCXIcon::FXPCXIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):FXIcon(a,NULL,clr,opts,w,h){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
@@ -74,20 +73,25 @@ FXPCXIcon::FXPCXIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FX
     }
   }
 
+
 // Save object to stream
 FXbool FXPCXIcon::savePixels(FXStream& store) const {
-  if(!fxsavePCX(store,data,width,height)) return FALSE;
-  return TRUE;
+  if(fxsavePCX(store,data,width,height)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load object from stream
 FXbool FXPCXIcon::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){ FXFREE(&data); }
-  if(!fxloadPCX(store,data,width,height)) return FALSE;
-  if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadPCX(store,pixels,w,h)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
@@ -96,4 +100,3 @@ FXPCXIcon::~FXPCXIcon(){
   }
 
 }
-

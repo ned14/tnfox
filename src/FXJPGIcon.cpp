@@ -3,7 +3,7 @@
 *                         J P E G   I c o n   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2004 by David Tyree.   All Rights Reserved.                *
+* Copyright (C) 2000,2005 by David Tyree.   All Rights Reserved.                *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXJPGIcon.cpp,v 1.20 2004/11/10 16:22:05 fox Exp $                       *
+* $Id: FXJPGIcon.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -65,9 +65,7 @@ const FXbool FXJPGIcon::supported=FALSE;
 
 
 // Initialize
-FXJPGIcon::FXJPGIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):
-  FXIcon(a,NULL,clr,opts,w,h){
-  quality=75;
+FXJPGIcon::FXJPGIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FXint h):FXIcon(a,NULL,clr,opts,w,h),quality(75){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
@@ -79,18 +77,22 @@ FXJPGIcon::FXJPGIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FX
 
 // Save pixels only
 FXbool FXJPGIcon::savePixels(FXStream& store) const {
-  if(!fxsaveJPG(store,data,width,height,quality)) return FALSE;
-  return TRUE;
+  if(fxsaveJPG(store,data,width,height,quality)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load pixels only
 FXbool FXJPGIcon::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){ FXFREE(&data); }
-  if(!fxloadJPG(store,data,width,height,quality)) return FALSE;
-  if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadJPG(store,pixels,w,h,quality)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
+    return TRUE;
+    }
+  return FALSE;
   }
 
 

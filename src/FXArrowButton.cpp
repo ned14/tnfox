@@ -3,7 +3,7 @@
 *                     A r r o w   B u t t o n    O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXArrowButton.cpp,v 1.44 2004/10/07 17:13:49 fox Exp $                   *
+* $Id: FXArrowButton.cpp,v 1.45 2005/01/16 16:06:06 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"

@@ -3,7 +3,7 @@
 *                     A p p l i c a t i o n   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * Major Contributions for Windows NT by Lyle Johnson                            *
 *********************************************************************************
@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.486 2004/11/10 16:22:05 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.507 2005/02/01 04:10:23 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -746,6 +746,7 @@ void FXEventLoop::requestAsyncRecalc(FXWindow *what)
 
 // Map
 FXDEFMAP(FXApp) FXAppMap[]={
+  FXMAPFUNC(SEL_TIMEOUT,FXApp::ID_HOVER,FXApp::onCmdHover),
   FXMAPFUNC(SEL_TIMEOUT,FXApp::ID_QUIT,FXApp::onCmdQuit),
   FXMAPFUNC(SEL_SIGNAL,FXApp::ID_QUIT,FXApp::onCmdQuit),
   FXMAPFUNC(SEL_CHORE,FXApp::ID_QUIT,FXApp::onCmdQuit),
@@ -850,6 +851,10 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   wmNetState=0;
   wmNetHMaximized=0;
   wmNetVMaximized=0;
+
+  embedAtom=0;                            // XEMBED support
+  embedInfoAtom=0;                        // XEMBED info support
+  timestampAtom=0;                        // Server time
 
   // DDE
   ddeTargets=0;                           // Data exchange to get list of types
@@ -970,6 +975,8 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   selbackColor=FXRGB(10,36,106);
   tipforeColor=FXRGB(0,0,0);
   tipbackColor=FXRGB(255,255,225);
+  selMenuTextColor=FXRGB(255,255,255);
+  selMenuBackColor=FXRGB(10,36,106);
 
   // Pointer to FXApp
   app=this;
@@ -1043,7 +1050,6 @@ static int xfatalerrorhandler(Display*){
 #endif
 
 /*******************************************************************************/
-
 
 // Open the display
 FXbool FXApp::openDisplay(const FXchar* dpyname){
@@ -1150,6 +1156,11 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
     wmNetHMaximized=XInternAtom((Display*)display,"_NET_WM_STATE_MAXIMIZED_HORZ",0);
     wmNetVMaximized=XInternAtom((Display*)display,"_NET_WM_STATE_MAXIMIZED_VERT",0);
 
+    // XEMBED support
+    embedAtom=XInternAtom((Display*)display,"_XEMBED",0);
+    embedInfoAtom=XInternAtom((Display*)display,"_XEMBED_INFO",0);
+    timestampAtom=XInternAtom((Display*)display,"FOX_TIMESTAMP_PROP",0);
+
     // DDE property
     ddeAtom=(FXID)XInternAtom((Display*)display,"_FOX_DDE",0);
     ddeDelete=(FXID)XInternAtom((Display*)display,"DELETE",0);
@@ -1246,7 +1257,6 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
     // Register our child window classes
     WNDCLASSEX wndclass;
 
-
     // Child window
     wndclass.cbSize=sizeof(WNDCLASSEX);
     wndclass.style=CS_HREDRAW|CS_VREDRAW;     // Set to 0 for bit_gravity
@@ -1262,7 +1272,6 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
     wndclass.lpszMenuName=NULL;
     wndclass.lpszClassName="FXWindow";
     RegisterClassEx(&wndclass);
-
 
     // Top window class
     wndclass.cbSize=sizeof(WNDCLASSEX);
@@ -1282,7 +1291,6 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
     wndclass.lpszClassName="FXTopWindow";
     RegisterClassEx(&wndclass);
 
-
     // OpenGL window class
     wndclass.cbSize=sizeof(WNDCLASSEX);
     wndclass.style=CS_HREDRAW|CS_VREDRAW|CS_OWNDC;   // Redraw all when resized, OWNER DC for speed
@@ -1297,7 +1305,6 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
     wndclass.lpszMenuName=NULL;
     wndclass.lpszClassName="FXGLCanvas";
     RegisterClassEx(&wndclass);
-
 
     // Popup window class
     wndclass.cbSize=sizeof(WNDCLASSEX);
@@ -1814,6 +1821,33 @@ r:if(mode&INPUT_READ){
 /*******************************************************************************/
 
 
+// Generate SEL_LEAVE
+void FXEventLoop::leaveWindow(FXWindow *window,FXWindow *ancestor){
+  if(window && window->getParent() && window!=ancestor){
+    event.type=SEL_LEAVE;
+    window->translateCoordinatesFrom(event.win_x,event.win_y,root,event.root_x,event.root_y);
+    if(window->handle(this,FXSEL(SEL_LEAVE,0),&event)) refresh();
+    cursorWindow=window->getParent();
+    leaveWindow(window->getParent(),ancestor);
+    }
+  }
+
+
+// Generate SEL_ENTER
+void FXEventLoop::enterWindow(FXWindow *window,FXWindow *ancestor){
+  if(window && window->getParent() && window!=ancestor){
+    enterWindow(window->getParent(),ancestor);
+    event.type=SEL_ENTER;
+    window->translateCoordinatesFrom(event.win_x,event.win_y,root,event.root_x,event.root_y);
+    cursorWindow=window;
+    if(window->handle(this,FXSEL(SEL_ENTER,0),&event)) refresh();
+    }
+  }
+
+
+/*******************************************************************************/
+
+
 #ifndef WIN32
 
 
@@ -1962,10 +1996,7 @@ FXbool FXEventLoop::doIdleProcessing()
         }
       else{
         while(refresher->getParent()){
-          if(refresher->getNext()){
-            refresher=refresher->getNext();
-            break;
-            }
+          if(refresher->getNext()){refresher=refresher->getNext();break;}
           refresher=refresher->getParent();
           }
         }
@@ -2322,7 +2353,7 @@ FXbool FXEventLoop::peekEventI(){
 
 // Dispatch event to widget
 FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
-  FXWindow *window;
+  FXWindow *window,*ancestor;
   char      buf[20];
   KeySym    sym;
   Atom      answer;
@@ -2547,17 +2578,29 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
 
       // Crossing
       case EnterNotify:
-      case LeaveNotify:
         event.time=ev.xcrossing.time;
-        if(!mouseGrabWindow || mouseGrabWindow==window){
+        if(cursorWindow!=window){
           if(ev.xcrossing.mode==NotifyGrab || ev.xcrossing.mode==NotifyUngrab || (ev.xcrossing.mode==NotifyNormal && ev.xcrossing.detail!=NotifyInferior)){
-            event.type=SEL_ENTER+ev.xany.type-EnterNotify;
-            event.win_x=ev.xcrossing.x;
-            event.win_y=ev.xcrossing.y;
+            ancestor=FXWindow::commonAncestor(window,cursorWindow);
             event.root_x=ev.xcrossing.x_root;
             event.root_y=ev.xcrossing.y_root;
             event.code=ev.xcrossing.mode;
-            if(window->handle(this,FXSEL(event.type,0),&event)) refresh();
+            leaveWindow(cursorWindow,ancestor);
+            enterWindow(window,ancestor);
+            }
+          }
+        return TRUE;
+
+      // Crossing
+      case LeaveNotify:
+        event.time=ev.xcrossing.time;
+        if(cursorWindow==window){
+          if(ev.xcrossing.mode==NotifyGrab || ev.xcrossing.mode==NotifyUngrab || (ev.xcrossing.mode==NotifyNormal && ev.xcrossing.detail!=NotifyInferior)){
+            event.root_x=ev.xcrossing.x_root;
+            event.root_y=ev.xcrossing.y_root;
+            event.code=ev.xcrossing.mode;
+            FXASSERT(cursorWindow==window);
+            leaveWindow(window,window->getParent());
             }
           }
         return TRUE;
@@ -2759,7 +2802,7 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         // XDND Enter from source
         else if(ev.xclient.message_type==app->xdndEnter){
           FXint ver=(ev.xclient.data.l[1]>>24)&255;
-          FXTRACE((100,"DNDEnter from remote window %ld\n",ev.xclient.data.l[0]));
+          FXTRACE((100,"DNDEnter from remote window %ld (ver %d)\n",ev.xclient.data.l[0],ver));
           if(ver>XDND_PROTOCOL_VERSION) return TRUE;
           app->xdndSource=ev.xclient.data.l[0];                                  // Now we're talking to this guy
           if(app->ddeTypeList){FXFREE(&app->ddeTypeList);app->ddeNumTypes=0;}
@@ -2865,6 +2908,7 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
           if(dropWindow){
             event.type=SEL_DND_DROP;
             event.time=ev.xclient.data.l[2];
+            // Target performs the action last confirmed in the status message
             if(dropWindow->handle(this,FXSEL(SEL_DND_DROP,0),&event)){
               se.xclient.data.l[1]|=1;                              // Drop was accepted (bit #0)
               if(app->ansAction==DRAG_COPY) se.xclient.data.l[2]=app->xdndActionCopy;             // Action performed by target
@@ -2873,10 +2917,11 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
               else if(app->ansAction==DRAG_PRIVATE) se.xclient.data.l[2]=app->xdndActionPrivate;
               refresh();
               }
-            dropWindow=NULL;
             }
+          // Send DND Finish
           XSendEvent((Display*)display,app->xdndSource,True,NoEventMask,&se);
           if(app->ddeTypeList){FXFREE(&app->ddeTypeList);app->ddeNumTypes=0;}
+          dropWindow=NULL;
           app->xdndSource=0;
           }
 
@@ -2907,13 +2952,16 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
       // Property change
       case PropertyNotify:
         event.time=ev.xproperty.time;
-//         {char* atomname=XGetAtomName((Display*)display,ev.xproperty.atom);
-//         FXTRACE((100,"PropertyNotify %s\n",atomname));
-//         XFree(atomname);
-//         }
-//         if(ev.xproperty.atom==wmState){
-//           FXTRACE((100,"Window State Change\n"));
-//           }
+//{char* atomname=XGetAtomName((Display*)display,ev.xproperty.atom);
+//FXTRACE((100,"PropertyNotify %s\n",atomname));
+//XFree(atomname);
+//}
+        if(ev.xproperty.atom==wmState){
+          FXTRACE((100,"Window wmState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));
+          }
+        if(ev.xproperty.atom==wmNetState){
+          FXTRACE((100,"Window wmNetState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));
+          }
         return TRUE;
 
       // Keyboard mapping
@@ -3299,6 +3347,35 @@ void FXEventLoop::stopModal(FXint value){
   }
 
 
+// Obtain system color and translate to FXColor
+#ifdef WIN32
+static FXColor getSystemColor(FXuint which){
+  DWORD dwColor=GetSysColor(which);
+  return FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
+  }
+#endif
+
+
+// Obtain system font and translate to FXFontDesc
+#ifdef WIN32
+static void getSystemFont(FXFontDesc& fontdesc){
+  NONCLIENTMETRICS ncm;
+  ncm.cbSize=sizeof(NONCLIENTMETRICS);
+  SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(NONCLIENTMETRICS),&ncm,0);
+  strncpy(fontdesc.face,ncm.lfMenuFont.lfFaceName,sizeof(fontdesc.face));
+  fontdesc.face[sizeof(fontdesc.face)-1]='\0';
+  HDC hDC=CreateCompatibleDC(NULL);
+  fontdesc.size=-10*MulDiv(ncm.lfMenuFont.lfHeight,72,GetDeviceCaps(hDC,LOGPIXELSY));
+  DeleteDC(hDC);
+  fontdesc.weight=ncm.lfMenuFont.lfWeight;
+  fontdesc.slant=ncm.lfMenuFont.lfItalic?FONTSLANT_ITALIC:FONTSLANT_REGULAR;
+  fontdesc.encoding=FONTENCODING_DEFAULT;
+  fontdesc.setwidth=FONTSETWIDTH_DONTCARE;
+  fontdesc.flags=0;
+  }
+#endif
+
+
 // Initialize application
 void FXApp::init(int& argc,char** argv,FXbool connect){
   const FXchar *fontspec,*d;
@@ -3314,6 +3391,8 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
   FXASSERT(sizeof(FXuint)==4);
   FXASSERT(sizeof(FXwchar)==4);
   FXASSERT(sizeof(FXint)==4);
+  FXASSERT(sizeof(FXulong)==8);
+  FXASSERT(sizeof(FXlong)==8);
   FXASSERT(sizeof(FXfloat)==4);
   FXASSERT(sizeof(FXdouble)==8);
   FXASSERT(sizeof(FXival)==sizeof(void*));
@@ -3322,12 +3401,6 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
   FXASSERT(sizeof(HWND)==sizeof(FXID));
 #else
   FXASSERT(sizeof(Window)==sizeof(FXID));
-#endif
-
-  // Long is not always available on all implementations
-#ifdef FX_LONG
-  FXASSERT(sizeof(FXulong)==8);
-  FXASSERT(sizeof(FXlong)==8);
 #endif
 
   // Check arguments
@@ -3443,46 +3516,37 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
 #ifdef WIN32
 
   // Get font face and metrics
-  NONCLIENTMETRICS ncm;
   FXFontDesc fontdesc;
-  ncm.cbSize=sizeof(NONCLIENTMETRICS);
-  SystemParametersInfo(SPI_GETNONCLIENTMETRICS,sizeof(NONCLIENTMETRICS),&ncm,0);
-  strncpy(fontdesc.face,ncm.lfMenuFont.lfFaceName,sizeof(fontdesc.face));
-  fontdesc.face[sizeof(fontdesc.face)-1]='\0';
-  HDC hDC=CreateCompatibleDC(NULL);
-  fontdesc.size=-10*MulDiv(ncm.lfMenuFont.lfHeight,72,GetDeviceCaps(hDC,LOGPIXELSY));
-  DeleteDC(hDC);
-  fontdesc.weight=ncm.lfMenuFont.lfWeight;
-  fontdesc.slant=ncm.lfMenuFont.lfItalic?FONTSLANT_ITALIC:FONTSLANT_REGULAR;
-  fontdesc.encoding=FONTENCODING_DEFAULT;
-  fontdesc.setwidth=FONTSETWIDTH_DONTCARE;
-  fontdesc.flags=0;
-
-  // Set new font
+  getSystemFont(fontdesc);
   normalFont->setFontDesc(fontdesc);
 
-  // Init colors
-  DWORD dwColor;
-  dwColor=GetSysColor(COLOR_3DFACE);
-  baseColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_3DHILIGHT);
-  hiliteColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_3DSHADOW);
-  shadowColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_WINDOW);
-  backColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_WINDOWFRAME);
-  borderColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_BTNTEXT);
-  foreColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_HIGHLIGHTTEXT);
-  selforeColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_HIGHLIGHT);
-  selbackColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_INFOTEXT);
-  tipforeColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
-  dwColor=GetSysColor(COLOR_INFOBK);
-  tipbackColor=FXRGB(GetRValue(dwColor),GetGValue(dwColor),GetBValue(dwColor));
+  // Read colors from system
+  baseColor=getSystemColor(COLOR_3DFACE);
+  hiliteColor=getSystemColor(COLOR_3DHILIGHT);
+  shadowColor=getSystemColor(COLOR_3DSHADOW);
+  backColor=getSystemColor(COLOR_WINDOW);
+  borderColor=getSystemColor(COLOR_WINDOWFRAME);
+  foreColor=getSystemColor(COLOR_BTNTEXT);
+  selforeColor=getSystemColor(COLOR_HIGHLIGHTTEXT);
+  selbackColor=getSystemColor(COLOR_HIGHLIGHT);
+  tipforeColor=getSystemColor(COLOR_INFOTEXT);
+  tipbackColor=getSystemColor(COLOR_INFOBK);
+
+  // Windows XP or later
+  OSVERSIONINFO osvi={sizeof(OSVERSIONINFO)};
+  GetVersionEx((OSVERSIONINFO*)&osvi);
+
+  // Flat looking menus
+//  if((osvi.dwMajorVersion>5) || (osvi.dwMajorVersion==5 && osvi.dwMinorVersion>=1)){	// FIXME
+//    selMenuTextColor=getSystemColor(COLOR_HIGHLIGHT);
+//    selMenuBackColor=getSystemColor(COLOR_MENUHILIGHT);
+//    //selMenuBackColor=getSystemColor(COLOR_MENUTEXT);		// Menu text
+//    //selMenuBackColor=getSystemColor(COLOR_MENU);		// Menu background
+//    }
+//  else{
+    selMenuTextColor=getSystemColor(COLOR_HIGHLIGHTTEXT);
+    selMenuBackColor=getSystemColor(COLOR_HIGHLIGHT);
+//    }
 
   // Get wheel lines
   SystemParametersInfo(SPI_GETWHEELSCROLLLINES,0,&wheelLines,0);
@@ -3519,6 +3583,8 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
   selbackColor=registry.readColorEntry("SETTINGS","selbackcolor",selbackColor);
   tipforeColor=registry.readColorEntry("SETTINGS","tipforecolor",tipforeColor);
   tipbackColor=registry.readColorEntry("SETTINGS","tipbackcolor",tipbackColor);
+  selMenuTextColor=registry.readColorEntry("SETTINGS","selmenutextcolor",selforeColor); // For backward compatibility
+  selMenuBackColor=registry.readColorEntry("SETTINGS","selmenubackcolor",selbackColor);
 
   // Maximum number of colors to allocate
   maxcolors=registry.readUnsignedEntry("SETTINGS","maxcolors",maxcolors);
@@ -3530,7 +3596,11 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
   // Motif applications which don't handle color allocation gracefully.
   getRootWindow()->getVisual()->setMaxColors(maxcolors);
 
-  // Open display
+  // Open display; this also applies any system-defined settings.
+  // We only override settings if NOT set from our own registry, since
+  // it is possible that we don't open the display until later, so we
+  // can't simply overwrite system-defined settings after opening the
+  // display here.
   if(connect){
     if(!openDisplay(dpy)){
       fxwarning("%s::openDisplay: unable to open display %s\n",getClassName(),dpy);
@@ -3681,6 +3751,30 @@ void FXApp::destroy(){
   }
 
 
+// Generates SEL_LEAVE event when cursor is not inside ancestor of
+// cursorWindow anymore. Note that cursor may still be phyisally inside
+// the borders of the cursorWindow's shell but is considered outside if
+// another window obscures it.  This mechanism replaces the dysfunctional
+// and unreliable TrackMouseEvent method.
+long FXApp::onCmdHover(FXObject*,FXSelector,void*){
+  FXEventLoop *me=FXApp::instance()->getEventLoop();
+  FXint x,y; FXuint buttons;
+  FXWindow *window;
+  if(!me->mouseGrabWindow && me->cursorWindow && me->cursorWindow!=me->root){
+    me->root->getCursorPosition(x,y,buttons);
+    if((window=findWindowAt(x,y))==NULL || !window->getShell()->containsChild(me->cursorWindow)){
+      me->event.type=SEL_LEAVE;
+      me->event.root_x=x;
+      me->event.root_y=y;
+      me->leaveWindow(me->cursorWindow,me->root);
+      return 0;
+      }
+    }
+  me->addTimeout(this,ID_HOVER,200);
+  return 0;
+  }
+
+
 #ifdef WIN32
 
 // This window procedure is a static member function of class FXApp.
@@ -3703,49 +3797,12 @@ long CALLBACK FXEventLoop::wndproc(FXID hwnd,unsigned int iMsg,unsigned int wPar
 #endif
 
 
-// Generate SEL_LEAVE for windows wnd and its ancestors; note that the
-// LEAVE events are generated in the order from child to parent
-void FXEventLoop::leaveWindow(FXWindow *win,FXWindow *anc){
-  POINT pt;
-  DWORD dwpts;
-  if(!win || !win->getParent() || win==anc) return;
-  event.type=SEL_LEAVE;
-  dwpts=GetMessagePos();
-  event.root_x=pt.x=((int)(short)LOWORD(dwpts));
-  event.root_y=pt.y=((int)(short)HIWORD(dwpts));
-  ScreenToClient((HWND)win->id(),&pt);
-  event.win_x=pt.x;
-  event.win_y=pt.y;
-  win->handle(this,FXSEL(SEL_LEAVE,0),&event);
-  leaveWindow(win->getParent(),anc);
-  }
-
-
-// Generate SEL_ENTER for windows and its ancestors; note that the
-// ENTER events are generated in the order from parent to child
-void FXEventLoop::enterWindow(FXWindow *win,FXWindow *anc){
-  POINT pt;
-  DWORD dwpts;
-  if(!win || !win->getParent() || win==anc) return;
-  enterWindow(win->getParent(),anc);
-  event.type=SEL_ENTER;
-  dwpts=GetMessagePos();
-  event.root_x=pt.x=((int)(short)LOWORD(dwpts));
-  event.root_y=pt.y=((int)(short)HIWORD(dwpts));
-  ScreenToClient((HWND)win->id(),&pt);
-  event.win_x=pt.x;
-  event.win_y=pt.y;
-  win->handle(this,FXSEL(SEL_ENTER,0),&event);
-  }
-
 
 #define GETFOXWINDOW(hwnd) (((hwnd)&&IsWindow((HWND)(hwnd)))?(FXWindow*)GetWindowLong((HWND)(hwnd),0):NULL)
 
 // Message dispatching
 long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,long lParam){
-  FXWindow *window,*oldwindow,*ancestor,*win;
-  BOOL curinside,oldinside;
-  TRACKMOUSEEVENT tme;
+  FXWindow *window,*ancestor,*win;
   POINT ptRoot, pt;
   DWORD dwpts;
   RECT rect;
@@ -3787,45 +3844,6 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
         window->handle(this,FXSEL(SEL_PAINT,0),&event);
         EndPaint((HWND)hwnd,&ps);
         }
-/*
-      // Contributed by Daniel Gehriger <gehriger@linkcad.com>
-      hRgn=CreateRectRgn(0,0,0,0);
-      if(hRgn==NULL) return 0;
-      switch(GetUpdateRgn((HWND)hwnd,hRgn,FALSE)){
-        case SIMPLEREGION:
-          GetRgnBox(hRgn,&rect);
-          event.type=SEL_PAINT;
-          event.synthetic=1;
-          BeginPaint((HWND)hwnd,&ps);
-          event.rect.h=(FXshort)(rect.bottom-rect.top);
-          window->handle(this,FXSEL(SEL_PAINT,0),&event);
-          EndPaint((HWND)hwnd,&ps);
-          break;
-        case COMPLEXREGION:
-          dwCount=GetRegionData(hRgn,0,NULL);
-          pRgnData=NULL;
-          FXMALLOC(&pRgnData,BYTE,dwCount);
-          if(pRgnData && GetRegionData(hRgn,dwCount,pRgnData)==dwCount){
-            event.type=SEL_PAINT;
-            event.synthetic=1;
-            BeginPaint((HWND)hwnd,&ps);
-            for(DWORD i=0; i<pRgnData->rdh.nCount; ++i){
-              LPRECT pRect=(LPRECT)(pRgnData->Buffer)+i;
-              event.rect.x=(FXshort)pRect->left;
-              event.rect.y=(FXshort)pRect->top;
-              event.rect.w=(FXshort)(pRect->right-pRect->left);
-              event.rect.h=(FXshort)(pRect->bottom-pRect->top);
-              window->handle(this,FXSEL(SEL_PAINT,0),&event);
-              }
-            EndPaint((HWND)hwnd,&ps);
-            }
-          FXFREE(&pRgnData);
-          break;
-        default: // NULLREGION or ERROR
-          break;
-        }
-      DeleteObject(hRgn);
-*/
       return 0;
 
     // Keyboard
@@ -3845,7 +3863,7 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
       event.state=fxmodifierkeys();
 
       // Translate to keysym
-      event.code=wkbMapKeyCode((HWND)hwnd,iMsg,wParam,lParam);// FIXME not all codes match with those of X11
+      event.code=wkbMapKeyCode(iMsg,wParam,lParam);// FIXME not all codes match with those of X11
 
       // Translate to string on KeyPress
       uScanCode=HIWORD(lParam)&(KF_EXTENDED|KF_UP|0xff);
@@ -3892,96 +3910,6 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
     case WM_CAPTURECHANGED:
       //FXTRACE((100,"WM_CAPTURECHANGED\n"));
       return 0;
-/*
-      event.time=GetMessageTime();
-      // When the mouseGrabWindow looses the capture, generate a LEAVE event on it,
-      // and determine if the window under the cursor location, if any, and
-      // generate a ENTER event on it if it's one of our own windows.
-      // Of course, start TrackMouseEvent again for this window!
-      if(NULL==((HWND)lParam)){
-        //FXTRACE((100,"capture lost\n"));
-        oldhwnd=(HWND)hwnd;
-        oldwindow=window;
-        dwpts=GetMessagePos();
-        pt.x=((int)(short)LOWORD(dwpts));
-        pt.y=((int)(short)HIWORD(dwpts));
-        hwnd=WindowFromPoint(pt);
-        if(hwnd && (hwnd==oldhwnd || IsChild((HWND)window->getShell()->id(),(HWND)hwnd))){
-          window=GETFOXWINDOW(hwnd);
-          ancestor=FXWindow::commonAncestor(window,oldwindow);
-          event.code=CROSSINGUNGRAB;
-          leaveWindow(oldwindow,ancestor);
-          enterWindow(window,ancestor);
-          oldhwnd=(HWND)hwnd;
-          }
-        else{
-          event.code=CROSSINGUNGRAB;
-          leaveWindow(oldwindow,root);
-          oldhwnd=0;
-          }
-        refresh();
-        }
-      // When the mouseGrabWindow gains the capture [we fake a WM_CAPTURECHANGED by
-      // calling SetCapture twice], we need to generate LEAVE events on the
-      // old window, if we had one.
-      // Either way, we generate ENTER events on the window just captured.
-      else if(hwnd==((HWND)lParam)){
-        //FXTRACE((100,"capture gained\n"));
-        if(oldhwnd && oldhwnd!=hwnd){
-          oldwindow=GETFOXWINDOW(oldhwnd);
-          ancestor=FXWindow::commonAncestor(window,oldwindow);
-          event.code=CROSSINGGRAB;
-          leaveWindow(oldwindow,ancestor);
-          enterWindow(window,ancestor);
-          refresh();
-          }
-        else{
-          event.code=CROSSINGGRAB;
-          enterWindow(window,root);
-          refresh();
-          }
-        oldhwnd=(HWND)hwnd;
-        }
-      // When the capture is transferred between two windows, we generate a LEAVE
-      // on the old window and an ENTER on the new one; the latter is actually done
-      // in the previous branch, because FOX calls SetCapture twice!
-      else{
-        //FXTRACE((100,"capture transferred\n"));
-        oldhwnd=(HWND)hwnd;
-        oldwindow=window;
-        event.code=CROSSINGGRAB;
-        leaveWindow(oldwindow,root);// We shouldn't leave all the way...
-        oldhwnd=0;
-        refresh();
-        }
-      return 0;
-*/
-
-    // TrackMouseEvent
-    case WM_MOUSELEAVE:
-      //FXTRACE((100,"WM_MOUSELEAVE hwnd=%d x=%d y=%d \n",hwnd,event.root_x,event.root_y));
-      // If we're still in a window, determine if the cursor is in some
-      // other inferior window of this window's shell.  If not, that means
-      // we left the shell and generate one final LEAVE event.
-      // We do not generate LEAVE events here when moving between inferiors
-      // because these WM_MOUSELEAVE events are generated out of sequence,
-      // i.e. we will have received an WM_MOUSEMOVE on the new window prior
-      // to receiving a WM_MOUSELEAVE on the old window, which is bad!
-      if(oldhwnd){
-        dwpts=GetMessagePos();
-        pt.x=((int)(short)LOWORD(dwpts));
-        pt.y=((int)(short)HIWORD(dwpts));
-        hwnd=WindowFromPoint(pt);
-        if(!hwnd || (window->getShell()->id()!=hwnd && !IsChild((HWND)window->getShell()->id(),(HWND)hwnd))){
-          //FXTRACE((100,"mouse leave %08x\n",window));
-          event.time=GetMessageTime();
-          event.code=CROSSINGNORMAL;
-          leaveWindow(window,root);
-          oldhwnd=0;
-          refresh();
-          }
-        }
-      return 0;
 
     // Motion
     case WM_MOUSEMOVE:
@@ -3995,6 +3923,9 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
 
       //FXTRACE((100,"WM_MOUSEMOVE hwnd=%d x=%d y=%d \n",hwnd,event.root_x,event.root_y));
 
+      // Reset hover timer
+	  addTimeout(this,FXApp::ID_HOVER,200);
+
       // Set moved flag
       if((FXABS(event.root_x-event.rootclick_x)>=app->dragDelta) || (FXABS(event.root_y-event.rootclick_y)>=app->dragDelta)) event.moved=1;
 
@@ -4002,43 +3933,24 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
       if(mouseGrabWindow){
 
         // Translate to grab window's coordinate system
-        window->translateCoordinatesTo(event.win_x,event.win_y,mouseGrabWindow,pt.x,pt.y);
+        root->translateCoordinatesTo(event.win_x,event.win_y,mouseGrabWindow,event.root_x,event.root_y);
 
         // Moved out of/into rectangle of grabbed window
-        GetClientRect((HWND)mouseGrabWindow->id(),&rect);
-        curinside=(0<=event.win_x && event.win_x<rect.right && 0<=event.win_y && event.win_y<rect.bottom);
-        oldinside=(0<=event.last_x && event.last_x<rect.right && 0<=event.last_y && event.last_y<rect.bottom);
-
-        // Crossed window boundary
-        if(curinside!=oldinside){
-          if(curinside){
-            event.type=SEL_ENTER;
-            event.code=CROSSINGNORMAL;
-            if(mouseGrabWindow->handle(this,FXSEL(SEL_ENTER,0),&event)) refresh();
-            }
-          else{
-            event.type=SEL_LEAVE;
-            event.code=CROSSINGNORMAL;
-            if(mouseGrabWindow->handle(this,FXSEL(SEL_LEAVE,0),&event)) refresh();
-            }
+        if(0<=event.win_x && event.win_x<mouseGrabWindow->getWidth() && 0<=event.win_y && event.win_y<mouseGrabWindow->getHeight()){
+          window=mouseGrabWindow;
+          }
+        else{
+          window=mouseGrabWindow->getParent();
           }
         }
 
-      // Not grabbed
-      else{
-        if(hwnd!=oldhwnd){
-          if(oldhwnd){
-            oldwindow=findWindowWithId(oldhwnd);
-            ancestor=FXWindow::commonAncestor(window,oldwindow);
-            event.code=CROSSINGNORMAL;
-            leaveWindow(oldwindow,ancestor);
-            enterWindow(window,ancestor);
-            }
-          else{
-            enterWindow(window,root);
-            }
-          refresh();
-          }
+      // Switched windows
+      if(cursorWindow!=window){
+        ancestor=FXWindow::commonAncestor(window,cursorWindow);
+        event.code=CROSSINGNORMAL;
+        leaveWindow(cursorWindow,ancestor);
+        enterWindow(window,ancestor);
+        refresh();
         }
 
       // Suppress spurious `tickling' motion events
@@ -4048,7 +3960,7 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
       if(mouseGrabWindow){
 
         // Translate to grab window's coordinate system
-        window->translateCoordinatesTo(event.win_x,event.win_y,mouseGrabWindow,pt.x,pt.y);
+        root->translateCoordinatesTo(event.win_x,event.win_y,mouseGrabWindow,event.root_x,event.root_y);
 
         // Set event data
         event.type=SEL_MOTION;
@@ -4076,22 +3988,6 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
       // Update most recent mouse position
       event.last_x=pt.x;
       event.last_y=pt.y;
-
-      // Set TrackMouseEvent on each window we enter, so we'll be notified when
-      // we depart this window, because we will not know when we get the last
-      // move event!
-      if(oldhwnd!=hwnd){
-        tme.cbSize=sizeof(TRACKMOUSEEVENT);
-        tme.dwFlags=TME_LEAVE;
-        tme.hwndTrack=(HWND)hwnd;
-        tme.dwHoverTime=HOVER_DEFAULT;
-#if defined(__IBMCPP__) ||  defined(__MINGW32__) || defined(__BORLANDC__) || defined(__SC__) || defined (__WATCOMC__)
-        TrackMouseEvent(&tme);
-#else
-        _TrackMouseEvent(&tme);
-#endif
-        oldhwnd=(HWND)hwnd;
-        }
 
       // Remember this for tickling test
       lastmovehwnd=(HWND)hwnd;
@@ -4433,6 +4329,7 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
     case WM_NCLBUTTONUP:
     case WM_WINDOWPOSCHANGING:  // Leave whatever placement is suggested
     case WM_STYLECHANGED:
+    case WM_MOUSELEAVE:         // We no longer use TrackMouseEvent it is not reliable
       return DefWindowProc((HWND)hwnd,iMsg,wParam,lParam);
 
     case WM_NCACTIVATE:         // Suggestion from: Frank De prins <fdp@MCS.BE>
@@ -4442,6 +4339,13 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
     case WM_ACTIVATEAPP:        // Suggestion from: Frank De prins <fdp@MCS.BE>
       SendMessage((HWND)hwnd,WM_NCACTIVATE,wParam,123456);
       return DefWindowProc((HWND)hwnd,iMsg,wParam,lParam);
+
+    case WM_DROPFILES:
+      //char ListFileName[MAX_PATH];
+      //HDROP DropData=(HDROP)WParam;
+      //DragQueryFile(DropData,0,ListFileName,sizeof(ListFileName)-1);
+      //DragFinish(DropData);
+      break;
 
     case WM_DND_ENTER:
       FXTRACE((100,"DNDEnter from remote window %d\n",lParam));
@@ -4479,11 +4383,16 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
       if(dropWindow){
         event.type=SEL_DND_DROP;
         event.time=GetMessageTime();
-        if(dropWindow->handle(this,FXSEL(SEL_DND_DROP,0),&event)) refresh();
-        dropWindow=NULL;
+        // Target performs the action last confirmed in the status message
+        if(dropWindow->handle(this,FXSEL(SEL_DND_DROP,0),&event)){
+          PostMessage((HWND)app->xdndSource,WM_DND_FINISH_REJECT+app->ansAction,0,(LPARAM)hwnd);
+          refresh();
+          goto dengo;
+          }
         }
-      PostMessage((HWND)app->xdndSource,WM_DND_FINISH,0,(LPARAM)hwnd);
-      if(app->ddeTypeList){FXFREE(&app->ddeTypeList);app->ddeNumTypes=0;}
+      PostMessage((HWND)app->xdndSource,WM_DND_FINISH_REJECT,0,(LPARAM)hwnd);
+dengo:if(app->ddeTypeList){FXFREE(&app->ddeTypeList);app->ddeNumTypes=0;}
+      dropWindow=NULL;
       app->xdndSource=0;
       return 0;
 
@@ -4623,7 +4532,7 @@ FXbool FXApp::getKeyState(FXuint keysym) const {
   XQueryKeymap((Display*)display,keys);
   return (keys[keycode>>3]>>(keycode&7))&1;
 #else
-  return GetKeyState(keysym);
+  return GetKeyState(keysym)!=0;
 #endif
   }
 
@@ -4826,6 +4735,8 @@ void FXApp::save(FXStream& store) const {
   store << selbackColor;
   store << tipforeColor;
   store << tipbackColor;
+  store << selMenuTextColor;
+  store << selMenuBackColor;
   }
 
 
@@ -4850,6 +4761,8 @@ void FXApp::load(FXStream& store){
   store >> selbackColor;
   store >> tipforeColor;
   store >> tipbackColor;
+  store >> selMenuTextColor;
+  store >> selMenuBackColor;
   }
 
 
@@ -4977,6 +4890,20 @@ void FXApp::setTipforeColor(FXColor color){
 void FXApp::setTipbackColor(FXColor color){
   tipbackColor=color;
   registry.writeColorEntry("SETTINGS","tipbackcolor",tipbackColor);
+  }
+
+
+// Change selected menu text color
+void FXApp::setSelMenuTextColor(FXColor color){
+  selMenuTextColor=color;
+  registry.writeColorEntry("SETTINGS","selmenutextcolor",selMenuTextColor);
+  }
+
+
+// Change selected menu back color
+void FXApp::setSelMenuBackColor(FXColor color){
+  selMenuBackColor=color;
+  registry.writeColorEntry("SETTINGS","selmenubackcolor",selMenuBackColor);
   }
 
 

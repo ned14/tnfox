@@ -3,7 +3,7 @@
 *                       M e n u   C a p t i o n   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCaption.cpp,v 1.44 2004/09/17 07:46:21 fox Exp $                   *
+* $Id: FXMenuCaption.cpp,v 1.46 2005/01/16 16:06:07 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -101,8 +101,8 @@ FXMenuCaption::FXMenuCaption(FXComposite* p,const FXString& text,FXIcon* ic,FXui
   hotoff=fxfindHotKey(string);
   addHotKey(hotkey);
   textColor=getApp()->getForeColor();
-  seltextColor=getApp()->getSelforeColor();
-  selbackColor=getApp()->getSelbackColor();
+  seltextColor=getApp()->getSelMenuTextColor();
+  selbackColor=getApp()->getSelMenuBackColor();
   hiliteColor=getApp()->getHiliteColor();
   shadowColor=getApp()->getShadowColor();
   }

@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileStream.cpp,v 1.17 2004/09/19 20:06:05 fox Exp $                    *
+* $Id: FXFileStream.cpp,v 1.19 2005/01/16 16:06:07 fox Exp $                    *
 ********************************************************************************/
 #include "fxdefs.h"
 #include "FXFileStream.h"

@@ -3,7 +3,7 @@
 *                            T a b l e   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * Contributions from: Pierre Cyr <pcyr@po-box.mcgill.ca>                        *
 *********************************************************************************
@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.cpp,v 1.210 2004/10/28 14:37:23 fox Exp $                        *
+* $Id: FXTable.cpp,v 1.212 2005/01/16 16:06:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -34,6 +34,7 @@
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXObjectList.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXApp.h"
@@ -1547,7 +1548,7 @@ FXbool FXTable::selectRange(FXint startrow,FXint endrow,FXint startcol,FXint end
   rhi=nrhi;
   clo=nclo;
   chi=nchi;
-  
+
   // Just to be safe
   orlo=orhi=oclo=ochi=-1;
 

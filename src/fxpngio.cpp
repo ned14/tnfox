@@ -3,7 +3,7 @@
 *                         P N G    I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpngio.cpp,v 1.33 2004/09/17 07:46:22 fox Exp $                         *
+* $Id: fxpngio.cpp,v 1.35 2005/01/16 16:06:07 fox Exp $                         *
 ********************************************************************************/
 #include "fxver.h"
 #include "fxdefs.h"
@@ -45,6 +45,7 @@
 namespace FX {
 
 
+extern FXAPI FXbool fxcheckPNG(FXStream& store);
 extern FXAPI FXbool fxloadPNG(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 extern FXAPI FXbool fxsavePNG(FXStream& store,const FXColor* data,FXint width,FXint height);
 
@@ -82,6 +83,15 @@ static void user_error_fn(png_structp png_ptr,png_const_charp message){
 static void user_warning_fn(png_structp,png_const_charp message){
   //FXStream* store=(FXStream*)png_get_error_ptr(png_ptr);
   FXTRACE((100,"Warning in png: %s\n",message));
+  }
+
+
+// Check if stream contains a PNG
+FXbool fxcheckPNG(FXStream& store){
+  FXuchar signature[8];
+  store.load(signature,8);
+  store.position(-8,FXFromCurrent);
+  return signature[0]==137 && signature[1]==80 && signature[2]==78 && signature[3]==71 && signature[4]==13 && signature[5]==10 && signature[6]==26 && signature[7]==10;
   }
 
 

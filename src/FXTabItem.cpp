@@ -3,7 +3,7 @@
 *                           T a b   I t e m    W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabItem.cpp,v 1.21 2004/10/14 07:27:18 fox Exp $                       *
+* $Id: FXTabItem.cpp,v 1.23 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -274,7 +274,7 @@ long FXTabItem::onPaint(FXObject*,FXSelector,void* ptr){
       dc.setForeground(textColor);
       drawLabel(dc,label,hotoff,tx,ty,tw,th);
       if(hasFocus()){
-        dc.drawFocusRectangle(border+2,border+2,width-2*border-4,height-2*border-4);
+        dc.drawFocusRectangle(border+1,border+1,width-2*border-2,height-2*border-2);
         }
       }
     else{

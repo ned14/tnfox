@@ -3,7 +3,7 @@
 *                     I R I S   R G B   I m a g e   O b j e c t                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRGBImage.cpp,v 1.20 2004/11/10 16:22:05 fox Exp $                      *
+* $Id: FXRGBImage.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -62,13 +62,11 @@ FXIMPLEMENT(FXRGBImage,FXImage,NULL,0)
 
 
 // Initialize
-FXRGBImage::FXRGBImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
-  FXImage(a,NULL,opts,w,h){
+FXRGBImage::FXRGBImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXImage(a,NULL,opts,w,h){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
-    fxloadRGB(ms,data,width,height);
-    options|=IMAGE_OWNED;
+    loadPixels(ms);
     ms.close();
     }
   }
@@ -76,17 +74,21 @@ FXRGBImage::FXRGBImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):
 
 // Save pixel data only
 FXbool FXRGBImage::savePixels(FXStream& store) const {
-  if(!fxsaveRGB(store,data,width,height)) return FALSE;
-  return TRUE;
+  if(fxsaveRGB(store,data,width,height)){
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
 // Load pixel data only
 FXbool FXRGBImage::loadPixels(FXStream& store){
-  if(options&IMAGE_OWNED){ FXFREE(&data); }
-  if(!fxloadRGB(store,data,width,height)) return FALSE;
-  options|=IMAGE_OWNED;
-  return TRUE;
+  FXColor *pixels; FXint w,h;
+  if(fxloadRGB(store,pixels,w,h)){
+    setData(pixels,IMAGE_OWNED,w,h);
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
@@ -95,4 +97,3 @@ FXRGBImage::~FXRGBImage(){
   }
 
 }
-
