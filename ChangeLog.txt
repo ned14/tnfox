@@ -51,6 +51,9 @@ more efficient and handle multiple nested exception throws simultaneously
 a reason :)
 + Added FXException::setConstructionBreak()
 + Added FXFile::join()
++ Added FXFile::stampCreationMetadata()
++ Added #define FXREFINGOBJECT_DEBUGKNOWALLOC
+
 
 v0.80 12th July 2004:
 -=-=-=-=-=-=-=-=-=-=-
