@@ -63,6 +63,7 @@ template<typename type> class QMemArray : private std::vector<type>
 private:
 	type *extArray;
 	uint extArrayLen;
+	bool noDeleteExtArray;
 	typename std::vector<type>::const_iterator int_retIndex(const type &d) const
 	{
 		typename std::vector<type>::const_iterator it;
@@ -75,12 +76,21 @@ public:
 	typedef const type * ConstIterator;
 	typedef type ValueType;
 	//! Constructs an empty array of \em type
-	QMemArray() : extArray(0), extArrayLen(0), std::vector<type>() { }
-	~QMemArray() { delete[] extArray; extArray=0; }
+	QMemArray() : extArray(0), extArrayLen(0), noDeleteExtArray(false), std::vector<type>() { }
+	~QMemArray()
+	{
+		if(extArray && !noDeleteExtArray)
+		{
+			delete[] extArray;
+			extArray=0;
+		}
+	}
 	//! Constructs an array of \em type \em size long
-	QMemArray(FXuval size) : extArray(0), extArrayLen(0), std::vector<type>(size) { }
-	QMemArray(const QMemArray<type> &o) : extArray(o.extArray), extArrayLen(o.extArrayLen), std::vector<type>(o) { }
-	QMemArray<type> &operator=(const QMemArray<type> &o) { extArray=o.extArray; extArrayLen=o.extArrayLen; std::vector<type>::operator=(o); return *this; }
+	QMemArray(FXuval size) : extArray(0), extArrayLen(0), noDeleteExtArray(false), std::vector<type>(size) { }
+	//! Constructs an array using an external array
+	QMemArray(type *a, uint n, bool _noDeleteExtArray=true) : extArray(a), extArrayLen(n), noDeleteExtArray(_noDeleteExtArray) { }
+	QMemArray(const QMemArray<type> &o) : extArray(o.extArray), extArrayLen(o.extArrayLen), noDeleteExtArray(o.noDeleteExtArray), std::vector<type>(o) { }
+	QMemArray<type> &operator=(const QMemArray<type> &o) { extArray=o.extArray; extArrayLen=o.extArrayLen; noDeleteExtArray=o.noDeleteExtArray; std::vector<type>::operator=(o); return *this; }
 
 	using std::vector<type>::capacity;
 	//using std::vector<type>::clear;
