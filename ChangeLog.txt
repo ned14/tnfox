@@ -22,6 +22,7 @@ B FXThread wasn't setting up default nested exception handling frame causing
 fatal app exit
 B Fixed memory leak in FXTextCodecs inherited from FOX
 B Fixed occasional segfault in FXFSMonitor due to insufficient data locking
+B Fixed failure to maintain wait counts in FXWaitCondition on Win32
 
 
 * Made FXMemMap::mappedRegion() return current and following region
