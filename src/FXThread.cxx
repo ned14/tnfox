@@ -975,14 +975,12 @@ bool FXWaitCondition::wait(FXuint time)
 		if(ret==WAIT_OBJECT_0+1) FXThread::current()->checkForTerminate();
 exit:
 		h.relock();
+		p->waitcnt--;
 		if(ret!=WAIT_TIMEOUT && ret!=WAIT_OBJECT_0 && ret!=WAIT_OBJECT_0+1)
 		{
-			p->waitcnt--;
 			FXERRHWIN(0);
 		}
-		if(ret==WAIT_TIMEOUT)
-			p->waitcnt--;
-		else if(isAutoReset)
+		if(isAutoReset)
 			isSignalled=false;
 		return (WAIT_OBJECT_0==ret);
 #endif
@@ -1001,14 +999,12 @@ exit:
 		else ret=pthread_cond_wait(&p->wc, &p->m);
 		pthread_mutex_unlock(&p->m);
 		h.relock();
+		p->waitcnt--;
 		if(ret && ETIMEDOUT!=ret)
 		{
-			p->waitcnt--;
 			FXERRHOS(ret);
 		}
-		if(ret==ETIMEDOUT)
-			p->waitcnt--;
-		else if(isAutoReset)
+		if(isAutoReset)
 			isSignalled=false;
 		return (ETIMEDOUT!=ret);
 #endif
@@ -1050,7 +1046,8 @@ void FXWaitCondition::wakeAll()
 		if(p->waitcnt)
 		{
 #ifdef USE_WINAPI
-			for(int n=0; n<p->waitcnt; n++)
+			int waitcnt=p->waitcnt;
+			for(int n=0; n<waitcnt; n++)
 			{
 				if(!(ret=SetEvent(p->wc))) goto exit;
 			}
@@ -1060,7 +1057,6 @@ void FXWaitCondition::wakeAll()
 			ret=pthread_cond_broadcast(&p->wc);
 			pthread_mutex_unlock(&p->m);
 			if(ret) goto exit;
-			p->waitcnt=0;
 #endif
 		}
 exit:
