@@ -32,12 +32,12 @@ class Thread : public TnFXAppEventLoop
 public:
 	FXDataTargetI<FXuint> count;
     FXMainWindow *mainwnd;
-	FXTimer *timer;
+	bool timerrunning;
 	FXDial *dial;
 	FXProgressBar *progress;
 	FXListBox *listbox;
 	FXList *list;
-	Thread() : TnFXAppEventLoop("Test Thread", (TnFXApp *) TnFXApp::instance()), mainwnd(0), timer(0)
+	Thread() : TnFXAppEventLoop("Test Thread", (TnFXApp *) TnFXApp::instance()), mainwnd(0), timerrunning(false)
 	{
 		*count=0;
 	}
@@ -85,21 +85,22 @@ public:
 	}
 	long onCmdToggleCounter(FXObject *from, FXSelector sel, void *data)
 	{
-		if(timer)
+		if(timerrunning)
 		{
-			getApp()->removeTimeout(timer);
-			timer=0;
+			getApp()->removeTimeout(this, ID_TIMERTICK);
+			timerrunning=false;
 		}
 		else
 		{
-			timer=getApp()->addTimeout(this, ID_TIMERTICK, 1);
+			getApp()->addTimeout(this, ID_TIMERTICK, 1);
+			timerrunning=true;
 		}
 		return 1;
 	}
 	long onCmdTimerTick(FXObject *from, FXSelector sel, void *data)
 	{
 		*count=*count>=100 ? 0 : *count+1;
-		timer=getApp()->addTimeout(this, ID_TIMERTICK, 10);
+		getApp()->addTimeout(this, ID_TIMERTICK, 10);
 		return 1;
 	}
 	long onCmdThrowError(FXObject *from, FXSelector sel, void *data)
