@@ -260,12 +260,16 @@ FXPythonInterp::FXPythonInterp(int argc, char **argv, const char *name) : p(0)
 	//fxmessage("Thread %d Setting %p was %p (GILcnt=%d)\n", cthread->id(), p->ts, oldts, td->GILcnt);
 	if(addTnFOX) py(
 		"# Thanks to Ralf W. Grosse-Kunstleve for this\n"
-		"import sys\n"
+		"import os, sys\n"
 #ifdef USE_POSIX
 		"previous_dlopenflags=sys.getdlopenflags()\n"
 		"sys.setdlopenflags(0x102)\n"
 		"print 'Former flags were',previous_dlopenflags,'now',0x102\n"
+		"print 'sys.path=',sys.path\n"
 #endif
+		// Hack in current directory to module search path
+		"sys.path.append(os.getcwd())\n"
+		"print 'new sys.path=',sys.path\n"
 		"from TnFOX import *\n"
 #ifdef USE_POSIX
 		"print 'After flags were',sys.getdlopenflags()\n"
