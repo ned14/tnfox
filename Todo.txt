@@ -12,16 +12,21 @@ NT v5.0 Failures:
 
 Linux Kernel v2.4.20 (RH9) Failures:
   None known, but thread cancellation during pipe operations is a little flaky
-in Tn (see the cleanup() in FXIPCChannel).
+in Tn (see the cleanup() in FXIPCChannel). NOTE THAT THIS HAS NOT BEEN TESTED
+SINCE THE v0.80 RELEASE!
 
 Linux Kernel v2.6.10 Failures:
   1. TestMultithreading, there is a segfault as the threads quit in sem_post()
 in glibc but ONLY when being used as a shared library. As this doesn't happen
 on other platforms or when built statically, it's likely an OS bug.
+  2. TestMemoryPool, there is a clash between glibc's memory allocator and
+TnFOX's. This will get fixed soon.
 
 FreeBSD v5.3 Failures:
   1. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
 timings are off - therefore the events don't open as they should.
+  2. TestEmbedPython, dies due to BSD memory allocator and TnFOX's clashing.
+This will get fixed soon.
 
 Known bugs:
 -=-=-=-=-=-

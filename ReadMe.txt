@@ -1,5 +1,5 @@
-TnFOX v0.85 ?:
--=-=-=-=-=-=-=-=-=-=-=-=-=-
+TnFOX v0.85 13th Feb 2005:
+-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 by Niall Douglas
 
@@ -94,7 +94,7 @@ in both debug and release modes on:
 
 1. Microsoft Windows 2000 SP3 with MSVC7.1 (Visual Studio .NET 2003)
 2. RedHat Fedora Core 3 with GCC & libstdc++ 3.4.2 (stock release)
-3. FreeBSD v5.3 with GCC & libstdc++ 4.0 from CVS
+3. FreeBSD v5.3 with GCC & libstdc++ 3.4.2 (with visibility patch)
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings
 in its compiler have forced me to drop it.
