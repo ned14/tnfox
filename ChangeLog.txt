@@ -64,6 +64,7 @@ a reason :)
 + Added failonfree() and unfailonfree()
 - Removed over allocation feature from FXMemMap
 + Added FXMemMap::mappableSize() and FXMemMap::maximiseMappableSize()
+* Merged FOX v1.3.20
 
 
 v0.80 12th July 2004:
