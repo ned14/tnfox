@@ -60,6 +60,12 @@ extern FXAPI void free(void *p, FXMemoryPool *heap=0) throw();
 #if defined(DEBUG) && defined(_MSC_VER)
 extern FXAPI void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw() FXMALLOCATTR;
 #endif
+/*! \ingroup fxmemoryops
+Causes an assertion failure when the specified memory block is freed */
+extern FXAPI void failonfree(void *p, FXMemoryPool *heap=0) throw();
+/*! \ingroup fxmemoryops
+Removes a previous FX::failonfree() */
+extern FXAPI void unfailonfree(void *p, FXMemoryPool *heap=0) throw();
 
 /*! \class FXMemoryPool
 \ingroup fxmemoryops
