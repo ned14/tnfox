@@ -93,6 +93,14 @@ is how free() knows when not to pass through to ::free()) */
  #define FXDISABLE_GLOBAL_MARKER 1
 #endif
 
+/* Defining this enables the failonfree() function whereby freeing a specified
+block causes an assertion failure. Only really has a point in debug builds */
+#ifdef DEBUG
+ #define FXFAILONFREESLOTS 32
+#else
+ #define FXFAILONFREESLOTS 0
+#endif
+
 namespace FX {
 
 #define USE_DL_PREFIX				// Prevent symbol collision
@@ -401,7 +409,17 @@ QMemArray<FXMemoryPool::MemoryPoolInfo> FXMemoryPool::statistics()
 
 
 
-// The memory allocator redirectors
+// **** The memory allocator redirectors ****
+#if FXFAILONFREESLOTS>0
+static struct FailOnFreeEntry
+{
+	void *blk;
+	FXMemoryPool *heap;
+	FailOnFreeEntry() : blk(0), heap(0) { }
+} failOnFrees[FXFAILONFREESLOTS];
+static FXMutex failOnFreesLock;
+#endif
+
 void *malloc(size_t size, FXMemoryPool *heap) throw()
 {
 	void *ret;
@@ -580,6 +598,12 @@ void free(void *p, FXMemoryPool *) throw()
 	FXMemoryPoolPrivate *realmp=0;
 	FXuval *_p=(FXuval *) p;
 	//fxmessage("FX::free(%p)\n", p);
+#if FXFAILONFREESLOTS>0
+	for(int n=0; n<FXFAILONFREESLOTS; n++)
+	{
+		assert(!failOnFrees[n].blk || p!=failOnFrees[n].blk);
+	}
+#endif
 #if !FXDISABLE_SEPARATE_POOLS
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
@@ -685,5 +709,36 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 	return ret;
 }
 #endif
+
+void failonfree(void *p, FXMemoryPool *heap) throw()
+{
+#if FXFAILONFREESLOTS>0
+	FXMtxHold h(failOnFreesLock);
+	for(int n=0; n<FXFAILONFREESLOTS; n++)
+	{
+		if(!failOnFrees[n].blk)
+		{
+			failOnFrees[n].blk=p;
+			failOnFrees[n].heap=heap;
+			break;
+		}
+	}
+#endif
+}
+void unfailonfree(void *p, FXMemoryPool *heap) throw()
+{
+#if FXFAILONFREESLOTS>0
+	FXMtxHold h(failOnFreesLock);
+	for(int n=0; n<FXFAILONFREESLOTS; n++)
+	{
+		if(failOnFrees[n].blk==p)
+		{
+			failOnFrees[n].blk=0;
+			failOnFrees[n].heap=0;
+			break;
+		}
+	}
+#endif
+}
 
 } // namespace
