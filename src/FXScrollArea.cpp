@@ -409,8 +409,8 @@ void FXScrollArea::layout(){
   vertical->setPosition(-pos_y);
 
   // Get back the adjusted position
-  new_x=-horizontal->getPosition();
-  new_y=-vertical->getPosition();
+  new_x=-(FXint) horizontal->getPosition();
+  new_y=-(FXint) vertical->getPosition();
 
   // Scroll to force position back into range
   if(new_x!=pos_x || new_y!=pos_y){
@@ -418,8 +418,8 @@ void FXScrollArea::layout(){
     }
 
   // Read back validated position
-  pos_x=-horizontal->getPosition();
-  pos_y=-vertical->getPosition();
+  pos_x=-(FXint) horizontal->getPosition();
+  pos_y=-(FXint) vertical->getPosition();
 
   // Hide or show horizontal scroll bar
   if(sh_h){
@@ -465,8 +465,8 @@ void FXScrollArea::setPosition(FXint x,FXint y){
   vertical->setPosition(-y);
 
   // Then read back valid position from scroll bars
-  new_x=-horizontal->getPosition();
-  new_y=-vertical->getPosition();
+  new_x=-(FXint) horizontal->getPosition();
+  new_y=-(FXint) vertical->getPosition();
 
   // Move content if there's a change
   if(new_x!=pos_x || new_y!=pos_y){

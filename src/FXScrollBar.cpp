@@ -136,7 +136,7 @@ void FXScrollBar::layout(){
 
 // Update value from a message
 long FXScrollBar::onCmdSetValue(FXObject*,FXSelector,void* ptr){
-  setPosition((FXint)(FXival)ptr);
+  setPosition((FXlong)(FXival)ptr);
   return 1;
   }
 
@@ -151,7 +151,7 @@ long FXScrollBar::onCmdSetIntValue(FXObject*,FXSelector,void* ptr){
 
 // Obtain value with a message
 long FXScrollBar::onCmdGetIntValue(FXObject*,FXSelector,void* ptr){
-  *((FXint*)ptr)=getPosition();
+  *((FXint*)ptr)=(FXint) getPosition();
   return 1;
   }
 
@@ -166,7 +166,7 @@ long FXScrollBar::onCmdSetIntRange(FXObject*,FXSelector,void* ptr){
 // Get range with a message
 long FXScrollBar::onCmdGetIntRange(FXObject*,FXSelector,void* ptr){
   ((FXint*)ptr)[0]=0;
-  ((FXint*)ptr)[1]=getRange();
+  ((FXint*)ptr)[1]=(FXint) getRange();
   return 1;
   }
 
@@ -175,7 +175,7 @@ long FXScrollBar::onCmdGetIntRange(FXObject*,FXSelector,void* ptr){
 // Note we don't move the focus to the scrollbar widget!
 long FXScrollBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   register FXEvent *event=(FXEvent*)ptr;
-  register FXint p=pos;
+  register FXlong p=pos;
   if(isEnabled()){
     grab();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
@@ -283,7 +283,7 @@ long FXScrollBar::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
 // Pressed MIDDLE button in slider
 long FXScrollBar::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
   FXEvent *event=(FXEvent*)ptr;
-  register FXint p=pos;
+  register FXlong p=pos;
   register int travel,lo,hi,t;
   if(isEnabled()){
     grab();
@@ -295,7 +295,7 @@ long FXScrollBar::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
     dragpoint=thumbsize/2;
     if(options&SCROLLBAR_HORIZONTAL){
       travel=width-height-height-thumbsize;
-      t=event->win_x-dragpoint;
+      t=event->win_x-(FXint) dragpoint;
       if(t<height) t=height;
       if(t>(width-height-thumbsize)) t=width-height-thumbsize;
       if(t!=thumbpos){
@@ -307,7 +307,7 @@ long FXScrollBar::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
       }
     else{
       travel=height-width-width-thumbsize;
-      t=event->win_y-dragpoint;
+      t=event->win_y-(FXint) dragpoint;
       if(t<width) t=width;
       if(t>(height-width-thumbsize)) t=height-width-thumbsize;
       if(t!=thumbpos){
@@ -356,7 +356,7 @@ long FXScrollBar::onMiddleBtnRelease(FXObject*,FXSelector,void* ptr){
 // Pressed RIGHT button in slider
 long FXScrollBar::onRightBtnPress(FXObject*,FXSelector,void* ptr){
   register FXEvent *event=(FXEvent*)ptr;
-  register FXint p=pos;
+  register FXlong p=pos;
   if(isEnabled()){
     grab();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
@@ -475,7 +475,8 @@ long FXScrollBar::onUngrabbed(FXObject* sender,FXSelector sel,void* ptr){
 // Moving
 long FXScrollBar::onMotion(FXObject*,FXSelector,void* ptr){
   FXEvent *event=(FXEvent*)ptr;
-  FXint travel,hi,lo,t,p;
+  FXint travel,hi,lo,t;
+  FXlong p;
   if(!isEnabled()) return 0;
   if(mode>=MODE_DRAG){
     p=0;
@@ -491,7 +492,7 @@ long FXScrollBar::onMotion(FXObject*,FXSelector,void* ptr){
     if(mode==MODE_DRAG){
       if(options&SCROLLBAR_HORIZONTAL){
         travel=width-height-height-thumbsize;
-        t=event->win_x-dragpoint;
+        t=event->win_x-(FXint) dragpoint;
         if(t<height) t=height;
         if(t>(width-height-thumbsize)) t=width-height-thumbsize;
         if(t!=thumbpos){
@@ -499,11 +500,11 @@ long FXScrollBar::onMotion(FXObject*,FXSelector,void* ptr){
           update(lo,0,hi+thumbsize-lo,height);
           thumbpos=t;
           }
-        if(travel>0){ p=(FXint)((((FXdouble)(thumbpos-height))*(range-page)+travel/2)/travel); }
+        if(travel>0){ p=(FXlong)((((FXdouble)(thumbpos-height))*(range-page)+travel/2)/travel); }
         }
       else{
         travel=height-width-width-thumbsize;
-        t=event->win_y-dragpoint;
+        t=event->win_y-(FXint) dragpoint;
         if(t<width) t=width;
         if(t>(height-width-thumbsize)) t=height-width-thumbsize;
         if(t!=thumbpos){
@@ -511,7 +512,7 @@ long FXScrollBar::onMotion(FXObject*,FXSelector,void* ptr){
           update(0,lo,width,hi+thumbsize-lo);
           thumbpos=t;
           }
-        if(travel>0){ p=(FXint)((((FXdouble)(thumbpos-width))*(range-page)+travel/2)/travel); }
+        if(travel>0){ p=(FXlong)((((FXdouble)(thumbpos-width))*(range-page)+travel/2)/travel); }
         }
       }
 
@@ -579,7 +580,7 @@ long FXScrollBar::onMouseWheel(FXObject*,FXSelector,void* ptr){
           if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
           }
         else{
-          dragjump=(dragpoint-pos);
+          dragjump=(FXint)(dragpoint-pos);
           if(FXABS(dragjump)>16) dragjump/=16;
           getApp()->addTimeout(this,ID_TIMEWHEEL,5,(void*)(FXival)dragjump);
           }
@@ -593,7 +594,7 @@ long FXScrollBar::onMouseWheel(FXObject*,FXSelector,void* ptr){
 
 // Smoothly scroll to desired value as determined by wheel
 long FXScrollBar::onTimeWheel(FXObject*,FXSelector,void* ptr){
-  register FXint p=pos+(FXint)(FXival)ptr;
+  register FXlong p=pos+(FXlong)(FXival)ptr;
   if(dragpoint<pos){
     if(p<=dragpoint){
       setPosition(dragpoint);
@@ -624,7 +625,7 @@ long FXScrollBar::onTimeWheel(FXObject*,FXSelector,void* ptr){
 
 // Automatic scroll based on timer
 long FXScrollBar::onAutoScroll(FXObject*,FXSelector,void* ptr){
-  register FXint p=pos+(FXint)(FXival)ptr;
+  register FXlong p=pos+(FXlong)(FXival)ptr;
   if(p<=0){
     p=0;
     }
@@ -845,7 +846,7 @@ long FXScrollBar::onPaint(FXObject*,FXSelector,void* ptr){
 
 
 // Set range
-void FXScrollBar::setRange(FXint r){
+void FXScrollBar::setRange(FXlong r){
   if(r<1) r=1;
   if(range!=r){
     range=r;
@@ -857,7 +858,7 @@ void FXScrollBar::setRange(FXint r){
 // Set page size
 void FXScrollBar::setPage(FXint p){
   if(p<1) p=1;
-  if(p>range) p=range;
+  if(p>range) p=(FXint) range;
   if(page!=p){
     page=p;
     setPosition(pos);
@@ -874,7 +875,7 @@ void FXScrollBar::setLine(FXint l){
 
 // Set position; tricky because the thumb size may have changed
 // as well; we do the minimal possible update to repaint properly.
-void FXScrollBar::setPosition(FXint p){
+void FXScrollBar::setPosition(FXlong p){
   FXint total,travel,lo,hi,l,h;
   pos=p;
   if(pos<0) pos=0;
@@ -883,7 +884,7 @@ void FXScrollBar::setPosition(FXint p){
   hi=thumbpos+thumbsize;
   if(options&SCROLLBAR_HORIZONTAL){
     total=width-height-height;
-    thumbsize=(total*page)/range;
+    thumbsize=(FXint)((total*page)/range);
     if(thumbsize<THUMB_MINIMUM) thumbsize=THUMB_MINIMUM;
     travel=total-thumbsize;
     if(range>page){ thumbpos=height+(FXint)((((FXdouble)pos)*travel)/(range-page)); } else { thumbpos=height; }
@@ -895,7 +896,7 @@ void FXScrollBar::setPosition(FXint p){
     }
   else{
     total=height-width-width;
-    thumbsize=(total*page)/range;
+    thumbsize=(FXint)((total*page)/range);
     if(thumbsize<THUMB_MINIMUM) thumbsize=THUMB_MINIMUM;
     travel=total-thumbsize;
     if(range>page){ thumbpos=width+(FXint)((((FXdouble)pos)*travel)/(range-page)); } else { thumbpos=width; }
