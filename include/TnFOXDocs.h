@@ -526,14 +526,25 @@ Wrote through TFileBySyncDev at 10538.028622Kb/sec
 	will print the above warning at startup and will retry opening a FAM connection on first
 	use of FX::FXFSMonitor but if it fails again, an exception will be returned.
 
-	The solution is to enable \c famd. On FreeBSD v5.2.1, it gets more complicated as first
-	you must create a port mapping, get the port mapper daemon running (called rpcbind), then
+	The solution is to enable \c famd. On FreeBSD v5.x, it gets more complicated as first
+	you must create a port mapping in \c /etc/rpc, get the port mapper daemon running (called rpcbind), then
 	get \c inetd configured and running and in theory, \c famd will get invoked on demand. You
 	should consult the documentation for FAM at http://oss.sgi.com/projects/fam/ and bear in
 	mind that sysinstall can do most of the hard work for you in its post-install configure
 	section (though you should manually tidy up \c /etc/rc.conf regularly). If running \c inetd
 	is too risky for you (even with a configure file devoid of anything except \c famd), it is
 	possible to run \c famd standalone - again, see the SGI documentation for more info.
+
+	Just to help you get going quicker:
+	
+	For \c /etc/rpc (already present on 5.x):
+	\code
+	sgi_fam 391002 fam # file alteration monitor
+	\endcode
+	For \c /etc/inetd.conf:
+	\code
+	sgi_fam/1-2 stream  rpc/tcp wait    root    /usr/local/bin/fam    fam
+	\endcode
 
   <li>
 	\subsection spinlockcallederror I'm getting the error "Spinlock called when not threaded" when running executables?
@@ -2212,11 +2223,12 @@ against Apple's X11 thunking layer and TnFOX is happy on FreeBSD it should be fi
 at least the problems will be minor.
 
 \section supported Supported configuration:
-TnFOX is tested against GCC v3.4 on a RedHat 9 (2.4 kernel) installation and it all works
-swimmingly. It is also tested against FreeBSD v5.2.1 and it also works swimmingly
-there too. v3.2.2 should also work as should Intel's C++ compiler for Linux v8. Since
-v0.80, Linux 2.6 kernels are supported but FX::FXMemMap with shared memory currently
-doesn't work (it appears to be the kernel's fault).
+TnFOX is primarily tested against GCC v4.0 on:
+\li A RedHat 9 (2.4 kernel) installation
+\li A RedHat Fedora Core 2 (2.6 kernel) installation
+\li A FreeBSD v5.3 installation
+
+GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
 Everything must have been built with threads enabled (X11, glibc, python). This
 is default on recent RedHat's, it may not be so with your installation.
@@ -2225,9 +2237,9 @@ On FreeBSD, the defaults aren't quite enough to compile out of the box. The gene
 kernel has the \c /proc filing system support compiled in but it isn't mounted by default -
 add "proc /proc procfs rw 0 0" to your \c /etc/fstab. You will also need to install
 the \c libtool package at the very least. Furthermore I found that GCC wasn't
-configured properly, it should include \c /usr/local/include and \c /usr/local/lib
-which it does not and lastly the python environment variables are missing which
-causes CppMunge.py to fail.
+configured properly on some systems, it should include \c /usr/local/include and
+\c /usr/local/lib which it does not and lastly the python environment variables are
+missing which causes CppMunge.py to fail.
 
 To fix GCC, the easiest is to set \c CPATH and \c LIBRARY_PATH (though you could
 recompile it). Doing this also fixes many other compilation errors in GNU programs
@@ -2241,11 +2253,12 @@ setvar PYTHON_INCLUDE /usr/local/include/python2.3
 export PYTHON_INCLUDE
 setvar PYTHON_ROOT /usr/local/lib/python2.3
 export PYTHON_ROOT
-setvar PYTHON_LIB /usr/local/lib/python2.3/config/libpython2.3.a
+setvar PYTHON_LIB /usr/local/lib/python2.3/config/libpython2.3.so
 export PYTHON_LIB
 setvar PYTHON_VERSION 2.3
 export PYTHON_VERSION
 \endcode
+On versions earlier than FreeBSD v5.3, you may need to use \c libpython2.3.a instead.
 Lastly you should probably review the FAQ entry \ref freebsdqs
 
 \section config Directory configuration:
