@@ -132,6 +132,11 @@ static struct ptmalloc2_init_t
 	ptmalloc2_init_t()
 	{	// This must be done in a single thread
 		ptmalloc2::ptmalloc_init();
+#ifndef FXDISABLE_NO_SEPARATE_POOL_WARNING
+#if defined(_MSC_VER) && (FXDISABLE_GLOBALALLOCATORREPLACEMENTS || FXDISABLE_SEPARATE_POOLS)
+		fxmessage("WARNING: Using Win32 memory allocator, performance will be degraded!\n");
+#endif
+#endif
 	}
 } ptmalloc2_init;
 
