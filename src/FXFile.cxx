@@ -32,6 +32,8 @@
 #include "FXFile.h"
 #ifdef WIN32
 #include <shellapi.h>
+#else
+#include <utime.h>
 #endif
 #include "FXException.h"
 #include "FXThread.h"
@@ -530,6 +532,25 @@ int FXFile::ungetch(int c)
 		return c;
 	}
 	return -1;
+}
+
+void FXFile::stampCreationMetadata(const FXString &path, FXTime creationdate)
+{
+#ifndef WIN32
+	// If modification is older than access time, sets creation time to modification
+	struct ::utimbuf times;
+	times.actime=creationdate+1;		// accessed
+	times.modtime=creationdate;			// modified
+	FXERRHOS(::utime(path.text(), &times));		// Sets created
+	times.actime=creationdate;			// accessed
+	FXERRHOS(::utime(path.text(), &times));		// Sets modified and accessed
+#else
+	FXFile fh(path);
+	fh.open(IO_ReadWrite);
+	FILETIME ft;
+	*(FXulong *)(&ft)=((FXulong) creationdate*10000000)+116444736000000000ULL;
+	FXERRHWIN(SetFileTime((HANDLE) _get_osfhandle(fh.p->handle), &ft, &ft, &ft));
+#endif
 }
 
 //*****************************************************************************
