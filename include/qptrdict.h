@@ -113,7 +113,7 @@ template<class type> FXStream &operator>>(FXStream &s, QPtrDict<type> &i)
 		FXERRHM(item=new type);
 		s >> key;
 		s >> *item;
-		i.insert((void *) key, item);
+		i.insert((void *)(FXuval) key, item);
 	}
 	return s;
 }
