@@ -598,7 +598,7 @@ bool FXBlkSocket::create(FXuint mode)
 	FXMtxHold h(p);
 	FXThread_DTHold dth;
 	close();
-	FXERRH(p->mine.addr.isLoopback() || p->mine.addr.isNull(), "Server sockets must be local", FXBLKSOCKET_NONLOCALCREATE, FXERRH_ISDEBUG);
+	FXERRH(p->mine.addr.isLocalMachine() || p->mine.addr.isNull(), "Server sockets must be local", FXBLKSOCKET_NONLOCALCREATE, FXERRH_ISDEBUG);
 	FXERRHSKT(p->handle=::socket(p->mine.addr.isIp6Addr() ? PF_INET6 : PF_INET, (p->type==Datagram) ? SOCK_DGRAM : SOCK_STREAM, 0));
 #ifdef USE_WINAPI
 	if(mode & IO_ReadOnly)
