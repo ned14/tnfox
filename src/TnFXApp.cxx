@@ -273,7 +273,7 @@ FXbool EventLoopC::getNextEventI(FXRawEvent& ev,FXbool blocking)
 				XFlush((Display*) display);			// We appear to need this on X11
 			if(timers)
 			{
-				struct timeval now;
+				struct ::timeval now;
 				gettimeofday(&now,NULL);
 				FXint togo;
 				togo=(timers->due.tv_sec-now.tv_sec)*1000;
