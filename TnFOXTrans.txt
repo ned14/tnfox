@@ -1,5 +1,5 @@
 # TnFOX human language string literal translation file
-# Last updated: Mon, 07 Mar 2005 16:38:10 +0000
+# Last updated: Sat, 12 Mar 2005 17:52:36 +0000
 
 version=1:
 
@@ -455,11 +455,7 @@ langids="ES":
 		ES: up
 
 "System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n":
-	srcfile="FXProcess.cxx":class="FXProcess":
-		ES: "!TODO! enter translation here"
-
-"System load: processor=%1, memory=%2, disc i/o=%3\n":
-	ES: "Carga de sistema: processadora=%1, memoria=%2, discos=%3\n"
+	ES: "Carga de sistema: processadora=%1, memoria=%2, discos=%3 con %4 VAS libre\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
@@ -571,6 +567,11 @@ langids="ES":
 "You cannot set the permissions on this device":
 	ES: "No es posible cambiar los permisos en este dispositivo"
 	srcfile="FXIODevice.cxx":class="FXIODevice":
+		ES: up
+
+"You must authenticate an entity before you can retrieve its home directory":
+	ES: "Se necesita autentificacion de una entidad antes pueda leer su directorio propietario"
+	srcfile="FXACL.cxx":class="FXACLEntity":
 		ES: up
 
 "You must authenticate an entity before you can set it as owner":
