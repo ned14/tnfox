@@ -19,18 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXLabel.cpp,v 1.49 2004/04/22 20:51:04 fox Exp $                         *
+* $Id: FXLabel.cpp,v 1.52 2004/09/17 07:46:21 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXAccelTable.h"
 #include "FXDCWindow.h"
@@ -61,6 +62,8 @@ namespace FX {
 // Map
 FXDEFMAP(FXLabel) FXLabelMap[]={
   FXMAPFUNC(SEL_PAINT,0,FXLabel::onPaint),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXLabel::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXLabel::onQueryHelp),
   FXMAPFUNC(SEL_KEYPRESS,FXLabel::ID_HOTKEY,FXLabel::onHotKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,FXLabel::ID_HOTKEY,FXLabel::onHotKeyRelease),
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_SETVALUE,FXLabel::onCmdSetValue),
@@ -68,8 +71,6 @@ FXDEFMAP(FXLabel) FXLabelMap[]={
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_GETSTRINGVALUE,FXLabel::onCmdGetStringValue),
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_SETICONVALUE,FXLabel::onCmdSetIconValue),
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_GETICONVALUE,FXLabel::onCmdGetIconValue),
-  FXMAPFUNC(SEL_UPDATE,FXLabel::ID_QUERY_TIP,FXLabel::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXLabel::ID_QUERY_HELP,FXLabel::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_SETHELPSTRING,FXLabel::onCmdSetHelp),
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_GETHELPSTRING,FXLabel::onCmdGetHelp),
   FXMAPFUNC(SEL_COMMAND,FXLabel::ID_SETTIPSTRING,FXLabel::onCmdSetTip),
@@ -407,25 +408,26 @@ long FXLabel::onCmdGetTip(FXObject*,FXSelector,void* ptr){
   }
 
 
-// We were asked about status text
-long FXLabel::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
-    return 1;
-    }
-  return 0;
-  }
-
-
 // We were asked about tip text
-long FXLabel::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(!tip.empty() && (flags&FLAG_TIP)){
+long FXLabel::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
     }
   return 0;
   }
 
+
+// We were asked about status text
+long FXLabel::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+    return 1;
+    }
+  return 0;
+  }
 
 
 // Change text

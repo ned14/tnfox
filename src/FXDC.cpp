@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDC.cpp,v 1.27 2004/02/08 17:29:06 fox Exp $                            *
+* $Id: FXDC.cpp,v 1.31 2004/09/17 07:46:21 fox Exp $                            *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXVisual.h"
@@ -182,7 +183,12 @@ void FXDC::drawLineSegments(const FXSegment*,FXuint){ }
 void FXDC::drawRectangle(FXint,FXint,FXint,FXint){ }
 
 
+// Draw unfilled rectangles
 void FXDC::drawRectangles(const FXRectangle*,FXuint){ }
+
+
+// Draw unfilled rounded rectangle
+void FXDC::drawRoundRectangle(FXint,FXint y,FXint,FXint,FXint,FXint){ }
 
 
 // Draw arc
@@ -193,12 +199,20 @@ void FXDC::drawArc(FXint,FXint,FXint,FXint,FXint,FXint){ }
 void FXDC::drawArcs(const FXArc*,FXuint){ }
 
 
+// Draw ellipse
+void FXDC::drawEllipse(FXint,FXint,FXint,FXint){ }
+
+
 // Filled rectangle
 void FXDC::fillRectangle(FXint,FXint,FXint,FXint){ }
 
 
 // Filled rectangles
 void FXDC::fillRectangles(const FXRectangle*,FXuint){ }
+
+
+// Filled rounded rectangle
+void FXDC::fillRoundRectangle(FXint,FXint,FXint,FXint,FXint,FXint){ }
 
 
 // Fill chord
@@ -215,6 +229,10 @@ void FXDC::fillArc(FXint,FXint,FXint,FXint,FXint,FXint){ }
 
 // Fill arcs
 void FXDC::fillArcs(const FXArc*,FXuint){ }
+
+
+// Fill ellipse
+void FXDC::fillEllipse(FXint,FXint,FXint,FXint){ }
 
 
 // Filled simple polygon

@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorBar.cpp,v 1.21 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXColorBar.cpp,v 1.27 2004/10/07 19:09:58 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXDrawable.h"
@@ -58,8 +59,8 @@ FXDEFMAP(FXColorBar) FXColorBarMap[]={
   FXMAPFUNC(SEL_MOTION,0,FXColorBar::onMotion),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,0,FXColorBar::onLeftBtnPress),
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE,0,FXColorBar::onLeftBtnRelease),
-  FXMAPFUNC(SEL_UPDATE,FXColorBar::ID_QUERY_TIP,FXColorBar::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXColorBar::ID_QUERY_HELP,FXColorBar::onQueryHelp),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXColorBar::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXColorBar::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXColorBar::ID_SETHELPSTRING,FXColorBar::onCmdSetHelp),
   FXMAPFUNC(SEL_COMMAND,FXColorBar::ID_GETHELPSTRING,FXColorBar::onCmdGetHelp),
   FXMAPFUNC(SEL_COMMAND,FXColorBar::ID_SETTIPSTRING,FXColorBar::onCmdSetTip),
@@ -196,20 +197,22 @@ long FXColorBar::onCmdGetTip(FXObject*,FXSelector,void* ptr){
   }
 
 
-// We were asked about status text
-long FXColorBar::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+// We were asked about tip text
+long FXColorBar::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
     }
   return 0;
   }
 
 
-// We were asked about tip text
-long FXColorBar::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(!tip.empty() && (flags&FLAG_TIP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+// We were asked about status text
+long FXColorBar::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
   return 0;
@@ -261,7 +264,7 @@ long FXColorBar::onMotion(FXObject*,FXSelector,void* ptr){
       hsv[2]=v;
       flags|=FLAG_CHANGED;
       update(xx,yy,ww,hh);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)hsv);
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)hsv);
       }
     flags|=FLAG_CHANGED;
     return 1;
@@ -278,7 +281,7 @@ long FXColorBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     xx=border+padleft+2;
     yy=border+padtop+2;
     ww=bar->getWidth();
@@ -298,7 +301,7 @@ long FXColorBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
       hsv[2]=v;
       flags|=FLAG_CHANGED;
       update(xx,yy,ww,hh);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)hsv);
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)hsv);
       }
     flags|=FLAG_PRESSED;
     flags&=~FLAG_UPDATE;
@@ -309,16 +312,14 @@ long FXColorBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 
 // End spot movement mode
 long FXColorBar::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
-  FXuint flgs=flags;
+  FXuint changed=(flags&FLAG_CHANGED);
   if(isEnabled()){
     ungrab();
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
     flags&=~FLAG_CHANGED;
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
-    if(flgs&FLAG_CHANGED){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)hsv);
-      }
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(changed && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)hsv);
     return 1;
     }
   return 1;

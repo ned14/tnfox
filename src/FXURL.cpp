@@ -21,12 +21,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXURL.cpp,v 1.21 2004/04/08 15:09:55 fox Exp $                           *
+* $Id: FXURL.cpp,v 1.22 2004/09/17 07:46:22 fox Exp $                           *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXFile.h"

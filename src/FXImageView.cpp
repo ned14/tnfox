@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImageView.cpp,v 1.26 2004/03/01 16:43:58 fox Exp $                     *
+* $Id: FXImageView.cpp,v 1.31 2004/10/07 21:49:14 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXImage.h"
@@ -153,8 +154,6 @@ long FXImageView::onPaint(FXObject*,FXSelector,void* ptr){
       else if(options&IMAGEVIEW_BOTTOM) yy=viewport_h-hh;
       else yy=(viewport_h-hh)/2;
       }
-    dc.setForeground(FXRGB(255,255,255));
-    dc.setBackground(FXRGB(0,0,0));
     dc.drawImage(image,xx,yy);
     dc.setForeground(backColor);
     xl=xx; xr=xx+ww;
@@ -181,7 +180,7 @@ long FXImageView::onRightBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
     flags&=~FLAG_UPDATE;
     flags|=FLAG_PRESSED|FLAG_SCROLLING;
     grabx=ev->win_x-pos_x;
@@ -198,7 +197,7 @@ long FXImageView::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
     ungrab();
     flags&=~(FLAG_PRESSED|FLAG_SCROLLING);
     flags|=FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
     return 1;
     }
   return 0;

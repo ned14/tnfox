@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeList.h,v 1.78 2004/03/15 16:05:28 fox Exp $                        *
+* $Id: FXTreeList.h,v 1.91 2004/10/31 16:14:07 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXTREELIST_H
 #define FXTREELIST_H
@@ -57,32 +57,32 @@ class FXAPI FXTreeItem : public FXObject {
   friend class FXTreeList;
   friend class FXDirList;
 protected:
-  FXTreeItem *parent;
-  FXTreeItem *prev;
-  FXTreeItem *next;
-  FXTreeItem *first;
-  FXTreeItem *last;
-  FXString    label;
-  FXIcon     *openIcon;
-  FXIcon     *closedIcon;
-  void       *data;
-  FXuint      state;
+  FXTreeItem *parent;           // Parent item
+  FXTreeItem *prev;             // Previous item
+  FXTreeItem *next;             // Next item
+  FXTreeItem *first;            // First child item
+  FXTreeItem *last;             // Last child item
+  FXString    label;            // Text of item
+  FXIcon     *openIcon;         // Icon of item
+  FXIcon     *closedIcon;       // Icon of item
+  void       *data;             // Item user data pointer
+  FXuint      state;            // Item state flags
   FXint       x,y;
 protected:
   FXTreeItem():parent(NULL),prev(NULL),next(NULL),first(NULL),last(NULL),openIcon(NULL),closedIcon(NULL),data(NULL),state(0),x(0),y(0){}
   virtual void draw(const FXTreeList* list,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
   virtual FXint hitItem(const FXTreeList* list,FXint x,FXint y) const;
-protected:
+public:
   enum{
-    SELECTED        = 1,
-    FOCUS           = 2,
-    DISABLED        = 4,
-    OPENED          = 8,
-    EXPANDED        = 16,
-    HASITEMS        = 32,
-    DRAGGABLE       = 64,
-    OPENICONOWNED   = 128,
-    CLOSEDICONOWNED = 256
+    SELECTED        = 1,        /// Selected
+    FOCUS           = 2,        /// Focus
+    DISABLED        = 4,        /// Disabled
+    OPENED          = 8,        /// Opened
+    EXPANDED        = 16,       /// Expanded
+    HASITEMS        = 32,       /// Has virtual subitems
+    DRAGGABLE       = 64,       /// Draggable
+    OPENICONOWNED   = 128,      /// Open icon owned by item
+    CLOSEDICONOWNED = 256       /// Close icon owned by item
     };
 public:
 
@@ -173,7 +173,7 @@ public:
   /// Return true if this item is draggable
   FXbool isDraggable() const { return (state&DRAGGABLE)!=0; }
 
-  /// Make open and or icon owned by the item
+  /// Make open and closed icon owned by the item
   void setIconOwned(FXuint owned=(OPENICONOWNED|CLOSEDICONOWNED));
 
   /// Return open icon and closed icon ownership status
@@ -181,10 +181,10 @@ public:
 
   /// Return TRUE if subitems, real or imagined
   FXbool hasItems() const { return (state&HASITEMS)!=0; }
-  
+
   /// Change has items flag
   void setHasItems(FXbool flag);
-  
+
   /// Return true if descendent of parent item
   FXbool isChildOf(const FXTreeItem* item) const;
 
@@ -265,6 +265,7 @@ protected:
   FXint              grabx;             // Grab point x
   FXint              graby;             // Grab point y
   FXString           lookup;            // Lookup string
+  FXString           tip;
   FXString           help;              // Help string
   FXbool             state;             // State of item
 protected:
@@ -361,39 +362,33 @@ public:
   /// Return last root item
   FXTreeItem* getLastItem() const { return lastitem; }
 
-  /// Prepend new [possibly subclassed] item as first child of p
-  FXTreeItem* addItemFirst(FXTreeItem* p,FXTreeItem* item,FXbool notify=FALSE);
+  /// Fill tree list by appending items from array of strings
+  FXint fillItems(FXTreeItem* father,const FXchar** strings,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
 
-  /// Prepend new item with given text and optional icon, and user-data pointer as first child of p
-  FXTreeItem* addItemFirst(FXTreeItem* p,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
+  /// Fill tree list by appending items from newline separated strings
+  FXint fillItems(FXTreeItem* father,const FXString& strings,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
 
-  /// Append new [possibly subclassed] item as last child of p
-  FXTreeItem* addItemLast(FXTreeItem* p,FXTreeItem* item,FXbool notify=FALSE);
+  /// Insert [possibly subclassed] item under father before other item
+  FXTreeItem* insertItem(FXTreeItem* other,FXTreeItem* father,FXTreeItem* item,FXbool notify=FALSE);
 
-  /// Append new item with given text and optional icon, and user-data pointer as last child of p
-  FXTreeItem* addItemLast(FXTreeItem* p,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
+  /// Insert item with given text and optional icons, and user-data pointer under father before other item
+  FXTreeItem* insertItem(FXTreeItem* other,FXTreeItem* father,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
 
-  /// Append new [possibly subclassed] item after to other item
-  FXTreeItem* addItemAfter(FXTreeItem* other,FXTreeItem* item,FXbool notify=FALSE);
+  /// Append [possibly subclassed] item as last child of father
+  FXTreeItem* appendItem(FXTreeItem* father,FXTreeItem* item,FXbool notify=FALSE);
 
-  /// Append new item with given text and optional icon, and user-data pointer after to other item
-  FXTreeItem* addItemAfter(FXTreeItem* other,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
+  /// Append item with given text and optional icons, and user-data pointer as last child of father
+  FXTreeItem* appendItem(FXTreeItem* father,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
 
-  /// Prepend new [possibly subclassed] item prior to other item
-  FXTreeItem* addItemBefore(FXTreeItem* other,FXTreeItem* item,FXbool notify=FALSE);
+  /// Prepend [possibly subclassed] item as first child of father
+  FXTreeItem* prependItem(FXTreeItem* father,FXTreeItem* item,FXbool notify=FALSE);
 
-  /// Prepend new item with given text and optional icon, and user-data pointer prior to other item
-  FXTreeItem* addItemBefore(FXTreeItem* other,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
+  /// Prepend item with given text and optional icons, and user-data pointer as first child of father
+  FXTreeItem* prependItem(FXTreeItem* father,const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL,FXbool notify=FALSE);
 
-  /// Reparent item under parent p
-  void reparentItem(FXTreeItem* item,FXTreeItem* p);
-
-  // Move item before other
-  FXTreeItem* moveItemBefore(FXTreeItem* other,FXTreeItem* item);
-
-  // Move item after other
-  FXTreeItem* moveItemAfter(FXTreeItem* other,FXTreeItem* item);
-
+  /// Move item under father before other item 
+  FXTreeItem *moveItem(FXTreeItem* other,FXTreeItem* father,FXTreeItem* item);
+  
   /// Remove item
   void removeItem(FXTreeItem* item,FXbool notify=FALSE);
 
@@ -410,16 +405,34 @@ public:
   FXint getItemHeight(const FXTreeItem* item) const { return item->getHeight(this); }
 
   /// Get item at x,y, if any
-  FXTreeItem* getItemAt(FXint x,FXint y) const;
+  virtual FXTreeItem* getItemAt(FXint x,FXint y) const;
 
   /**
-  * Search items for item by name, starting from start item; the
-  * flags argument controls the search direction, and case sensitivity.
+  * Search items by name, beginning from item start.  If the start item
+  * is NULL the search will start at the first, top-most item in the list.
+  * Flags may be SEARCH_FORWARD or SEARCH_BACKWARD to control the search
+  * direction; this can be combined with SEARCH_NOWRAP or SEARCH_WRAP
+  * to control whether the search wraps at the start or end of the list.
+  * The option SEARCH_IGNORECASE causes a case-insensitive match.  Finally,
+  * passing SEARCH_PREFIX causes searching for a prefix of the item name.
+  * Return NULL if no matching item is found.
   */
-  FXTreeItem* findItem(const FXString& text,FXTreeItem* start=NULL,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
+  FXTreeItem* findItem(const FXString& name,FXTreeItem* start=NULL,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
+
+  /**
+  * Search items by associated user data, beginning from item start. If the
+  * start item is NULL the search will start at the first, top-most item
+  * in the list.  Flags may be SEARCH_FORWARD or SEARCH_BACKWARD to control
+  * the search direction; this can be combined with SEARCH_NOWRAP or SEARCH_WRAP
+  * to control whether the search wraps at the start or end of the list.
+  * The option SEARCH_IGNORECASE causes a case-insensitive match.  Finally,
+  * passing SEARCH_PREFIX causes searching for a prefix of the item name.
+  * Return NULL if no matching item is found.
+  */
+  FXTreeItem* findItemByData(const void *ptr,FXTreeItem* start=NULL,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
 
   /// Scroll to make item visible
-  void makeItemVisible(FXTreeItem* item);
+  virtual void makeItemVisible(FXTreeItem* item);
 
   /// Change item's text
   void setItemText(FXTreeItem* item,const FXString& text);
@@ -473,10 +486,10 @@ public:
   void updateItem(FXTreeItem* item) const;
 
   /// Enable item
-  FXbool enableItem(FXTreeItem* item);
+  virtual FXbool enableItem(FXTreeItem* item);
 
   /// Disable item
-  FXbool disableItem(FXTreeItem* item);
+  virtual FXbool disableItem(FXTreeItem* item);
 
   /// Select item
   virtual FXbool selectItem(FXTreeItem* item,FXbool notify=FALSE);

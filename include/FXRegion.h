@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegion.h,v 1.12 2004/02/11 20:33:36 fox Exp $                          *
+* $Id: FXRegion.h,v 1.15 2004/08/24 07:13:07 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXREGION_H
 #define FXREGION_H
@@ -35,6 +35,7 @@ class FXRectangle;
 class FXAPI FXRegion {
   friend class FXDC;
   friend class FXDCWindow;
+  friend class FXWindow;
 private:
   void *region;
 public:
@@ -67,7 +68,7 @@ public:
   FXbool contains(FXint x,FXint y,FXint w,FXint h) const;
 
   /// Return bounding box
-  void bounds(FXRectangle& r) const;
+  FXRectangle bounds() const;
 
   /// Offset region by dx,dy
   FXRegion& offset(FXint dx,FXint dy);
@@ -78,7 +79,7 @@ public:
   /// Intersect region r with this one
   FXRegion& operator*=(const FXRegion& r);
 
-  /// Substract region r from this one
+  /// Subtract region r from this one
   FXRegion& operator-=(const FXRegion& r);
 
   /// Xor region r with this one
@@ -90,7 +91,7 @@ public:
   /// Intersection of region r1 and region r2
   friend FXAPI FXRegion operator*(const FXRegion& r1,const FXRegion& r2);
 
-  /// Substract region r2 from region r1
+  /// Subtract region r2 from region r1
   friend FXAPI FXRegion operator-(const FXRegion& r1,const FXRegion& r2);
 
   /// Xor of region r1 and region r2
@@ -104,7 +105,7 @@ public:
 
   /// Reset region to empty
   void reset();
-  
+
   /// Destroy region
  ~FXRegion();
   };

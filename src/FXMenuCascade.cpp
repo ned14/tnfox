@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCascade.cpp,v 1.43 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXMenuCascade.cpp,v 1.47 2004/10/18 20:14:51 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -153,7 +154,6 @@ long FXMenuCascade::onKeyPress(FXObject*,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(!isEnabled()) return 0;
   FXTRACE((200,"%s::onKeyPress %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
-  //if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
   if(pane && pane->shown() && pane->handle(pane,sel,ptr)) return 1;
   switch(event->code){
     case KEY_Right:
@@ -188,7 +188,6 @@ long FXMenuCascade::onKeyRelease(FXObject*,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(!isEnabled()) return 0;
   FXTRACE((200,"%s::onKeyRelease %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
-  //if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
   if(pane && pane->shown() && pane->handle(pane,sel,ptr)) return 1;
   switch(event->code){
     case KEY_Right:
@@ -317,7 +316,7 @@ long FXMenuCascade::onPaint(FXObject*,FXSelector,void* ptr){
   // Active
   else if(isActive()){
     dc.setForeground(selbackColor);
-    dc.fillRectangle(1,1,width-2,height-2);
+    dc.fillRectangle(0,0,width,height);
     if(icon){
       dc.drawIcon(icon,3,(height-icon->getHeight())/2);
       if(icon->getWidth()+5>xx) xx=icon->getWidth()+5;

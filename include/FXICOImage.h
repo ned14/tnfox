@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXICOImage.h,v 1.14 2004/01/15 01:38:04 fox Exp $                        *
+* $Id: FXICOImage.h,v 1.15 2004/11/10 16:22:05 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXICOIMAGE_H
 #define FXICOIMAGE_H
@@ -38,6 +38,8 @@ protected:
 private:
   FXICOImage(const FXICOImage&);
   FXICOImage &operator=(const FXICOImage&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct image from memory stream formatted in Microsoft icon format

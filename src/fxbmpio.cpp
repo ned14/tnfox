@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxbmpio.cpp,v 1.45 2004/04/08 16:24:48 fox Exp $                         *
+* $Id: fxbmpio.cpp,v 1.47 2004/09/17 07:46:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 
 
@@ -308,10 +309,10 @@ FXbool fxloadBMP(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       pp=data+i*biWidth;
       for(j=0; j<biWidth; j++){
         rgb16=read16(store);
-        ((FXuchar*)pp)[0]=((rgb16>>7)&0xf8)+((rgb16>>12)&0x7);  // Red
-        ((FXuchar*)pp)[1]=((rgb16>>2)&0xf8)+((rgb16>> 7)&0x7);  // Green
-        ((FXuchar*)pp)[2]=((rgb16<<3)&0xf8)+((rgb16>> 2)&0x7);  // Blue
-        ((FXuchar*)pp)[3]=255;                                  // Alpha
+        ((FXuchar*)pp)[0]=((rgb16>>7)&0xf8)+((rgb16>>12)&7);  // Red
+        ((FXuchar*)pp)[1]=((rgb16>>2)&0xf8)+((rgb16>> 7)&7);  // Green
+        ((FXuchar*)pp)[2]=((rgb16<<3)&0xf8)+((rgb16>> 2)&7);  // Blue
+        ((FXuchar*)pp)[3]=255;                                // Alpha
         pp++;
         }
       store.load(padding,pad);

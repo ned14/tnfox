@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileSelector.h,v 1.48 2004/03/18 15:25:20 fox Exp $                    *
+* $Id: FXFileSelector.h,v 1.51 2004/09/11 08:16:33 fox Exp $                    *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -71,7 +71,6 @@ protected:
   FXButton          *accept;            // Accept button
   FXButton          *cancel;            // Cancel button
   FXIcon            *updiricon;         // Up directory icon
-  FXIcon            *newdiricon;        // New directory icon
   FXIcon            *listicon;          // List mode icon
   FXIcon            *detailicon;        // Detail mode icon
   FXIcon            *iconsicon;         // Icon mode icon
@@ -81,6 +80,7 @@ protected:
   FXIcon            *hiddenicon;        // Files hidden icon
   FXIcon            *markicon;          // Book mark icon
   FXIcon            *clearicon;         // Book clear icon
+  FXIcon            *newicon;           // New directory icon
   FXIcon            *deleteicon;        // Delete file icon
   FXIcon            *moveicon;          // Rename file icon
   FXIcon            *copyicon;          // Copy file icon
@@ -195,6 +195,12 @@ public:
   /// Change pattern text for pattern number
   void setPatternText(FXint patno,const FXString& text);
 
+  /// Allow pattern entry
+  void allowPatternEntry(FXbool allow);
+
+  /// Return TRUE if pattern entry is allowed
+  FXbool allowPatternEntry() const;
+
   /**
   * Given filename pattern of the form "GIF Format (*.gif)",
   * returns the pattern only, i.e. "*.gif" in this case.
@@ -239,6 +245,12 @@ public:
 
   /// Return wildcard matching mode
   FXuint getMatchMode() const;
+
+  /// Return TRUE if showing hidden files
+  FXbool showHiddenFiles() const;
+
+  /// Show or hide hidden files
+  void showHiddenFiles(FXbool showing);
 
   /// Show readonly button
   void showReadOnly(FXbool show);

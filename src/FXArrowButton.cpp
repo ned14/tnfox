@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXArrowButton.cpp,v 1.39 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXArrowButton.cpp,v 1.44 2004/10/07 17:13:49 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXArrowButton.h"
@@ -69,13 +70,13 @@ FXDEFMAP(FXArrowButton) FXArrowButtonMap[]={
   FXMAPFUNC(SEL_TIMEOUT,FXArrowButton::ID_REPEAT,FXArrowButton::onRepeat),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,0,FXArrowButton::onLeftBtnPress),
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE,0,FXArrowButton::onLeftBtnRelease),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXArrowButton::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXArrowButton::onQueryHelp),
   FXMAPFUNC(SEL_UNGRABBED,0,FXArrowButton::onUngrabbed),
   FXMAPFUNC(SEL_KEYPRESS,0,FXArrowButton::onKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,0,FXArrowButton::onKeyRelease),
   FXMAPFUNC(SEL_KEYPRESS,FXArrowButton::ID_HOTKEY,FXArrowButton::onHotKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,FXArrowButton::ID_HOTKEY,FXArrowButton::onHotKeyRelease),
-  FXMAPFUNC(SEL_UPDATE,FXArrowButton::ID_QUERY_TIP,FXArrowButton::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXArrowButton::ID_QUERY_HELP,FXArrowButton::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXArrowButton::ID_SETHELPSTRING,FXArrowButton::onCmdSetHelp),
   FXMAPFUNC(SEL_COMMAND,FXArrowButton::ID_GETHELPSTRING,FXArrowButton::onCmdGetHelp),
   FXMAPFUNC(SEL_COMMAND,FXArrowButton::ID_SETTIPSTRING,FXArrowButton::onCmdSetTip),
@@ -213,7 +214,7 @@ long FXArrowButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     setState(TRUE);
     getApp()->removeTimeout(this,ID_AUTO);
     if(options&ARROW_REPEAT) getApp()->addTimeout(this,ID_REPEAT,getApp()->getScrollDelay());
@@ -231,13 +232,13 @@ long FXArrowButton::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   FXbool click=(!fired && state);
   if(isEnabled() && (flags&FLAG_PRESSED)){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
-    setState(FALSE);
-    getApp()->removeTimeout(this,ID_REPEAT);
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
     fired=FALSE;
-    if(click && target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+    getApp()->removeTimeout(this,ID_REPEAT);
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    setState(FALSE);
+    if(click && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
     return 1;
     }
   return 0;
@@ -259,7 +260,7 @@ long FXArrowButton::onUngrabbed(FXObject* sender,FXSelector sel,void* ptr){
 // Repeat a click automatically
 long FXArrowButton::onRepeat(FXObject*,FXSelector,void*){
   getApp()->addTimeout(this,ID_REPEAT,getApp()->getScrollSpeed());
-  if(state && target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+  if(state && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
   fired=TRUE;
   return 1;
   }
@@ -270,7 +271,7 @@ long FXArrowButton::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       setState(TRUE);
       getApp()->removeTimeout(this,ID_AUTO);
@@ -290,14 +291,14 @@ long FXArrowButton::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXbool click=(!fired && state);
   if(isEnabled() && (flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       setState(FALSE);
-      getApp()->removeTimeout(this,ID_REPEAT);
       flags|=FLAG_UPDATE;
       flags&=~FLAG_PRESSED;
       fired=FALSE;
-      if(click && target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+      getApp()->removeTimeout(this,ID_REPEAT);
+      if(click && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
       return 1;
       }
     }
@@ -326,11 +327,11 @@ long FXArrowButton::onHotKeyRelease(FXObject*,FXSelector,void*){
   FXbool click=(!fired && state);
   if(isEnabled() && (flags&FLAG_PRESSED)){
     setState(FALSE);
-    getApp()->removeTimeout(this,ID_REPEAT);
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
     fired=FALSE;
-    if(click && target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+    getApp()->removeTimeout(this,ID_REPEAT);
+    if(click && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
     }
   return 1;
   }
@@ -364,20 +365,22 @@ long FXArrowButton::onCmdGetTip(FXObject*,FXSelector,void* ptr){
   }
 
 
-// We were asked about status text
-long FXArrowButton::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+// We were asked about tip text
+long FXArrowButton::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
     }
   return 0;
   }
 
 
-// We were asked about tip text
-long FXArrowButton::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(!tip.empty() && (flags&FLAG_TIP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+// We were asked about status text
+long FXArrowButton::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
   return 0;

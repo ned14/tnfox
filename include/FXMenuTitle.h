@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuTitle.h,v 1.18 2004/02/08 17:17:34 fox Exp $                       *
+* $Id: FXMenuTitle.h,v 1.19 2004/09/16 04:04:58 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXMENUTITLE_H
 #define FXMENUTITLE_H
@@ -90,7 +90,7 @@ public:
   virtual void killFocus();
 
   /// Set popup menu to pop up
-  void setMenu(FXPopup *menu){ pane=menu; }
+  void setMenu(FXPopup *menu);
 
   /// Return popup menu
   FXPopup* getMenu() const { return pane; }

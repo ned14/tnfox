@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxezquantize.cpp,v 1.2 2004/04/24 02:19:23 fox Exp $                     *
+* $Id: fxezquantize.cpp,v 1.3 2004/06/16 06:27:51 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -103,7 +103,7 @@ nxt:continue;
       }
 
     // Output map index
-    dst[i]=mapindex[p];
+    dst[i]=(FXuchar)mapindex[p];
     }
 
   // Actual number of colors used

@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarTab.cpp,v 1.9 2004/02/08 17:29:07 fox Exp $                     *
+* $Id: FXToolBarTab.cpp,v 1.15 2004/10/19 00:48:59 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -67,10 +68,13 @@ FXDEFMAP(FXToolBarTab) FXToolBarTabMap[]={
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE,0,FXToolBarTab::onLeftBtnRelease),
   FXMAPFUNC(SEL_KEYPRESS,0,FXToolBarTab::onKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,0,FXToolBarTab::onKeyRelease),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXToolBarTab::onQueryTip),
   FXMAPFUNC(SEL_UPDATE,FXToolBarTab::ID_COLLAPSE,FXToolBarTab::onUpdCollapse),
   FXMAPFUNC(SEL_UPDATE,FXToolBarTab::ID_UNCOLLAPSE,FXToolBarTab::onUpdUncollapse),
   FXMAPFUNC(SEL_COMMAND,FXToolBarTab::ID_COLLAPSE,FXToolBarTab::onCmdCollapse),
   FXMAPFUNC(SEL_COMMAND,FXToolBarTab::ID_UNCOLLAPSE,FXToolBarTab::onCmdUncollapse),
+  FXMAPFUNC(SEL_COMMAND,FXToolBarTab::ID_SETTIPSTRING,FXToolBarTab::onCmdSetTip),
+  FXMAPFUNC(SEL_COMMAND,FXToolBarTab::ID_GETTIPSTRING,FXToolBarTab::onCmdGetTip),
   };
 
 
@@ -174,21 +178,22 @@ FXint FXToolBarTab::getDefaultHeight(){
 
 
 // Collapse or uncollapse
-void FXToolBarTab::collapse(FXbool c){
+void FXToolBarTab::collapse(FXbool fold,FXbool notify){
   FXWindow *sibling;
-  if(c!=collapsed){
+  if(fold!=collapsed){
     sibling=getNext() ? getNext() : getPrev();
     if(sibling){
-      if(c){
+      if(fold){
         sibling->hide();
         }
       else{
         sibling->show();
         }
       }
-    collapsed=c;
+    collapsed=fold;
     recalc();
     update();
+    if(notify && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)fold);
     }
   }
 
@@ -259,10 +264,7 @@ long FXToolBarTab::onLeftBtnRelease(FXObject* sender,FXSelector sel,void* ptr){
       flags&=~FLAG_PRESSED;
       down=FALSE;
       update();
-      if(click){
-        collapse(!collapsed);
-        if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)collapsed);
-        }
+      if(click) collapse(!collapsed,TRUE);
       return 1;
       }
     }
@@ -286,7 +288,7 @@ long FXToolBarTab::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       down=TRUE;
       update();
@@ -303,14 +305,13 @@ long FXToolBarTab::onKeyPress(FXObject*,FXSelector,void* ptr){
 long FXToolBarTab::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled() && (flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       down=FALSE;
       update();
       flags|=FLAG_UPDATE;
       flags&=~FLAG_PRESSED;
-      collapse(!collapsed);
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)collapsed);
+      collapse(!collapsed,TRUE);
       return 1;
       }
     }
@@ -320,7 +321,7 @@ long FXToolBarTab::onKeyRelease(FXObject*,FXSelector,void* ptr){
 
 // Collapse
 long FXToolBarTab::onCmdCollapse(FXObject*,FXSelector,void*){
-  collapse(TRUE);
+  collapse(TRUE,TRUE);
   return 1;
   }
 
@@ -337,7 +338,7 @@ long FXToolBarTab::onUpdCollapse(FXObject* sender,FXSelector,void*){
 
 // Uncollapse
 long FXToolBarTab::onCmdUncollapse(FXObject*,FXSelector,void*){
-  collapse(FALSE);
+  collapse(FALSE,TRUE);
   return 1;
   }
 
@@ -348,6 +349,31 @@ long FXToolBarTab::onUpdUncollapse(FXObject* sender,FXSelector,void*){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_CHECK),NULL);
   else
     sender->handle(this,FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
+  return 1;
+  }
+
+
+// We were asked about tip text
+long FXToolBarTab::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+    return 1;
+    }
+  return 0;
+  }
+
+
+// Set tip using a message
+long FXToolBarTab::onCmdSetTip(FXObject*,FXSelector,void* ptr){
+  setTipText(*((FXString*)ptr));
+  return 1;
+  }
+
+
+// Get tip using a message
+long FXToolBarTab::onCmdGetTip(FXObject*,FXSelector,void* ptr){
+  *((FXString*)ptr)=getTipText();
   return 1;
   }
 

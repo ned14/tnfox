@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuBar.h,v 1.10 2004/02/08 17:17:33 fox Exp $                          *
+* $Id: FXMenuBar.h,v 1.11 2004/09/26 18:02:28 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXMENUBAR_H
 #define FXMENUBAR_H

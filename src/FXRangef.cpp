@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRangef.cpp,v 1.6 2004/03/21 19:07:57 fox Exp $                         *
+* $Id: FXRangef.cpp,v 1.8 2004/10/06 21:51:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -172,7 +173,7 @@ FXRangef intersect(const FXRangef& a,const FXRangef& b){
   }
 
 
-// Intersect box with plane ax+by+cz+w; returns -1,0,+1
+// Intersect box with normalized plane ax+by+cz+w; returns -1,0,+1
 FXint FXRangef::intersect(const FXVec4f& plane) const {
   FXVec3f lo;
   FXVec3f hi;

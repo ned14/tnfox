@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVisual.cpp,v 1.64 2004/02/18 16:37:50 fox Exp $                        *
+* $Id: FXVisual.cpp,v 1.69 2004/09/17 07:46:22 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -33,7 +35,6 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXObjectList.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXVisual.h"
 
@@ -545,7 +546,7 @@ void FXVisual::setupstaticcolor(){
   register FXuint mapsize,bestmatch,i,nr,ng,nb,r,g,b,j,d;
   register FXdouble mindist,dist,gamma,dr,dg,db;
   register FXPixel redmax,greenmax,bluemax;
-  FXbool rc[256],gc[256],bc[256];
+  FXbool rcnt[256],gcnt[256],bcnt[256];
   XColor table[256],color;
 
   // Get gamma
@@ -558,17 +559,17 @@ void FXVisual::setupstaticcolor(){
   XQueryColors(DISPLAY(getApp()),colormap,table,mapsize);
 
   // How many shades of r,g,b do we have?
-  for(i=0; i<256; i++){ rc[i]=gc[i]=bc[i]=0; }
+  for(i=0; i<256; i++){ rcnt[i]=gcnt[i]=bcnt[i]=0; }
   for(i=0; i<mapsize; i++){
-    rc[table[i].red/257]=1;
-    gc[table[i].green/257]=1;
-    bc[table[i].blue/257]=1;
+    rcnt[table[i].red/257]=1;
+    gcnt[table[i].green/257]=1;
+    bcnt[table[i].blue/257]=1;
     }
   nr=ng=nb=0;
   for(i=0; i<256; i++){
-    if(rc[i]) nr++;
-    if(gc[i]) ng++;
-    if(bc[i]) nb++;
+    if(rcnt[i]) nr++;
+    if(gcnt[i]) ng++;
+    if(bcnt[i]) nb++;
     }
   FXTRACE((200,"nr=%3d ng=%3d nb=%3d\n",nr,ng,nb));
 
@@ -818,6 +819,7 @@ void FXVisual::setuppixmapmono(){
   }
 
 
+/*
 // Try determine standard colormap
 static FXbool getstdcolormap(Display *dpy,VisualID visualid,XStandardColormap& map){
   XStandardColormap *stdmaps=NULL;
@@ -845,6 +847,7 @@ static FXbool getstdcolormap(Display *dpy,VisualID visualid,XStandardColormap& m
   if(stdmaps) XFree(stdmaps);
   return status;
   }
+*/
 
 
 // Determine colormap, then initialize it
@@ -1184,7 +1187,8 @@ FXColor FXVisual::getColor(FXPixel pix){
   XColor color;
   color.pixel=pix;
   XQueryColor(DISPLAY(getApp()),colormap,&color);
-  return FXRGB((color.red>>8),(color.green>>8),(color.blue>>8));
+//  return FXRGB((color.red>>8),(color.green>>8),(color.blue>>8));
+  return FXRGB(((color.red+128)/257),((color.green+128)/257),((color.blue+128)/257));
 #else
   return PALETTEINDEX(pix);
 #endif

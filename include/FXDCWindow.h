@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.h,v 1.38 2004/01/21 07:09:58 fox Exp $                        *
+* $Id: FXDCWindow.h,v 1.41 2004/09/08 05:11:56 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXDCWINDOW_H
 #define FXDCWINDOW_H
@@ -113,13 +113,22 @@ public:
   virtual void drawRectangle(FXint x,FXint y,FXint w,FXint h);
   virtual void drawRectangles(const FXRectangle* rectangles,FXuint nrectangles);
 
+  /// Draw rounded rectangle with ellipse with ew and ellips height eh
+  virtual void drawRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh);
+
   /// Draw arcs
   virtual void drawArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2);
   virtual void drawArcs(const FXArc* arcs,FXuint narcs);
 
+  /// Draw ellipse
+  virtual void drawEllipse(FXint x,FXint y,FXint w,FXint h);
+
   /// Filled rectangles
   virtual void fillRectangle(FXint x,FXint y,FXint w,FXint h);
   virtual void fillRectangles(const FXRectangle* rectangles,FXuint nrectangles);
+
+  /// Filled rounded rectangle with ellipse with ew and ellips height eh
+  virtual void fillRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh);
 
   /// Fill chord
   virtual void fillChord(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2);
@@ -128,6 +137,9 @@ public:
   /// Draw arcs
   virtual void fillArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2);
   virtual void fillArcs(const FXArc* arcs,FXuint narcs);
+
+  /// Fill ellipse
+  virtual void fillEllipse(FXint x,FXint y,FXint w,FXint h);
 
   /// Filled polygon
   virtual void fillPolygon(const FXPoint* points,FXuint npoints);
@@ -159,7 +171,7 @@ public:
   virtual void drawIconShaded(const FXIcon* icon,FXint dx,FXint dy);
   virtual void drawIconSunken(const FXIcon* icon,FXint dx,FXint dy);
 
-  /// Draw string
+  /// Draw string with base line starting at x, y
   virtual void drawText(FXint x,FXint y,const FXchar* string,FXuint length);
   virtual void drawImageText(FXint x,FXint y,const FXchar* string,FXuint length);
 

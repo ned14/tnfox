@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRuler.h,v 1.19 2004/02/08 17:17:34 fox Exp $                           *
+* $Id: FXRuler.h,v 1.26 2004/08/22 19:03:07 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXRULER_H
 #define FXRULER_H
@@ -54,32 +54,38 @@ class FXFont;
 
 
 /**
-* The Ruler widget is placed alongside a document to measure position
-* and size of entities within the document.
+* The ruler widget is placed alongside a document to measure position
+* and size of entities within the document, such as margins, paragraph
+* indents, and tickmarks.
+* The ruler widget sends a SEL_CHANGED when the indentation or margins
+* are interactively changed by the user.
 */
 class FXAPI FXRuler : public FXFrame {
   FXDECLARE(FXRuler)
 protected:
   FXFont  *font;                // Font for numbers
-  FXColor  textColor;           // Color for numbers and ticks
-  FXint    lowerMargin;         // Lower margin
-  FXint    upperMargin;         // Upper margin
-  FXint    firstPara;           // First line paragraph indent
-  FXint    lowerPara;           // Lower paragraph indent
-  FXint    upperPara;           // Upper paragraph indent
-  FXint    docSpace;            // Empty space around document
-  FXint    docSize;             // Size of document
-  FXint    contentSize;         // Size of content
+  FXint    documentSize;        // Size of document
+  FXint    edgeSpacing;         // Edge spacing around document
+  FXint    marginLower;         // Lower margin
+  FXint    marginUpper;         // Upper margin
+  FXint    indentFirst;         // First line paragraph indent
+  FXint    indentLower;         // Lower paragraph indent
+  FXint    indentUpper;         // Upper paragraph indent
+  FXdouble pixelPerTick;        // Number of pixels per tick increment
+  FXint    numberTicks;         // Tick increments between numbers
+  FXint    majorTicks;          // Tick increments between major ticks
+  FXint    mediumTicks;         // Tick increments between medium ticks
+  FXint    tinyTicks;           // Tick increments between tiny ticks
   FXint    arrowPos;            // Arrow position
-  FXdouble pixelPerTick;        // Number of pixels between ticks
-  FXint    majorTicks;          // Interval between major ticks
-  FXint    mediumTicks;         // Interval between medium ticks
-  FXint    tinyTicks;           // Interval between tiny ticks
-  FXint    shift;               // Shift amount
+  FXColor  textColor;           // Color for numbers and ticks
+  FXint    pos;                 // Scroll position
+  FXint    off;                 // Offset item was grabbed
   FXString tip;                 // Tooltip text
   FXString help;                // Help text
+  FXuchar  mode;                // Mode widget is in
 protected:
   FXRuler();
+  FXint picked(FXint x,FXint y);
   void drawLeftArrow(FXDCWindow& dc,FXint x,FXint y);
   void drawRightArrow(FXDCWindow& dc,FXint x,FXint y);
   void drawUpArrow(FXDCWindow& dc,FXint x,FXint y);
@@ -88,7 +94,15 @@ protected:
   void drawRightMarker(FXDCWindow& dc,FXint x,FXint y);
   void drawUpMarker(FXDCWindow& dc,FXint x,FXint y);
   void drawDownMarker(FXDCWindow& dc,FXint x,FXint y);
-//  void drawHzTicks(FXDCWindow& dc
+protected:
+  enum{
+    MOUSE_NONE,         // No mouse operation
+    MOUSE_MARG_LOWER,   // Drag lower margin
+    MOUSE_MARG_UPPER,   // Drag upper margin
+    MOUSE_PARA_FIRST,   // Drag first indent
+    MOUSE_PARA_LOWER,   // Drag lower indent
+    MOUSE_PARA_UPPER    // Drag upper indent
+    };
 private:
   FXRuler(const FXRuler&);
   FXRuler &operator=(const FXRuler&);
@@ -107,7 +121,7 @@ public:
   long onQueryHelp(FXObject*,FXSelector,void*);
   long onQueryTip(FXObject*,FXSelector,void*);
 public:
-  enum {
+  enum{
     ID_ARROW=FXFrame::ID_LAST,
     ID_LAST
     };
@@ -127,6 +141,60 @@ public:
 
   /// Return default height
   virtual FXint getDefaultHeight();
+
+  /// Set the current position
+  void setPosition(FXint pos);
+
+  /// Return the current position
+  FXint getPosition() const { return pos; }
+
+  /// Change/return document size
+  void setDocumentSize(FXint size,FXbool notify=FALSE);
+  FXint getDocumentSize() const { return documentSize; }
+
+  /// Change/return document edge spacing
+  void setEdgeSpacing(FXint space,FXbool notify=FALSE);
+  FXint getEdgeSpacing() const { return edgeSpacing; }
+
+  /// Change/return lower document margin
+  void setMarginLower(FXint mgn,FXbool notify=FALSE);
+  FXint getMarginLower() const { return marginLower; }
+
+  /// Change/return upper document margin
+  void setMarginUpper(FXint mgn,FXbool notify=FALSE);
+  FXint getMarginUpper() const { return marginUpper; }
+
+  /// Change/return first line indent
+  void setIndentFirst(FXint ind,FXbool notify=FALSE);
+  FXint getIndentFirst() const { return indentFirst; }
+
+  /// Change/return lower indent
+  void setIndentLower(FXint ind,FXbool notify=FALSE);
+  FXint getIndentLower() const { return indentLower; }
+
+  /// Change/return upper indent
+  void setIndentUpper(FXint ind,FXbool notify=FALSE);
+  FXint getIndentUpper() const { return indentUpper; }
+
+  /// Change/return document number placement
+  void setNumberTicks(FXint ticks,FXbool notify=FALSE);
+  FXint getNumberTicks() const { return numberTicks; }
+
+  /// Change/return document major ticks
+  void setMajorTicks(FXint ticks,FXbool notify=FALSE);
+  FXint getMajorTicks() const { return majorTicks; }
+
+  /// Change/return document medium ticks
+  void setMediumTicks(FXint ticks,FXbool notify=FALSE);
+  FXint getMediumTicks() const { return mediumTicks; }
+
+  /// Change/return document tiny ticks
+  void setTinyTicks(FXint ticks,FXbool notify=FALSE);
+  FXint getTinyTicks() const { return tinyTicks; }
+
+  /// Change/return pixel per tick spacing
+  void setPixelPerTick(FXdouble space,FXbool notify=FALSE);
+  FXdouble getPixelPerTick() const { return pixelPerTick; }
 
   /// Set the text font
   void setFont(FXFont *fnt);

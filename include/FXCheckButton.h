@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCheckButton.h,v 1.26 2004/02/17 21:06:01 fox Exp $                     *
+* $Id: FXCheckButton.h,v 1.28 2004/09/24 17:34:02 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXCHECKBUTTON_H
 #define FXCHECKBUTTON_H
@@ -41,12 +41,18 @@ enum {
 
 
 /**
-* A check button is a tri-state button.  Normally, it is either
+* A Check Button is a tri-state button.  Normally, it is either
 * TRUE or FALSE, and toggles between TRUE or FALSE whenever it is pressed.
 * A third state MAYBE may be set to indicate that no selection has been made yet
 * by the user, or that the state is ambiguous.
-* When pressed, the check button sends a SEL_COMMAND to its target, and the
+* When pressed, the Check Button sends a SEL_COMMAND to its target, and the
 * message data represents the state of the check button.
+* The option CHECKBUTTON_AUTOGRAY (CHECKBUTTON_AUTOHIDE) causes the button to be 
+* grayed out (hidden) if its handler does not respond to the SEL_UPDATE message.
+* With the CHECKBUTTON_PLUS option, the Check Button will draw a + or - sign instead 
+* of a check.  You can use this to make collapsable panels, by hooking up a Check 
+* Button to a layout manager via the ID_TOGGLE_SHOWN message.  This will give a
+* similar visual element as collapsing folders in a Tree List.
 */
 class FXAPI FXCheckButton : public FXLabel {
   FXDECLARE(FXCheckButton)
@@ -112,10 +118,10 @@ public:
   /// Set the box background color
   void setBoxColor(FXColor clr);
 
-  /// Get the box background color
+  /// Get the box check color
   FXColor getCheckColor() const { return checkColor; }
 
-  /// Set the box background color
+  /// Set the box check color
   void setCheckColor(FXColor clr);
 
   /// Save check button to a stream

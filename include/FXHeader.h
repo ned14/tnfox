@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.h,v 1.57 2004/02/08 17:17:33 fox Exp $                          *
+* $Id: FXHeader.h,v 1.60 2004/10/30 06:19:36 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXHEADER_H
 #define FXHEADER_H
@@ -59,30 +59,27 @@ protected:
 protected:
   FXHeaderItem(){}
   virtual void draw(const FXHeader* header,FXDC& dc,FXint x,FXint y,FXint w,FXint h);
-protected:
-  enum{
-    ARROW_NONE = 0,
-    ARROW_UP   = 0x00000001,
-    ARROW_DOWN = 0x00000002,
-    PRESSED    = 0x00000004
-    };
 public:
   enum{
-    RIGHT      = 0x00000008,      /// Align on right
-    LEFT       = 0x00000010,      /// Align on left
-    CENTER_X   = 0,               /// Aling centered horizontally (default)
-    TOP        = 0x00000020,      /// Align on top
-    BOTTOM     = 0x00000040,      /// Align on bottom
-    CENTER_Y   = 0,               /// Aling centered vertically (default)
-    BEFORE     = 0x00000080,      /// Icon before the text
-    AFTER      = 0x00000100,      /// Icon after the text
-    ABOVE      = 0x00000200,      /// Icon above the text
-    BELOW      = 0x00000400       /// Icon below the text
+    ARROW_NONE = 0,     /// No arrow
+    ARROW_UP   = 1,     /// Arrow pointing up
+    ARROW_DOWN = 2,     /// Arrow pointing down
+    PRESSED    = 4,     /// Pressed down
+    RIGHT      = 8,     /// Align on right
+    LEFT       = 16,    /// Align on left
+    CENTER_X   = 0,     /// Aling centered horizontally (default)
+    TOP        = 32,    /// Align on top
+    BOTTOM     = 64,    /// Align on bottom
+    CENTER_Y   = 0,     /// Aling centered vertically (default)
+    BEFORE     = 128,   /// Icon before the text
+    AFTER      = 256,   /// Icon after the text
+    ABOVE      = 512,   /// Icon above the text
+    BELOW      = 1024   /// Icon below the text
     };
 public:
 
   /// Construct new item with given text, icon, size, and user-data
-  FXHeaderItem(const FXString& text,FXIcon* ic=NULL,FXint s=0,void* ptr=NULL):label(text),icon(ic),data(ptr),size(s),pos(0),state(FXHeaderItem::LEFT|FXHeaderItem::BEFORE){}
+  FXHeaderItem(const FXString& text,FXIcon* ic=NULL,FXint s=0,void* ptr=NULL):label(text),icon(ic),data(ptr),size(s),pos(0),state(LEFT|BEFORE){}
 
   /// Change item's text label
   virtual void setText(const FXString& txt){ label=txt; }
@@ -121,13 +118,13 @@ public:
   FXbool getArrowDir() const;
 
   /// Change content justification
-  void setJustify(FXuint justify);
+  void setJustify(FXuint justify=LEFT|CENTER_Y);
 
   /// Return content justification
   FXuint getJustify() const { return state&(RIGHT|LEFT|TOP|BOTTOM); }
 
   /// Change icon position
-  void setIconPosition(FXuint mode);
+  void setIconPosition(FXuint mode=BEFORE);
 
   /// Return icon position
   FXuint getIconPosition() const { return state&(BEFORE|AFTER|ABOVE|BELOW); }
@@ -237,7 +234,7 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Set the current position
-  void setPosition(FXint p);
+  void setPosition(FXint pos);
 
   /// Return the current position
   FXint getPosition() const { return pos; }
@@ -257,6 +254,12 @@ public:
 
   /// Replace items text, icon, and user-data pointer
   FXint setItem(FXint index,const FXString& text,FXIcon *icon=NULL,FXint size=0,void* ptr=NULL,FXbool notify=FALSE);
+
+  /// Fill header by appending items from array of strings
+  FXint fillItems(const FXchar** strings,FXIcon *icon=NULL,FXint size=0,void* ptr=NULL,FXbool notify=FALSE);
+
+  /// Fill header by appending items from newline separated strings
+  FXint fillItems(const FXString& strings,FXIcon *icon=NULL,FXint size=0,void* ptr=NULL,FXbool notify=FALSE);
 
   /// Insert a new [possibly subclassed] item at the give index
   FXint insertItem(FXint index,FXHeaderItem* item,FXbool notify=FALSE);

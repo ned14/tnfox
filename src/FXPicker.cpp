@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPicker.cpp,v 1.11 2004/02/08 17:29:07 fox Exp $                         *
+* $Id: FXPicker.cpp,v 1.17 2004/10/07 21:49:14 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXIcon.h"
@@ -91,10 +92,9 @@ long FXPicker::onLeave(FXObject* sender,FXSelector sel,void* ptr){
 // Mouse moved
 long FXPicker::onMotion(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
-  flags&=~FLAG_TIP;
   if(state==STATE_DOWN){
     FXPoint point(event->root_x,event->root_y);
-    if(target){ target->handle(this,FXSEL(SEL_CHANGED,message),(void*)&point); }
+    if(target){ target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)&point); }
     return 1;
     }
   return 0;
@@ -117,7 +117,7 @@ long FXPicker::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
       flags|=FLAG_UPDATE;
       setState(STATE_UP);
       FXPoint point(event->root_x,event->root_y);
-      if(target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)&point); }
+      if(target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)&point); }
       }
     return 1;
     }

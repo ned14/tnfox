@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSphered.cpp,v 1.4 2004/02/24 23:16:10 fox Exp $                        *
+* $Id: FXSphered.cpp,v 1.10 2004/10/29 15:58:01 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXVec2d.h"
 #include "FXVec3d.h"
@@ -33,7 +34,7 @@
 
 /*
   Notes:
-  - This is new, untested code; caveat emptor!
+  - Negative radius represents empty bounding sphere.
 */
 
 
@@ -48,19 +49,14 @@ inline FXdouble sqr(FXdouble x){ return x*x; }
 
 
 // Initialize from bounding box
-FXSphered::FXSphered(const FXRanged& bounds){
-  center=bounds.center();
-  radius=bounds.diameter()*0.5;
+FXSphered::FXSphered(const FXRanged& bounds):center(bounds.center()),radius(bounds.diameter()*0.5){
   }
 
 
 
 // Test if sphere contains point x,y,z
 FXbool FXSphered::contains(FXdouble x,FXdouble y,FXdouble z) const {
-  register FXdouble dx=center.x-x;
-  register FXdouble dy=center.y-y;
-  register FXdouble dz=center.z-z;
-  return dx*dx+dx*dy+dz*dz<radius*radius;
+  return 0.0<=radius && sqr(center.x-x)+sqr(center.y-y)+sqr(center.z-z)<=sqr(radius);
   }
 
 
@@ -85,11 +81,11 @@ FXbool FXSphered::contains(const FXRanged& box) const {
 
 // Test if sphere properly contains another sphere
 FXbool FXSphered::contains(const FXSphered& sphere) const {
-  if(radius>=sphere.radius){
+  if(0.0<=sphere.radius && sphere.radius<=radius){
     register FXdouble dx=center.x-sphere.center.x;
     register FXdouble dy=center.y-sphere.center.y;
     register FXdouble dz=center.z-sphere.center.z;
-    return sqrt(dx*dx+dx*dy+dz*dz)<radius-sphere.radius;
+    return sphere.radius+sqrt(dx*dx+dx*dy+dz*dz)<=radius;
     }
   return FALSE;
   }
@@ -97,11 +93,26 @@ FXbool FXSphered::contains(const FXSphered& sphere) const {
 
 // Include point
 FXSphered& FXSphered::include(FXdouble x,FXdouble y,FXdouble z){
-  register FXdouble dx=center.x-x;
-  register FXdouble dy=center.y-y;
-  register FXdouble dz=center.z-z;
-  register FXdouble dd=sqrt(dx*dx+dx*dy+dz*dz);
-  if(dd>radius) radius=dd;
+  register FXdouble dx,dy,dz,dist,delta,newradius;
+  if(0.0<=radius){
+    dx=center.x-x;
+    dy=center.y-y;
+    dz=center.z-z;
+    dist=sqrtf(dx*dx+dx*dy+dz*dz);
+    if(radius<dist){
+      newradius=0.5*(radius+dist);
+      delta=(newradius-radius);
+      center.x+=delta*dx/dist;
+      center.y+=delta*dy/dist;
+      center.z+=delta*dz/dist;
+      radius=newradius;
+      }
+    return *this;
+    }
+  center.x=x;
+  center.y=y;
+  center.z=z;
+  radius=0.0;
   return *this;
   }
 
@@ -115,7 +126,7 @@ FXSphered& FXSphered::include(const FXVec3d& p){
 // Include given range into this one
 FXSphered& FXSphered::include(const FXRanged& box){
   include(box.corner(0));
-  include(box.corner(1)); // FIXME there's got to be a better trick!
+  include(box.corner(1));
   include(box.corner(2));
   include(box.corner(3));
   include(box.corner(4));
@@ -128,50 +139,42 @@ FXSphered& FXSphered::include(const FXRanged& box){
 
 // Include given sphere into this one
 FXSphered& FXSphered::include(const FXSphered& sphere){
-  register FXdouble dx=sphere.center.x-center.x;
-  register FXdouble dy=sphere.center.y-center.y;
-  register FXdouble dz=sphere.center.z-center.z;
-  register FXdouble dist=sqrtf(dx*dx+dy*dy+dz*dz);
-  register FXdouble new_radius,delta;
-
-  // Rule out easy case
-  if(radius<dist+sphere.radius){
-
-    // New sphere contains this one
-    if(sphere.radius>dist+radius){
-      center=sphere.center;
-      radius=sphere.radius;
+  register FXdouble dx,dy,dz,dist,delta,newradius;
+  if(0.0<=sphere.radius){
+    if(0.0<=radius){
+      dx=sphere.center.x-center.x;
+      dy=sphere.center.y-center.y;
+      dz=sphere.center.z-center.z;
+      dist=sqrt(dx*dx+dy*dy+dz*dz);
+      if(sphere.radius<dist+radius){
+        if(radius<dist+sphere.radius){
+          newradius=0.5*(radius+dist+sphere.radius);
+          delta=(newradius-radius);
+          center.x+=delta*dx/dist;
+          center.y+=delta*dy/dist;
+          center.z+=delta*dz/dist;
+          radius=newradius;
+          }
+        return *this;
+        }
       }
-
-    // Same centers, take max radius
-    else if(dist<=0.0){
-      if(radius<sphere.radius) radius=sphere.radius;
-      }
-
-    // Update this sphere if sphere extends outside this radius
-    else{
-      new_radius=0.5*(radius+dist+sphere.radius);
-      delta=(new_radius-radius);
-      center.x+=delta*dx/dist;
-      center.y+=delta*dy/dist;
-      center.z+=delta*dz/dist;
-      radius=new_radius;
-      }
+    center=sphere.center;
+    radius=sphere.radius;
     }
   return *this;
   }
 
 
 
-// Intersect sphere with plane ax+by+cz+w; returns -1,0,+1
+// Intersect sphere with normalized plane ax+by+cz+w; returns -1,0,+1
 FXint FXSphered::intersect(const FXVec4d& plane) const {
-  register FXdouble rr=radius*sqrt(plane.x*plane.x+plane.y*plane.y+plane.z*plane.z);
+  register FXdouble dist=distance(plane,center);
 
   // Lower point on positive side of plane
-  if(plane.x*center.x+plane.y*center.y+plane.z*center.z+plane.w>=rr) return 1;
+  if(dist>=radius) return 1;
 
   // Upper point on negative side of plane
-  if(plane.x*center.x+plane.y*center.y+plane.z*center.z+plane.w<=rr) return -1;
+  if(dist<=-radius) return -1;
 
   // Overlap
   return 0;
@@ -180,7 +183,7 @@ FXint FXSphered::intersect(const FXVec4d& plane) const {
 
 // Intersect sphere with ray u-v
 FXbool FXSphered::intersect(const FXVec3d& u,const FXVec3d& v) const {
-  if(radius>0.0){
+  if(0.0<=radius){
     FXdouble rr=radius*radius;
     FXVec3d uc=center-u;        // Vector from u to center
     FXdouble dd=len2(uc);
@@ -201,41 +204,47 @@ FXbool FXSphered::intersect(const FXVec3d& u,const FXVec3d& v) const {
   }
 
 
-// Test if box overlaps with sphere; algorithm due to Arvo (GEMS I)
-FXbool overlap(const FXRanged& a,const FXSphered& b){
-  register FXdouble dd=0.0;
+// Test if sphere overlaps with box
+FXbool overlap(const FXSphered& a,const FXRanged& b){
+  if(0.0<=a.radius){
+    register FXdouble dd=0.0;
 
-  if(b.center.x<a.lower.x)
-    dd+=sqr(b.center.x-a.lower.x);
-  else if(b.center.x>a.upper.x)
-    dd+=sqr(b.center.x-a.upper.x);
+    if(a.center.x<b.lower.x)
+      dd+=sqr(a.center.x-b.lower.x);
+    else if(a.center.x>b.upper.x)
+      dd+=sqr(a.center.x-b.upper.x);
 
-  if(b.center.y<a.lower.y)
-    dd+=sqr(b.center.y-a.lower.y);
-  else if(b.center.y>a.upper.y)
-    dd+=sqr(b.center.y-a.upper.y);
+    if(a.center.y<b.lower.y)
+      dd+=sqr(a.center.y-b.lower.y);
+    else if(a.center.y>b.upper.y)
+      dd+=sqr(a.center.y-b.upper.y);
 
-  if(b.center.z<a.lower.z)
-    dd+=sqr(b.center.z-a.lower.z);
-  else if(b.center.z>a.upper.z)
-    dd+=sqr(b.center.z-a.upper.z);
+    if(a.center.z<b.lower.z)
+      dd+=sqr(a.center.z-b.lower.z);
+    else if(a.center.z>b.upper.z)
+      dd+=sqr(a.center.z-b.upper.z);
 
-  return dd<=b.radius*b.radius;
+    return dd<=a.radius*a.radius;
+    }
+  return FALSE;
   }
 
 
-// Test if sphere overlaps with box
-FXbool overlap(const FXSphered& a,const FXRanged& b){
+// Test if box overlaps with sphere; algorithm due to Arvo (GEMS I)
+FXbool overlap(const FXRanged& a,const FXSphered& b){
   return overlap(b,a);
   }
 
 
 // Test if spheres overlap
 FXbool overlap(const FXSphered& a,const FXSphered& b){
-  register FXdouble dx=a.center.x-b.center.x;
-  register FXdouble dy=a.center.y-b.center.y;
-  register FXdouble dz=a.center.z-b.center.z;
-  return sqrt(dx*dx+dy*dy+dz*dz)<(a.radius+b.radius);
+  if(0.0<=a.radius && 0.0<=b.radius){
+    register FXdouble dx=a.center.x-b.center.x;
+    register FXdouble dy=a.center.y-b.center.y;
+    register FXdouble dz=a.center.z-b.center.z;
+    return sqrt(dx*dx+dy*dy+dz*dz)<(a.radius+b.radius);
+    }
+  return FALSE;
   }
 
 

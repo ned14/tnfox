@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBMPIcon.cpp,v 1.26 2004/02/08 17:29:06 fox Exp $                       *
+* $Id: FXBMPIcon.cpp,v 1.29 2004/11/10 16:22:05 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -33,7 +35,6 @@
 #include "FXObject.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXDrawable.h"
@@ -54,6 +55,10 @@
 /*******************************************************************************/
 
 namespace FX {
+
+
+// Suggested file extension
+const FXchar FXBMPIcon::fileExt[]="bmp";
 
 
 // Object implementation

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGIFImage.h,v 1.17 2004/04/24 14:10:29 fox Exp $                        *
+* $Id: FXGIFImage.h,v 1.18 2004/11/10 16:22:05 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXGIFIMAGE_H
 #define FXGIFIMAGE_H
@@ -38,6 +38,8 @@ protected:
 private:
   FXGIFImage(const FXGIFImage&);
   FXGIFImage &operator=(const FXGIFImage&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct an image from memory stream formatted as CompuServe GIF format

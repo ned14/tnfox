@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComposite.cpp,v 1.41 2004/02/08 17:29:06 fox Exp $                     *
+* $Id: FXComposite.cpp,v 1.47 2004/10/07 21:49:14 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -33,7 +35,6 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXComposite.h"
 
@@ -247,7 +248,7 @@ long FXComposite::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
   if(getFocus() && getFocus()->handle(sender,sel,ptr)) return 1;
 
   // Try target first
-  if(isEnabled() && target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+  if(isEnabled() && target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
 
   // Check the accelerators
   if(getAccelTable() && getAccelTable()->handle(this,sel,ptr)) return 1;
@@ -287,7 +288,7 @@ long FXComposite::onKeyRelease(FXObject* sender,FXSelector sel,void* ptr){
   if(getFocus() && getFocus()->handle(sender,sel,ptr)) return 1;
 
   // Try target first
-  if(isEnabled() && target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+  if(isEnabled() && target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
 
   // Check the accelerators
   if(getAccelTable() && getAccelTable()->handle(this,sel,ptr)) return 1;

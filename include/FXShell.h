@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXShell.h,v 1.28 2004/02/08 17:17:34 fox Exp $                           *
+* $Id: FXShell.h,v 1.29 2004/09/26 18:02:28 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXSHELL_H
 #define FXSHELL_H
@@ -31,7 +31,10 @@
 namespace FX {
 
 
-/// A child of the Root window
+/**
+* The Shell widget is used as the base class for top level windows, i.e. 
+* windows which are direct children of the root window.
+*/
 class FXAPI FXShell : public FXComposite {
   FXDECLARE(FXShell)
   friend class FXHandedInterfaceI;

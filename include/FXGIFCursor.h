@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGIFCursor.h,v 1.17 2004/04/24 14:10:29 fox Exp $                       *
+* $Id: FXGIFCursor.h,v 1.18 2004/11/10 16:22:05 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXGIFCURSOR_H
 #define FXGIFCURSOR_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXGIFCursor(const FXGIFCursor&);
   FXGIFCursor &operator=(const FXGIFCursor&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /**

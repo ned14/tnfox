@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.h,v 1.38 2004/02/08 17:17:33 fox Exp $                        *
+* $Id: FXMDIChild.h,v 1.39 2004/09/20 16:25:54 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXMDICHILD_H
 #define FXMDICHILD_H
@@ -48,8 +48,27 @@ enum {
 
 
 /**
-* The MDI child window contains the application
-* work area in a Multiple Document Interface application.
+* The MDI child window contains the application work area in a Multiple Document 
+* Interface application.  GUI Controls are connected to the MDI child via delegation
+* through the MDI client, which forwards messages it receives to the active MDI child.
+* The MDI child itself tries to further delegate messages to its single content window, 
+* and if not handled there, to its target object.
+* When the MDI child is maximized, it sends a SEL_MAXIMIZE message; when the MDI
+* child is minimized, it sends a SEL_MINIMIZE message.  When it is restored, it
+* sends a SEL_RESTORE message to its target.  The MDI child also notifies its
+* target when it becomes the active MDI child, via the SEL_SELECTED message.
+* The void* in the SEL_SELECTED message refers to the previously active MDI child,
+* if any.  When an MDI child ceases to be the active one, a SEL_DESELECTED message
+* is sent.  The void* in the SEL_DESELECTED message refers to the newly activated
+* MDI child, if any.  Thus, interception of SEL_SELECTED and SEL_DESELECTED allows
+* the target object to determine whether the user switched between MDI windows of
+* the same document (target) or between MDI windows belonging to the same document.
+* When the MDI child is closed, it sends a SEL_CLOSE message to its target.
+* The target has an opportunity to object to the closing; if the MDI child should
+* not be closed, it should return 1 (objection). If the MDI child should be closed,
+* the target can either just return 0 or simply not handle the SEL_CLOSE message.
+* The SEL_UPDATE message can be used to modify the MDI child's title (via 
+* ID_SETSTRINGVALUE), and window icon (via ID_SETICONVALUE).
 */
 class FXAPI FXMDIChild : public FXComposite {
   FXDECLARE(FXMDIChild)

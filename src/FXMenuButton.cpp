@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuButton.cpp,v 1.37 2004/02/08 17:29:06 fox Exp $                    *
+* $Id: FXMenuButton.cpp,v 1.44 2004/10/07 21:49:14 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -234,7 +235,7 @@ long FXMenuButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     if(state)
       handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
     else
@@ -249,7 +250,7 @@ long FXMenuButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 long FXMenuButton::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* ev=(FXEvent*)ptr;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(ev->moved){ handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL); }
     return 1;
     }
@@ -290,7 +291,7 @@ long FXMenuButton::onKeyPress(FXObject*,FXSelector sel,void* ptr){
   flags&=~FLAG_TIP;
   if(pane && pane->shown() && pane->handle(pane,sel,ptr)) return 1;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       if(state)
         handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
@@ -308,7 +309,7 @@ long FXMenuButton::onKeyRelease(FXObject*,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(pane && pane->shown() && pane->handle(pane,sel,ptr)) return 1;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       return 1;
       }
@@ -370,7 +371,7 @@ long FXMenuButton::onCmdPost(FXObject*,FXSelector,void*){
         else if(options&MENUBUTTON_ATTACH_BOTTOM){
           y=y+height-h;
           }
-        x=x-offsetx-pane->getWidth();
+        x=x-offsetx-w;
         y=y+offsety;
         }
       else if(options&MENUBUTTON_UP){                           // Up
@@ -384,7 +385,7 @@ long FXMenuButton::onCmdPost(FXObject*,FXSelector,void*){
           x=x+width-w;
           }
         x=x+offsetx;
-        y=y-offsety-pane->getHeight();
+        y=y-offsety-h;
         }
       else{                                                     // Down
         if((options&MENUBUTTON_ATTACH_RIGHT)&&(options&MENUBUTTON_ATTACH_CENTER)){
@@ -633,6 +634,16 @@ void FXMenuButton::killFocus(){
 FXbool FXMenuButton::contains(FXint parentx,FXint parenty) const {
   if(pane && pane->shown() && pane->contains(parentx,parenty)) return 1;
   return 0;
+  }
+
+
+
+// Change the popup menu
+void FXMenuButton::setMenu(FXPopup *pup){
+  if(pup!=pane){
+    pane=pup;
+    recalc();
+    }
   }
 
 

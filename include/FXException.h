@@ -114,6 +114,10 @@ enum FXExceptionCodes
 	FXEXCEPTION_CONNECTIONLOST=(FXEXCEPTION_SYSCODE_BASE - 7),	//!< This code indicates that a connection unexpectedly terminated
 	FXEXCEPTION_NOPERMISSION=(FXEXCEPTION_SYSCODE_BASE - 8),	//!< This code indicates that the caller did not have permission
 
+	FXEXCEPTION_WINDOW		=(FXEXCEPTION_SYSCODE_BASE - 9),	//!< This code indicates that an error happened in the window system
+	FXEXCEPTION_IMAGE		=(FXEXCEPTION_SYSCODE_BASE - 10),	//!< This code indicates that an error happened in the image system
+	FXEXCEPTION_FONT		=(FXEXCEPTION_SYSCODE_BASE - 11),	//!< This code indicates that an error happened in the font system
+
 	FXEXCEPTION_OSSPECIFIC	=(FXEXCEPTION_SYSCODE_BASE - 32),	//!< This code indicates an exception was thrown by a call to the local OS thunking layer
 	FXEXCEPTION_PYTHONERROR	=(FXEXCEPTION_SYSCODE_BASE - 33),	//!< This code indicates that this exception came from a python exception
 
@@ -657,11 +661,50 @@ public:
 };
 #define FXERRGNOPERM(msg, flags)		{ FXNoPermissionException e(msg, flags); FXERRH_THROW(e); }
 
+/*! \class FXWindowException
+\brief A failure in the windowing system
+
+\warning The only safe way of handling this exception is process exit due to FOX
+code not being exception aware!
+*/
+class FXEXCEPTIONAPI(FXAPI) FXWindowException : public FXResourceException
+{
+public:
+	//! \deprecated For backward code compatibility only
+	FXWindowException(const FXchar *msg)
+		: FXResourceException(0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFATAL) { }
+};
+
+/*! \class FXImageException
+\brief A failure in the image, cursor or bitmap systems
+
+\warning The only safe way of handling this exception is process exit due to FOX
+code not being exception aware!
+*/
+class FXEXCEPTIONAPI(FXAPI) FXImageException : public FXResourceException
+{
+public:
+	//! \deprecated For backward code compatibility only
+	FXImageException(const FXchar *msg)
+		: FXResourceException(0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFATAL) { }
+};
+
+/*! \class FXFontException
+\brief A failure in the windowing system
+
+\warning The only safe way of handling this exception is process exit due to FOX
+code not being exception aware!
+*/
+class FXEXCEPTIONAPI(FXAPI) FXFontException : public FXResourceException
+{
+public:
+	//! \deprecated For backward code compatibility only
+	FXFontException(const FXchar *msg)
+		: FXResourceException(0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFATAL) { }
+};
+
+
 
 } // namespace
 
 #endif
-
-
-
-

@@ -19,17 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatd.cpp,v 1.7 2004/02/27 18:30:06 fox Exp $                          *
+* $Id: FXQuatd.cpp,v 1.18 2004/11/17 13:09:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXVec2d.h"
 #include "FXVec3d.h"
 #include "FXVec4d.h"
 #include "FXQuatd.h"
+#include "FXMat3d.h"
 
 
 
@@ -50,6 +52,18 @@ FXQuatd::FXQuatd(FXdouble roll,FXdouble pitch,FXdouble yaw){
   }
 
 
+// Construct quaternion from axes
+FXQuatd::FXQuatd(const FXVec3d& ex,const FXVec3d& ey,const FXVec3d& ez){
+  setAxes(ex,ey,ez);
+  }
+
+
+// Construct quaternion from 3x3 matrix
+FXQuatd::FXQuatd(const FXMat3d& mat){
+  setAxes(mat[0],mat[1],mat[2]);
+  }
+
+
 // Set axis and angle
 void FXQuatd::setAxisAngle(const FXVec3d& axis,FXdouble phi){
   register FXdouble a=0.5*phi;
@@ -66,17 +80,17 @@ void FXQuatd::setAxisAngle(const FXVec3d& axis,FXdouble phi){
 // for unit quaternion |q| == 1
 void FXQuatd::getAxisAngle(FXVec3d& axis,FXdouble& phi) const {
   register FXdouble n=sqrt(x*x+y*y+z*z);
-  if(n>0.0f){
+  if(n>0.0){
     axis.x=x/n;
     axis.y=y/n;
     axis.z=z/n;
-    phi=2.0f*acos(w);
+    phi=2.0*acos(w);
     }
   else{
-    axis.x=1.0f;
-    axis.y=0.0f;
-    axis.z=0.0f;
-    phi=0.0f;
+    axis.x=1.0;
+    axis.y=0.0;
+    axis.z=0.0;
+    phi=0.0;
     }
   }
 
@@ -203,28 +217,18 @@ FXQuatd operator*(const FXQuatd& p,const FXQuatd& q){
 // Rotation of a vector by a quaternion; this is defined as q.v.q*
 // where q* is the conjugate of q.
 FXVec3d operator*(const FXQuatd& quat,const FXVec3d& vec){
-  register FXdouble tx=2.0*quat.x;
-  register FXdouble ty=2.0*quat.y;
-  register FXdouble tz=2.0*quat.z;
-  register FXdouble twx=tx*quat.w;
-  register FXdouble twy=ty*quat.w;
-  register FXdouble twz=tz*quat.w;
-  register FXdouble txx=tx*quat.x;
-  register FXdouble txy=ty*quat.x;
-  register FXdouble txz=tz*quat.x;
-  register FXdouble tyy=ty*quat.y;
-  register FXdouble tyz=tz*quat.y;
-  register FXdouble tzz=tz*quat.z;
-
-  return FXVec3d(vec.x*(1.0-tyy-tzz)+vec.y*(txy-twz)+vec.z*(txz-twy),
-                 vec.x*(txy+twz)+vec.y*(1.0-txx-tzz)+vec.z*(tyz-twx),
-                 vec.x*(txz-twy)+vec.y*(tyz+twx)+vec.z*(1.0-txx-tyy));
+  return vec*toMatrix(quat);
   }
 
 
-// Construct quaternion from arc a->b on unit sphere
+// Construct quaternion from arc a->b on unit sphere.
 FXQuatd arc(const FXVec3d& f,const FXVec3d& t){
-  return FXQuatd(f.y*t.z-f.z*t.y, f.z*t.x-f.x*t.z, f.x*t.y-f.y*t.x, f.x*t.x+f.y*t.y+f.z*t.z);
+  register FXdouble dot,div;
+  dot=f.x*t.x+f.y*t.y+f.z*t.z;
+  FXASSERT(-1.0<=dot && dot<=1.0);
+  div=sqrt((dot+1.0)*2.0);
+  FXASSERT(0.0<div);
+  return FXQuatd((f.y*t.z-f.z*t.y)/div,(f.z*t.x-f.x*t.z)/div,(f.x*t.y-f.y*t.x)/div,div*0.5);
   }
 
 
@@ -247,6 +251,105 @@ FXQuatd lerp(const FXQuatd& u,const FXQuatd& v,FXdouble f){
   if(flip) alpha = -alpha;
   return FXQuatd(beta*u.x+alpha*v.x, beta*u.y+alpha*v.y, beta*u.z+alpha*v.z, beta*u.w+alpha*v.w);
   }
+
+
+// Set quaternion from axes
+void FXQuatd::setAxes(const FXVec3d& ex,const FXVec3d& ey,const FXVec3d& ez){
+  register FXdouble trace=ex.x+ey.y+ez.z;
+  register FXdouble scale;
+  if(trace>0.0){
+    scale=sqrt(1.0+trace);
+    w=0.5*scale;
+    scale=0.5/scale;
+    x=(ey.z-ez.y)*scale;
+    y=(ez.x-ex.z)*scale;
+    z=(ex.y-ey.x)*scale;
+    }
+  else if(ex.x>ey.y && ex.x>ez.z){
+    scale=2.0*sqrt(1.0+ex.x-ey.y-ez.z);
+    x=0.25*scale;
+    y=(ex.y+ey.x)/scale;
+    z=(ex.z+ez.x)/scale;
+    w=(ey.z-ez.y)/scale;
+    }
+  else if(ey.y>ez.z){
+    scale=2.0*sqrt(1.0+ey.y-ex.x-ez.z);
+    y=0.25*scale;
+    x=(ex.y+ey.x)/scale;
+    z=(ey.z+ez.y)/scale;
+    w=(ex.z-ez.x)/scale;
+    }
+  else{
+    scale=2.0*sqrt(1.0+ez.z-ex.x-ey.y);
+    z=0.25*scale;
+    x=(ex.z+ez.x)/scale;
+    y=(ey.z+ez.y)/scale;
+    w=(ex.y-ey.x)/scale;
+    }
+  }
+
+
+// Get quaternion axes
+void FXQuatd::getAxes(FXVec3d& ex,FXVec3d& ey,FXVec3d& ez) const {
+  register FXdouble tx=2.0*x;
+  register FXdouble ty=2.0*y;
+  register FXdouble tz=2.0*z;
+  register FXdouble twx=tx*w;
+  register FXdouble twy=ty*w;
+  register FXdouble twz=tz*w;
+  register FXdouble txx=tx*x;
+  register FXdouble txy=ty*x;
+  register FXdouble txz=tz*x;
+  register FXdouble tyy=ty*y;
+  register FXdouble tyz=tz*y;
+  register FXdouble tzz=tz*z;
+  ex.x=1.0-tyy-tzz;
+  ex.y=txy+twz;
+  ex.z=txz-twy;
+  ey.x=txy-twz;
+  ey.y=1.0-txx-tzz;
+  ey.z=tyz+twx;
+  ez.x=txz+twy;
+  ez.y=tyz-twx;
+  ez.z=1.0-txx-tyy;
+  }
+
+
+// Obtain local x axis
+FXVec3d FXQuatd::getXAxis() const {
+  register FXdouble ty=2.0*y;
+  register FXdouble tz=2.0*z;
+  return FXVec3d(1.0-ty*y-tz*z,ty*x+tz*w,tz*x-ty*w);
+  }
+
+
+// Obtain local y axis
+FXVec3d FXQuatd::getYAxis() const {
+  register FXdouble tx=2.0*x;
+  register FXdouble tz=2.0*z;
+  return FXVec3d(tx*y-tz*w,1.0-tx*x-tz*z,tz*y+tx*w);
+  }
+
+
+// Obtain local z axis
+FXVec3d FXQuatd::getZAxis() const {
+  register FXdouble tx=2.0*x;
+  register FXdouble ty=2.0*y;
+  return FXVec3d(tx*z+ty*w,ty*z-tx*w,1.0-tx*x-ty*y);
+  }
+
+
+// Convert quaternion to 3x3 matrix
+FXMat3d toMatrix(const FXQuatd& quat){
+  return FXMat3d(quat);
+  }
+
+
+// Convert 3x3 matrix to quaternion
+FXQuatd fromMatrix(const FXMat3d& mat){
+  return FXQuatd(mat[0],mat[1],mat[2]);
+  }
+
 
 }
 

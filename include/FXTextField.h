@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextField.h,v 1.51 2004/02/08 17:17:34 fox Exp $                       *
+* $Id: FXTextField.h,v 1.56 2004/10/28 14:37:23 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTEXTFIELD_H
 #define FXTEXTFIELD_H
@@ -60,24 +60,27 @@ enum {
 * During text entry, the text field sends a SEL_CHANGED message to its target,
 * with the message data set to the current text value of type const FXchar*.
 * When the text is accepted by hitting ENTER, the SEL_COMMAND message is sent.
+* The text field also sends SEL_COMMAND when the focus moves to another control.
+* TEXTFIELD_ENTER_ONLY can be passed to suppress this feature. Typically, this
+* flag is used in dialogs that close when ENTER is hit in a text field.
 */
 class FXAPI FXTextField : public FXFrame {
   FXDECLARE(FXTextField)
 protected:
-  FXString      contents;               // Edited text
-  const FXchar *delimiters;             // Set of delimiters
-  FXFont       *font;                   // Text font
-  FXColor       textColor;              // Text color
-  FXColor       selbackColor;           // Selected background color
-  FXColor       seltextColor;           // Selected text color
-  FXColor       cursorColor;            // Color of the Cursor
-  FXint         cursor;                 // Cursor position
-  FXint         anchor;                 // Anchor position
-  FXint         columns;                // Number of columns visible
-  FXint         shift;                  // Shift amount
-  FXString      clipped;                // Clipped text
-  FXString      help;                   // Help string
-  FXString      tip;                    // Tooltip
+  FXString      contents;       // Edited text
+  const FXchar *delimiters;     // Set of delimiters
+  FXFont       *font;           // Text font
+  FXColor       textColor;      // Text color
+  FXColor       selbackColor;   // Selected background color
+  FXColor       seltextColor;   // Selected text color
+  FXColor       cursorColor;    // Color of the Cursor
+  FXint         cursor;         // Cursor position
+  FXint         anchor;         // Anchor position
+  FXint         columns;        // Number of columns visible
+  FXint         shift;          // Shift amount
+  FXString      clipped;        // Clipped text
+  FXString      help;           // Help string
+  FXString      tip;            // Tooltip
 protected:
   FXTextField();
   FXint index(FXint x) const;
@@ -276,13 +279,22 @@ public:
   /// Return the cursor color
   FXColor getCursorColor() const { return cursorColor; }
 
-  /// Change width of text field in terms of number of columns * `m'
+  /**
+  * Change the default width of the text field in terms of a number
+  * of columns times the width of the numeral '8'. 
+  */
   void setNumColumns(FXint cols);
 
   /// Return number of columns
   FXint getNumColumns() const { return columns; }
 
-  /// Change text justification mode
+  /**
+  * Change text justification mode. The justify mode is a combination of
+  * horizontal justification (JUSTIFY_LEFT, JUSTIFY_RIGHT, or JUSTIFY_CENTER_X),
+  * and vertical justification (JUSTIFY_TOP, JUSTIFY_BOTTOM, JUSTIFY_CENTER_Y).
+  * Note that JUSTIFY_CENTER_X can not be set from the constructor since by
+  * default text fields are left-justified.
+  */
   void setJustify(FXuint mode);
 
   /// Return text justification mode
@@ -295,13 +307,13 @@ public:
   const FXchar* getDelimiters() const { return delimiters; }
 
   /// Set the status line help text for this label
-  void setHelpText(const FXString& text);
+  void setHelpText(const FXString& text){ help=text; }
 
   /// Get the status line help text for this label
   FXString getHelpText() const { return help; }
 
   /// Set the tool tip message for this text field
-  void setTipText(const FXString& text);
+  void setTipText(const FXString& text){ tip=text; }
 
   /// Get the tool tip message for this text field
   FXString getTipText() const { return tip; }

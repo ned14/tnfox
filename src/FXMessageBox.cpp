@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMessageBox.cpp,v 1.29 2004/02/08 17:29:06 fox Exp $                    *
+* $Id: FXMessageBox.cpp,v 1.32 2004/11/11 22:25:40 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXIcon.h"
 #include "FXGIFIcon.h"
@@ -64,7 +65,7 @@ namespace FX {
 // Map
 FXDEFMAP(FXMessageBox) FXMessageBoxMap[]={
   FXMAPFUNC(SEL_COMMAND,FXMessageBox::ID_CANCEL,FXMessageBox::onCmdCancel),
-  FXMAPFUNCS(SEL_COMMAND,FXMessageBox::ID_CLICKED_YES,FXMessageBox::ID_CLICKED_SAVE,FXMessageBox::onCmdClicked),
+  FXMAPFUNCS(SEL_COMMAND,FXMessageBox::ID_CLICKED_YES,FXMessageBox::ID_CLICKED_SKIPALL,FXMessageBox::onCmdClicked),
   };
 
 

@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxtifio.cpp,v 1.27 2004/04/08 16:24:48 fox Exp $                         *
+* $Id: fxtifio.cpp,v 1.28 2004/09/17 07:46:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #ifdef HAVE_TIFF_H
 #include <tiffio.h>

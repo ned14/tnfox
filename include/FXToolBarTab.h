@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarTab.h,v 1.5 2004/02/08 17:17:34 fox Exp $                       *
+* $Id: FXToolBarTab.h,v 1.7 2004/10/19 00:48:59 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTOOLBARTAB_H
 #define FXTOOLBARTAB_H
@@ -48,9 +48,10 @@ enum {
 class FXAPI FXToolBarTab : public FXFrame {
   FXDECLARE(FXToolBarTab)
 protected:
-  FXColor activeColor;                    // Color when active
-  FXbool  collapsed;                      // Is collapsed flat
-  FXbool  down;                           // Button down
+  FXColor  activeColor; // Color when active
+  FXString tip;         // Tooltip
+  FXbool   collapsed;   // Is collapsed flat
+  FXbool   down;        // Button down
 protected:
   FXToolBarTab();
   void drawUpArrow(FXDCWindow& dc);
@@ -76,6 +77,9 @@ public:
   long onUpdCollapse(FXObject*,FXSelector,void*);
   long onCmdUncollapse(FXObject*,FXSelector,void*);
   long onUpdUncollapse(FXObject*,FXSelector,void*);
+  long onCmdSetTip(FXObject*,FXSelector,void*);
+  long onCmdGetTip(FXObject*,FXSelector,void*);
+  long onQueryTip(FXObject*,FXSelector,void*);
 public:
   enum {
     ID_COLLAPSE=FXFrame::ID_LAST,
@@ -103,7 +107,7 @@ public:
   virtual void disable();
 
   /// Collapse or uncollapse the toolbar
-  void collapse(FXbool c=TRUE);
+  void collapse(FXbool fold,FXbool notify=FALSE);
 
   /// Return true if the toolbar is collapsed
   FXbool isCollapsed() const { return collapsed; }
@@ -119,6 +123,12 @@ public:
 
   /// Set the active color
   void setActiveColor(FXColor clr);
+
+  /// Set the tool tip message for the toolbar tab
+  void setTipText(const FXString& text){ tip=text; }
+
+  /// Get the tool tip message for the toolbar tab
+  FXString getTipText() const { return tip; }
 
   /// Save to a stream
   virtual void save(FXStream& store) const;

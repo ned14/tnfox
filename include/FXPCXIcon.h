@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPCXIcon.h,v 1.12 2004/02/08 17:17:34 fox Exp $                         *
+* $Id: FXPCXIcon.h,v 1.13 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXPCXICON_H
 #define FXPCXICON_H
@@ -38,6 +38,8 @@ protected:
 private:
   FXPCXIcon(const FXPCXIcon&);
   FXPCXIcon &operator=(const FXPCXIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct icon from memory stream formatted in PCX file format

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirBox.h,v 1.21 2004/02/08 17:17:33 fox Exp $                          *
+* $Id: FXDirBox.h,v 1.23 2004/10/09 08:00:39 fox Exp $                          *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -42,7 +42,15 @@ enum {
   };
 
 
-/// Directory Box
+/**
+* A Directory Box widget allows the user to select parts of a file path.
+* First, it is filled with a string comprising a file path, like "/a/b/c".
+* Then, the user can select "/a/b/c", "/a/b", "/a", and "/" from the drop-down
+* list.  The entries in the drop-down list are automatically provided with icons
+* by consulting the file-associations registry settings.
+* The Directory Box sends SEL_CHANGED and SEL_COMMAND messages, with the string
+* containing the full path to the selected item.
+*/
 class FXAPI FXDirBox : public FXTreeListBox {
   FXDECLARE(FXDirBox)
 protected:
@@ -62,14 +70,14 @@ private:
   FXDirBox(const FXDirBox&);
   FXDirBox &operator=(const FXDirBox&);
 public:
-  long onChanged(FXObject*,FXSelector,void*);
-  long onCommand(FXObject*,FXSelector,void*);
+  long onTreeChanged(FXObject*,FXSelector,void*);
+  long onTreeClicked(FXObject*,FXSelector,void*);
   long onCmdSetValue(FXObject*,FXSelector,void*);
   long onCmdSetStringValue(FXObject*,FXSelector,void*);
   long onCmdGetStringValue(FXObject*,FXSelector,void*);
 public:
 
-  /// Constructor
+  /// Construct a Directory Box
   FXDirBox(FXComposite *p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=FRAME_SUNKEN|FRAME_THICK|TREELISTBOX_NORMAL,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD);
 
   /// Create server-side resources
@@ -93,7 +101,7 @@ public:
   /// Return current directory
   FXString getDirectory() const;
 
-  /// Change file associations
+  /// Change file associations used to look up icons
   void setAssociations(FXFileDict* assoc);
 
   /// Return file associations

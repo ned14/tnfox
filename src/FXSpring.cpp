@@ -19,18 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSpring.cpp,v 1.4 2004/02/08 17:29:07 fox Exp $                         *
+* $Id: FXSpring.cpp,v 1.7 2004/09/17 07:46:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXPacker.h"
@@ -63,13 +64,13 @@ FXSpring::FXSpring(FXComposite* p,FXuint opts,FXint relw,FXint relh,FXint x,FXin
 
 // Compute minimum width based on child layout hints
 FXint FXSpring::getDefaultWidth(){
-  return 0<=relWidth ? relWidth : FXPacker::getDefaultWidth();
+  return 0<relWidth ? relWidth : FXPacker::getDefaultWidth();
   }
 
 
 // Compute minimum height based on child layout hints
 FXint FXSpring::getDefaultHeight(){
-  return 0<=relHeight ? relHeight : FXPacker::getDefaultHeight();
+  return 0<relHeight ? relHeight : FXPacker::getDefaultHeight();
   }
 
 

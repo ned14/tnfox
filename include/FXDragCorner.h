@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDragCorner.h,v 1.11 2004/02/08 17:17:33 fox Exp $                       *
+* $Id: FXDragCorner.h,v 1.12 2004/10/05 15:53:31 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXDRAGCORNER_H
 #define FXDRAGCORNER_H

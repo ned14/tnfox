@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFile.cpp,v 1.174 2004/04/16 14:25:33 fox Exp $                         *
+* $Id: FXFile.cpp,v 1.182 2004/11/30 03:16:56 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "qcstring.h"
@@ -561,6 +561,26 @@ FXString FXFile::getEnvironment(const FXString& name){
   }
 
 
+// Get current user name
+FXString FXFile::getCurrentUserName(){
+#ifndef WIN32
+#ifdef FOX_THREAD_SAFE
+  struct passwd pwdresult,*pwd;
+  char buffer[1024];
+  if(getpwuid_r(geteuid(),&pwdresult,buffer,sizeof(buffer),&pwd)==0 && pwd) return pwd->pw_name;
+#else
+  struct passwd *pwd=getpwuid(geteuid());
+  if(pwd) return pwd->pw_name;
+#endif
+#else
+  char buffer[1024];
+  DWORD size=sizeof(buffer);
+  if(GetUserName(buffer,&size)) return buffer;
+#endif
+  return FXString::null;
+  }
+
+
 // Get current working directory
 FXString FXFile::getCurrentDirectory(){
   FXchar buffer[MAXPATHLEN];
@@ -653,6 +673,7 @@ FXString FXFile::getUserDirectory(const FXString& user){
 #else
   if(user.empty()){
     register const FXchar *str1,*str2;
+    if((str1=getenv("USERPROFILE"))!=NULL) return str1; // Daniël Hörchner <dbjh@gmx.net>
     if((str1=getenv("HOME"))!=NULL) return str1;
     if((str2=getenv("HOMEPATH"))!=NULL){      // This should be good for WinNT, Win2K according to MSDN
       if((str1=getenv("HOMEDRIVE"))==NULL) str1="c:";
@@ -689,7 +710,7 @@ FXString FXFile::getExecPath(){
   }
 
 
-/// Return temporary directory.
+// Return temporary directory.
 FXString FXFile::getTempDirectory(){
 #ifndef WIN32
   // Conform Linux File Hierarchy standard; this should be
@@ -861,43 +882,49 @@ FXString FXFile::drive(const FXString&){
 // Perform tilde or environment variable expansion
 FXString FXFile::expand(const FXString& file){
 #ifndef WIN32
-  register FXint b,e,n;
-  FXString result;
+  if(!file.empty()){
+    register FXint b,e,n;
+    FXString result;
 
-  // Expand leading tilde of the form ~/filename or ~user/filename
-  n=0;
-  if(file[n]=='~'){
-    n++;
-    b=n;
-    while(file[n] && !ISPATHSEP(file[n])) n++;
-    e=n;
-    result.append(getUserDirectory(file.mid(b,e-b)));
-    }
-
-  // Expand environment variables of the form $HOME, ${HOME}, or $(HOME)
-  while(file[n]){
-    if(file[n]=='$'){
+    // Expand leading tilde of the form ~/filename or ~user/filename
+    n=0;
+    if(file[n]=='~'){
       n++;
-      if(file[n]=='{' || file[n]=='(') n++;
       b=n;
-      while(isalnum((FXuchar)file[n]) || file[n]=='_') n++;
+      while(file[n] && !ISPATHSEP(file[n])) n++;
       e=n;
-      if(file[n]=='}' || file[n]==')') n++;
-      result.append(getEnvironment(file.mid(b,e-b)));
-      continue;
+      result.append(getUserDirectory(file.mid(b,e-b)));
       }
-    result.append(file[n]);
-    n++;
-    }
-  return result;
-#else
-  FXchar buffer[2048];
 
-  // Expand environment variables of the form %HOMEPATH%
-  if(ExpandEnvironmentStrings(file.text(),buffer,sizeof(buffer))){
-    return buffer;
+    // Expand environment variables of the form $HOME, ${HOME}, or $(HOME)
+    while(file[n]){
+      if(file[n]=='$'){
+        n++;
+        if(file[n]=='{' || file[n]=='(') n++;
+        b=n;
+        while(isalnum((FXuchar)file[n]) || file[n]=='_') n++;
+        e=n;
+        if(file[n]=='}' || file[n]==')') n++;
+        result.append(getEnvironment(file.mid(b,e-b)));
+        continue;
+        }
+      result.append(file[n]);
+      n++;
+      }
+    return result;
     }
-  return file;
+  return FXString::null;
+#else
+  if(!file.empty()){
+    FXchar buffer[2048];
+
+    // Expand environment variables of the form %HOMEPATH%
+    if(ExpandEnvironmentStrings(file.text(),buffer,sizeof(buffer))){
+      return buffer;
+      }
+    return file;
+    }
+  return FXString::null;
 #endif
   }
 
@@ -1130,39 +1157,41 @@ FXString FXFile::unique(const FXString& file){
 
 // Search pathlist for file
 FXString FXFile::search(const FXString& pathlist,const FXString& file){
-  FXString pathfile=FXFile::simplify(FXFile::expand(file));
-  FXString path;
-  FXint beg,end;
+  if(!file.empty()){
+    FXString pathfile=FXFile::simplify(FXFile::expand(file));
+    FXString path;
+    FXint beg,end;
 #ifndef WIN32
-  if(ISPATHSEP(pathfile[0])){
-    if(exists(pathfile)) return pathfile;
-    return FXString::null;
-    }
+    if(ISPATHSEP(pathfile[0])){
+      if(exists(pathfile)) return pathfile;
+      return FXString::null;
+      }
 #else
-  if(ISPATHSEP(pathfile[0]) && ISPATHSEP(pathfile[1])){
-    if(exists(pathfile)) return pathfile;   // UNC
-    return FXString::null;
-    }
-  if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':'){
-    if(exists(pathfile)) return pathfile;
-    return FXString::null;
-    }
-//  if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':' && ISPATHSEP(pathfile[2])){
-//    if(exists(pathfile)) return pathfile;
-//    return FXString::null;
-//    }
-  if(ISPATHSEP(pathfile[0])){
-    pathfile=getCurrentDrive()+pathfile;
-    if(exists(pathfile)) return pathfile;
-    return FXString::null;
-    }
+    if(ISPATHSEP(pathfile[0]) && ISPATHSEP(pathfile[1])){
+      if(exists(pathfile)) return pathfile;   // UNC
+      return FXString::null;
+      }
+    if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':'){
+      if(exists(pathfile)) return pathfile;
+      return FXString::null;
+      }
+  //  if(isalpha((FXuchar)pathfile[0]) && pathfile[1]==':' && ISPATHSEP(pathfile[2])){
+  //    if(exists(pathfile)) return pathfile;
+  //    return FXString::null;
+  //    }
+    if(ISPATHSEP(pathfile[0])){
+      pathfile=getCurrentDrive()+pathfile;
+      if(exists(pathfile)) return pathfile;
+      return FXString::null;
+      }
 #endif
-  for(beg=0; pathlist[beg]; beg=end){
-    while(pathlist[beg]==PATHLISTSEP) beg++;
-    for(end=beg; pathlist[end] && pathlist[end]!=PATHLISTSEP; end++);
-    if(beg==end) break;
-    path=absolute(pathlist.mid(beg,end-beg),pathfile);
-    if(exists(path)) return path;
+    for(beg=0; pathlist[beg]; beg=end){
+      while(pathlist[beg]==PATHLISTSEP) beg++;
+      for(end=beg; pathlist[end] && pathlist[end]!=PATHLISTSEP; end++);
+      if(beg==end) break;
+      path=absolute(pathlist.mid(beg,end-beg),pathfile);
+      if(exists(path)) return path;
+      }
     }
   return FXString::null;
   }
@@ -2084,7 +2113,7 @@ FXbool FXFile::identical(const FXString& file1,const FXString& file2){
   if(file1!=file2){
 #ifndef WIN32
     struct stat stat1,stat2;
-    return !::lstat(file1.text(),&stat1) && !::lstat(file2.text(),&stat2) && stat1.st_ino==stat2.st_ino;
+    return !::lstat(file1.text(),&stat1) && !::lstat(file2.text(),&stat2) && stat1.st_ino==stat2.st_ino && stat1.st_dev==stat2.st_dev;
 #else
     FXbool same=FALSE;
     HANDLE hFile1;

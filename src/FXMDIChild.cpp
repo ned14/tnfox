@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.cpp,v 1.80 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXMDIChild.cpp,v 1.87 2004/10/07 21:49:14 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -313,7 +314,7 @@ FXbool FXMDIChild::maximize(FXbool notify){
     options|=MDI_MAXIMIZED;
     options&=~MDI_MINIMIZED;
     recalc();
-    if(notify && target){target->handle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
     }
   return TRUE;
   }
@@ -335,7 +336,7 @@ FXbool FXMDIChild::minimize(FXbool notify){
     options|=MDI_MINIMIZED;
     options&=~MDI_MAXIMIZED;
     recalc();
-    if(notify && target){target->handle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
     }
   return TRUE;
   }
@@ -356,7 +357,7 @@ FXbool FXMDIChild::restore(FXbool notify){
     height=normalHeight;
     options&=~(MDI_MINIMIZED|MDI_MAXIMIZED);
     recalc();
-    if(notify && target){target->handle(this,FXSEL(SEL_RESTORE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
     }
   return TRUE;
   }
@@ -366,7 +367,9 @@ FXbool FXMDIChild::restore(FXbool notify){
 FXbool FXMDIChild::close(FXbool notify){
   FXMDIClient *client=(FXMDIClient*)getParent();
   FXMDIChild *alternative;
-  if(!notify || !target || !target->handle(this,FXSEL(SEL_CLOSE,message),NULL)){
+
+  // See if OK to close
+  if(!notify || !target || !target->tryHandle(this,FXSEL(SEL_CLOSE,message),NULL)){
 
     // Target will receive no further messages from us
     setTarget(NULL);
@@ -702,7 +705,7 @@ long FXMDIChild::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     if(event->click_count==1){
       mode=where(event->win_x,event->win_y);
       if(mode!=DRAG_NONE){
@@ -735,7 +738,7 @@ long FXMDIChild::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   register FXEvent *event=(FXEvent*)ptr;
   if(isEnabled()){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(event->click_count==1){
       if(mode!=DRAG_NONE){
         if(!(options&MDI_TRACKING)){
@@ -845,7 +848,7 @@ long FXMDIChild::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
     return 1;
     }
   return 0;
@@ -856,7 +859,7 @@ long FXMDIChild::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
 long FXMDIChild::onMiddleBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
     return 1;
     }
   return 0;
@@ -868,7 +871,7 @@ long FXMDIChild::onRightBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
     lower();
     return 1;
     }
@@ -880,7 +883,7 @@ long FXMDIChild::onRightBtnPress(FXObject*,FXSelector,void* ptr){
 long FXMDIChild::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
     return 1;
     }
   return 0;
@@ -918,7 +921,7 @@ long FXMDIChild::onCmdGetIconValue(FXObject*,FXSelector,void* ptr){
 // Window was selected
 long FXMDIChild::onSelected(FXObject*,FXSelector,void* ptr){    // FIXME
   if(!(flags&FLAG_ACTIVE)){
-    if(target) target->handle(this,FXSEL(SEL_SELECTED,message),ptr);
+    if(target) target->tryHandle(this,FXSEL(SEL_SELECTED,message),ptr);
     windowbtn->setBackColor(hasFocus() ? titleBackColor : shadowColor);
     flags|=FLAG_ACTIVE;
     recalc();
@@ -931,7 +934,7 @@ long FXMDIChild::onSelected(FXObject*,FXSelector,void* ptr){    // FIXME
 // Window was deselected
 long FXMDIChild::onDeselected(FXObject*,FXSelector,void* ptr){    // FIXME
   if(flags&FLAG_ACTIVE){
-    if(target) target->handle(this,FXSEL(SEL_DESELECTED,message),ptr);
+    if(target) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),ptr);
     windowbtn->setBackColor(backColor);
     flags&=~FLAG_ACTIVE;
     recalc();
@@ -1127,13 +1130,13 @@ void FXMDIChild::setTitle(const FXString& name){
 
 
 // Delegate all other messages to child window
-long FXMDIChild::onDefault(FXObject* sender,FXSelector key,void* data){
+long FXMDIChild::onDefault(FXObject* sender,FXSelector sel,void* ptr){
 
   // Try to handle in child
-  if(contentWindow() && contentWindow()->handle(sender,key,data)) return 1;
+  if(contentWindow() && contentWindow()->tryHandle(sender,sel,ptr)) return 1;
 
   // Bounce to target
-  return target && target->handle(sender,key,data);
+  return target && target->tryHandle(sender,sel,ptr);
   }
 
 

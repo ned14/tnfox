@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCanvas.cpp,v 1.26 2004/02/08 17:29:06 fox Exp $                        *
+* $Id: FXCanvas.cpp,v 1.30 2004/10/07 17:13:49 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXCanvas.h"
 
@@ -44,10 +45,7 @@ namespace FX {
 
 // Map
 FXDEFMAP(FXCanvas) FXCanvasMap[]={
-  FXMAPFUNC(SEL_PAINT,0,FXCanvas::onPaint),
-  FXMAPFUNC(SEL_MOTION,0,FXCanvas::onMotion),
-  FXMAPFUNC(SEL_KEYPRESS,0,FXCanvas::onKeyPress),
-  FXMAPFUNC(SEL_KEYRELEASE,0,FXCanvas::onKeyRelease),
+  FXMAPFUNC(SEL_PAINT,0,FXCanvas::onPaint)
   };
 
 
@@ -81,22 +79,5 @@ long FXCanvas::onPaint(FXObject*,FXSelector,void* ptr){
   return target && target->handle(this,FXSEL(SEL_PAINT,message),ptr);
   }
 
-
-// Mouse moved
-long FXCanvas::onMotion(FXObject*,FXSelector,void* ptr){
-  return isEnabled() && target && target->handle(this,FXSEL(SEL_MOTION,message),ptr);
-  }
-
-
-// Handle keyboard press/release
-long FXCanvas::onKeyPress(FXObject*,FXSelector,void* ptr){
-  flags&=~FLAG_TIP;
-  return isEnabled() && target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr);
-  }
-
-
-long FXCanvas::onKeyRelease(FXObject*,FXSelector,void* ptr){
-  return isEnabled() && target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr);
-  }
 
 }

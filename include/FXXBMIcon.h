@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXXBMIcon.h,v 1.5 2004/02/08 17:17:34 fox Exp $                          *
+* $Id: FXXBMIcon.h,v 1.6 2004/11/10 16:22:05 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXXBMICON_H
 #define FXXBMICON_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXXBMIcon(const FXXBMIcon&);
   FXXBMIcon &operator=(const FXXBMIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct icon from memory stream formatted in X Bitmap format

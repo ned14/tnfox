@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPNGImage.h,v 1.15 2004/02/08 17:17:34 fox Exp $                        *
+* $Id: FXPNGImage.h,v 1.17 2004/11/10 16:22:05 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXPNGIMAGE_H
 #define FXPNGIMAGE_H
@@ -40,6 +40,8 @@ private:
   FXPNGImage(const FXPNGImage&);
   FXPNGImage &operator=(const FXPNGImage&);
 public:
+  static const FXchar fileExt[];
+public:
 
   /// Construct an image from memory stream formatted in PNG format
   FXPNGImage(FXApp *a,const void *pix=NULL,FXuint opts=0,FXint w=1,FXint h=1);
@@ -49,6 +51,9 @@ public:
 
   /// Load pixels from stream in PNG format
   virtual FXbool savePixels(FXStream& store) const;
+
+  /// True if format is supported
+  static const FXbool supported;
 
   /// Destroy
   virtual ~FXPNGImage();

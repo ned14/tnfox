@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.cpp,v 1.73 2004/04/24 00:46:29 fox Exp $                         *
+* $Id: FXPopup.cpp,v 1.77 2004/09/29 20:07:23 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXPopup.h"
@@ -751,30 +752,6 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   GetVersionEx(&vinfo);
 
 #if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
-
-/*
-  // Patch from Brian Hook <hook_l@py...>
-  if((vinfo.dwPlatformId==VER_PLATFORM_WIN32_WINDOWS && vinfo.dwMinorVersion>0) || (vinfo.dwPlatformId==VER_PLATFORM_WIN32_NT && vinfo.dwMajorVersion>=5))
-
-    {
-    MONITORINFOEX minfo;
-    HMONITOR hMon;
-    rect.left=x;
-    rect.right=x+w;
-    rect.top=y;
-    rect.bottom=y+h;
-    hMon=MonitorFromRect(&rect,MONITOR_DEFAULTTOPRIMARY);
-    memset(&minfo,0,sizeof(minfo));
-    minfo.cbSize=sizeof(minfo);
-    GetMonitorInfo(hMon,&minfo);
-    rx=minfo.rcWork.left;
-    ry=minfo.rcWork.top;
-    rw=minfo.rcWork.right;
-    rh=minfo.rcWork.bottom;
-    }
-*/
-
-
   HINSTANCE user32;
   typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);
   typedef HMONITOR (WINAPI* PFN_MONITORFROMRECTA)(LPRECT, DWORD);
@@ -785,7 +762,8 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   // The API does not exist on older Windows NT and 95, so
   // We can't even link it, let alone call it.
   // The solution is to ask the DLL if the function exists.
-  if((user32=LoadLibrary("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRectA")))){
+  // And another patch from Lothar Scholtz; now it works!
+  if((user32=LoadLibrary("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
     MONITORINFOEX minfo;
     HMONITOR hMon;
     rect.left=x;
@@ -801,11 +779,8 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
     rw=minfo.rcWork.right;
     rh=minfo.rcWork.bottom;
     }
-
   else
-
 #endif
-
     {
     // On Win95 and WinNT, we have to use the following
     SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
@@ -814,7 +789,6 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
     rw=rect.right-rect.left;
     rh=rect.bottom-rect.top;
     }
-
 #endif
 
   FXTRACE((150,"%s::popup %p\n",getClassName(),this));

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.cpp,v 1.27 2004/02/08 17:29:07 fox Exp $                      *
+* $Id: FXSettings.cpp,v 1.30 2004/09/17 07:46:22 fox Exp $                      *
 ********************************************************************************/
 #ifdef HAVE_VSSCANF
 #ifndef _GNU_SOURCE
@@ -29,6 +29,7 @@
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXStringDict.h"
@@ -579,7 +580,7 @@ FXint FXSettings::writeFormatEntry(const FXchar *section,const FXchar *key,const
   FXint result=0;
   if(group){
     FXchar buffer[2000];
-#if defined(__GLIBC__) || defined(WIN32)                // Try to be safe about it...
+#if defined(WIN32) || defined(HAVE_VSNPRINTF)
     result=vsnprintf(buffer,sizeof(buffer),fmt,args);
 #else
     result=vsprintf(buffer,fmt,args);

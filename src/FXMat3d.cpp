@@ -19,15 +19,18 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMat3d.cpp,v 1.5 2004/02/08 17:29:06 fox Exp $                          *
+* $Id: FXMat3d.cpp,v 1.7 2004/11/11 17:29:39 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXVec2d.h"
 #include "FXVec3d.h"
+#include "FXVec4d.h"
+#include "FXQuatd.h"
 #include "FXMat3d.h"
 
 
@@ -54,7 +57,15 @@
 
 namespace FX {
 
-// Build matrix from constant
+// Copy constructor
+FXMat3d::FXMat3d(const FXMat3d& other){
+  m[0]=other[0];
+  m[1]=other[1];
+  m[2]=other[2];
+  }
+
+
+// Construct from scalar number
 FXMat3d::FXMat3d(FXdouble w){
   m[0][0]=w; m[0][1]=w; m[0][2]=w;
   m[1][0]=w; m[1][1]=w; m[1][2]=w;
@@ -62,7 +73,7 @@ FXMat3d::FXMat3d(FXdouble w){
   }
 
 
-// Build matrix from scalars
+// Construct from components
 FXMat3d::FXMat3d(FXdouble a00,FXdouble a01,FXdouble a02,
                  FXdouble a10,FXdouble a11,FXdouble a12,
                  FXdouble a20,FXdouble a21,FXdouble a22){
@@ -72,19 +83,17 @@ FXMat3d::FXMat3d(FXdouble a00,FXdouble a01,FXdouble a02,
   }
 
 
-// Build matrix from three vectors
+// Construct matrix from three vectors
 FXMat3d::FXMat3d(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c){
-  m[0][0]=a[0]; m[0][1]=a[1]; m[0][2]=a[2];
-  m[1][0]=b[0]; m[1][1]=b[1]; m[1][2]=b[2];
-  m[2][0]=c[0]; m[2][1]=c[1]; m[2][2]=c[2];
+  m[0]=a;
+  m[1]=b;
+  m[2]=c;
   }
 
 
-// Copy constructor
-FXMat3d::FXMat3d(const FXMat3d& other){
-  m[0]=other[0];
-  m[1]=other[1];
-  m[2]=other[2];
+// Construct rotation matrix from quaternion
+FXMat3d::FXMat3d(const FXQuatd& quat){
+  quat.getAxes(m[0],m[1],m[2]);
   }
 
 

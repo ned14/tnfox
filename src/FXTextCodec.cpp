@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextCodec.cpp,v 1.8 2004/02/08 17:29:07 fox Exp $                      *
+* $Id: FXTextCodec.cpp,v 1.10 2004/09/17 07:46:22 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXDict.h"
 #include "FXString.h"
@@ -220,7 +221,7 @@ FXbool FXISOTextCodec::canEncode(FXwchar c) const {
 FXuchar FXISOTextCodec::encode(FXwchar c) const {
   register FXint i;
   if(c<0x80){
-    return TRUE;
+    return (FXuchar)c;
     }
   else{
     for(i=0; i<NTABLEITEMS; i++){

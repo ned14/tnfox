@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRadioButton.cpp,v 1.52 2004/02/17 21:06:02 fox Exp $                   *
+* $Id: FXRadioButton.cpp,v 1.57 2004/10/07 21:49:14 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXRadioButton.h"
@@ -232,7 +233,7 @@ long FXRadioButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     oldcheck=check;
     setCheck(TRUE);
     flags|=FLAG_PRESSED;
@@ -247,12 +248,10 @@ long FXRadioButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 long FXRadioButton::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled() && (flags&FLAG_PRESSED)){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
-    if(check!=oldcheck){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)TRUE);
-      }
+    if(check!=oldcheck && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)TRUE);
     return 1;
     }
   return 0;
@@ -274,7 +273,7 @@ long FXRadioButton::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       oldcheck=check;
       setCheck(TRUE);
@@ -291,13 +290,11 @@ long FXRadioButton::onKeyPress(FXObject*,FXSelector,void* ptr){
 long FXRadioButton::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled() && (flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       flags|=FLAG_UPDATE;
       flags&=~FLAG_PRESSED;
-      if(check!=oldcheck){
-        if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)TRUE);
-        }
+      if(check!=oldcheck && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)TRUE);
       return 1;
       }
     }
@@ -325,9 +322,7 @@ long FXRadioButton::onHotKeyRelease(FXObject*,FXSelector,void*){
   if(isEnabled() && (flags&FLAG_PRESSED)){
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
-    if(check!=oldcheck){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)TRUE);
-      }
+    if(check!=oldcheck && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)TRUE);
     }
   return 1;
   }
@@ -435,28 +430,7 @@ long FXRadioButton::onPaint(FXObject*,FXSelector,void* ptr){
     dc.fillRectangles(recs,3);
     }
 
-//   dc.fillArc(ix+1,iy+1,11,11,0,23040);
-//
-//   dc.setForeground(shadowColor);
-//   dc.drawArc(ix,iy,13,13,45*64,180*64);
-//
-//   dc.setForeground(hiliteColor);
-//   dc.drawArc(ix,iy,13,13,225*64,180*64);
-//
-//   dc.setForeground(borderColor);
-//   dc.drawArc(ix+1,iy+1,11,11,45*64,180*64);
-//
-//   dc.setForeground(baseColor);
-//   dc.drawArc(ix+1,iy+1,11,11,225*64,180*64);
-//
-//   if(check!=FALSE){
-//     if(isEnabled())
-//       dc.setForeground(textColor);
-//     else
-//       dc.setForeground(shadowColor);
-//     dc.fillArc(ix+3,iy+3,7,7,0,23040);
-//     }
-
+  // Label
   if(!label.empty()){
     dc.setFont(font);
     if(isEnabled()){

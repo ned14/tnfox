@@ -19,17 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMat4f.cpp,v 1.7 2004/03/09 05:56:35 fox Exp $                          *
+* $Id: FXMat4f.cpp,v 1.10 2004/10/25 04:20:26 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
 #include "FXVec4f.h"
 #include "FXQuatf.h"
+#include "FXMat3f.h"
 #include "FXMat4f.h"
 
 
@@ -440,49 +442,30 @@ FXMat4f& FXMat4f::left(){
   }
 
 
-
 // Rotate using quaternion
 FXMat4f& FXMat4f::rot(const FXQuatf& q){
-  register FXfloat r00,r01,r02,r10,r11,r12,r20,r21,r22;
-  register FXfloat x2,y2,z2,xx2,yy2,zz2,xy2,xz2,yz2,wx2,wy2,wz2;
   register FXfloat x,y,z;
 
-  // Pre-calculate some stuff
-  x2  = q.x*2.0f; y2  = q.y*2.0f; z2  = q.z*2.0f;
-  xx2 = q.x*x2;   yy2 = q.y*y2;   zz2 = q.z*z2;
-  xy2 = q.x*y2;   xz2 = q.x*z2;   yz2 = q.y*z2;
-  wx2 = q.w*x2;   wy2 = q.w*y2;   wz2 = q.w*z2;
-
-  // Rotation matrix
-  r00 = 1.0f-yy2-zz2; r01 = xy2+wz2;      r02 = xz2-wy2;
-  r10 = xy2-wz2;      r11 = 1.0f-xx2-zz2; r12 = yz2+wx2;
-  r20 = xz2+wy2;      r21 = yz2-wx2;      r22 = 1.0f-xx2-yy2;
+  // Get rotation matrix
+  FXMat3f r=toMatrix(q);
 
   // Pre-multiply
-  x=m[0][0];
-  y=m[1][0];
-  z=m[2][0];
-  m[0][0]=x*r00+y*r01+z*r02;
-  m[1][0]=x*r10+y*r11+z*r12;
-  m[2][0]=x*r20+y*r21+z*r22;
-  x=m[0][1];
-  y=m[1][1];
-  z=m[2][1];
-  m[0][1]=x*r00+y*r01+z*r02;
-  m[1][1]=x*r10+y*r11+z*r12;
-  m[2][1]=x*r20+y*r21+z*r22;
-  x=m[0][2];
-  y=m[1][2];
-  z=m[2][2];
-  m[0][2]=x*r00+y*r01+z*r02;
-  m[1][2]=x*r10+y*r11+z*r12;
-  m[2][2]=x*r20+y*r21+z*r22;
-  x=m[0][3];
-  y=m[1][3];
-  z=m[2][3];
-  m[0][3]=x*r00+y*r01+z*r02;
-  m[1][3]=x*r10+y*r11+z*r12;
-  m[2][3]=x*r20+y*r21+z*r22;
+  x=m[0][0]; y=m[1][0]; z=m[2][0];
+  m[0][0]=x*r[0][0]+y*r[0][1]+z*r[0][2];
+  m[1][0]=x*r[1][0]+y*r[1][1]+z*r[1][2];
+  m[2][0]=x*r[2][0]+y*r[2][1]+z*r[2][2];
+  x=m[0][1]; y=m[1][1]; z=m[2][1];
+  m[0][1]=x*r[0][0]+y*r[0][1]+z*r[0][2];
+  m[1][1]=x*r[1][0]+y*r[1][1]+z*r[1][2];
+  m[2][1]=x*r[2][0]+y*r[2][1]+z*r[2][2];
+  x=m[0][2]; y=m[1][2]; z=m[2][2];
+  m[0][2]=x*r[0][0]+y*r[0][1]+z*r[0][2];
+  m[1][2]=x*r[1][0]+y*r[1][1]+z*r[1][2];
+  m[2][2]=x*r[2][0]+y*r[2][1]+z*r[2][2];
+  x=m[0][3]; y=m[1][3]; z=m[2][3];
+  m[0][3]=x*r[0][0]+y*r[0][1]+z*r[0][2];
+  m[1][3]=x*r[1][0]+y*r[1][1]+z*r[1][2];
+  m[2][3]=x*r[2][0]+y*r[2][1]+z*r[2][2];
   return *this;
   }
 
@@ -639,7 +622,7 @@ FXMat4f& FXMat4f::scale(const FXVec3f& v){
   }
 
 
-// Calculate determinant 
+// Calculate determinant
 FXfloat det(const FXMat4f& a){
   return DET4(a[0][0],a[0][1],a[0][2],a[0][3],
               a[1][0],a[1][1],a[1][2],a[1][3],
@@ -719,7 +702,6 @@ FXMat4f& FXMat4f::look(const FXVec3f& eye,const FXVec3f& cntr,const FXVec3f& vup
   m[3][2]=rz[0]*x0+rz[1]*x1+rz[2]*x2+tz*m[3][3];
   return *this;
   }
-
 
 
 // Save to archive

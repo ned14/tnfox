@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec2f.h,v 1.3 2004/02/13 22:48:37 fox Exp $                            *
+* $Id: FXVec2f.h,v 1.4 2004/06/09 06:05:23 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXVEC2F_H
 #define FXVEC2F_H
@@ -78,7 +78,7 @@ public:
   /// Adding
   friend FXAPI FXVec2f operator+(const FXVec2f& a,const FXVec2f& b){return FXVec2f(a.x+b.x,a.y+b.y);}
 
-  /// Substracting
+  /// Subtracting
   friend FXAPI FXVec2f operator-(const FXVec2f& a,const FXVec2f& b){return FXVec2f(a.x-b.x,a.y-b.y);}
 
   /// Scaling

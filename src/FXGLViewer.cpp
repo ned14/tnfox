@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLViewer.cpp,v 1.139 2004/03/05 22:56:25 fox Exp $                     *
+* $Id: FXGLViewer.cpp,v 1.149 2004/11/16 17:50:18 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -40,7 +42,6 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXObjectList.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXVisual.h"
 #include "FXGLVisual.h"
@@ -184,6 +185,8 @@ FXDEFMAP(FXGLViewer) FXGLViewerMap[]={
   FXMAPFUNC(SEL_CLIPBOARD_LOST,0,FXGLViewer::onClipboardLost),
   FXMAPFUNC(SEL_CLIPBOARD_GAINED,0,FXGLViewer::onClipboardGained),
   FXMAPFUNC(SEL_CLIPBOARD_REQUEST,0,FXGLViewer::onClipboardRequest),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXGLViewer::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXGLViewer::onQueryHelp),
   FXMAPFUNCS(SEL_UPDATE,FXGLViewer::ID_DIAL_X,FXGLViewer::ID_DIAL_Z,FXGLViewer::onUpdXYZDial),
   FXMAPFUNCS(SEL_CHANGED,FXGLViewer::ID_DIAL_X,FXGLViewer::ID_DIAL_Z,FXGLViewer::onCmdXYZDial),
   FXMAPFUNCS(SEL_COMMAND,FXGLViewer::ID_DIAL_X,FXGLViewer::ID_DIAL_Z,FXGLViewer::onCmdXYZDial),
@@ -193,8 +196,6 @@ FXDEFMAP(FXGLViewer) FXGLViewerMap[]={
   FXMAPFUNCS(SEL_UPDATE,FXGLViewer::ID_SCALE_X,FXGLViewer::ID_SCALE_Z,FXGLViewer::onUpdXYZScale),
   FXMAPFUNCS(SEL_COMMAND,FXGLViewer::ID_SCALE_X,FXGLViewer::ID_SCALE_Z,FXGLViewer::onCmdXYZScale),
   FXMAPFUNCS(SEL_CHANGED,FXGLViewer::ID_SCALE_X,FXGLViewer::ID_SCALE_Z,FXGLViewer::onCmdXYZScale),
-  FXMAPFUNC(SEL_UPDATE,FXWindow::ID_QUERY_TIP,FXGLViewer::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXWindow::ID_QUERY_HELP,FXGLViewer::onQueryHelp),
   FXMAPFUNC(SEL_UPDATE,FXGLViewer::ID_PERSPECTIVE,FXGLViewer::onUpdPerspective),
   FXMAPFUNC(SEL_COMMAND,FXGLViewer::ID_PERSPECTIVE,FXGLViewer::onCmdPerspective),
   FXMAPFUNC(SEL_UPDATE,FXGLViewer::ID_PARALLEL,FXGLViewer::onUpdParallel),
@@ -674,11 +675,11 @@ void FXGLViewer::drawAnti(FXViewport& wv){
 
 // Fill select buffer with hits in rectangle
 FXint FXGLViewer::selectHits(FXuint*& hits,FXint& nhits,FXint x,FXint y,FXint w,FXint h){
+#ifdef HAVE_GL_H
   register FXfloat pickx,picky,pickw,pickh;
   register FXint mh=maxhits;
   hits=NULL;
   nhits=0;
-#ifdef HAVE_GL_H
   if(makeCurrent()){
 
     // Where to pick
@@ -1040,7 +1041,6 @@ FXbool FXGLViewer::setBounds(const FXRangef& r){
 // Fit view to new bounds
 FXbool FXGLViewer::fitToBounds(const FXRangef& box){
   FXRangef r(FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX,FLT_MAX,-FLT_MAX);
-  FXVec3f corner;
   FXMat4f m;
 
   // Get rotation of model
@@ -1217,9 +1217,9 @@ FXVec3f FXGLViewer::spherePoint(FXint px,FXint py){
   FXfloat d,t,screenmin;
   FXVec3f v;
   if(wvt.w>wvt.h)
-    screenmin=wvt.h;
+    screenmin=(FXfloat)wvt.h;
   else
-    screenmin=wvt.w;
+    screenmin=(FXfloat)wvt.w;
   v.x=2.0f*(px-0.5f*wvt.w)/screenmin;
   v.y=2.0f*(0.5f*wvt.h-py)/screenmin;
   d=v.x*v.x+v.y*v.y;
@@ -1239,21 +1239,9 @@ FXVec3f FXGLViewer::spherePoint(FXint px,FXint py){
   }
 
 
-// Turn camera
+// Turn camera; simpler now that arc() is changed
 FXQuatf FXGLViewer::turn(FXint fx,FXint fy,FXint tx,FXint ty){
-  FXVec3f oldsp,newsp;
-  FXQuatf q;
-  FXfloat t;
-  oldsp=spherePoint(fx,fy);
-  newsp=spherePoint(tx,ty);
-  q=arc(oldsp,newsp);
-  q.x*=0.5f;
-  q.y*=0.5f;
-  q.z*=0.5f;
-  t=1.0f-(q.x*q.x+q.y*q.y+q.z*q.z);
-  if(t<0.0f) t=0.0f;
-  q.w=sqrtf(t);
-  return q;
+  return arc(spherePoint(fx,fy),spherePoint(tx,ty));
   }
 
 
@@ -1353,22 +1341,22 @@ void FXGLViewer::drawLasso(FXint x0,FXint y0,FXint x1,FXint y1){
 // Current object changed
 long FXGLViewer::onChanged(FXObject*,FXSelector,void* ptr){
   setSelection((FXGLObject*)ptr);
-  if(target) target->handle(this,FXSEL(SEL_CHANGED,message),ptr);
+  if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),ptr);
   return 1;
   }
 
 
 // Message that indicates where user picked
 long FXGLViewer::onPick(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_PICKED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_PICKED,message),ptr);
   }
 
 
 // Clicked in widget
 long FXGLViewer::onClicked(FXObject*,FXSelector,void* ptr){
   if(target){
-    if(target->handle(this,FXSEL(SEL_CLICKED,message),ptr)) return 1;
-    if(ptr && target->handle(this,FXSEL(SEL_COMMAND,message),ptr)) return 1;
+    if(target->tryHandle(this,FXSEL(SEL_CLICKED,message),ptr)) return 1;
+    if(ptr && target->tryHandle(this,FXSEL(SEL_COMMAND,message),ptr)) return 1;
     }
   return 1;
   }
@@ -1376,13 +1364,13 @@ long FXGLViewer::onClicked(FXObject*,FXSelector,void* ptr){
 
 // Double clicked in widget; ptr may or may not point to an object
 long FXGLViewer::onDoubleClicked(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_DOUBLECLICKED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DOUBLECLICKED,message),ptr);
   }
 
 
 // Triple clicked in widget; ptr may or may not point to an object
 long FXGLViewer::onTripleClicked(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_TRIPLECLICKED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_TRIPLECLICKED,message),ptr);
   }
 
 
@@ -1392,7 +1380,7 @@ long FXGLViewer::onLassoed(FXObject*,FXSelector,void* ptr){
   FXGLObject **objlist;
 
   // Notify target of lasso
-  if(target && target->handle(this,FXSEL(SEL_LASSOED,message),ptr)) return 1;
+  if(target && target->tryHandle(this,FXSEL(SEL_LASSOED,message),ptr)) return 1;
 
   // Grab all objects in lasso
   objlist=lasso(event->click_x,event->click_y,event->win_x,event->win_y);
@@ -1416,25 +1404,25 @@ long FXGLViewer::onLassoed(FXObject*,FXSelector,void* ptr){
 
 // Selected object(s)
 long FXGLViewer::onSelected(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_SELECTED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_SELECTED,message),ptr);
   }
 
 
 // Deselected object(s)
 long FXGLViewer::onDeselected(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_DESELECTED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DESELECTED,message),ptr);
   }
 
 
 // Inserted object(s)
 long FXGLViewer::onInserted(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_INSERTED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_INSERTED,message),ptr);
   }
 
 
 // Deleted object(s)
 long FXGLViewer::onDeleted(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_DELETED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DELETED,message),ptr);
   }
 
 
@@ -1528,7 +1516,7 @@ long FXGLViewer::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     grab();
     flags&=~FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     if(event->state&RIGHTBUTTONMASK){
       if(event->state&SHIFTMASK)
         setOp(TRUCKING);
@@ -1580,7 +1568,7 @@ long FXGLViewer::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     ungrab();
     flags|=FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(event->state&RIGHTBUTTONMASK){
       if(event->state&SHIFTMASK){
         setOp(GYRATING);
@@ -1636,7 +1624,7 @@ long FXGLViewer::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
         }
       }
     else if(mode==DRAGGING){
-      if(target) target->handle(this,FXSEL(SEL_DRAGGED,message),selection);
+      if(target) target->tryHandle(this,FXSEL(SEL_DRAGGED,message),selection);
       setOp(HOVERING);
       }
     else{
@@ -1665,7 +1653,7 @@ long FXGLViewer::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     grab();
     flags&=~FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
     if(event->state&SHIFTMASK){
       setOp(TRUCKING);
       }
@@ -1684,7 +1672,7 @@ long FXGLViewer::onMiddleBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     ungrab();
     flags|=FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
     if(event->state&LEFTBUTTONMASK){
       setOp(ROTATING);
       grab();
@@ -1718,7 +1706,7 @@ long FXGLViewer::onRightBtnPress(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     grab();
     flags&=~FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
     if(event->state&LEFTBUTTONMASK){
       if(event->state&SHIFTMASK){
         setOp(TRUCKING);
@@ -1769,7 +1757,7 @@ long FXGLViewer::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     ungrab();
     flags|=FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
     if(event->state&LEFTBUTTONMASK){
       setOp(ROTATING);
       grab();
@@ -1789,7 +1777,7 @@ long FXGLViewer::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
         hit=pick(event->click_x,event->click_y);
         if(hit && hit->handle(this,FXSEL(SEL_COMMAND,ID_QUERY_MENU),ptr))
           ;
-        else if(target && target->handle(this,FXSEL(SEL_COMMAND,ID_QUERY_MENU),ptr))
+        else if(target && target->tryHandle(this,FXSEL(SEL_COMMAND,ID_QUERY_MENU),ptr))
           ;
         }
       setOp(HOVERING);
@@ -1810,7 +1798,7 @@ long FXGLViewer::onMotion(FXObject*,FXSelector,void* ptr){
   FXQuatf q;
   flags&=~FLAG_TIP;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_MOTION,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MOTION,message),ptr)) return 1;
     getApp()->removeTimeout(this,ID_TIPTIMER);
     switch(mode){
       case HOVERING:            // Reset the timer each time we moved the cursor
@@ -1909,7 +1897,7 @@ long FXGLViewer::onMotion(FXObject*,FXSelector,void* ptr){
 long FXGLViewer::onMouseWheel(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_MOUSEWHEEL,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MOUSEWHEEL,message),ptr)) return 1;
     setZoom(getZoom()*pow(2.0,-0.1*event->code/120.0));
     return 1;
     }
@@ -1922,7 +1910,7 @@ long FXGLViewer::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     switch(event->code){
       case KEY_Shift_L:
       case KEY_Shift_R:
@@ -1957,7 +1945,7 @@ long FXGLViewer::onKeyPress(FXObject*,FXSelector,void* ptr){
 long FXGLViewer::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     switch(event->code){
       case KEY_Shift_L:
       case KEY_Shift_R:
@@ -2009,13 +1997,11 @@ long FXGLViewer::onTipTimer(FXObject*,FXSelector,void*){
 
 
 // We were asked about status text
-long FXGLViewer::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if((flags&FLAG_HELP)){
-    FXTRACE((250,"%s::onQueryHelp %p\n",getClassName(),this));
-    if(!help.empty()){
-      sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
-      return 1;
-      }
+long FXGLViewer::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+    return 1;
     }
   return 0;
   }
@@ -2023,13 +2009,11 @@ long FXGLViewer::onQueryHelp(FXObject* sender,FXSelector,void*){
 
 // We were asked about tip text
 long FXGLViewer::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
-  FXGLObject *hit;
-  FXuint state;
-  FXint x,y;
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
   if(flags&FLAG_TIP){
+    FXint x,y; FXuint state;
     getCursorPosition(x,y,state);
-    FXTRACE((250,"%s::onQueryTip %p (%d,%d)\n",getClassName(),this,x,y));
-    hit=pick(x,y);
+    FXGLObject *hit=pick(x,y);
     if(hit && hit->handle(sender,sel,ptr)) return 1;
     if(!tip.empty()){
       sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
@@ -3048,8 +3032,8 @@ void FXGLViewer::setAmbientColor(const FXVec4f& clr){
 
 
 // Delegate all other messages to the GL Object
-long FXGLViewer::onDefault(FXObject* sender,FXSelector key,void* data){
-  return selection && selection->handle(sender,key,data);
+long FXGLViewer::onDefault(FXObject* sender,FXSelector sel,void* ptr){
+  return selection && selection->handle(sender,sel,ptr);
   }
 
 

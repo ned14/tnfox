@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStatusLine.cpp,v 1.17 2004/02/08 17:29:07 fox Exp $                    *
+* $Id: FXStatusLine.cpp,v 1.21 2004/10/07 21:49:14 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -156,13 +157,13 @@ long FXStatusLine::onUpdate(FXObject* sender,FXSelector sel,void* ptr){
 
   // Ask the help source for a new status text first, but only if the
   // statusline's shell is a direct or indirect owner of the help source
-  if(helpsource && getShell()->isOwnerOf(helpsource) && helpsource->handle(this,FXSEL(SEL_UPDATE,FXWindow::ID_QUERY_HELP),NULL)){
+  if(helpsource && getShell()->isOwnerOf(helpsource) && helpsource->handle(this,FXSEL(SEL_QUERY_HELP,0),NULL)){
     return 1;
     }
 
   // Ask target; this should be the normal help text
   // indicating the state the program is in currently.
-  if(target && target->handle(this,FXSEL(SEL_UPDATE,message),NULL)){// FIXME redundant; already asked target
+  if(target && target->tryHandle(this,FXSEL(SEL_UPDATE,message),NULL)){// FIXME redundant; already asked target
     return 1;
     }
 

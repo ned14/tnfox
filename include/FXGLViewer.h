@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLViewer.h,v 1.69 2004/02/20 16:29:39 fox Exp $                        *
+* $Id: FXGLViewer.h,v 1.71 2004/11/08 13:26:59 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXGLVIEWER_H
 #define FXGLVIEWER_H
@@ -93,7 +93,7 @@ typedef FXbool (*FXZSortFunc)(FXfloat*& buffer,FXint& used,FXint& size);
 /********************************  Viewer  Class  ******************************/
 
 
-/// Canvas, an area drawn by another object
+/// OpenGL viewer widget
 class FXAPI FXGLViewer : public FXGLCanvas {
   FXDECLARE(FXGLViewer)
   friend class FXGLObject;
@@ -155,8 +155,8 @@ protected:
 protected:
   FXGLViewer();
   void glsetup();
-  void updateProjection();
-  void updateTransform();
+  virtual void updateProjection();
+  virtual void updateTransform();
   FXVec3f spherePoint(FXint px,FXint py);
   FXQuatf turn(FXint fx,FXint fy,FXint tx,FXint ty);
   void drawWorld(FXViewport& wv);
@@ -363,7 +363,7 @@ public:
   virtual FXGLObject* pick(FXint x,FXint y);
 
   /// Change the model bounding box; this adjusts the viewer
-  FXbool setBounds(const FXRangef& box);
+  virtual FXbool setBounds(const FXRangef& box);
 
   /// Fit viewer to the given bounding box
   FXbool fitToBounds(const FXRangef& box);

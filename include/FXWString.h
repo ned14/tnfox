@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWString.h,v 1.10 2004/02/08 17:17:34 fox Exp $                          *
+* $Id: FXWString.h,v 1.11 2004/08/28 01:16:10 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXWSTRING_H
 #define FXWSTRING_H

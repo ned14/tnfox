@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIClient.h,v 1.29 2004/02/08 17:17:33 fox Exp $                       *
+* $Id: FXMDIClient.h,v 1.30 2004/09/20 16:25:54 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXMDICLIENT_H
 #define FXMDICLIENT_H
@@ -35,17 +35,21 @@ class FXMDIChild;
 
 
 /**
-* The MDI client window manages a number of MDI child windows in
-* a multiple-document interface (MDI) application.
-* MDI child windows usually receive messages from the GUI through
-* delegation via the MDI client, i.e. the MDI client window is set as
-* the target for most GUI commands; the MDI client filters out a few messages
-* and forwards all other messages to the active MDI child.
-* MDI client can arrange the MDI child windows in various ways:-
-* it may maximize one of the MDI child windows, arrange them side-by-side,
-* cascade them, or iconify them.
-* MDI child windows are notified about changes in the active MDI child
-* window by the MDI client.
+* The MDI client window manages a number of MDI child windows in a multiple-document 
+* interface (MDI) application. MDI child windows usually receive messages from the GUI controls
+* by delegation via the MDI client.  This is accomplished by making the MDI client window 
+* the target for most GUI controls.  The MDI client filters out messages intented for itself,
+* and delegates the remaining messages to its currently active MDI child, if any.
+* If you use the auto-gray or auto-hide feature available in some GUI controls, these
+* controls can be automatically grayed out or hidden when there is no active MDI child.
+* When delegating messages via MDI client to MDI child windows of different types, care
+* should be taken that message ID's do not overlap, so that all message ID's only map to
+* the intented handlers no matter which MDI child window type is active. 
+* The MDI client sends a SEL_CHANGED message to its target when the active MDI child is
+* switched, with the void* pointer refering to the new MDI child.
+* A MDI Window selection dialog can be brought up through the ID_MDI_OVER_X messages;
+* a menu button connected to the MDI client with the ID_MDI_OVER_X message will be 
+* automatically grayed out if there are less than X MDI child windows.
 */
 class FXAPI FXMDIClient : public FXComposite {
   FXDECLARE(FXMDIClient)
@@ -147,13 +151,13 @@ public:
   /// Get current active child; may be NULL!
   FXMDIChild* getActiveChild() const { return active; }
 
-  // Cascade windows
+  /// Cascade windows
   virtual void cascade(FXbool notify=FALSE);
 
-  // Layout horizontally
+  /// Layout horizontally
   virtual void horizontal(FXbool notify=FALSE);
 
-  // Layout vertically
+  /// Layout vertically
   virtual void vertical(FXbool notify=FALSE);
 
   /// Change cascade offset X

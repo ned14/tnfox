@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxwuquantize.cpp,v 1.6 2004/04/24 13:44:20 fox Exp $                     *
+* $Id: fxwuquantize.cpp,v 1.7 2004/06/16 06:27:51 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -231,9 +231,9 @@ static FXint top(box& cube,FXuchar dir,FXint pos,FXint mmt[33][33][33]){
 static FXfloat variance(WU& wu,box& cube){
   register FXfloat dr,dg,db,xx;
 
-  dr = volume(cube,wu.mr);
-  dg = volume(cube,wu.mg);
-  db = volume(cube,wu.mb);
+  dr = (FXfloat)volume(cube,wu.mr);
+  dg = (FXfloat)volume(cube,wu.mg);
+  db = (FXfloat)volume(cube,wu.mb);
 
   xx =  wu.m2[cube.r1][cube.g1][cube.b1]
        -wu.m2[cube.r1][cube.g1][cube.b0]
@@ -372,7 +372,6 @@ FXbool fxwuquantize(FXuchar* dst,const FXColor* src,FXColor* colormap,FXint& act
   FXuchar  map[33][33][33];
   FXfloat  vv[MAXCOLOR];
   box      cube[MAXCOLOR];
-  FXuchar *tag;
   WU       wu;
 
   // Size of image

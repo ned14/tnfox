@@ -24,7 +24,7 @@
 namespace FX {
 
 // Keep similar to FXIMPLEMENT()
-const FXMetaClass FXFunctorTarget::metaClass("FXFunctorTarget",FXFunctorTarget::manufacture,&FXObject::metaClass,NULL,0,sizeof(FXObject::FXMapEntry),sizeof("FXFunctorTarget"));
+const FXMetaClass FXFunctorTarget::metaClass("FXFunctorTarget",FXFunctorTarget::manufacture,&FXObject::metaClass,NULL,0,sizeof(FXObject::FXMapEntry));
 
 long FXFunctorTarget::handle(FXObject* sender,FXSelector sel,void* ptr)
 {

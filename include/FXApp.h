@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.h,v 1.172 2004/04/30 03:44:51 fox Exp $                            *
+* $Id: FXApp.h,v 1.185 2004/10/19 19:48:18 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXAPP_H
 #define FXAPP_H
@@ -218,15 +218,15 @@ protected:
   void setup();
   static void signalhandler(int sig);
   static void immediatesignalhandler(int sig);
-  void dragdropSetData(const FXWindow* window,FXDragType type,FXuchar* data,FXuint size);
-  void dragdropGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size);
-  void dragdropGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes);
   void selectionSetData(const FXWindow* window,FXDragType type,FXuchar* data,FXuint size);
   void selectionGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size);
   void selectionGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes);
   void clipboardSetData(const FXWindow* window,FXDragType type,FXuchar* data,FXuint size);
   void clipboardGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size);
   void clipboardGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes);
+  void dragdropSetData(const FXWindow* window,FXDragType type,FXuchar* data,FXuint size);
+  void dragdropGetData(const FXWindow* window,FXDragType type,FXuchar*& data,FXuint& size);
+  void dragdropGetTypes(const FXWindow* window,FXDragType*& types,FXuint& numtypes);
 #ifndef WIN32
   void addRepaint(FXID win,FXint x,FXint y,FXint w,FXint h,FXbool synth=0);
   void removeRepaints(FXID win,FXint x,FXint y,FXint w,FXint h);
@@ -290,6 +290,9 @@ public:
   /// Get root Window
   FXRootWindow* getRootWindow() const { return root; }
 
+  /// Set root Window
+  void setRootWindow(FXRootWindow* rt);
+
   /// Get the window under the cursor, if any
   FXWindow *getCursorWindow() const { return cursorWindow; }
 
@@ -312,17 +315,12 @@ public:
   * handler.  If a timer with the same target and message already exists,
   * it will be rescheduled.
   */
-  FXTimer* addTimeout(FXObject* tgt,FXSelector sel,FXuint ms=1000,void* ptr=NULL);
+  void addTimeout(FXObject* tgt,FXSelector sel,FXuint ms=1000,void* ptr=NULL);
 
   /**
-  * Remove timeout identified by tgt and sel; returns NULL.
+  * Remove timeout identified by tgt and sel.
   */
-  FXTimer* removeTimeout(FXObject* tgt,FXSelector sel);
-
-  /**
-  * Remove timeout t; returns NULL.
-  */
-  FXTimer* removeTimeout(FXTimer *t);
+  void removeTimeout(FXObject* tgt,FXSelector sel);
 
   /**
   * Return TRUE if given timeout has been set
@@ -334,14 +332,12 @@ public:
   * If the timer is past due, 0 is returned.  If there is no such
   * timer, infinity (UINT_MAX) is returned.
   */
-  FXuint remainingTimeout(FXObject *tgt,FXSelector sel) const;
+  FXuint remainingTimeout(FXObject *tgt,FXSelector sel);
 
   /**
-  * Return, in ms, the time remaining until the given timer fires.
-  * If the timer is past due, 0 is returned.  If there is no such
-  * timer, infinity (UINT_MAX) is returned.
+  * Process any timouts due at this time.
   */
-  FXuint remainingTimeout(FXTimer *t) const;
+  void handleTimeouts();
 
   /**
   * Add a idle processing message to be sent to target object when
@@ -350,17 +346,12 @@ public:
   * of the message handler. If a chore with the same target and message
   * already exists, it will be rescheduled.
   */
-  FXChore* addChore(FXObject* tgt,FXSelector sel,void *ptr=NULL);
+  void addChore(FXObject* tgt,FXSelector sel,void *ptr=NULL);
 
   /**
-  * Remove idle processing message identified by tgt and sel; returns NULL.
+  * Remove idle processing message identified by tgt and sel.
   */
-  FXChore* removeChore(FXObject* tgt,FXSelector sel);
-
-  /**
-  * Remove idle processing message; returns NULL.
-  */
-  FXChore* removeChore(FXChore *c);
+  void removeChore(FXObject* tgt,FXSelector sel);
 
   /**
   * Return TRUE if given chore has been set
@@ -392,6 +383,9 @@ public:
   * and mode, which is a bitwise OR of (INPUT_READ, INPUT_WRITE, INPUT_EXCEPT).
   */
   FXbool removeInput(FXInputHandle fd,FXuint mode);
+
+  /// Return key state
+  FXbool getKeyState(FXuint keysym) const;
 
   /// Peek to determine if there's an event
   FXbool peekEvent();
@@ -559,9 +553,9 @@ private:
   FXVisual        *defaultVisual;       // Default [color] visual
   FXFont          *normalFont;          // Normal font
   FXFont          *stockFont;           // Stock font
-  FXuint           maxcolors;           // Maximum number of colors to allocate
   FXuchar         *ddeData;             // DDE array
   FXuint           ddeSize;             // DDE array size
+  FXuint           maxcolors;           // Maximum number of colors to allocate
   FXuint           typingSpeed;         // Typing speed
   FXuint           clickSpeed;          // Double click speed
   FXuint           scrollSpeed;         // Scroll speed
@@ -642,6 +636,7 @@ private:
   FXbool           xdndStatusReceived;  // XDND received at least one status
   FXbool           xdndWantUpdates;     // XDND target wants new positions while in rect
   FXRectangle      xdndRect;            // XDND rectangle bounding target
+  FXint            xrreventbase;        // XRR event base
   FXID             stipples[23];        // Standard stipple patterns
   void            *xim;                 // Input method
   void            *xic;                 // Input method context
@@ -713,7 +708,8 @@ public:
 
   /**
   * Construct application object; the name and vendor strings are used
-  * as keys into the registry database for this application's settings
+  * as keys into the registry database for this application's settings.
+  * Only one single application object can be constructed.
   */
   FXApp(const FXString& name="Application",const FXString& vendor="FoxDefault");
 
@@ -759,6 +755,9 @@ public:
   /// Get root Window
   FXRootWindow* getRootWindow() const { return getEventLoop()->getRootWindow(); }
 
+  /// Set root Window
+  void setRootWindow(FXRootWindow* rt) { return getEventLoop()->setRootWindow(rt); }
+
   /// Get the window under the cursor, if any
   FXWindow *getCursorWindow() const { return getEventLoop()->getCursorWindow(); }
 
@@ -774,6 +773,15 @@ public:
   /// Find window from root x,y, starting from given window
   FXWindow* findWindowAt(FXint rx,FXint ry,FXID window=0) const { return getEventLoop()->findWindowAt(rx,ry,window); }
 
+  /// Create application's windows
+  virtual void create();
+
+  /// Destroy application's windows
+  virtual void destroy();
+
+  /// Detach application's windows
+  virtual void detach();
+
   /**
   * Add timeout message to be sent to target object in ms milliseconds;
   * the timer fires only once after the interval expires.  The void* ptr
@@ -781,17 +789,12 @@ public:
   * handler.  If a timer with the same target and message already exists,
   * it will be rescheduled.
   */
-  FXTimer* addTimeout(FXObject* tgt,FXSelector sel,FXuint ms=1000,void* ptr=NULL) { return getEventLoop()->addTimeout(tgt,sel,ms,ptr); }
+  void addTimeout(FXObject* tgt,FXSelector sel,FXuint ms=1000,void* ptr=NULL) { return getEventLoop()->addTimeout(tgt,sel,ms,ptr); }
 
   /**
-  * Remove timeout identified by tgt and sel; returns NULL.
+  * Remove timeout identified by tgt and sel.
   */
-  FXTimer* removeTimeout(FXObject* tgt,FXSelector sel) { return getEventLoop()->removeTimeout(tgt,sel); }
-
-  /**
-  * Remove timeout t; returns NULL.
-  */
-  FXTimer* removeTimeout(FXTimer *t) { return getEventLoop()->removeTimeout(t); }
+  void removeTimeout(FXObject* tgt,FXSelector sel) { return getEventLoop()->removeTimeout(tgt,sel); }
 
   /**
   * Return TRUE if given timeout has been set
@@ -806,11 +809,9 @@ public:
   FXuint remainingTimeout(FXObject *tgt,FXSelector sel) const { return getEventLoop()->remainingTimeout(tgt,sel); }
 
   /**
-  * Return, in ms, the time remaining until the given timer fires.
-  * If the timer is past due, 0 is returned.  If there is no such
-  * timer, infinity (UINT_MAX) is returned.
+  * Process any timeouts due at this time.
   */
-  FXuint remainingTimeout(FXTimer *t) const { return getEventLoop()->remainingTimeout(t); }
+  void handleTimeouts() { return getEventLoop()->handleTimeouts(); }
 
   /**
   * Add a idle processing message to be sent to target object when
@@ -819,17 +820,12 @@ public:
   * of the message handler. If a chore with the same target and message
   * already exists, it will be rescheduled.
   */
-  FXChore* addChore(FXObject* tgt,FXSelector sel,void *ptr=NULL) { return getEventLoop()->addChore(tgt,sel,ptr); }
+  void addChore(FXObject* tgt,FXSelector sel,void *ptr=NULL) { return getEventLoop()->addChore(tgt,sel,ptr); }
 
   /**
   * Remove idle processing message identified by tgt and sel; returns NULL.
   */
-  FXChore* removeChore(FXObject* tgt,FXSelector sel) { return getEventLoop()->removeChore(tgt,sel); }
-
-  /**
-  * Remove idle processing message; returns NULL.
-  */
-  FXChore* removeChore(FXChore *c) { return getEventLoop()->removeChore(c); }
+  void removeChore(FXObject* tgt,FXSelector sel) { return getEventLoop()->removeChore(tgt,sel); }
 
   /**
   * Return TRUE if given chore has been set
@@ -862,14 +858,8 @@ public:
   */
   FXbool removeInput(FXInputHandle fd,FXuint mode) { return getEventLoop()->removeInput(fd,mode); }
 
-  /// Create application's windows
-  virtual void create();
-
-  /// Destroy application's windows
-  virtual void destroy();
-
-  /// Detach application's windows
-  virtual void detach();
+  /// Return key state
+  FXbool getKeyState(FXuint keysym) const;
 
   /// Peek to determine if there's an event
   FXbool peekEvent() { return getEventLoop()->peekEvent(); }
@@ -985,7 +975,12 @@ public:
   */
   virtual void exit(FXint code=0);
 
-  /// Get registry
+  /**
+  * Return a reference to the registry.  The registry keeps
+  * settings and configuration information for an application,
+  * which are automatically loaded when the application starts
+  * up, and saved when the application terminates.
+  */
   FXRegistry& reg(){ return registry; }
 
   /// Register new DND type
@@ -1088,7 +1083,7 @@ public:
 
   /// Dump widget information
   void dumpWidgets() const;
-  
+
   /// Destroy the application and all reachable resources
   virtual ~FXApp();
   };

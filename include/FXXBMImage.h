@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXXBMImage.h,v 1.6 2004/02/08 17:17:34 fox Exp $                         *
+* $Id: FXXBMImage.h,v 1.7 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXXBMIMAGE_H
 #define FXXBMIMAGE_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXXBMImage(const FXXBMImage&);
   FXXBMImage &operator=(const FXXBMImage&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct image from memory stream formatted in X Bitmap format

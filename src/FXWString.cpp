@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWString.cpp,v 1.12 2004/02/08 17:29:07 fox Exp $                       *
+* $Id: FXWString.cpp,v 1.16 2004/10/12 06:47:20 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXWString.h"
 
@@ -109,9 +110,9 @@ void FXWString::length(FXint len){
   if(((FXint*)str)[-1]!=len){
     if(0<len){
       if(str==EMPTY)
-        str=sizeof(FXint)+(FXwchar*)malloc(ROUNDUP(sizeof(FXint)+1+len)*sizeof(FXwchar));
+        str=(FXwchar*)(sizeof(FXint)+(FXchar*)malloc(ROUNDUP(1+len)*sizeof(FXwchar)+sizeof(FXint)));
       else
-        str=sizeof(FXint)+(FXwchar*)realloc(str-sizeof(FXint),ROUNDUP(sizeof(FXint)+1+len)*sizeof(FXwchar));
+        str=(FXwchar*)(sizeof(FXint)+(FXchar*)realloc(((FXchar*)str)-sizeof(FXint),ROUNDUP(1+len)*sizeof(FXwchar)+sizeof(FXint)));
       str[len]=0;
       ((FXint*)str)[-1]=len;
       }
@@ -150,7 +151,7 @@ FXWString::FXWString(const FXwchar* s):str(EMPTY){
 
 // Construct and init with substring
 FXWString::FXWString(const FXwchar* s,FXint n):str(EMPTY){
-  if(0<n){
+  if(s && 0<n){
     length(n);
     fxmemcpy(str,s,n);
     }
@@ -211,7 +212,12 @@ FXWString FXWString::section(const FXwchar* delim,FXint n,FXint start,FXint num)
     while(s<len){
       c=str[s++];
       i=n;
-      while(--i>=0){ if(delim[i]==c && --start==0) goto a; }
+      while(--i>=0){
+        if(delim[i]==c){
+          if(--start==0) goto a;
+          break;
+          }
+        }
       }
     }
 a:e=s;
@@ -219,7 +225,12 @@ a:e=s;
     while(e<len){
       c=str[e];
       i=n;
-      while(--i>=0){ if(delim[i]==c && --num==0) goto b; }
+      while(--i>=0){
+        if(delim[i]==c){
+          if(--num==0) goto b;
+          break;
+          }
+        }
       ++e;
       }
     }
@@ -245,7 +256,7 @@ FXWString& FXWString::operator=(const FXWString& s){
     register FXint len=s.length();
     if(0<len){
       length(len);
-      fxmemcpy(str,s.str,len);
+      fxmemmove(str,s.str,len);
       }
     else{
       length(0);
@@ -261,7 +272,7 @@ FXWString& FXWString::operator=(const FXwchar* s){
     if(s && s[0]){
       register FXint len=fxstrlen(s);
       length(len);
-      fxmemcpy(str,s,len);
+      fxmemmove(str,s,len);
       }
     else{
       length(0);
@@ -340,9 +351,12 @@ FXWString& FXWString::assign(FXwchar c,FXint n){
 
 // Assign first n characters of input string to this string
 FXWString& FXWString::assign(const FXwchar *s,FXint n){
-  if(str!=s){
+  if(s && 0<n){
     length(n);
-    fxmemcpy(str,s,n);
+    fxmemmove(str,s,n);
+    }
+  else{
+    length(0);
     }
   return *this;
   }
@@ -357,7 +371,14 @@ FXWString& FXWString::assign(const FXWString& s){
 
 // Assign input string to this string
 FXWString& FXWString::assign(const FXwchar *s){
-  assign(s,fxstrlen(s));
+  if(s && s[0]){
+    register FXint n=fxstrlen(s);
+    length(n);
+    fxmemmove(str,s,n);
+    }
+  else{
+    length(0);
+    }
   return *this;
   }
 
@@ -405,7 +426,7 @@ FXWString& FXWString::insert(FXint pos,FXwchar c,FXint n){
 
 // Insert string at position
 FXWString& FXWString::insert(FXint pos,const FXwchar* s,FXint n){
-  if(0<n){
+  if(s && 0<n){
     register FXint len=length();
     length(len+n);
     if(pos<=0){
@@ -433,7 +454,22 @@ FXWString& FXWString::insert(FXint pos,const FXWString& s){
 
 // Insert string at position
 FXWString& FXWString::insert(FXint pos,const FXwchar* s){
-  insert(pos,s,fxstrlen(s));
+  if(s && s[0]){
+    register FXint len=length();
+    register FXint n=fxstrlen(s);
+    length(len+n);
+    if(pos<=0){
+      fxmemmove(&str[n],str,len);
+      fxmemcpy(str,s,n);
+      }
+    else if(pos>=len){
+      fxmemcpy(&str[len],s,n);
+      }
+    else{
+      fxmemmove(&str[pos+n],&str[pos],len-pos);
+      fxmemcpy(&str[pos],s,n);
+      }
+    }
   return *this;
   }
 
@@ -460,7 +496,7 @@ FXWString& FXWString::append(FXwchar c,FXint n){
 
 // Add string to the end
 FXWString& FXWString::append(const FXwchar *s,FXint n){
-  if(0<n){
+  if(s && 0<n){
     register FXint len=length();
     length(len+n);
     fxmemcpy(&str[len],s,n);
@@ -478,7 +514,12 @@ FXWString& FXWString::append(const FXWString& s){
 
 // Add string to the end
 FXWString& FXWString::append(const FXwchar *s){
-  append(s,fxstrlen(s));
+  if(s && s[0]){
+    register FXint len=length();
+    register FXint n=fxstrlen(s);
+    length(len+n);
+    fxmemcpy(&str[len],s,n);
+    }
   return *this;
   }
 
@@ -492,7 +533,7 @@ FXWString& FXWString::operator+=(const FXWString& s){
 
 // Append string
 FXWString& FXWString::operator+=(const FXwchar* s){
-  append(s,fxstrlen(s));
+  append(s);
   return *this;
   }
 
@@ -516,7 +557,7 @@ FXWString& FXWString::prepend(FXwchar c){
 
 // Prepend string
 FXWString& FXWString::prepend(const FXwchar *s,FXint n){
-  if(0<n){
+  if(s && 0<n){
     register FXint len=length();
     length(len+n);
     fxmemmove(&str[n],str,len);
@@ -547,7 +588,13 @@ FXWString& FXWString::prepend(const FXWString& s){
 
 // Prepend string
 FXWString& FXWString::prepend(const FXwchar *s){
-  prepend(s,fxstrlen(s));
+  if(s && s[0]){
+    register FXint len=length();
+    register FXint n=fxstrlen(s);
+    length(len+n);
+    fxmemmove(&str[n],str,len);
+    fxmemcpy(str,s,n);
+    }
   return *this;
   }
 

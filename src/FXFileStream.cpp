@@ -3,7 +3,7 @@
 *                       F i l e   S t r e a m   C l a s s                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2003 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
 * TnFOX Extensions (C) 2003 Niall Douglas                                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileStream.cpp,v 1.13 2004/03/02 23:37:10 fox Exp $                     *
+* $Id: FXFileStream.cpp,v 1.17 2004/09/19 20:06:05 fox Exp $                    *
 ********************************************************************************/
 #include "fxdefs.h"
 #include "FXFileStream.h"

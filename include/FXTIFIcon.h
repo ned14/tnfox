@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTIFIcon.h,v 1.15 2004/02/08 17:17:34 fox Exp $                         *
+* $Id: FXTIFIcon.h,v 1.17 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXTIFICON_H
 #define FXTIFICON_H
@@ -42,6 +42,8 @@ private:
   FXTIFIcon(const FXTIFIcon&);
   FXTIFIcon &operator=(const FXTIFIcon&);
 public:
+  static const FXchar fileExt[];
+public:
 
   /// Construct an icon from memory stream formatted in TIFF format
   FXTIFIcon(FXApp *a,const void *pix=NULL,FXColor clr=FXRGB(192,192,192),FXuint opts=0,FXint w=1,FXint h=1);
@@ -57,6 +59,9 @@ public:
 
   /// Load pixels from stream in TIFF format
   virtual FXbool loadPixels(FXStream& store);
+
+  /// True if format is supported
+  static const FXbool supported;
 
   /// Destroy
   virtual ~FXTIFIcon();

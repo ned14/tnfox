@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMat3f.h,v 1.5 2004/02/08 17:17:33 fox Exp $                            *
+* $Id: FXMat3f.h,v 1.6 2004/11/11 17:29:39 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXMAT3F_H
 #define FXMAT3F_H
@@ -30,19 +30,34 @@
 namespace FX {
 
 
+class FXQuatf;
+
+
 /// Single-precision 3x3 matrix
 class FXAPI FXMat3f {
 protected:
   FXVec3f m[3];
 public:
-  /// Constructors
+
+  /// Default constructor 
   FXMat3f(){}
+  
+  /// Copy constructor
+  FXMat3f(const FXMat3f& other);
+  
+  /// Construct from scalar number
   FXMat3f(FXfloat w);
+  
+  /// Construct from components
   FXMat3f(FXfloat a00,FXfloat a01,FXfloat a02,
           FXfloat a10,FXfloat a11,FXfloat a12,
           FXfloat a20,FXfloat a21,FXfloat a22);
+          
+  /// Construct matrix from three vectors          
   FXMat3f(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c);
-  FXMat3f(const FXMat3f& other);
+  
+  /// Construct rotation matrix from quaternion
+  FXMat3f(const FXQuatf& quat);
 
   /// Assignment operators
   FXMat3f& operator=(const FXMat3f& other);

@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXAccelTable.cpp,v 1.29 2004/02/08 17:29:06 fox Exp $                    *
+* $Id: FXAccelTable.cpp,v 1.34 2004/10/07 17:13:49 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXObject.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXAccelTable.h"
 
@@ -205,7 +206,7 @@ long FXAccelTable::onKeyPress(FXObject* sender,FXSelector,void* ptr){
     p=(p+1)&max;
     }
   if(key[p].target && key[p].messagedn){
-    key[p].target->handle(sender,key[p].messagedn,ptr);
+    key[p].target->tryHandle(sender,key[p].messagedn,ptr);
     }
   return 1;
   }
@@ -225,7 +226,7 @@ long FXAccelTable::onKeyRelease(FXObject* sender,FXSelector,void* ptr){
     p=(p+1)&max;
     }
   if(key[p].target && key[p].messageup){
-    key[p].target->handle(sender,key[p].messageup,ptr);
+    key[p].target->tryHandle(sender,key[p].messageup,ptr);
     }
   return 1;
   }

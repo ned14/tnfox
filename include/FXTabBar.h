@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBar.h,v 1.8 2004/02/08 17:17:34 fox Exp $                           *
+* $Id: FXTabBar.h,v 1.9 2004/10/14 07:27:18 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXTABBAR_H
 #define FXTABBAR_H
@@ -31,14 +31,14 @@
 namespace FX {
 
 
-// Tab Book options
+/// Tab Book options
 enum {
-  TABBOOK_TOPTABS    = 0,                                   // Tabs on top (default)
-  TABBOOK_BOTTOMTABS = 0x00020000,                          // Tabs on bottom
-  TABBOOK_SIDEWAYS   = 0x00040000,                          // Tabs on left
-  TABBOOK_LEFTTABS   = TABBOOK_SIDEWAYS|TABBOOK_TOPTABS,    // Tabs on left
-  TABBOOK_RIGHTTABS  = TABBOOK_SIDEWAYS|TABBOOK_BOTTOMTABS, // Tabs on right
-  TABBOOK_NORMAL     = TABBOOK_TOPTABS
+  TABBOOK_TOPTABS    = 0,                                   /// Tabs on top (default)
+  TABBOOK_BOTTOMTABS = 0x00020000,                          /// Tabs on bottom
+  TABBOOK_SIDEWAYS   = 0x00040000,                          /// Tabs on left
+  TABBOOK_LEFTTABS   = TABBOOK_SIDEWAYS|TABBOOK_TOPTABS,    /// Tabs on left
+  TABBOOK_RIGHTTABS  = TABBOOK_SIDEWAYS|TABBOOK_BOTTOMTABS, /// Tabs on right
+  TABBOOK_NORMAL     = TABBOOK_TOPTABS                      /// Normal tabs
   };
 
 
@@ -53,7 +53,7 @@ enum {
 class FXAPI FXTabBar : public FXPacker {
   FXDECLARE(FXTabBar)
 protected:
-  FXint current;
+  FXint current;        // Current tab index
 protected:
   FXTabBar(){}
 private:

@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFontSelector.cpp,v 1.42 2004/02/08 17:05:35 fox Exp $                  *
+* $Id: FXFontSelector.cpp,v 1.45 2004/09/17 07:46:21 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXFont.h"
@@ -256,6 +257,7 @@ void FXFontSelector::listFontFaces(){
     if(selindex==-1) selindex=0;
     if(0<familylist->getNumItems()){
       familylist->setCurrentItem(selindex);
+      familylist->makeItemVisible(selindex);
       family->setText(familylist->getItemText(selindex));
       strncpy(selected.face,familylist->getItemText(selindex).text(),sizeof(selected.face));
       }
@@ -304,6 +306,7 @@ void FXFontSelector::listWeights(){
     if(selindex==-1) selindex=0;
     if(0<weightlist->getNumItems()){
       weightlist->setCurrentItem(selindex);
+      weightlist->makeItemVisible(selindex);
       weight->setText(weightlist->getItemText(selindex));
       selected.weight=(FXuint)(FXuval)weightlist->getItemData(selindex);
       }
@@ -348,6 +351,7 @@ void FXFontSelector::listSlants(){
     if(selindex==-1) selindex=0;
     if(0<stylelist->getNumItems()){
       stylelist->setCurrentItem(selindex);
+      stylelist->makeItemVisible(selindex);
       style->setText(stylelist->getItemText(selindex));
       selected.slant=(FXuint)(FXuval)stylelist->getItemData(selindex);
       }
@@ -373,8 +377,6 @@ void FXFontSelector::listFontSizes(){
         s=sizeint[f];
         string.format("%.1f",0.1*s);
         sizelist->appendItem(string,NULL,(void*)(FXuval)s);
-//        sizelist->appendItem(FXStringVal(0.1*sizeint[f],6,MAYBE),NULL,(void*)s);
-//        sizelist->appendItem(FXStringVal(s/10),NULL,(void*)s);
         if(selected.size == s) selindex=sizelist->getNumItems()-1;
         lasts=s;
         }
@@ -385,8 +387,6 @@ void FXFontSelector::listFontSizes(){
         if(s!=lasts){
           string.format("%.1f",0.1*s);
           sizelist->appendItem(string,NULL,(void*)(FXuval)s);
-//          sizelist->appendItem(FXStringVal(0.1*s,6,MAYBE),NULL,(void*)s);
-//          sizelist->appendItem(FXStringVal(s/10),NULL,(void*)s);
           if(selected.size == s) selindex=sizelist->getNumItems()-1;
           lasts=s;
           }
@@ -395,6 +395,7 @@ void FXFontSelector::listFontSizes(){
     if(selindex==-1) selindex=0;
     if(0<sizelist->getNumItems()){
       sizelist->setCurrentItem(selindex);
+      sizelist->makeItemVisible(selindex);
       size->setText(sizelist->getItemText(selindex));
       selected.size=(FXuint)(FXuval)sizelist->getItemData(selindex);
       }

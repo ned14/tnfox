@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGradientBar.cpp,v 1.61 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXGradientBar.cpp,v 1.67 2004/10/07 21:49:14 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXDrawable.h"
@@ -77,7 +78,8 @@
   - Drop left of pivot changes left color, right changes right color,
     and on changes both.
 
-  - Should pass some info in callbacks.
+  - Pass -1 if many segments are affected; otherwise pass affected segment
+    index only.
 
 */
 
@@ -117,8 +119,8 @@ FXDEFMAP(FXGradientBar) FXGradientBarMap[]={
   FXMAPFUNC(SEL_DND_LEAVE,0,FXGradientBar::onDNDLeave),
   FXMAPFUNC(SEL_DND_DROP,0,FXGradientBar::onDNDDrop),
   FXMAPFUNC(SEL_DND_MOTION,0,FXGradientBar::onDNDMotion),
-  FXMAPFUNC(SEL_UPDATE,FXGradientBar::ID_QUERY_TIP,FXGradientBar::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXGradientBar::ID_QUERY_HELP,FXGradientBar::onQueryHelp),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXGradientBar::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXGradientBar::onQueryHelp),
   FXMAPFUNC(SEL_UPDATE,FXGradientBar::ID_RECENTER,FXGradientBar::onUpdRecenter),
   FXMAPFUNC(SEL_COMMAND,FXGradientBar::ID_RECENTER,FXGradientBar::onCmdRecenter),
   FXMAPFUNC(SEL_UPDATE,FXGradientBar::ID_SPLIT,FXGradientBar::onUpdSplit),
@@ -666,7 +668,7 @@ FXbool FXGradientBar::selectSegments(FXint fm,FXint to,FXbool notify){
     sellower=fm;
     selupper=to;
     update();
-    if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -677,8 +679,8 @@ FXbool FXGradientBar::selectSegments(FXint fm,FXint to,FXbool notify){
 FXbool FXGradientBar::deselectSegments(FXbool notify){
   if(0<=sellower && 0<=selupper){
     sellower=selupper=-1;
-    if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),NULL);}
     update();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -697,7 +699,7 @@ void FXGradientBar::setCurrentSegment(FXint index,FXbool notify){
   if(index<-1 || nsegs<=index){ fxerror("%s::setCurrentSegment: index out of range.\n",getClassName()); }
   if(index!=current){
     current=index;
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
     }
   }
 
@@ -716,8 +718,8 @@ void FXGradientBar::moveSegmentLower(FXint sg,FXdouble val,FXbool notify){
     if(seg[sg].middle<val) val=seg[sg].middle;
     if(seg[sg].lower!=val){
       seg[sg-1].upper=seg[sg].lower=val;
-      if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
       recalc();
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)sg);}
       }
     }
   }
@@ -730,8 +732,8 @@ void FXGradientBar::moveSegmentMiddle(FXint sg,FXdouble val,FXbool notify){
     if(seg[sg].upper<val) val=seg[sg].upper;
     if(seg[sg].middle!=val){
       seg[sg].middle=val;
-      if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
       recalc();
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)sg);}
       }
     }
   }
@@ -744,8 +746,8 @@ void FXGradientBar::moveSegmentUpper(FXint sg,FXdouble val,FXbool notify){
     if(seg[sg+1].middle<val) val=seg[sg+1].middle;
     if(seg[sg].upper!=val){
       seg[sg+1].lower=seg[sg].upper=val;
-      if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
       recalc();
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)sg);}
       }
     }
   }
@@ -785,8 +787,8 @@ void FXGradientBar::moveSegments(FXint sglo,FXint sghi,FXdouble val,FXbool notif
       if(sghi<nsegs-1){
         seg[sghi+1].lower=seg[sghi].upper;
         }
-      if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
       recalc();
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
       }
     }
   }
@@ -814,8 +816,8 @@ void FXGradientBar::splitSegments(FXint sglo,FXint sghi,FXbool notify){
       seg[j+0].blend=seg[i].blend;
       }
     nsegs+=n;
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
     recalc();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
     }
   }
 
@@ -834,8 +836,8 @@ void FXGradientBar::mergeSegments(FXint sglo,FXint sghi,FXbool notify){
     if(sellower>=nsegs) sellower=nsegs-1;
     if(current>=nsegs) current=nsegs-1;
     if(anchor>=nsegs) anchor=nsegs-1;
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
     recalc();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
     }
   }
 
@@ -853,8 +855,8 @@ void FXGradientBar::uniformSegments(FXint sglo,FXint sghi,FXbool notify){
       seg[s].upper=a+(FXdouble)(s-sglo+1)*m/d;
       seg[s].middle=0.5*(seg[s].lower+seg[s].upper);
       }
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
     recalc();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
     }
   }
 
@@ -866,8 +868,8 @@ void FXGradientBar::blendSegments(FXint sglo,FXint sghi,FXuint blend,FXbool noti
     for(s=sglo; s<=sghi; s++){
       seg[s].blend=blend;
       }
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
     recalc();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
     }
   }
 
@@ -1013,17 +1015,17 @@ long FXGradientBar::onMotion(FXObject*,FXSelector,void* ptr){
     }
   switch(grip){
     case GRIP_LOWER:
-      if(0<current) moveSegmentLower(current,value);
+      if(0<current) moveSegmentLower(current,value,TRUE);
       return 1;
     case GRIP_MIDDLE:
-      moveSegmentMiddle(current,value);
+      moveSegmentMiddle(current,value,TRUE);
       return 1;
     case GRIP_UPPER:
-      if(current<nsegs-1) moveSegmentUpper(current,value);
+      if(current<nsegs-1) moveSegmentUpper(current,value,TRUE);
       return 1;
     case GRIP_SEG_LOWER:
     case GRIP_SEG_UPPER:
-      moveSegments(sellower,selupper,value);
+      moveSegments(sellower,selupper,value,TRUE);
       return 1;
     case GRIP_NONE:
       s=getSegment(event->win_x,event->win_y);
@@ -1052,8 +1054,8 @@ long FXGradientBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
-    setCurrentSegment(getSegment(event->win_x,event->win_y));
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    setCurrentSegment(getSegment(event->win_x,event->win_y),TRUE);
     if(0<=current){
       grip=getGrip(current,event->win_x,event->win_y);
       if(grip==GRIP_SEG_LOWER || grip==GRIP_SEG_UPPER){
@@ -1108,7 +1110,7 @@ long FXGradientBar::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~FLAG_CHANGED;
     flags|=FLAG_UPDATE;
     grip=GRIP_NONE;
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if((0<=current) && (g==GRIP_SEG_LOWER || g==GRIP_SEG_UPPER) && !(event->state&SHIFTMASK) && !event->moved){
       selectSegments(current,current,TRUE);
       }
@@ -1341,20 +1343,22 @@ long FXGradientBar::onCmdGetTip(FXObject*,FXSelector,void* ptr){
   }
 
 
-// We were asked about status text
-long FXGradientBar::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+// We were asked about tip text
+long FXGradientBar::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
     }
   return 0;
   }
 
 
-// We were asked about tip text
-long FXGradientBar::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(!tip.empty() && (flags&FLAG_TIP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+// We were asked about status text
+long FXGradientBar::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
   return 0;
@@ -1373,8 +1377,8 @@ void FXGradientBar::setSegmentLowerColor(FXint s,FXColor clr,FXbool notify){
   if(s<0 || s>=nsegs){ fxerror("FXGradientBar::setSegmentLowerColor: argument out of range."); }
   if(seg[s].lowerColor!=clr){
     seg[s].lowerColor=clr;
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
     recalc();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)s);}
     }
   }
 
@@ -1384,8 +1388,8 @@ void FXGradientBar::setSegmentUpperColor(FXint s,FXColor clr,FXbool notify){
   if(s<0 || s>=nsegs){ fxerror("FXGradientBar::setSegmentUpperColor: argument out of range."); }
   if(seg[s].upperColor!=clr){
     seg[s].upperColor=clr;
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),NULL);}
     recalc();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)s);}
     }
   }
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHash.h,v 1.6 2004/02/08 17:17:33 fox Exp $                             *
+* $Id: FXHash.h,v 1.8 2004/09/19 20:02:55 fox Exp $                             *
 ********************************************************************************/
 #ifndef FXHASH_H
 #define FXHASH_H
@@ -30,7 +30,7 @@ namespace FX {
 
 
 /**
-* A hash table for associating handles to pointers.
+* A hash table for associating pointers to pointers.
 */
 class FXAPI FXHash {
 private:
@@ -53,14 +53,23 @@ public:
   /// Construct empty hash table
   FXHash();
 
+  /// Return number of items in table
+  FXuint no() const { return used; }
+
   /// Insert key into the table
   void* insert(void* key,void* val);
+
+  /// Replace key in table
+  void* replace(void* key,void* val);
 
   /// Remove key from the table
   void* remove(void* key);
 
   /// Return value of key
   void* find(void* key) const;
+
+  /// Clear hash table
+  void clear();
 
   /// Destructor
   virtual ~FXHash();

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXXPMImage.h,v 1.15 2004/04/24 14:10:30 fox Exp $                        *
+* $Id: FXXPMImage.h,v 1.16 2004/11/10 16:22:05 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXXPMIMAGE_H
 #define FXXPMIMAGE_H
@@ -30,6 +30,7 @@
 
 namespace FX {
 
+
 /// X Pixmap image
 class FXAPI FXXPMImage : public FXImage {
   FXDECLARE(FXXPMImage)
@@ -38,6 +39,8 @@ protected:
 private:
   FXXPMImage(const FXXPMImage&);
   FXXPMImage &operator=(const FXXPMImage&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct image from compiled-in X Pixmap format

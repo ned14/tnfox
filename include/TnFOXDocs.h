@@ -36,7 +36,7 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.2.4), and the extensions listed below are designed to not interfere with that process where
+from v1.3.20), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
 is (C) 2001-2004 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
@@ -2009,7 +2009,7 @@ v3.0. Hence later API additions or revisions may not be reflected here.
 TnFOX is a fork of FOX which can be found at http://www.fox-toolkit.org/
 
 TnFOX maintains virtually the same API as FOX though there are differences
-especially in the i/o classes. Generally speaking, you should be able to
+especially in the i/o and threading classes. Generally speaking, you should be able to
 compile your FOX application against TnFOX without incident as those classes
 which have been deprecated have thunk replacements implemented in the new code.
 
@@ -2017,6 +2017,25 @@ However, for various reasons, some semantic changes did need to happen:
 \li Anything using the FOX i/o classes may break. An emulation thunking to
 TnFOX's much superior replacements is good enough that FOX code itself
 doesn't know any better and so neither should your code.
+\li FOX's threading support was added substantially after TnFOX's and so uses some
+of the same API names for different things. I've done what I can to ease your
+journey here, but you'll just have to modify your code as the classes do not have
+a one to one relationship (eg; FX::FXWaitCondition simply does not behave like FOX's
+FX::FXCondition). Similarly, FOX has
+gone with a process-wide lock to enable concurrent GUI usage by multiple threads
+despite my pleas on foxgui-users to not repeat a mistake evident in every
+other GUI toolkit which has gone the same way. TnFOX's per-thread event loops
+enable a far simpler multithreaded GUI usage for your code - just create and
+go and post messages at event loops when wanting to alter a GUI not belonging
+to your thread.
+\li The exception types FX::FXWindowException, FX::FXImageException and FX::FXFontException
+are FOR COMPATIBILITY WITH FOX ONLY. They are NOT LIKE NORMAL TNFOX EXCEPTIONS
+in that they are thrown from within FOX code which is not exception safe. While
+they have been marked as fatal exceptions, you may need to take action within
+your code to make very sure you do not attempt recovery from these exceptions.
+I did wonder about not deriving them from FX::FXException so that they'd
+definitely fatally exit the process, but decided that it's probably best if they
+are actually trappable.
 \li You should put a <tt>FXProcess myprocess(argc, argv);</tt> directly
 after your \c main() but before creating your FXApp.
 \li Try to use FX::FXHandedDialog and FX::FXHandedPopup, they are so much
@@ -2047,15 +2066,6 @@ during its operation. However as it can return <tt>const char *</tt>,
 there is the possibility that one thread deletes an item just after another
 thread fetches it and so the pointer is left dangling. If this is a
 possibility you must lock FXApp yourself until you are done with the string.
-\li FOX's FXThread was added substantially after TnFOX's and so uses some
-of the same API names for different things. I've done what I can to ease your
-journey here, but you'll just have to modify your code. Similarly, FOX has
-gone with a process-wide lock to enable concurrent GUI usage by multiple threads
-despite my pleas on foxgui-users to not repeat a mistake evident in every
-other GUI toolkit which has gone the same way. TnFOX's per-thread event loops
-enable a far simpler multithreaded GUI usage for your code - just create and
-go and post messages at event loops when wanting to alter a GUI not belonging
-to your thread.
 \li If you wish to run multiple event loops, you must initialise
 a FX::TnFXApp instead of a FX::FXApp in your code and change your \c main()
 slightly. See the docs for FX::TnFXApp.
@@ -2064,6 +2074,16 @@ Therefore, if you call \b any TnFOX code where a path exists up the call
 stack going through FOX code (eg; a GUI event handler) then you must surround
 that code with the FXEXCEPTION_FOXCALLING1 and FXEXCEPTION_FOXCALLING2 macros.
 These trap any exceptions thrown and show a FX::FXExceptionDialog.
+
+Summary of what is not supported from FOX:
+\li Some FX::FXStream methods. You'll never normally notice these
+\li The application wide mutex
+\li FXCondition (rewrite your code to use FX::FXWaitCondition, it's more
+useful anyway)
+\li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
+FX::FXWaitCondition. Also consider FX::FXZeroedWait)
+\li There are some API thunks for FX::FXMutex, FX::FXMutexLock and FX::FXThread.
+But you'll have to try and see for yourself
 */
 
 /*! \defgroup generic Generic Tools in TnFOX

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.h,v 1.106 2004/04/30 03:44:51 fox Exp $                         *
+* $Id: FXWindow.h,v 1.121 2004/10/31 16:14:07 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXWINDOW_H
 #define FXWINDOW_H
@@ -85,9 +85,12 @@ enum {
   };
 
 
+class FXIcon;
+class FXBitmap;
 class FXCursor;
-class FXAccelTable;
+class FXRegion;
 class FXComposite;
+class FXAccelTable;
 
 
 /// Base class for all windows
@@ -118,8 +121,6 @@ protected:
 private:
   static FXint  windowCount;            // Number of windows
 public:
-
-  // Common DND types
   static FXDragType deleteType;         // Delete request
   static FXDragType textType;           // Ascii text request
   static FXDragType colorType;          // Color
@@ -141,6 +142,13 @@ public:
   static inline FXuint scaleLayoutValue(FXuint value) { return FXProcess::screenScale(value); }
 
 protected:
+  FXWindow();
+  FXWindow(FXApp* a,FXVisual *vis);
+  FXWindow(FXApp* a,FXWindow* own,FXuint opts,FXint x,FXint y,FXint w,FXint h);
+  static FXWindow* findDefault(FXWindow* window);
+  static FXWindow* findInitial(FXWindow* window);
+  virtual FXbool doesOverrideRedirect() const;
+protected:
 #ifdef WIN32
   virtual FXID GetDC() const;
   virtual int ReleaseDC(FXID) const;
@@ -149,18 +157,9 @@ protected:
   void addColormapWindows();
   void remColormapWindows();
 #endif
-
-protected:
-  FXWindow();
-  FXWindow(FXApp* a,FXVisual *vis);
-  FXWindow(FXApp* a,FXWindow* own,FXuint opts,FXint x,FXint y,FXint w,FXint h);
-  static FXWindow* findDefault(FXWindow* window);
-  static FXWindow* findInitial(FXWindow* window);
-  virtual FXbool doesOverrideRedirect() const;
 private:
   FXWindow(const FXWindow&);
   FXWindow& operator=(const FXWindow&);
-
 protected:
 
   // Window state flags
@@ -230,6 +229,8 @@ public:
   long onDNDMotion(FXObject*,FXSelector,void*);
   long onDNDDrop(FXObject*,FXSelector,void*);
   long onDNDRequest(FXObject*,FXSelector,void*);
+  long onQueryHelp(FXObject*,FXSelector,void*);
+  long onQueryTip(FXObject*,FXSelector,void*);
   long onCmdShow(FXObject*,FXSelector,void*);
   long onCmdHide(FXObject*,FXSelector,void*);
   long onUpdToggleShown(FXObject*,FXSelector,void*);
@@ -238,6 +239,8 @@ public:
   long onCmdLower(FXObject*,FXSelector,void*);
   long onCmdEnable(FXObject*,FXSelector,void*);
   long onCmdDisable(FXObject*,FXSelector,void*);
+  long onUpdToggleEnabled(FXObject*,FXSelector,void*);
+  long onCmdToggleEnabled(FXObject*,FXSelector,void*);
   long onCmdUpdate(FXObject*,FXSelector,void*);
   long onUpdYes(FXObject*,FXSelector,void*);
   long onCmdDelete(FXObject*,FXSelector,void*);
@@ -255,6 +258,7 @@ public:
     ID_DELETE,
     ID_DISABLE,         // ID_DISABLE+FALSE
     ID_ENABLE,          // ID_DISABLE+TRUE
+    ID_TOGGLEENABLED,
     ID_UNCHECK,         // ID_UNCHECK+FALSE
     ID_CHECK,           // ID_UNCHECK+TRUE
     ID_UNKNOWN,         // ID_UNCHECK+MAYBE
@@ -280,8 +284,6 @@ public:
     ID_GETHELPSTRING,
     ID_SETTIPSTRING,
     ID_GETTIPSTRING,
-    ID_QUERY_TIP,
-    ID_QUERY_HELP,
     ID_QUERY_MENU,
     ID_HOTKEY,
     ID_ACCEL,
@@ -497,6 +499,9 @@ public:
   /// Remove the focus from this window
   virtual void killFocus();
 
+  /// Notification that focus moved to new child
+  virtual void changeFocus(FXWindow *child);
+
   /**
   * This changes the default window which responds to the Return
   * key in a dialog. If enable is TRUE, this window becomes the default
@@ -533,6 +538,18 @@ public:
   /// Destroy the server-side resources for this window
   virtual void destroy();
 
+  /// Set window shape by means of region
+  virtual void setShape(const FXRegion& region);
+
+  /// Set window shape by means of bitmap
+  virtual void setShape(FXBitmap* bitmap);
+
+  /// Set window shape by means of icon
+  virtual void setShape(FXIcon* icon);
+
+  /// Clear window shape
+  virtual void clearShape();
+
   /// Raise this window to the top of the stacking order
   virtual void raise();
 
@@ -557,8 +574,8 @@ public:
   /// Force a GUI update of this window and its children
   void forceRefresh();
 
-  /// Change the parent for this window
-  virtual void reparent(FXWindow* newparent);
+  /// Reparent this window under new father
+  virtual void reparent(FXWindow* father);
 
   /// Scroll rectangle x,y,w,h by a shift of dx,dy
   void scroll(FXint x,FXint y,FXint w,FXint h,FXint dx,FXint dy) const;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXXPMIcon.h,v 1.16 2004/04/24 14:10:30 fox Exp $                         *
+* $Id: FXXPMIcon.h,v 1.17 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXXPMICON_H
 #define FXXPMICON_H
@@ -30,6 +30,7 @@
 
 namespace FX {
 
+
 /// X Pixmap icon
 class FXAPI FXXPMIcon : public FXIcon {
   FXDECLARE(FXXPMIcon)
@@ -38,6 +39,8 @@ protected:
 private:
   FXXPMIcon(const FXXPMIcon&);
   FXXPMIcon &operator=(const FXXPMIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct icon from compiled-in X Pixmap format

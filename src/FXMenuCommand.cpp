@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCommand.cpp,v 1.55 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXMenuCommand.cpp,v 1.61 2004/10/07 21:49:14 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -98,7 +99,7 @@ FXMenuCommand::FXMenuCommand(){
 FXMenuCommand::FXMenuCommand(FXComposite* p,const FXString& text,FXIcon* ic,FXObject* tgt,FXSelector sel,FXuint opts):
   FXMenuCaption(p,text,ic,opts){
   FXAccelTable *table;
-  FXWindow *owner;
+  FXWindow *own;
   flags|=FLAG_ENABLED;
   defaultCursor=getApp()->getDefaultCursor(DEF_RARROW_CURSOR);
   target=tgt;
@@ -106,9 +107,9 @@ FXMenuCommand::FXMenuCommand(FXComposite* p,const FXString& text,FXIcon* ic,FXOb
   accel=text.section('\t',1);
   acckey=fxparseAccel(accel);
   if(acckey){
-    owner=getShell()->getOwner();
-    if(owner){
-      table=owner->getAccelTable();
+    own=getShell()->getOwner();
+    if(own){
+      table=own->getAccelTable();
       if(table){
         table->addAccel(acckey,this,FXSEL(SEL_COMMAND,ID_ACCEL));
         }
@@ -173,7 +174,7 @@ long FXMenuCommand::onButtonRelease(FXObject*,FXSelector,void*){
   FXbool active=isActive();
   if(!isEnabled()) return 0;
   getParent()->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
-  if(active && target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1); }
+  if(active && target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1); }
   return 1;
   }
 
@@ -183,7 +184,6 @@ long FXMenuCommand::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(!isEnabled()) return 0;
   FXTRACE((200,"%s::onKeyPress %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
-  //if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
   switch(event->code){
     case KEY_KP_Enter:
     case KEY_Return:
@@ -200,14 +200,13 @@ long FXMenuCommand::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(!isEnabled()) return 0;
   FXTRACE((200,"%s::onKeyRelease %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
-  //if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
   switch(event->code){
     case KEY_KP_Enter:
     case KEY_Return:
     case KEY_space:
     case KEY_KP_Space:
       getParent()->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
       return 1;
     }
   return 0;
@@ -227,7 +226,7 @@ long FXMenuCommand::onHotKeyRelease(FXObject*,FXSelector,void*){
   FXTRACE((200,"%s::onHotKeyRelease %p\n",getClassName(),this));
   if(isEnabled()){
     getParent()->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
     }
   return 1;
   }
@@ -236,7 +235,7 @@ long FXMenuCommand::onHotKeyRelease(FXObject*,FXSelector,void*){
 // Accelerator activated
 long FXMenuCommand::onCmdAccel(FXObject*,FXSelector,void*){
   if(isEnabled()){
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
     return 1;
     }
   return 0;
@@ -361,11 +360,11 @@ void FXMenuCommand::load(FXStream& store){
 // Need to uninstall accelerator
 FXMenuCommand::~FXMenuCommand(){
   FXAccelTable *table;
-  FXWindow *owner;
+  FXWindow *own;
   if(acckey){
-    owner=getShell()->getOwner();
-    if(owner){
-      table=owner->getAccelTable();
+    own=getShell()->getOwner();
+    if(own){
+      table=own->getAccelTable();
       if(table){
         table->removeAccel(acckey);
         }

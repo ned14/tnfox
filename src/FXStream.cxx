@@ -4,7 +4,7 @@
 *                                                                               *
 *********************************************************************************
 * Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
-* TnFOX Extensions (C) 2003 Niall Douglas                                       *
+* TnFOX Extensions (C) 2003, 2004 Niall Douglas                                 *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -20,13 +20,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStream.cpp,v 1.47 2004/04/05 14:49:33 fox Exp $                        *
+* $Id: FXStream.cpp,v 1.53 2004/11/08 15:35:10 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXStream.h"
 #include "FXString.h"
+#include "FXHash.h"
 #include "FXObject.h"
 #include "FXIODevice.h"
 #include "FXException.h"
@@ -62,99 +63,86 @@ namespace FX {
 // Create PersistentStore object
 FXStream::FXStream(FXIODevice *_dev, const FXObject *cont){
   parent=cont;
-  table=NULL;
-  ntable=0;
-  no=0;
+  begptr=NULL;
+  endptr=NULL;
+  wrptr=NULL;
+  rdptr=NULL;
+  pos=0;
   dir=FXStreamDead;
   code=FXStreamOK;
+  seq=0x80000000;
+  swap=FALSE;
+  owns=FALSE;
+
+  // TnFOX stuff
+  hash=0;
   dev=_dev;
-  swap=FOX_BIGENDIAN;
   }
 
 
 // Destroy PersistentStore object
 FXStream::~FXStream(){
-  FXFREE(&table);
-  parent=(const FXObject*)-1L;
-  table=(FXStreamHashEntry*)-1L;
+  if(owns){FXFREE(&begptr);}
+  parent=(FXObject*)-1L;
+  begptr=(FXuchar*)-1L;
+  endptr=(FXuchar*)-1L;
+  wrptr=(FXuchar*)-1L;
+  rdptr=(FXuchar*)-1L;
+
+  // TnFOX stuff
+  FXDELETE(hash);
+  dev=(FXIODevice *)-1L;
   }
 
 
-// Grow hash table
-void FXStream::grow(){
-  register FXuint i,n,p,x;
-  FXStreamHashEntry *h;
+unsigned long FXStream::getSpace() const
+{
+	return 102400;	// dummy value to keep code happy
+}
 
-  // Double table size
-  FXASSERT(ntable);
-  n=ntable<<1;
 
-  // Allocate new table
-  if(!FXMALLOC(&h,FXStreamHashEntry,n)){ code=FXStreamAlloc; return; }
-
-  // Rehash table when FXStreamSave
-  if(dir==FXStreamSave){
-    for(i=0; i<n; i++) h[i].ref=UNUSEDSLOT;
-    for(i=0; i<ntable; i++){
-      if(table[i].ref==UNUSEDSLOT) continue;
-      p = HASH1(table[i].obj,n);
-      FXASSERT(p<n);
-      x = HASH2(table[i].obj,n);
-      FXASSERT(1<=x && x<n);
-      while(h[p].ref!=UNUSEDSLOT) p=(p+x)%n;
-      h[p].ref=table[i].ref;
-      h[p].obj=table[i].obj;
-      }
-    }
-
-  // Simply copy over when FXStreamLoad
-  else if(dir==FXStreamLoad){
-    for(i=0; i<ntable; i++){
-      h[i].ref=table[i].ref;
-      h[i].obj=table[i].obj;
-      }
-    }
-
-  // Ditch old table
-  FXFREE(&table);
-
-  // Point to new table
-  table=h;
-  ntable=n;
-  }
+void FXStream::setSpace(unsigned long)
+{
+	// Do nothing
+}
 
 
 // Open for save or load
-FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size){
-  register unsigned int i,p;
+FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar* data){
   if(save_or_load!=FXStreamSave && save_or_load!=FXStreamLoad){fxerror("FXStream::open: illegal stream direction.\n");}
   if(!dir){
-    if(size<16){ fxerror("FXStream::open: size argument less than 16\n"); }
 
-    // Allocate hash table
-    if(!FXMALLOC(&table,FXStreamHashEntry,DEF_HASH_SIZE)){ code=FXStreamAlloc; return FALSE; }
+    // Use external buffer space
+    if(data){
+      begptr=data;
+      if(size==ULONG_MAX)
+        endptr=((FXuchar*)NULL)-1;
+      else
+        endptr=begptr+size;
+      wrptr=begptr;
+      rdptr=begptr;
+      owns=FALSE;
+      }
 
-    // Initialize table to empty
-    for(i=0; i<DEF_HASH_SIZE; i++){ table[i].ref=UNUSEDSLOT; }
+    // Use internal buffer space
+    else{
+      if(!FXCALLOC(&begptr,FXuchar,size)){ code=FXStreamAlloc; return FALSE; }
+      endptr=begptr+size;
+      wrptr=begptr;
+      rdptr=begptr;
+      owns=TRUE;
+      }
 
-    // Set variables
-    ntable=DEF_HASH_SIZE;
+    // Reset variables
+	FXERRHM(hash=new FXHash);
+    hash->clear();
     dir=save_or_load;
-    no=0;
+    seq=0x80000000;
+    pos=0;
 
     // Append container object to hash table
     if(parent){
-      if(dir==FXStreamSave){
-        p=HASH1(parent,ntable);
-        FXASSERT(p<ntable);
-        table[p].obj=(FXObject*)parent;
-        table[p].ref=no;
-        }
-      else{
-        table[no].obj=(FXObject*)parent;
-        table[no].ref=no;
-        }
-      no++;
+      addObject(parent);
       }
 
     // So far, so good
@@ -169,24 +157,27 @@ FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size){
 // Close store; return TRUE if no errors have been encountered
 FXbool FXStream::close(){
   if(dir){
+    hash->clear();
+	FXDELETE(hash);
     dir=FXStreamDead;
-    FXFREE(&table);
-    ntable=0;
-    no=0;
+    if(owns){FXFREE(&begptr);}
+    begptr=NULL;
+    wrptr=NULL;
+    rdptr=NULL;
+    endptr=NULL;
+    owns=FALSE;
     return code==FXStreamOK;
     }
   return FALSE;
   }
 
-unsigned long FXStream::getSpace() const
-{
-	return 102400;
-}
 
-void FXStream::setSpace(unsigned long)
-{
-	// Do nothing
-}
+// Flush buffer
+FXbool FXStream::flush(){
+  // Does nothing as underlying i/o devices do the buffering
+  return code==FXStreamOK;
+  }
+
 
 FXulong FXStream::position() const
 {
@@ -496,47 +487,50 @@ FXStream& FXStream::load(FXulong* p,unsigned long n){
 #endif
 
 
-/*******************************  Save Objects  ********************************/
+/*********************************  Add Object  ********************************/
 
+
+// Add object without saving or loading
+FXStream& FXStream::addObject(const FXObject* v){
+  if(dir==FXStreamSave){
+    hash->insert((void*)v,(void*)(FXuval)seq++);
+    }
+  else if(dir==FXStreamLoad){
+    hash->insert((void*)(FXuval)seq++,(void*)v);
+    }
+  return *this;
+  }
+
+
+/********************************  Save Object  ********************************/
 
 // Save object
 FXStream& FXStream::saveObject(const FXObject* v){
-  const FXMetaClass *cls;
-  register FXuint p,x;
-  FXuint tag,esc=0;
+  register const FXMetaClass *cls;
+  register const FXchar *name;
+  FXuint tag,zero=0;
   if(dir!=FXStreamSave){ fxerror("FXStream::saveObject: wrong stream direction.\n"); }
   if(code==FXStreamOK){
-    if(v==NULL){
-      tag=0;
+    if(v==NULL){                                // Its a NULL
+      *this << zero;
+      return *this;
+      }
+    tag=(FXuint)(FXuval)hash->find((void*)v);    // Already in table
+    if(tag){
       *this << tag;
       return *this;
       }
-    p=HASH1(v,ntable);
-    FXASSERT(p<ntable);
-    x=HASH2(v,ntable);
-    FXASSERT(1<=x && x<ntable);
-    while(table[p].ref!=UNUSEDSLOT){
-      if(table[p].obj==v){
-        FXASSERT(table[p].ref<=no);
-        tag=table[p].ref|0x80000000;
-        *this << tag;
-        return *this;
-        }
-      p = (p+x)%ntable;
-      }
-    table[p].obj=(FXObject*)v;
-    table[p].ref=no++;
-    FXASSERT(no<ntable);
-    if((100*no)>=(MAX_LOAD*ntable)) grow();
+    hash->insert((void*)v,(void*)(FXuval)seq++); // Add to table
     cls=v->getMetaClass();
-    tag=cls->getClassNameLength();
-    if(tag>MAXCLASSNAME){
-      code=FXStreamFormat;                    // Class name too long
+    name=cls->getClassName();
+    tag=strlen(name)+1;
+    if(tag>MAXCLASSNAME){                       // Class name too long
+      code=FXStreamFormat;
       return *this;
       }
-    *this << tag;
-    *this << esc;                             // Escape code for future expension; must be 0 for now
-    save(cls->getClassName(),cls->getClassNameLength());
+    *this << tag;                               // Save tag
+    *this << zero;
+    save(name,tag);
     FXTRACE((100,"saveObject(%s)\n",v->getClassName()));
     v->save(*this);
     }
@@ -544,56 +538,44 @@ FXStream& FXStream::saveObject(const FXObject* v){
   }
 
 
-/*******************************  Load Objects  ********************************/
+/*******************************  Load Object  *********************************/
 
 // Load object
 FXStream& FXStream::loadObject(FXObject*& v){
-  const FXMetaClass *cls;
-  FXchar obnam[MAXCLASSNAME];
+  register const FXMetaClass *cls;
+  FXchar name[MAXCLASSNAME+1];
   FXuint tag,esc;
   if(dir!=FXStreamLoad){ fxerror("FXStream::loadObject: wrong stream direction.\n"); }
   if(code==FXStreamOK){
     *this >> tag;
-    if(tag==0){
+    if(tag==0){                                 // Was a NULL
       v=NULL;
       return *this;
       }
-    if(tag&0x80000000){
-      tag&=0x7fffffff;
-      if(tag>=no){                            // Out-of-range reference number
-        code=FXStreamFormat;                  // Bad format in stream
-        return *this;
+    if(tag>=0x80000000){
+      v=(FXObject*)hash->find((void*)(FXuval)tag);
+      if(!v){
+        code=FXStreamFormat;                    // Bad format in stream
         }
-      if(table[tag].ref!=tag){                // We should have constructed the object already!
-        code=FXStreamFormat;                  // Bad format in stream
-        return *this;
-        }
-      FXASSERT(tag<ntable);
-      v=table[tag].obj;
-      FXASSERT(v);
       return *this;
       }
-    if(tag>MAXCLASSNAME){                     // Out-of-range class name string
-      code=FXStreamFormat;                    // Bad format in stream
+    if(tag>MAXCLASSNAME){                       // Class name too long
+      code=FXStreamFormat;                      // Bad format in stream
       return *this;
       }
-    *this >> esc;                             // Read but ignore escape code
-    load(obnam,tag);
-    cls=FXMetaClass::getMetaClassFromName(obnam);
-    if(cls==NULL){                            // No FXMetaClass with this class name
-      code=FXStreamUnknown;                   // Unknown class
+    *this >> esc;                               // Read escape code
+    if(esc!=0){                                 // Escape code is wrong
+      code=FXStreamFormat;                      // Bad format in stream
       return *this;
       }
-    v=cls->makeInstance();                    // Build some object!!
-    if(v==NULL){
-      code=FXStreamAlloc;                     // Unable to construct object
+    load(name,tag);                             // Load name
+    cls=FXMetaClass::getMetaClassFromName(name);
+    if(cls==NULL){                              // No FXMetaClass with this class name
+      code=FXStreamUnknown;                     // Unknown class
       return *this;
       }
-    FXASSERT(no<ntable);
-    table[no].obj=v;                          // Save pointer in table
-    table[no].ref=no;                         // Save reference number also!
-    no++;
-    if(no>=ntable) grow();
+    v=cls->makeInstance();                      // Build some object!!
+    hash->insert((void*)(FXuval)seq++,(void*)v); // Add to table
     FXTRACE((100,"loadObject(%s)\n",v->getClassName()));
     v->load(*this);
     }

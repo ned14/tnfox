@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDebugTarget.cpp,v 1.23 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXDebugTarget.cpp,v 1.25 2004/09/17 07:46:21 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXDebugTarget.h"
 
@@ -118,7 +119,9 @@ static const char *messageTypeName_[]={
   "SEL_IO_READ",
   "SEL_IO_WRITE",
   "SEL_IO_EXCEPT",
-  "SEL_PICKED"
+  "SEL_PICKED",
+  "SEL_QUERY_TIP",
+  "SEL_QUERY_HELP"
   };
 const FXchar **FXDebugTarget::messageTypeName=messageTypeName_;
 

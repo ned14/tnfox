@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDataTarget.h,v 1.19 2004/02/08 17:17:33 fox Exp $                      *
+* $Id: FXDataTarget.h,v 1.20 2004/06/09 06:06:56 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXDATATARGET_H
 #define FXDATATARGET_H
@@ -45,7 +45,7 @@ namespace FX {
 * to reflect this new value on the display.
 * Data Targets also allow connecting Radio Buttons, Menu Commands, and so on
 * to a variable.  In this case, the new value of the connected variable is computed
-* by substracting ID_OPTION from the message ID.
+* by subtracting ID_OPTION from the message ID.
 *
 * TnFOX adds an upcall mechanism whereby any number of FX::Generic::BoundFunctorV's
 * may be attached to a data target which are upcalled when the value changes. This

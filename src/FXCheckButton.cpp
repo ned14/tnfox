@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCheckButton.cpp,v 1.46 2004/02/17 21:06:02 fox Exp $                   *
+* $Id: FXCheckButton.cpp,v 1.51 2004/10/07 19:09:58 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXCheckButton.h"
@@ -227,7 +228,7 @@ long FXCheckButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     oldcheck=check;
     setCheck(!oldcheck);
     flags|=FLAG_PRESSED;
@@ -242,10 +243,10 @@ long FXCheckButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 long FXCheckButton::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled() && (flags&FLAG_PRESSED)){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
-    if(check!=oldcheck && target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check); }
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(check!=oldcheck && target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check); }
     return 1;
     }
   return 0;
@@ -267,7 +268,7 @@ long FXCheckButton::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       oldcheck=check;
       setCheck(!oldcheck);
@@ -284,11 +285,11 @@ long FXCheckButton::onKeyPress(FXObject*,FXSelector,void* ptr){
 long FXCheckButton::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled() && (flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       flags|=FLAG_UPDATE;
       flags&=~FLAG_PRESSED;
-      if(check!=oldcheck && target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check); }
+      if(check!=oldcheck && target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check); }
       return 1;
       }
     }
@@ -315,9 +316,7 @@ long FXCheckButton::onHotKeyRelease(FXObject*,FXSelector,void*){
   if(isEnabled() && (flags&FLAG_PRESSED)){
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
-    if(check!=oldcheck){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check);
-      }
+    if(check!=oldcheck && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check);
     }
   return 1;
   }

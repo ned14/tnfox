@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.cpp,v 1.114 2004/04/21 20:58:37 fox Exp $                     *
+* $Id: FXDCWindow.cpp,v 1.126 2004/11/09 04:06:07 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXObject.h"
@@ -34,7 +36,6 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXVisual.h"
@@ -255,84 +256,176 @@ FXColor FXDCWindow::readPixel(FXint x,FXint y){
   }
 
 
+// Draw point
 void FXDCWindow::drawPoint(FXint x,FXint y){
   if(!surface){ fxerror("FXDCWindow::drawPoint: DC not connected to drawable.\n"); }
   XDrawPoint(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y);
   }
 
 
+// Draw points
 void FXDCWindow::drawPoints(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::drawPoints: DC not connected to drawable.\n"); }
   XDrawPoints(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,CoordModeOrigin);
   }
 
 
+// Draw points relative
 void FXDCWindow::drawPointsRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::drawPointsRel: DC not connected to drawable.\n"); }
   XDrawPoints(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,CoordModePrevious);
   }
 
 
+// Draw line
 void FXDCWindow::drawLine(FXint x1,FXint y1,FXint x2,FXint y2){
   if(!surface){ fxerror("FXDCWindow::drawLine: DC not connected to drawable.\n"); }
   XDrawLine(DISPLAY(getApp()),surface->id(),(GC)ctx,x1,y1,x2,y2);
   }
 
 
+// Draw lines
 void FXDCWindow::drawLines(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::drawLines: DC not connected to drawable.\n"); }
   XDrawLines(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,CoordModeOrigin);
   }
 
 
+// Draw lines relative
 void FXDCWindow::drawLinesRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::drawLinesRel: DC not connected to drawable.\n"); }
   XDrawLines(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,CoordModePrevious);
   }
 
 
+// Draw line segments
 void FXDCWindow::drawLineSegments(const FXSegment* segments,FXuint nsegments){
   if(!surface){ fxerror("FXDCWindow::drawLineSegments: DC not connected to drawable.\n"); }
   XDrawSegments(DISPLAY(getApp()),surface->id(),(GC)ctx,(XSegment*)segments,nsegments);
   }
 
 
+// Draw rectangle
 void FXDCWindow::drawRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::drawRectangle: DC not connected to drawable.\n"); }
   XDrawRectangle(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,w,h);
   }
 
 
+// Draw rectangles
 void FXDCWindow::drawRectangles(const FXRectangle* rectangles,FXuint nrectangles){
   if(!surface){ fxerror("FXDCWindow::drawRectangles: DC not connected to drawable.\n"); }
   XDrawRectangles(DISPLAY(getApp()),surface->id(),(GC)ctx,(XRectangle*)rectangles,nrectangles);
   }
 
 
+// Draw round rectangle
+void FXDCWindow::drawRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh){
+  XArc arcs[4]; XSegment segs[4]; XGCValues gcv;
+  if(!surface){ fxerror("FXDCWindow::drawRoundRectangle: DC not connected to drawable.\n"); }
+  if(ew+ew>w) ew=w>>1;
+  if(eh+eh>h) eh=h>>1;
+  arcs[0].x=arcs[2].x=x;
+  arcs[0].y=arcs[1].y=y;
+  arcs[1].x=arcs[3].x=x+w-(ew<<1);
+  arcs[2].y=arcs[3].y=y+h-(eh<<1);
+  arcs[0].width=arcs[1].width=arcs[2].width=arcs[3].width=ew<<1;
+  arcs[0].height=arcs[1].height=arcs[2].height=arcs[3].height=eh<<1;
+  arcs[0].angle1=5760;
+  arcs[0].angle2=5760;
+  arcs[1].angle1=0;
+  arcs[1].angle2=5760;
+  arcs[2].angle1=11520;
+  arcs[2].angle2=5760;
+  arcs[3].angle1=17280;
+  arcs[3].angle2=5760;
+  segs[0].x1=segs[1].x1=x+ew;
+  segs[0].x2=segs[1].x2=x+w-ew;
+  segs[0].y1=segs[0].y2=y;
+  segs[1].y1=segs[1].y2=y+h;
+  segs[2].x1=segs[2].x2=x;
+  segs[3].x1=segs[3].x2=x+w;
+  segs[2].y1=segs[3].y1=y+eh;
+  segs[2].y2=segs[3].y2=y+h-eh;
+  gcv.cap_style=CapButt;
+  XChangeGC(DISPLAY(getApp()),(GC)ctx,GCCapStyle,&gcv);
+  XDrawArcs(DISPLAY(getApp()),surface->id(),(GC)ctx,arcs,4);
+  XDrawSegments(DISPLAY(getApp()),surface->id(),(GC)ctx,segs,4);
+  gcv.cap_style=cap;
+  XChangeGC(DISPLAY(getApp()),(GC)ctx,GCCapStyle,&gcv);
+  }
+
+
+// Draw arc
 void FXDCWindow::drawArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   if(!surface){ fxerror("FXDCWindow::drawArc: DC not connected to drawable.\n"); }
   XDrawArc(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,w,h,ang1,ang2);
   }
 
 
+// Draw arcs
 void FXDCWindow::drawArcs(const FXArc* arcs,FXuint narcs){
   if(!surface){ fxerror("FXDCWindow::drawArcs: DC not connected to drawable.\n"); }
   XDrawArcs(DISPLAY(getApp()),surface->id(),(GC)ctx,(XArc*)arcs,narcs);
   }
 
 
+// Draw ellipse
+void FXDCWindow::drawEllipse(FXint x,FXint y,FXint w,FXint h){
+  if(!surface){ fxerror("FXDCWindow::drawEllipse: DC not connected to drawable.\n"); }
+  XDrawArc(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,w,h,0,23040);
+  }
+
+
+// Fill rectangle
 void FXDCWindow::fillRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::fillRectangle: DC not connected to drawable.\n"); }
   XFillRectangle(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,w,h);
   }
 
 
+// Fill rectangles
 void FXDCWindow::fillRectangles(const FXRectangle* rectangles,FXuint nrectangles){
   if(!surface){ fxerror("FXDCWindow::fillRectangles: DC not connected to drawable.\n"); }
   XFillRectangles(DISPLAY(getApp()),surface->id(),(GC)ctx,(XRectangle*)rectangles,nrectangles);
   }
 
 
+// Fill rounded rectangle
+void FXDCWindow::fillRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh){
+  XArc arcs[4]; XRectangle recs[3];
+  if(!surface){ fxerror("FXDCWindow::fillRoundRectangle: DC not connected to drawable.\n"); }
+  if(ew+ew>w) ew=w>>1;
+  if(eh+eh>h) eh=h>>1;
+  arcs[0].x=arcs[2].x=x;
+  arcs[0].y=arcs[1].y=y;
+  arcs[1].x=arcs[3].x=x+w-(ew<<1);
+  arcs[2].y=arcs[3].y=y+h-(eh<<1);
+  arcs[0].width=arcs[1].width=arcs[2].width=arcs[3].width=ew<<1;
+  arcs[0].height=arcs[1].height=arcs[2].height=arcs[3].height=eh<<1;
+  arcs[0].angle1=5760;
+  arcs[0].angle2=5760;
+  arcs[1].angle1=0;
+  arcs[1].angle2=5760;
+  arcs[2].angle1=11520;
+  arcs[2].angle2=5760;
+  arcs[3].angle1=17280;
+  arcs[3].angle2=5760;
+  recs[0].x=recs[2].x=x+ew;
+  recs[0].width=recs[2].width=w-(ew<<1);
+  recs[0].height=recs[2].height=eh;
+  recs[0].y=y;
+  recs[2].y=y+h-eh;
+  recs[1].x=x;
+  recs[1].y=y+eh;
+  recs[1].width=w;
+  recs[1].height=h-(eh<<1);
+  XFillArcs(DISPLAY(getApp()),surface->id(),(GC)ctx,arcs,4);
+  XFillRectangles(DISPLAY(getApp()),surface->id(),(GC)ctx,recs,3);
+  }
+
+
+// Fill chord
 void FXDCWindow::fillChord(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   if(!surface){ fxerror("FXDCWindow::fillChord: DC not connected to drawable.\n"); }
   XSetArcMode(DISPLAY(getApp()),(GC)ctx,ArcChord);
@@ -341,6 +434,7 @@ void FXDCWindow::fillChord(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2
   }
 
 
+// Fill chords
 void FXDCWindow::fillChords(const FXArc* chords,FXuint nchords){
   if(!surface){ fxerror("FXDCWindow::fillChords: DC not connected to drawable.\n"); }
   XSetArcMode(DISPLAY(getApp()),(GC)ctx,ArcChord);
@@ -349,54 +443,70 @@ void FXDCWindow::fillChords(const FXArc* chords,FXuint nchords){
   }
 
 
+// Fill arc
 void FXDCWindow::fillArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   if(!surface){ fxerror("FXDCWindow::fillArc: DC not connected to drawable.\n"); }
   XFillArc(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,w,h,ang1,ang2);
   }
 
 
+// Fill arcs
 void FXDCWindow::fillArcs(const FXArc* arcs,FXuint narcs){
   if(!surface){ fxerror("FXDCWindow::fillArcs: DC not connected to drawable.\n"); }
   XFillArcs(DISPLAY(getApp()),surface->id(),(GC)ctx,(XArc*)arcs,narcs);
   }
 
 
+// Fill ellipse
+void FXDCWindow::fillEllipse(FXint x,FXint y,FXint w,FXint h){
+  if(!surface){ fxerror("FXDCWindow::fillEllipse: DC not connected to drawable.\n"); }
+  XFillArc(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,w,h,0,23040);
+  }
+
+
+// Fill polygon
 void FXDCWindow::fillPolygon(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillArcs: DC not connected to drawable.\n"); }
   XFillPolygon(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,Convex,CoordModeOrigin);
   }
 
 
+// Fill concave polygon
 void FXDCWindow::fillConcavePolygon(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillConcavePolygon: DC not connected to drawable.\n"); }
   XFillPolygon(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,Nonconvex,CoordModeOrigin);
   }
 
 
+// Fill complex polygon
 void FXDCWindow::fillComplexPolygon(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillComplexPolygon: DC not connected to drawable.\n"); }
   XFillPolygon(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,Complex,CoordModeOrigin);
   }
 
 
+// Fill polygon relative
 void FXDCWindow::fillPolygonRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillPolygonRel: DC not connected to drawable.\n"); }
   XFillPolygon(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,Convex,CoordModePrevious);
   }
 
 
+// Fill concave polygon relative
 void FXDCWindow::fillConcavePolygonRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillConcavePolygonRel: DC not connected to drawable.\n"); }
   XFillPolygon(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,Nonconvex,CoordModePrevious);
   }
 
 
+// Fill complex polygon relative
 void FXDCWindow::fillComplexPolygonRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillComplexPolygonRel: DC not connected to drawable.\n"); }
   XFillPolygon(DISPLAY(getApp()),surface->id(),(GC)ctx,(XPoint*)points,npoints,Complex,CoordModePrevious);
   }
 
 
+// Draw text
 void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
@@ -417,6 +527,7 @@ void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   }
 
 
+// Draw image text
 void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawImageText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawImageText: no font selected.\n"); }
@@ -450,6 +561,7 @@ void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint lengt
   }
 
 
+// Draw area
 void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy){
   if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
   if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
@@ -457,6 +569,7 @@ void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FX
   }
 
 
+// Draw image
 void FXDCWindow::drawImage(const FXImage* image,FXint dx,FXint dy){
   if(!surface){ fxerror("FXDCWindow::drawImage: DC not connected to drawable.\n"); }
   if(!image || !image->id()){ fxerror("FXDCWindow::drawImage: illegal image specified.\n"); }
@@ -464,6 +577,7 @@ void FXDCWindow::drawImage(const FXImage* image,FXint dx,FXint dy){
   }
 
 
+// Draw bitmap
 void FXDCWindow::drawBitmap(const FXBitmap* bitmap,FXint dx,FXint dy) {
   if(!surface) fxerror("FXDCWindow::drawBitmap: DC not connected to drawable.\n");
   if(!bitmap || !bitmap->id()) fxerror("FXDCWindow::drawBitmap: illegal bitmap specified.\n");
@@ -566,6 +680,7 @@ void FXDCWindow::drawIconSunken(const FXIcon* icon,FXint dx,FXint dy){
   }
 
 
+// Draw hash box
 void FXDCWindow::drawHashBox(FXint x,FXint y,FXint w,FXint h,FXint b){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::drawHashBox: DC not connected to drawable.\n"); }
@@ -582,6 +697,7 @@ void FXDCWindow::drawHashBox(FXint x,FXint y,FXint w,FXint h,FXint b){
   }
 
 
+// Draw focus rectangle
 void FXDCWindow::drawFocusRectangle(FXint x,FXint y,FXint w,FXint h){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::drawFocusRectangle: DC not connected to drawable.\n"); }
@@ -608,6 +724,7 @@ void FXDCWindow::drawFocusRectangle(FXint x,FXint y,FXint w,FXint h){
   }
 
 
+// Set foreground color
 void FXDCWindow::setForeground(FXColor clr){
   if(!surface){ fxerror("FXDCWindow::setForeground: DC not connected to drawable.\n"); }
   devfg=visual->getPixel(clr);
@@ -617,6 +734,7 @@ void FXDCWindow::setForeground(FXColor clr){
   }
 
 
+// Set background color
 void FXDCWindow::setBackground(FXColor clr){
   if(!surface){ fxerror("FXDCWindow::setBackground: DC not connected to drawable.\n"); }
   devbg=visual->getPixel(clr);
@@ -626,6 +744,7 @@ void FXDCWindow::setBackground(FXColor clr){
   }
 
 
+// Set dashes
 void FXDCWindow::setDashes(FXuint dashoffset,const FXchar *dashpattern,FXuint dashlength){
   register FXuint len,i;
   if(!surface){ fxerror("FXDCWindow::setDashes: DC not connected to drawable.\n"); }
@@ -640,6 +759,7 @@ void FXDCWindow::setDashes(FXuint dashoffset,const FXchar *dashpattern,FXuint da
   }
 
 
+// Set line width
 void FXDCWindow::setLineWidth(FXuint linewidth){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setLineWidth: DC not connected to drawable.\n"); }
@@ -650,6 +770,7 @@ void FXDCWindow::setLineWidth(FXuint linewidth){
   }
 
 
+// Set line cap style
 void FXDCWindow::setLineCap(FXCapStyle capstyle){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setLineCap: DC not connected to drawable.\n"); }
@@ -660,6 +781,7 @@ void FXDCWindow::setLineCap(FXCapStyle capstyle){
   }
 
 
+// Set line join style
 void FXDCWindow::setLineJoin(FXJoinStyle joinstyle){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setLineJoin: DC not connected to drawable.\n"); }
@@ -670,6 +792,7 @@ void FXDCWindow::setLineJoin(FXJoinStyle joinstyle){
   }
 
 
+// Set line style
 void FXDCWindow::setLineStyle(FXLineStyle linestyle){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setLineStyle: DC not connected to drawable.\n"); }
@@ -680,6 +803,7 @@ void FXDCWindow::setLineStyle(FXLineStyle linestyle){
   }
 
 
+// Set fill style
 void FXDCWindow::setFillStyle(FXFillStyle fillstyle){
   if(!surface){ fxerror("FXDCWindow::setFillStyle: DC not connected to drawable.\n"); }
   XSetFillStyle(DISPLAY(getApp()),(GC)ctx,fillstyle);
@@ -688,6 +812,7 @@ void FXDCWindow::setFillStyle(FXFillStyle fillstyle){
   }
 
 
+// Set polygon fill rule
 void FXDCWindow::setFillRule(FXFillRule fillrule){
   if(!surface){ fxerror("FXDCWindow::setFillRule: DC not connected to drawable.\n"); }
   XSetFillRule(DISPLAY(getApp()),(GC)ctx,fillrule);
@@ -696,6 +821,7 @@ void FXDCWindow::setFillRule(FXFillRule fillrule){
   }
 
 
+// Set raster function
 void FXDCWindow::setFunction(FXFunction func){
   if(!surface){ fxerror("FXDCWindow::setFunction: DC not connected to drawable.\n"); }
   XSetFunction(DISPLAY(getApp()),(GC)ctx,func);
@@ -704,6 +830,7 @@ void FXDCWindow::setFunction(FXFunction func){
   }
 
 
+// Set tile pattern
 void FXDCWindow::setTile(FXImage* image,FXint dx,FXint dy){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setTile: DC not connected to drawable.\n"); }
@@ -720,6 +847,7 @@ void FXDCWindow::setTile(FXImage* image,FXint dx,FXint dy){
   }
 
 
+// Set stipple bitmap
 void FXDCWindow::setStipple(FXBitmap* bitmap,FXint dx,FXint dy){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setStipple: DC not connected to drawable.\n"); }
@@ -738,6 +866,7 @@ void FXDCWindow::setStipple(FXBitmap* bitmap,FXint dx,FXint dy){
   }
 
 
+// Set stipple pattern
 void FXDCWindow::setStipple(FXStipplePattern pat,FXint dx,FXint dy){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setStipple: DC not connected to drawable.\n"); }
@@ -757,6 +886,7 @@ void FXDCWindow::setStipple(FXStipplePattern pat,FXint dx,FXint dy){
   }
 
 
+// Set clip region
 void FXDCWindow::setClipRegion(const FXRegion& region){
   if(!surface){ fxerror("FXDCWindow::setClipRegion: DC not connected to drawable.\n"); }
   XSetRegion(DISPLAY(getApp()),(GC)ctx,(Region)region.region);///// Should intersect region and rect??
@@ -767,6 +897,7 @@ void FXDCWindow::setClipRegion(const FXRegion& region){
   }
 
 
+// Set clip rectangle
 void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::setClipRectangle: DC not connected to drawable.\n"); }
   clip.x=FXMAX(x,rect.x);
@@ -783,6 +914,7 @@ void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   }
 
 
+// Set clip rectangle
 void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   if(!surface){ fxerror("FXDCWindow::setClipRectangle: DC not connected to drawable.\n"); }
   clip.x=FXMAX(rectangle.x,rect.x);
@@ -799,6 +931,7 @@ void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   }
 
 
+// Clear clip rectangle
 void FXDCWindow::clearClipRectangle(){
   if(!surface){ fxerror("FXDCWindow::clearClipRectangle: DC not connected to drawable.\n"); }
   clip=rect;
@@ -810,6 +943,7 @@ void FXDCWindow::clearClipRectangle(){
   }
 
 
+// Set clip mask
 void FXDCWindow::setClipMask(FXBitmap* bitmap,FXint dx,FXint dy){
   XGCValues gcv;
   if(!surface){ fxerror("FXDCWindow::setClipMask: DC not connected to drawable.\n"); }
@@ -827,6 +961,7 @@ void FXDCWindow::setClipMask(FXBitmap* bitmap,FXint dx,FXint dy){
   }
 
 
+// Clear clip mask
 void FXDCWindow::clearClipMask(){
   if(!surface){ fxerror("FXDCWindow::clearClipMask: DC not connected to drawable.\n"); }
   clip=rect;
@@ -838,6 +973,7 @@ void FXDCWindow::clearClipMask(){
   }
 
 
+// Set text font
 void FXDCWindow::setFont(FXFont *fnt){
   if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
   if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
@@ -849,6 +985,7 @@ void FXDCWindow::setFont(FXFont *fnt){
   }
 
 
+// Set clip child windows
 void FXDCWindow::clipChildren(FXbool yes){
   if(!surface){ fxerror("FXDCWindow::clipChildren: window has not yet been created.\n"); }
   if(yes){
@@ -994,6 +1131,7 @@ void FXDCWindow::drawPoint(FXint x,FXint y){
   }
 
 
+// Draw points
 void FXDCWindow::drawPoints(const FXPoint* points,FXuint npoints){
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::drawPoints: DC not connected to drawable.\n"); }
@@ -1003,6 +1141,7 @@ void FXDCWindow::drawPoints(const FXPoint* points,FXuint npoints){
   }
 
 
+// Draw points relative
 void FXDCWindow::drawPointsRel(const FXPoint* points,FXuint npoints){
   register int x=0,y=0;
   register FXuint i;
@@ -1015,6 +1154,7 @@ void FXDCWindow::drawPointsRel(const FXPoint* points,FXuint npoints){
   }
 
 
+// Draw line
 void FXDCWindow::drawLine(FXint x1,FXint y1,FXint x2,FXint y2){
   if(!surface){ fxerror("FXDCWindow::drawLine: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
@@ -1032,6 +1172,7 @@ void FXDCWindow::drawLine(FXint x1,FXint y1,FXint x2,FXint y2){
   }
 
 
+// Draw lines
 void FXDCWindow::drawLines(const FXPoint* points,FXuint npoints){
   register FXuint i;
   POINT pts[1360];      // Worst case limit according to MSDN
@@ -1058,6 +1199,7 @@ void FXDCWindow::drawLines(const FXPoint* points,FXuint npoints){
   }
 
 
+// Draw lines relative
 void FXDCWindow::drawLinesRel(const FXPoint* points,FXuint npoints){
   register int x=0,y=0;
   register FXuint i;
@@ -1089,6 +1231,7 @@ void FXDCWindow::drawLinesRel(const FXPoint* points,FXuint npoints){
   }
 
 
+// Draw line segments
 void FXDCWindow::drawLineSegments(const FXSegment* segments,FXuint nsegments){
   register FXuint i;
   POINT pts[2];
@@ -1119,6 +1262,7 @@ void FXDCWindow::drawRectangle(FXint x,FXint y,FXint w,FXint h){
   }
 
 
+// Draw unfilled rectangles
 void FXDCWindow::drawRectangles(const FXRectangle* rectangles,FXuint nrectangles){
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::drawRectangles: DC not connected to drawable.\n"); }
@@ -1127,6 +1271,18 @@ void FXDCWindow::drawRectangles(const FXRectangle* rectangles,FXuint nrectangles
   for(i=0; i<nrectangles; i++){
     Rectangle((HDC)ctx,rectangles[i].x,rectangles[i].y,rectangles[i].x+rectangles[i].w+1,rectangles[i].y+rectangles[i].h+1);
     }
+  SelectObject((HDC)ctx,hBrush);
+  }
+
+
+// Unfilled rounded rectangle
+void FXDCWindow::drawRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh){
+  if(!surface){ fxerror("FXDCWindow::drawRoundRectangle: DC not connected to drawable.\n"); }
+  if(needsNewPen) updatePen();
+  HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
+  if(ew+ew>w) ew=w>>1;
+  if(eh+eh>h) eh=h>>1;
+  RoundRect((HDC)ctx,x,y,x+w+1,y+h+1,ew,eh);
   SelectObject((HDC)ctx,hBrush);
   }
 
@@ -1160,11 +1316,29 @@ void FXDCWindow::drawArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   }
 
 
+// Draw arcs
 void FXDCWindow::drawArcs(const FXArc* arcs,FXuint narcs){
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::drawArcs: DC not connected to drawable.\n"); }
   for(i=0; i<narcs; i++){
     drawArc(arcs[i].x,arcs[i].y,arcs[i].w,arcs[i].h,arcs[i].a,arcs[i].b);
+    }
+  }
+
+
+// Draw ellipse
+void FXDCWindow::drawEllipse(FXint x,FXint y,FXint w,FXint h){
+  if(!surface){ fxerror("FXDCWindow::drawEllipse: DC not connected to drawable.\n"); }
+  if(needsNewBrush) updateBrush();
+  w+=1;
+  h+=1;
+  if(needsPath){
+    BeginPath((HDC)ctx);
+    }
+  Arc((HDC)ctx,x,y,x+w,y+h,x+(w>>1),y+(h>>1),x+(w>>1),y+(h>>1));
+  if(needsPath){
+    EndPath((HDC)ctx);
+    StrokePath((HDC)ctx);
     }
   }
 
@@ -1188,6 +1362,18 @@ void FXDCWindow::fillRectangles(const FXRectangle* rectangles,FXuint nrectangles
   for(i=0; i<nrectangles; i++){
     Rectangle((HDC)ctx,rectangles[i].x,rectangles[i].y,rectangles[i].x+rectangles[i].w+1,rectangles[i].y+rectangles[i].h+1);
     }
+  SelectObject((HDC)ctx,hPen);
+  }
+
+
+// Fill using currently selected ROP mode
+void FXDCWindow::fillRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh){
+  if(!surface){ fxerror("FXDCWindow::fillRoundRectangle: DC not connected to drawable.\n"); }
+  if(needsNewBrush) updateBrush();
+  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  if(ew+ew>w) ew=w>>1;
+  if(eh+eh>h) eh=h>>1;
+  RoundRect((HDC)ctx,x,y,x+w+1,y+h+1,ew,eh);
   SelectObject((HDC)ctx,hPen);
   }
 
@@ -1248,12 +1434,25 @@ void FXDCWindow::fillArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   }
 
 
+// Fill arcs
 void FXDCWindow::fillArcs(const FXArc* arcs,FXuint narcs){
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::fillArcs: DC not connected to drawable.\n"); }
   for(i=0; i<narcs; i++){
     fillArc(arcs[i].x,arcs[i].y,arcs[i].w,arcs[i].h,arcs[i].a,arcs[i].b);
     }
+  }
+
+
+// Fill ellipse
+void FXDCWindow::fillEllipse(FXint x,FXint y,FXint w,FXint h){
+  if(!surface){ fxerror("FXDCWindow::fillEllipse: DC not connected to drawable.\n"); }
+  if(needsNewBrush) updateBrush();
+  w+=1;
+  h+=1;
+  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  Pie((HDC)ctx,x,y,x+w,y+h,x+(w>>1),y+(h>>1),x+(w>>1),y+(h>>1));
+  SelectObject((HDC)ctx,hPen);
   }
 
 
@@ -1274,6 +1473,7 @@ void FXDCWindow::fillPolygon(const FXPoint* points,FXuint npoints){
   }
 
 
+// Filled concave polygon
 void FXDCWindow::fillConcavePolygon(const FXPoint* points,FXuint npoints){
   register FXuint i;
   POINT pts[1360];      // Worst case limit according to MSDN
@@ -1290,6 +1490,7 @@ void FXDCWindow::fillConcavePolygon(const FXPoint* points,FXuint npoints){
   }
 
 
+// Filled complex polygon relative
 void FXDCWindow::fillComplexPolygon(const FXPoint* points,FXuint npoints){
   register FXuint i;
   POINT pts[1360];      // Worst case limit according to MSDN
@@ -1324,6 +1525,7 @@ void FXDCWindow::fillPolygonRel(const FXPoint* points,FXuint npoints){
   }
 
 
+// Filled concave polygon relative
 void FXDCWindow::fillConcavePolygonRel(const FXPoint* points,FXuint npoints){
   register int x=0,y=0;
   register FXuint i;
@@ -1341,6 +1543,7 @@ void FXDCWindow::fillConcavePolygonRel(const FXPoint* points,FXuint npoints){
   }
 
 
+// Filled complex polygon relative
 void FXDCWindow::fillComplexPolygonRel(const FXPoint* points,FXuint npoints){
   register int x=0,y=0;
   register FXuint i;
@@ -1496,7 +1699,7 @@ void FXDCWindow::drawImage(const FXImage* image,FXint dx,FXint dy){
   }
 
 
-// Draw bitmap (Contributed by Michal Furmanczyk <mf@cfdrc.com>)
+// Draw bitmap 
 void FXDCWindow::drawBitmap(const FXBitmap* bitmap,FXint dx,FXint dy) {
   if(!surface) fxerror("FXDCWindow::drawBitmap: DC not connected to drawable.\n");
   if(!bitmap || !bitmap->id()) fxerror("FXDCWindow::drawBitmap: illegal bitmap specified.\n");
@@ -1656,6 +1859,7 @@ void FXDCWindow::drawIconSunken(const FXIcon* icon,FXint dx,FXint dy){
   }
 
 
+// Draw hash box
 void FXDCWindow::drawHashBox(FXint x,FXint y,FXint w,FXint h,FXint b){
   if(!surface){ fxerror("FXDCWindow::drawHashBox: DC not connected to drawable.\n"); }
   HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]));
@@ -1671,6 +1875,7 @@ void FXDCWindow::drawHashBox(FXint x,FXint y,FXint w,FXint h,FXint b){
   }
 
 
+// Draw focus rectangle
 void FXDCWindow::drawFocusRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::drawFocusRectangle: DC not connected to drawable.\n"); }
   HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]));
@@ -1877,6 +2082,7 @@ void FXDCWindow::updateBrush(){
   }
 
 
+// Set foreground color
 void FXDCWindow::setForeground(FXColor clr){
   if(!surface){ fxerror("FXDCWindow::setForeground: DC not connected to drawable.\n"); }
   devfg=visual->getPixel(clr);
@@ -1887,6 +2093,7 @@ void FXDCWindow::setForeground(FXColor clr){
   }
 
 
+// Set background color
 void FXDCWindow::setBackground(FXColor clr){
   if(!surface){ fxerror("FXDCWindow::setBackground: DC not connected to drawable.\n"); }
   devbg=visual->getPixel(clr);
@@ -1909,6 +2116,7 @@ void FXDCWindow::setDashes(FXuint dashoffset,const FXchar *dashpattern,FXuint da
   }
 
 
+// Set line width
 void FXDCWindow::setLineWidth(FXuint linewidth){
   if(!surface){ fxerror("FXDCWindow::setLineWidth: DC not connected to drawable.\n"); }
   width=linewidth;
@@ -1916,6 +2124,7 @@ void FXDCWindow::setLineWidth(FXuint linewidth){
   }
 
 
+// Set line cap style
 void FXDCWindow::setLineCap(FXCapStyle capstyle){
   if(!surface){ fxerror("FXDCWindow::setLineCap: DC not connected to drawable.\n"); }
   cap=capstyle;
@@ -1923,6 +2132,7 @@ void FXDCWindow::setLineCap(FXCapStyle capstyle){
   }
 
 
+// Set line join style
 void FXDCWindow::setLineJoin(FXJoinStyle joinstyle){
   if(!surface){ fxerror("FXDCWindow::setLineJoin: DC not connected to drawable.\n"); }
   join=joinstyle;
@@ -1930,6 +2140,7 @@ void FXDCWindow::setLineJoin(FXJoinStyle joinstyle){
   }
 
 
+// Set line style
 void FXDCWindow::setLineStyle(FXLineStyle linestyle){
   if(!surface){ fxerror("FXDCWindow::setLineStyle: DC not connected to drawable.\n"); }
   style=linestyle;
@@ -1937,6 +2148,7 @@ void FXDCWindow::setLineStyle(FXLineStyle linestyle){
   }
 
 
+// Set fill style
 void FXDCWindow::setFillStyle(FXFillStyle fillstyle){
   if(!surface){ fxerror("FXDCWindow::setFillStyle: DC not connected to drawable.\n"); }
   fill=fillstyle;
@@ -2049,12 +2261,11 @@ void FXDCWindow::setStipple(FXStipplePattern pat,FXint dx,FXint dy){
 // Patch from "Dimitris Servis" <servis@deslab.ntua.gr>
 // The new clip rectangle should be the intersect of the region
 // boundary rectangle and the paint rectangle.
-// Another patch from Ivan Markov <ivan.markov@wizcom.bg> to delete 
+// Another patch from Ivan Markov <ivan.markov@wizcom.bg> to delete
 // the region which must be disposed off explicitly.
 void FXDCWindow::setClipRegion(const FXRegion& region){
   if(!surface){ fxerror("FXDCWindow::setClipRegion: DC not connected to drawable.\n"); }
-  FXRectangle rectangle;
-  region.bounds(rectangle);
+  FXRectangle rectangle=region.bounds();
   clip.x=FXMAX(rectangle.x,rect.x);
   clip.y=FXMAX(rectangle.y,rect.y);
   clip.w=FXMIN(rectangle.x+rectangle.w,rect.x+rect.w)-clip.x;
@@ -2068,6 +2279,7 @@ void FXDCWindow::setClipRegion(const FXRegion& region){
   }
 
 
+// Set clip rectangle
 void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::setClipRectangle: DC not connected to drawable.\n"); }
   clip.x=FXMAX(x,rect.x);
@@ -2082,6 +2294,7 @@ void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   }
 
 
+// Set clip rectangle
 void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   if(!surface){ fxerror("FXDCWindow::setClipRectangle: DC not connected to drawable.\n"); }
   clip.x=FXMAX(rectangle.x,rect.x);
@@ -2096,6 +2309,7 @@ void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   }
 
 
+// Clear clip rectangle
 void FXDCWindow::clearClipRectangle(){
   if(!surface){ fxerror("FXDCWindow::clearClipRectangle: DC not connected to drawable.\n"); }
   clip=rect;
@@ -2105,6 +2319,8 @@ void FXDCWindow::clearClipRectangle(){
   }
 
 
+
+// Set clip mask
 void FXDCWindow::setClipMask(FXBitmap* bitmap,FXint dx,FXint dy){
   if(!surface){ fxerror("FXDCWindow::setClipMask: DC not connected to drawable.\n"); }
   FXASSERT(FALSE);
@@ -2114,6 +2330,7 @@ void FXDCWindow::setClipMask(FXBitmap* bitmap,FXint dx,FXint dy){
   }
 
 
+// Clear clip mask
 void FXDCWindow::clearClipMask(){
   if(!surface){ fxerror("FXDCWindow::clearClipMask: DC not connected to drawable.\n"); }
   FXASSERT(FALSE);
@@ -2123,13 +2340,13 @@ void FXDCWindow::clearClipMask(){
   }
 
 
+// Set text font
 void FXDCWindow::setFont(FXFont *fnt){
   if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
   if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
   SelectObject((HDC)ctx,fnt->id());
   font=fnt;
   }
-
 
 
 // Window will clip against child windows

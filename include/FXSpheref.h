@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSpheref.h,v 1.5 2004/03/21 19:07:57 fox Exp $                          *
+* $Id: FXSpheref.h,v 1.9 2004/10/28 18:29:14 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSPHEREF_H
 #define FXSPHEREF_H
@@ -32,7 +32,7 @@ class FXRangef;
 class FXVec4f;
 
 
-// Spherical bounds
+/// Spherical bounds
 class FXAPI FXSpheref {
 public:
   FXVec3f center;
@@ -46,10 +46,10 @@ public:
   FXSpheref(const FXSpheref& sphere):center(sphere.center),radius(sphere.radius){}
 
   /// Initialize from center and radius
-  FXSpheref(const FXVec3f& cen,FXfloat rad):center(cen),radius(rad){}
+  FXSpheref(const FXVec3f& cen,FXfloat rad=0.0f):center(cen),radius(rad){}
 
   /// Initialize from center and radius
-  FXSpheref(FXfloat x,FXfloat y,FXfloat z,FXfloat rad):center(x,y,z),radius(rad){}
+  FXSpheref(FXfloat x,FXfloat y,FXfloat z,FXfloat rad=0.0f):center(x,y,z),radius(rad){}
 
   /// Initialize sphere to fully contain the given bounding box
   FXSpheref(const FXRangef& bounds);
@@ -57,7 +57,7 @@ public:
   /// Assignment
   FXSpheref& operator=(const FXSpheref& sphere){ center=sphere.center; radius=sphere.radius; return *this; }
 
-  // Diameter of sphere
+  /// Diameter of sphere
   FXfloat diameter() const { return radius*2.0f; }
 
   /// Test if empty
@@ -87,7 +87,7 @@ public:
   /// Include given sphere into this one
   FXSpheref& include(const FXSpheref& sphere);
 
-  // Intersect sphere with plane ax+by+cz+w; returns -1,0,+1
+  /// Intersect sphere with normalized plane ax+by+cz+w; returns -1,0,+1
   FXint intersect(const FXVec4f& plane) const;
 
   /// Intersect sphere with ray u-v

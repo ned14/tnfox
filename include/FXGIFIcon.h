@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGIFIcon.h,v 1.17 2004/04/24 14:10:29 fox Exp $                         *
+* $Id: FXGIFIcon.h,v 1.19 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXGIFICON_H
 #define FXGIFICON_H
@@ -38,6 +38,8 @@ protected:
 private:
   FXGIFIcon(const FXGIFIcon&);
   FXGIFIcon &operator=(const FXGIFIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct an icon from memory stream formatted as GIF format
@@ -67,7 +69,9 @@ extern FXAPI FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint&
 
 
 /**
-* Save an GIF (Graphics Interchange Format) file to a stream.
+* Save an GIF (Graphics Interchange Format) file to a stream.  The flag
+* "fast" is used to select the faster Floyd-Steinberg dither method instead
+* of the slower Wu quantization algorithm.
 */
 extern FXAPI FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FXbool fast=TRUE);
 

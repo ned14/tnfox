@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollBar.cpp,v 1.16 2004/02/08 17:29:07 fox Exp $                     *
+* $Id: FXScrollBar.cpp,v 1.21 2004/10/07 21:49:14 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxkeys.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXScrollBar.h"
@@ -179,7 +180,7 @@ long FXScrollBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     grab();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
     getApp()->removeTimeout(this,ID_AUTOSCROLL);
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     flags&=~FLAG_UPDATE;
     if(options&SCROLLBAR_HORIZONTAL){     // Horizontal scrollbar
       if(event->win_x<height){                   // Left arrow
@@ -247,8 +248,8 @@ long FXScrollBar::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     if(p>(range-page)) p=range-page;
     if(p!=pos){
       setPosition(p);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -269,9 +270,9 @@ long FXScrollBar::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     update();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
     getApp()->removeTimeout(this,ID_AUTOSCROLL);
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(flgs&FLAG_CHANGED){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -288,7 +289,7 @@ long FXScrollBar::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
     grab();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
     getApp()->removeTimeout(this,ID_AUTOSCROLL);
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
     mode=MODE_DRAG;
     flags&=~FLAG_UPDATE;
     dragpoint=thumbsize/2;
@@ -320,8 +321,8 @@ long FXScrollBar::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
     if(p>(range-page)) p=range-page;
     if(pos!=p){
       pos=p;
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -342,9 +343,9 @@ long FXScrollBar::onMiddleBtnRelease(FXObject*,FXSelector,void* ptr){
     update();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
     getApp()->removeTimeout(this,ID_AUTOSCROLL);
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
     if(flgs&FLAG_CHANGED){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -360,7 +361,7 @@ long FXScrollBar::onRightBtnPress(FXObject*,FXSelector,void* ptr){
     grab();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
     getApp()->removeTimeout(this,ID_AUTOSCROLL);
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
     flags&=~FLAG_UPDATE;
     if(options&SCROLLBAR_HORIZONTAL){     // Horizontal scrollbar
       if(event->win_x<height){                   // Left arrow
@@ -426,8 +427,8 @@ long FXScrollBar::onRightBtnPress(FXObject*,FXSelector,void* ptr){
     if(p>(range-page)) p=range-page;
     if(p!=pos){
       setPosition(p);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -448,9 +449,9 @@ long FXScrollBar::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
     update();
     getApp()->removeTimeout(this,ID_TIMEWHEEL);
     getApp()->removeTimeout(this,ID_AUTOSCROLL);
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
     if(flgs&FLAG_CHANGED){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -547,8 +548,8 @@ long FXScrollBar::onMotion(FXObject*,FXSelector,void* ptr){
     if(p>(range-page)) p=range-page;
     if(pos!=p){
       pos=p;
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       return 1;
       }
     }
@@ -574,8 +575,8 @@ long FXScrollBar::onMouseWheel(FXObject*,FXSelector,void* ptr){
       if(dragpoint!=pos){
         if(options&SCROLLBAR_WHEELJUMP){
           setPosition(dragpoint);
-          if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
           dragpoint=0;
+          if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
           }
         else{
           dragjump=(dragpoint-pos);
@@ -596,25 +597,25 @@ long FXScrollBar::onTimeWheel(FXObject*,FXSelector,void* ptr){
   if(dragpoint<pos){
     if(p<=dragpoint){
       setPosition(dragpoint);
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       dragpoint=0;
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     else{
       setPosition(p);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       getApp()->addTimeout(this,ID_TIMEWHEEL,5,ptr);
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     }
   else{
     if(p>=dragpoint){
       setPosition(dragpoint);
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       dragpoint=0;
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     else{
       setPosition(p);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       getApp()->addTimeout(this,ID_TIMEWHEEL,5,ptr);
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     }
   return 1;
@@ -635,8 +636,8 @@ long FXScrollBar::onAutoScroll(FXObject*,FXSelector,void* ptr){
     }
   if(p!=pos){
     setPosition(p);
-    if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
     flags|=FLAG_CHANGED;
+    if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
     return 1;
     }
   return 0;

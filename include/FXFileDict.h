@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.h,v 1.21 2004/02/08 17:17:33 fox Exp $                        *
+* $Id: FXFileDict.h,v 1.22 2004/09/26 18:02:28 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXFILEDICT_H
 #define FXFILEDICT_H
@@ -49,7 +49,16 @@ struct FXFileAssoc {
   };
 
 
-/// Icon dictionary
+/**
+* The Icon Dictionary manages a collection of icons.  The icons are referenced
+* by their file name.  When first encountering a new file name, the icon is
+* located by searching the icon search path for the icon file.  If found, the
+* type of the icon is determined by means of the extension, and then the icon
+* is loaded.  Subsequent queries for the same icon will return immediately with
+* the cached icon.
+* Icons are managed by the icon dictionary and when an the dictionary is deleted
+* all the icons stored in it are released.
+*/
 class FXAPI FXIconDict : public FXDict {
   FXDECLARE(FXIconDict)
 private:
@@ -102,11 +111,33 @@ public:
 
 
 /**
-* The File Association dictionary associates a file extension
-* with a FXFileAssoc record which contains command name, mime type,
-* icons, and other information about the file type.
-* The Registry is used as source of the file bindings; an alternative
-* Settings database may be specified however.
+* The File Association dictionary associates a file extension with a File 
+* Association record which contains command name, mime type, icons, and other 
+* information about the file type.  The icons referenced by the file association
+* are managed by the Icon Dictionary; this guarantees that each icon is loaded
+* only once into memory.
+* The associations are determined by the information by the FOX Registry settings;
+* each entry under the FILETYPES registry section comprises the command line,
+* extension name, large icon, small icon, and mime type:
+*
+*   command ';' extension ';' bigicon [ ':' bigiconopen ] ';' icon [ ':' iconopen ] ';' mime
+*
+* For example, the binding for "jpg" could be:
+*
+*   xv %s &;JPEG Image;bigimage.xpm;miniimage.xpm;image/jpeg
+*
+* The association for a file name is determined by first looking at the entire 
+* file name, then at the whole extension, and then at sub-extensions.
+* For example, "name.tar.gz", "tar.gz", and "gz" can each be given a different
+* file association.  Directory names may also be given associations; there is
+* no command-line association for a directory, however.  The association for a
+* directory is found by first checking the whole pathname, then checking the
+* pathname less the first component, and so on.  So, "/usr/local/include", 
+* "/local/include", and "/include" can each be given their own file associations.
+* If the above lookup procedure has not found a file association, the system
+* uses a fallback associations: for files, the fallback association is determined
+* by the binding "defaultfilebinding".  For directories, the "defaultdirbinding"
+* is used, and for executables the "defaultexecbinding" is used.
 */
 class FXAPI FXFileDict : public FXDict {
   FXDECLARE(FXFileDict)
@@ -148,7 +179,10 @@ public:
   /// Get application
   FXApp* getApp() const { return app; }
 
-  /// Set icon search path
+  /**
+  * Set icon search path; the initial search path is determined by the
+  * "iconpath" registry setting in the SETTINGS section.
+  */
   void setIconPath(const FXString& path);
 
   /// Return current icon search path

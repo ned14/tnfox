@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollPane.h,v 1.6 2004/02/08 17:17:34 fox Exp $                       *
+* $Id: FXScrollPane.h,v 1.7 2004/09/26 18:02:28 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXSCROLLPANE_H
 #define FXSCROLLPANE_H
@@ -32,7 +32,11 @@ namespace FX {
 
 class FXArrowButton;
 
-/// Scrolling menu pane
+/**
+* A Scroll Pane is a menu pane which provides scrolling of menu entries.
+* It is useful when menus are populated programmatically and it is not
+* known in advance how many entries will be added.
+*/
 class FXAPI FXScrollPane : public FXMenuPane {
   FXDECLARE(FXScrollPane)
 protected:

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxdefs.h,v 1.133 2004/03/28 23:55:18 fox Exp $                           *
+* $Id: fxdefs.h,v 1.140 2004/10/13 22:28:23 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXDEFS_H
 #define FXDEFS_H
@@ -261,6 +261,8 @@ enum FXSelType {
   SEL_IO_WRITE,                       // Write activity on a pipe
   SEL_IO_EXCEPT,                      // Except activity on a pipe
   SEL_PICKED,                         // Picked some location
+  SEL_QUERY_TIP,                      // Message inquiring about tooltip
+  SEL_QUERY_HELP,                     // Message inquiring about statusline help
   SEL_LAST                            // Last message
   };
 
@@ -270,8 +272,13 @@ enum {
   SHIFTMASK        = 0x001,           /// Shift key is down
   CAPSLOCKMASK     = 0x002,           /// Caps Lock key is down
   CONTROLMASK      = 0x004,           /// Ctrl key is down
+#ifdef __APPLE__
+  ALTMASK          = 0x2000           /// Alt key is down
+  METAMASK         = 0x10,            /// Meta key is down
+#else
   ALTMASK          = 0x008,           /// Alt key is down
   METAMASK         = 0x040,           /// Meta key is down
+#endif
   NUMLOCKMASK      = 0x010,           /// Num Lock key is down
   SCROLLLOCKMASK   = 0x0E0,           /// Scroll Lock key is down (seems to vary)
   LEFTBUTTONMASK   = 0x100,           /// Left mouse button is down
@@ -589,24 +596,29 @@ template<typename type> type *FXOFFSETPTR(type *p, FXival offset) { return (type
 
 
 /**
-* Allocate no elements of type to the specified pointer.
+* Allocate a memory block of no elements of type and store a pointer
+* to it into the address pointed to by ptr.
 * Return FALSE if size!=0 and allocation fails, TRUE otherwise.
 * An allocation of a zero size block returns a NULL pointer.
 */
 #define FXMALLOC(ptr,type,no)     (FX::fxmalloc((void **)(ptr),sizeof(type)*(no)))
 
 /**
-* Allocate no elements of type to the specified pointer, and clear this memory to zero.
+* Allocate a zero-filled memory block no elements of type and store a pointer
+* to it into the address pointed to by ptr.
 * Return FALSE if size!=0 and allocation fails, TRUE otherwise.
 * An allocation of a zero size block returns a NULL pointer.
 */
 #define FXCALLOC(ptr,type,no)     (FX::fxcalloc((void **)(ptr),sizeof(type)*(no)))
 
 /**
-* Resize a previously allocated block of memory.
+* Resize the memory block referred to by the pointer at the address ptr, to a
+* hold no elements of type.
 * Returns FALSE if size!=0 and reallocation fails, TRUE otherwise.
 * If reallocation fails, pointer is left to point to old block; a reallocation
 * to a zero size block has the effect of freeing it.
+* The ptr argument must be the address where the pointer to the allocated
+* block is to be stored.
 */
 #define FXRESIZE(ptr,type,no)     (FX::fxresize((void **)(ptr),sizeof(type)*(no)))
 
@@ -614,12 +626,16 @@ template<typename type> type *FXOFFSETPTR(type *p, FXival offset) { return (type
 * Allocate and initialize memory from another block.
 * Return FALSE if size!=0 and source!=NULL and allocation fails, TRUE otherwise.
 * An allocation of a zero size block returns a NULL pointer.
+* The ptr argument must be the address where the pointer to the allocated
+* block is to be stored.
 */
 #define FXMEMDUP(ptr,src,type,no) (FX::fxmemdup((void **)(ptr),(const void*)(src),sizeof(type)*(no)))
 
 /**
 * Free a block of memory allocated with either FXMALLOC, FXCALLOC, FXRESIZE, or FXMEMDUP.
-* It is OK to call free a NULL pointer.
+* It is OK to call free a NULL pointer.  The argument must be the address of the
+* pointer to the block to be released.  The pointer is set to NULL to prevent
+* any further references to the block after releasing it.
 */
 #define FXFREE(ptr)               (FX::fxfree((void **)(ptr)))
 

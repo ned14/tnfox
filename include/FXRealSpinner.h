@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRealSpinner.h,v 1.9 2004/02/08 17:17:34 fox Exp $                      *
+* $Id: FXRealSpinner.h,v 1.10 2004/10/01 07:09:30 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXREALSPINNER_H
 #define FXREALSPINNER_H
@@ -33,14 +33,14 @@
 
 namespace FX {
 
-// Spinner Options
+/// RealSpinner Options
 enum {
-  REALSPIN_NORMAL  =  0,                // Normal, non-cyclic
-  REALSPIN_CYCLIC  =  0x00020000,       // Cyclic spinner
-  REALSPIN_NOTEXT  =  0x00040000,       // No text visible
-  REALSPIN_NOMAX   =  0x00080000,       // Spin all the way up to infinity
-  REALSPIN_NOMIN   =  0x00100000,       // Spin all the way down to -infinity
-  REALSPIN_LOG     =  0x00200000        // Logarithmic rather than linear
+  REALSPIN_NORMAL  =  0,                /// Normal, non-cyclic
+  REALSPIN_CYCLIC  =  0x00020000,       /// Cyclic spinner
+  REALSPIN_NOTEXT  =  0x00040000,       /// No text visible
+  REALSPIN_NOMAX   =  0x00080000,       /// Spin all the way up to infinity
+  REALSPIN_NOMIN   =  0x00100000,       /// Spin all the way down to -infinity
+  REALSPIN_LOG     =  0x00200000        /// Logarithmic rather than linear
   };
 
 
@@ -71,7 +71,6 @@ public:
   long onCmdIncrement(FXObject*,FXSelector,void*);
   long onUpdDecrement(FXObject*,FXSelector,void*);
   long onCmdDecrement(FXObject*,FXSelector,void*);
-  long onUpdEntry(FXObject*,FXSelector,void*);
   long onCmdEntry(FXObject*,FXSelector,void*);
   long onChgEntry(FXObject*,FXSelector,void*);
   long onWheelEntry(FXObject*,FXSelector,void*);

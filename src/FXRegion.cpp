@@ -19,17 +19,24 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegion.cpp,v 1.18 2004/02/11 20:33:36 fox Exp $                        *
+* $Id: FXRegion.cpp,v 1.26 2004/09/17 07:46:21 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegion.h"
 
+
+/*
+  Notes:
+  - Add some more ways to create regions
+
+*/
 
 
 /*******************************************************************************/
@@ -59,7 +66,7 @@ FXRegion::FXRegion(FXint x,FXint y,FXint w,FXint h){
   }
 
 
-/// Construct new region from rectangle rect
+// Construct new region from rectangle rect
 FXRegion::FXRegion(const FXRectangle& rect){
 #ifndef WIN32
   region=XCreateRegion();
@@ -149,17 +156,19 @@ FXbool FXRegion::contains(FXint x,FXint y,FXint w,FXint h) const {
 
 
 // Return bounding box
-void FXRegion::bounds(FXRectangle& r) const {
+FXRectangle FXRegion::bounds() const {
+  FXRectangle result;
 #ifndef WIN32
-  XClipBox((Region)region,(XRectangle*)&r);
+  XClipBox((Region)region,(XRectangle*)&result);
 #else
   RECT rect;
   GetRgnBox((HRGN)region,&rect);
-  r.x=(FXshort)rect.left;
-  r.y=(FXshort)rect.top;
-  r.w=(FXshort)(rect.right-rect.left);
-  r.h=(FXshort)(rect.bottom-rect.top);
+  result.x=(FXshort)rect.left;
+  result.y=(FXshort)rect.top;
+  result.w=(FXshort)(rect.right-rect.left);
+  result.h=(FXshort)(rect.bottom-rect.top);
 #endif
+  return result;
   }
 
 

@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCaption.cpp,v 1.41 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXMenuCaption.cpp,v 1.44 2004/09/17 07:46:21 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -67,7 +68,7 @@ namespace FX {
 FXDEFMAP(FXMenuCaption) FXMenuCaptionMap[]={
   FXMAPFUNC(SEL_PAINT,0,FXMenuCaption::onPaint),
   FXMAPFUNC(SEL_UPDATE,0,FXMenuCaption::onUpdate),
-  FXMAPFUNC(SEL_UPDATE,FXMenuCaption::ID_QUERY_HELP,FXMenuCaption::onQueryHelp),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXMenuCaption::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_SETSTRINGVALUE,FXMenuCaption::onCmdSetStringValue),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_GETSTRINGVALUE,FXMenuCaption::onCmdGetStringValue),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_SETICONVALUE,FXMenuCaption::onCmdSetIconValue),
@@ -176,8 +177,9 @@ long FXMenuCaption::onCmdGetHelp(FXObject*,FXSelector,void* ptr){
 
 
 // We were asked about status text
-long FXMenuCaption::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
+long FXMenuCaption::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }

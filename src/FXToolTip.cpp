@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolTip.cpp,v 1.14 2004/02/08 17:29:07 fox Exp $                       *
+* $Id: FXToolTip.cpp,v 1.19 2004/10/07 19:09:58 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -44,6 +45,7 @@
     from the system registry.
   - Do not assume root window is at (0,0); multi-monitor machines may
     have secondary monitor anywhere relative to primary display.
+  - Text length dependent tooltip display by leonard@hipgraphics.com.
 */
 
 #define HSPACE  4
@@ -199,7 +201,7 @@ void FXToolTip::place(FXint x,FXint y){
   py=y+20;
   if(px+w>rw) px=rw-w;
   if(px<rx) px=rx;
-  if(py+h>rh){ py=rh-h; if(py<=y && y<py+h) py=y-h-10; }
+  if(py+h+50>rh){ py=y-h-10; }
   if(py<ry) py=ry;
   position(px,py,w,h);
   }
@@ -221,7 +223,7 @@ long FXToolTip::onUpdate(FXObject* sender,FXSelector sel,void* ptr){
   FXWindow::onUpdate(sender,sel,ptr);
 
   // Ask the help source for a new status text first
-  if(helpsource && helpsource->handle(this,FXSEL(SEL_UPDATE,FXWindow::ID_QUERY_TIP),NULL)){
+  if(helpsource && helpsource->handle(this,FXSEL(SEL_QUERY_TIP,0),NULL)){
     if(!popped){
       popped=TRUE;
       if(!shown()){
@@ -246,8 +248,6 @@ long FXToolTip::onTipShow(FXObject*,FXSelector,void*){
     show();
     if(!(options&TOOLTIP_PERMANENT)){
       FXint timeoutms=getApp()->getTooltipTime();
-      // Text length dependent tooltip display time;
-      // Contributed by: leonard@hipgraphics.com
       if(options&TOOLTIP_VARIABLE){
         timeoutms=timeoutms/4+(timeoutms*label.length())/64;
         }

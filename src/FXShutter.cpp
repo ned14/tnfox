@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXShutter.cpp,v 1.34 2004/02/08 17:29:07 fox Exp $                       *
+* $Id: FXShutter.cpp,v 1.39 2004/10/07 21:49:14 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXIcon.h"
 #include "FXFrame.h"
@@ -225,7 +226,7 @@ long FXShutter::onOpenItem(FXObject* sender,FXSelector,void*){
       }
     current=which;
     recalc();
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)current);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)current);
     }
   return 1;
   }

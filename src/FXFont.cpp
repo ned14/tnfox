@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFont.cpp,v 1.94 2004/03/11 00:19:23 fox Exp $                          *
+* $Id: FXFont.cpp,v 1.103 2004/11/02 17:38:45 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,10 +34,10 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXFont.h"
+#include "FXException.h"
 
 
 /*
@@ -258,21 +260,9 @@ static void familyandfoundryfromname(FXchar* family,FXchar* foundry,const FXchar
 
 #ifdef HAVE_XFT_H                       // Using XFT
 
-#ifndef FC_WEIGHT_THIN
-#define FC_WEIGHT_THIN 1
-#endif
-#ifndef FC_WEIGHT_EXTRALIGHT
-#define FC_WEIGHT_EXTRALIGHT 2
-#endif
-#ifndef FC_WEIGHT_NORMAL
-#define FC_WEIGHT_NORMAL 99
-#endif
-#ifndef FC_WEIGHT_EXTRABOLD
-#define FC_WEIGHT_EXTRABOLD 201
-#endif
-#ifndef FC_WEIGHT_HEAVY
-#define FC_WEIGHT_HEAVY 211
-#endif
+#define FCWIDTHVERSION 10004
+
+#if FC_VERSION >= FCWIDTHVERSION
 
 // From FOX weight to fontconfig weight
 static FXint weight2FcWeight(FXint weight){
@@ -307,31 +297,6 @@ static FXint fcWeight2Weight(FXint fcWeight){
   return FONTWEIGHT_NORMAL;
   }
 
-
-// From FOX slant to fontconfig slant
-static FXint slant2FcSlant(FXint slant){
-  switch(slant){
-    case FONTSLANT_REGULAR:        return FC_SLANT_ROMAN;
-    case FONTSLANT_ITALIC:         return FC_SLANT_ITALIC;
-    case FONTSLANT_OBLIQUE:        return FC_SLANT_OBLIQUE;
-    case FONTSLANT_REVERSE_ITALIC: return FC_SLANT_ITALIC; // No equivalent FC value
-    case FONTSLANT_REVERSE_OBLIQUE:return FC_SLANT_OBLIQUE;// No equivalent FC value
-    }
-  return FC_SLANT_ROMAN;
-  }
-
-
-// From fontconfig slant to FOX slant
-static FXint fcSlant2Slant(FXint fcSlant){
-  switch(fcSlant){
-    case FC_SLANT_ROMAN:  return FONTSLANT_REGULAR;
-    case FC_SLANT_ITALIC: return FONTSLANT_ITALIC;
-    case FC_SLANT_OBLIQUE:return FONTSLANT_OBLIQUE;
-    }
-  return FONTSLANT_REGULAR;
-  }
-
-#ifdef FC_WIDTH
 // From FOX setwidth to fontconfig setwidth
 static FXint setWidth2FcSetWidth(FXint setwidth){
   switch(setwidth){
@@ -364,7 +329,84 @@ static FXint fcSetWidth2SetWidth(FXint fcSetWidth){
     }
   return FONTSETWIDTH_NORMAL;
   }
+
+
+#else
+
+// From FOX weight to fontconfig weight
+static FXint weight2FcWeight(FXint weight){
+  switch(weight){
+    case FONTWEIGHT_THIN:
+    case FONTWEIGHT_EXTRALIGHT:
+    case FONTWEIGHT_LIGHT:     return FC_WEIGHT_LIGHT;
+    case FONTWEIGHT_NORMAL:
+    case FONTWEIGHT_MEDIUM:    return FC_WEIGHT_MEDIUM;
+    case FONTWEIGHT_DEMIBOLD:  return FC_WEIGHT_DEMIBOLD;
+    case FONTWEIGHT_BOLD:      return FC_WEIGHT_BOLD;
+    case FONTWEIGHT_EXTRABOLD:
+    case FONTWEIGHT_HEAVY:     return FC_WEIGHT_BLACK;
+    }
+  return FC_WEIGHT_MEDIUM;
+  }
+
+
+// From fontconfig weight to FOX weight
+static FXint fcWeight2Weight(FXint fcWeight){
+  switch(fcWeight){
+    case FC_WEIGHT_LIGHT:     return FONTWEIGHT_LIGHT;
+    case FC_WEIGHT_MEDIUM:    return FONTWEIGHT_MEDIUM;
+    case FC_WEIGHT_DEMIBOLD:  return FONTWEIGHT_DEMIBOLD;
+    case FC_WEIGHT_BOLD:      return FONTWEIGHT_BOLD;
+    case FC_WEIGHT_BLACK:     return FONTWEIGHT_BLACK;
+    }
+  return FONTWEIGHT_NORMAL;
+  }
+
 #endif
+
+
+// From FOX slant to fontconfig slant
+static FXint slant2FcSlant(FXint slant){
+  switch(slant){
+    case FONTSLANT_REGULAR:        return FC_SLANT_ROMAN;
+    case FONTSLANT_ITALIC:         return FC_SLANT_ITALIC;
+    case FONTSLANT_OBLIQUE:        return FC_SLANT_OBLIQUE;
+    case FONTSLANT_REVERSE_ITALIC: return FC_SLANT_ITALIC; // No equivalent FC value
+    case FONTSLANT_REVERSE_OBLIQUE:return FC_SLANT_OBLIQUE;// No equivalent FC value
+    }
+  return FC_SLANT_ROMAN;
+  }
+
+
+// From fontconfig slant to FOX slant
+static FXint fcSlant2Slant(FXint fcSlant){
+  switch(fcSlant){
+    case FC_SLANT_ROMAN:  return FONTSLANT_REGULAR;
+    case FC_SLANT_ITALIC: return FONTSLANT_ITALIC;
+    case FC_SLANT_OBLIQUE:return FONTSLANT_OBLIQUE;
+    }
+  return FONTSLANT_REGULAR;
+  }
+
+
+static double getDPIXft(){
+  double fcDPI;
+  FcPattern* dpiPattern=FcPatternCreate();
+  if(dpiPattern != NULL){
+    FcDefaultSubstitute(dpiPattern);
+    FcPatternGetDouble(dpiPattern, FC_DPI, 0, &fcDPI);
+    FcPatternDestroy(dpiPattern);
+    }
+  return fcDPI;
+  }
+
+
+static double getDPIDiffXft(){
+  // Perhaps override screen resolution via registry
+  int screenres=FXApp::instance()->reg().readUnsignedEntry("SETTINGS","screenres",100);
+  return screenres/getDPIXft();
+  }
+
 
 // Build fontconfig pattern from face name and hints
 static FcPattern* buildPatternXft(const FXchar* face,FXuint size,FXuint weight,FXuint slant,FXuint setwidth,FXuint encoding,FXuint hints){
@@ -391,9 +433,11 @@ static FcPattern* buildPatternXft(const FXchar* face,FXuint size,FXuint weight,F
 
   // Set point size
   if(size>0){
+    FcPatternAddInteger(pattern,FC_SIZE,(int)(size/10*getDPIDiffXft() + 0.5));
+
     // Should be 10 but this makes it slightly better;
     // Suggested by "Niall Douglas" <s_sourceforge@nedprod.com>.
-    FcPatternAddDouble(pattern,FC_SIZE,size/7.5);
+//    FcPatternAddDouble(pattern,FC_SIZE,size/7.5);
 //    FcPatternAddDouble(pattern,FC_SIZE,size/10.0);
 //  FcPatternAddInteger(pattern,FC_PIXEL_SIZE,size/10);
     }
@@ -402,12 +446,14 @@ static FcPattern* buildPatternXft(const FXchar* face,FXuint size,FXuint weight,F
   if(weight!=FONTWEIGHT_DONTCARE){
     FcPatternAddInteger(pattern,FC_WEIGHT,weight2FcWeight(weight));
     }
-#ifdef FC_WIDTH
+
+#if FC_VERSION >= FCWIDTHVERSION
   // Set setwidth
   if(setwidth!=FONTSETWIDTH_DONTCARE){
     FcPatternAddInteger(pattern,FC_WIDTH,setWidth2FcSetWidth(setwidth));
     }
 #endif
+
   // Set slant
   if(slant!=FONTSLANT_DONTCARE){
     FcPatternAddInteger(pattern,FC_SLANT,slant2FcSlant(slant));
@@ -443,6 +489,92 @@ static FcPattern* buildPatternXft(const FXchar* face,FXuint size,FXuint weight,F
   return pattern;
   }
 
+
+// Get font description from pattern
+static FXbool pattern2FontDescXft(FcPattern* p,FXFontDesc* desc){
+  FXbool res=TRUE;
+  FXString faceFamily,faceFoundry;
+
+  FcChar8 *family, *foundry;
+  int spacing, setwidth, weight, slant, size;
+  FcBool scalable;
+
+  if(FcPatternGetString(p,FC_FAMILY,0,&family)==FcResultMatch)
+    faceFamily=(const FXchar*)family;
+  else
+    res = FALSE;
+
+  if(FcPatternGetString(p, FC_FOUNDRY, 0, &foundry) == FcResultMatch)
+    faceFoundry=(const FXchar*)foundry;
+  else
+    res=FALSE;
+
+  if(faceFoundry.length()>0){
+    faceFamily.append(" [");
+    faceFamily.append(faceFoundry);
+    faceFamily.append("]");
+    }
+
+  strncpy(desc->face,faceFamily.text(),sizeof(desc->face)-1);
+
+#if FC_VERSION >= FCWIDTHVERSION
+  if(FcPatternGetInteger(p,FC_WIDTH,0,&setwidth)==FcResultMatch){
+    desc->setwidth=fcSetWidth2SetWidth(setwidth);
+    }
+  else{
+    res=FALSE;
+    desc->setwidth=FONTSETWIDTH_NORMAL;
+    }
+#else
+    desc->setwidth=FONTSETWIDTH_NORMAL;
+#endif
+
+  if(FcPatternGetInteger(p, FC_PIXEL_SIZE, 0, &size) == FcResultMatch){
+    desc->size=(int)(size*10/getDPIDiffXft()+0.5);
+    }
+  else{
+    res=FALSE;
+    desc->size=0;
+    }
+
+  if(FcPatternGetInteger(p,FC_WEIGHT,0,&weight)==FcResultMatch){
+    desc->weight=fcWeight2Weight(weight);
+    }
+  else{
+    res=FALSE;
+    desc->weight=FONTWEIGHT_NORMAL;
+    }
+
+  if(FcPatternGetInteger(p,FC_SLANT,0,&slant)==FcResultMatch){
+    desc->slant=fcSlant2Slant(slant);
+    }
+  else{
+    res=FALSE;
+    desc->slant=FONTSLANT_REGULAR;
+    }
+
+  if(FcPatternGetInteger(p,FC_SPACING,0,&spacing)==FcResultMatch){
+    if(spacing==FC_PROPORTIONAL)
+      desc->flags|=FONTPITCH_VARIABLE;
+    else if(spacing==FC_MONO)
+      desc->flags|=FONTPITCH_FIXED;
+    }
+  else{
+    res=FALSE;
+    desc->flags|=FONTPITCH_VARIABLE;
+    }
+
+  if(FcPatternGetBool(p,FC_SCALABLE,0,&scalable)==FcResultMatch){
+    if(scalable) desc->flags|=FONTHINT_SCALABLE;
+    }
+  else{
+    res=FALSE;
+    }
+
+  desc->encoding=FONTENCODING_DEFAULT; //FIXME fcEncoding2Encoding(encoding);
+
+  return res;
+  }
 
 
 
@@ -828,7 +960,7 @@ char* FXFont::findmatch(char* fontname,const char* forge,const char* family){
 
 
 // Try load the best matching font
-char* FXFont::findbestfont(char *fontname){
+const char* FXFont::findbestfont(char *fontname){
   register const FXchar *altfoundry;
   register const FXchar *altfamily;
   FXchar family[104];
@@ -1000,7 +1132,9 @@ static FXuint CharSet2FXFontEncoding(BYTE lfCharSet){
     case EASTEUROPE_CHARSET: return FONTENCODING_EASTEUROPE;
     case GB2312_CHARSET: return FONTENCODING_DEFAULT;
     case GREEK_CHARSET: return FONTENCODING_GREEK;
+#if !defined (__WATCOMC__)
     case HANGUL_CHARSET: return FONTENCODING_DEFAULT;
+#endif
     case HEBREW_CHARSET: return FONTENCODING_HEBREW;
     case MAC_CHARSET: return FONTENCODING_DEFAULT;
     case OEM_CHARSET: return FONTENCODING_DEFAULT;
@@ -1256,15 +1390,25 @@ void FXFont::create(){
       // Find pattern matching a font
       p=FcFontMatch(0,pattern,&result);
 
+      // Get back the matched font properties
+      FXFontDesc desc;
+      pattern2FontDescXft(p, &desc);
+      actualName = desc.face;
+      actualSize = desc.size;
+      actualWeight = desc.weight;
+      actualSlant = desc.slant;
+      actualSetwidth = desc.setwidth;
+      actualEncoding = desc.encoding;
+
       // Create font
-      font=XftFontOpenPattern(DISPLAY(getApp()),p);     // FIXME currently unknown how to determine what font was matched
+      font=XftFontOpenPattern(DISPLAY(getApp()),p);    
       xid=(unsigned long)font;
 
       // Destroy pattern
       FcPatternDestroy(pattern);
 
       // Uh-oh, we failed
-      if(!xid){ fxerror("%s::create: unable to create font.\n",getClassName()); }
+      if(!xid){ throw FXFontException("unable to create font"); }
 
 #else                                   // Using XLFD
 
@@ -1298,7 +1442,7 @@ void FXFont::create(){
       if(font){ xid=((XFontStruct*)font)->fid; }
 
       // Uh-oh, we failed
-      if(!xid){ fxerror("%s::create: unable to create font.\n",getClassName()); }
+      if(!xid){ throw FXFontException("unable to create font"); }
 
       // Dump some useful stuff
       FXTRACE((150,"min_char_or_byte2   = %d\n",((XFontStruct*)font)->min_char_or_byte2));
@@ -1383,7 +1527,7 @@ void FXFont::create(){
       xid=CreateFontIndirect(&lf);
 
       // Uh-oh, we failed
-      if(!xid){ fxerror("%s::create: unable to create font.\n",getClassName()); }
+      if(!xid){ throw FXFontException("unable to create font"); }
 
       // Obtain text metrics
       FXCALLOC(&font,TEXTMETRIC,1);
@@ -1417,7 +1561,7 @@ void FXFont::detach(){
 
     // Free font struct w/o doing anything else...
 #ifdef HAVE_XFT_H
-    XftFontClose(DISPLAY(getApp()), (XftFont*)font);
+    XftFontClose(DISPLAY(getApp()),(XftFont*)font);
 #else
     XFreeFont(DISPLAY(getApp()),(XFontStruct*)font);
 #endif
@@ -1587,7 +1731,10 @@ FXbool FXFont::isFontMono() const {
   if(font){
 #ifndef WIN32
 #ifdef HAVE_XFT_H
-    return (hints&FONTPITCH_FIXED) != 0;      // FIXME this is just a hint, not about actual font
+    XGlyphInfo i_extents,m_extents;     
+    XftTextExtents8(DISPLAY(getApp()),(XftFont*)font,(const FcChar8*)"i",1,&i_extents); // FIXME better than before but no cigar yet
+    XftTextExtents8(DISPLAY(getApp()),(XftFont*)font,(const FcChar8*)"M",1,&m_extents);
+    return i_extents.xOff==m_extents.xOff;
 #else
     return ((XFontStruct*)font)->min_bounds.width == ((XFontStruct*)font)->max_bounds.width;
 #endif
@@ -1801,7 +1948,7 @@ void FXFont::encoding2FcCharSet(void *cs,FXFontEncoding encoding){
 
 // List all fonts that match the passed requirements
 FXbool FXFont::listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& face,FXuint wt,FXuint sl,FXuint sw,FXuint en,FXuint h){
-#ifdef FC_WIDTH
+#if FC_VERSION >= FCWIDTHVERSION
   FcObjectSet *objset = FcObjectSetBuild(FC_FAMILY, FC_FOUNDRY, FC_SPACING, FC_SCALABLE, FC_WIDTH, FC_PIXEL_SIZE, FC_WEIGHT, FC_SLANT, NULL);
 #else
   FcObjectSet *objset = FcObjectSetBuild(FC_FAMILY, FC_FOUNDRY, FC_SPACING, FC_SCALABLE, FC_PIXEL_SIZE, FC_WEIGHT, FC_SLANT, NULL);
@@ -1816,7 +1963,7 @@ FXbool FXFont::listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& fac
   if(numfonts>0){
     FXMALLOC(&fonts,FXFontDesc,numfonts);
 
-    unsigned realnumfonts = 0;
+    unsigned realnumfonts=0;
 
     for(unsigned i=0; i<numfonts; i++){
       FXFontDesc *desc = &fonts[realnumfonts];
@@ -1836,15 +1983,17 @@ FXbool FXFont::listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& fac
 
       strncpy(desc->face, fc.text(), sizeof(desc->face) - 1);
 
-#ifdef FC_WIDTH
+#if FC_VERSION >= FCWIDTHVERSION
       if(FcPatternGetInteger(p, FC_WIDTH, 0, &setwidth) == FcResultMatch)
         desc->setwidth = fcSetWidth2SetWidth(setwidth);
       else
-#endif
         desc->setwidth = FONTSETWIDTH_NORMAL;
+#else
+        desc->setwidth = FONTSETWIDTH_NORMAL;
+#endif
 
       if(FcPatternGetInteger(p, FC_PIXEL_SIZE, 0, &size) == FcResultMatch)
-        desc->size = size*10;
+        desc->size = (int)(size*10/getDPIDiffXft() + 0.5);
       else
         desc->size = 0;
 
@@ -1858,53 +2007,56 @@ FXbool FXFont::listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& fac
       else
         desc->slant = FONTSLANT_REGULAR;
 
-      if(FcPatternGetInteger(p, FC_SPACING, 0, &spacing) == FcResultMatch) {
-        if(spacing == FC_PROPORTIONAL)
-          desc->flags |= FONTPITCH_VARIABLE;
-        else if(spacing == FC_MONO)
-          desc->flags |= FONTPITCH_FIXED;
-      } else
-          desc->flags |= FONTPITCH_VARIABLE;
+      if(FcPatternGetInteger(p, FC_SPACING, 0, &spacing) == FcResultMatch){
+        if(spacing==FC_PROPORTIONAL)
+          desc->flags|=FONTPITCH_VARIABLE;
+        else if(spacing==FC_MONO)
+          desc->flags|=FONTPITCH_FIXED;
+        }
+      else{
+        desc->flags|=FONTPITCH_VARIABLE;
+        }
 
-      if(FcPatternGetBool(p, FC_SCALABLE, 0, &scalable) == FcResultMatch) {
+      if(FcPatternGetBool(p, FC_SCALABLE, 0, &scalable) == FcResultMatch){
         if(scalable)
-          desc->flags |= FONTHINT_SCALABLE;
-      }
+          desc->flags|=FONTHINT_SCALABLE;
+        }
 
-      desc->encoding = en; //FIXME fcEncoding2Encoding(encoding);
+      desc->encoding=en; //FIXME fcEncoding2Encoding(encoding);
 
-      if(face.empty()) {
+      if(face.empty()){
         // Should return one font entry for each font family
-        FXbool addIt = TRUE;
-        for(unsigned j = 0; j < realnumfonts; j++)
-          if(strcmp(fonts[j].face, desc->face) == 0) {
+        FXbool addIt=TRUE;
+        for(unsigned j=0; j<realnumfonts; j++)
+          if(strcmp(fonts[j].face, desc->face) == 0){
             addIt = FALSE;
             break;
           }
 
         if(!addIt)
           continue;
-      }
+        }
 
       realnumfonts++;
 
       // Dump what we have found out
       FXTRACE((150, "Font=%s weight=%d slant=%d size=%3d setwidth=%d encoding=%d flags=%d\n", desc->face, desc->weight, desc->slant, desc->size, desc->setwidth, desc->encoding, desc->flags));
-    }
+      }
 
-    if(realnumfonts < numfonts) {
+    if(realnumfonts<numfonts){
       numfonts = realnumfonts;
 
-      if(numfonts > 0)
+      if(numfonts>0)
         FXRESIZE(&fonts, FXFontDesc, numfonts);
       else
         FXFREE(&fonts);
-    }
+      }
 
-    if(numfonts > 0)
-      // Sort them by name, weight, slant, and size respectively
-      qsort(fonts, numfonts, sizeof(FXFontDesc), comparefont);
-  }
+    // Sort them by name, weight, slant, and size respectively
+    if(numfonts>0){
+      qsort(fonts,numfonts,sizeof(FXFontDesc),comparefont);
+      }
+    }
 
   FcFontSetDestroy(fontset);
   FcObjectSetDestroy(objset);

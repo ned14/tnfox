@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.458 2004/05/03 20:42:55 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.486 2004/11/10 16:22:05 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -33,6 +33,8 @@
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "fxpriv.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -42,7 +44,6 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXDC.h"
@@ -286,7 +287,6 @@ struct FXTimer {
 #ifndef WIN32
   struct timeval due;               // When timer is due
 #else
-//  long           due;               // When timer is due (ms)
   FXlong         due;               // When timer is due (ms)
 #endif
   };
@@ -896,8 +896,7 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   xdndRect.y=0;
   xdndRect.w=0;
   xdndRect.h=0;
-
-  // Clear input method stuff
+  xrreventbase=0;                         // XRR support
   xim=NULL;
   xic=NULL;
 
@@ -976,6 +975,7 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   app=this;
   }
 
+
 /*******************************************************************************/
 
 
@@ -1044,6 +1044,7 @@ static int xfatalerrorhandler(Display*){
 
 /*******************************************************************************/
 
+
 // Open the display
 FXbool FXApp::openDisplay(const FXchar* dpyname){
   if(!initialized){
@@ -1075,9 +1076,6 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 
 #ifdef HAVE_XSHM_H
 
-    // See if we wanted/have XSHM
-    FXTRACE((100,"Checking for shared memory\n"));
-
     // Displaying remotely turns it off for sure
     if(!(dpyname[0]==':' && isdigit((FXuchar)dpyname[1]))){
       shmi=FALSE;
@@ -1097,17 +1095,17 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
         }
       }
 
-    // Report the result
-    FXTRACE((100,"Shared Images  = %d\n",shmi));
-    FXTRACE((100,"Shared Pixmaps = %d\n",shmp));
-
 #else
 
     // Don't have it!
-    FXTRACE((100,"Shared memory not available\n"));
     shmi=FALSE;
     shmp=FALSE;
+
 #endif
+
+    // Report the result
+    FXTRACE((100,"X Shared Images  = %d\n",shmi));
+    FXTRACE((100,"X Shared Pixmaps = %d\n",shmp));
 
     // Initialize Xft and fontconfig
 #ifdef HAVE_XFT_H
@@ -1115,7 +1113,7 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 #endif
 
     // Open input method
-#if !defined(NO_XIM) && !defined(XTHREADS)
+#ifndef NO_XIM
     xic=NULL;
     xim=(void*)XOpenIM((Display*)display,NULL,NULL,NULL);
     if(xim){
@@ -1126,6 +1124,15 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
       xic=XCreateIC((XIM)xim,XNInputStyle,XIMPreeditNothing|XIMStatusNone,XNClientWindow,XDefaultRootWindow((Display*)display),NULL);
 #endif
       if(xic) XmbResetIC((XIC)xic);
+      }
+#endif
+
+    // Check for X Rotation and Reflection support
+#ifdef HAVE_XRANDR_H
+    int errorbase;
+    if(XRRQueryExtension((Display*)display,&xrreventbase,&errorbase)){
+      XRRSelectInput((Display*)display,XDefaultRootWindow((Display*)display),True);
+      FXTRACE((100,"X RandR available\n"));
       }
 #endif
 
@@ -1396,7 +1403,11 @@ FXbool FXApp::closeDisplay(){
     DeleteObject(stipples[STIPPLE_16]);
 
 #endif
+
+    // Clear it
     display=NULL;
+
+    // We are no longer initialized
     initialized=FALSE;
     }
   return TRUE;
@@ -1430,23 +1441,11 @@ static inline FXlong getticktime(){
   return now/10000;
   }
 
-/*
-// Return 64-bit tick count (ms)
-// The advantage of using TSC register is that it
-// isn't changed when the user changes the date or time.
-static inline FXlong getticktime(){
-  LARGE_INTEGER now,hz;
-  QueryPerformanceFrequency(&hz);
-  QueryPerformanceCounter(&now);
-  return (1000*now)/hz;
-  }
-*/
-
 #endif
 
 
 // Add timeout, sorted by time
-FXTimer* FXEventLoop::addTimeout(FXObject* tgt,FXSelector sel,FXuint ms,void* ptr){
+void FXEventLoop::addTimeout(FXObject* tgt,FXSelector sel,FXuint ms,void* ptr){
   FXLockHold h(this);
   register FXTimer *t,**tt;
   for(tt=&timers; (t=*tt)!=NULL; tt=&t->next){
@@ -1477,26 +1476,11 @@ a:t->data=ptr;
   for(tt=&timers; *tt && ((*tt)->due < t->due); tt=&(*tt)->next);
   t->next=*tt;
   *tt=t;
-  return t;
-  }
-
-
-// Remove timeout from the list
-FXTimer* FXEventLoop::removeTimeout(FXTimer *t){
-  FXLockHold h(this);
-  register FXTimer **tt;
-  for(tt=&timers; *tt; tt=&(*tt)->next){
-    if(*tt==t){
-      *tt=t->next; t->next=timerrecs; timerrecs=t;
-      break;
-      }
-    }
-  return NULL;
   }
 
 
 // Remove timeout identified by tgt and sel from the list
-FXTimer* FXEventLoop::removeTimeout(FXObject* tgt,FXSelector sel){
+void FXEventLoop::removeTimeout(FXObject* tgt,FXSelector sel){
   FXLockHold h(this);
   register FXTimer *t,**tt;
   for(tt=&timers; (t=*tt)!=NULL; tt=&t->next){
@@ -1505,7 +1489,6 @@ FXTimer* FXEventLoop::removeTimeout(FXObject* tgt,FXSelector sel){
       break;
       }
     }
-  return NULL;
   }
 
 
@@ -1520,8 +1503,8 @@ FXbool FXEventLoop::hasTimeout(FXObject* tgt,FXSelector sel) const {
 
 
 // Return, in ms, the time remaining until the given timer fires.
-FXuint FXEventLoop::remainingTimeout(FXObject *tgt,FXSelector sel) const {
-  FXLockHold h(const_cast<FXEventLoop *>(this));
+FXuint FXEventLoop::remainingTimeout(FXObject *tgt,FXSelector sel) {
+  FXLockHold h(this);
   register FXuint remaining=4294967295U;
   for(register FXTimer *t=timers; t; t=t->next){
     if(t->target==tgt && t->message==sel){
@@ -1551,36 +1534,26 @@ FXuint FXEventLoop::remainingTimeout(FXObject *tgt,FXSelector sel) const {
   }
 
 
-// Return, in ms, the time remaining until the given timer fires.
-FXuint FXEventLoop::remainingTimeout(FXTimer *t) const {
-  FXLockHold h(const_cast<FXEventLoop *>(this));
-  register FXuint remaining=4294967295U;
-  for(register FXTimer *tt=timers; tt; tt=tt->next){
-    if(tt==t){
-      remaining=0;
+// Handle any outstanding timers
+void FXEventLoop::handleTimeouts(){
+  FXLockHold h(this);
+  register FXTimer* t;
 #ifndef WIN32
-      struct timeval now;
-      gettimeofday(&now,NULL);
-      if(now < t->due){
-        now.tv_sec=t->due.tv_sec-now.tv_sec;
-        now.tv_usec=t->due.tv_usec-now.tv_usec;
-        if(now.tv_usec<0){
-          now.tv_usec+=1000000;
-          now.tv_sec-=1;
-          }
-        remaining=now.tv_sec*1000+now.tv_usec/1000;
-        }
+  struct timeval now;
+  gettimeofday(&now,NULL);
 #else
-      FXlong now=getticktime();
-      if(now < t->due){
-        remaining=(FXuint)(t->due-now);
-        }
+  FXlong now=getticktime();
 #endif
-      break;
-      }
+  while(timers){
+    if(now < timers->due) break;
+    t=timers;
+    timers=t->next;
+    if(t->target && t->target->tryHandle(this,FXSEL(SEL_TIMEOUT,t->message),t->data)) refresh();
+    t->next=timerrecs;
+    timerrecs=t;
     }
-  return remaining;
   }
+
 
 /*******************************************************************************/
 
@@ -1680,7 +1653,7 @@ void FXEventLoop::removeSignal(FXint sig){
 
 
 // Add chore to the END of the list
-FXChore* FXEventLoop::addChore(FXObject* tgt,FXSelector sel,void *ptr){
+void FXEventLoop::addChore(FXObject* tgt,FXSelector sel,void *ptr){
   register FXChore *c,**cc;
   for(cc=&chores; (c=*cc)!=NULL; cc=&c->next){
     if(c->target==tgt && c->message==sel){ *cc=c->next; goto a; }
@@ -1698,25 +1671,11 @@ a:c->data=ptr;
   for(cc=&chores; *cc; cc=&(*cc)->next);
   c->next=NULL;
   *cc=c;
-  return c;
-  }
-
-
-// Remove chore from the list
-FXChore* FXEventLoop::removeChore(FXChore *c){
-  register FXChore **cc;
-  for(cc=&chores; *cc; cc=&(*cc)->next){
-    if(*cc==c){
-      *cc=c->next; c->next=chorerecs; chorerecs=c;
-      break;
-      }
-    }
-  return NULL;
   }
 
 
 // Remove chore identified by tgt and sel from the list
-FXChore* FXEventLoop::removeChore(FXObject* tgt,FXSelector sel){
+void FXEventLoop::removeChore(FXObject* tgt,FXSelector sel){
   register FXChore *c,**cc;
   for(cc=&chores; (c=*cc)!=NULL; cc=&c->next){
     if(c->target==tgt && c->message==sel){
@@ -1724,7 +1683,6 @@ FXChore* FXEventLoop::removeChore(FXObject* tgt,FXSelector sel){
       break;
       }
     }
-  return NULL;
   }
 
 
@@ -1769,7 +1727,7 @@ FXbool FXEventLoop::addInput(FXInputHandle fd,FXuint mode,FXObject *tgt,FXSelect
   if(fd>maxinput) maxinput=fd;
 #else
   register FXint in;
-  if(fd==INVALID_HANDLE_VALUE) return FALSE;
+  if(fd==INVALID_HANDLE_VALUE || fd==NULL) return FALSE;
   for(in=0; in<=maxinput; in++){      // See if existing handle
     if(handles[in]==fd) goto r;       // If existing handle, just replace callbacks
     }
@@ -1826,7 +1784,7 @@ FXbool FXEventLoop::removeInput(FXInputHandle fd,FXuint mode){
     }
 #else
   register FXint in;
-  if(fd==INVALID_HANDLE_VALUE) return FALSE;
+  if(fd==INVALID_HANDLE_VALUE || fd==NULL) return FALSE;
   for(in=0; in<=maxinput; in++){        // See if existing handle
     if(handles[in]==fd) goto r;
     }
@@ -1991,7 +1949,7 @@ FXbool FXEventLoop::doIdleProcessing()
     if(chores){
       register FXChore *c=chores;
       chores=c->next;
-      if(c->target && c->target->handle(this,FXSEL(SEL_CHORE,c->message),c->data)) refresh();
+      if(c->target && c->target->tryHandle(this,FXSEL(SEL_CHORE,c->message),c->data)) refresh();
       c->next=chorerecs;
       chorerecs=c;
       }
@@ -2031,7 +1989,7 @@ void FXEventLoop::doTimers()
     register FXTimer* t=timers;
     if(now < t->due) break;
     timers=t->next;
-    if(t->target && t->target->handle(this,FXSEL(SEL_TIMEOUT,t->message),t->data)) refresh();
+    if(t->target && t->target->tryHandle(this,FXSEL(SEL_TIMEOUT,t->message),t->data)) refresh();
     t->next=timerrecs;
     timerrecs=t;
     }
@@ -2043,7 +2001,7 @@ void FXEventLoop::doAsyncMsgs()
       register FXAsyncMsg* a=asyncmsgs;
       asyncmsgs=a->next;
       h.unlock();
-      if(a->target && a->target->handle(a->source,a->message,a->data)) refresh();
+      if(a->target && a->target->tryHandle(a->source,a->message,a->data)) refresh();
       h.relock();
       a->next=asyncmsgsrecs;
       asyncmsgsrecs=a;
@@ -2075,7 +2033,7 @@ FXbool FXEventLoop::getNextEvent(FXRawEvent& ev,FXbool blocking){
     for(register FXint sig=0; sig<MAXSIGNALS; sig++){
       if(signals[sig].notified){
         signals[sig].notified=FALSE;
-        if(signals[sig].target && signals[sig].target->handle(this,FXSEL(SEL_SIGNAL,signals[sig].message),(void*)(FXival)sig)){
+        if(signals[sig].target && signals[sig].target->tryHandle(this,FXSEL(SEL_SIGNAL,signals[sig].message),(void*)(FXival)sig)){
           refresh();
           return FALSE;
           }
@@ -2242,7 +2200,7 @@ FXbool FXEventLoop::getNextEventI(FXRawEvent& ev,FXbool blocking){
     // Any other file descriptors set?
     if(0<=maxinput){
 
-      // Try I/O channels if any are set
+      // Examine I/O file descriptors
       for(FXInputHandle fff=0; fff<=maxinput; fff++){
 
         // Copy the record as the callbacks may try to change things
@@ -2359,7 +2317,6 @@ FXbool FXEventLoop::peekEventI(){
     }
   return FALSE;
   }
-
 
 /*******************************************************************************/
 
@@ -2533,20 +2490,16 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         if(ev.xbutton.button==Button4 || ev.xbutton.button==Button5){     // Mouse wheel
           event.type=SEL_MOUSEWHEEL;
           event.code=((ev.xbutton.button==Button4)?120:-120)*ev.xbutton.subwindow;
-/*
-          do{
-            if(window->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)){ refresh(); break; }
-            window=window->getParent();
-            }
-          while(window);
-*/
           if(mouseGrabWindow){
             window->translateCoordinatesTo(event.win_x,event.win_y,mouseGrabWindow,event.win_x,event.win_y);
             if(mouseGrabWindow->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)) refresh();
             }
-          // FIXME doesSaveUnder test should go away
-          else if(!invocation || invocation->modality==MODAL_FOR_NONE || (invocation->window && invocation->window->isOwnerOf(window)) || window->getShell()->doesSaveUnder()){
-            if(window->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)) refresh();
+          else{
+            // FIXME doesSaveUnder test should go away
+            while(window && (!invocation || invocation->modality==MODAL_FOR_NONE || (invocation->window && invocation->window->isOwnerOf(window)) || window->getShell()->doesSaveUnder())){
+              if(window->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)){ refresh(); break; }
+              window=window->getParent();
+              }
             }
           }
         else{                                                             // Mouse button
@@ -2873,6 +2826,8 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
             event.type=SEL_DND_MOTION;
             XTranslateCoordinates((Display*)display,XDefaultRootWindow((Display*)display),dropWindow->id(),event.root_x,event.root_y,&event.win_x,&event.win_y,&tmp);
             if(dropWindow->handle(this,FXSEL(SEL_DND_MOTION,0),&event)) refresh();
+            event.last_x=event.win_x;
+            event.last_y=event.win_y;
             }
           se.xclient.type=ClientMessage;
           se.xclient.display=(Display*)display;
@@ -2965,6 +2920,17 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
       case MappingNotify:
         FXTRACE((100,"MappingNotify\n"));
         if(ev.xmapping.request!=MappingPointer) XRefreshKeyboardMapping(&ev.xmapping);
+        return TRUE;
+
+      // Other events
+      default:
+#ifdef HAVE_XRANDR_H
+        if(ev.type==xrreventbase+RRScreenChangeNotify){
+          XRRUpdateConfiguration(&ev);
+          FXTRACE((100,"RRScreenChangeNotify w=%d h=%d\n",DisplayWidth((Display*)display,DefaultScreen((Display*)display)),DisplayHeight((Display*)display,DefaultScreen((Display*)display))));
+          // FIXME This should be a SEL_CONFIGURE for the root window, eventually
+          }
+#endif
         return TRUE;
       }
     }
@@ -3156,7 +3122,7 @@ void FXEventLoop::repaint(){
 #ifndef WIN32
     removeRepaints(0,0,0,0,0);
 #else
-    for(FXWindow *top=root->getFirst(); top; top=top->getNext()){
+    for(FXWindow *top=getRootWindow()->getFirst(); top; top=top->getNext()){
       RedrawWindow((HWND)top->id(),NULL,NULL,RDW_ERASENOW|RDW_UPDATENOW|RDW_ALLCHILDREN);
       }
 #endif
@@ -3363,6 +3329,11 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
   FXASSERT(sizeof(FXulong)==8);
   FXASSERT(sizeof(FXlong)==8);
 #endif
+
+  // Check arguments
+  if(argc<1 || argv==NULL || argv[0]==NULL){
+    fxerror("%s::init: bad arguments.\n",getClassName());
+    }
 
   // Initialize locale
 #if defined(__BCPLUSPLUS__) || defined(__BORLANDC__)
@@ -3879,7 +3850,6 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
       // Translate to string on KeyPress
       uScanCode=HIWORD(lParam)&(KF_EXTENDED|KF_UP|0xff);
       GetKeyboardState(ks);
-      //n=ToAscii(wParam,uScanCode,ks,(LPWORD)buf,0);
       n=ToAsciiEx(wParam,uScanCode,ks,(LPWORD)buf,0,GetKeyboardLayout(0));
 
       if(event.type==SEL_KEYPRESS){
@@ -4115,7 +4085,7 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
         tme.dwFlags=TME_LEAVE;
         tme.hwndTrack=(HWND)hwnd;
         tme.dwHoverTime=HOVER_DEFAULT;
-#if defined(__IBMCPP__) ||  defined(__MINGW32__) || defined(__BORLANDC__) || defined(__SC__)
+#if defined(__IBMCPP__) ||  defined(__MINGW32__) || defined(__BORLANDC__) || defined(__SC__) || defined (__WATCOMC__)
         TrackMouseEvent(&tme);
 #else
         _TrackMouseEvent(&tme);
@@ -4147,7 +4117,7 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
         if(iMsg==WM_LBUTTONDOWN){ event.type=SEL_LEFTBUTTONPRESS; event.code=LEFTBUTTON; }
         if(iMsg==WM_MBUTTONDOWN){ event.type=SEL_MIDDLEBUTTONPRESS; event.code=MIDDLEBUTTON; }
         if(iMsg==WM_RBUTTONDOWN){ event.type=SEL_RIGHTBUTTONPRESS; event.code=RIGHTBUTTON; }
-        if(!event.moved && (event.time-event.click_time<app->clickSpeed) && (event.code==event.click_button)){
+        if(!event.moved && (event.time-event.click_time<app->clickSpeed) && (event.code==(FXint)event.click_button)){
           event.click_count++;
           event.click_time=event.time;
           }
@@ -4196,20 +4166,16 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
         ScreenToClient((HWND)window->id(),&pt);
         event.win_x=pt.x;
         event.win_y=pt.y;
-/*
-        do{
-          if(window->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)){ refresh(); break; }
-          window=window->getParent();
-          }
-        while(window);
-*/
         if(mouseGrabWindow){
           window->translateCoordinatesTo(event.win_x,event.win_y,mouseGrabWindow,event.win_x,event.win_y);
           if(mouseGrabWindow->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)) refresh();
           }
-        // FIXME doesSaveUnder test should go away
-        else if(!invocation || invocation->modality==MODAL_FOR_NONE || (invocation->window && invocation->window->isOwnerOf(window)) || window->getShell()->doesSaveUnder()){
-          if(window->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)) refresh();
+        else{
+          // FIXME doesSaveUnder test should go away
+          while(window && (!invocation || invocation->modality==MODAL_FOR_NONE || (invocation->window && invocation->window->isOwnerOf(window)) || window->getShell()->doesSaveUnder())){
+            if(window->handle(this,FXSEL(SEL_MOUSEWHEEL,0),&event)){ refresh(); break; }
+            window=window->getParent();
+            }
           }
         }
       return 0;
@@ -4404,7 +4370,7 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
 
     case WM_INITMENU:           // Patch from Robin Wilson <robin.wilson@abaqus.com>
     case WM_SYSCOMMAND:         // This pops down the menupane when clicking in non-client area
-      for(win=root->getFirst(); win; win=win->getNext()){       // FIXME don't we already know popupWindow?
+      for(win=getRootWindow()->getFirst(); win; win=win->getNext()){       // FIXME don't we already know popupWindow?
         if(win->shown() && win->isMemberOf(FXMETACLASS(FXMenuPane)) && window->containsChild(win->getOwner())) window->killFocus();
         }
       return DefWindowProc((HWND)hwnd,iMsg,wParam,lParam);
@@ -4558,6 +4524,8 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
         event.win_y=pt.y;
         event.type=SEL_DND_MOTION;
         if(dropWindow->handle(this,FXSEL(SEL_DND_MOTION,0),&event)) refresh();
+        event.last_x=event.win_x;
+        event.last_y=event.win_y;
         }
       FXTRACE((100,"accepting %d\n",app->ansAction));
       PostMessage((HWND)app->xdndSource,WM_DND_STATUS_REJECT+app->ansAction,MAKELONG(app->xdndRect.x,app->xdndRect.y),MAKELONG(app->xdndRect.w,app->xdndRect.h));
@@ -4646,6 +4614,20 @@ FXString FXApp::getDragTypeName(FXDragType type) const {
 
 /*******************************************************************************/
 
+// Return key state
+FXbool FXApp::getKeyState(FXuint keysym) const {
+#ifndef WIN32
+  KeyCode keycode=XKeysymToKeycode((Display*)display,keysym);
+  char keys[32];
+  if(keycode==NoSymbol) return FALSE;
+  XQueryKeymap((Display*)display,keys);
+  return (keys[keycode>>3]>>(keycode&7))&1;
+#else
+  return GetKeyState(keysym);
+#endif
+  }
+
+
 // Beep
 void FXApp::beep(){
   if(initialized){
@@ -4719,6 +4701,15 @@ void FXApp::setDefaultVisual(FXVisual* vis){
 void FXApp::setNormalFont(FXFont* font){
   if(!font){ fxerror("%s::setNormalFont: NULL font.\n",getClassName()); }
   normalFont=font;
+  }
+
+
+// Set root Window
+void FXEventLoop::setRootWindow(FXRootWindow* rt){
+  if(!rt){ fxerror("%s::setRootWindow: NULL root window.\n",getClassName()); }
+  if(root->getFirst()){ fxerror("%s::setRootWindow: already have windows.\n",getClassName()); }
+  if(rt->getVisual()!=root->getVisual()){ fxerror("%s::setRootWindow: has different visual.\n",getClassName()); }
+  root=rt;
   }
 
 

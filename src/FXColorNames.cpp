@@ -19,13 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorNames.cpp,v 1.23 2004/02/08 17:29:06 fox Exp $                    *
+* $Id: FXColorNames.cpp,v 1.24 2004/09/17 07:46:21 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "fxpriv.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
 

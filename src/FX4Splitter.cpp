@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX4Splitter.cpp,v 1.36 2004/04/05 14:49:33 fox Exp $                     *
+* $Id: FX4Splitter.cpp,v 1.41 2004/10/07 19:09:57 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FX4Splitter.h"
@@ -285,7 +286,7 @@ long FX4Splitter::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   FXEvent* ev=(FXEvent*)ptr;
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     mode=getMode(ev->win_x,ev->win_y);
     if(mode){
       offx=ev->win_x-splitx;
@@ -311,17 +312,17 @@ long FX4Splitter::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~FLAG_CHANGED;
     flags&=~FLAG_PRESSED;
     mode=NOWHERE;
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(flgs&FLAG_PRESSED){
       if(!(options&FOURSPLITTER_TRACKING)){
         drawSplit(splitx,splity);
         adjustLayout();
         if(flgs&FLAG_CHANGED){
-          if(target) target->handle(this,FXSEL(SEL_CHANGED,message),NULL);
+          if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
           }
         }
       if(flgs&FLAG_CHANGED){
-        if(target) target->handle(this,FXSEL(SEL_COMMAND,message),NULL);
+        if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),NULL);
         }
       }
     return 1;
@@ -355,7 +356,7 @@ long FX4Splitter::onMotion(FXObject*,FXSelector,void* ptr){
         }
       else{
         adjustLayout();
-        if(target) target->handle(this,FXSEL(SEL_CHANGED,message),NULL);
+        if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
         }
       flags|=FLAG_CHANGED;
       }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSeparator.h,v 1.15 2004/02/08 17:17:34 fox Exp $                       *
+* $Id: FXSeparator.h,v 1.16 2004/09/26 18:02:28 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXSEPARATOR_H
 #define FXSEPARATOR_H
@@ -40,7 +40,13 @@ enum {
   };
 
 
-/// Separator widget
+/**
+* A Separator widget is used to draw a horizontal or vertical divider between
+* groups of controls.  It is purely decorative.  The separator may be drawn
+* in various styles as determined by the SEPARATOR_NONE, SEPARATOR_GROOVE, 
+* SEPARATOR_RIDGE, and SEPARATOR_LINE options.  Since its derived from Frame,
+* it can also have the frame's border styles.
+*/
 class FXAPI FXSeparator : public FXFrame {
   FXDECLARE(FXSeparator)
 protected:

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTGAImage.h,v 1.12 2004/02/08 17:17:34 fox Exp $                        *
+* $Id: FXTGAImage.h,v 1.13 2004/11/10 16:22:05 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXTGAIMAGE_H
 #define FXTGAIMAGE_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXTGAImage(const FXTGAImage&);
   FXTGAImage &operator=(const FXTGAImage&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct image from memory stream formatted in TARGA file

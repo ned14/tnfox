@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpsio.cpp,v 1.5 2004/04/08 16:24:48 fox Exp $                           *
+* $Id: fxpsio.cpp,v 1.8 2004/09/17 07:46:22 fox Exp $                           *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 
 
@@ -50,7 +51,7 @@ static void output(FXStream& store,const char* fmt,...){
   FXchar buffer[1024]; FXint len;
   va_list args;
   va_start(args,fmt);
-#if __GLIBC__>=2 || defined(WIN32)
+#if defined(WIN32) || defined(HAVE_VSNPRINTF)
   len=vsnprintf(buffer,sizeof(buffer),fmt,args);
 #else
   len=vsprintf(buffer,fmt,args);

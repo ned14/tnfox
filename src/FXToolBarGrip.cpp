@@ -19,18 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarGrip.cpp,v 1.10 2004/02/08 17:29:07 fox Exp $                    *
+* $Id: FXToolBarGrip.cpp,v 1.13 2004/10/19 00:48:59 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXToolBar.h"
@@ -67,6 +68,9 @@ FXDEFMAP(FXToolBarGrip) FXToolBarGripMap[]={
   FXMAPFUNC(SEL_MOTION,0,FXToolBarGrip::onMotion),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,0,FXToolBarGrip::onLeftBtnPress),
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE,0,FXToolBarGrip::onLeftBtnRelease),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXToolBarGrip::onQueryTip),
+  FXMAPFUNC(SEL_COMMAND,FXToolBarGrip::ID_SETTIPSTRING,FXToolBarGrip::onCmdSetTip),
+  FXMAPFUNC(SEL_COMMAND,FXToolBarGrip::ID_GETTIPSTRING,FXToolBarGrip::onCmdGetTip),
   };
 
 
@@ -253,6 +257,31 @@ long FXToolBarGrip::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~(FLAG_TRYDRAG|FLAG_DODRAG);
     flags|=FLAG_UPDATE;
     }
+  return 1;
+  }
+
+
+// We were asked about tip text
+long FXToolBarGrip::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+    return 1;
+    }
+  return 0;
+  }
+
+
+// Set tip using a message
+long FXToolBarGrip::onCmdSetTip(FXObject*,FXSelector,void* ptr){
+  setTipText(*((FXString*)ptr));
+  return 1;
+  }
+
+
+// Get tip using a message
+long FXToolBarGrip::onCmdGetTip(FXObject*,FXSelector,void* ptr){
+  *((FXString*)ptr)=getTipText();
   return 1;
   }
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: vsscanf.cpp,v 1.12 2004/03/11 03:17:18 fox Exp $                         *
+* $Id: vsscanf.cpp,v 1.15 2004/07/06 15:36:59 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -29,6 +29,14 @@
 /*
   Notes:
   - Needs checking for conformance with standard scanf.
+  - Some POSIX finesse:
+    u,d is equivalent to strtol (strtoul) with base = 10.
+    x   is equivalent to strtoul with base = 16
+    o   is equivalent to strtoul with base = 8
+    i   is equivalent to strtol with base = 0 (which means either
+        octal, hex, or decimal as determined by leading 2 characters).
+  - Rewrite in terms of strtol, strtoul strtod; these are available since we're
+    already using them and have heard no complaints.
 */
 
 #ifndef HAVE_VSSCANF
@@ -157,11 +165,11 @@ in_scan:ch=*format++;
           case 'x':                                     // Hexadecimal
             _div+=6;
           case 'd':                                     // Decimal
+          case 'u':
             _div+=2;
           case 'o':                                     // Octal
             _div+=8;
-          case 'u':                                     // These may be decimal, octal, or hex
-          case 'i':
+          case 'i':                                     // 'i' may be decimal, octal, or hex
             v=0;
             consumedsofar=consumed;
             while(isspace(tpch)) tpch=A_GETC(fn);
@@ -170,7 +178,9 @@ in_scan:ch=*format++;
               tpch=A_GETC(fn);
               neg=1;
               }
-            if(tpch=='+') tpch=A_GETC(fn);
+            else if(tpch=='+'){
+              tpch=A_GETC(fn);
+              }
             if((_div==16) && (tpch=='0')) goto scan_hex;
             if(!_div){
               _div=10;
@@ -197,7 +207,7 @@ scan_hex:       tpch=A_GETC(fn);
                 v=(neg)?LONG_MIN:LONG_MAX;
                 }
               else{
-                if(neg) v*=-1;
+                if(neg) v*=-1L;
                 }
               }
             if(!flag_discard){
@@ -227,7 +237,9 @@ scan_hex:       tpch=A_GETC(fn);
               tpch=A_GETC(fn);
               neg=1;
               }
-            if(tpch=='+') tpch=A_GETC(fn);
+            else if(tpch=='+'){
+              tpch=A_GETC(fn);
+              }
             while(isdigit(tpch)){
               d=d*10.0+(tpch-'0');
               tpch=A_GETC(fn);
@@ -268,7 +280,8 @@ scan_hex:       tpch=A_GETC(fn);
                 --exp;
                 }
               }
-exp_out:    if(!flag_discard){
+exp_out:    if(neg) d=-d;
+            if(!flag_discard){
               if(flag_long){
                 pd=(double *)va_arg(arg_ptr,double*);
                 *pd=d;

@@ -19,17 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatf.cpp,v 1.11 2004/02/27 23:30:45 fox Exp $                         *
+* $Id: FXQuatf.cpp,v 1.21 2004/11/17 13:09:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
 #include "FXVec4f.h"
 #include "FXQuatf.h"
+#include "FXMat3f.h"
 
 
 
@@ -47,6 +49,18 @@ FXQuatf::FXQuatf(const FXVec3f& axis,FXfloat phi){
 // Construct from roll, pitch, yaw
 FXQuatf::FXQuatf(FXfloat roll,FXfloat pitch,FXfloat yaw){
   setRollPitchYaw(roll,pitch,yaw);
+  }
+
+
+// Construct quaternion from axes
+FXQuatf::FXQuatf(const FXVec3f& ex,const FXVec3f& ey,const FXVec3f& ez){
+  setAxes(ex,ey,ez);
+  }
+
+
+// Construct quaternion from 3x3 matrix
+FXQuatf::FXQuatf(const FXMat3f& mat){
+  setAxes(mat[0],mat[1],mat[2]);
   }
 
 
@@ -200,32 +214,59 @@ FXQuatf operator*(const FXQuatf& p,const FXQuatf& q){
   }
 
 
-
 // Rotation of a vector by a quaternion; this is defined as q.v.q*
 // where q* is the conjugate of q.
 FXVec3f operator*(const FXQuatf& quat,const FXVec3f& vec){
-  register FXfloat tx=2.0f*quat.x;
-  register FXfloat ty=2.0f*quat.y;
-  register FXfloat tz=2.0f*quat.z;
-  register FXfloat twx=tx*quat.w;
-  register FXfloat twy=ty*quat.w;
-  register FXfloat twz=tz*quat.w;
-  register FXfloat txx=tx*quat.x;
-  register FXfloat txy=ty*quat.x;
-  register FXfloat txz=tz*quat.x;
-  register FXfloat tyy=ty*quat.y;
-  register FXfloat tyz=tz*quat.y;
-  register FXfloat tzz=tz*quat.z;
-
-  return FXVec3f(vec.x*(1.0f-tyy-tzz)+vec.y*(txy-twz)+vec.z*(txz-twy),
-                 vec.x*(txy+twz)+vec.y*(1.0f-txx-tzz)+vec.z*(tyz-twx),
-                 vec.x*(txz-twy)+vec.y*(tyz+twx)+vec.z*(1.0f-txx-tyy));
+  return vec*toMatrix(quat);
   }
 
 
-// Construct quaternion from arc a->b on unit sphere
+/*
+
+According to someone on gdalgorithms list, this is faster:
+
+V' = V - 2 * cross( cross( q.xyz, V ) - q.w * V ), q.xyz )
+
+*/
+
+
+// Construct quaternion from arc a->b on unit sphere.
+//
+// Explanation: a quaternion which rotates by angle theta about unit axis a
+// is specified as:
+//
+//   q = (a * sin(theta/2), cos(theta/2)).
+//
+// Assuming is f and t are unit length, we have:
+//
+//  sin(theta) = | f x t |
+//
+// and
+//
+//  cos(theta) = f . t
+//
+// Using sin(2 * x) = 2 * sin(x) * cos(x), we get:
+//
+//  a * sin(theta/2) = (f x t) * sin(theta/2) / (2 * sin(theta/2) * cos(theta/2))
+//
+//                   = (f x t) / (2 * cos(theta/2))
+//
+// Using cos^2(x)=(1 + cos(2 * x)) / 2, we get:
+//
+//  4 * cos^2(theta/2) = 2 + 2 * cos(theta)
+//
+//                     = 2 + 2 * (f . t)
+// Ergo:
+//
+//  2 * cos(theta/2)   = sqrt(2 + 2 * (f . t))
+//
 FXQuatf arc(const FXVec3f& f,const FXVec3f& t){
-  return FXQuatf(f.y*t.z-f.z*t.y, f.z*t.x-f.x*t.z, f.x*t.y-f.y*t.x, f.x*t.x+f.y*t.y+f.z*t.z);
+  register FXfloat dot,div;
+  dot=f.x*t.x+f.y*t.y+f.z*t.z;
+  FXASSERT(-1.0f<=dot && dot<=1.0f);
+  div=sqrtf((dot+1.0f)*2.0f);
+  FXASSERT(0.0f<div);
+  return FXQuatf((f.y*t.z-f.z*t.y)/div,(f.z*t.x-f.x*t.z)/div,(f.x*t.y-f.y*t.x)/div,div*0.5f);
   }
 
 
@@ -247,6 +288,104 @@ FXQuatf lerp(const FXQuatf& u,const FXQuatf& v,FXfloat f){
     }
   if(flip) alpha = -alpha;
   return FXQuatf(beta*u.x+alpha*v.x, beta*u.y+alpha*v.y, beta*u.z+alpha*v.z, beta*u.w+alpha*v.w);
+  }
+
+
+// Set quaternion from axes
+void FXQuatf::setAxes(const FXVec3f& ex,const FXVec3f& ey,const FXVec3f& ez){
+  register FXfloat trace=ex.x+ey.y+ez.z;
+  register FXfloat scale;
+  if(trace>0.0f){
+    scale=sqrtf(1.0f+trace);
+    w=0.5f*scale;
+    scale=0.5f/scale;
+    x=(ey.z-ez.y)*scale;
+    y=(ez.x-ex.z)*scale;
+    z=(ex.y-ey.x)*scale;
+    }
+  else if(ex.x>ey.y && ex.x>ez.z){
+    scale=2.0f*sqrtf(1.0f+ex.x-ey.y-ez.z);
+    x=0.25f*scale;
+    y=(ex.y+ey.x)/scale;
+    z=(ex.z+ez.x)/scale;
+    w=(ey.z-ez.y)/scale;
+    }
+  else if(ey.y>ez.z){
+    scale=2.0f*sqrtf(1.0f+ey.y-ex.x-ez.z);
+    y=0.25f*scale;
+    x=(ex.y+ey.x)/scale;
+    z=(ey.z+ez.y)/scale;
+    w=(ex.z-ez.x)/scale;
+    }
+  else{
+    scale=2.0f*sqrtf(1.0f+ez.z-ex.x-ey.y);
+    z=0.25f*scale;
+    x=(ex.z+ez.x)/scale;
+    y=(ey.z+ez.y)/scale;
+    w=(ex.y-ey.x)/scale;
+    }
+  }
+
+
+// Get quaternion axes
+void FXQuatf::getAxes(FXVec3f& ex,FXVec3f& ey,FXVec3f& ez) const {
+  register FXfloat tx=2.0f*x;
+  register FXfloat ty=2.0f*y;
+  register FXfloat tz=2.0f*z;
+  register FXfloat twx=tx*w;
+  register FXfloat twy=ty*w;
+  register FXfloat twz=tz*w;
+  register FXfloat txx=tx*x;
+  register FXfloat txy=ty*x;
+  register FXfloat txz=tz*x;
+  register FXfloat tyy=ty*y;
+  register FXfloat tyz=tz*y;
+  register FXfloat tzz=tz*z;
+  ex.x=1.0f-tyy-tzz;
+  ex.y=txy+twz;
+  ex.z=txz-twy;
+  ey.x=txy-twz;
+  ey.y=1.0f-txx-tzz;
+  ey.z=tyz+twx;
+  ez.x=txz+twy;
+  ez.y=tyz-twx;
+  ez.z=1.0f-txx-tyy;
+  }
+
+
+// Obtain local x axis
+FXVec3f FXQuatf::getXAxis() const {
+  register FXfloat ty=2.0f*y;
+  register FXfloat tz=2.0f*z;
+  return FXVec3f(1.0f-ty*y-tz*z,ty*x+tz*w,tz*x-ty*w);
+  }
+
+
+// Obtain local y axis
+FXVec3f FXQuatf::getYAxis() const {
+  register FXfloat tx=2.0f*x;
+  register FXfloat tz=2.0f*z;
+  return FXVec3f(tx*y-tz*w,1.0f-tx*x-tz*z,tz*y+tx*w);
+  }
+
+
+// Obtain local z axis
+FXVec3f FXQuatf::getZAxis() const {
+  register FXfloat tx=2.0f*x;
+  register FXfloat ty=2.0f*y;
+  return FXVec3f(tx*z+ty*w,ty*z-tx*w,1.0f-tx*x-ty*y);
+  }
+
+
+// Convert quaternion to 3x3 matrix
+FXMat3f toMatrix(const FXQuatf& quat){
+  return FXMat3f(quat);
+  }
+
+
+// Convert 3x3 matrix to quaternion
+FXQuatf fromMatrix(const FXMat3f& mat){
+  return FXQuatf(mat[0],mat[1],mat[2]);
   }
 
 }

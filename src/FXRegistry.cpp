@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegistry.cpp,v 1.40 2004/04/16 15:00:13 fox Exp $                      *
+* $Id: FXRegistry.cpp,v 1.42 2004/11/08 13:26:59 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXString.h"
@@ -163,7 +164,7 @@ FXbool FXRegistry::read(){
       }
 
     // Get path to per-user settings directory
-    dirname=FXFile::getHomeDirectory()+PATHSEPSTRING ".foxrc";
+    dirname=FXFile::getEnvironment("USERPROFILE")+PATHSEPSTRING "foxrc";
 
     // Then read per-user settings; overriding system-wide ones
     if(readFromDir(dirname,TRUE)) ok=TRUE;
@@ -376,7 +377,7 @@ FXbool FXRegistry::write(){
       FXTRACE((100,"Writing to file based settings database.\n"));
 
       // Changes written only in the per-user registry
-      pathname=FXFile::getHomeDirectory()+PATHSEPSTRING ".foxrc";
+      pathname=FXFile::getEnvironment("USERPROFILE")+PATHSEPSTRING "foxrc";
 
       // If this directory does not exist, make it
       if(!FXFile::exists(pathname)){
@@ -554,7 +555,7 @@ FXbool FXRegistry::writeToRegistryGroup(void* org,const char* groupname){
   FXStringDict *group;
   if(RegCreateKeyEx((HKEY)org,groupname,0,REG_NONE,REG_OPTION_NON_VOLATILE,KEY_WRITE|KEY_READ,NULL,&groupkey,&disp)==ERROR_SUCCESS){
 
-    // First, purge all existing sections 
+    // First, purge all existing sections
     while(1){
       sectionindex=0;
       sectionsize=MAXNAME;

@@ -19,13 +19,15 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirList.cpp,v 1.130 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXDirList.cpp,v 1.135 2004/10/29 17:49:19 fox Exp $                      *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -35,7 +37,6 @@
 #include "FXURL.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXFont.h"
 #include "FXIcon.h"
@@ -725,7 +726,7 @@ void FXDirList::listRootItems(){
   FXFileAssoc *fileassoc;
 
   // First time, make root node
-  if(!item) item=list=(FXDirItem*)addItemLast(NULL,PATHSEPSTRING,harddiskicon,harddiskicon,NULL,TRUE);
+  if(!item) item=list=(FXDirItem*)appendItem(NULL,PATHSEPSTRING,harddiskicon,harddiskicon,NULL,TRUE);
 
   // Root is a directory, has items under it, and is searchable
   item->state|=FXDirItem::FOLDER|FXDirItem::HASITEMS;
@@ -832,7 +833,7 @@ void FXDirList::listChildItems(FXDirItem *par){
         }
 
       // Not found; prepend before list
-      item=(FXDirItem*)addItemLast(par,name,open_folder,closed_folder,NULL,TRUE);
+      item=(FXDirItem*)appendItem(par,name,open_folder,closed_folder,NULL,TRUE);
 
       // Next gets hung after this one
 fnd:  *pn=item;
@@ -968,7 +969,7 @@ void FXDirList::listRootItems(){
       }
 
     // Not found; prepend before list
-    item=(FXDirItem*)addItemLast(NULL,name,open_folder,closed_folder,NULL,TRUE);
+    item=(FXDirItem*)appendItem(NULL,name,open_folder,closed_folder,NULL,TRUE);
 
     // Next gets hung after this one
 fnd:*pn=item;
@@ -1112,7 +1113,7 @@ void FXDirList::listChildItems(FXDirItem *par){
         }
 
       // Not found; prepend before list
-      item=(FXDirItem*)addItemLast(par,name,open_folder,closed_folder,NULL,TRUE);
+      item=(FXDirItem*)appendItem(par,name,open_folder,closed_folder,NULL,TRUE);
 
       // Next gets hung after this one
 fnd:  *pn=item;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorWell.h,v 1.30 2004/02/08 17:17:33 fox Exp $                       *
+* $Id: FXColorWell.h,v 1.31 2004/10/06 07:36:33 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXCOLORWELL_H
 #define FXCOLORWELL_H
@@ -89,11 +89,8 @@ public:
   long onSelectionLost(FXObject*,FXSelector,void*);
   long onSelectionGained(FXObject*,FXSelector,void*);
   long onSelectionRequest(FXObject*,FXSelector,void*);
-  long onChanged(FXObject*,FXSelector,void*);
-  long onCommand(FXObject*,FXSelector,void*);
   long onClicked(FXObject*,FXSelector,void*);
   long onDoubleClicked(FXObject*,FXSelector,void*);
-  long onTripleClicked(FXObject*,FXSelector,void*);
   long onCmdSetValue(FXObject*,FXSelector,void*);
   long onCmdSetIntValue(FXObject*,FXSelector,void*);
   long onCmdGetIntValue(FXObject*,FXSelector,void*);
@@ -137,7 +134,7 @@ public:
   virtual void killFocus();
 
   /// Set color
-  void setRGBA(FXColor clr);
+  void setRGBA(FXColor clr,FXbool notify=FALSE);
 
   /// Get color
   FXColor getRGBA() const { return rgba; }

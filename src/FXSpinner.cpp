@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSpinner.cpp,v 1.50 2004/02/19 15:37:45 fox Exp $                       *
+* $Id: FXSpinner.cpp,v 1.55 2004/10/07 21:49:14 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXLabel.h"
 #include "FXTextField.h"
@@ -68,7 +69,6 @@ FXDEFMAP(FXSpinner) FXSpinnerMap[]={
   FXMAPFUNC(SEL_KEYPRESS,0,FXSpinner::onKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,0,FXSpinner::onKeyRelease),
   FXMAPFUNC(SEL_FOCUS_SELF,0,FXSpinner::onFocusSelf),
-  FXMAPFUNC(SEL_UPDATE,FXSpinner::ID_ENTRY,FXSpinner::onUpdEntry),
   FXMAPFUNC(SEL_COMMAND,FXSpinner::ID_ENTRY,FXSpinner::onCmdEntry),
   FXMAPFUNC(SEL_CHANGED,FXSpinner::ID_ENTRY,FXSpinner::onChgEntry),
   FXMAPFUNC(SEL_MOUSEWHEEL,FXSpinner::ID_ENTRY,FXSpinner::onWheelEntry),
@@ -90,7 +90,7 @@ FXIMPLEMENT(FXSpinner,FXPacker,FXSpinnerMap,ARRAYNUMBER(FXSpinnerMap))
 
 // Construct spinner out of two buttons and a text field
 FXSpinner::FXSpinner(){
-  flags=(flags|FLAG_ENABLED|FLAG_SHOWN)&~FLAG_UPDATE;
+  flags|=FLAG_ENABLED;
   textField=(FXTextField*)-1L;
   upButton=(FXArrowButton*)-1L;
   downButton=(FXArrowButton*)-1L;
@@ -104,7 +104,7 @@ FXSpinner::FXSpinner(){
 // Construct spinner out of two buttons and a text field
 FXSpinner::FXSpinner(FXComposite *p,FXint cols,FXObject *tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb):
   FXPacker(p,opts,x,y,w,h,0,0,0,0,0,0){
-  flags=(flags|FLAG_ENABLED|FLAG_SHOWN)&~FLAG_UPDATE;
+  flags|=FLAG_ENABLED;
   target=tgt;
   message=sel;
   textField=new FXTextField(this,cols,this,ID_ENTRY,TEXTFIELD_INTEGER|JUSTIFY_RIGHT,0,0,0,0,pl,pr,pt,pb);
@@ -194,7 +194,7 @@ long FXSpinner::onUpdIncrement(FXObject* sender,FXSelector,void*){
 long FXSpinner::onCmdIncrement(FXObject*,FXSelector,void*){
   if(isEnabled() && isEditable()){
     increment();
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
     return 1;
     }
   return 0;
@@ -215,7 +215,7 @@ long FXSpinner::onUpdDecrement(FXObject* sender,FXSelector,void*){
 long FXSpinner::onCmdDecrement(FXObject*,FXSelector,void*){
   if(isEnabled() && isEditable()){
     decrement();
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
     return 1;
     }
   return 0;
@@ -225,20 +225,14 @@ long FXSpinner::onCmdDecrement(FXObject*,FXSelector,void*){
 // Rolling mouse wheel in text field works as if hitting up or down buttons
 long FXSpinner::onWheelEntry(FXObject*,FXSelector,void* ptr){
   if(isEnabled() && isEditable()){
-    if(((FXEvent*)ptr)->code>0) 
-      increment(); 
-    else 
+    if(((FXEvent*)ptr)->code>0)
+      increment();
+    else
       decrement();
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
     return 1;
     }
   return 0;
-  }
-
-
-// Update from text field
-long FXSpinner::onUpdEntry(FXObject*,FXSelector,void*){
-  return target && target->handle(this,FXSEL(SEL_UPDATE,message),NULL);
   }
 
 
@@ -249,7 +243,7 @@ long FXSpinner::onChgEntry(FXObject*,FXSelector,void*){
   if(value>range[1]) value=range[1];
   if(value!=pos){
     pos=value;
-    if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
+    if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
     }
   return 1;
   }
@@ -258,7 +252,7 @@ long FXSpinner::onChgEntry(FXObject*,FXSelector,void*){
 // Text field command
 long FXSpinner::onCmdEntry(FXObject*,FXSelector,void*){
   textField->setText(FXStringVal(pos));       // Put back adjusted value
-  if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+  if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
   return 1;
   }
 
@@ -267,13 +261,13 @@ long FXSpinner::onCmdEntry(FXObject*,FXSelector,void*){
 long FXSpinner::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     switch(event->code){
       case KEY_Up:
       case KEY_KP_Up:
         if(isEditable()){
           increment();
-          if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+          if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
           }
         else{
           getApp()->beep();
@@ -283,7 +277,7 @@ long FXSpinner::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
       case KEY_KP_Down:
         if(isEditable()){
           decrement();
-          if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+          if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
           }
         else{
           getApp()->beep();
@@ -301,7 +295,7 @@ long FXSpinner::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
 long FXSpinner::onKeyRelease(FXObject* sender,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled()){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     switch(event->code){
       case KEY_Up:
       case KEY_KP_Up:

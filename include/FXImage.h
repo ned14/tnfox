@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImage.h,v 1.56 2004/04/28 16:29:07 fox Exp $                           *
+* $Id: FXImage.h,v 1.60 2004/11/18 15:58:56 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXIMAGE_H
 #define FXIMAGE_H
@@ -109,14 +109,30 @@ public:
   */
   FXImage(FXApp* a,const FXColor *pix=NULL,FXuint opts=0,FXint w=1,FXint h=1);
 
-  /// To get to the pixel data
-  FXColor* getData() const { return data; }
+  /// Change options
+  void setOptions(FXuint opts);
 
   /// To get to the option flags
   FXuint getOptions() const { return options; }
 
-  /// Change options
-  void setOptions(FXuint opts);
+  /**
+  * Populate the image with new pixel data of the same size; it will assume 
+  * ownership of the pixel data if image IMAGE_OWNED option is passed.  
+  * The server-side representation of the image, if it exists, is not updated.
+  * This can be done by calling render().
+  */
+  virtual void setData(FXColor *pix,FXuint opts=0);
+
+  /**
+  * Populate the image with new pixel data of a new size; it will assume ownership 
+  * of the pixel data if image IMAGE_OWNED option is passed.  The size of the server-
+  * side representation of the image, if it exists, is adjusted but the contents are 
+  * not updated yet. This can be done by calling render().
+  */
+  virtual void setData(FXColor *pix,FXuint opts,FXint w,FXint h);
+
+  /// Return pointer to the pixel data of the image
+  FXColor* getData() const { return data; }
 
   /// Get pixel at x,y
   FXColor getPixel(FXint x,FXint y) const { return data[y*width+x]; }
@@ -126,13 +142,14 @@ public:
 
   /// Scan the image and return FALSE if fully opaque
   FXbool hasAlpha() const;
-  
+
   /**
   * Create the server side pixmap, then call render() to fill it with the
   * pixel data from the client-side buffer.  After the server-side image has
   * been created, the client-side pixel buffer will be deleted unless
   * IMAGE_KEEP has been specified.  If the pixel buffer is not owned, i.e.
-  * the flag IMAGE_OWNED is not set, the pixel buffer will not be deleted.
+  * the flag IMAGE_OWNED is not set, the pixel buffer will not be deleted,
+  * however the pixel buffer will be set to NULL.
   */
   virtual void create();
 
@@ -194,9 +211,11 @@ public:
 
   /**
   * Crop image to given rectangle; this calls resize() to adjust the client
-  * and server side representations.
+  * and server side representations.  The new image may be smaller or larger
+  * than the old one; blank areas are filled with color. There must be at
+  * least one pixel of overlap between the old and the new image.
   */
-  virtual void crop(FXint x,FXint y,FXint w,FXint h);
+  virtual void crop(FXint x,FXint y,FXint w,FXint h,FXColor color=0);
 
   /// Fill image with uniform color
   virtual void fill(FXColor color);

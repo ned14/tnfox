@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXShutter.h,v 1.22 2004/02/08 17:17:34 fox Exp $                         *
+* $Id: FXShutter.h,v 1.23 2004/09/26 18:02:28 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXSHUTTER_H
 #define FXSHUTTER_H
@@ -37,7 +37,12 @@ class FXScrollWindow;
 class FXShutterItem;
 
 
-/// Shutter Control
+/**
+* A Shutter Item is a panel which is embedded inside a Shutter Widget.
+* It can contain other user interface widgets which can be added under
+* the content widget.  The content widget is itself embedded in a scroll
+* window to allow unlimited room for all the contents.
+*/
 class FXAPI FXShutterItem : public FXVerticalFrame {
   FXDECLARE(FXShutterItem)
   friend class FXShutter;
@@ -86,7 +91,11 @@ public:
   };
 
 
-/// Shutter Control
+/**
+* The Shutter widget provides a set of foldable sub panels.  Each subpanel 
+* consists of a Shutter Item which contains a button and some contents.
+* A sub panel can be unfolded by pressing on that panel's button.
+*/
 class FXAPI FXShutter : public FXVerticalFrame {
   FXDECLARE(FXShutter)
   friend class FXShutterItem;

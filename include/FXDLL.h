@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDLL.h,v 1.5 2004/02/08 17:17:33 fox Exp $                              *
+* $Id: FXDLL.h,v 1.6 2004/08/31 15:21:39 fox Exp $                              *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -48,6 +48,12 @@ extern FXAPI void fxdllClose(void* dllhandle);
 * dllhandle, or NULL if the operation failed.
 */
 extern FXAPI void* fxdllSymbol(void* dllhandle,const FXchar* dllsymbol);
+
+
+/**
+* Return the string error message when loading dll's.
+*/
+extern FXAPI FXString fxdllError();
 
 
 }

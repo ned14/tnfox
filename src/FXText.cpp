@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXText.cpp,v 1.285 2004/05/05 16:03:37 fox Exp $                         *
+* $Id: FXText.cpp,v 1.298 2004/11/03 18:39:34 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXRex.h"
@@ -34,7 +36,6 @@
 #include "FXObject.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -44,6 +45,7 @@
 #include "FXInputDialog.h"
 #include "FXReplaceDialog.h"
 #include "FXSearchDialog.h"
+#include "FXFile.h"
 #include "icons.h"
 
 
@@ -180,8 +182,8 @@ FXDEFMAP(FXText) FXTextMap[]={
   FXMAPFUNC(SEL_CLIPBOARD_REQUEST,0,FXText::onClipboardRequest),
   FXMAPFUNC(SEL_KEYPRESS,0,FXText::onKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,0,FXText::onKeyRelease),
-  FXMAPFUNC(SEL_UPDATE,FXText::ID_QUERY_HELP,FXText::onQueryHelp),
-  FXMAPFUNC(SEL_UPDATE,FXText::ID_QUERY_TIP,FXText::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXText::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXText::onQueryHelp),
   FXMAPFUNC(SEL_UPDATE,FXText::ID_TOGGLE_EDITABLE,FXText::onUpdToggleEditable),
   FXMAPFUNC(SEL_UPDATE,FXText::ID_TOGGLE_OVERSTRIKE,FXText::onUpdToggleOverstrike),
   FXMAPFUNC(SEL_UPDATE,FXText::ID_CURSOR_ROW,FXText::onUpdCursorRow),
@@ -327,7 +329,7 @@ FXText::FXText(){
 
 
 // Text widget
-FXText::FXText(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
+FXText::FXText(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb):
   FXScrollArea(p,opts,x,y,w,h){
   flags|=FLAG_ENABLED|FLAG_DROPTARGET;
   target=tgt;
@@ -355,10 +357,10 @@ FXText::FXText(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,F
   cursorrow=0;
   cursorcol=0;
   prefcol=-1;
-  margintop=2;
-  marginbottom=2;
-  marginleft=3;
-  marginright=3;
+  margintop=pt;
+  marginbottom=pb;
+  marginleft=pl;
+  marginright=pr;
   wrapwidth=80;
   wrapcolumns=80;
   tabwidth=8;
@@ -404,7 +406,7 @@ void FXText::create(){
   if(options&TEXT_FIXEDWRAP){ wrapwidth=wrapcolumns*font->getTextWidth(" ",1); }
   tabwidth=tabcolumns*font->getTextWidth(" ",1);
   barwidth=barcolumns*font->getTextWidth("8",1);
-  recalc();// FIXME:- ugly because replaceText resets the flags...
+  recalc();
   }
 
 
@@ -600,7 +602,7 @@ FXint FXText::countLines(FXint start,FXint end) const {
   }
 
 
-// Count number of rows; start and end should be on a row start
+// Count number of rows; start should be on a row start
 FXint FXText::countRows(FXint start,FXint end) const {
   register FXint p,q,s,w=0,c,cw,nr=0;
   FXASSERT(0<=start && end<=length+1);
@@ -648,7 +650,7 @@ FXint FXText::countRows(FXint start,FXint end) const {
   }
 
 
-// Count number of columns
+// Count number of columns; start should be on a row start
 FXint FXText::countCols(FXint start,FXint end) const {
   register FXint nc=0,in=0,ch;
   FXASSERT(0<=start && end<=length);
@@ -1098,29 +1100,29 @@ void FXText::flashMatching(){
 
 
 // Search for text
-FXbool FXText::findText(const FXString& string,FXint* beg,FXint* end,FXint start,FXuint flags,FXint npar){
-  register FXint mode;
+FXbool FXText::findText(const FXString& string,FXint* beg,FXint* end,FXint start,FXuint flgs,FXint npar){
+  register FXint rexmode;
   FXRex rex;
 
   // Compile flags
-  mode=REX_VERBATIM;
-  if(1<npar) mode|=REX_CAPTURE;
-  if(flags&SEARCH_REGEX) mode&=~REX_VERBATIM;
-  if(flags&SEARCH_IGNORECASE) mode|=REX_ICASE;
+  rexmode=REX_VERBATIM;
+  if(1<npar) rexmode|=REX_CAPTURE;
+  if(flgs&SEARCH_REGEX) rexmode&=~REX_VERBATIM;
+  if(flgs&SEARCH_IGNORECASE) rexmode|=REX_ICASE;
 
   // Try parse the regex
-  if(rex.parse(string,mode)==REGERR_OK){
+  if(rex.parse(string,rexmode)==REGERR_OK){
 
     // Make all characters contiguous in the buffer
     squeezegap();
 
     // Search backward
-    if(flags&SEARCH_BACKWARD){
+    if(flgs&SEARCH_BACKWARD){
 
       // Search from start to begin of buffer
       if(rex.match(buffer,length,beg,end,REX_BACKWARD,npar,0,start)) return TRUE;
 
-      if(!(flags&SEARCH_WRAP)) return FALSE;
+      if(!(flgs&SEARCH_WRAP)) return FALSE;
 
       // Search from end of buffer backwards
       if(rex.match(buffer,length,beg,end,REX_BACKWARD,npar,start,length)) return TRUE;
@@ -1132,7 +1134,7 @@ FXbool FXText::findText(const FXString& string,FXint* beg,FXint* end,FXint start
       // Search from start to end of buffer
       if(rex.match(buffer,length,beg,end,REX_FORWARD,npar,start,length)) return TRUE;
 
-      if(!(flags&SEARCH_WRAP)) return FALSE;
+      if(!(flgs&SEARCH_WRAP)) return FALSE;
 
       // Search from begin of buffer forwards
       if(rex.match(buffer,length,beg,end,REX_FORWARD,npar,0,start)) return TRUE;
@@ -1684,8 +1686,8 @@ void FXText::replaceStyledText(FXint pos,FXint m,const FXchar *text,FXint n,FXin
   extractText(textchange.del,pos,m);
   replace(pos,m,text,n,style);
   if(notify && target){
-    target->handle(this,FXSEL(SEL_REPLACED,message),(void*)&textchange);
-    target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
+    target->tryHandle(this,FXSEL(SEL_REPLACED,message),(void*)&textchange);
+    target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
     }
   FXFREE(&textchange.del);
   }
@@ -1706,11 +1708,11 @@ void FXText::appendStyledText(const FXchar *text,FXint n,FXint style,FXbool noti
   textchange.ndel=0;
   textchange.nins=n;
   textchange.ins=(FXchar*)text;
-  textchange.del="";
+  textchange.del=(FXchar*)"";
   replace(length,0,text,n,style);
   if(notify && target){
-    target->handle(this,FXSEL(SEL_INSERTED,message),(void*)&textchange);
-    target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
+    target->tryHandle(this,FXSEL(SEL_INSERTED,message),(void*)&textchange);
+    target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
     }
   }
 
@@ -1730,11 +1732,11 @@ void FXText::insertStyledText(FXint pos,const FXchar *text,FXint n,FXint style,F
   textchange.ndel=0;
   textchange.nins=n;
   textchange.ins=(FXchar*)text;
-  textchange.del="";
+  textchange.del=(FXchar*)"";
   replace(pos,0,text,n,style);
   if(notify && target){
-    target->handle(this,FXSEL(SEL_INSERTED,message),(void*)&textchange);
-    target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
+    target->tryHandle(this,FXSEL(SEL_INSERTED,message),(void*)&textchange);
+    target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
     }
   }
 
@@ -1753,13 +1755,13 @@ void FXText::removeText(FXint pos,FXint n,FXbool notify){
   textchange.pos=pos;
   textchange.ndel=n;
   textchange.nins=0;
-  textchange.ins="";
+  textchange.ins=(FXchar*)"";
   FXMALLOC(&textchange.del,FXchar,n);
   extractText(textchange.del,pos,n);
   replace(pos,n,NULL,0,0);
   if(notify && target){
-    target->handle(this,FXSEL(SEL_DELETED,message),(void*)&textchange);
-    target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
+    target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)&textchange);
+    target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
     }
   FXFREE(&textchange.del);
   }
@@ -1876,10 +1878,10 @@ void FXText::setStyledText(const FXchar* text,FXint n,FXint style,FXbool notify)
   textchange.ndel=0;
   textchange.nins=n;
   textchange.ins=(FXchar*)text;
-  textchange.del="";
+  textchange.del=(FXchar*)"";
   if(notify && target){
-    target->handle(this,FXSEL(SEL_INSERTED,message),(void*)&textchange);
-    target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
+    target->tryHandle(this,FXSEL(SEL_INSERTED,message),(void*)&textchange);
+    target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
     }
   recalc();
   layout();
@@ -2107,20 +2109,22 @@ long FXText::onFocusOut(FXObject* sender,FXSelector sel,void* ptr){
   }
 
 
-// We were asked about status text
-long FXText::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+// We were asked about tip text
+long FXText::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
     }
   return 0;
   }
 
 
-// We were asked about tip text
-long FXText::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(!tip.empty() && (flags&FLAG_TIP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),&tip);
+// We were asked about status text
+long FXText::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
   return 0;
@@ -2142,7 +2146,7 @@ long FXText::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     flags&=~FLAG_UPDATE;
 
     // Select characters
@@ -2187,7 +2191,7 @@ long FXText::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     ungrab();
     mode=MOUSE_NONE;
     stopAutoScroll();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     return 1;
     }
   return 0;
@@ -2202,7 +2206,7 @@ long FXText::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
     pos=getPosAt(event->win_x,event->win_y);
 
     // Move over
@@ -2227,7 +2231,7 @@ long FXText::onMiddleBtnRelease(FXObject*,FXSelector,void* ptr){
     ungrab();
     stopAutoScroll();
     mode=MOUSE_NONE;
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
 
     // Drop text somewhere
     if(md==MOUSE_DRAG){
@@ -2251,7 +2255,7 @@ long FXText::onRightBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
     mode=MOUSE_SCROLL;
     grabx=event->win_x-pos_x;
     graby=event->win_y-pos_y;
@@ -2267,7 +2271,7 @@ long FXText::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     ungrab();
     mode=MOUSE_NONE;
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
     return 1;
     }
   return 0;
@@ -2497,7 +2501,7 @@ long FXText::onDNDDrop(FXObject* sender,FXSelector sel,void* ptr){
         }
 
       // Insert the new text
-      handle(this,FXSEL(SEL_COMMAND,ID_INSERT_STRING),(void*)data);    // FIXME don't kill selection!
+      handle(this,FXSEL(SEL_COMMAND,ID_INSERT_STRING),(void*)data);
       FXFREE(&data);
       }
     return 1;
@@ -2508,8 +2512,7 @@ long FXText::onDNDDrop(FXObject* sender,FXSelector sel,void* ptr){
 
 // Service requested DND data
 long FXText::onDNDRequest(FXObject* sender,FXSelector sel,void* ptr){
-  FXEvent *event=(FXEvent*)ptr;
-  FXuchar *data; FXuint len;
+  FXEvent *event=(FXEvent*)ptr; FXuchar *data; FXuint len;
 
   // Perhaps the target wants to supply its own data
   if(FXScrollArea::onDNDRequest(sender,sel,ptr)) return 1;
@@ -2552,7 +2555,7 @@ long FXText::onSelectionLost(FXObject* sender,FXSelector sel,void* ptr){
   if(target){
     what[0]=selstartpos;
     what[1]=selendpos-selstartpos;
-    target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)what);
+    target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)what);
     }
   updateRange(selstartpos,selendpos);
   selstartpos=0;
@@ -2563,8 +2566,7 @@ long FXText::onSelectionLost(FXObject* sender,FXSelector sel,void* ptr){
 
 // Somebody wants our selection
 long FXText::onSelectionRequest(FXObject* sender,FXSelector sel,void* ptr){
-  FXEvent *event=(FXEvent*)ptr;
-  FXchar *data; FXint len;
+  FXEvent *event=(FXEvent*)ptr; FXchar *data; FXint len;
 
   // Perhaps the target wants to supply its own data for the selection
   if(FXScrollArea::onSelectionRequest(sender,sel,ptr)) return 1;
@@ -2607,8 +2609,7 @@ long FXText::onClipboardLost(FXObject* sender,FXSelector sel,void* ptr){
 
 // Somebody wants our selection
 long FXText::onClipboardRequest(FXObject* sender,FXSelector sel,void* ptr){
-  FXEvent *event=(FXEvent*)ptr;
-  FXchar *data; FXint len;
+  FXEvent *event=(FXEvent*)ptr; FXchar *data; FXint len;
 
   // Try handling it in base class first
   if(FXScrollArea::onClipboardRequest(sender,sel,ptr)) return 1;
@@ -2634,284 +2635,285 @@ long FXText::onClipboardRequest(FXObject* sender,FXSelector sel,void* ptr){
 long FXText::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
-  if(!isEnabled()) return 0;
-  FXTRACE((200,"%s::onKeyPress keysym=0x%04x state=%04x\n",getClassName(),event->code,event->state));
-  if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
-  flags&=~FLAG_UPDATE;
-  switch(event->code){
-    case KEY_Shift_L:
-    case KEY_Shift_R:
-    case KEY_Control_L:
-    case KEY_Control_R:
-      if(mode==MOUSE_DRAG){handle(this,FXSEL(SEL_DRAGGED,0),ptr);}
-      return 1;
-    case KEY_Up:
-    case KEY_KP_Up:
-      if(event->state&CONTROLMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_SCROLL_UP),NULL);
-        }
-      else{
+  if(isEnabled()){
+    FXTRACE((200,"%s::onKeyPress keysym=0x%04x state=%04x\n",getClassName(),event->code,event->state));
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    flags&=~FLAG_UPDATE;
+    switch(event->code){
+      case KEY_Shift_L:
+      case KEY_Shift_R:
+      case KEY_Control_L:
+      case KEY_Control_R:
+        if(mode==MOUSE_DRAG){handle(this,FXSEL(SEL_DRAGGED,0),ptr);}
+        return 1;
+      case KEY_Up:
+      case KEY_KP_Up:
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_SCROLL_UP),NULL);
+          }
+        else{
+          if(!(event->state&SHIFTMASK)){
+            handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+            }
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_UP),NULL);
+          if(event->state&SHIFTMASK){
+            handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
+            }
+          else{
+            handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
+            }
+          }
+        return 1;
+      case KEY_Down:
+      case KEY_KP_Down:
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_SCROLL_DOWN),NULL);
+          }
+        else{
+          if(!(event->state&SHIFTMASK)){
+            handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+            }
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_DOWN),NULL);
+          if(event->state&SHIFTMASK){
+            handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
+            }
+          else{
+            handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
+            }
+          }
+        return 1;
+      case KEY_Left:
+      case KEY_KP_Left:
         if(!(event->state&SHIFTMASK)){
           handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
           }
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_UP),NULL);
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_WORD_LEFT),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_LEFT),NULL);
+          }
         if(event->state&SHIFTMASK){
           handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
           }
         else{
           handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
           }
-        }
-      return 1;
-    case KEY_Down:
-    case KEY_KP_Down:
-      if(event->state&CONTROLMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_SCROLL_DOWN),NULL);
-        }
-      else{
+        return 1;
+      case KEY_Right:
+      case KEY_KP_Right:
         if(!(event->state&SHIFTMASK)){
           handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
           }
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_DOWN),NULL);
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_WORD_RIGHT),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_RIGHT),NULL);
+          }
         if(event->state&SHIFTMASK){
           handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
           }
         else{
           handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
           }
-        }
-      return 1;
-    case KEY_Left:
-    case KEY_KP_Left:
-      if(!(event->state&SHIFTMASK)){
-        handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-        }
-      if(event->state&CONTROLMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_WORD_LEFT),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_LEFT),NULL);
-        }
-      if(event->state&SHIFTMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
-        }
-      return 1;
-    case KEY_Right:
-    case KEY_KP_Right:
-      if(!(event->state&SHIFTMASK)){
-        handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-        }
-      if(event->state&CONTROLMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_WORD_RIGHT),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_RIGHT),NULL);
-        }
-      if(event->state&SHIFTMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
-        }
-      return 1;
-    case KEY_Home:
-    case KEY_KP_Home:
-      if(!(event->state&SHIFTMASK)){
-        handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-        }
-      if(event->state&CONTROLMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_TOP),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_HOME),NULL);
-        }
-      if(event->state&SHIFTMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
-        }
-      return 1;
-    case KEY_End:
-    case KEY_KP_End:
-      if(!(event->state&SHIFTMASK)){
-        handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-        }
-      if(event->state&CONTROLMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_BOTTOM),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_END),NULL);
-        }
-      if(event->state&SHIFTMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
-        }
-      return 1;
-    case KEY_Page_Up:
-    case KEY_KP_Page_Up:
-      if(!(event->state&SHIFTMASK)){
-        handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-        }
-      handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_PAGEUP),NULL);
-      if(event->state&SHIFTMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
-        }
-      return 1;
-    case KEY_Page_Down:
-    case KEY_KP_Page_Down:
-      if(!(event->state&SHIFTMASK)){
-        handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-        }
-      handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_PAGEDOWN),NULL);
-      if(event->state&SHIFTMASK){
-        handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
-        }
-      return 1;
-    case KEY_Insert:
-    case KEY_KP_Insert:
-      if(event->state&CONTROLMASK){
+        return 1;
+      case KEY_Home:
+      case KEY_KP_Home:
+        if(!(event->state&SHIFTMASK)){
+          handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+          }
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_TOP),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_HOME),NULL);
+          }
+        if(event->state&SHIFTMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
+          }
+        return 1;
+      case KEY_End:
+      case KEY_KP_End:
+        if(!(event->state&SHIFTMASK)){
+          handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+          }
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_BOTTOM),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_END),NULL);
+          }
+        if(event->state&SHIFTMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
+          }
+        return 1;
+      case KEY_Page_Up:
+      case KEY_KP_Page_Up:
+        if(!(event->state&SHIFTMASK)){
+          handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+          }
+        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_PAGEUP),NULL);
+        if(event->state&SHIFTMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
+          }
+        return 1;
+      case KEY_Page_Down:
+      case KEY_KP_Page_Down:
+        if(!(event->state&SHIFTMASK)){
+          handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+          }
+        handle(this,FXSEL(SEL_COMMAND,ID_CURSOR_PAGEDOWN),NULL);
+        if(event->state&SHIFTMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_EXTEND),NULL);
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_MARK),NULL);
+          }
+        return 1;
+      case KEY_Insert:
+      case KEY_KP_Insert:
+        if(event->state&CONTROLMASK){
+          handle(this,FXSEL(SEL_COMMAND,ID_COPY_SEL),NULL);
+          }
+        else if(event->state&SHIFTMASK){
+          if(isEditable()){
+            handle(this,FXSEL(SEL_COMMAND,ID_PASTE_SEL),NULL);
+            }
+          else{
+            getApp()->beep();
+            }
+          }
+        else{
+          handle(this,FXSEL(SEL_COMMAND,ID_TOGGLE_OVERSTRIKE),NULL);
+          }
+        return 1;
+      case KEY_Delete:
+      case KEY_KP_Delete:
+        if(isEditable()){
+          if(isPosSelected(cursorpos)){
+            if(event->state&SHIFTMASK){
+              handle(this,FXSEL(SEL_COMMAND,ID_CUT_SEL),NULL);
+              }
+            else{
+              handle(this,FXSEL(SEL_COMMAND,ID_DELETE_SEL),NULL);
+              }
+            }
+          else{
+            handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+            if(event->state&CONTROLMASK){
+              handle(this,FXSEL(SEL_COMMAND,ID_DELETE_WORD),NULL);
+              }
+            else if(event->state&SHIFTMASK){
+              handle(this,FXSEL(SEL_COMMAND,ID_DELETE_EOL),NULL);
+              }
+            else{
+              handle(this,FXSEL(SEL_COMMAND,ID_DELETE),NULL);
+              }
+            }
+          }
+        else{
+          getApp()->beep();
+          }
+        return 1;
+      case KEY_BackSpace:
+        if(isEditable()){
+          if(isPosSelected(cursorpos)){
+            handle(this,FXSEL(SEL_COMMAND,ID_DELETE_SEL),NULL);
+            }
+          else{
+           handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
+           if(event->state&CONTROLMASK){
+              handle(this,FXSEL(SEL_COMMAND,ID_BACKSPACE_WORD),NULL);
+              }
+            else if(event->state&SHIFTMASK){
+              handle(this,FXSEL(SEL_COMMAND,ID_BACKSPACE_BOL),NULL);
+              }
+            else{
+              handle(this,FXSEL(SEL_COMMAND,ID_BACKSPACE),NULL);
+              }
+            }
+          }
+        else{
+          getApp()->beep();
+          }
+        return 1;
+      case KEY_Return:
+      case KEY_KP_Enter:
+        if(isEditable()){
+          handle(this,FXSEL(SEL_COMMAND,ID_INSERT_NEWLINE),NULL);
+          }
+        else{
+          getApp()->beep();
+          }
+        return 1;
+      case KEY_Tab:
+      case KEY_KP_Tab:
+        if(isEditable()){
+          if(event->state&CONTROLMASK){
+            handle(this,FXSEL(SEL_COMMAND,ID_INSERT_STRING),(void*)"\t");
+            }
+          else{
+            handle(this,FXSEL(SEL_COMMAND,ID_INSERT_TAB),NULL);
+            }
+          }
+        else{
+          getApp()->beep();
+          }
+        return 1;
+      case KEY_a:
+        if(!(event->state&CONTROLMASK)) goto ins;
+        handle(this,FXSEL(SEL_COMMAND,ID_SELECT_ALL),NULL);
+        return 1;
+      case KEY_x:
+        if(!(event->state&CONTROLMASK)) goto ins;
+      case KEY_F20:                               // Sun Cut key
+        if(isEditable()){
+          handle(this,FXSEL(SEL_COMMAND,ID_CUT_SEL),NULL);
+          }
+        else{
+          getApp()->beep();
+          }
+        return 1;
+      case KEY_c:
+        if(!(event->state&CONTROLMASK)) goto ins;
+      case KEY_F16:                               // Sun Copy key
         handle(this,FXSEL(SEL_COMMAND,ID_COPY_SEL),NULL);
-        }
-      else if(event->state&SHIFTMASK){
+        return 1;
+      case KEY_v:
+        if(!(event->state&CONTROLMASK)) goto ins;
+      case KEY_F18:                               // Sun Paste key
         if(isEditable()){
           handle(this,FXSEL(SEL_COMMAND,ID_PASTE_SEL),NULL);
           }
         else{
           getApp()->beep();
           }
-        }
-      else{
-        handle(this,FXSEL(SEL_COMMAND,ID_TOGGLE_OVERSTRIKE),NULL);
-        }
-      return 1;
-    case KEY_Delete:
-    case KEY_KP_Delete:
-      if(isEditable()){
-        if(isPosSelected(cursorpos)){
-          if(event->state&SHIFTMASK){
-            handle(this,FXSEL(SEL_COMMAND,ID_CUT_SEL),NULL);
+        return 1;
+      default:
+ins:    if((event->state&(CONTROLMASK|ALTMASK)) || ((FXuchar)event->text[0]<32)) return 0;
+        if(isEditable()){
+          if(options&TEXT_OVERSTRIKE){
+            handle(this,FXSEL(SEL_COMMAND,ID_OVERST_STRING),(void*)event->text.text());
             }
           else{
-            handle(this,FXSEL(SEL_COMMAND,ID_DELETE_SEL),NULL);
+            handle(this,FXSEL(SEL_COMMAND,ID_INSERT_STRING),(void*)event->text.text());
             }
           }
         else{
-          handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-          if(event->state&CONTROLMASK){
-            handle(this,FXSEL(SEL_COMMAND,ID_DELETE_WORD),NULL);
-            }
-          else if(event->state&SHIFTMASK){
-            handle(this,FXSEL(SEL_COMMAND,ID_DELETE_EOL),NULL);
-            }
-          else{
-            handle(this,FXSEL(SEL_COMMAND,ID_DELETE),NULL);
-            }
+          getApp()->beep();
           }
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
-    case KEY_BackSpace:
-      if(isEditable()){
-        if(isPosSelected(cursorpos)){
-          handle(this,FXSEL(SEL_COMMAND,ID_DELETE_SEL),NULL);
-          }
-        else{
-         handle(this,FXSEL(SEL_COMMAND,ID_DESELECT_ALL),NULL);
-         if(event->state&CONTROLMASK){
-            handle(this,FXSEL(SEL_COMMAND,ID_BACKSPACE_WORD),NULL);
-            }
-          else if(event->state&SHIFTMASK){
-            handle(this,FXSEL(SEL_COMMAND,ID_BACKSPACE_BOL),NULL);
-            }
-          else{
-            handle(this,FXSEL(SEL_COMMAND,ID_BACKSPACE),NULL);
-            }
-          }
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
-    case KEY_Return:
-    case KEY_KP_Enter:
-      if(isEditable()){
-        handle(this,FXSEL(SEL_COMMAND,ID_INSERT_NEWLINE),NULL);
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
-    case KEY_Tab:
-    case KEY_KP_Tab:
-      if(isEditable()){
-        if(event->state&CONTROLMASK){
-          handle(this,FXSEL(SEL_COMMAND,ID_INSERT_STRING),(void*)"\t");
-          }
-        else{
-          handle(this,FXSEL(SEL_COMMAND,ID_INSERT_TAB),NULL);
-          }
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
-    case KEY_a:
-      if(!(event->state&CONTROLMASK)) goto ins;
-      handle(this,FXSEL(SEL_COMMAND,ID_SELECT_ALL),NULL);
-      return 1;
-    case KEY_x:
-      if(!(event->state&CONTROLMASK)) goto ins;
-    case KEY_F20:                               // Sun Cut key
-      if(isEditable()){
-        handle(this,FXSEL(SEL_COMMAND,ID_CUT_SEL),NULL);
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
-    case KEY_c:
-      if(!(event->state&CONTROLMASK)) goto ins;
-    case KEY_F16:                               // Sun Copy key
-      handle(this,FXSEL(SEL_COMMAND,ID_COPY_SEL),NULL);
-      return 1;
-    case KEY_v:
-      if(!(event->state&CONTROLMASK)) goto ins;
-    case KEY_F18:                               // Sun Paste key
-      if(isEditable()){
-        handle(this,FXSEL(SEL_COMMAND,ID_PASTE_SEL),NULL);
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
-    default:
-ins:  if((event->state&(CONTROLMASK|ALTMASK)) || ((FXuchar)event->text[0]<32)) return 0;
-      if(isEditable()){
-        if(options&TEXT_OVERSTRIKE){
-          handle(this,FXSEL(SEL_COMMAND,ID_OVERST_STRING),(void*)event->text.text());
-          }
-        else{
-          handle(this,FXSEL(SEL_COMMAND,ID_INSERT_STRING),(void*)event->text.text());
-          }
-        }
-      else{
-        getApp()->beep();
-        }
-      return 1;
+        return 1;
+      }
     }
   return 0;
   }
@@ -2920,16 +2922,17 @@ ins:  if((event->state&(CONTROLMASK|ALTMASK)) || ((FXuchar)event->text[0]<32)) r
 // Keyboard release
 long FXText::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
-  if(!isEnabled()) return 0;
-  FXTRACE((200,"%s::onKeyRelease keysym=0x%04x state=%04x\n",getClassName(),event->code,event->state));
-  if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
-  switch(event->code){
-    case KEY_Shift_L:
-    case KEY_Shift_R:
-    case KEY_Control_L:
-    case KEY_Control_R:
-      if(mode==MOUSE_DRAG){handle(this,FXSEL(SEL_DRAGGED,0),ptr);}
-      return 1;
+  if(isEnabled()){
+    FXTRACE((200,"%s::onKeyRelease keysym=0x%04x state=%04x\n",getClassName(),event->code,event->state));
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    switch(event->code){
+      case KEY_Shift_L:
+      case KEY_Shift_R:
+      case KEY_Control_L:
+      case KEY_Control_R:
+        if(mode==MOUSE_DRAG){handle(this,FXSEL(SEL_DRAGGED,0),ptr);}
+        return 1;
+      }
     }
   return 0;
   }
@@ -3382,11 +3385,11 @@ long FXText::onCmdDeleteSel(FXObject*,FXSelector,void*){
 
 // Paste clipboard
 long FXText::onCmdPasteSel(FXObject*,FXSelector,void*){
-  FXchar *string; FXint reppos,replen,len;
+  FXchar *data; FXint reppos,replen,len;
   if(isEditable()){
-    if(getDNDData(FROM_CLIPBOARD,stringType,(FXuchar*&)string,(FXuint&)len)){
+    if(getDNDData(FROM_CLIPBOARD,stringType,(FXuchar*&)data,(FXuint&)len)){
 #ifdef WIN32
-      fxfromDOS(string,len);
+      fxfromDOS(data,len);
 #endif
       reppos=cursorpos;
       replen=0;
@@ -3394,8 +3397,8 @@ long FXText::onCmdPasteSel(FXObject*,FXSelector,void*){
         reppos=selstartpos;
         replen=selendpos-selstartpos;
         }
-      replaceText(reppos,replen,string,len,TRUE);
-      FXFREE(&string);
+      replaceText(reppos,replen,data,len,TRUE);
+      FXFREE(&data);
       killSelection(TRUE);
       setCursorPos(reppos+len,TRUE);
       makePositionVisible(cursorpos);
@@ -3812,8 +3815,7 @@ long FXText::onCmdBlockEnd(FXObject*,FXSelector sel,void*){
 
 // Search for selected text
 long FXText::onCmdSearchSel(FXObject*,FXSelector sel,void*){
-  FXchar *data;
-  FXint len;
+  FXchar *data; FXint len;
   if(getDNDData(FROM_SELECTION,stringType,(FXuchar*&)data,(FXuint&)len)){
     FXint pos=cursorpos;
     FXint beg,end;
@@ -4069,17 +4071,18 @@ long FXText::onUpdCursorColumn(FXObject* sender,FXSelector,void*){
 
 
 // Update somebody who works on the selection
-long FXText::onUpdHaveSelection(FXObject* sender,FXSelector,void* ptr){
-  sender->handle(this,(selstartpos<selendpos)?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),ptr);
+long FXText::onUpdHaveSelection(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(selstartpos<selendpos)?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
   return 1;
   }
 
 
 // Update somebody who works on the selection
-long FXText::onUpdSelectAll(FXObject* sender,FXSelector,void* ptr){
-  sender->handle(this,(length==0)?FXSEL(SEL_COMMAND,ID_DISABLE):FXSEL(SEL_COMMAND,ID_ENABLE),ptr);
+long FXText::onUpdSelectAll(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(length==0)?FXSEL(SEL_COMMAND,ID_DISABLE):FXSEL(SEL_COMMAND,ID_ENABLE),NULL);
   return 1;
   }
+
 
 /*******************************************************************************/
 
@@ -4516,7 +4519,7 @@ void FXText::setCursorPos(FXint pos,FXbool notify){
     drawCursor(FLAG_CARET);
     prefcol=-1;
     if(target && notify){
-      target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
+      target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)cursorpos);
       }
     }
   }
@@ -4640,7 +4643,7 @@ FXbool FXText::setSelection(FXint pos,FXint len,FXbool notify){
       if(notify && target){
         what[0]=selstartpos;
         what[1]=selendpos-selstartpos;
-        target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)what);
+        target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)what);
         }
       if(hasSelection()) releaseSelection();
       }
@@ -4666,7 +4669,7 @@ FXbool FXText::setSelection(FXint pos,FXint len,FXbool notify){
       if(notify && target){
         what[0]=selstartpos;
         what[1]=selendpos-selstartpos;
-        target->handle(this,FXSEL(SEL_SELECTED,message),(void*)what);
+        target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)what);
         }
       }
     return TRUE;
@@ -4682,7 +4685,7 @@ FXbool FXText::killSelection(FXbool notify){
     if(notify && target){
       what[0]=selstartpos;
       what[1]=selendpos-selstartpos;
-      target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)what);
+      target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)what);
       }
     if(hasSelection()) releaseSelection();
     updateRange(selstartpos,selendpos);

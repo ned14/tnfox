@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.h,v 1.130 2004/03/29 17:39:40 fox Exp $                          *
+* $Id: FXTable.h,v 1.144 2004/10/28 14:37:23 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABLE_H
 #define FXTABLE_H
@@ -31,8 +31,6 @@
 
 namespace FX {
 
-
-//////////////////////////////  UNDER DEVELOPMENT  //////////////////////////////
 
 class FXIcon;
 class FXFont;
@@ -52,7 +50,8 @@ enum {
   TABLE_ROW_SIZABLE     = 0x00200000,   /// Rows are resizable
   TABLE_HEADERS_SIZABLE = 0x00400000,   /// Headers are sizable
   TABLE_NO_COLSELECT    = 0x00900000,   /// Disallow column selections
-  TABLE_NO_ROWSELECT    = 0x01000000    /// Disallow row selections
+  TABLE_NO_ROWSELECT    = 0x01000000,   /// Disallow row selections
+  TABLE_READONLY        = 0x02000000,   /// Table is NOT editable
   };
 
 
@@ -88,66 +87,135 @@ protected:
   virtual void drawContent(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
   virtual void drawPattern(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
   virtual void drawBackground(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
-protected:
-  enum{
-    SELECTED   = 0x00000001,
-    FOCUS      = 0x00000002,
-    DISABLED   = 0x00000004,
-    DRAGGABLE  = 0x00000008,
-    RESERVED1  = 0x00000010,
-    RESERVED2  = 0x00000020,
-    ICONOWNED  = 0x00000040
-    };
 public:
   enum{
-    RIGHT      = 0x00002000,      /// Align on right
-    LEFT       = 0x00004000,      /// Align on left
-    CENTER_X   = 0,               /// Aling centered horizontally (default)
-    TOP        = 0x00008000,      /// Align on top
-    BOTTOM     = 0x00010000,      /// Align on bottom
-    CENTER_Y   = 0,               /// Aling centered vertically (default)
-    BEFORE     = 0x00020000,      /// Icon before the text
-    AFTER      = 0x00040000,      /// Icon after the text
-    ABOVE      = 0x00080000,      /// Icon above the text
-    BELOW      = 0x00100000,      /// Icon below the text
-    LBORDER    = 0x00200000,      /// Draw left border
-    RBORDER    = 0x00400000,      /// Draw right border
-    TBORDER    = 0x00800000,      /// Draw top border
-    BBORDER    = 0x01000000       /// Draw bottom border
+    SELECTED   = 0x00000001,    /// Selected
+    FOCUS      = 0x00000002,    /// Focus
+    DISABLED   = 0x00000004,    /// Disabled
+    DRAGGABLE  = 0x00000008,    /// Draggable
+    RESERVED1  = 0x00000010,    /// Reserved
+    RESERVED2  = 0x00000020,    /// Reserved
+    ICONOWNED  = 0x00000040,    /// Icon owned by table item
+    RIGHT      = 0x00002000,    /// Align on right
+    LEFT       = 0x00004000,    /// Align on left
+    CENTER_X   = 0,             /// Aling centered horizontally (default)
+    TOP        = 0x00008000,    /// Align on top
+    BOTTOM     = 0x00010000,    /// Align on bottom
+    CENTER_Y   = 0,             /// Aling centered vertically (default)
+    BEFORE     = 0x00020000,    /// Icon before the text
+    AFTER      = 0x00040000,    /// Icon after the text
+    ABOVE      = 0x00080000,    /// Icon above the text
+    BELOW      = 0x00100000,    /// Icon below the text
+    LBORDER    = 0x00200000,    /// Draw left border
+    RBORDER    = 0x00400000,    /// Draw right border
+    TBORDER    = 0x00800000,    /// Draw top border
+    BBORDER    = 0x01000000     /// Draw bottom border
     };
 public:
+
+  /// Construct new table item
   FXTableItem(const FXString& text,FXIcon* ic=NULL,void* ptr=NULL):label(text),icon(ic),data(ptr),state(FXTableItem::RIGHT){}
+
+  /// Change item's text label
   virtual void setText(const FXString& txt){ label=txt; }
-  const FXString& getText() const { return label; }
+
+  /// Return item's text label
+  virtual FXString getText() const { return label; }
+
+  /// Change item's icon
   virtual void setIcon(FXIcon* icn){ icon=icn; }
-  FXIcon* getIcon() const { return icon; }
+
+  /// Return item's icon
+  virtual FXIcon* getIcon() const { return icon; }
+
+  /// Change item's user data
   void setData(void* ptr){ data=ptr; }
+
+  /// Get item's user data
   void* getData() const { return data; }
+
+  /// Make item draw as focused
   virtual void setFocus(FXbool focus);
+
+  /// Return true if item has focus
   FXbool hasFocus() const { return (state&FOCUS)!=0; }
+
+  /// Select item
   virtual void setSelected(FXbool selected);
+
+  /// Return true if this item is selected
   FXbool isSelected() const { return (state&SELECTED)!=0; }
+
+  /// Enable or disable item
   virtual void setEnabled(FXbool enabled);
+
+  /// Return true if this item is enabled
   FXbool isEnabled() const { return (state&DISABLED)==0; }
+
+  /// Make item draggable
   virtual void setDraggable(FXbool draggable);
+
+  /// Return true if this item is draggable
   FXbool isDraggable() const { return (state&DRAGGABLE)!=0; }
-  void setJustify(FXuint justify);
+
+  /// Change item content justification
+  virtual void setJustify(FXuint justify);
+
+  /// Return item content justification
   FXuint getJustify() const { return state&(RIGHT|LEFT|TOP|BOTTOM); }
-  void setIconPosition(FXuint mode);
+
+  /// Change item icon position
+  virtual void setIconPosition(FXuint mode);
+
+  /// Return item icon position
   FXuint getIconPosition() const { return state&(BEFORE|AFTER|ABOVE|BELOW); }
-  void setBorders(FXuint borders);
+
+  /// Change item borders
+  virtual void setBorders(FXuint borders);
+
+  /// Return item borders
   FXuint getBorders() const { return state&(LBORDER|RBORDER|TBORDER|BBORDER); }
-  void setStipple(FXStipplePattern pattern);
+
+  /// Change item background stipple
+  virtual void setStipple(FXStipplePattern pattern);
+
+  /// Return item background stipple
   FXStipplePattern getStipple() const;
+
+  /// Make icon owned by item
   virtual void setIconOwned(FXuint owned=ICONOWNED);
+
+  /// Return icon owned state
   FXuint isIconOwned() const { return (state&ICONOWNED); }
+
+  /// Create input control for editing this item
+  virtual FXWindow *getControlFor(FXTable* table);
+
+  /// Set value from input control
+  virtual void setFromControl(FXWindow *control);
+
+  /// Return width of item
   virtual FXint getWidth(const FXTable* table) const;
+
+  /// Return height of item
   virtual FXint getHeight(const FXTable* table) const;
+
+  /// Create server-side resources
   virtual void create();
+
+  /// Detach server-side resources
   virtual void detach();
+
+  /// Destroy server-side resources
   virtual void destroy();
+
+  /// Save to stream
   virtual void save(FXStream& store) const;
+
+  /// Load from stream
   virtual void load(FXStream& store);
+
+  /// Destroy item and free icon if owned
   virtual ~FXTableItem();
   };
 
@@ -161,6 +229,7 @@ protected:
   FXHeader     *rowHeader;              // Row header
   FXButton     *cornerButton;           // Corner button
   FXTableItem **cells;                  // Cells
+  FXWindow     *editor;                 // Editor widget
   FXFont       *font;                   // Font
   FXint         nrows;                  // Number of rows
   FXint         ncols;                  // Number of columns
@@ -186,6 +255,7 @@ protected:
   FXint         defRowHeight;           // Default row height [if uniform rows]
   FXTablePos    current;                // Current position
   FXTablePos    anchor;                 // Anchor position
+  FXTableRange  input;                  // Input cell
   FXTableRange  selection;              // Range of selected cells
   FXchar       *clipbuffer;             // Clipped text
   FXint         cliplength;             // Length of clipped text
@@ -213,6 +283,8 @@ protected:
   virtual void drawVGrid(FXDC& dc,FXint rlo,FXint rhi,FXint clo,FXint chi);
   virtual void drawContents(FXDC& dc,FXint x,FXint y,FXint w,FXint h);
   virtual FXTableItem* createItem(const FXString& text,FXIcon* icon,void* ptr);
+  virtual FXWindow *getControlForItem(FXint r,FXint c);
+  virtual void setItemFromControl(FXint r,FXint c,FXWindow *control);
   void countText(FXint& nr,FXint& nc,const FXchar* text,FXint size,FXchar cs='\t',FXchar rs='\n') const;
 protected:
   enum {
@@ -250,6 +322,9 @@ public:
   long onDoubleClicked(FXObject*,FXSelector,void*);
   long onTripleClicked(FXObject*,FXSelector,void*);
 
+  long onCmdToggleEditable(FXObject*,FXSelector,void*);
+  long onUpdToggleEditable(FXObject*,FXSelector,void*);
+
   // Visual characteristics
   long onCmdHorzGrid(FXObject*,FXSelector,void*);
   long onUpdHorzGrid(FXObject*,FXSelector,void*);
@@ -262,7 +337,9 @@ public:
   long onCmdDeleteRow(FXObject*,FXSelector,void*);
   long onUpdDeleteRow(FXObject*,FXSelector,void*);
   long onCmdInsertColumn(FXObject*,FXSelector,void*);
+  long onUpdInsertColumn(FXObject*,FXSelector,void*);
   long onCmdInsertRow(FXObject*,FXSelector,void*);
+  long onUpdInsertRow(FXObject*,FXSelector,void*);
 
   // Movement
   long onCmdMoveRight(FXObject*,FXSelector,void*);
@@ -295,11 +372,19 @@ public:
   long onCmdDeleteSel(FXObject*,FXSelector,void*);
   long onCmdPasteSel(FXObject*,FXSelector,void*);
   long onUpdHaveSelection(FXObject*,FXSelector,void*);
+
+  // Edit control
+  long onCmdStartInput(FXObject*,FXSelector,void*);
+  long onUpdStartInput(FXObject*,FXSelector,void*);
+  long onCmdAcceptInput(FXObject*,FXSelector,void*);
+  long onUpdAcceptInput(FXObject*,FXSelector,void*);
+  long onCmdCancelInput(FXObject*,FXSelector,void*);
 public:
 
   enum {
     ID_HORZ_GRID=FXScrollArea::ID_LAST,
     ID_VERT_GRID,
+    ID_TOGGLE_EDITABLE,
     ID_DELETE_COLUMN,
     ID_DELETE_ROW,
     ID_INSERT_COLUMN,
@@ -321,6 +406,9 @@ public:
     ID_MOVE_BOTTOM,
     ID_MOVE_PAGEDOWN,
     ID_MOVE_PAGEUP,
+    ID_START_INPUT,
+    ID_CANCEL_INPUT,
+    ID_ACCEPT_INPUT,
     ID_MARK,
     ID_EXTEND,
     ID_CUT_SEL,
@@ -372,17 +460,32 @@ public:
   /// Remove the focus from this window
   virtual void killFocus();
 
+  /// Notification that focus moved to new child
+  virtual void changeFocus(FXWindow *child);
+
   /// Return column header control
   FXHeader* getColumnHeader() const { return colHeader; }
 
   /// Return row header control
   FXHeader* getRowHeader() const { return rowHeader; }
 
-  /// Change visible rows/columns
+  /// Change visible rows
   void setVisibleRows(FXint nvrows);
+
+  /// return number of visible rows
   FXint getVisibleRows() const { return visiblerows; }
+
+  /// Change visible columns
   void setVisibleColumns(FXint nvcols);
+
+  /// Return number of visible columns
   FXint getVisibleColumns() const { return visiblecols; }
+
+  /// Return TRUE if table is editable
+  FXbool isEditable() const;
+
+  /// Set editable flag
+  void setEditable(FXbool edit=TRUE);
 
   /// Show or hide horizontal grid
   void showHorzGrid(FXbool on=TRUE);
@@ -427,18 +530,44 @@ public:
   FXint getMarginRight() const { return marginright; }
 
   /**
+  * Start input mode for the cell at the given position.
+  * An input control is created which is used to edit the cell;
+  * it is filled by the original item's contents if the cell contained
+  * an item.  You can enter input mode also by sending the table an
+  * ID_START_INPUT message.
+  */
+  virtual void startInput(FXint row,FXint col);
+
+  /**
+  * Cancel input mode.  The input control is immediately deleted
+  * and the cell will retain its old value.  You can also cancel
+  * input mode by sending the table an ID_CANCEL_INPUT message.
+  */
+  virtual void cancelInput();
+
+  /**
+  * End input mode and accept the new value from the control.
+  * The item in the cell will be set to the value from the control,
+  * and the control will be deleted.  If TRUE is passed, a SEL_REPLACED
+  * callback will be generated to signify to the target that this call
+  * has a new value.  You can also accept the input by sending the table
+  * an ID_ACCEPT_INPUT message.
+  */
+  virtual void acceptInput(FXbool notify=FALSE);
+
+  /**
+  * Determine column containing x.
+  * Returns -1 if x left of first column, and ncols if x right of last column;
+  * otherwise, returns column in table containing x.
+  */
+  FXint colAtX(FXint x) const;
+
+  /**
   * Determine row containing y.
   * Returns -1 if y above first row, and nrows if y below last row;
   * otherwise, returns row in table containing y.
   */
   FXint rowAtY(FXint y) const;
-
-  /**
-  * Determine column containing x.
-  * Returns -1 if x left of first column, and ncols if x right of last column;
-  * otherwise, returns columns in table containing x.
-  */
-  FXint colAtX(FXint x) const;
 
   /// Return the item at the given index
   FXTableItem *getItem(FXint row,FXint col) const;
@@ -471,9 +600,9 @@ public:
   virtual void clearItems(FXbool notify=FALSE);
 
   /// Scroll to make cell at r,c fully visible
-  void makePositionVisible(FXint r,FXint c);
+  virtual void makePositionVisible(FXint r,FXint c);
 
-  // Return TRUE if item partially visible
+  /// Return TRUE if item partially visible
   FXbool isItemVisible(FXint r,FXint c) const;
 
   /**
@@ -510,28 +639,34 @@ public:
   /// Return row header width
   FXint getRowHeaderWidth() const;
 
+  /// Get X coordinate of column
+  FXint getColumnX(FXint col) const;
+
+  /// Get Y coordinate of row
+  FXint getRowY(FXint row) const;
+
   /// Change column width
   virtual void setColumnWidth(FXint col,FXint cwidth);
+
+  /// Get column width
   FXint getColumnWidth(FXint col) const;
 
   /// Change row height
   virtual void setRowHeight(FXint row,FXint rheight);
+
+  /// Get row height
   FXint getRowHeight(FXint row) const;
-
-  /// Change X coordinate of column c
-  virtual void setColumnX(FXint col,FXint x);
-  FXint getColumnX(FXint col) const;
-
-  /// Change Y coordinate of row r
-  virtual void setRowY(FXint row,FXint y);
-  FXint getRowY(FXint row) const;
 
   /// Change default column width
   void setDefColumnWidth(FXint cwidth);
+
+  /// Get default column width
   FXint getDefColumnWidth() const { return defColWidth; }
 
   /// Change default row height
   void setDefRowHeight(FXint rheight);
+
+  /// Get default row height
   FXint getDefRowHeight() const { return defRowHeight; }
 
   /// Return minimum row height
@@ -539,6 +674,12 @@ public:
 
   /// Return minimum column width
   FXint getMinColumnWidth(FXint c) const;
+
+  /// Fit row heights to contents
+  void fitRowsToContents(FXint row,FXint nr=1);
+
+  /// Fit column widths to contents
+  void fitColumnsToContents(FXint col,FXint nc=1);
 
   /// Change column header
   void setColumnText(FXint index,const FXString& text);
@@ -580,12 +721,12 @@ public:
   void updateItem(FXint r,FXint c) const;
 
   /// Enable item
-  FXbool enableItem(FXint r,FXint c);
+  virtual FXbool enableItem(FXint r,FXint c);
 
   /// Disable item
-  FXbool disableItem(FXint r,FXint c);
+  virtual FXbool disableItem(FXint r,FXint c);
 
-  // Is item enabled
+  /// Is item enabled
   FXbool isItemEnabled(FXint r,FXint c) const;
 
   /// Change item justification
@@ -621,7 +762,7 @@ public:
   /// Get column number of current item
   FXint getCurrentColumn() const { return current.col; }
 
-  // Is item current
+  /// Is item current
   FXbool isItemCurrent(FXint r,FXint c) const;
 
   /// Change anchor item

@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec4f.cpp,v 1.4 2004/02/08 17:29:07 fox Exp $                          *
+* $Id: FXVec4f.cpp,v 1.9 2004/10/06 21:51:22 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXVec2f.h"
@@ -58,6 +59,7 @@ FXVec4f::operator FXColor() const {
   }
 
 
+// Normalize vector
 FXVec4f normalize(const FXVec4f& a){
   register FXfloat t=len(a);
   if(t>0.0f){ return FXVec4f(a.x/t,a.y/t,a.z/t,a.w/t); }
@@ -65,11 +67,54 @@ FXVec4f normalize(const FXVec4f& a){
   }
 
 
+// Compute plane equation from 3 points a,b,c
+FXVec4f plane(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
+  FXVec3f nm(normal(a,b,c));
+  return FXVec4f(nm,-(nm.x*a.x+nm.y*a.y+nm.z*a.z));
+  }
+
+
+// Compute plane equation from vector and distance
+FXVec4f plane(const FXVec3f& vec,FXfloat dist){
+  FXVec3f nm(normalize(vec));
+  return FXVec4f(nm,-dist);
+  }
+
+
+// Compute plane equation from vector and point on plane
+FXVec4f plane(const FXVec3f& vec,const FXVec3f& p){
+  FXVec3f nm(normalize(vec));
+  return FXVec4f(nm,-(nm.x*p.x+nm.y*p.y+nm.z*p.z));
+  }
+
+
+// Compute plane equation from 4 vector
+FXVec4f plane(const FXVec4f& vec){
+  register FXfloat t=sqrtf(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
+  return FXVec4f(vec.x/t,vec.y/t,vec.z/t,vec.w/t);
+  }
+
+
+// Signed distance normalized plane and point
+FXfloat distance(const FXVec4f& plane,const FXVec3f& p){
+  return plane.x*p.x+plane.y*p.y+plane.z*p.z+plane.z;
+  }
+
+
+// Return true if edge a-b crosses plane
+FXbool crosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b){
+  return (distance(plane,a)>=0.0f) ^ (distance(plane,b)>=0.0f);
+  }
+
+
+// Save vector to stream
 FXStream& operator<<(FXStream& store,const FXVec4f& v){
   store << v.x << v.y << v.z << v.w;
   return store;
   }
 
+
+// Load vector from stream
 FXStream& operator>>(FXStream& store,FXVec4f& v){
   store >> v.x >> v.y >> v.z >> v.w;
   return store;

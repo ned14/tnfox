@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXString.h,v 1.67 2004/02/13 22:48:37 fox Exp $                          *
+* $Id: FXString.h,v 1.70 2004/09/17 07:46:20 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSTRING_H
 #define FXSTRING_H
@@ -80,7 +80,7 @@ public:
   void length(FXint len);
 
   /// Length of text
-  FXint length() const throw() { return ((FXint*)str)[-1]; }
+  FXint length() const throw() { return *(((FXint*)str)-1); }
 
   /*! Get text contents in ASCII form (converts down from unicode)
   \warning Buffer returned is per-string static so subsequent uses of text()
@@ -125,16 +125,16 @@ public:
   /// Convert to upper case
   FXString& upper() throw();
 
-  /// Return num partition(s) beginning at start from a string separated by delimiters delim. 
+  /// Return num partition(s) beginning at start from a string separated by delimiters delim.
   FXString section(FXchar delim,FXint start,FXint num=1) const;
 
   /// Return num partition(s) beginning at start from a string separated by set of delimiters from delim of size n
-  FXString section(const FXchar* delim,FXint n,FXint start,FXint num=1) const;
+  FXString section(const FXchar* delim,FXint n,FXint start,FXint num) const;
 
-  /// Return num partition(s) beginning at start from a string separated by set of delimiters from delim. 
+  /// Return num partition(s) beginning at start from a string separated by set of delimiters from delim.
   FXString section(const FXchar* delim,FXint start,FXint num=1) const;
 
-  /// Return num partition(s) beginning at start from a string separated by set of delimiters from delim. 
+  /// Return num partition(s) beginning at start from a string separated by set of delimiters from delim.
   FXString section(const FXString& delim,FXint start,FXint num=1) const;
 
   /// Assign character c to this string
@@ -304,10 +304,10 @@ public:
   /// Find a character, searching backward; return position or -1
   FXint rfind(FXchar c,FXint pos=2147483647) const throw();
 
-  // Find n-th occurrence of character, searching forward; return position or -1
+  /// Find n-th occurrence of character, searching forward; return position or -1
   FXint find(FXchar c,FXint pos,FXint n) const throw();
 
-  // Find n-th occurrence of character, searching backward; return position or -1
+  /// Find n-th occurrence of character, searching backward; return position or -1
   FXint rfind(FXchar c,FXint pos,FXint n) const throw();
 
   /// Find a substring of length n, searching forward; return position or -1

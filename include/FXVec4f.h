@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec4f.h,v 1.9.2.1 2004/06/04 04:32:23 fox Exp $                            *
+* $Id: FXVec4f.h,v 1.16 2004/10/06 21:51:22 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXVEC4F_H
 #define FXVEC4F_H
@@ -45,10 +45,10 @@ public:
   /// Copy constructor
   FXVec4f(const FXVec4f& v){x=v.x;y=v.y;z=v.z;w=v.w;}
 
-  /// Construct with 3-vector
-  FXVec4f(const FXVec3f& v){x=v.x;y=v.y;z=v.z;w=1.0f;}
+  /// Construct with 3-vector and optional scalar
+  FXVec4f(const FXVec3f& v,FXfloat ww=1.0f){x=v.x;y=v.y;z=v.z;w=ww;}
 
-  // Construct from array of floats
+  /// Construct from array of floats
   FXVec4f(const FXfloat v[]){x=v[0];y=v[1];z=v[2];w=v[3];}
 
   /// Construct from components
@@ -95,7 +95,7 @@ public:
   /// Adding
   friend FXAPI FXVec4f operator+(const FXVec4f& a,const FXVec4f& b){return FXVec4f(a.x+b.x,a.y+b.y,a.z+b.z,a.w+b.w);}
 
-  /// Substracting
+  /// Subtracting
   friend FXAPI FXVec4f operator-(const FXVec4f& a,const FXVec4f& b){return FXVec4f(a.x-b.x,a.y-b.y,a.z-b.z,a.w-b.w);}
 
   /// Scaling
@@ -146,6 +146,18 @@ public:
   /// Lowest or highest components
   friend FXAPI FXVec4f lo(const FXVec4f& a,const FXVec4f& b){return FXVec4f(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z),FXMIN(a.w,b.w));}
   friend FXAPI FXVec4f hi(const FXVec4f& a,const FXVec4f& b){return FXVec4f(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z),FXMAX(a.w,b.w));}
+
+  /// Compute normalized plane equation ax+by+cz+d=0
+  friend FXAPI FXVec4f plane(const FXVec4f& vec);
+  friend FXAPI FXVec4f plane(const FXVec3f& vec,FXfloat dist);
+  friend FXAPI FXVec4f plane(const FXVec3f& vec,const FXVec3f& p);
+  friend FXAPI FXVec4f plane(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c);
+
+  /// Signed distance normalized plane and point
+  friend FXAPI FXfloat distance(const FXVec4f& plane,const FXVec3f& p);
+
+  /// Return true if edge a-b crosses plane
+  friend FXAPI FXbool crosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b);
 
   /// Save to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec4f& v);

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXText.h,v 1.144 2004/05/05 16:03:37 fox Exp $                           *
+* $Id: FXText.h,v 1.148 2004/11/03 18:39:34 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXTEXT_H
 #define FXTEXT_H
@@ -165,9 +165,6 @@ protected:
   void squeezegap();
   FXint charWidth(FXchar ch,FXint indent) const;
   FXint wrap(FXint start) const;
-  FXint countRows(FXint start,FXint end) const;
-  FXint countCols(FXint start,FXint end) const;
-  FXint countLines(FXint start,FXint end) const;
   FXint measureText(FXint start,FXint end,FXint& wmax,FXint& hmax) const;
   FXint lineWidth(FXint pos,FXint n) const;
   FXint getYOfPos(FXint pos) const;
@@ -422,7 +419,7 @@ public:
 public:
 
   /// Construct multi-line text widget
-  FXText(FXComposite *p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=0,FXint x=0,FXint y=0,FXint w=0,FXint h=0);
+  FXText(FXComposite *p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=0,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=3,FXint pr=3,FXint pt=2,FXint pb=2);
 
   /// Create server-side resources
   virtual void create();
@@ -694,6 +691,15 @@ public:
 
   /// Return text position at given visible x,y coordinate
   FXint getPosAt(FXint x,FXint y) const;
+
+  /// Count number of rows; start should be on a row start
+  FXint countRows(FXint start,FXint end) const;
+  
+  /// Count number of columns; start should be on a row start
+  FXint countCols(FXint start,FXint end) const;
+  
+  /// Count number of newlines
+  FXint countLines(FXint start,FXint end) const;
 
   /// Return position of begin of line containing position pos
   FXint lineStart(FXint pos) const;

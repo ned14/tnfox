@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRanged.cpp,v 1.7 2004/03/21 19:07:57 fox Exp $                         *
+* $Id: FXRanged.cpp,v 1.9 2004/10/06 21:51:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXVec2d.h"
 #include "FXVec3d.h"
@@ -171,7 +172,7 @@ FXRanged intersect(const FXRanged& a,const FXRanged& b){
   }
 
 
-// Intersect box with plane ax+by+cz+w; returns -1,0,+1
+// Intersect box with normalized plane ax+by+cz+w; returns -1,0,+1
 FXint FXRanged::intersect(const FXVec4d& plane) const {
   FXVec3d lo;
   FXVec3d hi;

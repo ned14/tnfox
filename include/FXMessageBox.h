@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMessageBox.h,v 1.23 2004/02/08 17:17:34 fox Exp $                      *
+* $Id: FXMessageBox.h,v 1.24 2004/09/26 18:02:28 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXMESSAGEBOX_H
 #define FXMESSAGEBOX_H
@@ -56,7 +56,15 @@ enum {
   };
 
 
-/// Message box
+/**
+* A Message Box is a convenience class which provides a dialog for 
+* very simple common yes/no type interactions with the user.  
+* The message box has an optional icon, a title string, and the question
+* which is presented to the user.  It also has up to three buttons which
+* furnish standard responses to the question.
+* Message boxes are usually ran modally: the question must be answered
+* before the program may continue.  
+*/
 class FXAPI FXMessageBox : public FXDialogBox {
   FXDECLARE(FXMessageBox)
 protected:

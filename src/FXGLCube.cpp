@@ -21,11 +21,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLCube.cpp,v 1.21 2004/02/20 16:29:39 fox Exp $                        *
+* $Id: FXGLCube.cpp,v 1.24 2004/11/02 06:57:39 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -40,7 +42,6 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXObjectList.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXGLViewer.h"
 #include "FXGLCube.h"
@@ -103,7 +104,6 @@ void FXGLCube::drawshape(FXGLViewer*){
   FXfloat ymax = 0.5f*height;
   FXfloat zmin =-0.5f*depth;
   FXfloat zmax = 0.5f*depth;
-
   glBegin(GL_TRIANGLE_STRIP);
     glNormal3f(0.0f,0.0f,-1.0f);
     glVertex3f(xmin, ymin, zmin);

@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLCanvas.cpp,v 1.51.2.1 2004/05/19 03:35:41 fox Exp $                      *
+* $Id: FXGLCanvas.cpp,v 1.55 2004/09/17 07:46:21 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXVisual.h"
 #include "FXGLVisual.h"
@@ -112,16 +113,17 @@ FXbool FXGLCanvas::isShared() const { return sgnext!=this; }
 
 // Create X window (GL CANVAS)
 void FXGLCanvas::create(){
-  FXGLCanvas *canvas;
-  void *sharedctx=NULL;
   FXWindow::create();
 #ifdef HAVE_GL_H
   if(!ctx){
+    void *sharedctx=NULL;
     if(!visual->info){ fxerror("%s::create(): visual unsuitable for OpenGL.\n",getClassName()); }
+
+    // Sharing display lists with other context
     if(sgnext!=this){
 
       // Find another member of the group which is already created, and get its context
-      canvas=sgnext;
+      FXGLCanvas *canvas=sgnext;
       while(canvas!=this){
         sharedctx=canvas->ctx;
         if(sharedctx) break;
@@ -133,11 +135,15 @@ void FXGLCanvas::create(){
         fxerror("%s::create(): trying to share display lists with incompatible visuals\n",getClassName());
         }
       }
+
 #ifndef WIN32
+
     // Make context
     ctx=glXCreateContext((Display*)getApp()->getDisplay(),(XVisualInfo*)visual->info,(GLXContext)sharedctx,TRUE);
     if(!ctx){ fxerror("%s::create(): glXCreateContext() failed.\n",getClassName()); }
+
 #else
+
     // Make that the pixel format of the device context
     HDC hdc=::GetDC((HWND)xid);
     PIXELFORMATDESCRIPTOR *pfd=(PIXELFORMATDESCRIPTOR*)visual->info;
@@ -155,6 +161,7 @@ void FXGLCanvas::create(){
     // be what's going on.  Report this to jeroen@fox-toolkit.org
     if(sharedctx && !wglShareLists((HGLRC)sharedctx,(HGLRC)ctx)){ fxerror("%s::create(): wglShareLists() failed.\n",getClassName()); }
     ::ReleaseDC((HWND)xid,hdc);
+
 #endif
     }
 #endif

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.cpp,v 1.152 2004/02/08 17:29:06 fox Exp $                     *
+* $Id: FXFileList.cpp,v 1.156 2004/09/17 07:46:21 fox Exp $                     *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -27,6 +27,8 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -36,7 +38,6 @@
 #include "FXURL.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXFont.h"
 #include "FXIcon.h"
@@ -176,13 +177,14 @@ FXFileList::FXFileList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,F
   mini_app=new FXGIFIcon(getApp(),miniapp);
 #ifdef WIN32
   matchmode=FILEMATCH_FILE_NAME|FILEMATCH_NOESCAPE|FILEMATCH_CASEFOLD;
+  sortfunc=ascendingCase;
 #else
   matchmode=FILEMATCH_FILE_NAME|FILEMATCH_NOESCAPE;
+  sortfunc=ascending;
 #endif
   if(!(options&FILELIST_NO_OWN_ASSOC)) associations=new FXFileDict(getApp());
   list=NULL;
   dropaction=DRAG_MOVE;
-  sortfunc=ascendingCase;
   counter=0;
   timestamp=0;
   }
@@ -239,8 +241,8 @@ void FXFileList::destroy(){
 
 // Open up folder when howvering long over a folder
 long FXFileList::onOpenTimer(FXObject*,FXSelector,void*){
-  FXint xx,yy,index; FXuint state;
-  getCursorPosition(xx,yy,state);
+  FXint xx,yy,index; FXuint buttons;
+  getCursorPosition(xx,yy,buttons);
   index=getItemAt(xx,yy);
   if(0<=index && isItemDirectory(index)){
     dropdirectory=getItemPathname(index);

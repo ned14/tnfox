@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRGBIcon.h,v 1.8 2004/02/08 17:17:34 fox Exp $                          *
+* $Id: FXRGBIcon.h,v 1.9 2004/11/10 16:22:05 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXRGBICON_H
 #define FXRGBICON_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXRGBIcon(const FXRGBIcon&);
   FXRGBIcon &operator=(const FXRGBIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct icon from memory stream formatted in IRIS-RGB format

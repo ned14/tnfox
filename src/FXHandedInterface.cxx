@@ -40,16 +40,14 @@ struct FXDLLLOCAL FXHandedInterfaceIPrivate
 	FXPacker *buttonwell;
 	FXPrimaryButton *okButton, *cancelButton;
 	bool docked;
-	FXTimer *docktimer;
+	bool docktimeractive;
 	FXint dockdone, dockspeed;
 	FXHandedInterfaceIPrivate(FXApplyResetList *_arl, FXShell *_me, FXint pl,FXint pr,FXint pt,FXint pb, FXint hs,FXint vs)
 		: arl(_arl), me(_me), padleft(pl), padright(pr), padtop(pt), padbottom(pb),
 		hspacing(hs), vspacing(vs), buttonwell(0), okButton(0), cancelButton(0),
-		docked(false), docktimer(0), dockdone(100), dockspeed(0) { }
+		docked(false), docktimeractive(false), dockdone(100), dockspeed(0) { }
 	~FXHandedInterfaceIPrivate()
 	{
-		if(docktimer) me->getEventLoop()->removeTimeout(docktimer);
-		docktimer=0;
 	}
 };
 
@@ -91,12 +89,16 @@ long FXHandedInterfaceI::onCmdDockWell(FXObject*,FXSelector sel,void*)
 		{
 			if(p->docked) return 1;
 			p->docked=true;
-			if(p->docktimer) me->getEventLoop()->removeTimeout(p->docktimer);
+			if(p->docktimeractive)
+			{
+				me->getEventLoop()->removeTimeout(me, ID_DOCKWELL);
+				p->docktimeractive=false;
+			}
 			p->dockspeed=0;
 		} // fall through
 	case SEL_TIMEOUT:
 		{
-			p->docktimer=0;
+			p->docktimeractive=false;
 			if(++p->dockspeed>16) p->dockspeed=16;
 			p->dockdone-=p->dockspeed;
 			if(p->dockdone<4)
@@ -105,7 +107,10 @@ long FXHandedInterfaceI::onCmdDockWell(FXObject*,FXSelector sel,void*)
 				p->buttonwell->setBackColor(FXRGB(255,255,0));
 			}
 			else
-				p->docktimer=me->getEventLoop()->addTimeout(me, ID_DOCKWELL, 25);
+			{
+				me->getEventLoop()->addTimeout(me, ID_DOCKWELL, 25);
+				p->docktimeractive=true;
+			}
 			me->recalc();
 			return 1;
 		}
@@ -121,13 +126,17 @@ long FXHandedInterfaceI::onCmdUndockWell(FXObject*,FXSelector sel,void*)
 		{
 			if(!p->docked) return 1;
 			p->docked=false;
-			if(p->docktimer) me->getEventLoop()->removeTimeout(p->docktimer);
+			if(p->docktimeractive)
+			{
+				me->getEventLoop()->removeTimeout(me, ID_DOCKWELL);
+				p->docktimeractive=false;
+			}
 			p->dockspeed=0;
 			p->buttonwell->setBackColor(me->getApp()->getBaseColor());
 		} // fall through
 	case SEL_TIMEOUT:
 		{
-			p->docktimer=0;
+			p->docktimeractive=false;
 			if(++p->dockspeed>16) p->dockspeed=16;
 			p->dockdone+=p->dockspeed;
 			if(p->dockdone>=100)
@@ -135,7 +144,10 @@ long FXHandedInterfaceI::onCmdUndockWell(FXObject*,FXSelector sel,void*)
 				p->dockdone=100;
 			}
 			else
-				p->docktimer=me->getEventLoop()->addTimeout(me, ID_UNDOCKWELL, 25);
+			{
+				p->docktimeractive=true;
+				me->getEventLoop()->addTimeout(me, ID_UNDOCKWELL, 25);
+			}
 			me->recalc();
 			return 1;
 		}
@@ -222,7 +234,15 @@ FXHandedInterfaceI::FXHandedInterfaceI(FXApplyResetList *arl, FXShell *window, F
 
 FXHandedInterfaceI::~FXHandedInterfaceI()
 { FXEXCEPTIONDESTRUCT1 {
-	FXDELETE(p);
+	if(p)
+	{
+		if(p->docktimeractive)
+		{
+			p->me->getEventLoop()->removeTimeout(p->me, ID_DOCKWELL);
+			p->docktimeractive=false;
+		}
+		FXDELETE(p);
+	}
 } FXEXCEPTIONDESTRUCT2; }
 FXPacker *FXHandedInterfaceI::buttonWell() const throw()
 {

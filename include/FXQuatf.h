@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatf.h,v 1.6 2004/02/27 18:30:06 fox Exp $                            *
+* $Id: FXQuatf.h,v 1.12 2004/11/11 17:29:39 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXQUATF_H
 #define FXQUATF_H
@@ -30,11 +30,14 @@ namespace FX {
 
 class FXVec3f;
 
+class FXMat3f;
+
+
 /// Single-precision quaternion
 class FXAPI FXQuatf : public FXVec4f {
 public:
 
-  /// Constructors
+  /// Construct 
   FXQuatf(){}
 
   /// Copy constructor
@@ -43,7 +46,7 @@ public:
   /// Construct from components
   FXQuatf(FXfloat xx,FXfloat yy,FXfloat zz,FXfloat ww):FXVec4f(xx,yy,zz,ww){}
 
-  // Construct from array of floats
+  /// Construct from array of floats
   FXQuatf(const FXfloat v[]):FXVec4f(v){}
 
   /// Construct from axis and angle
@@ -51,6 +54,12 @@ public:
 
   /// Construct from euler angles yaw (z), pitch (y), and roll (x)
   FXQuatf(FXfloat roll,FXfloat pitch,FXfloat yaw);
+
+  /// Construct quaternion from axes
+  FXQuatf(const FXVec3f& ex,const FXVec3f& ey,const FXVec3f& ez);
+  
+  /// Construct quaternion from 3x3 matrix
+  FXQuatf(const FXMat3f& mat);
 
   /// Adjust quaternion length
   FXQuatf& adjust();
@@ -67,6 +76,21 @@ public:
   /// Obtain yaw, pitch, and roll from quaternion
   void getRollPitchYaw(FXfloat& roll,FXfloat& pitch,FXfloat& yaw) const;
 
+  /// Set quaternion from axes
+  void setAxes(const FXVec3f& ex,const FXVec3f& ey,const FXVec3f& ez);
+
+  /// Get quaternion axes
+  void getAxes(FXVec3f& ex,FXVec3f& ey,FXVec3f& ez) const;
+
+  /// Obtain local x axis
+  FXVec3f getXAxis() const;
+
+  /// Obtain local y axis
+  FXVec3f getYAxis() const;
+
+  /// Obtain local z axis
+  FXVec3f getZAxis() const;
+
   /// Exponentiate quaternion
   friend FXAPI FXQuatf exp(const FXQuatf& q);
 
@@ -75,7 +99,7 @@ public:
 
   /// Invert quaternion
   friend FXAPI FXQuatf invert(const FXQuatf& q);
-  
+
   /// Invert unit quaternion
   friend FXAPI FXQuatf unitinvert(const FXQuatf& q);
 
@@ -85,7 +109,7 @@ public:
   /// Multiply quaternions
   friend FXAPI FXQuatf operator*(const FXQuatf& p,const FXQuatf& q);
 
-  // Rotation of a vector by a quaternion
+  /// Rotation of a vector by a quaternion
   friend FXAPI FXVec3f operator*(const FXQuatf& quat,const FXVec3f& vec);
 
   /// Construct quaternion from arc a->b on unit sphere
@@ -93,6 +117,12 @@ public:
 
   /// Spherical lerp
   friend FXAPI FXQuatf lerp(const FXQuatf& u,const FXQuatf& v,FXfloat f);
+
+  /// Convert quaternion to 3x3 matrix
+  friend FXAPI FXMat3f toMatrix(const FXQuatf& quat);
+
+  /// Convert 3x3 matrix to quaternion
+  friend FXAPI FXQuatf fromMatrix(const FXMat3f& mat);
   };
 
 

@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBitmap.cpp,v 1.67 2004/03/06 07:42:41 fox Exp $                        *
+* $Id: FXBitmap.cpp,v 1.76 2004/10/19 04:39:22 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,12 +33,13 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXVisual.h"
 #include "FXBitmap.h"
 #include "FXVisual.h"
 #include "FXDCWindow.h"
+#include "FXException.h"
+
 
 /*
   Note:
@@ -95,7 +98,7 @@ FXBitmap::FXBitmap(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXDrawa
   bytewidth=(width+7)>>3;
   options=opts;
   if(!data && (options&BITMAP_OWNED)){
-    FXCALLOC(&data,FXuchar,height*bytewidth);
+    if(!FXCALLOC(&data,FXuchar,height*bytewidth)){ throw FXMemoryException("unable to construct bitmap"); }
     }
   }
 
@@ -113,7 +116,6 @@ void FXBitmap::create(){
 
       // Make pixmap
       xid=XCreatePixmap(DISPLAY(getApp()),XDefaultRootWindow(DISPLAY(getApp())),FXMAX(width,1),FXMAX(height,1),1);
-      if(!xid){ fxerror("%s::create: unable to create bitmap.\n",getClassName()); }
 
 #else
 
@@ -122,9 +124,11 @@ void FXBitmap::create(){
 
       // Create uninitialized shape bitmap
       xid=CreateBitmap(FXMAX(width,1),FXMAX(height,1),1,1,NULL);
-      if(!xid){ fxerror("%s::create: unable to create bitmap.\n",getClassName()); }
 
 #endif
+
+      // Were we successful?
+      if(!xid){ throw FXImageException("unable to create bitmap"); }
 
       // Render pixels
       render();
@@ -204,10 +208,10 @@ void FXBitmap::render(){
       vis=(Visual*)visual->visual;
 
       xim=XCreateImage(DISPLAY(getApp()),vis,1,XYBitmap,0,NULL,width,height,8,(width+7)>>3);
-      if(!xim){ fxerror("%s::render: unable to render image.\n",getClassName()); }
+      if(!xim){ throw FXImageException("unable to render bitmap"); }
 
       // Try create temp pixel store
-      if(!FXMALLOC(&xim->data,char,xim->bytes_per_line*height)){ fxerror("%s::render: unable to allocate memory.\n",getClassName()); }
+      if(!FXMALLOC(&xim->data,char,xim->bytes_per_line*height)){ throw FXMemoryException("unable to render bitmap"); }
 
       // Render bits into server-formatted bitmap
       size=xim->bytes_per_line*height;
@@ -278,7 +282,7 @@ void FXBitmap::render(){
 
       // Fill temp array
       bytes_per_line=((width+31)&~31)>>3;
-      FXCALLOC(&widedata,FXuchar,height*bytes_per_line);
+      if(!FXCALLOC(&widedata,FXuchar,height*bytes_per_line)){ throw FXMemoryException("unable to render bitmap"); }
       p=widedata+(height-1)*bytes_per_line;
       q=data;
       for(i=0; i<height; i++){
@@ -293,7 +297,7 @@ void FXBitmap::render(){
       // Get memory device context
       HDC hdcmem=::CreateCompatibleDC(NULL);
       if(!SetDIBits(hdcmem,(HBITMAP)xid,0,height,widedata,(BITMAPINFO*)&bmi,DIB_RGB_COLORS)){
-        fxerror("%s::render: unable to render pixels\n",getClassName());
+        throw FXImageException("unable to render bitmap");
         }
       GdiFlush();
       FXFREE(&widedata);
@@ -321,7 +325,7 @@ void FXBitmap::resize(FXint w,FXint h){
 
     // Make new pixmap
     xid=XCreatePixmap(DISPLAY(getApp()),XDefaultRootWindow(DISPLAY(getApp())),w,h,1);
-    if(!xid){ fxerror("%s::resize: unable to resize bitmap.\n",getClassName()); }
+    if(!xid){ throw FXImageException("unable to resize bitmap"); }
 
 #else
 
@@ -330,7 +334,7 @@ void FXBitmap::resize(FXint w,FXint h){
 
     // Create a bitmap compatible with current display
     xid=CreateBitmap(w,h,1,1,NULL);
-    if(!xid){ fxerror("%s::resize: unable to resize bitmap.\n",getClassName()); }
+    if(!xid){ throw FXImageException("unable to resize bitmap"); }
 
 #endif
     }
@@ -339,11 +343,11 @@ void FXBitmap::resize(FXint w,FXint h){
   // array is a different size as measured in bytes!
   if(data){
     if(!(options&BITMAP_OWNED)){        // Need to own array
-      FXMALLOC(&data,FXColor,h*bw);
+      if(!FXMALLOC(&data,FXColor,h*bw)){ throw FXMemoryException("unable to resize bitmap"); }
       options|=BITMAP_OWNED;
       }
     else if(h*bw!=height*bytewidth){
-      FXRESIZE(&data,FXColor,h*bw);
+      if(!FXRESIZE(&data,FXColor,h*bw)){ throw FXMemoryException("unable to resize bitmap"); }
       }
     }
 
@@ -378,7 +382,7 @@ void FXBitmap::scale(FXint w,FXint h){
       FXuchar *interim;
 
       // Copy to old buffer
-      FXMEMDUP(&interim,data,FXuchar,height*bytewidth);
+      if(!FXMEMDUP(&interim,data,FXuchar,height*bytewidth)){ throw FXMemoryException("unable to scale bitmap"); }
 
       // Resize the pixmap and target buffer
       resize(w,h);
@@ -474,7 +478,7 @@ void FXBitmap::rotate(FXint degrees){
       register FXint bw=bytewidth;
       register FXint i,j,x;
       FXuchar *olddata;
-      FXMEMDUP(&olddata,data,FXuchar,bytewidth*height);
+      if(!FXMEMDUP(&olddata,data,FXuchar,bytewidth*height)){ throw FXMemoryException("unable to rotate bitmap"); }
       switch(degrees){
         case 90:
           resize(height,width);
@@ -559,34 +563,108 @@ void FXBitmap::rotate(FXint degrees){
 
 
 // Crop bitmap to given rectangle
-void FXBitmap::crop(FXint x,FXint y,FXint w,FXint h){
+void FXBitmap::crop(FXint x,FXint y,FXint w,FXint h,FXbool color){
   if(w<1) w=1;
   if(h<1) h=1;
-  if(x<0 || y<0 || w>width || y+h>height) { fxerror("%s::crop: rectangle outside of bitmap.\n",getClassName()); }
+  if(x>=width || y>=height || x+w<=0 || y+h<=0){ fxerror("%s::crop: bad arguments.\n",getClassName()); }
   FXTRACE((1,"%s::crop(%d,%d,%d,%d)\n",getClassName(),x,y,w,h));
   if(data){
-    register FXuchar *paa,*pbb,*end,*pa,*pb;
+    register FXuchar *pnn,*poo,*yyy,*pn,*po,*xx;
     register FXint oldbw=bytewidth;
     register FXint newbw=(w+7)>>3;
-    register FXint size=height*bytewidth;
-    register FXint sh=x&7;
+    register FXint cpybw;
+    register FXint ow=width;
+    register FXint oh=height;
+    register FXint nw=w;
+    register FXint nh=h;
+    register FXint cw;
+    register FXint ch;
+    register FXint sh;
     register FXuint t;
     FXuchar *olddata;
-    FXMALLOC(&olddata,FXuchar,size+1);          // Yes, one extra byte!
-    memcpy(olddata,data,size);
-    pbb=olddata+bytewidth*y+(x>>3);
+    if(!FXMALLOC(&olddata,FXuchar,oh*bytewidth+1)){ throw FXMemoryException("unable to crop bitmap"); }
+    memcpy(olddata,data,oh*bytewidth);
     resize(w,h);
-    paa=data;
-    end=data+h*bytewidth;
+    pnn=data;
+    yyy=data+newbw*nh;
     do{
-      pa=paa; paa+=newbw;
-      pb=pbb; pbb+=oldbw;
-      do{
-        t=*pb++; t|=*pb<<8; *pa++=t>>sh;        // Because of here!
-        }
-      while(pa<paa);
+      *pnn++=-color;            // 1 -> 0xff, 0 -> 0xff
       }
-    while(paa<end);
+    while(pnn<yyy);
+    if(x<0){                    // x < 0
+      cw=FXMIN(ow,x+nw);
+      if(y<0){                  // y < 0
+        pnn=data-newbw*y;
+        poo=olddata;
+        ch=FXMIN(oh,y+nh);
+        }
+      else{                     // y >= 0
+        pnn=data;
+        poo=olddata+oldbw*y;
+        ch=FXMIN(oh,y+nh)-y;
+        }
+      pnn+=(-x)>>3;
+      sh=8-((-x)&7);
+      FXASSERT(cw>0);
+      FXASSERT(ch>0);
+      yyy=pnn+newbw*ch;
+      cpybw=((cw-x+7)>>3)-((-x)>>3);
+      FXTRACE((1,"ow=%d oh=%d nw=%d nh=%d cw=%d ch=%d sh=%d cpybw=%d\n",ow,oh,nw,nh,cw,ch,sh,cpybw));
+      do{
+        pn=pnn;
+        po=poo;
+        xx=pnn+cpybw;
+        t=(-color)&0xff;
+        do{
+          t|=(*po++)<<8;
+          *pn++=t>>sh;
+          t>>=8;
+          }
+        while(pn<xx);
+        if(color){              // A bit ugly but it'll have to do for now...
+          *(pn-1)|=0xff<<((cw-x)&7);
+          }
+        else{
+          *(pn-1)&=~(0xff<<((cw-x)&7));
+          }
+        pnn+=newbw;                 
+        poo+=oldbw;
+        }
+      while(pnn<yyy);
+      }
+    else{                       // x >= 0
+      cw=FXMIN(ow,x+nw)-x;
+      if(y<0){                  // y < 0
+        pnn=data-newbw*y;
+        poo=olddata;
+        ch=FXMIN(oh,y+nh);
+        }
+      else{                     // y >= 0
+        pnn=data;
+        poo=olddata+oldbw*y;
+        ch=FXMIN(oh,y+nh)-y;
+        }
+      poo+=x>>3;
+      sh=x&7;
+      FXASSERT(cw>0);
+      FXASSERT(ch>0);
+      yyy=pnn+newbw*ch;
+      cpybw=(cw+7)>>3;
+      do{
+        pn=pnn;
+        po=poo;
+        xx=pnn+cpybw;
+        do{
+          t=*po++;
+          t|=*po<<8;
+          *pn++=t>>sh;
+          }
+        while(pn<xx);
+        pnn+=newbw;
+        poo+=oldbw;
+        }
+      while(pnn<yyy);
+      }
     FXFREE(&olddata);
     render();
     }
@@ -594,6 +672,7 @@ void FXBitmap::crop(FXint x,FXint y,FXint w,FXint h){
     resize(w,h);
     }
   }
+
 
 
 #ifdef WIN32

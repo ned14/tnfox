@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBZStream.h,v 1.3 2004/02/08 17:17:33 fox Exp $                         *
+* $Id: FXBZStream.h,v 1.6 2004/10/21 20:17:52 fox Exp $                         *
 ********************************************************************************/
 #ifdef HAVE_BZ2LIB_H
 #ifndef FXBZSTREAM_H
@@ -51,6 +51,9 @@ public:
 
   /// Close file stream
   virtual FXbool close();
+
+  /// Get position
+  unsigned long position() const { return FXStream::position(); }
 
   /// Move to position
   virtual FXbool position(long,FXWhence){ return FALSE; }

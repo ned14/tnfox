@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxppmio.cpp,v 1.5 2004/04/08 16:24:48 fox Exp $                          *
+* $Id: fxppmio.cpp,v 1.7 2004/09/17 07:46:22 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 
 
@@ -184,7 +185,7 @@ FXbool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       break;
     }
 
-  return FALSE;
+  return TRUE;
   }
 
 

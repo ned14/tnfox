@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGradientBar.h,v 1.48 2004/02/08 17:17:33 fox Exp $                     *
+* $Id: FXGradientBar.h,v 1.49 2004/09/29 08:16:07 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXGRADIENTBAR_H
 #define FXGRADIENTBAR_H
@@ -226,7 +226,7 @@ public:
   /// Select segment(s)
   FXbool selectSegments(FXint fm,FXint to,FXbool notify=FALSE);
 
-  // Deselect all segments
+  /// Deselect all segments
   FXbool deselectSegments(FXbool notify);
 
   /// Returns TRUE if the specified segment is selected

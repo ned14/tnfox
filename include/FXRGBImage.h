@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRGBImage.h,v 1.8 2004/02/08 17:17:34 fox Exp $                         *
+* $Id: FXRGBImage.h,v 1.9 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXRGBIMAGE_H
 #define FXRGBIMAGE_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXRGBImage(const FXRGBImage&);
   FXRGBImage &operator=(const FXRGBImage&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct image from memory stream formatted in IRIS-RGB format

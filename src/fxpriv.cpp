@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpriv.cpp,v 1.32 2004/02/18 16:06:15 fox Exp $                          *
+* $Id: fxpriv.cpp,v 1.36 2004/09/17 07:46:22 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXObject.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXDrawable.h"
@@ -162,12 +163,10 @@ static FXuint fxrecvprop(Display *display,Window window,Atom prop,Atom& type,FXu
   unsigned long tfroffset,tfrsize,tfrleft;
   unsigned char *ptr;
   int format;
-  //FXTRACE((100,"fxrecvprop: maxtfrsize=%lu\n",maxtfrsize));
   tfroffset=0;
 
   // Read next chunk of data from property
   while(XGetWindowProperty(display,window,prop,tfroffset>>2,maxtfrsize>>2,False,AnyPropertyType,&type,&format,&tfrsize,&tfrleft,&ptr)==Success && type!=None){
-    //FXTRACE((100,"fxrecvprop: type=%d format=%d tfrsize=%d tfrleft=%d\n",type,format,tfrsize,tfrleft));
     tfrsize*=(format>>3);
 
     // Grow the array to accomodate new data
@@ -184,7 +183,6 @@ static FXuint fxrecvprop(Display *display,Window window,Atom prop,Atom& type,FXu
   // Delete property after we're done
   XDeleteProperty(display,window,prop);
   XFlush(display);
-  //FXTRACE((100,"fxrecvprop: read=%lu\n",tfroffset));
   return tfroffset;
   }
 
@@ -202,11 +200,9 @@ Atom fxrecvdata(Display *display,Window window,Atom prop,Atom incr,Atom& type,FX
     // First, see what we've got
     if(XGetWindowProperty(display,window,prop,0,0,False,AnyPropertyType,&type,&format,&tfrsize,&tfrleft,&ptr)==Success && type!=None){
       XFree(ptr);
-      //FXTRACE((100,"fxrecvdata: type=%d format=%d tfrsize=%d tfrleft=%d\n",type,format,tfrsize,tfrleft));
 
       // Incremental transfer
       if(type==incr){
-        //FXTRACE((100,"fxrecvdata: incr\n"));
 
         // Delete the INCR property
         XDeleteProperty(display,window,prop);
@@ -217,7 +213,6 @@ Atom fxrecvdata(Display *display,Window window,Atom prop,Atom incr,Atom& type,FX
 
           // Wrong type of notify event; perhaps stale event
           if(ev.xproperty.atom!=prop || ev.xproperty.state!=PropertyNewValue) continue;
-          //FXTRACE((100,"fxwaitforevent: got it\n"));
 
           // See what we've got
           if(XGetWindowProperty(display,window,prop,0,0,False,AnyPropertyType,&type,&format,&tfrsize,&tfrleft,&ptr)==Success && type!=None){
@@ -251,6 +246,7 @@ Atom fxrecvdata(Display *display,Window window,Atom prop,Atom incr,Atom& type,FX
 
 
 /*******************************************************************************/
+
 
 
 // Change PRIMARY selection data
@@ -342,7 +338,7 @@ void FXEventLoop::clipboardGetTypes(const FXWindow* window,FXDragType*& types,FX
   numtypes=0;
   if(clipboardWindow){
     FXMEMDUP(&types,app->xcbTypeList,FXDragType,app->xcbNumTypes);
-    numtypes=app->xselNumTypes;
+    numtypes=app->xcbNumTypes;
     }
   else{
     answer=fxsendrequest((Display*)display,window->id(),app->xcbSelection,app->ddeAtom,app->ddeTargets,event.time);

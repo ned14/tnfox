@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec3d.h,v 1.4 2004/02/13 22:48:37 fox Exp $                            *
+* $Id: FXVec3d.h,v 1.7 2004/09/30 15:03:55 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXVEC3D_H
 #define FXVEC3D_H
@@ -45,7 +45,7 @@ public:
   /// Copy constructor
   FXVec3d(const FXVec3d& v){x=v.x;y=v.y;z=v.z;}
 
-  // Initialize from array of floats
+  /// Initialize from array of doubles
   FXVec3d(const FXdouble v[]){x=v[0];y=v[1];z=v[2];}
 
   /// Initialize with components
@@ -66,7 +66,7 @@ public:
   /// Assignment
   FXVec3d& operator=(const FXVec3d& v){x=v.x;y=v.y;z=v.z;return *this;}
 
-  /// Assignment from array of floats
+  /// Assignment from array of doubles
   FXVec3d& operator=(const FXdouble v[]){x=v[0];y=v[1];z=v[2];return *this;}
 
   /// Assigning operators
@@ -91,7 +91,7 @@ public:
   /// Adding
   friend FXAPI FXVec3d operator+(const FXVec3d& a,const FXVec3d& b){return FXVec3d(a.x+b.x,a.y+b.y,a.z+b.z);}
 
-  /// Substracting
+  /// Subtracting
   friend FXAPI FXVec3d operator-(const FXVec3d& a,const FXVec3d& b){return FXVec3d(a.x-b.x,a.y-b.y,a.z-b.z);}
 
   /// Scaling
@@ -145,6 +145,12 @@ public:
   /// Lowest or highest components
   friend FXAPI FXVec3d lo(const FXVec3d& a,const FXVec3d& b){return FXVec3d(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z));}
   friend FXAPI FXVec3d hi(const FXVec3d& a,const FXVec3d& b){return FXVec3d(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z));}
+
+  /// Compute normal from three points a,b,c
+  friend FXAPI FXVec3d normal(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c);
+
+  /// Compute approximate normal from four points a,b,c,d
+  friend FXAPI FXVec3d normal(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c,const FXVec3d& d);
 
   /// Save vector to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec3d& v);

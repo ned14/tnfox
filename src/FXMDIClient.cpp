@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIClient.cpp,v 1.49 2004/02/08 17:29:06 fox Exp $                     *
+* $Id: FXMDIClient.cpp,v 1.55 2004/10/07 21:49:14 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXDrawable.h"
@@ -459,7 +460,7 @@ FXbool FXMDIClient::setActiveChild(FXMDIChild* child,FXbool notify){
     getApp()->refresh();
 
     // Notify target
-    if(notify && target){ target->handle(this,FXSEL(SEL_CHANGED,message),child); }
+    if(notify && target){ target->tryHandle(this,FXSEL(SEL_CHANGED,message),child); }
 
     return TRUE;
     }
@@ -586,8 +587,8 @@ long FXMDIClient::onUpdActivatePrev(FXObject* sender,FXSelector,void*){
 
 
 // Delegate all other messages to active child
-long FXMDIClient::onDefault(FXObject* sender,FXSelector key,void* data){
-  return active && active->handle(sender,key,data);
+long FXMDIClient::onDefault(FXObject* sender,FXSelector sel,void* ptr){
+  return active && active->handle(sender,sel,ptr);
   }
 
 

@@ -19,18 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIcon.cpp,v 1.62 2004/04/28 16:29:07 fox Exp $                          *
+* $Id: FXIcon.cpp,v 1.65 2004/09/17 07:46:21 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXVisual.h"
 #include "FXIcon.h"
@@ -382,10 +383,11 @@ struct BITMAPINFO2 {
 // Render Icon MS-Windows
 void FXIcon::render(){
   if(xid){
-    register FXuchar *maskdata,*etchdata,*msk,*ets;
+    register FXint bytes_per_line,x,y;
+    register FXuchar *msk,*ets;
     register FXColor *img;
-    register FXint x,y;
-    register FXuint bytes_per_line;
+    FXuchar *maskdata;
+    FXuchar *etchdata;
     BITMAPINFO2 bmi;
     HDC hdcmsk;
 

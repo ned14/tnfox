@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXListBox.h,v 1.29 2004/02/08 17:17:33 fox Exp $                         *
+* $Id: FXListBox.h,v 1.35 2004/10/30 15:45:34 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXLISTBOX_H
 #define FXLISTBOX_H
@@ -45,7 +45,15 @@ class FXList;
 class FXPopup;
 
 
-/// List Box (lets you choose from a drop-down menu)
+/**
+* The List Box is a control to select one of a list of options.  It looks
+* similar to a Combo Box except that List Box yields integer numbers only.
+* When an option is selected, List Box will send an SEL_COMMAND with the
+* index of the opton.  While manipulating the list, it may send SEL_CHANGED
+* messages to indicate which option the cursor is hovering over.
+* The List Box is able to receive ID_GETINTVALUE and ID_SETINTVALUE which
+* will retrieve the current option or change the selected option.
+*/
 class FXAPI FXListBox : public FXPacker {
   FXDECLARE(FXListBox)
 protected:
@@ -117,7 +125,7 @@ public:
   FXbool isItemCurrent(FXint index) const;
 
   /// Set the current item (index is zero-based)
-  void setCurrentItem(FXint index);
+  virtual void setCurrentItem(FXint index);
 
   /// Get the current item's index
   FXint getCurrentItem() const;
@@ -127,6 +135,12 @@ public:
 
   /// Replace the item at index
   FXint setItem(FXint index,const FXString& text,FXIcon* icon=NULL,void* ptr=NULL);
+
+  /// Fill list box by appending items from array of strings
+  FXint fillItems(const FXchar** strings,FXIcon* icon=NULL,void* ptr=NULL);
+
+  /// Fill list box by appending items from newline separated strings
+  FXint fillItems(const FXString& strings,FXIcon* icon=NULL,void* ptr=NULL);
 
   /// Insert a new item at index
   FXint insertItem(FXint index,const FXString& text,FXIcon* icon=NULL,void* ptr=NULL);
@@ -147,10 +161,28 @@ public:
   void clearItems();
 
   /**
-  * Search items for item by name, starting from start item; the
-  * flags argument controls the search direction, and case sensitivity.
+  * Search items by name, beginning from item start.  If the start
+  * item is -1 the search will start at the first item in the list.
+  * Flags may be SEARCH_FORWARD or SEARCH_BACKWARD to control the
+  * search direction; this can be combined with SEARCH_NOWRAP or SEARCH_WRAP
+  * to control whether the search wraps at the start or end of the list.
+  * The option SEARCH_IGNORECASE causes a case-insensitive match.  Finally,
+  * passing SEARCH_PREFIX causes searching for a prefix of the item name.
+  * Return -1 if no matching item is found.
   */
   FXint findItem(const FXString& text,FXint start=-1,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
+
+  /**
+  * Search items by associated user data, beginning from item start. If the
+  * start item is -1 the search will start at the first item in the list.
+  * Flags may be SEARCH_FORWARD or SEARCH_BACKWARD to control the
+  * search direction; this can be combined with SEARCH_NOWRAP or SEARCH_WRAP
+  * to control whether the search wraps at the start or end of the list.
+  * The option SEARCH_IGNORECASE causes a case-insensitive match.  Finally,
+  * passing SEARCH_PREFIX causes searching for a prefix of the item name.
+  * Return -1 if no matching item is found.
+  */
+  FXint findItemByData(const void *ptr,FXint start=-1,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
 
   /// Set text for specified item
   void setItemText(FXint index,const FXString& text);

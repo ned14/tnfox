@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHash.cpp,v 1.13 2004/02/08 17:29:06 fox Exp $                          *
+* $Id: FXHash.cpp,v 1.20 2004/09/21 00:58:17 fox Exp $                          *
 ********************************************************************************/
 #include "fxver.h"
 #include "fxdefs.h"
@@ -39,7 +39,7 @@
     number of used items drops below some minimum, the table's size is
     halved.
   - If the table is resized, the empty slots all become free slots since
-    the empty holes are not compied into the table.  All used items will
+    the empty holes are not copied into the table; only used items will
     be rehashed into the new table.
 */
 
@@ -55,8 +55,15 @@
 namespace FX {
 
 // Make empty table
-FXHash::FXHash():used(0),free(2),max(1){
-  FXCALLOC(&table,FXEntry,2);
+FXHash::FXHash(){
+  FXMALLOC(&table,FXEntry,2);
+  table[0].key=NULL;
+  table[0].val=NULL;
+  table[1].key=NULL;
+  table[1].val=NULL;
+  used=0;
+  free=2;
+  max=1;
   }
 
 
@@ -83,28 +90,53 @@ void FXHash::resize(FXuint m){
   }
 
 
-// Insert or replace association into the table
+// Insert key into the table
 void* FXHash::insert(void* key,void* val){
-  register FXuint p,pp,x,xx;
+  register FXuint p,pp,x;
   if(key){
-    if((free<<1)<=max) resize((max<<1)|1);
+    if((free<<1)<=max+1) resize((max<<1)|1);
     p=pp=HASH1(key,max);
-    x=xx=HASH2(key,max);
+    x=HASH2(key,max);
     while(table[p].key){
-      if(table[p].key==key) goto y;             // Replace existing
+      if(table[p].key==key) goto y;             // Return existing
       p=(p+x)&max;
       }
     p=pp;
-    x=xx;
     while(table[p].key){
       if(table[p].key==(void*)-1L) goto x;      // Put it in empty slot
       p=(p+x)&max;
       }
     free--;
 x:  used++;
-y:  table[p].key=key;
+    table[p].key=key;
     table[p].val=val;
-    return val;
+y:  return table[p].val;
+    }
+  return NULL;
+  }
+
+
+// Replace key in the table
+void* FXHash::replace(void* key,void* val){
+  register FXuint p,pp,x;
+  if(key){
+    if((free<<1)<=max+1) resize((max<<1)|1);
+    p=pp=HASH1(key,max);
+    x=HASH2(key,max);
+    while(table[p].key){
+      if(table[p].key==key) goto y;             // Replace existing
+      p=(p+x)&max;
+      }
+    p=pp;
+    while(table[p].key){
+      if(table[p].key==(void*)-1L) goto x;      // Put it in empty slot
+      p=(p+x)&max;
+      }
+    free--;
+x:  used++;
+    table[p].key=key;
+y:  table[p].val=val;
+    return table[p].val;
     }
   return NULL;
   }
@@ -125,7 +157,7 @@ void* FXHash::remove(void* key){
     table[p].key=(void*)-1L;                    // Empty but not free
     table[p].val=NULL;
     used--;
-    if((used<<2)<=max) resize(max>>1);
+    if(used<((max+1)>>2)) resize(max>>1);
     return val;
     }
 x:return NULL;
@@ -145,6 +177,19 @@ void* FXHash::find(void* key) const {
     return table[p].val;
     }
 x:return NULL;
+  }
+
+
+// Clear hash table
+void FXHash::clear(){
+  FXRESIZE(&table,FXEntry,2);
+  table[0].key=NULL;
+  table[0].val=NULL;
+  table[1].key=NULL;
+  table[1].val=NULL;
+  used=0;
+  free=2;
+  max=1;
   }
 
 

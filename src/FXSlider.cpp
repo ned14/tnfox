@@ -19,18 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSlider.cpp,v 1.52 2004/03/25 23:11:04 fox Exp $                        *
+* $Id: FXSlider.cpp,v 1.58 2004/10/07 21:49:14 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXSlider.h"
@@ -67,8 +68,8 @@ FXDEFMAP(FXSlider) FXSliderMap[]={
   FXMAPFUNC(SEL_MIDDLEBUTTONPRESS,0,FXSlider::onMiddleBtnPress),
   FXMAPFUNC(SEL_MIDDLEBUTTONRELEASE,0,FXSlider::onMiddleBtnRelease),
   FXMAPFUNC(SEL_UNGRABBED,0,FXSlider::onUngrabbed),
-  FXMAPFUNC(SEL_UPDATE,FXSlider::ID_QUERY_TIP,FXSlider::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXSlider::ID_QUERY_HELP,FXSlider::onQueryHelp),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXSlider::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXSlider::onQueryHelp),
   FXMAPFUNC(SEL_TIMEOUT,FXSlider::ID_AUTOSLIDE,FXSlider::onAutoSlide),
   FXMAPFUNC(SEL_COMMAND,FXSlider::ID_SETVALUE,FXSlider::onCmdSetValue),
   FXMAPFUNC(SEL_COMMAND,FXSlider::ID_SETINTVALUE,FXSlider::onCmdSetIntValue),
@@ -208,20 +209,22 @@ long FXSlider::onCmdGetTip(FXObject*,FXSelector,void* ptr){
   }
 
 
-// We were asked about status text
-long FXSlider::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),&help);
+// We were asked about tip text
+long FXSlider::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
     }
   return 0;
   }
 
 
-// We were asked about tip text
-long FXSlider::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(!tip.empty() && (flags&FLAG_TIP)){
-    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),&tip);
+// We were asked about status text
+long FXSlider::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
   return 0;
@@ -301,7 +304,8 @@ long FXSlider::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     grab();
     getApp()->removeTimeout(this,ID_AUTOSLIDE);
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    flags&=~FLAG_UPDATE;
     if(options&SLIDER_VERTICAL){
       if(event->win_y<headpos){
         getApp()->addTimeout(this,ID_AUTOSLIDE,getApp()->getScrollDelay(),(void*)(FXival)incr);
@@ -334,10 +338,9 @@ long FXSlider::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     if(p>range[1]) p=range[1];
     if(p!=pos){
       setValue(p);
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
-    flags&=~FLAG_UPDATE;
     return 1;
     }
   return 0;
@@ -354,9 +357,9 @@ long FXSlider::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~FLAG_PRESSED;
     flags&=~FLAG_CHANGED;
     flags|=FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(flgs&FLAG_CHANGED){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -408,8 +411,8 @@ long FXSlider::onMotion(FXObject*,FXSelector,void* ptr){
     if(p>range[1]) p=range[1];
     if(pos!=p){
       pos=p;
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -424,12 +427,14 @@ long FXSlider::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled()){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONPRESS,message),ptr)) return 1;
     dragpoint=headsize/2;
     yy=border+padtop+2;
     xx=border+padleft+2;
     hh=height-(border<<1)-padtop-padbottom-4;
     ww=width-(border<<1)-padleft-padright-4;
+    flags|=FLAG_PRESSED;
+    flags&=~FLAG_UPDATE;
     if(options&SLIDER_VERTICAL){
       h=event->win_y-dragpoint;
       travel=hh-headsize;
@@ -464,11 +469,9 @@ long FXSlider::onMiddleBtnPress(FXObject*,FXSelector,void* ptr){
     if(p>range[1]) p=range[1];
     if(p!=pos){
       pos=p;
-      if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       flags|=FLAG_CHANGED;
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
-    flags|=FLAG_PRESSED;
-    flags&=~FLAG_UPDATE;
     return 1;
     }
   return 0;
@@ -485,9 +488,9 @@ long FXSlider::onMiddleBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~FLAG_CHANGED;
     flags|=FLAG_UPDATE;
     setValue(pos);                                                 // Hop to exact position
-    if(target && target->handle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_MIDDLEBUTTONRELEASE,message),ptr)) return 1;
     if(flgs&FLAG_CHANGED){
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
       }
     return 1;
     }
@@ -503,8 +506,7 @@ long FXSlider::onMouseWheel(FXObject*,FXSelector,void* ptr){
   if(p>range[1]) p=range[1];
   if(pos!=p){
     setValue(p);
-    if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);
     }
   return 1;
   }
@@ -536,8 +538,8 @@ long FXSlider::onAutoSlide(FXObject*,FXSelector,void* ptr){
     }
   if(p!=pos){
     setValue(p);
-    if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
     flags|=FLAG_CHANGED;
+    if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
     return 1;
     }
   return 0;

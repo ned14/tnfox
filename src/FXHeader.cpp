@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.cpp,v 1.83 2004/02/08 17:29:06 fox Exp $                        *
+* $Id: FXHeader.cpp,v 1.91 2004/10/30 06:19:36 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -319,8 +320,8 @@ FXDEFMAP(FXHeader) FXHeaderMap[]={
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE,0,FXHeader::onLeftBtnRelease),
   FXMAPFUNC(SEL_UNGRABBED,0,FXHeader::onUngrabbed),
   FXMAPFUNC(SEL_TIMEOUT,FXHeader::ID_TIPTIMER,FXHeader::onTipTimer),
-  FXMAPFUNC(SEL_UPDATE,FXWindow::ID_QUERY_TIP,FXHeader::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXWindow::ID_QUERY_HELP,FXHeader::onQueryHelp),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXHeader::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXHeader::onQueryHelp),
   };
 
 
@@ -443,7 +444,7 @@ FXint FXHeader::setItem(FXint index,FXHeaderItem* item,FXbool notify){
   if(index<0 || nitems<=index){ fxerror("%s::setItem: index out of range.\n",getClassName()); }
 
   // Notify item will be replaced
-  if(notify && target){target->handle(this,FXSEL(SEL_REPLACED,message),(void*)(FXival)index);}
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_REPLACED,message),(void*)(FXival)index);}
 
   // Copy the size over
   item->setSize(items[index]->getSize());
@@ -490,7 +491,7 @@ FXint FXHeader::insertItem(FXint index,FXHeaderItem* item,FXbool notify){
   nitems++;
 
   // Notify item has been inserted
-  if(notify && target){target->handle(this,FXSEL(SEL_INSERTED,message),(void*)(FXival)index);}
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_INSERTED,message),(void*)(FXival)index);}
 
   // Redo layout
   recalc();
@@ -528,6 +529,30 @@ FXint FXHeader::prependItem(const FXString& text,FXIcon *icon,FXint size,void* p
   }
 
 
+// Fill list by appending items from array of strings
+FXint FXHeader::fillItems(const FXchar** strings,FXIcon *icon,FXint size,void* ptr,FXbool notify){
+  register FXint n=0;
+  if(strings){
+    while(strings[n]){
+      appendItem(strings[n++],icon,size,ptr,notify);
+      }
+    }
+  return n;
+  }
+
+
+// Fill list by appending items from newline separated strings
+FXint FXHeader::fillItems(const FXString& strings,FXIcon *icon,FXint size,void* ptr,FXbool notify){
+  register FXint n=0;
+  FXString text;
+  while(!(text=strings.section('\n',n)).empty()){
+    appendItem(text,icon,size,ptr,notify);
+    n++;
+    }
+  return n;
+  }
+
+
 // Remove node from list
 void FXHeader::removeItem(FXint index,FXbool notify){
   register FXint i,d;
@@ -536,7 +561,7 @@ void FXHeader::removeItem(FXint index,FXbool notify){
   if(index<0 || nitems<=index){ fxerror("%s::removeItem: index out of range.\n",getClassName()); }
 
   // Notify item will be deleted
-  if(notify && target){target->handle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
 
   // Adjust remaining columns
   for(i=index+1,d=items[index]->getSize(); i<nitems; i++) items[i]->setPos(items[i]->getPos()-d);
@@ -557,7 +582,7 @@ void FXHeader::clearItems(FXbool notify){
 
   // Delete items
   for(FXint index=nitems-1; 0<=index; index--){
-    if(notify && target){target->handle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
     delete items[index];
     }
 
@@ -889,9 +914,10 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
 
 
 // We were asked about tip text
-long FXHeader::onQueryTip(FXObject* sender,FXSelector,void*){
-  FXint index,cx,cy; FXuint btns;
+long FXHeader::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
   if(flags&FLAG_TIP){
+    FXint index,cx,cy; FXuint btns;
     getCursorPosition(cx,cy,btns);
     index=getItemAt((options&HEADER_VERTICAL)?cy:cx);
     if(0<=index && index<nitems){
@@ -905,9 +931,9 @@ long FXHeader::onQueryTip(FXObject* sender,FXSelector,void*){
 
 
 // We were asked about status text
-long FXHeader::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    FXTRACE((250,"%s::onQueryHelp %p\n",getClassName(),this));
+long FXHeader::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
@@ -934,7 +960,7 @@ long FXHeader::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     grab();
 
     // First change callback
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
 
     // Where clicked
     coord=(options&HEADER_VERTICAL)?event->win_y:event->win_x;
@@ -978,14 +1004,14 @@ long FXHeader::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~(FLAG_PRESSED|FLAG_DODRAG|FLAG_TRYDRAG);
 
     // First chance callback
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
 
     // Set cursor back
     setDragCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
 
     // Clicked on split
     if(flg&FLAG_TRYDRAG){
-      if(target) target->handle(this,FXSEL(SEL_CLICKED,message),(void*)(FXival)active);
+      if(target) target->tryHandle(this,FXSEL(SEL_CLICKED,message),(void*)(FXival)active);
       return 1;
       }
 
@@ -994,7 +1020,7 @@ long FXHeader::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
       if(!(options&HEADER_TRACKING)){
         drawSplit(activepos+activesize);
         setItemSize(active,activesize);
-        if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)active);
+        if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)active);
         }
       return 1;
       }
@@ -1003,7 +1029,7 @@ long FXHeader::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     if(flg&FLAG_PRESSED){
       if(items[active]->isPressed()){
         setItemPressed(active,FALSE);
-        if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)active);
+        if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)active);
         }
       return 1;
       }
@@ -1048,7 +1074,7 @@ long FXHeader::onMotion(FXObject*,FXSelector,void* ptr){
         }
       else{
         setItemSize(active,activesize);
-        if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)active);
+        if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)active);
         }
       }
     return 1;
@@ -1114,10 +1140,10 @@ long FXHeader::onUngrabbed(FXObject* sender,FXSelector sel,void* ptr){
 
 
 // Draw the split
-void FXHeader::drawSplit(FXint pos){
+void FXHeader::drawSplit(FXint p){
   FXDCWindow dc(getParent());
   FXint px,py;
-  translateCoordinatesTo(px,py,getParent(),pos,pos);
+  translateCoordinatesTo(px,py,getParent(),p,p);
   dc.clipChildren(FALSE);
   dc.setFunction(BLT_NOT_DST);
   if(options&HEADER_VERTICAL){

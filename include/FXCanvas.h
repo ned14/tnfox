@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCanvas.h,v 1.17 2004/02/08 17:17:33 fox Exp $                          *
+* $Id: FXCanvas.h,v 1.18 2004/10/05 15:53:31 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXCANVAS_H
 #define FXCANVAS_H
@@ -41,9 +41,6 @@ private:
   FXCanvas &operator=(const FXCanvas&);
 public:
   long onPaint(FXObject*,FXSelector,void*);
-  long onMotion(FXObject*,FXSelector,void*);
-  long onKeyPress(FXObject*,FXSelector,void*);
-  long onKeyRelease(FXObject*,FXSelector,void*);
 public:
 
   /// Construct new drawing canvas widget

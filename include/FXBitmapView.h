@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBitmapView.h,v 1.3 2004/03/03 19:25:34 fox Exp $                       *
+* $Id: FXBitmapView.h,v 1.5 2004/09/24 17:34:02 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXBITMAPVIEW_H
 #define FXBITMAPVIEW_H
@@ -45,7 +45,10 @@ enum {
   };
 
 /**
-* The Bitmap View widget display a scrollable view of a bitmap.
+* The Bitmap View widget display a scrollable view of a monochrome bitmap image; 
+* the bitmap is not owned by the bitmap frame so it must be explicitly deleted 
+* elsewhere.  Thus, a single bitmap image can be displayed inside multiple bitmap
+* view widgets.
 */
 class FXAPI FXBitmapView : public FXScrollArea {
   FXDECLARE(FXBitmapView)
@@ -57,7 +60,6 @@ protected:
   FXint     graby;      // Grab point y
 protected:
   FXBitmapView();
-  virtual void layout();
 private:
   FXBitmapView(const FXBitmapView&);
   FXBitmapView &operator=(const FXBitmapView&);
@@ -81,6 +83,9 @@ public:
 
   /// Detach server-side resources
   virtual void detach();
+
+  /// Perform layout immediately
+  virtual void layout();
 
   /// Image view widget can receive focus
   virtual FXbool canFocus() const;

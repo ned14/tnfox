@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFile.h,v 1.65 2004/02/08 17:17:33 fox Exp $                            *
+* $Id: FXFile.h,v 1.66 2004/07/31 05:35:44 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXFILE_H
 #define FXFILE_H
@@ -148,6 +148,9 @@ public:
 
 
 	// These are directly copied from FOX
+
+	/// Get current user name
+	static FXString  getCurrentUserName();
 
 	/// Return value of environment variable name
 	static FXString  getEnvironment(const FXString& name);

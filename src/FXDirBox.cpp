@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirBox.cpp,v 1.46 2004/02/08 17:29:06 fox Exp $                        *
+* $Id: FXDirBox.cpp,v 1.55 2004/10/29 17:49:19 fox Exp $                        *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -27,6 +27,8 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -37,7 +39,6 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXObjectList.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXImage.h"
 #include "FXIcon.h"
@@ -69,6 +70,8 @@
     the lowest directory.
   - Share icons with other widgets; upgrade icons to some nicer ones.
   - Should some of these icons move to FXFileDict?
+  - Need to support ":" directory list separator so we can path not just
+    a single path but a list of paths.
 */
 
 
@@ -80,11 +83,11 @@ namespace FX {
 
 // Map
 FXDEFMAP(FXDirBox) FXDirBoxMap[]={
-  FXMAPFUNC(SEL_CHANGED,0,FXDirBox::onChanged),
-  FXMAPFUNC(SEL_COMMAND,0,FXDirBox::onCommand),
-  FXMAPFUNC(SEL_COMMAND,FXWindow::ID_SETVALUE,FXDirBox::onCmdSetValue),
-  FXMAPFUNC(SEL_COMMAND,FXWindow::ID_SETSTRINGVALUE,FXDirBox::onCmdSetStringValue),
-  FXMAPFUNC(SEL_COMMAND,FXWindow::ID_GETSTRINGVALUE,FXDirBox::onCmdGetStringValue),
+  FXMAPFUNC(SEL_CHANGED,FXDirBox::ID_TREE,FXDirBox::onTreeChanged),
+  FXMAPFUNC(SEL_CLICKED,FXDirBox::ID_TREE,FXDirBox::onTreeClicked),
+  FXMAPFUNC(SEL_COMMAND,FXDirBox::ID_SETVALUE,FXDirBox::onCmdSetValue),
+  FXMAPFUNC(SEL_COMMAND,FXDirBox::ID_SETSTRINGVALUE,FXDirBox::onCmdSetStringValue),
+  FXMAPFUNC(SEL_COMMAND,FXDirBox::ID_GETSTRINGVALUE,FXDirBox::onCmdGetStringValue),
   };
 
 
@@ -213,7 +216,7 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
     if(id()) icon->create();
 
     // Add root
-    item=addItemFirst(NULL,"/",icon,icon);
+    item=appendItem(NULL,"/",icon,icon);
 
     // Add the rest
     while(end<path.length()){
@@ -232,7 +235,7 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
         }
 
       // Add next item under last
-      item=addItemLast(item,path.mid(beg,end-beg),icon,icon);
+      item=appendItem(item,path.mid(beg,end-beg),icon,icon);
 
       // Create item
       if(id()) icon->create();
@@ -308,7 +311,7 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
         if(id()) icon->create();
 
         // Add another root item
-        it=addItemLast(NULL,drivename,icon,icon);
+        it=appendItem(NULL,drivename,icon,icon);
 
         // Rest of path under this root
         if(comparecase(path,drivename,end)==0) item=it;
@@ -329,7 +332,7 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
     if(id()) icon->create();
 
     // Add netword neighborhood item
-    it=addItemLast(NULL,"\\\\",icon,icon);
+    it=appendItem(NULL,"\\\\",icon,icon);
 
     // Rest of path under this root maybe
     if(comparecase(path,"\\\\",end)==0) item=it;
@@ -357,7 +360,7 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
         if(id()) icon->create();
 
         // Add next item under last
-        item=addItemLast(item,path.mid(beg,end-beg),icon,icon);
+        item=appendItem(item,path.mid(beg,end-beg),icon,icon);
 
         // Skip over path separator
         if(end<path.length() && ISPATHSEP(path[end])) end++;
@@ -372,19 +375,25 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
 
 #endif
 
-// Changed current item in tree; pass path to current item
-long FXDirBox::onChanged(FXObject*,FXSelector,void* ptr){
+
+// Forward clicked message from list to target
+long FXDirBox::onTreeClicked(FXObject*,FXSelector,void* ptr){
   FXString string=getItemPathname((FXTreeItem*)ptr);
-  if(target) target->handle(this,FXSEL(SEL_CHANGED,message),(void*)string.text());
+  button->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);    // Unpost the list
+  if(ptr){
+    field->setText(tree->getItemText((FXTreeItem*)ptr));
+    field->setIcon(tree->getItemClosedIcon((FXTreeItem*)ptr));
+    removeItem(((FXTreeItem*)ptr)->getFirst());
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)string.text());
+    }
   return 1;
   }
 
 
-// Switch current item
-long FXDirBox::onCommand(FXObject*,FXSelector,void* ptr){
+// Forward changed message from list to target
+long FXDirBox::onTreeChanged(FXObject*,FXSelector,void* ptr){
   FXString string=getItemPathname((FXTreeItem*)ptr);
-  removeItem(((FXTreeItem*)ptr)->getFirst());
-  if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)string.text());
+  if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)string.text());
   return 1;
   }
 

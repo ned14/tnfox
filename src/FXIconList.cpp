@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.cpp,v 1.164 2004/02/08 17:29:06 fox Exp $                     *
+* $Id: FXIconList.cpp,v 1.179 2004/10/30 06:19:36 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -71,6 +72,8 @@
     autoscroll when dragging icons.
   - Perhaps drawDetails() should ignore x coordinate and just look at getItemOffest()
     from the header instead.
+  - Perhaps the ICONLIST_AUTOSIZE mode should be set with a separate API so that
+    the visual stuff changed setListStyle().
 */
 
 
@@ -486,6 +489,8 @@ FXDEFMAP(FXIconList) FXIconListMap[]={
   FXMAPFUNC(SEL_DOUBLECLICKED,0,FXIconList::onDoubleClicked),
   FXMAPFUNC(SEL_TRIPLECLICKED,0,FXIconList::onTripleClicked),
   FXMAPFUNC(SEL_COMMAND,0,FXIconList::onCommand),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXIconList::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXIconList::onQueryHelp),
   FXMAPFUNC(SEL_CHANGED,FXIconList::ID_HEADER_CHANGE,FXIconList::onHeaderChanged),
   FXMAPFUNC(SEL_CLICKED,FXIconList::ID_HEADER_CHANGE,FXIconList::onHeaderResize),
   FXMAPFUNC(SEL_UPDATE,FXIconList::ID_SHOW_DETAILS,FXIconList::onUpdShowDetails),
@@ -493,8 +498,6 @@ FXDEFMAP(FXIconList) FXIconListMap[]={
   FXMAPFUNC(SEL_UPDATE,FXIconList::ID_SHOW_BIG_ICONS,FXIconList::onUpdShowBigIcons),
   FXMAPFUNC(SEL_UPDATE,FXIconList::ID_ARRANGE_BY_ROWS,FXIconList::onUpdArrangeByRows),
   FXMAPFUNC(SEL_UPDATE,FXIconList::ID_ARRANGE_BY_COLUMNS,FXIconList::onUpdArrangeByColumns),
-  FXMAPFUNC(SEL_UPDATE,FXWindow::ID_QUERY_TIP,FXIconList::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXWindow::ID_QUERY_HELP,FXIconList::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXIconList::ID_SHOW_DETAILS,FXIconList::onCmdShowDetails),
   FXMAPFUNC(SEL_COMMAND,FXIconList::ID_SHOW_MINI_ICONS,FXIconList::onCmdShowMiniIcons),
   FXMAPFUNC(SEL_COMMAND,FXIconList::ID_SHOW_BIG_ICONS,FXIconList::onCmdShowBigIcons),
@@ -788,29 +791,18 @@ long FXIconList::onHeaderChanged(FXObject*,FXSelector,void*){
   }
 
 
-// Helper function
-static inline FXint count(const FXchar* label){
-  register FXint c=0;
-  while(label[c] && label[c]!='\t') c++;
-  return c;
-  }
-
-
-
 // Header subdivision resize has been requested;
 // we want to set the width of the header column
 // to that of the widest item.
 long FXIconList::onHeaderResize(FXObject*,FXSelector,void* ptr){
   register FXint hi=(FXint)(FXival)ptr;
-  register FXint tlen,i,c;
-  register FXint iw,tw,w,nw=0;
+  register FXint i,iw,tw,w,nw=0;
+  FXString text;
 
   // For detailed icon list
   if(!(options&(ICONLIST_MINI_ICONS|ICONLIST_BIG_ICONS))){
     for(i=0; i<nitems; i++){
-      register const FXchar *text=items[i]->label.text();
       w=0;
-      c=0;
 
       // The first header item may have an icon
       if(hi==0){
@@ -820,19 +812,14 @@ long FXIconList::onHeaderResize(FXObject*,FXSelector,void* ptr){
           }
         }
 
-      if(text){
-
-        // Locate text for the header index
-        while(*text!='\0' && c<hi){
-          if(*text++=='\t') c++;
-          }
-        tlen=count(text);               // FIXME
-///////////////  for(tlen=0; tlen<lbl.length() && lbl[tlen]!='\t'; tlen++);
-        if(tlen>0){
-          tw=font->getTextWidth(text,tlen);
-          w+=tw+SIDE_SPACING+2;
-          }
+      // Measure section of text
+      text=items[i]->label.section('\t',hi);
+      if(!text.empty()){
+        tw=font->getTextWidth(text.text(),text.length());
+        w+=tw+SIDE_SPACING+2;
         }
+
+      // Keep the max
       if(w>nw) nw=w;
       }
 
@@ -843,6 +830,20 @@ long FXIconList::onHeaderResize(FXObject*,FXSelector,void* ptr){
       }
     }
   return 1;
+  }
+
+
+// Set headers from array of strings
+void FXIconList::setHeaders(const FXchar** strings,FXint size){
+  header->clearItems();
+  header->fillItems(strings,NULL,size);
+  }
+
+
+// Set headers from newline separated strings
+void FXIconList::setHeaders(const FXString& strings,FXint size){
+  header->clearItems();
+  header->fillItems(strings,NULL,size);
   }
 
 
@@ -1024,8 +1025,14 @@ FXbool FXIconList::isItemVisible(FXint index) const {
 void FXIconList::makeItemVisible(FXint index){
   register FXint x,y,hh,px,py;
   if(xid && 0<=index && index<nitems){
+
+    // Force layout if dirty
+    if(flags&FLAG_RECALC) layout();
+
     px=pos_x;
     py=pos_y;
+
+    // Showing icon view
     if(options&(ICONLIST_BIG_ICONS|ICONLIST_MINI_ICONS)){
       if(options&ICONLIST_COLUMNS){
         FXASSERT(ncols>0);
@@ -1042,12 +1049,16 @@ void FXIconList::makeItemVisible(FXint index){
       if(py+y+itemHeight >= viewport_h) py=viewport_h-y-itemHeight;
       if(py+y <= 0) py=-y;
       }
+
+    // Showing list view
     else{
       hh=header->getDefaultHeight();
       y=hh+index*itemHeight;
       if(py+y+itemHeight >= viewport_h+hh) py=hh+viewport_h-y-itemHeight;
       if(py+y <= hh) py=hh-y;
       }
+
+    // Scroll into view
     setPosition(px,py);
     }
   }
@@ -1117,30 +1128,59 @@ typedef FXint (*FXCompareFunc)(const FXString&,const FXString&,FXint);
 
 
 // Get item by name
-FXint FXIconList::findItem(const FXString& text,FXint start,FXuint flags) const {
+FXint FXIconList::findItem(const FXString& text,FXint start,FXuint flgs) const {
   register FXCompareFunc comparefunc;
   register FXint index,len;
   if(0<nitems){
-    comparefunc=(flags&SEARCH_IGNORECASE) ? (FXCompareFunc)compcase : (FXCompareFunc)comp;
-    len=(flags&SEARCH_PREFIX)?text.length():2147483647;
-    if(!(flags&SEARCH_BACKWARD)){
-      if(start<0) start=0;
-      for(index=start; index<nitems; index++){
-        if((*comparefunc)(items[index]->getText(),text,len)==0) return index;
-        }
-      if(!(flags&SEARCH_WRAP)) return -1;
-      for(index=0; index<start; index++){
-        if((*comparefunc)(items[index]->getText(),text,len)==0) return index;
-        }
-      }
-    else{
+    comparefunc=(flgs&SEARCH_IGNORECASE) ? (FXCompareFunc)compcase : (FXCompareFunc)comp;
+    len=(flgs&SEARCH_PREFIX)?text.length():2147483647;
+    if(flgs&SEARCH_BACKWARD){
       if(start<0) start=nitems-1;
       for(index=start; 0<=index; index--){
         if((*comparefunc)(items[index]->getText(),text,len)==0) return index;
         }
-      if(!(flags&SEARCH_WRAP)) return -1;
+      if(!(flgs&SEARCH_WRAP)) return -1;
       for(index=nitems-1; start<index; index--){
         if((*comparefunc)(items[index]->getText(),text,len)==0) return index;
+        }
+      }
+    else{
+      if(start<0) start=0;
+      for(index=start; index<nitems; index++){
+        if((*comparefunc)(items[index]->getText(),text,len)==0) return index;
+        }
+      if(!(flgs&SEARCH_WRAP)) return -1;
+      for(index=0; index<start; index++){
+        if((*comparefunc)(items[index]->getText(),text,len)==0) return index;
+        }
+      }
+    }
+  return -1;
+  }
+
+
+// Get item by data
+FXint FXIconList::findItemByData(const void *ptr,FXint start,FXuint flgs) const {
+  register FXint index;
+  if(0<nitems){
+    if(flgs&SEARCH_BACKWARD){
+      if(start<0) start=nitems-1;
+      for(index=start; 0<=index; index--){
+        if(items[index]->getData()==ptr) return index;
+        }
+      if(!(flgs&SEARCH_WRAP)) return -1;
+      for(index=nitems-1; start<index; index--){
+        if(items[index]->getData()==ptr) return index;
+        }
+      }
+    else{
+      if(start<0) start=0;
+      for(index=start; index<nitems; index++){
+        if(items[index]->getData()==ptr) return index;
+        }
+      if(!(flgs&SEARCH_WRAP)) return -1;
+      for(index=0; index<start; index++){
+        if(items[index]->getData()==ptr) return index;
         }
       }
     }
@@ -1233,7 +1273,7 @@ FXbool FXIconList::selectItem(FXint index,FXbool notify){
       case ICONLIST_MULTIPLESELECT:
         items[index]->setSelected(TRUE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
         break;
       }
     return TRUE;
@@ -1252,7 +1292,7 @@ FXbool FXIconList::deselectItem(FXint index,FXbool notify){
       case ICONLIST_SINGLESELECT:
         items[index]->setSelected(FALSE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)index);}
         break;
       }
     return TRUE;
@@ -1270,7 +1310,7 @@ FXbool FXIconList::toggleItem(FXint index,FXbool notify){
         killSelection(notify);
         items[index]->setSelected(TRUE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
         }
       break;
     case ICONLIST_SINGLESELECT:
@@ -1278,12 +1318,12 @@ FXbool FXIconList::toggleItem(FXint index,FXbool notify){
         killSelection(notify);
         items[index]->setSelected(TRUE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
         }
       else{
         items[index]->setSelected(FALSE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)index);}
         }
       break;
     case ICONLIST_EXTENDEDSELECT:
@@ -1291,12 +1331,12 @@ FXbool FXIconList::toggleItem(FXint index,FXbool notify){
       if(!items[index]->isSelected()){
         items[index]->setSelected(TRUE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)index);}
         }
       else{
         items[index]->setSelected(FALSE);
         updateItem(index);
-        if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)index);}
+        if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)index);}
         }
       break;
     }
@@ -1355,7 +1395,7 @@ FXbool FXIconList::extendSelection(FXint index,FXbool notify){
           items[i]->setSelected(TRUE);
           updateItem(i);
           changes=TRUE;
-          if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)i);}
+          if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)i);}
           }
         }
 
@@ -1366,7 +1406,7 @@ FXbool FXIconList::extendSelection(FXint index,FXbool notify){
           items[i]->setSelected(FALSE);
           updateItem(i);
           changes=TRUE;
-          if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)i);}
+          if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)i);}
           }
         }
       }
@@ -1381,7 +1421,7 @@ FXbool FXIconList::extendSelection(FXint index,FXbool notify){
           items[i]->setSelected(TRUE);
           updateItem(i);
           changes=TRUE;
-          if(notify && target){target->handle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)i);}
+          if(notify && target){target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)(FXival)i);}
           }
         }
 
@@ -1392,7 +1432,7 @@ FXbool FXIconList::extendSelection(FXint index,FXbool notify){
           items[i]->setSelected(FALSE);
           updateItem(i);
           changes=TRUE;
-          if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)i);}
+          if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)i);}
           }
         }
       }
@@ -1411,7 +1451,7 @@ FXbool FXIconList::killSelection(FXbool notify){
       items[i]->setSelected(FALSE);
       updateItem(i);
       changes=TRUE;
-      if(notify && target){target->handle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)i);}
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)(FXival)i);}
       }
     }
   return changes;
@@ -1502,22 +1542,21 @@ long FXIconList::onTipTimer(FXObject*,FXSelector,void*){
 
 
 // We were asked about tip text
-long FXIconList::onQueryTip(FXObject* sender,FXSelector,void*){
-  if(flags&FLAG_TIP){
-    if(0<=cursor){
-      FXString string=items[cursor]->getText().section('\t',0);
-      sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&string);
-      return 1;
-      }
+long FXIconList::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && (0<=cursor)){
+    FXString string=items[cursor]->getText().section('\t',0);
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&string);
+    return 1;
     }
   return 0;
   }
 
 
 // We were asked about status text
-long FXIconList::onQueryHelp(FXObject* sender,FXSelector,void*){
-  if(!help.empty() && (flags&FLAG_HELP)){
-    FXTRACE((250,"%s::onQueryHelp %p\n",getClassName(),this));
+long FXIconList::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
     }
@@ -1558,8 +1597,6 @@ long FXIconList::onPaint(FXObject*,FXSelector,void* ptr){
 
   // Set font
   dc.setFont(font);
-//dc.setForeground(FXRGB(255,0,0));
-//dc.fillRectangle(0,0,width,height);
 
   // Icon mode
   if(options&(ICONLIST_BIG_ICONS|ICONLIST_MINI_ICONS)){
@@ -1865,7 +1902,7 @@ void FXIconList::setCurrentItem(FXint index,FXbool notify){
       }
 
     // Notify item change
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
     }
 
   // In browse selection mode, select item
@@ -1896,7 +1933,7 @@ long FXIconList::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXint index=current;
   flags&=~FLAG_TIP;
   if(!isEnabled()) return 0;
-  if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+  if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
   if(index<0) index=0;
   switch(event->code){
     case KEY_Control_L:
@@ -2051,7 +2088,7 @@ hop:  lookup=FXString::null;
 long FXIconList::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(!isEnabled()) return 0;
-  if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+  if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
   switch(event->code){
     case KEY_Shift_L:
     case KEY_Shift_R:
@@ -2193,7 +2230,7 @@ long FXIconList::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     flags&=~FLAG_UPDATE;
 
     // First change callback
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
 
     // Locate item
     index=getItemAt(event->win_x,event->win_y);
@@ -2275,7 +2312,7 @@ long FXIconList::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
     flags&=~(FLAG_PRESSED|FLAG_TRYDRAG|FLAG_LASSO|FLAG_DODRAG);
 
     // First chance callback
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
 
     // Was lassoing
     if(flg&FLAG_LASSO){
@@ -2348,7 +2385,7 @@ long FXIconList::onRightBtnPress(FXObject*,FXSelector,void* ptr){
   if(isEnabled()){
     grab();
     flags&=~FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONPRESS,message),ptr)) return 1;
     flags|=FLAG_SCROLLING;
     grabx=event->win_x-pos_x;
     graby=event->win_y-pos_y;
@@ -2364,7 +2401,7 @@ long FXIconList::onRightBtnRelease(FXObject*,FXSelector,void* ptr){
     ungrab();
     flags&=~FLAG_SCROLLING;
     flags|=FLAG_UPDATE;
-    if(target && target->handle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_RIGHTBUTTONRELEASE,message),ptr)) return 1;
     return 1;
     }
   return 0;
@@ -2383,25 +2420,25 @@ long FXIconList::onUngrabbed(FXObject* sender,FXSelector sel,void* ptr){
 
 // Command message
 long FXIconList::onCommand(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_COMMAND,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_COMMAND,message),ptr);
   }
 
 
 // Clicked in list
 long FXIconList::onClicked(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_CLICKED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_CLICKED,message),ptr);
   }
 
 
 // Double Clicked in list; ptr may or may not point to an item
 long FXIconList::onDoubleClicked(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_DOUBLECLICKED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DOUBLECLICKED,message),ptr);
   }
 
 
 // Triple Clicked in list; ptr may or may not point to an item
 long FXIconList::onTripleClicked(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_TRIPLECLICKED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_TRIPLECLICKED,message),ptr);
   }
 
 
@@ -2428,7 +2465,7 @@ FXint FXIconList::setItem(FXint index,FXIconItem* item,FXbool notify){
   if(index<0 || nitems<=index){ fxerror("%s::setItem: index out of range.\n",getClassName()); }
 
   // Notify item will be replaced
-  if(notify && target){target->handle(this,FXSEL(SEL_REPLACED,message),(void*)(FXival)index);}
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_REPLACED,message),(void*)(FXival)index);}
 
   // Copy the state over
   item->state=items[index]->state;
@@ -2474,11 +2511,11 @@ FXint FXIconList::insertItem(FXint index,FXIconItem* item,FXbool notify){
   if(current<0 && nitems==1) current=0;
 
   // Notify item has been inserted
-  if(notify && target){target->handle(this,FXSEL(SEL_INSERTED,message),(void*)(FXival)index);}
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_INSERTED,message),(void*)(FXival)index);}
 
   // Current item may have changed
   if(old!=current){
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
     }
 
   // Was new item
@@ -2527,6 +2564,30 @@ FXint FXIconList::prependItem(const FXString& text,FXIcon *big,FXIcon* mini,void
   }
 
 
+// Fill list by appending items from array of strings
+FXint FXIconList::fillItems(const FXchar** strings,FXIcon *big,FXIcon* mini,void* ptr,FXbool notify){
+  register FXint n=0;
+  if(strings){
+    while(strings[n]){
+      appendItem(strings[n++],big,mini,ptr,notify);
+      }
+    }
+  return n;
+  }
+
+
+// Fill list by appending items from newline separated strings
+FXint FXIconList::fillItems(const FXString& strings,FXIcon *big,FXIcon* mini,void* ptr,FXbool notify){
+  register FXint n=0;
+  FXString text;
+  while(!(text=strings.section('\n',n)).empty()){
+    appendItem(text,big,mini,ptr,notify);
+    n++;
+    }
+  return n;
+  }
+
+
 // Move item from oldindex to newindex
 FXint FXIconList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
   register FXint old=current;
@@ -2567,7 +2628,7 @@ FXint FXIconList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
 
     // Current item may have changed
     if(old!=current){
-      if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
       }
 
     // Redo layout
@@ -2585,7 +2646,7 @@ void FXIconList::removeItem(FXint index,FXbool notify){
   if(index<0 || nitems<=index){ fxerror("%s::removeItem: index out of range.\n",getClassName()); }
 
   // Notify item will be deleted
-  if(notify && target){target->handle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
 
   nitems--;
   delete items[index];
@@ -2598,7 +2659,7 @@ void FXIconList::removeItem(FXint index,FXbool notify){
 
   // Current item has changed
   if(index<=old){
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
     }
 
   // Deleted current item
@@ -2622,7 +2683,7 @@ void FXIconList::clearItems(FXbool notify){
 
   // Delete items
   for(FXint index=nitems-1; 0<=index; index--){
-    if(notify && target){target->handle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
     delete items[index];
     }
 
@@ -2637,7 +2698,7 @@ void FXIconList::clearItems(FXbool notify){
 
   // Current item has changed
   if(old!=-1){
-    if(notify && target){target->handle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)-1);}
     }
 
   // Redo layout

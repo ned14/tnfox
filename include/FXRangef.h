@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRangef.h,v 1.6 2004/02/29 17:54:17 fox Exp $                           *
+* $Id: FXRangef.h,v 1.8 2004/11/08 13:26:59 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXRANGEF_H
 #define FXRANGEF_H
@@ -77,7 +77,7 @@ public:
   /// shortest side
   FXfloat shortest() const;
 
-  // Length of diagonal
+  /// Length of diagonal
   FXfloat diameter() const;
 
   /// Compute diagonal
@@ -113,7 +113,7 @@ public:
   /// Include given sphere into this box
   FXRangef& include(const FXSpheref& sphere);
 
-  // Intersect box with plane ax+by+cz+w; returns -1,0,+1
+  /// Intersect box with normalized plane ax+by+cz+w; returns -1,0,+1
   FXint intersect(const FXVec4f& plane) const;
 
   /// Intersect box with ray u-v

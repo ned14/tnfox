@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.cpp,v 1.46 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXFileDict.cpp,v 1.50 2004/09/17 07:46:21 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXFileStream.h"
 #include "FXString.h"
@@ -33,7 +35,6 @@
 #include "FXFile.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXFileDict.h"
 #include "FXIcon.h"
@@ -197,88 +198,86 @@ FXIconDict::FXIconDict(FXApp* a,const FXString& p):app(a),path(p){
 
 // Try and load the icon
 void *FXIconDict::createData(const void* ptr){
-  register const FXchar *ext;
 
-  // Make sure
-  if(!ptr) return NULL;
+  // Try only if we have a filename
+  if(ptr){
 
-  // Get file extension
-  ext=strrchr((const char*)ptr,'.');
+    // Find icon in the icon directory
+    FXString iconfile=FXFile::search(path,(const char*)ptr);
 
-  // Determine what type
-  if(ext){
-    FXIcon *icon=NULL;
+    FXTRACE((150,"FXIconDict: search icon %s in %s; found at %s\n",(const char*)ptr,path.text(),iconfile.text()));
 
-    // Create icon of the right type
-    if(comparecase(".gif",ext)==0){
-      icon=new FXGIFIcon(getApp());
-      }
-    else if(comparecase(".bmp",ext)==0){
-      icon=new FXBMPIcon(getApp());
-      }
-    else if(comparecase(".xpm",ext)==0){
-      icon=new FXXPMIcon(getApp());
-      }
-    else if(comparecase(".pcx",ext)==0){
-      icon=new FXPCXIcon(getApp());
-      }
-    else if(comparecase(".ico",ext)==0){
-      icon=new FXICOIcon(getApp());
-      }
-    else if(comparecase(".tga",ext)==0){
-      icon=new FXTGAIcon(getApp());
-      }
-    else if(comparecase(".rgb",ext)==0){
-      icon=new FXRGBIcon(getApp());
-      }
-    else if(comparecase(".xbm",ext)==0){
-      icon=new FXXBMIcon(getApp());
-      }
+    // Found icon
+    if(!iconfile.empty()){
+
+      // Get file extension
+      const FXchar *ext=strrchr((const char*)ptr,'.');
+
+      // Determine what type
+      if(ext){
+        FXIcon *icon=NULL;
+
+        // Create icon of the right type
+        if(comparecase(".gif",ext)==0){
+          icon=new FXGIFIcon(getApp());
+          }
+        else if(comparecase(".bmp",ext)==0){
+          icon=new FXBMPIcon(getApp());
+          }
+        else if(comparecase(".xpm",ext)==0){
+          icon=new FXXPMIcon(getApp());
+          }
+        else if(comparecase(".pcx",ext)==0){
+          icon=new FXPCXIcon(getApp());
+          }
+        else if(comparecase(".ico",ext)==0){
+          icon=new FXICOIcon(getApp());
+          }
+        else if(comparecase(".tga",ext)==0){
+          icon=new FXTGAIcon(getApp());
+          }
+        else if(comparecase(".rgb",ext)==0){
+          icon=new FXRGBIcon(getApp());
+          }
+        else if(comparecase(".xbm",ext)==0){
+          icon=new FXXBMIcon(getApp());
+          }
 #ifndef CORE_IMAGE_FORMATS
 #ifdef HAVE_JPEG_H
-    else if(comparecase(".jpg",ext)==0){
-      icon=new FXJPGIcon(getApp());
-      }
+        else if(comparecase(".jpg",ext)==0){
+          icon=new FXJPGIcon(getApp());
+          }
 #endif
 #ifdef HAVE_PNG_H
-    else if(comparecase(".png",ext)==0){
-      icon=new FXPNGIcon(getApp());
-      }
+        else if(comparecase(".png",ext)==0){
+          icon=new FXPNGIcon(getApp());
+          }
 #endif
 #ifdef HAVE_TIFF_H
-    else if(comparecase(".tif",ext)==0){
-      icon=new FXTIFIcon(getApp());
-      }
+        else if(comparecase(".tif",ext)==0){
+          icon=new FXTIFIcon(getApp());
+          }
 #endif
 #endif
+        // Got icon
+        if(icon){
+          FXFileStream str;
 
-    // Got icon
-    if(icon){
+          // Try open the file
+          if(str.open(iconfile,FXStreamLoad)){
 
-      // Find icon in the icon directory
-      FXString iconfile=FXFile::search(path,(const char*)ptr);
-      if(!iconfile.empty()){
-        FXFileStream str;
+            FXTRACE((150,"FXIconDict: loading = %s\n",iconfile.text()));
 
-        FXTRACE((150,"FXIconDict: found icon in = %s\n",iconfile.text()));
+            // Load it
+            icon->loadPixels(str);
 
-        // Try open the file
-        if(str.open(iconfile,FXStreamLoad)){
+            // Done
+            str.close();
 
-          FXTRACE((150,"FXIconDict: loading = %s\n",iconfile.text()));
-
-          // Load it
-          icon->loadPixels(str);
-
-          // Done
-          str.close();
-
-          return icon;
+            return icon;
+            }
           }
         }
-
-      // Failed, delete the icon
-      delete icon;
       }
     }
   return NULL;

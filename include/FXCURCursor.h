@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCURCursor.h,v 1.13 2004/01/15 01:38:04 fox Exp $                       *
+* $Id: FXCURCursor.h,v 1.14 2004/11/10 16:22:05 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXCURCURSOR_H
 #define FXCURCURSOR_H
@@ -38,6 +38,8 @@ protected:
 private:
   FXCURCursor(const FXCURCursor&);
   FXCURCursor &operator=(const FXCURCursor&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /**

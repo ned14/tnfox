@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCPrint.cpp,v 1.41 2004/03/10 23:19:41 fox Exp $                       *
+* $Id: FXDCPrint.cpp,v 1.46 2004/09/17 07:46:21 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -33,7 +35,6 @@
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXFont.h"
@@ -649,12 +650,19 @@ void FXDCPrint::drawRectangle(FXint x,FXint y,FXint w,FXint h){
   }
 
 
+// Draw unfilled rectangles
 void FXDCPrint::drawRectangles(const FXRectangle* rectangles,FXuint nrectangles){
   register FXuint i;
   for(i=0; i<nrectangles; i++){
     drawRectangle(rectangles[i].x,rectangles[i].y,rectangles[i].w,rectangles[i].h);
     }
   }
+
+
+// Unfilled rounded rectangle
+void FXDCPrint::drawRoundRectangle(FXint,FXint,FXint,FXint,FXint,FXint){
+  }
+
 
 // Draw arc (patch from: sancelot@crosswinds.net)
 void FXDCPrint::drawArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
@@ -670,6 +678,11 @@ void FXDCPrint::drawArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
 
 // Draw arcs
 void FXDCPrint::drawArcs(const FXArc*,FXuint){
+  }
+
+
+// Draw ellipse
+void FXDCPrint::drawEllipse(FXint,FXint,FXint,FXint){
   }
 
 
@@ -693,6 +706,11 @@ void FXDCPrint::fillRectangles(const FXRectangle* rectangles,FXuint nrectangles)
   }
 
 
+// Fill using currently selected ROP mode
+void FXDCPrint::fillRoundRectangle(FXint,FXint,FXint,FXint,FXint,FXint){
+  }
+
+
 // Fill chord
 void FXDCPrint::fillChord(FXint,FXint,FXint,FXint,FXint,FXint){
   }
@@ -711,6 +729,11 @@ void FXDCPrint::fillArc(FXint,FXint,FXint,FXint,FXint,FXint){
 
 // Fill arcs
 void FXDCPrint::fillArcs(const FXArc*,FXuint){
+  }
+
+
+// Fill ellipse
+void FXDCPrint::fillEllipse(FXint,FXint,FXint,FXint){
   }
 
 
@@ -877,20 +900,20 @@ void FXDCPrint::drawArea(const FXDrawable*,FXint,FXint,FXint,FXint,FXint,FXint){
 void FXDCPrint::drawImage(const FXImage *img,FXint dx,FXint dy){
   FXuint opts=img->getOptions();
   if(opts&IMAGE_OWNED){
-    FXint    width  = img->getWidth();
-    FXint    height = img->getHeight();
+    FXint    ww  = img->getWidth();
+    FXint    hh = img->getHeight();
     FXuchar *buffer = (FXuchar*)img->getData();
 
-    outf("/picstr %d string def\n",width*3);
-    outf("%d %d translate\n",dx,height-dy);
-    outf("%d %d scale\n",width,-height);
-    outf("%d %d %d\n",width,height,8);
-    outf("[%d 0 0 -%d 0 %d]\n",width,height,height);
+    outf("/picstr %d string def\n",ww*3);
+    outf("%d %d translate\n",dx,hh-dy);
+    outf("%d %d scale\n",ww,-hh);
+    outf("%d %d %d\n",ww,hh,8);
+    outf("[%d 0 0 -%d 0 %d]\n",ww,hh,hh);
     outf("{currentfile picstr readhexstring pop}\n");
     outf("false %d\n",3);
     outf("colorimage\n");
 
-    int end=width*height;
+    int end=ww*hh;
     for(int i=0; i<end ; i+=4){
       outhex(buffer[i]);
       outhex(buffer[i+1]);

@@ -275,6 +275,9 @@ public:
 	~FXMutex();
 	//! Returns if the mutex is locked
 	bool isLocked() const;
+	/*! \overload For FOX compatibility
+	*/
+	FXbool locked() const { return (FXbool) isLocked(); }
 	//! Returns the current spin count
 	FXuint spinCount() const;
 	//! Sets the spin count
@@ -293,6 +296,9 @@ public:
 	returns false without waiting
 	*/
 	bool tryLock();
+	/*! \overload For FOX compatibility
+	*/
+	FXbool trylock() { return (FXbool) tryLock(); }
 	/*! Sets the debugging flag for mutexs in this process. See the main description
 	above */
 	static bool setMutexDebugYield(bool v);

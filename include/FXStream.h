@@ -3,7 +3,7 @@
 *       P e r s i s t e n t   S t o r a g e   S t r e a m   C l a s s e s       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2003 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
 * TnFOX Extensions (C) 2003 Niall Douglas                                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStream.h,v 1.29 2004/01/13 20:56:04 fox Exp $                          *
+* $Id: FXStream.h,v 1.34 2004/11/08 15:35:10 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSTREAM_H
 #define FXSTREAM_H
@@ -65,6 +65,7 @@ enum FXWhence {
   };
 
 
+class FXHash;
 class FXString;
 class FXIODevice;
 
@@ -127,22 +128,22 @@ down calling each in turn. All QTL thunks provided in TnFOX provide default
 stream operators which require a null constructor in the type to compile.
 */
 class FXAPI FXStream {
-private:
-  struct FXStreamHashEntry {
-    FXuint    ref;              // Object reference number
-    FXObject* obj;              // Pointer to object
-    };
-private:
-  const FXObject*    parent;    // Parent object
-  FXStreamHashEntry* table;     // Hash table
-  FXuint             ntable;    // Table size
-  FXuint             no;        // Count objects
-  FXbool             swap;      // Swap bytes on readin
-  void               grow();    // Enlarge the table
-  FXIODevice         *dev;      // The i/o device I use
 protected:
+  FXHash            *hash;      // Hash table
+  const FXObject    *parent;    // Parent object
+  FXuchar           *begptr;    // Begin of buffer
+  FXuchar           *endptr;    // End of buffer
+  FXuchar           *wrptr;     // Write pointer
+  FXuchar           *rdptr;     // Read pointer
+  unsigned long      pos;       // Position
   FXStreamDirection  dir;       // Direction of current transfer
   FXStreamStatus     code;      // Status code
+  FXuint             seq;       // Sequence number
+  FXbool             owns;      // Stream owns buffer
+  FXbool             swap;      // Swap bytes on readin
+
+protected: // TnFOX stuff
+  FXIODevice        *dev;       // i/o device
 public:
 
   //! Constructs an instance using device \em dev. \em cont is for FOX FXStream emulation only.
@@ -186,12 +187,21 @@ public:
 
   /** \deprecated For FOX compatibility only
 
+  * Construct stream with given container object.  The container object
+  * is an object that will itself not be saved to or loaded from the stream,
+  * but which may be referenced by other objects.  These references will be
+  * properly saved and restored.
+  */
+  FXStream(const FXObject* cont);
+
+  /** \deprecated For FOX compatibility only
+
   * Open stream for reading (FXStreamLoad) or for writing (FXStreamSave).
   * An initial buffer size may be given, which must be at least 16 bytes.
   * If data is not NULL, it is expected to point to an external data buffer
   * of length size; otherwise stream will use an internally managed buffer.
   */
-  FXbool open(FXStreamDirection save_or_load,unsigned long size=8192);
+  FXbool open(FXStreamDirection save_or_load,unsigned long size=8192,FXuchar* data=NULL);
 
   /** \deprecated For FOX compatibility only
 
@@ -199,8 +209,11 @@ public:
   */
   virtual FXbool close();
 
-  /// Flush buffer
-  //FXbool flush();
+  /** \deprecated For FOX compatibility only
+  
+  Flush buffer
+  */
+  virtual FXbool flush();
 
   /** \deprecated For FOX compatibility only
 
@@ -214,7 +227,31 @@ public:
   */
   void setSpace(unsigned long sp);
 
-  /// Get parent object
+  /** \deprecated For FOX compatibility only
+  
+  Get status code
+  */
+  FXStreamStatus status() const { return code; }
+
+  /// Return TRUE if at end of file or error
+  FXbool eof() const { return atEnd(); }
+
+  /** \deprecated For FOX compatibility only
+  
+  Set status code
+  */
+  void setError(FXStreamStatus err);
+
+  /** \deprecated For FOX compatibility only
+  
+  Obtain stream direction
+  */
+  FXStreamDirection direction() const { return dir; }
+
+  /** \deprecated For FOX compatibility only
+  
+  Get parent object
+  */
   const FXObject* container() const { return parent; }
 
   /// Get position
@@ -297,6 +334,9 @@ public:
 
   /// Load object
   FXStream& loadObject(FXObject*& v);
+
+  /// Add object without saving or loading
+  FXStream& addObject(const FXObject* v);
 
   /// Destructor
   virtual ~FXStream();

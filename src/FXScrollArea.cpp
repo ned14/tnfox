@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollArea.cpp,v 1.42 2004/04/15 22:12:13 fox Exp $                    *
+* $Id: FXScrollArea.cpp,v 1.44 2004/09/17 07:46:22 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -31,7 +33,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXScrollBar.h"
@@ -374,10 +375,10 @@ void FXScrollArea::layout(){
   if(!(options&HSCROLLER_NEVER)) sh_h=horizontal->getDefaultHeight();
   if(!(options&VSCROLLER_NEVER)) sv_w=vertical->getDefaultWidth();
 
-  // Should we disable the scroll bars?  A bit tricky as the scrollbars 
-  // may influence each other's presence.  Also, we don't allow more than 
-  // 50% of the viewport to be taken up by scrollbars; when the scrollbars 
-  // take up more than 50% of the available space we simply turn them off. 
+  // Should we disable the scroll bars?  A bit tricky as the scrollbars
+  // may influence each other's presence.  Also, we don't allow more than
+  // 50% of the viewport to be taken up by scrollbars; when the scrollbars
+  // take up more than 50% of the available space we simply turn them off.
   if(!(options&(HSCROLLER_ALWAYS|VSCROLLER_ALWAYS)) && (content_w<=viewport_w) && (content_h<=viewport_h)){sh_h=sv_w=0;}
   if(!(options&HSCROLLER_ALWAYS) && ((content_w<=viewport_w-sv_w) || (0>=viewport_h-sh_h-sh_h))) sh_h=0;
   if(!(options&VSCROLLER_ALWAYS) && ((content_h<=viewport_h-sh_h) || (0>=viewport_w-sv_w-sv_w))) sv_w=0;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXButton.h,v 1.34 2004/02/08 17:17:33 fox Exp $                          *
+* $Id: FXButton.h,v 1.35 2004/09/24 17:34:02 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXBUTTON_H
 #define FXBUTTON_H
@@ -55,6 +55,20 @@ enum {
 /**
 * A button provides a push button, with optional icon and/or text label.
 * When pressed, the button widget sends a SEL_COMMAND to its target.
+* Passing the BUTTON_TOOLBAR style option gives buttons a "flat" look, and 
+* causes the edge of the button to be raised when the cursor moves over it.
+* Passing BUTTON_DEFAULT allows the button to become the default button in
+* a dialog, when the focus moves to it.  The default widget in a dialog
+* is the widget which will accept the RETURN key when it is pressed.
+* The BUTTON_INITIAL flag makes the button the default widget when the
+* focus moves to a widget which can not itself be a default widget.
+* There should be only a single button in the dialog which is the
+* initial default; typically this is the OK or CLOSE button.
+* The option BUTTON_AUTOGRAY (BUTTON_AUTOHIDE) causes the button to be grayed 
+* out (hidden) if its handler does not respond to the SEL_UPDATE message.
+* This is useful when messages are delegated, for example when using a
+* multiple document interface, where the ultimaye destination of a message
+* can be changed.
 */
 class FXAPI FXButton : public FXLabel {
   FXDECLARE(FXButton)

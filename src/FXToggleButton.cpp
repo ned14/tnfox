@@ -19,19 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToggleButton.cpp,v 1.48 2004/02/08 17:29:07 fox Exp $                  *
+* $Id: FXToggleButton.cpp,v 1.54 2004/10/07 21:49:15 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXIcon.h"
@@ -71,8 +72,8 @@ FXDEFMAP(FXToggleButton) FXToggleButtonMap[]={
   FXMAPFUNC(SEL_KEYRELEASE,0,FXToggleButton::onKeyRelease),
   FXMAPFUNC(SEL_KEYPRESS,FXToggleButton::ID_HOTKEY,FXToggleButton::onHotKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,FXToggleButton::ID_HOTKEY,FXToggleButton::onHotKeyRelease),
-  FXMAPFUNC(SEL_UPDATE,FXToggleButton::ID_QUERY_TIP,FXToggleButton::onQueryTip),
-  FXMAPFUNC(SEL_UPDATE,FXToggleButton::ID_QUERY_HELP,FXToggleButton::onQueryHelp),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXToggleButton::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FXToggleButton::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXToggleButton::ID_CHECK,FXToggleButton::onCheck),
   FXMAPFUNC(SEL_COMMAND,FXToggleButton::ID_UNCHECK,FXToggleButton::onUncheck),
   FXMAPFUNC(SEL_COMMAND,FXToggleButton::ID_SETVALUE,FXToggleButton::onCmdSetValue),
@@ -272,7 +273,7 @@ long FXToggleButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     press(TRUE);
     flags|=FLAG_PRESSED;
     flags&=~FLAG_UPDATE;
@@ -287,13 +288,13 @@ long FXToggleButton::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   FXbool click=down;
   if(isEnabled() && (flags&FLAG_PRESSED)){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
-    press(FALSE);
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
+    press(FALSE);
     if(click){
       setState(!state);
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);
       }
     return 1;
     }
@@ -316,7 +317,7 @@ long FXToggleButton::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       press(TRUE);
       flags|=FLAG_PRESSED;
@@ -332,13 +333,13 @@ long FXToggleButton::onKeyPress(FXObject*,FXSelector,void* ptr){
 long FXToggleButton::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   if(isEnabled() && (flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if(event->code==KEY_space || event->code==KEY_KP_Space){
       press(FALSE);
       setState(!state);
       flags|=FLAG_UPDATE;
       flags&=~FLAG_PRESSED;
-      if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);
+      if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);
       return 1;
       }
     }
@@ -368,14 +369,15 @@ long FXToggleButton::onHotKeyRelease(FXObject*,FXSelector,void*){
     flags&=~FLAG_PRESSED;
     press(FALSE);
     setState(!state);
-    if(target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);
     }
   return 1;
   }
 
 
 // We were asked about status text
-long FXToggleButton::onQueryHelp(FXObject* sender,FXSelector,void*){
+long FXToggleButton::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
   if(flags&FLAG_HELP){
     if(state){
       if(!althelp.empty()){
@@ -393,7 +395,8 @@ long FXToggleButton::onQueryHelp(FXObject* sender,FXSelector,void*){
 
 
 // We were asked about tip text
-long FXToggleButton::onQueryTip(FXObject* sender,FXSelector,void*){
+long FXToggleButton::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
   if(flags&FLAG_TIP){
     if(state){
       if(!alttip.empty()){

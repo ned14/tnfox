@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.h,v 1.42 2004/02/08 17:17:33 fox Exp $                        *
+* $Id: FXFileList.h,v 1.43 2004/09/26 18:02:28 fox Exp $                        *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -112,7 +112,15 @@ public:
   };
 
 
-/// File List object
+/**
+* A File List widget provides an icon rich view of the file system.
+* It automatically updates itself periodically by re-scanning the file system
+* for any changes.  As it scans the displayed directory, it automatically
+* determines the icons to be displayed by consulting the file associations registry
+* settings.  A number of messages can be sent to the File List to control the
+* filter pattern, sort category, sorting order, case sensitivity, and hidden file 
+* display mode.  
+*/
 class FXAPI FXFileList : public FXIconList {
   FXDECLARE(FXFileList)
 protected:

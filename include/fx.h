@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fx.h,v 1.75 2004/03/25 02:42:25 fox Exp $                                *
+* $Id: fx.h,v 1.82 2004/09/17 07:46:20 fox Exp $                                *
 ********************************************************************************/
 #ifndef FX_H
 #define FX_H
@@ -36,7 +36,9 @@
 #include "fxdefs.h"
 
 // FOX classes
+#include "FXHash.h"
 #include "FXException.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXFileStream.h"
 #include "FXMemoryStream.h"
@@ -55,7 +57,6 @@
 #include "FXObjectList.h"
 #include "FXAccelTable.h"
 #include "FXRecentFiles.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXVisual.h"
@@ -68,6 +69,7 @@
 #include "FXImage.h"
 #include "FXIcon.h"
 #include "FXGIFImage.h"
+#include "FXIFFImage.h"
 #include "FXBMPImage.h"
 #include "FXICOImage.h"
 #include "FXXBMImage.h"
@@ -76,7 +78,9 @@
 #include "FXTGAImage.h"
 #include "FXRGBImage.h"
 #include "FXPPMImage.h"
+#include "FXRASImage.h"
 #include "FXGIFIcon.h"
+#include "FXIFFIcon.h"
 #include "FXBMPIcon.h"
 #include "FXICOIcon.h"
 #include "FXXBMIcon.h"
@@ -85,6 +89,7 @@
 #include "FXTGAIcon.h"
 #include "FXRGBIcon.h"
 #include "FXPPMIcon.h"
+#include "FXRASIcon.h"
 #include "FXRegion.h"
 #include "FXDC.h"
 #include "FXDCWindow.h"
@@ -94,6 +99,7 @@
 #include "FXFrame.h"
 #include "FXSeparator.h"
 #include "FXLabel.h"
+#include "FX7Segment.h"
 #include "FXDial.h"
 #include "FXColorBar.h"
 #include "FXColorWell.h"
@@ -157,6 +163,7 @@
 #include "FXDragCorner.h"
 #include "FXStatusBar.h"
 #include "FXStatusLine.h"
+#include "FXChoiceBox.h"
 #include "FXMessageBox.h"
 #include "FXDirList.h"
 #include "FXSlider.h"
@@ -196,6 +203,7 @@
 #include "FXToolBarTab.h"
 #include "FXPrintDialog.h"
 #include "FXDebugTarget.h"
+#include "FXSplashWindow.h"
 
 #include "FXACL.h"
 #include "FXBlkSocket.h"

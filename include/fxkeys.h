@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxkeys.h,v 1.9 2004/02/13 22:48:37 fox Exp $                             *
+* $Id: fxkeys.h,v 1.11 2004/08/01 00:08:36 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXKEYS_H
 #define FXKEYS_H
@@ -1403,6 +1403,12 @@ enum {
   };
 
 }
+
+
+#ifndef FX_NO_GLOBAL_NAMESPACE
+using namespace FX;
+#endif
+
 
 #endif
 

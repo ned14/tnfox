@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIcon.h,v 1.25 2004/02/08 17:17:33 fox Exp $                            *
+* $Id: FXIcon.h,v 1.27 2004/09/24 04:15:43 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXICON_H
 #define FXICON_H
@@ -45,6 +45,7 @@ class FXTopWindow;
 class FXAPI FXIcon : public FXImage {
   FXDECLARE(FXIcon)
   friend class FXDC;
+  friend class FXWindow;
   friend class FXDCWindow;
   friend class FXDrawable;
   friend class FXTopWindow;
@@ -77,10 +78,11 @@ public:
 
   /**
   * Create the server side pixmap, the shape bitmap, and the etch bitmap, then
-  * call render() to fill it with the pixel data from the client-side buffer.  After the server-
-  * side pixmap and bitmaps have been created, the client-side pixel buffer will be deleted unless
-  * IMAGE_KEEP has been specified. If the pixel buffer is not owned, i.e. the flag IMAGE_OWNED
-  * is not set, the pixel buffer will not be deleted.
+  * call render() to fill it with the pixel data from the client-side buffer.  After 
+  * the server-side pixmap and bitmaps have been created, the client-side pixel 
+  * buffer will be deleted unless IMAGE_KEEP has been specified. If the pixel buffer 
+  * is not owned, i.e. the flag IMAGE_OWNED is not set, the pixel buffer will not 
+  * be deleted; however the pixel buffer will be set to NULL.
   */
   virtual void create();
 

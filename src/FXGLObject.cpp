@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLObject.cpp,v 1.28 2004/03/15 06:49:46 fox Exp $                      *
+* $Id: FXGLObject.cpp,v 1.32 2004/11/02 17:38:45 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -38,11 +40,11 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXObjectList.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXGLViewer.h"
 #include "FXGLObject.h"
-
+#include "FXGLVisual.h"
+#include "FXFont.h"
 
 // GLU versions prior to 1.1 have GLUquadric
 #if !defined(GLU_VERSION_1_1) && !defined(GLU_VERSION_1_2) && !defined(GLU_VERSION_1_3)
@@ -53,50 +55,6 @@
   Notes:
   - Leaf objects don't push any names!
   - Group objects should do focus traversal.
-
-  - Suggestion for transform nodes... "Mike Fletcher" <mcfletch@vrtelecom.com>
-    class FXGLTransform( FXGLGroup ):
-
-    def draw( self, viewer):
-            # The transform node sets up a transformation matrix
-            # then renders all children
-            # then removes that transformation matrix
-            # from the stack.
-            GL.PushMatrix () # store previous
-            if self.translation: # three tupple
-                    apply (GL.glTranslatef, self.translation )
-            if self.center: #three tupple
-                    apply (GL.glTranslatef, self.center )
-            # rotation of angle ra around axis rx,ry,rz
-            if self.rotation: # 4 tupple
-                    rx,ry,rz,ra = self.rotation
-                    apply (GL.glRotatef, (saa*self.radtodeg, sax,say,saz) )
-            if self.scale: # three tupple
-                    if self.scaleOrientation: # 4 tupple
-                            sax,say,saz,saa = self.scaleOrientation
-                            apply (GL.glRotatef, (saa*self.radtodeg, sax,say,saz) )
-                    apply (GL.glScalef, tuple( self.scale ) )
-                    # reverse the scaleOrientation
-                    if self.scaleOrientation:
-                            apply (GL.glRotatef, (-saa*self.radtodeg, sax,say,saz) )
-            # now reverse center offset
-            if self.center:
-                    cx,cy,cz = self.center
-                    apply (GL.glTranslatef, ( -cx,-cy,-cz) )
-            # draw children here...
-            FXGLGroup.draw( self, viewer)
-            # now remove the transformation matrix
-            PopMatrix()
-
-    Needs to do the same calculation for the pick pass as well...  Note that it
-    is fairly easy to calculate the entire matrix at one go whenever it changes,
-    thereby saving the system most of the work of calculation per-frame (a
-    single matrix multiply with the current "surrounding" matrix
-    GL.glGetFloatv(GL_MODELVIEW_MATRIX, ModelView) ).  I have not profiled the
-    difference between them, but I would assume a cached matrix would be faster.
-
-
-
 */
 
 
@@ -341,7 +299,7 @@ void FXGLLine::bounds(FXRangef& box){
 
 
 // Draw
-void FXGLLine::draw(FXGLViewer* ){
+void FXGLLine::draw(FXGLViewer*){
 #ifdef HAVE_GL_H
   glColor3f(1.0,0.0,0.0);
   glPointSize(HANDLE_SIZE);
@@ -349,6 +307,27 @@ void FXGLLine::draw(FXGLViewer* ){
   glVertex3fv(fm.pos);
   glVertex3fv(to.pos);
   glEnd();
+
+/*
+static GLint list=-1;
+
+FXFont *font=FXApp::instance()->getNormalFont();
+
+int first,last,count;
+if(list<0){
+first=font->getMinChar();
+last=font->getMaxChar();
+count=last-first+1;
+list=glGenLists(count);
+glUseFXFont(font,first,count,list);
+FXTRACE((1,"first=%d last=%d list=%d\n",first,last,list));
+}
+
+  glColor3f(1.0,0.0,0.0);
+  glRasterPos2f(0,0);
+  glListBase(list);
+  glCallLists(26,GL_UNSIGNED_BYTE,(GLubyte*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+*/
 #endif
   }
 

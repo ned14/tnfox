@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirDialog.h,v 1.13 2004/02/08 17:17:33 fox Exp $                       *
+* $Id: FXDirDialog.h,v 1.15 2004/09/23 15:22:24 fox Exp $                       *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -36,20 +36,32 @@ namespace FX {
 class FXDirSelector;
 
 
-/// Directory selection dialog
+/**
+* A Directory Dialog provides a way to select a directory.  In function,
+* the directory selection dialog is very similar to the file dialog, except that
+* the Directory Dialog displays a tree-structured view of the file system, and
+* thereby makes up and down navigation through the file system significantly easier.
+*/
 class FXAPI FXDirDialog : public FXDialogBox {
   FXDECLARE(FXDirDialog)
 protected:
   FXDirSelector *dirbox;          // Directory selection widget
 protected:
   FXDirDialog(){}
+  void initdialog();
 private:
   FXDirDialog(const FXDirDialog&);
   FXDirDialog &operator=(const FXDirDialog&);
 public:
 
-  /// Construct Directory Dialog Box
+  /// Construct Directory Dialog box
   FXDirDialog(FXWindow* owner,const FXString& name,FXuint opts=0,FXint x=0,FXint y=0,FXint w=400,FXint h=300);
+
+  /// Construct free-floating Directory Dialog box
+  FXDirDialog(FXApp* a,const FXString& name,FXuint opts=0,FXint x=0,FXint y=0,FXint w=400,FXint h=300);
+
+  /// Hide this window
+  virtual void hide();
 
   /// Change directory
   void setDirectory(const FXString& path);
@@ -57,11 +69,32 @@ public:
   /// Return directory
   FXString getDirectory() const;
 
-  /// Change Directory List style
+  /// Return TRUE if showing files as well as directories
+  FXbool showFiles() const;
+
+  /// Show or hide normal files
+  void showFiles(FXbool showing);
+
+  /// Return TRUE if showing hidden files
+  FXbool showHiddenFiles() const;
+
+  /// Show or hide hidden files
+  void showHiddenFiles(FXbool showing);
+
+  /// Return wildcard matching mode
+  FXuint getMatchMode() const;
+
+  /// Change wildcard matching mode
+  void setMatchMode(FXuint mode);
+
+  /// Change directory list style
   void setDirBoxStyle(FXuint style);
 
-  /// Return Directory List style
+  /// Return directory list style
   FXuint getDirBoxStyle() const;
+
+  /// Open directory name
+  static FXString getOpenDirectory(FXWindow* owner,const FXString& caption,const FXString& path);
 
   /// Save to stream
   virtual void save(FXStream& store) const;

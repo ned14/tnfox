@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.127 2004/05/04 05:03:38 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.146 2004/11/09 04:06:07 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXCursor.h"
@@ -44,7 +45,6 @@
 
 /*
   Notes:
-  - Need to trap & forward iconify messages.
   - Handle zero width/height case similar to FXWindow.
   - Pass Size Hints to Window Manager as per ICCCM.
   - Add padding options, as this is convenient for FXDialogBox subclasses;
@@ -53,51 +53,6 @@
   - Now observes LAYOUT_FIX_X and LAYOUT_FIX_Y hints.
   - LAYOUT_FIX_WIDTH and LAYOUT_FIX_HEIGHT take precedence over PACK_UNIFORM_WIDTH and
     PACK_UNIFORM_HEIGHT!
-  - We should use some sort of SizeHints to let the WM know about our desired size.
-
-    David Heath <dave@hipgraphics.com>
-
-      I have something that appears to work under X/Motif, but even there I
-      have not tested it under many window managers. Here is a little
-      code snippet which sets the variables wmLeft, wmRight, wmTop, wmBottom
-      to the border sizes.
-
-            Window w, rw;
-            unsigned int border, depth;
-            unsigned int sx, sy, msx, msy;
-            int ox, oy;
-            Display *dpy = theApp->display ();
-
-            w = XtWindow ((theApp->mainWindow ())->mainWindowWidget ());
-            XGetGeometry (dpy, w, &rw, &ox, &oy, &msx, &msy, &border, &depth);
-
-            wmLeft = wmRight = wmTop = wmBottom = 0;
-
-            Window pw, c[100];
-            unsigned int cn;
-
-            do{
-              XQueryTree (dpy, w, &rw, &pw, (Window **) &c, &cn);
-              XGetGeometry (dpy, w, &rw, &ox, &oy, &sx, &sy, &border, &depth);
-              printf ("Window 0x%p [%4dx%4d] +[%4d,%4d], border %4d\n", w, sx, sy, ox, oy, border);
-              if(pw != rw){
-                wmLeft += ox;
-                wmTop += oy;
-                }
-              w = pw;
-              }
-            while(w != rw);
-            wmRight  = (sx - msx - wmLeft);
-            wmBottom = (sy - msy - wmTop);
-            printf ("WM Borders l:%d r:%d t:%d b:%d\n", wmLeft, wmRight, wmTop, wmBottom);
-
-      One thing that I would find useful, if you do eventually add code
-      to fox to determine these sizes, that you make the values accessible
-      to the API in the rare case that someone needs them.
-
-
-    Theo Veenker <theo.veenker@let.uu.nl>
-
   - We need new toolbar layout modes:
 
       +--------+---+----------+----+
@@ -181,8 +136,8 @@ FXIMPLEMENT_ABSTRACT(FXTopWindow,FXShell,FXTopWindowMap,ARRAYNUMBER(FXTopWindowM
 
 
 // Create toplevel window object & add to toplevel window list
-FXTopWindow::FXTopWindow(FXApp* a,const FXString& name,FXIcon *ic,FXIcon *mi,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
-  FXShell(a,opts,x,y,w,h){
+FXTopWindow::FXTopWindow(FXApp* ap,const FXString& name,FXIcon *ic,FXIcon *mi,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
+  FXShell(ap,opts,x,y,w,h){
   title=name;
   icon=ic;
   miniIcon=mi;
@@ -197,8 +152,8 @@ FXTopWindow::FXTopWindow(FXApp* a,const FXString& name,FXIcon *ic,FXIcon *mi,FXu
 
 
 // Create toplevel window object & add to toplevel window list
-FXTopWindow::FXTopWindow(FXWindow* own,const FXString& name,FXIcon *ic,FXIcon *mi,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
-  FXShell(own,opts,x,y,w,h){
+FXTopWindow::FXTopWindow(FXWindow* ow,const FXString& name,FXIcon *ic,FXIcon *mi,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs):
+  FXShell(ow,opts,x,y,w,h){
   title=name;
   icon=ic;
   miniIcon=mi;
@@ -391,6 +346,17 @@ void FXTopWindow::hide(){
   }
 
 
+// Raise and make foreground window
+void FXTopWindow::raise(){
+  FXShell::raise();
+  if(xid){
+#ifdef WIN32
+    SetForegroundWindow((HWND)xid);
+#endif
+    }
+  }
+
+
 // Position the window based on placement
 void FXTopWindow::place(FXuint placement){
   FXint rx,ry,rw,rh,ox,oy,ow,oh,wx,wy,ww,wh,x,y;
@@ -404,10 +370,72 @@ void FXTopWindow::place(FXuint placement){
   wh=getHeight();
 
   // Get root window size
+#ifndef WIN32
   rx=getRoot()->getX();
   ry=getRoot()->getY();
   rw=getRoot()->getWidth();
   rh=getRoot()->getHeight();
+#else
+  OSVERSIONINFO vinfo;
+  RECT rect;
+  memset(&vinfo,0,sizeof(vinfo));
+  vinfo.dwOSVersionInfoSize=sizeof(vinfo);
+  GetVersionEx(&vinfo);
+
+#if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
+  HINSTANCE user32;
+  typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);
+  typedef HMONITOR (WINAPI* PFN_MONITORFROMRECTA)(LPRECT, DWORD);
+  PFN_GETMONITORINFOA GetMonitorInfoA;
+  PFN_MONITORFROMRECTA MonitorFromRectA;
+
+  // Suggested by "Daniel Gehriger" <gehriger@linkcad.com>
+  // The API does not exist on older Windows NT and 95, so
+  // We can't even link it, let alone call it.
+  // The solution is to ask the DLL if the function exists.
+  // And another patch from Lothar Scholtz; now it works!
+  if((user32=LoadLibrary("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
+    MONITORINFOEX minfo;
+    HMONITOR hMon;
+    if(placement == PLACEMENT_CURSOR){
+      // Use mouse position to select screen.
+      getRoot()->getCursorPosition(x,y,state);
+      rect.left=x;
+      rect.right=x+1;
+      rect.top=y;
+      rect.bottom=y+1;
+      }
+    else{
+      // Use owner to select screen.
+      over=getOwner()?getOwner():getRoot();
+      over->translateCoordinatesTo(ox,oy,getRoot(),0,0);
+      ow=over->getWidth();
+      oh=over->getHeight();
+      rect.left=ox;
+      rect.right=ox+ow;
+      rect.top=oy;
+      rect.bottom=oy+oh;
+      }
+    hMon=MonitorFromRectA(&rect,MONITOR_DEFAULTTOPRIMARY);
+    memset(&minfo,0,sizeof(minfo));
+    minfo.cbSize=sizeof(minfo);
+    GetMonitorInfoA(hMon,&minfo);
+    rx=minfo.rcWork.left;
+    ry=minfo.rcWork.top;
+    rw=minfo.rcWork.right;
+    rh=minfo.rcWork.bottom;
+    }
+  else
+#endif
+    {
+    // On Win95 and WinNT, we have to use the following
+    SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
+    rx=rect.left;
+    ry=rect.top;
+    rw=rect.right-rect.left;
+    rh=rect.bottom-rect.top;
+    }
+#endif
 
   // Placement policy
   switch(placement){
@@ -506,7 +534,7 @@ void FXTopWindow::place(FXuint placement){
     case PLACEMENT_DEFAULT:
     default:
       break;
-      }
+    }
 
   // Place it
   position(wx,wy,ww,wh);
@@ -660,7 +688,7 @@ void FXTopWindow::setdecorations(){
   // Set new style
   SetWindowLong((HWND)xid,GWL_STYLE,dwStyle);
 
-  // Patch from Stephane Ancelot <sancelot@wanadoo.fr> and Sander Jansen <sxj@cfdrc.com>
+  // Patch from Stephane Ancelot <sancelot@wanadoo.fr> and Sander Jansen <sander@knology.net>
   HMENU sysmenu=GetSystemMenu((HWND)xid,FALSE);
   if(sysmenu){
     if(options&DECOR_CLOSE)
@@ -678,6 +706,45 @@ void FXTopWindow::setdecorations(){
   SetWindowPos((HWND)xid,NULL,0,0,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOMOVE|SWP_NOZORDER|SWP_NOOWNERZORDER);
   RedrawWindow((HWND)xid,NULL,NULL,RDW_FRAME|RDW_INVALIDATE);
 #endif
+  }
+
+
+// Obtain border sizes added to our window by the window manager
+FXbool FXTopWindow::getWMBorders(FXint& left,FXint& right,FXint& top,FXint& bottom){
+  left=right=top=bottom=0;
+  if(xid){
+#ifdef WIN32
+#if(WINVER >= 0x0500)
+    WINDOWINFO wi;
+    GetWindowInfo((HWND)xid,&wi);
+    left=wi.rcClient.left-wi.rcWindow.left;
+    top=wi.rcClient.top-wi.rcWindow.top;
+    right=wi.rcWindow.right-wi.rcClient.right;
+    bottom=wi.rcWindow.bottom-wi.rcClient.bottom;
+#endif
+#else
+    unsigned int sx,sy,msx,msy,cn,border,depth;
+    Window w,rw,pw,*cw;
+    int ox,oy;
+    w=xid;
+    XGetGeometry(DISPLAY(getApp()),w,&rw,&ox,&oy,&msx,&msy,&border,&depth);
+    do{
+      XQueryTree(DISPLAY(getApp()),w,&rw,&pw,&cw,&cn);
+      XFree(cw);
+      XGetGeometry(DISPLAY(getApp()),w,&rw,&ox,&oy,&sx,&sy,&border,&depth);
+      if(pw!=rw){
+        left+=ox;
+        top+=oy;
+        }
+      w=pw;
+      }
+    while(w!=rw);
+    right=(sx-msx-left);
+    bottom=(sy-msy-top);
+#endif
+    return TRUE;
+    }
+  return FALSE;
   }
 
 
@@ -724,7 +791,7 @@ FXbool FXTopWindow::maximize(FXbool notify){
       ShowWindow((HWND)xid,SW_MAXIMIZE);
 #endif
       }
-    if(notify && target){target->handle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -741,7 +808,7 @@ FXbool FXTopWindow::minimize(FXbool notify){
       ShowWindow((HWND)xid,SW_MINIMIZE);
 #endif
       }
-    if(notify && target){target->handle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -774,7 +841,7 @@ FXbool FXTopWindow::restore(FXbool notify){
       ShowWindow((HWND)xid,SW_RESTORE);
 #endif
       }
-    if(notify && target){target->handle(this,FXSEL(SEL_RESTORE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -786,7 +853,7 @@ FXbool FXTopWindow::close(FXbool notify){
   register FXWindow *window;
 
   // Ask target if desired
-  if(!notify || !target || !target->handle(this,FXSEL(SEL_CLOSE,message),NULL)){
+  if(!notify || !target || !target->tryHandle(this,FXSEL(SEL_CLOSE,message),NULL)){
 
     // Target will receive no further messages from us
     setTarget(NULL);
@@ -849,16 +916,16 @@ FXbool FXTopWindow::isMinimized() const {
   if(xid){
 #ifndef WIN32
     unsigned long length,after;
-    unsigned char *data;
+    unsigned char *prop;
     Atom actualtype;
     int actualformat;
 
     // This is ICCCM compliant method to ask about WM_STATE
-    if(Success==XGetWindowProperty(DISPLAY(getApp()),xid,getApp()->wmState,0,2,FALSE,AnyPropertyType,&actualtype,&actualformat,&length,&after,&data)){
+    if(Success==XGetWindowProperty(DISPLAY(getApp()),xid,getApp()->wmState,0,2,FALSE,AnyPropertyType,&actualtype,&actualformat,&length,&after,&prop)){
       if(actualformat==32){
-        minimized=(IconicState==*((FXuint*)data));
+        minimized=(IconicState==*((FXuint*)prop));
         }
-      XFree((char*)data);
+      XFree((char*)prop);
       }
 #else
     minimized=IsIconic((HWND)xid);
@@ -905,7 +972,6 @@ void FXTopWindow::resize(FXint w,FXint h){
       cw.width=width;
       cw.height=height;
       XReconfigureWMWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())),CWWidth|CWHeight,&cw);
-//    XResizeWindow(DISPLAY(getApp()),xid,w,h);
 #else
       // Calculate the required window size based on the desired
       // size of the *client* rectangle.
@@ -937,7 +1003,6 @@ void FXTopWindow::position(FXint x,FXint y,FXint w,FXint h){
       cw.width=width;
       cw.height=height;
       XReconfigureWMWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())),CWX|CWY|CWWidth|CWHeight,&cw);
-//    XMoveResizeWindow(DISPLAY(getApp()),xid,x,y,w,h);
 #else
       // Calculate the required window position & size based on the desired
       // position & size of the *client* rectangle.

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirDialog.cpp,v 1.16 2004/02/08 17:29:06 fox Exp $                     *
+* $Id: FXDirDialog.cpp,v 1.19 2004/09/17 07:46:21 fox Exp $                     *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -27,15 +27,18 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXFile.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
+#include "FXRecentFiles.h"
 #include "FXId.h"
 #include "FXFont.h"
 #include "FXDrawable.h"
@@ -44,6 +47,8 @@
 #include "FXLabel.h"
 #include "FXButton.h"
 #include "FXComposite.h"
+#include "FXTreeList.h"
+#include "FXDirList.h"
 #include "FXPacker.h"
 #include "FXShell.h"
 #include "FXTopWindow.h"
@@ -67,14 +72,37 @@ namespace FX {
 FXIMPLEMENT(FXDirDialog,FXDialogBox,NULL,0)
 
 
-// File Open Dialog
+// Construct directory dialog box
 FXDirDialog::FXDirDialog(FXWindow* owner,const FXString& name,FXuint opts,FXint x,FXint y,FXint w,FXint h):
-  FXDialogBox(owner,name,opts|DECOR_TITLE|DECOR_BORDER|DECOR_RESIZE,x,y,w,h,0,0,0,0,4,4){
+  FXDialogBox(owner,name,opts|DECOR_TITLE|DECOR_BORDER|DECOR_RESIZE|DECOR_CLOSE,x,y,w,h,0,0,0,0,4,4){
+  initdialog();
+  }
+
+
+// Construct directory dialog box
+FXDirDialog::FXDirDialog(FXApp* a,const FXString& name,FXuint opts,FXint x,FXint y,FXint w,FXint h):
+  FXDialogBox(a,name,opts|DECOR_TITLE|DECOR_BORDER|DECOR_RESIZE|DECOR_CLOSE,x,y,w,h,0,0,0,0,4,4){
+  initdialog();
+  }
+
+
+// Initialize dialog and load settings
+void FXDirDialog::initdialog(){
   dirbox=new FXDirSelector(this,NULL,0,LAYOUT_FILL_X|LAYOUT_FILL_Y);
   dirbox->acceptButton()->setTarget(this);
   dirbox->acceptButton()->setSelector(FXDialogBox::ID_ACCEPT);
   dirbox->cancelButton()->setTarget(this);
   dirbox->cancelButton()->setSelector(FXDialogBox::ID_CANCEL);
+  setWidth(getApp()->reg().readIntEntry("Directory Dialog","width",getWidth()));
+  setHeight(getApp()->reg().readIntEntry("Directory Dialog","height",getHeight()));
+  }
+
+
+// Hide window and save settings
+void FXDirDialog::hide(){
+  FXDialogBox::hide();
+  getApp()->reg().writeIntEntry("Directory Dialog","width",getWidth());
+  getApp()->reg().writeIntEntry("Directory Dialog","height",getHeight());
   }
 
 
@@ -87,6 +115,42 @@ void FXDirDialog::setDirectory(const FXString& path){
 // Get directory
 FXString FXDirDialog::getDirectory() const {
   return dirbox->getDirectory();
+  }
+
+
+// Return TRUE if showing files as well as directories
+FXbool FXDirDialog::showFiles() const {
+  return dirbox->showFiles();
+  }
+
+
+// Show or hide normal files
+void FXDirDialog::showFiles(FXbool showing){
+  dirbox->showFiles(showing);
+  }
+
+
+// Return TRUE if showing hidden files
+FXbool FXDirDialog::showHiddenFiles() const {
+  return dirbox->showHiddenFiles();
+  }
+
+
+// Show or hide hidden files
+void FXDirDialog::showHiddenFiles(FXbool showing){
+  dirbox->showHiddenFiles(showing);
+  }
+
+
+// Change wildcard matching mode
+void FXDirDialog::setMatchMode(FXuint mode){
+  dirbox->setMatchMode(mode);
+  }
+
+
+// Return wildcard matching mode
+FXuint FXDirDialog::getMatchMode() const {
+  return dirbox->getMatchMode();
   }
 
 
@@ -119,6 +183,19 @@ void FXDirDialog::load(FXStream& store){
 // Cleanup
 FXDirDialog::~FXDirDialog(){
   dirbox=(FXDirSelector*)-1L;
+  }
+
+
+// Open existing directory name
+FXString FXDirDialog::getOpenDirectory(FXWindow* owner,const FXString& caption,const FXString& path){
+  FXDirDialog dirdialog(owner,caption);
+  FXString dirname;
+  dirdialog.setDirectory(path);
+  if(dirdialog.execute()){
+    dirname=dirdialog.getDirectory();
+    if(FXFile::isDirectory(dirname)) return dirname;
+    }
+  return FXString::null;
   }
 
 }

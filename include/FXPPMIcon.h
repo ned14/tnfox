@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPPMIcon.h,v 1.3 2004/02/08 17:17:34 fox Exp $                          *
+* $Id: FXPPMIcon.h,v 1.4 2004/11/10 16:22:05 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXPPMICON_H
 #define FXPPMICON_H
@@ -39,6 +39,8 @@ protected:
 private:
   FXPPMIcon(const FXPPMIcon&);
   FXPPMIcon &operator=(const FXPPMIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct icon from memory stream formatted in Portable Pixmap format

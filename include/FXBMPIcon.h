@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBMPIcon.h,v 1.15 2004/02/08 17:17:33 fox Exp $                         *
+* $Id: FXBMPIcon.h,v 1.17 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXBMPICON_H
 #define FXBMPICON_H
@@ -31,7 +31,14 @@
 namespace FX {
 
 
-/// Microsoft Bitmap icon
+/**
+* The BMP Icon class is a convenience class for working with icons in the
+* Microsoft Bitmap (.bmp) graphics file format.  This makes it possible to
+* use resources created with Windows development tools inside FOX without
+* need for graphics file format translators.  The bitmap loaded handles
+* 1, 4, and 8 bit paletted bitmaps, 16 and 24 bit RGB bitmaps, and
+* 32 bit RGBA bitmaps.
+*/
 class FXAPI FXBMPIcon : public FXIcon {
   FXDECLARE(FXBMPIcon)
 protected:
@@ -39,6 +46,8 @@ protected:
 private:
   FXBMPIcon(const FXBMPIcon&);
   FXBMPIcon &operator=(const FXBMPIcon&);
+public:
+  static const FXchar fileExt[];
 public:
 
   /// Construct icon from memory stream formatted in Microsoft BMP format

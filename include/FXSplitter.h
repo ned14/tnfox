@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSplitter.h,v 1.26 2004/02/08 17:17:34 fox Exp $                        *
+* $Id: FXSplitter.h,v 1.27 2004/07/30 14:13:25 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXSPLITTER_H
 #define FXSPLITTER_H
@@ -45,7 +45,8 @@ enum {
 /**
 * Splitter window is used to interactively repartition
 * two or more subpanels.
-* Space may be subdivided horizontally or vertically.
+* Space may be subdivided horizontally (SPLITTER_HORIZONTAL, which 
+* the default) or vertically (SPLITTER_VERTICAL option).
 * When the splitter is itself resized, the right-most (bottom-most)
 * child window will be resized unless the splitter window is reversed;
 * if the splitter is reversed, the left-most (top-most) child window

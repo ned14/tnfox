@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarGrip.h,v 1.7 2004/02/08 17:17:34 fox Exp $                      *
+* $Id: FXToolBarGrip.h,v 1.8 2004/10/19 00:48:59 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXTOOLBARGRIP_H
 #define FXTOOLBARGRIP_H
@@ -53,9 +53,10 @@ class FXToolBar;
 class FXAPI FXToolBarGrip : public FXWindow {
   FXDECLARE(FXToolBarGrip)
 protected:
-  FXColor activeColor;                    // Color when active
-  FXColor hiliteColor;                    // Highlight color
-  FXColor shadowColor;                    // Shadow color
+  FXColor  activeColor; // Color when active
+  FXColor  hiliteColor; // Highlight color
+  FXColor  shadowColor; // Shadow color
+  FXString tip;         // Tooltip
 protected:
   FXToolBarGrip();
 private:
@@ -68,6 +69,9 @@ public:
   long onMotion(FXObject*,FXSelector,void*);
   long onEnter(FXObject*,FXSelector,void*);
   long onLeave(FXObject*,FXSelector,void*);
+  long onCmdSetTip(FXObject*,FXSelector,void*);
+  long onCmdGetTip(FXObject*,FXSelector,void*);
+  long onQueryTip(FXObject*,FXSelector,void*);
 public:
 
   /// Construct toolbar grip
@@ -102,6 +106,12 @@ public:
 
   /// Get the active color
   FXColor getActiveColor() const { return activeColor; }
+
+  /// Set the tool tip message for the toolbar grip
+  void setTipText(const FXString& text){ tip=text; }
+
+  /// Get the tool tip message for the toolbar grip
+  FXString getTipText() const { return tip; }
 
   /// Save to stream
   virtual void save(FXStream& store) const;

@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXButton.cpp,v 1.54 2004/02/08 17:29:06 fox Exp $                        *
+* $Id: FXButton.cpp,v 1.61 2004/10/07 19:09:58 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXIcon.h"
@@ -235,7 +236,7 @@ long FXButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
     grab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
     if(state!=STATE_ENGAGED) setState(STATE_DOWN);
     flags|=FLAG_PRESSED;
     flags&=~FLAG_UPDATE;
@@ -250,11 +251,11 @@ long FXButton::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   FXbool click=(state==STATE_DOWN);
   if(isEnabled() && (flags&FLAG_PRESSED)){
     ungrab();
-    if(target && target->handle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
+    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
     if(state!=STATE_ENGAGED) setState(STATE_UP);
-    if(click && target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1); }
+    if(click && target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1); }
     return 1;
     }
   return 0;
@@ -276,7 +277,7 @@ long FXButton::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
     if((event->code==KEY_space || event->code==KEY_KP_Space) || (isDefault() && (event->code==KEY_Return || event->code==KEY_KP_Enter))){
       if(state!=STATE_ENGAGED) setState(STATE_DOWN);
       flags|=FLAG_PRESSED;
@@ -293,12 +294,12 @@ long FXButton::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXbool click=(state==STATE_DOWN);
   if(isEnabled() && (flags&FLAG_PRESSED)){
-    if(target && target->handle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
     if((event->code==KEY_space || event->code==KEY_KP_Space) || (isDefault() && (event->code==KEY_Return || event->code==KEY_KP_Enter))){
       if(state!=STATE_ENGAGED) setState(STATE_UP);
       flags|=FLAG_UPDATE;
       flags&=~FLAG_PRESSED;
-      if(click && target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1); }
+      if(click && target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1); }
       return 1;
       }
     }
@@ -326,7 +327,7 @@ long FXButton::onHotKeyRelease(FXObject*,FXSelector,void*){
     if(state!=STATE_ENGAGED) setState(STATE_UP);
     flags|=FLAG_UPDATE;
     flags&=~FLAG_PRESSED;
-    if(click && target) target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
+    if(click && target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
     }
   return 1;
   }

@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXJPGImage.cpp,v 1.18 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXJPGImage.cpp,v 1.22 2004/11/10 16:22:05 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -31,10 +33,8 @@
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXJPGImage.h"
-
 
 
 /*
@@ -48,8 +48,20 @@
 
 namespace FX {
 
+
+// Suggested file extension
+const FXchar FXJPGImage::fileExt[]="jpg";
+
+
 // Object implementation
 FXIMPLEMENT(FXJPGImage,FXImage,NULL,0)
+
+
+#ifdef HAVE_JPEG_H
+const FXbool FXJPGImage::supported=TRUE;
+#else
+const FXbool FXJPGImage::supported=FALSE;
+#endif
 
 
 // Initialize

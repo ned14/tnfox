@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorBar.h,v 1.16 2004/02/08 17:17:33 fox Exp $                        *
+* $Id: FXColorBar.h,v 1.17 2004/09/24 17:34:02 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXCOLORBAR_H
 #define FXCOLORBAR_H
@@ -42,8 +42,12 @@ class FXImage;
 
 
 /**
-* A color bar is a widget which controls the brightness (value) of a
+* A Color Bar is a widget which controls the brightness (value) of a
 * color by means of the hue, saturation, value specification system.
+* It is most useful when used together with the Color Wheel which controls
+* the hue and saturation.
+* The options COLORBAR_HORIZONTAL and COLORBAR_VERTICAL control the orientation
+* of the bar.
 */
 class FXAPI FXColorBar : public FXFrame {
   FXDECLARE(FXColorBar)

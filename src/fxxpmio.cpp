@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxxpmio.cpp,v 1.44 2004/04/24 14:10:30 fox Exp $                         *
+* $Id: fxxpmio.cpp,v 1.46 2004/09/17 07:46:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "fxpriv.h"
 
@@ -91,7 +92,7 @@ static FXint nextword(const FXchar*& src,FXchar* dst){
   while(*src && isspace((FXuchar)*src)) src++;
   while(*src && !isspace((FXuchar)*src)) *ptr++=*src++;
   *ptr=0;
-  return ptr-dst;
+  return (FXint)(ptr-dst);
   }
 
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDriveBox.cpp,v 1.23 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXDriveBox.cpp,v 1.28 2004/10/07 21:49:14 fox Exp $                      *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -27,6 +27,8 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -36,7 +38,6 @@
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
 #include "FXObjectList.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXFile.h"
@@ -260,7 +261,7 @@ long FXDriveBox::onListClicked(FXObject*,FXSelector,void* ptr){
   if(0<=((FXint)(FXival)ptr)){
     field->setText(getItemText((FXival)ptr));
     field->setIcon(getItemIcon((FXival)ptr));
-    if(target){target->handle(this,FXSEL(SEL_COMMAND,message),(void*)getItemText((FXival)ptr).text());}
+    if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getItemText((FXival)ptr).text());}
     }
   return 1;
   }
@@ -268,7 +269,7 @@ long FXDriveBox::onListClicked(FXObject*,FXSelector,void* ptr){
 
 // List has changed
 long FXDriveBox::onListChanged(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_CHANGED,message),(void*)getItemText((FXival)ptr).text());
+  return target && target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)getItemText((FXival)ptr).text());
   }
 
 

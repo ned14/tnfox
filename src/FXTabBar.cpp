@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBar.cpp,v 1.15 2004/02/08 17:29:07 fox Exp $                        *
+* $Id: FXTabBar.cpp,v 1.21 2004/10/14 07:27:18 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -43,14 +44,8 @@
 /*
   Notes:
   - Should focus go to tab items?
-  - Should callbacks come from tab items?
-  - Should redesign this stuff a little.
   - Tab items should observe various border styles.
   - TAB/TABTAB should go into content, arrow keys navigate between tabs.
-  - FXTabBook: pane's hints make no sense to observe
-  - We hide the panes in FXTabBook.  This way, we don't have to change
-    the position of each pane when the FXTabBook itself changes.
-    Only the active pane needs to be moved.
   - Fix setCurrent() to be like FXSwitcher.
 */
 
@@ -101,17 +96,21 @@ FXint FXTabBar::getDefaultWidth(){
   register FXint w,wtabs,wmaxtab,t,ntabs;
   register FXuint hints;
   register FXWindow *child;
+
+  // Left or right tabs
   if(options&TABBOOK_SIDEWAYS){
     wtabs=0;
     for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
-        if(hints&LAYOUT_FIX_WIDTH) t=child->getWidth(); else t=child->getDefaultWidth();
+        if(hints&LAYOUT_FIX_WIDTH) t=child->getWidth()-2; else t=child->getDefaultWidth()-2;
         if(t>wtabs) wtabs=t;
         }
       }
     w=wtabs;
     }
+
+  // Top or bottom tabs
   else{
     wtabs=wmaxtab=ntabs=0;
     for(child=getFirst(); child; child=child->getNext()){
@@ -135,6 +134,8 @@ FXint FXTabBar::getDefaultHeight(){
   register FXint h,htabs,hmaxtab,t,ntabs;
   register FXuint hints;
   register FXWindow *child;
+
+  // Left or right tabs
   if(options&TABBOOK_SIDEWAYS){
     htabs=hmaxtab=ntabs=0;
     for(child=getFirst(); child; child=child->getNext()){
@@ -149,12 +150,14 @@ FXint FXTabBar::getDefaultHeight(){
     if(options&PACK_UNIFORM_HEIGHT) htabs=ntabs*hmaxtab;
     h=htabs+5;
     }
+
+  // Top or bottom tabs
   else{
     htabs=0;
     for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
-        if(hints&LAYOUT_FIX_HEIGHT) t=child->getHeight(); else t=child->getDefaultHeight();
+        if(hints&LAYOUT_FIX_HEIGHT) t=child->getHeight()-2; else t=child->getDefaultHeight()-2;
         if(t>htabs) htabs=t;
         }
       }
@@ -192,38 +195,31 @@ void FXTabBar::layout(){
   // Tabs on left or right
   if(options&TABBOOK_SIDEWAYS){
 
-    // Placements for tab items and tab panels
-    y=border+padtop;
-    if(options&TABBOOK_BOTTOMTABS){         // Right tabs
-      x=width-padright-border-wmaxtab;
-      }
-    else{
-      x=border+padleft;
-      }
-
     // Place all of the children
-    for(i=0,tab=getFirst(); tab; tab=tab->getNext(),i++){
+    for(tab=getFirst(),y=border+padtop,i=0; tab; tab=tab->getNext(),i++){
       if(tab->shown()){
         hints=tab->getLayoutHints();
+        if(hints&LAYOUT_FIX_WIDTH) w=tab->getWidth();
+        else if(options&PACK_UNIFORM_WIDTH) w=wmaxtab;
+        else w=tab->getDefaultWidth();
         if(hints&LAYOUT_FIX_HEIGHT) h=tab->getHeight();
         else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
         else h=tab->getDefaultHeight();
         if(current==i){
-          if(options&TABBOOK_BOTTOMTABS)      // Right tabs
-            tab->position(x-2,y,wmaxtab+2,h+3);
+          if(options&TABBOOK_BOTTOMTABS)      
+            tab->position(-2,y,w,h);
           else
-            tab->position(x,y,wmaxtab+2,h+3);
-          tab->update(0,0,wmaxtab+2,h+3);
+            tab->position(width-w+2,y,w,h);
           raisetab=tab;
+          y+=h-3;
           }
         else{
-          if(options&TABBOOK_BOTTOMTABS)      // Right tabs
-            tab->position(x-2,y+2,wmaxtab,h);
+          if(options&TABBOOK_BOTTOMTABS)      
+            tab->position(-4,y+2,w,h);
           else
-            tab->position(x+2,y+2,wmaxtab,h);
-          tab->update(0,0,wmaxtab,h);
+            tab->position(width-w+4,y+2,w,h);
+          y+=h;
           }
-        y+=h;
         }
       }
     }
@@ -231,42 +227,38 @@ void FXTabBar::layout(){
   // Tabs on top or bottom
   else{
 
-    // Placements for tab items and tab panels
-    x=border+padleft;
-    if(options&TABBOOK_BOTTOMTABS){         // Bottom tabs
-      y=height-padbottom-border-hmaxtab;
-      }
-    else{
-      y=border+padtop;
-      }
-
     // Place all of the children
-    for(i=0,tab=getFirst(); tab; tab=tab->getNext(),i++){
+    for(tab=getFirst(),x=border+padleft,i=0; tab; tab=tab->getNext(),i++){
       if(tab->shown()){
         hints=tab->getLayoutHints();
         if(hints&LAYOUT_FIX_WIDTH) w=tab->getWidth();
         else if(options&PACK_UNIFORM_WIDTH) w=wmaxtab;
         else w=tab->getDefaultWidth();
+        if(hints&LAYOUT_FIX_HEIGHT) h=tab->getHeight();
+        else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
+        else h=tab->getDefaultHeight();
         if(current==i){
-          if(options&TABBOOK_BOTTOMTABS)      // Bottom tabs
-            tab->position(x,y-2,w+3,hmaxtab+2);
+          if(options&TABBOOK_BOTTOMTABS)      
+            tab->position(x,-2,w,h);
           else
-            tab->position(x,y,w+3,hmaxtab+2);
-          tab->update(0,0,w+3,hmaxtab+2);
+            tab->position(x,height-h+2,w,h);
           raisetab=tab;
+          x+=w-3;
           }
         else{
-          if(options&TABBOOK_BOTTOMTABS)      // Bottom tabs
-            tab->position(x+2,y-2,w,hmaxtab);
+          if(options&TABBOOK_BOTTOMTABS)   
+            tab->position(x+2,-4,w,h);
           else
-            tab->position(x+2,y+2,w,hmaxtab);
-          tab->update(0,0,w,hmaxtab);
+            tab->position(x+2,height-h+4,w,h);
+          x+=w;
           }
-        x+=w;
         }
       }
     }
+    
+  // Raise tab 
   if(raisetab) raisetab->raise();
+  
   flags&=~FLAG_DIRTY;
   }
 
@@ -275,8 +267,8 @@ void FXTabBar::layout(){
 void FXTabBar::setCurrent(FXint panel,FXbool notify){
   if(0<=panel && panel!=current){
     current=panel;
-    if(notify && target){ target->handle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)current); }
     recalc();
+    if(notify && target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)current); }
     }
   }
 

@@ -19,15 +19,17 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec3f.cpp,v 1.4 2004/02/08 17:29:07 fox Exp $                          *
+* $Id: FXVec3f.cpp,v 1.8 2004/10/01 17:07:51 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "FXHash.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
+
 
 
 
@@ -63,12 +65,26 @@ FXVec3f normalize(const FXVec3f& a){
   }
 
 
+// Compute normal from three points a,b,c
+FXVec3f normal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
+  return normalize((b-a)^(c-a));
+  }
+
+
+// Compute approximate normal from four points a,b,c,d
+FXVec3f normal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c,const FXVec3f& d){
+  return normalize((c-a)^(d-b));
+  }
+
+
+// Save vector to stream
 FXStream& operator<<(FXStream& store,const FXVec3f& v){
   store << v.x << v.y << v.z;
   return store;
   }
 
 
+// Load vector from stream
 FXStream& operator>>(FXStream& store,FXVec3f& v){
   store >> v.x >> v.y >> v.z;
   return store;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPNGIcon.h,v 1.15 2004/02/08 17:17:34 fox Exp $                         *
+* $Id: FXPNGIcon.h,v 1.17 2004/11/10 16:22:05 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXPNGICON_H
 #define FXPNGICON_H
@@ -40,6 +40,8 @@ private:
   FXPNGIcon(const FXPNGIcon&);
   FXPNGIcon &operator=(const FXPNGIcon&);
 public:
+  static const FXchar fileExt[];
+public:
 
   /// Construct an icon from memory stream formatted in PNG format
   FXPNGIcon(FXApp *a,const void *pix=NULL,FXColor clr=FXRGB(192,192,192),FXuint opts=0,FXint w=1,FXint h=1);
@@ -49,6 +51,9 @@ public:
 
   /// Load pixels from stream in PNG format
   virtual FXbool loadPixels(FXStream& store);
+
+  /// True if format is supported
+  static const FXbool supported;
 
   /// Destroy
   virtual ~FXPNGIcon();

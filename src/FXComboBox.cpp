@@ -19,12 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComboBox.cpp,v 1.45 2004/02/08 17:29:06 fox Exp $                      *
+* $Id: FXComboBox.cpp,v 1.56 2004/10/30 15:45:34 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "FXHash.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -32,7 +34,6 @@
 #include "FXRectangle.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
-#include "FXHash.h"
 #include "FXApp.h"
 #include "FXId.h"
 #include "FXDrawable.h"
@@ -70,6 +71,7 @@
   - Combobox should also issue notify message, probably.
     FXComboBox::getItem() and FXComboBox::getItemText() are the same; this
     should probably change.
+  - No reaction to up and down arrow while disabled.
 */
 
 #define COMBOBOX_INS_MASK   (COMBOBOX_REPLACE|COMBOBOX_INSERT_BEFORE|COMBOBOX_INSERT_AFTER|COMBOBOX_INSERT_FIRST|COMBOBOX_INSERT_LAST)
@@ -106,7 +108,7 @@ FXDEFMAP(FXComboBox) FXComboBoxMap[]={
 FXIMPLEMENT(FXComboBox,FXPacker,FXComboBoxMap,ARRAYNUMBER(FXComboBoxMap))
 
 
-// List box
+// Combo box
 FXComboBox::FXComboBox(FXComposite *p,FXint cols,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb):
   FXPacker(p,opts,x,y,w,h, 0,0,0,0, 0,0){
   flags|=FLAG_ENABLED;
@@ -124,7 +126,7 @@ FXComboBox::FXComboBox(FXComposite *p,FXint cols,FXObject* tgt,FXSelector sel,FX
   }
 
 
-// Createwindow
+// Create window
 void FXComboBox::create(){
   FXPacker::create();
   pane->create();
@@ -147,7 +149,7 @@ void FXComboBox::destroy(){
 
 // Enable the window
 void FXComboBox::enable(){
-  if(!(flags&FLAG_ENABLED)){
+  if(!isEnabled()){
     FXPacker::enable();
     field->enable();
     button->enable();
@@ -157,7 +159,7 @@ void FXComboBox::enable(){
 
 // Disable the window
 void FXComboBox::disable(){
-  if(flags&FLAG_ENABLED){
+  if(isEnabled()){
     FXPacker::disable();
     field->disable();
     button->disable();
@@ -185,14 +187,12 @@ FXint FXComboBox::getDefaultHeight(){
 
 // Recalculate layout
 void FXComboBox::layout(){
-  FXint buttonWidth,textWidth,itemHeight; //,paneWidth;
+  FXint buttonWidth,textWidth,itemHeight;
   itemHeight=height-(border<<1);
   buttonWidth=button->getDefaultWidth();
   textWidth=width-buttonWidth-(border<<1);
-//  paneWidth=pane->getDefaultWidth();
   field->position(border,border,textWidth,itemHeight);
   button->position(border+textWidth,border,buttonWidth,itemHeight);
-//  pane->resize(FXMAX(width,paneWidth),pane->getDefaultHeight());
   pane->resize(width,pane->getDefaultHeight());
   flags&=~FLAG_DIRTY;
   }
@@ -200,7 +200,7 @@ void FXComboBox::layout(){
 
 // Forward GUI update of text field to target; but only if pane is not popped
 long FXComboBox::onUpdFmText(FXObject*,FXSelector,void*){
-  return target && !isPaneShown() && target->handle(this,FXSEL(SEL_UPDATE,message),NULL);
+  return target && !isPaneShown() && target->tryHandle(this,FXSEL(SEL_UPDATE,message),NULL);
   }
 
 
@@ -215,7 +215,8 @@ long FXComboBox::onListClicked(FXObject*,FXSelector,void* ptr){
   button->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);    // Unpost the list
   if(0<=((FXint)(FXival)ptr)){
     field->setText(list->getItemText((FXint)(FXival)ptr));
-    if(target){target->handle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+    field->selectAll();
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());
     }
   return 1;
   }
@@ -233,7 +234,7 @@ long FXComboBox::onTextButton(FXObject*,FXSelector,void*){
 
 // Text has changed
 long FXComboBox::onTextChanged(FXObject*,FXSelector,void* ptr){
-  return target && target->handle(this,FXSEL(SEL_CHANGED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_CHANGED,message),ptr);
   }
 
 
@@ -259,7 +260,7 @@ long FXComboBox::onTextCommand(FXObject*,FXSelector,void* ptr){
         break;
       }
     }
-  return target && target->handle(this,FXSEL(SEL_COMMAND,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_COMMAND,message),ptr);
   }
 
 
@@ -271,29 +272,33 @@ long FXComboBox::onFocusSelf(FXObject* sender,FXSelector,void* ptr){
 
 // Select upper item
 long FXComboBox::onFocusUp(FXObject*,FXSelector,void*){
-  FXTRACE((100,"FXComboBox::onFocusUp\n"));
-  FXint index=getCurrentItem();
-  if(index<0) index=getNumItems()-1;
-  else if(0<index) index--;
-  if(0<=index && index<getNumItems()){
-    setCurrentItem(index);
-    if(target){target->handle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+  if(isEnabled()){
+    FXint index=getCurrentItem();
+    if(index<0) index=getNumItems()-1;
+    else if(0<index) index--;
+    if(0<=index && index<getNumItems()){
+      setCurrentItem(index);
+      if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+      }
+    return 1;
     }
-  return 1;
+  return 0;
   }
 
 
 // Select lower item
 long FXComboBox::onFocusDown(FXObject*,FXSelector,void*){
-  FXTRACE((100,"FXComboBox::onFocusDown\n"));
-  FXint index=getCurrentItem();
-  if(index<0) index=0;
-  else if(index<getNumItems()-1) index++;
-  if(0<=index && index<getNumItems()){
-    setCurrentItem(index);
-    if(target){target->handle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+  if(isEnabled()){
+    FXint index=getCurrentItem();
+    if(index<0) index=0;
+    else if(index<getNumItems()-1) index++;
+    if(0<=index && index<getNumItems()){
+      setCurrentItem(index);
+      if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+      }
+    return 1;
     }
-  return 1;
+  return 0;
   }
 
 
@@ -360,6 +365,7 @@ FXbool FXComboBox::isItemCurrent(FXint index) const {
 // Change current item
 void FXComboBox::setCurrentItem(FXint index){
   list->setCurrentItem(index);
+  list->makeItemVisible(index);
   if(0<=index){
     setText(list->getItemText(index));
     }
@@ -390,6 +396,30 @@ FXint FXComboBox::setItem(FXint index,const FXString& text,void* ptr){
     }
   recalc();
   return index;
+  }
+
+
+// Fill list by appending items from array of strings
+FXint FXComboBox::fillItems(const FXchar** strings){
+  register FXint numberofitems=list->getNumItems();
+  register FXint n=list->fillItems(strings);
+  if(numberofitems<=list->getCurrentItem()){
+    field->setText(list->getItemText(list->getCurrentItem()));
+    }
+  recalc();
+  return n;
+  }
+
+
+// Fill list by appending items from newline separated strings
+FXint FXComboBox::fillItems(const FXString& strings){
+  register FXint numberofitems=list->getNumItems();
+  register FXint n=list->fillItems(strings);
+  if(numberofitems<=list->getCurrentItem()){
+    field->setText(list->getItemText(list->getCurrentItem()));
+    }
+  recalc();
+  return n;
   }
 
 
@@ -472,8 +502,14 @@ void FXComboBox::clearItems(){
 
 
 // Get item by name
-FXint FXComboBox::findItem(const FXString& text,FXint start,FXuint flags) const {
-  return list->findItem(text,start,flags);
+FXint FXComboBox::findItem(const FXString& text,FXint start,FXuint flgs) const {
+  return list->findItem(text,start,flgs);
+  }
+
+
+// Get item by data
+FXint FXComboBox::findItemByData(const void *ptr,FXint start,FXuint flgs) const {
+  return list->findItemByData(ptr,start,flgs);
   }
 
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.h,v 1.21 2004/02/08 17:17:34 fox Exp $                        *
+* $Id: FXSettings.h,v 1.22 2004/09/26 18:02:28 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXSETTINGS_H
 #define FXSETTINGS_H
@@ -35,9 +35,9 @@ class FXStringDict;
 
 
 /**
-* FXSettings is a key-value database.  This is normally used as
-* part of FXRegistry, but can also be used separately in application
-* that need to maintain a key-value database of their own.
+* The Settings class manages a key-value database.  This is normally used as
+* part of Registry, but can also be used separately in applications that need 
+* to maintain a key-value database in a file of their own.
 */
 class FXAPI FXSettings : public FXDict {
   FXDECLARE(FXSettings)
