@@ -400,7 +400,7 @@ void FXTransString::contents(const char *&context, const char *&text, const char
 
 void FXTransString::save(FXStream &s) const
 {
-	s << (FXulong) p->context << (FXulong) p->text << (FXulong) p->hint;
+	s << (FXulong)(FXuval) p->context << (FXulong)(FXuval) p->text << (FXulong)(FXuval) p->hint;
 	s << FXString(p->text);
 }
 void FXTransString::load(FXStream &s)
@@ -411,7 +411,7 @@ void FXTransString::load(FXStream &s)
 	}
 	FXulong context, text, hint;
 	s >> context >> text >> hint;
-	p->context=(const char *) context; p->text=(const char *) text; p->hint=(const char *) hint;
+	p->context=(const char *)(FXuval) context; p->text=(const char *)(FXuval) text; p->hint=(const char *)(FXuval) hint;
 	p->langidfunc=0; p->langid=0;
 	p->args.clear();
 	FXDELETE(p->translation);

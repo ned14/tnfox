@@ -114,7 +114,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 	{
 		if(!m) m=cmapping;
 		if(!m) return 0;
-		return (void *)((FXfval)m->addr+offset-m->offset);
+		return (void *)(FXuval)((FXfval)(FXuval)m->addr+offset-m->offset);
 	}
 	void map()
 	{	// Maps in all unmapped regions
@@ -751,7 +751,7 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 			{	// Use section
 				FXfval offset=ioIndex-m->offset;
 				FXuval left=FXMIN((maxlen-readed), (FXuval)(m->len-offset));
-				memcpy(data+readed, (void *)(((FXfval) m->addr)+offset), left);
+				memcpy(data+readed, (void *)(FXuval)(((FXfval)(FXuval) m->addr)+offset), left);
 				setIoIndex(ioIndex+left); readed+=left;
 				if(readed==maxlen) break;
 			}
@@ -821,7 +821,7 @@ FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
 			{	// Use section
 				FXfval offset=ioIndex-m->offset;
 				FXuval left=FXMIN((maxlen-written), (FXuval)(m->len-offset));
-				memcpy((void *)(((FXfval) m->addr)+offset), data+written, left);
+				memcpy((void *)(FXuval)(((FXfval)(FXuval) m->addr)+offset), data+written, left);
 				setIoIndex(ioIndex+left); written+=left;
 				if(written==maxlen) break;
 			}
