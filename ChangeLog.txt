@@ -21,6 +21,7 @@ complaining about
 B FXThread wasn't setting up default nested exception handling frame causing
 fatal app exit
 B Fixed memory leak in FXTextCodecs inherited from FOX
+B Fixed occasional segfault in FXFSMonitor due to insufficient data locking
 
 
 * Made FXMemMap::mappedRegion() return current and following region
@@ -59,6 +60,7 @@ a reason :)
 + Added FXFile::stampCreationMetadata()
 + Added #define FXREFINGOBJECT_DEBUGKNOWALLOC
 + Added support for 64 bit x86 architectures
++ Added failonfree() and unfailonfree()
 
 
 v0.80 12th July 2004:
