@@ -858,9 +858,9 @@ public:
 	\deprecated For FOX compatibility only */
 	FXbool cancel() { requestTermination(); return TRUE; }
 	//! Returns a unique number identifying this thread within this kernel
-	static FXuint id() throw();
+	static FXulong id() throw();
 	//! Returns a unique number identifying the thread represented by this instance
-	FXuint myId() const;
+	FXulong myId() const;
 	/*! Returns the currently executing FXThread object. Note that the primary thread
 	(ie; the one main() was called by first thing) correctly returns a pointer to an internal thread object.
 	\warning All FXThread usage is non-trivial and thus should not be used during static data initialisation
