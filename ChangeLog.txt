@@ -24,6 +24,7 @@ source files
 * Changed FXFont to always specify anti-aliased and cleartype on Win32
 * Now replaces system allocator on FreeBSD too
 * FXFSMonitor now can disable itself if it detects a broken FAM implementation
++ Added FXACLEntity::homeDirectory()
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
