@@ -35,7 +35,7 @@ multiple threads and the heap - I get frequently enough hangs in OutputDebugStri
 and since it's not just in this code, I'm guessing it's Microsoft's problem.
 */
 
-#define MAX_THREADS 8
+#define MAX_THREADS 4
 
 static int rnd(int max)
 {
@@ -118,7 +118,7 @@ int main( int argc, char** argv)
 	for(n=0; n<MAX_THREADS; n++)
 	{
 		threads[n]->requestTermination();
-		//threads[n]->wait(FXINFINITE);
+		threads[n]->wait(FXINFINITE);
 	}
 	bool alldone;
 	do
