@@ -6,6 +6,7 @@ B FXMemoryPool contained a use of static data after static data deinit
 B FXMtxHold wasn't being inlined on Win32
 B Various FXException macros were using "e" as their temporary exception
 which could cause conflict with local definitions of "e"
+B FXIPCChannel wasn't retrying message sends if they part completed
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -19,6 +20,9 @@ source files
 + Added operator!= to FXHostAddress
 - Removed the FXHostAddress::isLoopback() method
 + Added the FXHostAddress::isLocalMachine() method
+* Changed FXFont to always specify anti-aliased and cleartype on Win32
+* Now replaces system allocator on FreeBSD too
+* FXFSMonitor now can disable itself if it detects a broken FAM implementation
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
