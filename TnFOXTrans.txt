@@ -1,12 +1,12 @@
 # TnFOX human language string literal translation file
-# Last updated: Mon, 31 Jan 2005 20:51:10 +0000
+# Last updated: Mon, 07 Mar 2005 16:38:10 +0000
 
 version=1:
 
 # If the line below says =Yes, then there are still text literals in here
 # which have not been translated yet. Search for "!TODO!" to find them
 
-needsupdating=Yes:
+needsupdating=No:
 
 # Enter the list of all language ids used in the file
 
@@ -270,8 +270,8 @@ langids="ES":
 	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
 		ES: up
 
-"Maximum message size exceeded":
-	ES: "El tamaño maximo de mensaje rebasado"
+"Maximum message size exceeded (%1 with limit of %2)":
+	ES: "El tamaño maximo de mensaje rebasado (%1 con limite de %2)"
 	srcfile="FXIPC.cxx":class="FXIPCChannel":
 		ES: up
 
