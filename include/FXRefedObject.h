@@ -393,14 +393,19 @@ public:
 		: FXRefingObjectBase(file, lineno), Generic::ptr<type, FXRefingObjectImpl::refedObject>(data) { }
 	explicit FXRefingObject(FXAutoPtr<type> &ptr)
 		: FXRefingObjectBase(0, 0), Generic::ptr<type, FXRefingObjectImpl::refedObject>(ptr) { }
-#if 1
+#if FXREFINGOBJECT_DEBUGKNOWALLOC
+ #if 1
 	// Prefer original info over where copied
 	FXRefingObject(const FXRefingObject &o, const char *file=0, int lineno=0)
 		: FXRefingObjectBase(o.allocated.file ? o.allocated.file : file, o.allocated.file ? o.allocated.lineno : lineno), Generic::ptr<type, FXRefingObjectImpl::refedObject>(o) { }
-#else
+ #else
 	// Prefer where copied over original info
 	FXRefingObject(const FXRefingObject &o, const char *file=0, int lineno=0)
 		: FXRefingObjectBase(file ? file : o.allocated.file, file ? lineno : o.allocated.lineno), Generic::ptr<type, FXRefingObjectImpl::refedObject>(o) { }
+ #endif
+#else
+	FXRefingObject(const FXRefingObject &o, const char *file=0, int lineno=0)
+		: FXRefingObjectBase(0, 0), Generic::ptr<type, FXRefingObjectImpl::refedObject>(o) { }
 #endif
 	/*! Makes a copy of the referenced object and returns a holder pointing to
 	the new copy
