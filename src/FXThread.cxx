@@ -983,6 +983,7 @@ bool FXThread::wait(FXuint time)
 
 void FXThread::start(bool waitTillStarted)
 {
+	static FXuint noOfProcessors=FXProcess::noOfProcessors();
 	FXMtxHold h(p);
 	if(waitTillStarted && !p->startedwc)
 	{
@@ -993,17 +994,28 @@ void FXThread::start(bool waitTillStarted)
 		DWORD threadId;
 		p->plsCancel=false;
 		FXERRHWIN(ResetEvent(p->plsCancelWaiter));
-#ifdef FX_SMPBUILD
-		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
-#else
-		// Keep on processor 0 if not SMP build
-		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, CREATE_SUSPENDED, &threadId)));
-		FXERRHWIN(SetThreadAffinityMask(p->threadh, 1));
-		FXERRHWIN(ResumeThread(p->threadh));
+#ifndef FX_SMPBUILD
+		if(noOfProcessors!=1)
+		{	// Keep on processor 0 if not SMP build
+			fxmessage("WARNING: Running non-SMP build executable on SMP system, forcing thread to only use processor zero!\n");
+			FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, CREATE_SUSPENDED, &threadId)));
+			FXERRHWIN(SetThreadAffinityMask(p->threadh, 1));
+			FXERRHWIN(ResumeThread(p->threadh));
+		}
+		else
 #endif
+		{
+			FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
+		}
 	}
 #endif
 #ifdef USE_POSIX
+#ifndef FX_SMPBUILD
+	if(noOfProcessors!=1)
+	{
+		fxerror("FATAL ERROR: You cannot run a non-SMP build executable on a SMP system!\n");
+	}
+#endif
 	pthread_attr_t attr;
 	FXERRHOS(pthread_attr_init(&attr));
 	int scope=0;
