@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
 				fxmessage(temp2.text());
 			}
 		}
+#if 1	// Doesn't work on POSIX
 		FXERRH_TRY
 		{
 			py( "print '\\nThrowing a python exception ...'\n"
@@ -95,6 +96,7 @@ int main(int argc, char *argv[])
 			fxmessage("C++ exception caught: %s\n", e.report().text());
 		}
 		FXERRH_ENDTRY
+#endif
 
 		py("print '\\nCalculating some fibonacci numbers ...'");
 		py( "def fibGen():\n"

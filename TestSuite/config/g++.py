@@ -74,7 +74,7 @@ if debugmode:
     env['LINKFLAGS']+=[ #"-static"        # Don't use shared objects
                        ]
 else:
-    env['LINKFLAGS']+=["-O"             # Optimise
+    env['LINKFLAGS']+=[ # "-O"             # Optimise
                        ]
 
 # Include system libs (mandatory)
