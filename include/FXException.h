@@ -481,7 +481,7 @@ struct FXException_TryHandler
 {
 	FXException_TryHandler(const char *srcfile, int lineno)
 	{
-		FXException::int_enterTryHandler(0,0);
+		FXException::int_enterTryHandler(srcfile,lineno);
 	}
 	~FXException_TryHandler()
 	{
