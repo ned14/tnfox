@@ -241,8 +241,8 @@ int main(int argc, char *argv[])
 			fxmessage("\nStippled i/o test:\n"
 						"-=-=-=-=-=-=-=-=-=\n");
 			FXMemMap src("../ReadMe.txt"), dest("BigFile.txt");
-			src.open(IO_ReadOnly|IO_Translate);
-			dest.open(IO_WriteOnly|IO_Translate);
+			src.open(IO_ReadOnly);
+			dest.open(IO_WriteOnly);
 			dest.truncate(src.size());
 			FXuval ps=FXProcess::pageSize();
 			FXuval n, blocks=(FXuval) src.size()/ps;
