@@ -142,11 +142,6 @@ C++ to describe itself.
 
 \section diffs Detailed list of enhancements
 <ol>
-<li><b>FX::FXString is now unicode and All filing system & user interface code uses unicode</b><br>
-text() down-converts to ASCII for compatibility with FOX. utext() and wtext() returns the full
-unicode string in UTF-16 and UTF-32 respectively.
-\note Until FOX finalises support for Unicode, FXString merely pretends to be unicode.
-
 <li><b>Qt-like automated human language translation</b><br>
 When combined with FX::FXTrans, human-language translation is now easy as pie! Simply wrap all of your
 user-visible string literals with <tt>tr()</tt>, extract into a text file using the provided
