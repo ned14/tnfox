@@ -2209,10 +2209,11 @@ against Apple's X11 thunking layer and TnFOX is happy on FreeBSD it should be fi
 at least the problems will be minor.
 
 \section supported Supported configuration:
-TnFOX is primarily tested against:
-\li A RedHat 9 (2.4 kernel) installation with GCC v4.0 from CVS
-\li A RedHat Fedora Core 2 (2.6 kernel) installation with stock GCC v3.4.2
-\li A FreeBSD v5.3 installation with GCC v4.0 from CVS
+TnFOX was developed against:
+\li A RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
+tested, but there is no reason why it shouldn't continue to work.
+\li A RedHat Fedora Core 3 (2.6 kernel) installation with stock GCC v3.4.2
+\li A FreeBSD v5.3 installation with GCC v3.4.2 with visibility patch applied.
 
 GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
