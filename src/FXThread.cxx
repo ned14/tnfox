@@ -1608,17 +1608,20 @@ static void *start_thread(void *t)
 		return (void *)-1;
 	}
 	FXThreadPrivate::setResultAddr(tt, &result);
-	try // Must use normal try here, otherwise the nested exception framework leaks memory
+	// Set currentThread to point to t so we will know who we are in the future
+	// Must be done for nested exception handling framework to function
+	FXThreadPrivate::currentThread=tt;
+	FXERRH_TRY
 	{
 		FXThreadPrivate::run(tt);
 		return result;
 	}
-	catch(FXThreadIntException &)
+	FXERRH_CATCH(FXThreadIntException &)
 	{
 		cleanup_thread(t);
 		return result;
 	}
-	catch(FXException &e)
+	FXERRH_CATCH(FXException &e)
 	{
 #ifdef DEBUG
 		fxmessage("Exception occurred in thread %d (%s): %s\n", FXThread::id(), tt->name(), e.report().text());
@@ -1654,6 +1657,7 @@ static void *start_thread(void *t)
 		FXThreadPrivate::forceCleanup(tt);
 		return result;
 	}
+	FXERRH_ENDTRY
 }
 #ifdef USE_WINAPI
 static DWORD WINAPI start_threadwin(void *p)
@@ -1668,8 +1672,6 @@ void FXThreadPrivate::run(FXThread *t)
 	FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)); 
 	FXERRHOS(pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL));
 #endif
-	// Set currentThread to point to t so we will know who we are in the future
-	currentThread=t;
 	{
 #ifdef USE_WINAPI
 		t->p->id=(FXuint) GetCurrentThreadId();
@@ -2278,7 +2280,7 @@ struct FXDLLLOCAL FXThreadPoolPrivate : public FXMutex
 		Generic::BoundFunctorV *volatile code;
 		Thread(FXThreadPoolPrivate *_parent)
 			: parent(_parent), free(true), wc(true), code(0), FXThread("Pool thread", true) { }
-		~Thread() { parent=0; code=0; }
+		~Thread() { parent=0; assert(!code); code=0; }
 		void run();
 		void *cleanup() { return 0; }
 		void selfDestruct()
@@ -2391,6 +2393,10 @@ public:
 		FXThreadPool *which;
 		FXAutoPtr<Generic::BoundFunctorV> code;
 		Entry(FXuint _when, FXThreadPool *creator, FXAutoPtr<Generic::BoundFunctorV> _code) : when(_when), which(creator), code(_code) { }
+		~Entry()
+		{
+			assert(!code);
+		}
 		bool operator<(const Entry &o) const { return o.when-when<0x80000000; }
 		bool operator==(const Entry &o) const { return when==o.when && which==o.which && code==o.code; }
 	};
@@ -2415,11 +2421,19 @@ public:
 				if(entry)
 				{
 					FXuint now=FXProcess::getMsCount();
-					if((now-entry->when)<0x80000000)
+					FXuint diff=now-entry->when;
+#ifdef DEBUG
+					//if(diff>=0x80000000)
+					//	fxmessage("NOTE: threadpool system returned %d ms early, rescheduling\n", -((FXint)diff));
+					//if(diff<0x80000000)
+					//	fxmessage("NOTE: threadpool dispatch %d ms late\n", diff);
+#endif
+					if(diff<0x80000000)
 					{
 						FXPtrHold<Entry> entryh(entry);
 						entries.takeFirst();
 						entryh->which->dispatch(entryh->code);
+						assert(!entryh->code);
 					}
 					if(!entries.isEmpty())
 					{
@@ -2438,6 +2452,7 @@ public:
 	{
 		FXMtxHold h(mastertimekeeperlock);
 		Entry *entry;
+		assert(entries.isEmpty());	// Otherwise it's probably a memory leak
 		while((entry=entries.getFirst()))
 		{
 			PtrRelease(entry->code);
@@ -2572,6 +2587,7 @@ Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV>
 					break;
 				}
 			}
+			assert(t);
 		}
 		else
 		{
@@ -2615,6 +2631,10 @@ FXThreadPool::CancelledState FXThreadPool::cancel(Generic::BoundFunctorV *code, 
 				{
 					if(t->code==code)
 					{	// Wait for it to complete
+						if(FXThread::id()==t->myId())
+						{
+							FXERRH(!wait, "You cannot cancel a thread pool dispatch from within that dispatch with wait as a deadlock would occur!", 0, FXERRH_ISDEBUG);
+						}
 						//fxmessage("Thread pool cancel %p waiting for completion\n", code);
 						h.unlock();
 						if(wait) { FXMtxHold h3(t); }
