@@ -619,7 +619,8 @@ struct FXDLLLOCAL FXMutexPrivate
 {
 #ifdef USE_OURMUTEX
 	FXAtomicInt lockCount, wakeSema;
-	FXuint threadId, recurseCount, spinCount;
+	FXulong threadId;
+	FXuint recurseCount, spinCount;
 #ifdef USE_WINAPI
 	KernelWaitObjectCache::Entry *wc;
 #endif
@@ -742,7 +743,7 @@ inline void FXMutex::int_lock()
 	assert(p);
 	if(!p) return;
 #ifdef USE_OURMUTEX
-	FXuint myid=FXThread::id();
+	FXulong myid=FXThread::id();
 	if(!p->lockCount.finc())
 	{	// Nothing owns me
 		assert(p->threadId==0);
@@ -834,7 +835,7 @@ void FXMutex::int_unlock()
 	else
 	{
 #ifdef DEBUG
-		FXuint myid=FXThread::id();	// For debug knowledge only
+		FXulong myid=FXThread::id();	// For debug knowledge only
 		if(myid && p->threadId)
 			FXERRH(FXThread::id()==p->threadId, "FXMutex::unlock() performed by thread which did not own mutex", FXMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
@@ -863,7 +864,7 @@ void FXMutex::unlock() { int_unlock(); }
 bool FXMutex::tryLock()
 {
 #ifdef USE_OURMUTEX
-	FXuint myid=FXThread::id();
+	FXulong myid=FXThread::id();
 	if(!p->lockCount.finc())
 	{	// Nothing owns me
 		assert(p->threadId==0);
@@ -1096,7 +1097,7 @@ public:
 	FXWaitCondition prewritecntZeroed;
 	struct WriteInfo
 	{
-		FXuint threadid;
+		FXulong threadid;
 		volatile int count;
 		bool readLockLost;
 	} write;
@@ -1161,7 +1162,7 @@ inline bool FXRWMutex::_lock(FXMtxHold &h, bool write)
 {
 	bool lockLost=false;
 #ifndef FXDISABLE_THREADS
-	FXuint myid=FXThread::id();
+	FXulong myid=FXThread::id();
 	if(write)
 	{
 		if(p->write.threadid!=myid)
@@ -1240,7 +1241,7 @@ void FXRWMutex::unlock(bool write)
 		if(write)
 		{
 #ifdef DEBUG
-			FXuint myid=FXThread::id();
+			FXulong myid=FXThread::id();
 			FXERRH(p->write.threadid==myid, "FXRWMutex::unlock(true) called by thread which did not have write lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 			// Release writers before readers (makes no difference on POSIX though)
@@ -1403,7 +1404,7 @@ public:
 	bool autodelete;
 	FXuval stackSize;
 	FXThread::ThreadScheduler threadLocation;
-	FXuint id;
+	FXulong id;
 	FXThread *creator;
 	FXWaitCondition *startedwc, *stoppedwc;
 	struct CleanupCall
@@ -1479,13 +1480,13 @@ public:
 	{
 		FX::primaryThread=this;
 #ifdef USE_WINAPI
-		p->id=(FXuint) GetCurrentThreadId();
+		p->id=FXThread::id();
 #endif
 #ifdef USE_POSIX
 #ifdef USE_OURTHREADID
 		p->id=(FXProcess::id()<<16)+0xffff;	// Highest id possible for POSIX
 #else
-		p->id=(FXuint) pthread_self();
+		p->id=FXThread::id();
 #endif
 #endif
 		p->currentThread=this;
@@ -1523,7 +1524,7 @@ static void cleanup_thread(void *t)
 {
 	FXThread *tt=(FXThread *) t;
 #ifdef DEBUG
-	fxmessage("Thread %u (%s) cleanup\n", FXThread::id(), tt->name());
+	fxmessage("Thread %u (%s) cleanup\n", (FXuint) FXThread::id(), tt->name());
 #endif
 	FXThreadPrivate::cleanup(tt);
 }
@@ -1553,7 +1554,7 @@ static void *start_thread(void *t)
 	FXERRH_CATCH(FXException &e)
 	{
 #ifdef DEBUG
-		fxmessage("Exception occurred in thread %u (%s): %s\n", FXThread::id(), tt->name(), e.report().text());
+		fxmessage("Exception occurred in thread %u (%s): %s\n", (FXuint) FXThread::id(), tt->name(), e.report().text());
 #endif
 		if(e.flags() & FXERRH_ISFATAL)
 		{
@@ -1572,7 +1573,7 @@ static void *start_thread(void *t)
 			catch(FXException &e)
 			{
 #ifdef DEBUG
-				fxmessage("Exception occurred in cleanup of thread %u (%s) after other exception\n", FXThread::id(), tt->name());
+				fxmessage("Exception occurred in cleanup of thread %u (%s) after other exception\n", (FXuint) FXThread::id(), tt->name());
 #endif
 				if(e.flags() & FXERRH_ISFATAL)
 				{
@@ -1603,7 +1604,7 @@ void FXThreadPrivate::run(FXThread *t)
 #endif
 	{
 #ifdef USE_WINAPI
-		t->p->id=(FXuint) GetCurrentThreadId();
+		t->p->id=FXThread::id();
 #endif
 #ifdef USE_POSIX
 #ifdef USE_OURTHREADID
@@ -1619,13 +1620,13 @@ void FXThreadPrivate::run(FXThread *t)
 		// May need someday to take a CRC of the pid as it don't fit into 16 bit
 		t->p->id=idt | (FXProcess::id()<<16);
 #else
-		t->p->id=(FXuint) pthread_self();
+		t->p->id=FXThread::id();
 #endif
 #endif
 	}
 	FXMtxHold h(t->p);
 #ifdef DEBUG
-	fxmessage("Thread %u (%s) started\n", FXThread::id(), t->name());
+	fxmessage("Thread %u (%s) started\n", (FXuint) FXThread::id(), t->name());
 #endif
 #ifdef USE_POSIX
 #ifdef _MSC_VER
@@ -1680,7 +1681,7 @@ void FXThreadPrivate::cleanup(FXThread *t)
 		h.relock();
 		forceCleanup(t);
 #ifdef DEBUG
-		fxmessage("Thread %u (%s) cleanup exits with code %d\n", FXThread::id(), t->name(), (int) *t->p->result);
+		fxmessage("Thread %u (%s) cleanup exits with code %d\n", (FXuint) FXThread::id(), t->name(), (int) *t->p->result);
 #endif
 		{
 #ifdef USE_OURTHREADID
@@ -1906,13 +1907,13 @@ void FXThread::requestTermination()
 	}
 }
 
-FXuint FXThread::id() throw()
+FXulong FXThread::id() throw()
 {
 #ifdef USE_WINAPI
-	return (FXuint) GetCurrentThreadId();
+	return (FXulong) GetCurrentThreadId();
 #endif
 #ifdef USE_POSIX
-#ifdef USE_OURTHREADID
+ #ifdef USE_OURTHREADID
 	FXThread *me=FXThread::current();
 	if(me && me->p)
 		return me->p->id;
@@ -1920,14 +1921,35 @@ FXuint FXThread::id() throw()
 	{	// TODO: Breakpoint this every so often and make sure it's not getting used too much
 		return 0;
 	}
-#else
-	return (FXuint) pthread_self();
-#endif
+ #else
+  #if defined(__linux__)
+	// On Linux pthread_t is already an uint, so recast
+	return (FXulong) pthread_self();
+  #elif defined(__FreeBSD__)
+	/* On FreeBSD pthread_t is a pointer, so dereference. Unfortunately right now
+	we must define the kernel structure as it's opaque */
+	struct FreeBSD_pthread
+	{
+		void *tcb;		// struct tcb *tcb;
+		FXuint magic;
+		char *name;
+		FXulong uniqueid;
+		// don't care about rest
+	};
+	FreeBSD_pthread *pt=(FreeBSD_pthread *) pthread_self();
+	FXulong ret=getpid();
+	ret=ret<<32;
+	ret|=(FXuint) pt->uniqueid;
+	return ret;
+  #else
+   #error Unknown POSIX architecture, don't know how to convert pthread_self()
+  #endif
+ #endif
 #endif
 	return 0;
 }
 
-FXuint FXThread::myId() const
+FXulong FXThread::myId() const
 {
 	return p->id;
 }
