@@ -94,7 +94,7 @@ objects+=[env.SharedObject(builddir+"/"+getBase(x), x) for x in getSources()]
 #for object in objects:
 #    env.Depends(object, geninterfaces)
 BPLObjects=["aix_init_module", "arg_to_python_base", "builtin_converters", "class", "dict",
-          "enum", "errors", "from_python", "function", "inheritance", "iterator",
+          "enum", "errors", "from_python", "function", "inheritance", "indexing_slice", "iterator",
           "life_support", "list", "long", "module", "numeric", "object_operators",
           "object_protocol", "pickle_support", "python_iterator", "registry", "slice",
           "str", "tuple", "type_id"]
