@@ -155,6 +155,7 @@ protected:
   friend class FXApp;
   friend class FXPopup;
   friend class FXWindow;
+  friend class FXToolBarGrip;
   template<typename type> friend class FXEventLoop_Static;
 
   FXApp           *app;                 // Back link to application object
@@ -540,7 +541,6 @@ class FXAPI FXApp : public FXLockable, public FXObject {
   friend class FXGLContext;
   friend class FXDC;
   friend class FXDCWindow;
-  friend class FXToolBarGrip;
   friend class FXEmbedderWindow;
 protected:
   mutable FXEventLoop *eventLoop;       // Event loop

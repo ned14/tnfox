@@ -27,6 +27,9 @@
 #ifndef FXFRAME_H
 #include "FXFrame.h"
 #endif
+#ifndef FXOBJECTLIST_H
+#include "FXObjectList.h"
+#endif
 
 namespace FX {
 

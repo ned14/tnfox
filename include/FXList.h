@@ -27,6 +27,9 @@
 #ifndef FXSCROLLAREA_H
 #include "FXScrollArea.h"
 #endif
+#ifndef FXOBJECTLIST_H
+#include "FXObjectList.h"
+#endif
 
 namespace FX {
 
