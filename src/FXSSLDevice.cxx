@@ -1102,12 +1102,12 @@ FXSSLPKey *FXSSLKey::asymmetricKey() const throw()
 	return p->pkey;
 }
 
-void FXSSLKey::setAsymmetricKey(const FXSSLPKey *pkey)
+FXSSLKey &FXSSLKey::setAsymmetricKey(const FXSSLPKey *pkey)
 {
 	if(!pkey)
 	{
 		FXDELETE(p->pkey);
-		return;
+		return *this;
 	}
 	if(!p->pkey)
 	{
@@ -1115,6 +1115,7 @@ void FXSSLKey::setAsymmetricKey(const FXSSLPKey *pkey)
 	}
 	else
 		*p->pkey=*pkey;
+	return *this;
 }
 
 FXuint FXSSLKey::bytesLen() const throw()
