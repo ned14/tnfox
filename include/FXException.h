@@ -85,9 +85,9 @@ with message \em msg, code \em code and \em flags being the usual exception flag
 #define FXERRMAKE(e2, msg, code, flags)		FXException e2(FXEXCEPTION_FILE(e2), FXEXCEPTION_LINE(e2), msg, code, flags);
 
 //! Throws the specified exception
-#define FXERRH_THROW(e)						{ FXException::int_setThrownException(e); throw e; }
+#define FXERRH_THROW(e2)					{ FXException::int_setThrownException(e2); throw e2; }
 //! This combines a FXERRMAKE() with a FXERRH_THROW()
-#define FXERRG(msg, code, flags)			{ FXERRMAKE(e, msg, code, flags); FXERRH_THROW(e); }
+#define FXERRG(msg, code, flags)			{ FXERRMAKE(_int_e_temp, msg, code, flags); FXERRH_THROW(_int_e_temp); }
 //! This performs the assertion \em cond, which if false throws the specified exception
 #ifdef DEBUG
 #define FXERRH(cond, msg, code, flags)		if(!(cond) || FXException::int_testCondition()) FXERRG(msg, code, flags)
@@ -142,14 +142,14 @@ MSVCRT which sets errno
 //! Enters a section of code guarded against exceptions
 #define FXERRH_TRY			{ bool __retryerrorh; do { __retryerrorh=false; FXException_TryHandler __newtryhandler(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); try
 //! Catches a specific exception
-#define FXERRH_CATCH(e)		catch(e)
+#define FXERRH_CATCH(e2)	catch(e2)
 /*! \param owner Either a FXApp or FXWindow
 \param e The FXException to report
 Reports the exception \em e to the user
 \note You must <tt>#include "FXExceptionDialog.h"</tt> for this to compile
 \warning You must be within a FXERRH_TRY...FXERRH_ENDTRY
 */
-#define FXERRH_REPORT(owner, e)	{ if(FXExceptionDialog(owner, e).execute()) __retryerrorh=true; }
+#define FXERRH_REPORT(owner, e2)	{ if(FXExceptionDialog(owner, e2).execute()) __retryerrorh=true; }
 //! Ends the section of guarded code plus its exception handlers
 #define FXERRH_ENDTRY		} while(__retryerrorh); }
 //@)
@@ -159,7 +159,7 @@ Reports the exception \em e to the user
 
 #define FXERRH_NODESTRUCTORMOD
 #define FXEXCEPTIONDESTRUCT1 FXException::int_incDestructorCnt(); try
-#define FXEXCEPTIONDESTRUCT2 catch(FXException &e) { if(FXException::int_nestedException(e)) throw; } FXException::int_decDestructorCnt()
+#define FXEXCEPTIONDESTRUCT2 catch(FXException &_int_caught_e) { if(FXException::int_nestedException(_int_caught_e)) throw; } FXException::int_decDestructorCnt()
 //@(
 //! Enters a section of code guarded against \c std::bad_alloc exceptions
 #define FXEXCEPTION_STL1 try {
@@ -170,7 +170,7 @@ Reports the exception \em e to the user
 //! Enters a section of code called by exception-unaware code eg; FOX GUI code
 #define FXEXCEPTION_FOXCALLING1 FXERRH_TRY {
 //! Exits a section of code called by exception-unaware code eg; FOX GUI code
-#define FXEXCEPTION_FOXCALLING2 } FXERRH_CATCH(FXException &e) { FXERRH_REPORT(FXApp::instance(), e); } FXERRH_ENDTRY
+#define FXEXCEPTION_FOXCALLING2 } FXERRH_CATCH(FXException &_int_caught_e) { FXERRH_REPORT(FXApp::instance(), _int_caught_e); } FXERRH_ENDTRY
 //@)
 
 
@@ -513,7 +513,7 @@ Use this macro to generically indicate a parameter exceedin te permitted range. 
 failure in all code, this should greatly help intuitive writing of handlers for this
 common error
 */
-#define FXERRGNF(msg, flags)		{ FXNotFoundException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(e); }
+#define FXERRGNF(msg, flags)		{ FXNotFoundException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXPointerException
 \brief An unexpected null pointer error
@@ -528,7 +528,7 @@ public:
 	FXPointerException(const FXchar *msg)
 		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, 0) { }
 };
-#define FXERRGPTR(flags)	{ FXPointerException e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(e); }
+#define FXERRGPTR(flags)	{ FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
 /*! \return A FXPointerException
 
 Use this macro to test for null pointers
@@ -567,7 +567,7 @@ public:
 	FXMemoryException(const FXchar *msg)
 		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, 0) { }
 };
-#define FXERRGM				{ FXMemoryException e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(e); }
+#define FXERRGM				{ FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
 /*! \return A FXMemoryException
 
 Use this macro to wrap malloc, calloc and new eg;
@@ -593,7 +593,7 @@ public:
 	FXNotSupportedException(const char *_filename, int _lineno, const FXString &msg)
 		: FXException(_filename, _lineno, msg, FXEXCEPTION_NOTSUPPORTED, FXERRH_ISNORETRY|FXERRH_ISDEBUG) { }
 };
-#define FXERRGNOTSUPP(msg)	{ FXNotSupportedException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(e); }
+#define FXERRGNOTSUPP(msg)	{ FXNotSupportedException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXNotFoundException
 \brief A failure to find something (eg; a file, handle, etc)
@@ -611,7 +611,7 @@ Use this macro to generically indicate failures to find things. As this is a com
 failure in all code, this should greatly help intuitive writing of handlers for this
 common error
 */
-#define FXERRGNF(msg, flags)		{ FXNotFoundException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(e); }
+#define FXERRGNF(msg, flags)		{ FXNotFoundException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXIOException
 \brief A failure to perform i/o
@@ -623,7 +623,7 @@ public:
 	FXIOException(const char *_filename, int _lineno, const FXString &msg, FXuint code=FXEXCEPTION_IOERROR, FXuint flags=0)
 		: FXResourceException(_filename, _lineno, msg, code, flags) { }
 };
-#define FXERRGIO(msg)		{ FXIOException e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(e); }
+#define FXERRGIO(msg)		{ FXIOException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
 /*! \return A FXIOException
 
 Use this macro to wrap standard C library type calls eg;
@@ -647,7 +647,7 @@ public:
 	FXConnectionLostException(const FXString &msg, FXuint flags)
 		: FXIOException(0, 0, msg, FXEXCEPTION_CONNECTIONLOST, flags|FXERRH_ISINFORMATIONAL) { }
 };
-#define FXERRGCONLOST(msg, flags)		{ FXConnectionLostException e(msg, flags); FXERRH_THROW(e); }
+#define FXERRGCONLOST(msg, flags)		{ FXConnectionLostException _int_temp_e(msg, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXNoPermissionException
 \brief The caller had insufficient permissions
@@ -659,7 +659,7 @@ public:
 	FXNoPermissionException(const FXString &msg, FXuint flags)
 		: FXException(0, 0, msg, FXEXCEPTION_NOPERMISSION, flags|FXERRH_ISINFORMATIONAL) { }
 };
-#define FXERRGNOPERM(msg, flags)		{ FXNoPermissionException e(msg, flags); FXERRH_THROW(e); }
+#define FXERRGNOPERM(msg, flags)		{ FXNoPermissionException _int_temp_e(msg, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXWindowException
 \brief A failure in the windowing system
