@@ -203,57 +203,57 @@ FXIPCChannel::~FXIPCChannel()
 } FXEXCEPTIONDESTRUCT2; }
 FXIPCMsgRegistry &FXIPCChannel::registry() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return *p->registry;
 }
 void FXIPCChannel::setRegistry(FXIPCMsgRegistry &registry)
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	p->registry=&registry;
 }
 FXIODeviceS *FXIPCChannel::device() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return p->dev;
 }
 void FXIPCChannel::setDevice(FXIODeviceS *dev)
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	p->dev=dev;
 }
 FXThreadPool *FXIPCChannel::threadPool() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return p->threadPool;
 }
 void FXIPCChannel::setThreadPool(FXThreadPool *threadPool)
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	p->threadPool=threadPool;
 }
 bool FXIPCChannel::unreliable() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return p->unreliable;
 }
 void FXIPCChannel::setUnreliable(bool v)
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	p->unreliable=v;
 }
 bool FXIPCChannel::compression() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return p->compressed;
 }
 void FXIPCChannel::setCompression(bool v)
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	p->compressed=v;
 }
 bool FXIPCChannel::active() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return !p->quit;
 }
 void FXIPCChannel::reset()
@@ -264,7 +264,7 @@ void FXIPCChannel::reset()
 }
 FXIPCChannel::EndianConversionKinds FXIPCChannel::endianConversion() const
 {
-	FXMtxHold h(this);
+	// FXMtxHold h(this); can do without
 	return p->endianConversion;
 }
 void FXIPCChannel::setEndianConversion(FXIPCChannel::EndianConversionKinds kind)
