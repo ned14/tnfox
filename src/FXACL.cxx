@@ -36,6 +36,7 @@
 #include "Sddl.h"
 #include "Aclapi.h"
 #include "Lm.h"
+#include "shlobj.h"
 #define SECURITY_WIN32
 #include "Security.h"
 #include <io.h>
@@ -56,6 +57,61 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
 namespace FX {
+
+#ifdef USE_WINAPI
+class FXACLInit
+{	// Cached here to speed FXACL::check()
+public:
+	HANDLE myprocessh;
+	DWORD pssize;
+	PRIVILEGE_SET *ps;
+	FXACLInit()
+	{
+		FXERRHWIN(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY|TOKEN_DUPLICATE|TOKEN_ADJUST_PRIVILEGES, &myprocessh));
+		//DWORD privsinfolen=0;
+		//FXERRHWIN(GetTokenInformation(myprocessh, TokenPrivileges, NULL, privsinfolen, &privsinfolen));
+		//TOKEN_PRIVILEGES *privsinfo;
+		//FXERRHM(privsinfo=malloc(privsinfolen+sizeof(DWORD)));
+		//FXRBOp unalloc=FXRBAlloc(privsinfo);
+		//FXERRHWIN(GetTokenInformation(myprocessh, TokenPrivileges, privsinfo, privsinfolen, &privsinfolen));
+		//// Stupid god damn extra DWORD ...
+		//PRIVILEGE_SET *ps=(PRIVILEGE_SET *) privsinfo;
+		//memmove(&ps->Privileges, &privsinfo->Privileges, privsinfolen-sizeof(DWORD));
+		//ps->Control=PRIVILEGE_SET_ALL_NECESSARY;
+		pssize=sizeof(PRIVILEGE_SET)+3*sizeof(LUID_AND_ATTRIBUTES);
+		FXERRHM(ps=(PRIVILEGE_SET *) malloc(pssize));
+		ps->PrivilegeCount=3;
+		ps->Control=0;
+		// Just some useful privileges
+		ps->Privilege[0].Attributes=0;
+		FXERRHWIN(LookupPrivilegeValue(0, SE_CHANGE_NOTIFY_NAME, &ps->Privilege[0].Luid));
+		ps->Privilege[1].Attributes=0;
+		FXERRHWIN(LookupPrivilegeValue(0, SE_TAKE_OWNERSHIP_NAME, &ps->Privilege[1].Luid));
+		ps->Privilege[2].Attributes=0;
+		FXERRHWIN(LookupPrivilegeValue(0, SE_TCB_NAME, &ps->Privilege[2].Luid));
+
+		/*{	// Try to give ourselves the SE_TCB_NAME privilege
+			HANDLE adjh;
+			if(!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &adjh)) return;
+			FXRBOp unadjh=FXRBFunc(CloseHandle, adjh);
+			TOKEN_PRIVILEGES tp={ 1 };
+			tp.Privileges[0].Luid=ps->Privilege[2].Luid;
+			tp.Privileges[0].Attributes=SE_PRIVILEGE_ENABLED;
+			DWORD retlen=0;
+			BOOL ret=AdjustTokenPrivileges(adjh, FALSE, &tp, 0, NULL, &retlen);
+			ret=ret;
+		}*/
+	}
+	~FXACLInit()
+	{
+		free(ps); ps=0;
+		FXERRHWIN(CloseHandle(myprocessh)); myprocessh=0;
+	}
+};
+static FXProcess_StaticInit<FXACLInit> fxaclinit("FXACLInit");
+#endif
+
+
 
 struct FXDLLLOCAL FXACLEntityPrivate
 {
@@ -451,6 +507,68 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	return false;
 #endif
 }
+FXString FXACLEntity::homeDirectory(bool filesdir) const
+{
+#ifdef USE_WINAPI
+	if(filesdir)
+	{	// Ask the shell where this user's My Documents lives
+		FXERRH(p->token, FXTrans::tr("FXACLEntity", "You must authenticate an entity before you can retrieve its home directory"), FXACLENTITY_HOMEDIRNEEDSAUTH, 0);
+		TCHAR outpath[MAX_PATH];
+		HRESULT ret=SHGetFolderPath(NULL, CSIDL_PERSONAL, p->token, SHGFP_TYPE_CURRENT, outpath);
+		FXERRHWIN(ret!=S_FALSE && ret!=E_FAIL);
+		return FXString(outpath);
+	}
+	else
+	{	/* Here comes the "official" method of obtaining a user's home directory.
+		As is usual on Windows, it's far too long-winded :( */
+
+		// Get the username and computer
+		TCHAR account[1024], computer[1024];
+		DWORD accsize=sizeof(account), compsize=sizeof(computer);
+		SID_NAME_USE use;
+		FXERRHWIN(LookupAccountSid(p->computer(), p->sid, account, &accsize, computer, &compsize, &use));
+
+#ifdef UNICODE
+#error Fixme for unicode!
+#endif
+		// Convert to unicode
+		WCHAR accountw[1024], computerw[1024];
+		FXERRHWIN(MultiByteToWideChar(CP_ACP, 0, account,  strlen(account)+1, accountw,   sizeof(accountw)/sizeof(WCHAR)));
+		FXERRHWIN(MultiByteToWideChar(CP_ACP, 0, computer, strlen(account)+1, computerw, sizeof(computerw)/sizeof(WCHAR)));
+
+		// Get domain controller for the computer
+		LPBYTE domainw=0;
+		FXERRHWIN(NetGetDCName(NULL, computerw, &domainw));
+		FXRBOp undomainw=FXRBFunc(NetApiBufferFree, domainw);
+
+		// Finally, go get the user info
+		USER_INFO_1 *usrinfo=0;
+		FXERRHWIN(NERR_Success==NetUserGetInfo((LPWSTR) domainw, accountw, 1, (LPBYTE *) &usrinfo));
+		FXRBOp unusrinfo=FXRBFunc(NetApiBufferFree, usrinfo);
+
+		// Convert it back to ASCII
+		char temp[1024];
+		FXERRHWIN(WideCharToMultiByte(CP_ACP, 0, usrinfo->usri1_home_dir, -1, temp, sizeof(temp), NULL, NULL));
+		return FXString(temp);
+	}
+#endif
+#ifdef USE_POSIX
+	if(p->amOwner || p->amPublic || p->amGroup)
+		return FXString::nullStr();
+	int ret;
+	QByteArray store(1024);
+	struct passwd *_userinfo=0, userinfo={0};
+	struct group *_groupinfo=0, groupinfo={0};
+	for(;;)
+	{
+		if(!(ret=getpwuid_r(p->userId, &userinfo, (char *) store.data(), store.size(), &_userinfo))) break;
+		if(ret && ERANGE!=ret) FXERRHOS(-1);
+		store.resize(store.size()+1024);
+	}
+	if(!_userinfo) memset(&userinfo, 0, sizeof(userinfo));
+	return FXString(userinfo.pw_dir);
+#endif
+}
 
 static FXMutex staticmethodlock;
 const FXACLEntity &FXACLEntity::currentUser()
@@ -459,20 +577,20 @@ const FXACLEntity &FXACLEntity::currentUser()
 	if(ret.p) return ret;
 	FXMtxHold lh(staticmethodlock);
 #ifdef USE_WINAPI
-	HANDLE myprocessh;
 	DWORD userinfolen=0, groupinfolen=0;
-    FXERRHWIN(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &myprocessh));
-	FXRBOp unprocessh=FXRBFunc(&CloseHandle, myprocessh);
-	GetTokenInformation(myprocessh, TokenUser, NULL, userinfolen, &userinfolen);
-	GetTokenInformation(myprocessh, TokenPrimaryGroup, NULL, groupinfolen, &groupinfolen);
+	// Take a copy of the process token for the current user token
+	FXERRHWIN(DuplicateTokenEx(fxaclinit->myprocessh, 0, NULL, SecurityImpersonation, TokenImpersonation, &ret.p->token));
+	// Go get the SIDs for the process token's user and group
+	GetTokenInformation(ret.p->token, TokenUser, NULL, userinfolen, &userinfolen);
+	GetTokenInformation(ret.p->token, TokenPrimaryGroup, NULL, groupinfolen, &groupinfolen);
 	TOKEN_USER *userinfo;
 	TOKEN_PRIMARY_GROUP *groupinfo;
 	FXERRHM(userinfo=(TOKEN_USER *) malloc(userinfolen));
 	FXRBOp unalloc1=FXRBAlloc(userinfo);
-	FXERRHWIN(GetTokenInformation(myprocessh, TokenUser, userinfo, userinfolen, &userinfolen));
+	FXERRHWIN(GetTokenInformation(fxaclinit->myprocessh, TokenUser, userinfo, userinfolen, &userinfolen));
 	FXERRHM(groupinfo=(TOKEN_PRIMARY_GROUP *) malloc(groupinfolen));
 	FXRBOp unalloc2=FXRBAlloc(groupinfo);
-	FXERRHWIN(GetTokenInformation(myprocessh, TokenPrimaryGroup, groupinfo, groupinfolen, &groupinfolen));
+	FXERRHWIN(GetTokenInformation(fxaclinit->myprocessh, TokenPrimaryGroup, groupinfo, groupinfolen, &groupinfolen));
 	FXERRHM(ret.p=new FXACLEntityPrivate((SID *) userinfo->User.Sid, (SID *) groupinfo->PrimaryGroup, FXString::nullStr()));
 #endif
 #ifdef USE_POSIX
@@ -599,6 +717,12 @@ FXACLEntity FXACLEntity::lookupUser(const FXString &username, const FXString &ma
 #endif
 	return ret;
 }
+/*
+QValueList<FXACLEntity> FXACLEntity::localEntities()
+{
+	// Use NetQueryDisplayInformation() on Windows
+}
+*/
 
 // Returns a string of the form "RWXA RWRWO" or "LTCDCD RWRWO"
 FXString FXACL::Permissions::asString(EntityType type) const
@@ -741,58 +865,8 @@ static FXACL::Permissions translateBack(DWORD p, FXACL::EntityType type)
 }
 #endif
 
-#ifdef USE_WINAPI
-class FXACLInit
-{	// Cached here to speed FXACL::check()
-public:
-	HANDLE myprocessh;
-	DWORD pssize;
-	PRIVILEGE_SET *ps;
-	FXACLInit()
-	{
-		FXERRHWIN(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY|TOKEN_DUPLICATE|TOKEN_ADJUST_PRIVILEGES, &myprocessh));
-		//DWORD privsinfolen=0;
-		//FXERRHWIN(GetTokenInformation(myprocessh, TokenPrivileges, NULL, privsinfolen, &privsinfolen));
-		//TOKEN_PRIVILEGES *privsinfo;
-		//FXERRHM(privsinfo=malloc(privsinfolen+sizeof(DWORD)));
-		//FXRBOp unalloc=FXRBAlloc(privsinfo);
-		//FXERRHWIN(GetTokenInformation(myprocessh, TokenPrivileges, privsinfo, privsinfolen, &privsinfolen));
-		//// Stupid god damn extra DWORD ...
-		//PRIVILEGE_SET *ps=(PRIVILEGE_SET *) privsinfo;
-		//memmove(&ps->Privileges, &privsinfo->Privileges, privsinfolen-sizeof(DWORD));
-		//ps->Control=PRIVILEGE_SET_ALL_NECESSARY;
-		pssize=sizeof(PRIVILEGE_SET)+3*sizeof(LUID_AND_ATTRIBUTES);
-		FXERRHM(ps=(PRIVILEGE_SET *) malloc(pssize));
-		ps->PrivilegeCount=3;
-		ps->Control=0;
-		// Just some useful privileges
-		ps->Privilege[0].Attributes=0;
-		FXERRHWIN(LookupPrivilegeValue(0, SE_CHANGE_NOTIFY_NAME, &ps->Privilege[0].Luid));
-		ps->Privilege[1].Attributes=0;
-		FXERRHWIN(LookupPrivilegeValue(0, SE_TAKE_OWNERSHIP_NAME, &ps->Privilege[1].Luid));
-		ps->Privilege[2].Attributes=0;
-		FXERRHWIN(LookupPrivilegeValue(0, SE_TCB_NAME, &ps->Privilege[2].Luid));
 
-		/*{	// Try to give ourselves the SE_TCB_NAME privilege
-			HANDLE adjh;
-			if(!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &adjh)) return;
-			FXRBOp unadjh=FXRBFunc(CloseHandle, adjh);
-			TOKEN_PRIVILEGES tp={ 1 };
-			tp.Privileges[0].Luid=ps->Privilege[2].Luid;
-			tp.Privileges[0].Attributes=SE_PRIVILEGE_ENABLED;
-			DWORD retlen=0;
-			BOOL ret=AdjustTokenPrivileges(adjh, FALSE, &tp, 0, NULL, &retlen);
-			ret=ret;
-		}*/
-	}
-	~FXACLInit()
-	{
-		free(ps); ps=0;
-		FXERRHWIN(CloseHandle(myprocessh)); myprocessh=0;
-	}
-};
-static FXProcess_StaticInit<FXACLInit> fxaclinit("FXACLInit");
-#endif
+
 
 struct FXDLLLOCAL FXACLPrivate : public QValueList<FXACL::Entry>
 {
