@@ -468,7 +468,7 @@ A FXMutex or FXRWMutex can also be specified via passing a FX::FXPol_lockable po
 A rarely used other possibility is to pass FXMtxHold::UnlockAndRelock as the second argument to the
 constructor - this unlocks the mutex and relocks it on destruction.
 */
-class FXAPI FXMtxHold
+class FXMtxHold
 {
 	bool rw, locked, inverted, rwmutexwrite, locklost;
 	FXMutex *mutex;
@@ -484,27 +484,27 @@ public:
 		UnlockAndRelock		//!< The opposite (very rarely used)
 	};
 	//! Constructs an instance holding the lock to mutex \em m
-	FXMtxHold(const FXMutex *m, Hold type=LockAndUnlock)
+	inline FXMtxHold(const FXMutex *m, Hold type=LockAndUnlock)
 		: rw(false), inverted(type==UnlockAndRelock), mutex(const_cast<FXMutex *>(m))
 	{
 		if(inverted) mutex->unlock(); else mutex->lock();
 		locked=true;
 	}
 	//! \overload
-	FXMtxHold(const FXMutex &m, Hold type=LockAndUnlock)
+	inline FXMtxHold(const FXMutex &m, Hold type=LockAndUnlock)
 		: rw(false), inverted(type==UnlockAndRelock), mutex(const_cast<FXMutex *>(&m))
 	{
 		if(inverted) mutex->unlock(); else mutex->lock();
 		locked=true;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXMtxHold(FXRWMutex *m, bool write=true) : rw(true), rwmutex(m), rwmutexwrite(write)
+	inline FXMtxHold(FXRWMutex *m, bool write=true) : rw(true), rwmutex(m), rwmutexwrite(write)
 		{ locklost=rwmutex->lock(rwmutexwrite); locked=true; }
 	//! \overload
-	FXMtxHold(FXRWMutex &m, bool write=true) : rw(true), rwmutex(&m), rwmutexwrite(write)
+	inline FXMtxHold(FXRWMutex &m, bool write=true) : rw(true), rwmutex(&m), rwmutexwrite(write)
 		{ locklost=rwmutex->lock(rwmutexwrite); locked=true; }
 	//! Used to unlock the held mutex earlier than destruction.
-	void unlock()
+	inline void unlock()
 	{
 		if(locked)
 		{
@@ -518,7 +518,7 @@ public:
 		}
 	}
 	//! Used to relock a previously unlocked held mutex
-	void relock()
+	inline void relock()
 	{
 		if(!locked)
 		{
@@ -533,10 +533,10 @@ public:
 	}
 	/*! \overload
 	\deprecated For FOX compatibility only */
-	void lock() { relock(); }
+	inline void lock() { relock(); }
 	//! Returns true if when during a read-to-write lock transition the lock was lost
-	bool lockLost() const { return locklost; }
-	~FXMtxHold() { unlock(); }
+	inline bool lockLost() const { return locklost; }
+	inline ~FXMtxHold() { unlock(); }
 };
 //! For FOX compatibility only
 typedef FXMtxHold FXMutexLock;
