@@ -84,11 +84,11 @@
  // GCC lets us know what it's compiling
  #if defined(__x86_64__)
   #define ARCHITECTURE "AMD64"
- #elif defined(__i686__)
+ #elif defined(__i686__) || defined(__athlon__) || defined(__pentiumpro__) || defined(__pentium4__)
   #define ARCHITECTURE "i686"
- #elif defined(__i586__)
+ #elif defined(__i586__) || defined(__k6__)
   #define ARCHITECTURE "i586"
- #elif defined(__i386__)
+ #elif defined(__i386__) || defined(__i486__)
   #define ARCHITECTURE "i486"
  #elif defined(__ia64__)
   #define ARCHITECTURE "ia64"
