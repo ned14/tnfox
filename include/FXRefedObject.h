@@ -32,7 +32,54 @@ namespace FX {
 \brief Defines classes useful for implementing handles to objects
 */
 
-class FXRefingObjectBase {};
+/*! \def FXREFINGOBJECT_DEBUGKNOWALLOC [0|1]
+If defined to 1, FX::FXRefingObject stores where in the program source it was created.
+Useful for tracking down lost handles to things. By default enabled in debug builds.
+To use, do something like the following:
+\code
+#if FXREFINGOBJECT_DEBUGKNOWALLOC
+ #define FXRefingObject(a) FXRefingObject(a, __FILE__, __LINE__)
+#endif
+\endcode
+*/
+#ifndef FXREFINGOBJECT_DEBUGKNOWALLOC
+ #ifdef DEBUG
+  #define FXREFINGOBJECT_DEBUGKNOWALLOC 1
+ #else
+  #define FXREFINGOBJECT_DEBUGKNOWALLOC 0
+ #endif
+#endif
+
+class FXRefingObjectBase
+{
+protected:
+#if FXREFINGOBJECT_DEBUGKNOWALLOC
+	struct Allocated
+	{
+		const char *file;
+		int lineno;
+		Allocated(const char *_file, int _lineno) : file(_file), lineno(_lineno) { }
+	} allocated;
+	FXRefingObjectBase(const char *_file, int _lineno) : allocated(_file, _lineno) { }
+public:
+	FXRefingObjectBase &operator=(const FXRefingObjectBase &o)
+	{
+		if(o.allocated.file)
+		{
+			allocated.file=o.allocated.file;
+			allocated.lineno=o.allocated.lineno;
+		}
+		return *this;
+	}
+	const char *int_allocated_file() const throw() { return allocated.file; }
+	int int_allocated_lineno() const throw() { return allocated.lineno; }
+#else
+	FXRefingObjectBase(const char *_file, int _lineno) { }
+public:
+	const char *int_allocated_file() const throw() { return 0; }
+	int int_allocated_lineno() const throw() { return 0; }
+#endif
+};
 template<class type> class FXRefingObject;
 namespace FXRefingObjectImpl {
 	template<bool mutexed, class type> struct dataHolderI;
@@ -216,23 +263,15 @@ namespace FXRefingObjectImpl {
 	{
 		type *data;
 		dataHolderI(type *p) : data(p) { }
-		void addRef() { data->int_addReferrer((FXRefingObjectBase *) this); }
-		void delRef() { data->int_removeReferrer((FXRefingObjectBase *) this); }
+		inline void addRef();
+		inline void delRef();
 	};
 	template<class type> struct dataHolderI<true, type>
 	{
 		type *data;
 		dataHolderI(type *p) : data(p) { }
-		void addRef()
-		{
-			FXMtxHold h(data);
-			data->int_addReferrer((FXRefingObjectBase *) this);
-		}
-		void delRef()
-		{
-			FXMtxHold h(data);
-			data->int_removeReferrer((FXRefingObjectBase *) this);
-		}
+		inline void addRef();
+		inline void delRef();
 	};
 	template<class type> struct dataHolder
 		: public dataHolderI<Generic::convertible<FXMutex &, type &>::value, type>
@@ -350,9 +389,12 @@ template<class type> class FXRefingObject
 {
 public:
 	//! Constructs an instance holding a reference to \em data
-	FXRefingObject(type *data=0) : Generic::ptr<type, FXRefingObjectImpl::refedObject>(data) { }
-	explicit FXRefingObject(FXAutoPtr<type> &ptr) : Generic::ptr<type, FXRefingObjectImpl::refedObject>(ptr) { }
-	FXRefingObject(const FXRefingObject &o) : Generic::ptr<type, FXRefingObjectImpl::refedObject>(o) { }
+	FXRefingObject(type *data=0, const char *file=0, int lineno=0)
+		: FXRefingObjectBase(file, lineno), Generic::ptr<type, FXRefingObjectImpl::refedObject>(data) { }
+	explicit FXRefingObject(FXAutoPtr<type> &ptr)
+		: FXRefingObjectBase(0, 0), Generic::ptr<type, FXRefingObjectImpl::refedObject>(ptr) { }
+	FXRefingObject(const FXRefingObject &o, const char *file=0, int lineno=0)
+		: FXRefingObjectBase(o.allocated.file ? o.allocated.file : file, o.allocated.file ? o.allocated.lineno : lineno), Generic::ptr<type, FXRefingObjectImpl::refedObject>(o) { }
 	/*! Makes a copy of the referenced object and returns a holder pointing to
 	the new copy
 	*/
@@ -365,6 +407,28 @@ public:
 		return FXRefingObject(v);
 	}
 };
+
+namespace FXRefingObjectImpl
+{	// Now that we know FXRefingObject's relationship to its policy classes, we can static_cast<>
+	template<bool mutexed, class type> inline void dataHolderI<mutexed, type>::addRef()
+	{
+		data->int_addReferrer(static_cast<FXRefingObject<type> *>(this));
+	}
+	template<bool mutexed, class type> inline void dataHolderI<mutexed, type>::delRef()
+	{
+		data->int_removeReferrer(static_cast<FXRefingObject<type> *>(this));
+	}
+	template<class type> inline void dataHolderI<true, type>::addRef()
+	{
+		FXMtxHold h(data);
+		data->int_addReferrer(static_cast<FXRefingObject<type> *>(this));
+	}
+	template<class type> inline void dataHolderI<true, type>::delRef()
+	{
+		FXMtxHold h(data);
+		data->int_removeReferrer(static_cast<FXRefingObject<type> *>(this));
+	}
+}
 
 } // namespace
 
