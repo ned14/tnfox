@@ -39,7 +39,7 @@ if debugmode:
 else:
     cppflags+=["/O2",        # Optimise for fast code
                "/Zd",        # Line no debug info only
-               #"/Zi",
+               #"/Zi", #"/Og-",
                "/MD"         # Select MSVCRT.dll
                ]
     #env['CCWPOOPTS']=["/Og-"]
