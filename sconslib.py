@@ -52,7 +52,8 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
     target,suffix=VersionedSharedLibraryName(env, target, version, debug)
     libtool=sys.platform!="win32"
     DLL=env.SharedLibrary(target+suffix, sources, SHLIBSUFFIX=suffix, **args)
-    basetarget=str(DLL)
+    basetarget=str(DLL[-1])
+    print "basetarget=",basetarget
     stem,ext=os.path.split(targetorig)
     mpos=string.rfind(basetarget, '-')
     lpos=string.rfind(basetarget, os.sep)
@@ -63,6 +64,7 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
     vBpos=string.find(basetarget, '.', vSpos+1)
     LAIname=os.path.join(stem, basetarget[lpos+1:sopos]+".la")
     def genLAIfile(target, source, env):
+        print "Generating LAI file at",LAIname
         oh=file(LAIname, "wt")
         try:
             
@@ -106,7 +108,7 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
         basetarget=target[string.rfind(target, os.path.sep)+1:]
         libsbase=os.path.abspath(os.path.join(stem, ".libs"))
         libsloc=os.path.join(libsbase, basetarget)
-        print target, libsbase, libsloc, basetarget
+        print "Linking to", target, "from", libsloc, "libsbase=", libsbase, "basetarget=",basetarget
         try:
             os.mkdir(libsbase)
         except: pass
