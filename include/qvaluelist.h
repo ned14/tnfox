@@ -76,7 +76,7 @@ public:
 	typename std::list<type>::iterator append(const QValueList &l)
 	{
 		FXEXCEPTION_STL1 {
-			for(const_iterator it=l.begin(); it!=l.end(); ++it)
+			for(typename std::list<type>::const_iterator it=l.begin(); it!=l.end(); ++it)
 			{
 				std::list<type>::push_back(*it);
 			}
