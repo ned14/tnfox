@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 		{
 			FXMemMap testfile("BigFile2.txt");
 			testfile.open(IO_ReadWrite);
-			testfile.truncate(4*4096*round);	// 4Mb
+			testfile.truncate(16*4096*round);	// 4Mb
 			char *data=(char *) testfile.mapIn();
 			FXuint before=FXProcess::getMsCount();
 			memset(data, 'N', (size_t) testfile.size());
