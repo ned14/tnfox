@@ -1394,7 +1394,7 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 		char buffer[64];
 		FILE *ih=fopen("/proc/sys/kernel/osrelease", "rt");
 		if(!ih) FXERRGOS(errno, 0);
-		len=fread(buffer, 1, 64, ih);
+		int len=fread(buffer, 1, 64, ih);
 		buffer[len-1]=0;
 		fclose(ih);
 		linuxver=(buffer[0]-'0')*10+(buffer[2]-'0');
