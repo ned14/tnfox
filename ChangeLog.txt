@@ -29,6 +29,8 @@ R Issued snapshot 1
 + Added FXACLEntity::homeDirectory()
 + Added FXDEPRECATED macro
 + Added support for MSVC8.0
++ Added FX::Pol::itRevCompare
+* FXSSLKey::setAsymmetricKey() now returns *this
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
