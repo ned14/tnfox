@@ -1,0 +1,628 @@
+v0.80 10th July 2004:
+-=-=-=-=-=-=-=-=-=-=-
+B FXPython.h wasn't observing the -fvisibility GCC extension
+B QDictBase was never deleting keys, so key list was always growing
+and performance dropping with time
+B QDictBaseIterator became invalidated with any removals from
+QDictBase
+B FXIPCChannel::setRegistry() was corrupting memory
+B Fixed malcode in QDictBase::operator>>
+B Fixed QIntDict and QPtrDict saving incompatible file formats when between
+32 & 64 bit architectures
+B Fixed malcode in QSortedList operator >>
+B FXProcess::dllLoad wasn't trying default extensions on Windows
+B FXIPCChannel::doReception lost any messages split across a pipe buffer
+boundary
+B FXFSMonitor was being overzealous in verifying a path exists on Windows
+B FXFSMonitor wasn't error checking path add on Windows
+B FXRefedObject::noMoreReferrers() was being recursed into
+B Errors and Unhandled messages from remote side of FXIPCChannel were being
+ignored
+B FXThreadPool::cancel() wasn't cancelling timed dispatches
+B FXBlkSocket when closing wasn't causing remote end to fault (SO_DONTLINGER
+isn't much use :( )
+B FXBlkSocket wasn't detecting graceful closure on Windows (and was looping
+forever)
+B FXThreadPool::cancel() was returning if functor was running causing it to
+get deleted during execution
+B TnFXApp::exit() would hang if no event loops had ever been created
+B FXThreadPool::cancel() was deleting functor if it was a timed dispatch and
+was yet to fire
+B FXThreadPool::reset() was returning if functor was running causing it to
+spuriously create another functor
+B FXThreadPool::remove() wasn't causing recalculation of wait list on Windows
+B Generic::TL::instance<> would cause the compiler to throw a "requested base
+class is ambiguous" error during compilation if there were more than one
+of the same type in a typelist instantiated using Generic::TL::instantiateH.
+B FXMemMap was always deleting shared memory names on first close
+B FXBlkSocket::close() would throw exception if connection had been lost
+B Kernel handle leak in ~FXThreadPrivate() fixed
+B FXMemoryPool was leaking entire 1Mb segments :(
+B QSortedList::take() wasn't using binary search
+B FXThreadPool::reset() wasn't moving entry to correct place in timed order
+list
+B "scons tests" wasn't working (thanks to Taras for reporting this)
+B FXThreadPool::cancel() was deleting functor
+B Generic::Functor's void * constructor unfortunately consumed
+Generic::Functor::Tester *, causing a segfault.
+B FXThreadPool::cancel() would delete wrong functor if activation time was
+identical to another.
+B TnFXApp::exit() wasn't quite working correctly
+B Stopped FXIPCChannel from sending disconnect message if its registry is dead
+B Fixed segfault when FXThread_DTHold was used in a self-destructing thread
+B FXIPCChannel wasn't calling constructor for messages with type<=4 which carry
+an id (eg; ErrorOccurred) - this led to segfaults
+B When FXIPCChannel returned an ErrorOccurred, it also returned an Unhandled.
+B TnFXApp's event loop subclasses were calling X11 even if it wasn't initialised
+B FXPipe wouldn't work with FXIODeviceS::waitForData() on POSIX
+B FXFSMonitor wasn't handling FAM being out of date with respect to what's being
+monitored (now it ignores FAM).
+B FXFSMonitor::remove() wasn't cancelling pending callbacks
+B FXIPCChannel wasn't dynamically adjusting its msg ack lists
+B FXPipe was losing data during first read after open
+B QSortedList::findIter() wasn't returning null iterator if not found
+B Fixed segfault in FXProcess::memoryLoad()
+B Fixed memory leak in FXException
+B QPtrListIterator::toLast() and QPtrVectorIterator::toLast() failed when list
+was empty.
+B QPtrVectorIterator wouldn't die when run off front of list
+B Fixed major bug where direct use of a FXMemoryPool was not locking pool lock
+B Fixed data corruption when multiple threads wrote to a FXSSLDevice concurrently
+B Fixed segfault when POSIX release build python bindings DLL was loaded
+B Fixed creating a new python interpreter causing a segfault
+B FXWaitCondition wasn't adjusting wait count when wait timed out
+B FXProcess::exepath() wasn't working on Linux 2.6 kernels
+
++ Added FXMemMap::mappedRegion()
+* Made FXACLEntity default constructor public
++ Added FXSSLPKey::publicKeyFromString()
+* Made FXSSLPKey and FXSSLKey have default constructors
++ Added Generic::TextToType
++ Added if(sp) and if(!sp) to Generic::Functor
++ Added Generic::findParent and findParentC
++ Added default constructors to all QDictBase subclasses
++ Added default constructors to iterators for QPtrList, QPtrVector and
+QSortedList
++ Added routing field to FXIPCMsg
++ Added QDICTDYNRESIZE(dict) and fx2powerprimes()
++ Added ability for FXIPCChannel::doHandled() to send back exception
+* Tighted up access specifiers for FXIPCMsg. Caught a few sliced destructions.
+* Upgraded doxygen to v1.3.6 and fixed various doc errors
++ Added default constructor and FXStream serialisation to Generic::typeInfoBase
++ Added QInt64Dict
+* Made major structural changes to the build system due to Tn requirements
++ Added FXIPCChannel::maxMsgSize(), setMaxMsgSize(), garbageMessageCount() and
+setGarbageMessageCount()
+* Stopped stupid "media insert" dialog appearing when FXACL queries a
+removable media drive
+* Made FXThreadPool destructor clean itself from timer master lists in case
+not all dispatches were freed before destruction.
++ Added TnFXAppEventLoop::getEventLoop()
+* Finalised support for the new GCC visibility infrastructure esp. FXDLLLOCAL
++ Added FXThread::primaryThread()
+* Altered FXFSMonitor to pass before and after file info's (more useful).
+* Added assert.h to FXGenericTools.h and asserting indirections through Generic::ptr
+* Reimplemented Generic::instantiateH with a superior implementation lacking the
+"ambiguous base class" error above but also results in noticeably faster compile
+times.
+* Split Generic::TraitsBasic from Generic::Traits
++ Added i/o device flag IO_DontUnlink and support to FXPipe and FXMemMap
++ Added facility for always building static libraries on Win32
++ TnFXApp now can dispatch messages to the main loop on POSIX just Win32. Both
+systems now behave identically.
++ Added QPtrList::takeByIter, QPtrVector::takeByIter and did better forwarding
+of QPtrList functions through QSortedList
+* Slightly refined build process (thanks to Taras for suggesting improvements)
++ Added a console control handler for all TnFOX processes to FXProcess for Win32
++ Added int_referrers() to FXRefedObject so code can read the referrers list
++ Added loads of extra overloads to FXString::arg() and FXString::number()
++ Added visibility local to private classes for improved GCC code quality
+* FXProcess::hostOSMemoryLoad() had been broken by Linux kernel 2.6.x
+* Collapsed FXIPCMessagingBase back into FXIPCChannel
++ Added FXIPCChannel::invokeMsgHandler() to outsource message handling to a thread
+pool.
++ Added FXIPCChannel::unknownMsgReceived(), doAsyncHandled(), restampMsgAndSend(),
+lonelyMsgAckReceived() and makeUniqueMsgId().
++ Added support for IPC message tunnelling and per-msg endianess
+* All FXGenericTools.h and FXRollback.h stuff taking variable parameters can now
+take up to four parameters instead of three
+* FXRollback.h stuff now does a no op if code pointer is null
++ Added QPtrListIterator::makeDead()
+* Merged TMemPool into FXMemoryPool. Added global dynamic memory allocator overrides
+for all TnFOX.
+* Improved make support for Whole Program Optimisation (WPO).
++ Added an optional initial size parameter to FXBuffer
+* FXMutex now uses a cache for kernel wait objects to vastly improve creation and
+deletion speed. Also now spin counts with processor yield on uniprocessor machines.
+* Enabled aliasing on MSVC which yields 5-10% faster code.
+* Ran all Tn and TnFOX code through lint - fixed a number of small issues.
+* Merged FOX v1.2.4
+* TnFOX-ised FXString.
+* Modified build system to test GCC for -fvisibility and enable if supported
+* Updated embedded translation file
+
+v0.75 9th April 2004:
+-=-=-=-=-=-=-=-=-=-=-
+Thanks to Mykhaylo Sorochan for reporting problems with FreeBSD.
+
+B Malcode in QMemArray::sort fixed
+B Malcode in FXRefedObject::PtrRef() fixed
+B Malcode in Generic::ptr when comparing against zero fixed
+B scons was using GCC v3.4 options incompatible with GCC v3.2/3.3
+B SOL_TCP didn't exist on BSD so replaced with getprotobyname()
+B MSG_NOSIGNAL is Linux only, so moved FXPipe signal catcher into
+common code and integrated into FXBlkSocket
+B FXACL::check() was failing on Win32 when the calling thread was not
+the main process thread
+B Fixed segfault caused by FXIPCMsgRegistry getting deleted before its
+registrants
+B FXACLEntity::isGroup() was totally broken on Win32
+B FXACLEntity::root() on Win32 returned the root group as the user
+B FXACLEntity::lookupUser() was totally broken on Win32
+B Removed the include zutil.h in FXGZipDevice as BSD doesn't come with that
+B pthreads and dlopen weren't being found on FreeBSD
+B CppMunge.py wasn't being invoked on Unix systems
+B shm_open is only in librt on Linux
+B Linux-only signal type constants in FXProcess are now compiled on Linux!
+B Fatal and non retryable errors were disabling the wrong button in
+FXExceptionDialog
+B Fixed faulty referencing of a string in FXExceptionDialog (caused SIGBUS
+on BSD)
+B Fixed FXMutex::lock() causing abort when called from a cleanup/signal
+handler on FreeBSD
+B Fixed amazingly stupid mistake by me in FXThread::checkForTerminate()
+where I was testing for thread cancel while holding the thread's mutex
+B FXThread was not specifying PTHREAD_SCOPE_SYSTEM, thus it was creating
+process-side only threads (these don't work and aren't consistent with Win32)
+B Fixed bug on POSIX when opening FXMemMap with IO_ReadWrite actually
+opened write only
+B Fixed DLL unload failing to remove translations on POSIX (now TestDLL passes)
+B FXACL::check() didn't account for root being able to do anything
+B Fixed GCC compile errors in the patches to Boost for the python bindings
+B FXHandedInterface::onCmdAccept wasn't invoking subclass message handler
+B FXSSLPKey::operator>> was segfaulting
+B Using symmetric keys bigger than 256 bits was corrupting the stack and
+secure heap
+B QPtrList::at, getFirst, getLast etc. were not returning zero if the list
+was empty. Similarly for QPtrVector.
+
++ Added Generic::TL::findC
++ Added comparison operators to FXSSLPKey and FXSSLKey
++ Added FXSSLPKey::publicKeyAsString()
++ Added Secure::TigerHashValue::asString()
++ Added FXSSLPKey::publicKeyAsHash()
+* Finally reimplemented FXFile in native Win32 calls
++ Added FXSettingsHelpers
++ Added FXACLEntity::isLoginPassword() with some difficulty
+* FXTextField now zeros its contents on destruct if it holds a password
+* Rewrote FXFSMonitor to use SGI's FAM on POSIX
++ Added FXACLEntity::owner()
++ Added inheritability support to FXACL
+* FXACL can now set object ownership to entities other than the current user
+* Reimplemented FXProcess::noOfProcessors(), mappedFiles(), hostOS(),
+hostOSDescription() and hostOSMemoryLoad() to use native FreeBSD functionality
+* Main SConstruct now builds tnfox by default
+* FXThread now forces a thread stack of 512Kb
+* FXThread now can schedule a thread either by the kernel or in-process and
+adjusted FXFSMonitor and FXIPCChannel to be inprocess scheduled
+* Updated python bindings to use Boost v1.31 and latest indexing suite v2 CVS
+* Reembedded Spanish translations
+* Added support for -fvisibility patched GCC which dramatically cuts down the
+dynamic symbol table of the shared libraries, giving much improved link times
+* Had FXFileInfo trap exceptions from FXACL, converting them into an empty ACL
+instead
+* It turns out that GCC will not transmit typed exceptions across a shared
+object boundary unless they have a virtual function table
+* Delayed signalling of wait condition for thread ended until after self
+destruction
+* Added QPtrList::takeFirst() and takeLast()
+
+v0.7 9th March 2004:
+-=-=-=-=-=-=-=-=-=-=
+B FXString::number(double, fmt, prec) was defined but not implemented
+B QDictBase::statistics was using spread as a variable and function
+B QDictBase copy constructor forgot to copy hash table size
+B FXThread cleanup and destructor were occasionally clashing (without locking)
+B FXPrimaryButton wasn't actually generating SEL_APPLY messages :(
+B Generic::Traits was choking on void *
+B Generic::Functor was not trapping std::bad_alloc and was missing operator=()
+B FXDataTargetI const operator * wouldn't compile
+B Fixed window reparenting causing segfault (FOX bug)
+B Fixed window reparenting not reparenting popup windows (FOX bug)
+B Fixed timers, async messages and idle processing not being issued when
+Windows is inside a modal loop (FOX bug)
+B Clarified operator=() in FXDataTargetI::Returner
+B Two small bits of malcode in QDictBaseIterator fixed
+B Fixed up FXAtomicInt & FXMutex's use of inline so GCC v3.4 would be happy
+B Malcode in QPtrVector, QPtrList, QValueList and QMemArray fixed
+B QDictBase::resize() wasn't changing size causing dictionary corruption
+B FXPipe::size() was failing with error on Win32 if the pipe hadn't been
+connected to yet
+B FXHostAddress::toString() returned the eight bit parts in reverse order :)
+B Fixed bug where if a cancellable thing was done during cleanup the thread lock
+never got freed
+B Fixed bug where posting async messages on POSIX deadlocked
+B FXPipe::writeBlock() wasn't a thread cancellation point on Windows
+B FXLRUCacheIterator was using non-public types from FXLRUCache
+
+* Tuned changes when BUILDING_TCLIENT is enabled
+* Made Generic::isConvertible disable MSVC warning about possible bits lost
++ Added Generic::TL::dynamicAt
+* Removed FXPipe isMsgType, added isDeepPipe and adjusted everything else
+to suit
+* Enhanced FXTransString so it can return a translation for any language
++ Added Generic::TL::dynamicAt
+* Modified scons build system to let Tn build it remotely
+* Replaced BUILDING_TCLIENT with BUILDING_TCOMMON. Not sure why I chose
+TClient in the first place, it wasn't right as the Tornado client DLL
+doesn't really need to exist anymore
++ Added fxstrfval()
++ Added operator << and >> for bool in FXStream
+* Added SEL_RESET to FOX. Only FXPrimaryButton supports it yet
++ Added FXApplyResetList
+* Added load() and store() to FXPrimaryButton
++ Added FXHandedDialog
+* Moved FXExceptionDialog over to use FXHandedDialog
+* Added upcall functors to FXDataTarget
++ Added FXFunctorTarget
+* Moved everything accepting a Generic::Functor to accept by value instead
+of reference
+* Rewrote FXHandedDialog as FXHandedInterface and added FXHandedPopup
+* Added copy() to FXTransString
++ Added screen scaling and screen constraining
+* Fixed both FXExceptionDialog and FXHandedInterface which were using fixed
+padding
+* Hatched timers, chores and async msgs out into separate functions in
+FXEventLoop
++ Added FXEventLoop::requestAsyncRecalc()
+* Added Generic::TL::applyInstance and replicate
+* Lots of daft little changes to gain GCC v3.4 compatibility. Probably worth
+it in the long run.
++ New compiler=<tool> switch for scons file
+* Removed the const PtrRef() function for Generic::ptr as technically it was
+unsafe.
++ Added Generic::addConstRef
+* Improved VersionedSharedLibrary in build tools
++ Added Intel C++ compiler for Linux support
++ Added QQuickList
+* Added FXIPCMessagingBase
++ Added Generic::MapBools
++ Added strongestAnonCipher() and fastestAnonCipher() to FXSSLDevice
++ Added Generic::TL::filter and renamed applyInstance to apply
+* Slightly adjusted the API of FXIPCChannel
++ Added waitForData() to FXIODevice
++ Added Secure::PRandomness
++ Added operators << and >> to Secure::TigerHashValue
+* At long, long last FXBlkSocket::waitForConnection() is a proper thread
+cancellation point on Windows. Also added a timeout.
+* Merged fox v1.1.48
+* Added support for getting memory page locking to work via a setuid process
+* Updated python bindings for latest API
+* Reembedded Spanish translations
+
+v0.6 7th February 2004:
+-=-=-=-=-=-=-=-=-=-=-=-
+B QIntDictIterator didn't compile. Surprised I hadn't seen this before.
+B FXStream::byteOrder() and setByteOrder() inverted on big endian machines
+B Two TnFOX based processes were not playing nice on Windows
+B FXStream was always swapping bytes by default irrespective of host endian
+B FXResourceException was not passing through the flags so throwing a
+FXConnectionLostException was very slow cos of the debug report production
+B FXProcess::mappedFiles() now always returns module path - now FXTrans
+works correctly on Linux
+B On Windows FXBlkSocket readBlock() and writeBlock() were saying they had
+completed when in fact they had not and the data transfer was happening
+some time afterwards
+B FXSSLDevice was faulting if the executable name was more than 16 or so chars
+B SConstruct files for python and tests weren't setting FOX_BIGENDIAN
+B FXSSLDevice didn't prevent multiple threads negotiating the connection
+concurrently
+B FXSSLDevice treated zero bytes read and written as an error
+B FXSSLDevice::close() called twice caused exception
+B FXGZipDevice compressed too much data if closed then opened
+B FXWaitCondition now correctly uses ETIMEDOUT (thanks to Matthew Robertson)
+B Generic::ptr when doing if(ptr==type *) was selecting wrong operator overload
+B Fixed small bug in QSortedList::findIter which prevented compiling
+B Fixed long-standing bug that operator new threw an exception on failure to
+allocate. Now returns zero.
+B QPtrListIterator was not always returning zero when invalid
+B FXProcess static init was sending an iterator behind the first element
+B FXMemMap wasn't resetting next mapping iterator when the mappings were none
+B FXLocalPipe::readBlock() was returning before maxlen read
+B FXLocalPipe::readBlock() was reading too much data (causing memory corruption)
+B Discovered that you cannot define operator new in a namespace under ISO C++
+(despite that both MSVC and GCC let you). Reworked code to use per-object
+operator new & delete's.
+B Major bug since maybe v0.4 of TnFOX - XIM hangs if X Threads are enabled.
+Now disables XIM.
+B Python StopIteration exception now specially handled by C++ side
+B FXPythonInterp destructor was causing fault if called via FXThread::cleanup()
+B Fixed last thread unlock when unwinding from FXProcess destroy faulting
+B FXACL on POSIX was only writing other bits for everyone permissions, not also
+user + group
+B On POSIX error handling was using function return code (always -1) instead of
+POSIX errno global
+B QSortedList was inserting items into the wrong place if it were at the end of
+the list
+B FXException destructor segfaulted if the nested exception handling state had
+been deleted (GCC keeps exceptions round longer than MSVC)
+
+* Added true colour and alpha support to FXCursor. Submitted changes to FOX so
+it'll likely appear there soonish. Added TestCursor.
++ Ported FXIPCMsg, FXIPCMsgRegistry, FXIPCMsg_ErrorOccurred, FXIPCChannel from
+Tornado.
++ Added FXIPCMsgChunkCodeAlloc, FXIPCMsgChunk, FXIPCMsgRegister,
+FXIPCMsg_Disconnect and FXIPCMsg_Unhandled
+* Added TestIPC
+* Improved error message handling in FXSecure entropy gatherer
+* Added myId() to FXThread
+* Added hostOSProcessorLoad(), hostOSMemoryLoad() and hostOSDiscIOLoad() to
+FXProcess
+* FXThread::id() now uses pthread_self() on POSIX
+* FXExceptionCodes is now an enum (for python bindings)
+* Added system exception FXNotSupportedException
+* Added FXIODevice::readBlockFrom() and writeBlockTo(). Implemented for
+all devices where it was appropriate.
++ Added fxdump8() and fxdump32()
+* Added Winsock error code to error string decoding to FXBlkSocket on Win32
+* Merged FOX v1.1.43
+* Added on-demand thread creation to FXThreadPool
+* Completely reworked FXRefedObject.h again :), losing FX::Pol::lockable
+and kin and now using Generic::ptr as a base
+* Some changes made to Generic::ptr
+* Added missing operator[] to all QTL dictionaries
++ Added FXLRUCache, FXLRUCacheIterator and QCache, QIntCache specialisations.
+* Added IO_ShredTruncate to FXIODevice and shredData(). Added same to all file
+i/o classes
+* Added yield() to FXThread
++ Added FXMemoryPool
+* Added fatal exit upcall to FXProcess, plus FXProcess_MemLock
+* On release builds of TnFOX on MSVC, now uses FXMemoryPool for all memory ops
+* FX::Secure heap now uses a FXMemoryPool locked in memory and destroyed on
+process exit no matter what
+* Added FXMutex::setMutexDebugYield()
++ Added FXAPIR to restrict exports of code unsuitable for Tn components and
+made a number of obsolete classes (such anything handling a directory) compile
+nothing when BUILDING_TCLIENT is defined. Expect this list to increase substantially
+with time.
+* Hived FXEventLoop out of FXApp. Made various methods virtual. Added
+getEventLoop() to FXId. Adjusted FXPopup and FXWindow to use event loops.
++ Added FXLockable, FXLockHold and made FXApp and FXEventLoop inherit from them.
+* Added FXEventLoop::postAsyncMessage()
++ Added FXEventLoop_Static
+* Split getNextEvent() into that and getNextEventI(). Merged Win32 and X11
+getNextEvent(). Split peekEvent() into that and peekEventI(). Merged Win32 and
+X11 peekEvent().
+* Made FXSSLDevice no longer import the Secure namespace (GCC just didn't like
+it :( ). This should hopefully fix the GCC segfault problems.
+* Removed debug printing from FXSSLDevice in release mode (whoops!)
+* Made FXSSLDevice use the secure heap for temporary buffers
+* Made FXSettings threadsafe by locking through FXApp
+* Added FXEXCEPTION_FOXCALLING1 and FXEXCEPTION_FOXCALLING2
+* Added Xft2 detection & support to scons config
+* Added FXDataTargetI
+* Added operator[] to QPtrVector
++ Added FXPrimaryButton and made all appropriate FOX classes use it
+* Added userHandedness() to FXProcess and userHandednessLayout() to FXWindow
+* Renamed FXExceptionBox to FXExceptionDialog
+* Improved FXExceptionDialog plus added handedness
+* Added SEL_APPLY to FOX. Only FXPrimaryButton supports it yet
+* Added user handedness and memory full overrides to the command line options
+* Reembedded spanish translations
+
+v0.5 24th December 2003:
+-=-=-=-=-=-=-=-=-=-=-=-=
+B Fixed invalid memory access when default FXProcess constructor used
+B Fixed tiny bug where Generic::typeInfo wasn't demangling symbols on GCC
+B QDictBaseIterator was just totally broken :(
+B :: in class specifiers in translation files were being misinterpreted as line ends
+B Translations registered by dynamically loaded DLL's weren't being unregistered
+B iterators in some calls in QPtrList were being treated as random-access
+B QDictBase::spread() didn't compile when instantiated
+B Fixed two year old issue regarding setting the correct thread return code
+B Fixed 40 byte per FXThread memory leak
+B Fixed thread deletion causing disabling of nested exception framework (erk!)
+B Fixed thread deletion destroying its exception TIB only to recreate it again.
+B Finally, after only four releases, fixed the memory leakage in FXTrans
+B Fixed bug in FXWaitCondition::wakeOne() whereby calling it when nothing was
+waiting caused the condition never to signal.
+B QValueList::remove(it) wouldn't compile
+B %% in FXString arg() inserts was causing infinite loop
+B FXString::nullStr() wasn't defined
+B QDict wasn't handling case insensitive keys
+B Fixed memory leak where FXTransStringArg didn't have virtual destructor
+B QValueList::remove(iterator) was needlessly searching the list :(
+B Fixed memory leaks caused by FXProcess exiting early
+B Reworked Generic::convertible as GCC was getting confused during nested
+Traits determinants.
+B Primary (faked) FXThread wasn't setting FXThread::current() to zero after
+destruction.
+B If FXThread::run() terminated via return, cleanup wasn't being called on
+Win32 only (with Win32 API used directly)
+B Was failing to lock FXThreadPrivate during initial stages of thread execution
+B Calling FXThread::enableTermination() without a prior disableTermination()
+caused misoperation
+
++ Added the asList type to Generic::FnInfo
++ Added instantiateH and instance to Generic::TL
++ Added Generic::Functor, Generic::BoundFunctor
++ Added Generic::BindFunctor, Generic::BindFunc and Generic::BindObj
+* Renamed FXDoUndo to Generic::DoUndo and added support for bound functors
+* Replaced FXProcess::dllResolve() with functor based code
++ Added Generic::FnFromList
++ Added test of DLL facilities + dynamic loading/unloading of translations
+* Replaced FXThread::addCleanupCall() with bound functor based code
++ Added FXThread creation upcall
++ Added QPtrVector and QPtrVectorIterator
+* Replaced various routines which used QPtrList with QPtrVector
+* Improved FXTrans' matching of translations to their provider DLL (removed
+hard 10Mb DLL size limit).
+* Added languages provided plus translation table stats to -sysinfo output
++ Added a policy-based smart pointer, FX::Generic::ptr
++ Added FXThreadPool as well as FXProcess::threadPool()
++ Added FXACLEntity, FXACL, FXACLIterator
++ Added FXFileInfo, FXFileInfoIterator
++ Added a policy-driven generic QValueList sorting class
++ Added FXDir
++ Added FXFSMonitor
++ Added QStringList
+* CppMunge now prints file and line number if it crashes
+* Added FXACL support to FXFile, FXPipe, FXMemMap, FXBlkSocket
+* FXERRGOS() and FXERRGWIN() have been reworked to call a static method
+rather than generate the exception inline (substantial bloat reduction).
+Furthermore throwing of custom exception types are now more consistent
+between platforms.
+* Added the custom exception type "NoPermission"
+* Modified FXFile to create its own file handle as you must specify then
+if you might want to alter the DACL later
++ Added fxerrhpy() and FXERRHPY() plus custom python exception and
+translation
+* Rewrote FXPythonInterp
++ Added FXCodeToPythonCode plus defaults for FOX sort functions
++ Added FXPython::evaluate() plus py() and pyeval()
+* Folded the BPL into TnFOX.pyd
+* Changed FXThread::checkForTerminate() to return bool
+* Updated Spanish language translations
++ Added policies for new TnFOX classes
+* Updated SConstruct files to work with scons v0.94
+* Embedded spanish translation file
+* Changed FXProcess::dllLoad() to optionally append .so and prepend lib
+
+v0.4 10th November 2003
+-=-=-=-=-=-=-=-=-=-=-=-
+B Fixed FXHostAddress where I'd used the wrong IPv4 to IPv6 mapping!
+B Major bug this - FXRollback when taken was exiting process due to pure virtual
+call. Whoops!
+B FXBlkSocket::accept() now supports thread termination
+B Fixed small for() scoping problem in FXException
+B FXThread::sleep() and FXThread::msleep() now support thread termination
+B Fixed two places in FXPipe where it wasn't handling pipe broken correctly on Win32
+B Fixed UpdateMunged.py not piping stderr to its stdout
+B Fixed CppMunge.py fetching source file name from variable which no longer exists
+B Fixed FXVisual missing disabled copy constructor
+B Stopped memdbg warnings on GCC
+B Implemented FXStream::getSpace and setSpace (forgot to implement them)
+B FXString comparison operators were returning FXbool, not bool
+B FXProcess::dllLoad didn't find DLLs in the same directory as the DLL being loaded
+
++ Moved entire project to work out of subversion mainly cos CVS sucks
++ Added FXRBConstruct(), then to all relevent parts of the TnFOX extensions
++ Added FXTrans::provided() which I unfortunately defined but never implemented :(
++ Added FXDoUndo plus several other generic programming tools (into FXGenericTools.h
+and FXPolicies.h)
+* Made FXRefedObject use policies (still source compatible)
++ Added the FX::Secure namespace
++ Added FX::Secure::TigerHash
++ Added FX::Secure::Randomness
++ Added FXShrdMemMutex
++ Added FXIODeviceS and moved the relevent devices over to use it
+* Added global new & delete operator overrides to FX namespace which never throw
++ Added FXSSLDevice, FXSSLKey & FXSSLPKey
++ Made all FOX header files standalone
++ Implemented return policies for all TnFOX methods needing them in bindings
+* Moved build process over to scons
++ Added a large range of generic tools (too many to list here)
++ Added a mostly-complete set of python bindings for TnFOX
++ Produced patch file for same bindings
+* Replaced QDictBase with completely new optimised implementation (and thus
+QDict and QIntDict as well).
+* Merged fox v1.1.38 + added relevent new policies
++ Added QPtrDict
+* Altered license declaration to state specific LGPL version across all files
++ Added Python Test
++ Added Generic Tools Test
++ Added DLL binding to speed loading on Win2k SP3
++ Added custom libtool compatible output scons builder for GNU
+* Embedded fully updated spanish translations
+* Merged fox v1.1.41
+
+v0.3 27th July 2003:
+-=-=-=-=-=-=-=-=-=-=
+B Fixed bug where FXIODevice::removeCRLF() was introducing ASCII 10's if the
+blocks fed to it split mid-CRLF.
+B Fixed bug where FXIODevice::applyCRLF() was not adding ASCII 10 in a CR,LF
+sequence if output buffer was one too short.
+B Fixed bug where CppMunge.py was mangling error macro extraction on complex
+FXERRH()'s
+B Fixed bug where FXThread internal thread cancellation event wasn't being
+created for primary thread
+B Fixed bug in FXZeroedWait where wait condition and count were becoming desynced
+B Fixed bug where operators += and -= in FXAtomicInt weren't returning the right value
+B Fixed bug where FXThread::wait() with an infinite value was deadlocking on POSIX
+B Fixed resource leak when a FXThread was destroyed on POSIX
+B Fixed FXThread::enableTermination terminating the thread immediately :)
+
++ Made FXERRH_ISINFORMATIONAL exceptions or those without source file id not
+include source file nor stack backtrace info in the error report
++ Altered FXERRHWIN() in WindowsGubbins.h to specially trap file and path not
+found errors and generate a FXNotFoundException instead.
++ Added code to FXProcess to generate a secure default DACL for inter-process
+used objects.
++ Added FXPipe, plus anonymous pipe support
++ Added FXHostAddress
++ Added FXBlkSocket
++ Added FXLocalPipe
++ Added QSortedList
++ Added pageSize() to FXProcess
++ Added FXMemMap
++ Added FXNetwork, both new-style DNS lookups and old cos Windows' new styles
+are broken!
+* Stopped CppMunge.py extracting FXEXCEPTION_* macros
+* Added trapping of memory allocation failures to QTL implementations
++ Added an adler32 checksum calculation routine, thanks Jeroen!
+* Added lots of new tests to TestDeviceIO
+* Merged fox v1.1.32
++ Generated a full set of project files for MSVC7.1 (.NET 2003)
+* Got rid of a lot of the GCC warnings about the QTL
++ Finally got the dllResolve() templated function pointer syntax right in FXProcess
+* Harmonised Windows and Linux thread cancellation behaviour
++ Ported FXRefedObject classes from Tornado
+* Embedded latest spanish translations of string literals
+
+v0.2 12th July 2003:
+-=-=-=-=-=-=-=-=-=-=
+B Fixed bug where copy to clipboard in error reporting box wasn't working on X11
+B Fixed bug where FXProcess' destructor was not destructing static inits
+B Fixed bug where FXThread was not calling primary thread registered cleanup calls
+
++ Added string literal extraction to CppMunge.py & generation of translation file
+* Merged fox v1.1.29
++ QDict, QDictIterator, QIntDict, QIntDictIterator added
++ Altered xincs.h to use 64 bit file addressing on both Unix & Windows + as many API's
+as I could find now use FXfval to indicate file size and position
++ Added FXIODevice
++ Added FXFile
+* Revamped FXStream:
+  + Now uses an FXIODevice for i/o
+  + Added much more error detection
+  + Carefully changed to maintain backwards API compatibility
+* Altered FXFileStream to thunk to FXStream + FXFile combination
++ Added QMemArray<> and QByteArray
++ Added FXBuffer
+* Altered FXMemoryStream to thunk to FXStream + FXBuffer combination
+* Altered fxgifio.cpp, fxjpegio.cpp, fxpngio.cpp, fxrgbio.cpp, fxtifio.cpp &
+fxxpmio.cpp to be compatible with new 64-bit i/o structure
++ Added utext() and wtext() to FXString for eventual unicode transition.
++ Added FXGZipDevice, removed FXGzStream
++ Added FXStream overloads for all the QTL thunks, FXException, FXBuffer.
+* Merged fox v1.1.30
++ Added FXMemDbg, plus added it to all my source files.
++ Added generic FXStream overload for all FXIODevice's
++ Added stdio() method to FXFile (really needs FXPipe)
++ Added transaction rollback support (FXRollback*)
++ Implemented FXTrans plus added FXTransString
++ Moved to new TnFOX MSVC project, changed file extensions to .cxx, installed
+custom build configuration to have CppMunge.py process all C++ source before compilation.
++ Added dynamically loaded library support to FXProcess and FXTrans
++ Generated MSVC7.1 project files for all parts
++ Added -sysinfo on the command-line
++ Added FXProcess::mappedFiles() which now means FXTrans knows where to find its
+translation files
++ Added automatic GZip decompression and compression support to FXTrans
++ Added delayed DLL loading on Win32 for mostly unused DLL's
++ Added StripSymbols to generate .dbg files for MSVC release builds
++ Merged fox v1.1.31
+
+v0.1 19th June 2003:
+-=-=-=-=-=-=-=-=-=-=
+First version released to public

@@ -1,0 +1,89 @@
+
+
+                           ADDENDUM TO LICENSE
+                               July 2003
+
+                Copyright (C) 2003 Niall Douglas
+
+        Everyone is permitted to copy and distribute verbatim copies
+     of this license addendum document, but changing it is not allowed.
+
+
+TnFOX Toolkit Library License Addendum.
+
+
+1. License.  The TnFOX Toolkit Library ("The Library") is comprised of
+two parts - (i) a modified derivative of the FOX GUI toolkit library and
+(ii) extension files wholly copyright to me.
+
+My modifications to FOX files are licensed under the GNU Library General
+Public License as published by the Free Software Foundation, version 2.1
+of the License including FOX's static linking exception as detailed in
+the file LICENSE_ADDENDUM.txt. You can tell which are these files because
+they do not have (C) Niall Douglas at the top.
+
+However those files wholly copyright to me (you can tell these apart because
+at the top of each file they say so) fall under a modified license
+namely exactly the same license as FOX with one exception:
+
+        You may NOT relicence any code wholly copyright to me under the
+           normal GPL ie; section 3 of the LGPL does not apply
+
+This modified license applies to any derivatives taken from or made to
+files wholly copyright to me. If you wish to use some of my code under
+some other license, please email me and ask.
+
+Obviously so long as my code remains under the LGPL, you can use it in
+your GPL application in a way the LGPL permits eg; linking with it.
+I want to make it absolutely clear that I do not want my code ever to
+become under the GPL, period!
+
+Explanation:
+-=-=-=-=-=-=
+Why do I make this exception? Because while the licensing model of GPL
+software is better than proprietary, it is not long-term sustainable
+and therefore bad for the long-term future of computer software. I
+support a complete overhaul of Intellectual Property laws for computer
+software (instead of basing them on book law, mostly written several
+hundred years ago) which provides adequate incentive to take risks
+and encourage step-change innovation - and this is something the GPL
+inherently discourages.
+
+There is a great myth that the GPL is for protecting your own code 
+against commercial exploitation. But I ask what does it offer which 
+the LGPL does not? One thing: no commercial use at all, period. What does
+it prevent? It prevents commercial improvements to your code (which they
+would usually have to publicly release under the LGPL). It means commercial
+developers must waste production duplicating your library. It means
+average code quality falls, projects fall late, less standardisation and
+inter-operability and thus, *exactly* the same problems closed-source
+proprietary causes - just less so.
+
+The GPL causes exactly the same negative consequences that closed-
+source does. Both represent the same failed ideology that software 
+use must be restricted for its own good. They are one and the same.
+
+Proprietary models are bad for everyone, but they do reward entrepreneurship
+and taking risks. We should not throw the baby out with the bath water -
+and while many of you reading this will want immediately to email me
+with flames of abuse, I should point out that I have debated this
+extensively with some of the leading GPL minds without satisfactory
+conclusion. Of course if you feel you can add something new to this,
+please do email me :)
+
+If you want to see more detail, please see
+http://www.nedprod.com/programs/definition.html
+
+GPL compatibility:
+-=-=-=-=-=-=-=-=-=
+Some may complain that removing clause 3 makes the LGPL incompatible with
+the GPL. This is not true! The GPL permits use of non-GPL libraries
+so long as they too make their source code available.
+
+The primary use for clause 3 is to let the GPL steal code off LGPL libraries
+so like a black hole it sucks in all the code coming near it (it says so
+in the LGPL license text).
+
+                             END OF ADDENDUM
+
+

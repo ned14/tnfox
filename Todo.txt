@@ -1,0 +1,75 @@
+Platform-specific issues:
+-=-=-=-=-=-=-=-=-=-=-=-=-
+NT v5.0 Failures:
+  None known.
+
+Linux Kernel v2.4 Failures:
+  None known, but thread cancellation is a little flaky in Tn (see the
+cleanup() in FXIPCChannel).
+
+Linux Kernel v2.6.6 Failures:
+  1. TestDeviceIO in socket i/o test segfaults in FXBlkSocket::readBlock() just
+after thread termination has been processed. TestSSL fails similarly. Likely
+a kernel bug.
+  2. TestMultithreading, almost certainly due to thread termination
+happening when thread termination is disabled. Likely a glibc or NPTL
+bug reenabling thread termination during internal code or a kernel bug.
+
+FreeBSD v5.2.1 Failures:
+  1. TestDeviceIO in socket i/o test hangs (same place in TestSSL). Unfortunately
+as there is no kse threads support in gdb under FreeBSD v5.3 I can't tell what's
+going on.
+  2. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
+timings are off - therefore the events don't open as they should.
+
+Known bugs:
+-=-=-=-=-=-
+* FXSSLDevice throws a "bad decrypt" exception on close() with Blowfish
+with certain key lengths. The cause is currently unknown.
+* Valgrind complains about how we fake a primary thread object. It also doesn't
+like the marker test FXMemoryPool's global allocator operators perform to detect
+which blocks belong to the system allocator.
+* TestGeneric fails to compile with GCC
+* FXLocalPipe has some problem when running under FXSSLDevice. Will investigate
+later.
+* TestEmbedPython fails on Linux & FreeBSD as exceptions won't traverse the
+shared object boundary. This is either a bug in GCC or ld.
+* TestPython on exit fails with a segfault on Linux & FreeBSD. I think this
+is related to an incompatibility with initialising extension modules on POSIX.
+* TnFOX and Intel's C++ compiler for Linux currently don't play nice. You'll
+get a segfault in _ZNSt6_WinitC9Ev in libcprts.so which suggests it's TnFOX's
+redefinition of the global new operator to be the cause (this means it's a bug
+in ICC).
+
+
+Coming shortly:
+-=-=-=-=-=-=-=-
+* Test custodian & ward policies in python bindings to try and solve
+FXWindow children being deleted twice problem
+* Get FXTrans to run per-thread locales
+* Have FXPacker dynamically cause horizontally packed items to go
+vertical if there isn't enough space (small screen support)
+* Add test of new sort function capability to TestPython
+* Add comprehensive test of all security facilities ensuring it very
+hard to compromise secure data
+* Have FXMutex spin only when current owner is on different processor
+to requester (hard as threads can shift processor suddenly)
+
+Eventually:
+-=-=-=-=-=-
+* FXBlkSocket::writeBlock() for UDP
+* Move all my stuff over to use FXWString (when FOX does so too)
+* Temp string additions to FXString (use templates?)
+* Currency and time formatting extensions to FXTrans (needs more std support
+though - maybe those extended GNU functions or <locale>?)
+* Have python bindings extract argc & argv before instantiating FXProcess
+
+Other:
+* MSVC doesn't make temporaries const which is very useful for implementing
+copy constructors which actually move. GCC however is more strict and
+does make them const, thus breaking this semantic.
+   We're really waiting for move constructors to be added to the ISO C++ spec,
+this will take a few years if based on past experience. Defining
+HAVE_MOVECONSTRUCTORS enables the proposed syntax.
+   Until then, HAVE_CONSTTEMPORARIES when defined makes the copy constructors
+take a const reference even though in fact it modifies the original.

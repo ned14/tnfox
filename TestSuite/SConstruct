@@ -1,0 +1,27 @@
+import os
+
+filelist=os.listdir(".")
+idx=0
+while idx<len(filelist):
+    if filelist[idx][:4]!="Test":
+        del filelist[idx]
+    else: idx+=1
+
+def runScons(target, source, env):
+    cpath=os.getcwd()
+    try:
+        os.chdir(str(source[0]))
+        inh, outh=os.popen4("scons")
+        while True:
+            line=outh.readline()
+            if not line: break
+            print "  "+line,
+    finally:
+        os.chdir(cpath)
+        print
+env=Environment()
+stests=[]
+for test in filelist:
+    stests.append(env.Command(test+"_", test, runScons))
+    env.Alias(test, stests[-1])
+Default(stests)

@@ -1,0 +1,67 @@
+#********************************************************************************
+#                                                                               *
+#                            TnFOX tests make file                              *
+#                                                                               *
+#********************************************************************************
+#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
+#********************************************************************************
+# This code is free software; you can redistribute it and/or modify it under    *
+# the terms of the GNU Library General Public License v2.1 as published by the  *
+# Free Software Foundation EXCEPT that clause 3 does not apply ie; you may not  *
+# "upgrade" this code to the GPL without my prior written permission.           *
+# Please consult the file "License_Addendum2.txt" accompanying this file.       *
+#                                                                               *
+# This code is distributed in the hope that it will be useful,                  *
+# but WITHOUT ANY WARRANTY; without even the implied warranty of                *
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
+#********************************************************************************
+
+import os
+import sys
+execfile("../../../sconslib.py")
+init(globals(), "../../../", "../../")
+dir,name=os.path.split(os.getcwd())
+if "hgfs" in dir: dir="/home/ned/Tornado/TClient/TnFOX/TestSuite/TestDLL"
+if "kate/D" in dir: dir="/usr/home/ned/Tornado/TClient/TnFOX/TestSuite/TestDLL"
+targetname=dir+"/../../lib/MyTestDLL"
+
+env['CPPDEFINES']=[ "FOXDLL", "TESTDLL_EXPORTS" ]
+env['CPPPATH']=[ ".",
+                 "../../../include"
+                 ]
+env['LIBPATH']=[dir+"/../../lib"]
+env['LIBS']=[ libtnfox ]
+
+if debugmode:
+    builddir="Debug"
+else:
+    builddir="Release"
+dir+="/.."    # So the libtool hack finds the right place
+execfile(platformconfig)
+if "freebsd" in sys.platform:
+    env['LINK']="libtool --tag=CXX --mode=link gcc" # Force always dynamic linking
+elif "linux" in sys.platform:
+    env['LINK']="libtool --mode=link gcc" # Force always dynamic linking
+objects=[env.SharedObject(builddir+"/maindll", "maindll.cpp")]
+Clean(targetname, objects)
+if onWindows:
+    env['LINKFLAGS']+=["/PDB:TestDLL.pdb"]
+DLL=env.SharedLibrary(targetname, objects)
+env.Precious(DLL)
+#if not onWindows:
+#    def runRename(target, source, env):
+#        stem, leaf=os.path.split(str(target[0]))
+#        os.system('mv '+str(target[0])+' '+stem+'/TestDLL.so')
+#    AddPostAction(DLL, Action(runRename))
+
+if onWindows:
+    env.MSVSProject("project"+env['MSVSPROJECTSUFFIX'],
+                srcs=["main.cpp"],
+                localincs=["../../../config.py"],
+                buildtarget=DLL,
+                variant=["Release","Debug"][debugmode])
+    env.Alias("msvcproj", "project"+env['MSVSPROJECTSUFFIX'])
+Default(DLL)
+targetfrombase=targetname[3:]
+Return("targetfrombase")

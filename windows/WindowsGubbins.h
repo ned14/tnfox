@@ -1,0 +1,49 @@
+/********************************************************************************
+*                                                                               *
+*                  Microsoft Windows header files include                       *
+*                                                                               *
+*********************************************************************************
+* Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.              *
+*   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
+*********************************************************************************
+* This code is free software; you can redistribute it and/or modify it under    *
+* the terms of the GNU Library General Public License v2.1 as published by the  *
+* Free Software Foundation EXCEPT that clause 3 does not apply ie; you may not  *
+* "upgrade" this code to the GPL without my prior written permission.           *
+* Please consult the file "License_Addendum2.txt" accompanying this file.       *
+*                                                                               *
+* This code is distributed in the hope that it will be useful,                  *
+* but WITHOUT ANY WARRANTY; without even the implied warranty of                *
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
+*********************************************************************************
+* $Id:                                                                          *
+********************************************************************************/
+
+#ifndef _WindowsGubbins_h_
+#define _WindowsGubbins_h_
+
+#ifndef _WINDOWS
+#error This file should only ever be included on Windows builds
+#endif
+
+// We want across the board APIs
+#define _WIN32_WINNT 0x600
+
+#include "windows.h"
+
+// Define a special kind of error handler for Win32
+#ifdef FXEXCEPTION_DISABLESOURCEINFO
+#define FXERRGWIN(code, flags) { FXException::int_throwWinError(0, 0, code, flags); }
+#else
+#define FXERRGWIN(code, flags) { FXException::int_throwWinError(__FILE__, __LINE__, code, flags); }
+#endif
+#ifdef DEBUG
+#define FXERRHWIN(exp)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FXException::int_testCondition()) FXERRGWIN(GetLastError(), 0); }
+#else
+#define FXERRHWIN(exp)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(GetLastError(), 0); }
+#endif
+#define FXERRGCOM(code, flags) { FXERRMAKE(e, tr("COM error 0x%1 occurred").arg(code), FXEXCEPTION_OSSPECIFIC, flags); \
+	FXERRH_THROW(e); }
+#define FXERRHCOM(exp)	{ HRESULT __ret=(exp); if(NOERROR!=__ret) FXERRGCOM(__ret, 0); }
+
+#endif

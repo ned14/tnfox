@@ -1,0 +1,586 @@
+# TnFOX human language string literal translation file
+# Last updated: Fri, 25 Jun 2004 18:26:05 +0000
+
+version=1:
+
+# If the line below says =Yes, then there are still text literals in here
+# which have not been translated yet. Search for "!TODO!" to find them
+
+needsupdating=No:
+
+# Enter the list of all language ids used in the file
+
+langids="ES":
+
+"    Hashing efficiency is %1% and overall efficiency is %2%\n":
+	ES: "La eficiencia de hashing es %1% y de total es %2%\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"    who will experience a left-handed interface\n":
+	ES: "    quien recibira una interfaz zurda\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"    who will experience a right-handed interface\n":
+	ES: "    quien recibira una interfaz diestra\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"  %1 to %2 %3%4%5%6 %7\n":
+	ES: "  %1 a %2 %3%4%5%6 %7\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"  -fxhanded=<left|right> : Overrides the handedness of the user\n":
+	ES: "  -fxhanded=<left|right> : Desautorizar el lado de manu de usuario\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"  -fxmemoryfull=<fpno>   : Overrides the memory full setting\n":
+	ES: "  -fxmemoryfull=<fpno>   : Desautorizar el indicador de memoria llena\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"  -fxscreenscale=<%>     : Overrides the window layout scaling factor\n":
+	ES: "  -fxscreenscale=<%>     : Desautorizar el factor tamaño de composicion de ventanas\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"  -fxscreensize=w,h      : Constrains the screen (debug only)\n":
+	ES: "  -fxscreensize=w,h      : Constreñir la pantella (solo modigo debug)\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"  -fxtrans-country=<cc>  : Overrides the country to be used by\n                           the application to an ISO3166 code\n":
+	ES: "  -fxtrans-country=<cc>  : Desautorizar la region que la applicacion\n                           usa a codigo de ISO3166\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"  -fxtrans-dump<n>       : Writes the library's embedded\n                           translation file no <n> to stdout\n":
+	ES: "  -fxtrans-dump<n>       : Escriba el archivo embutido de programa\n                           numero <n> a stdout\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"  -fxtrans-dumpgzip<n>   : Writes the library's embedded\n                           translation file no <n> to stdout in gzip\n":
+	ES: "  -fxtrans-dumpgzip<n>   : Escriba el archivo embutido de programa\n                           numero <n> a stdout en formato gzip\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"  -fxtrans-language=<ll> : Overrides the language to be used by\n                           the application to an ISO639 code\n":
+	ES: "  -fxtrans-language=<ll> : Desautorizar la idioma que la applicacion\n                           usa a codigo de ISO639\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"  -sysinfo               : Show information about the system & environment\n":
+	ES: "  -sysinfo               : Mostrar informacion sobre la sistema y entorno\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"%1 (code 0x%2 file %3 line %4 thread %5)":
+	ES: "%1 (codigo 0x%2 archivo %3 linea %4 hilo %5)"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"%1 (code 0x%2)":
+	ES: "%1 (codigo 0x%2)"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n":
+	ES: "%1 basado en el libririo portatil 'TnFOX' v%2.%3\n   (derivado de FOX v%4.%5.%6) (haciendo: %7 %8)\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"&Cancel":
+	ES: "&Cancelar"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
+		ES: up
+
+"&Copy to clipboard":
+	ES: "&Copiar al tabloncillo"
+	srcfile="FXExceptionDialog.cxx":
+		ES: up
+
+"&Full detail":
+	ES: "&Detalle total"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"&Ok":
+	ES: "&Vale"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
+		ES: up
+
+"&Quit":
+	ES: "&Dejar"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"&Retry":
+	ES: "&Reintentar"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"0x%1:%2%3\n                                 (file %4 line no %5)\n":
+	ES: "0x%1:%2%3\n                                 (archivo %4 linea %5)\n"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"<backtrace ends>":
+	ES: "<El backtrace termina aqui>"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"<backtrace may continue ...>":
+	ES: "<El backtrace quizas continua ...>"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"AES needs a key of either 128, 192 or 256 bits":
+	ES: "AES necesita una llave de cualquiera de 128, 192 o 256 bites"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Blowfish needs a key between 32 and 448 bits":
+	ES: "Blowfish necesita una llave entre 32 y 448 bites"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Buffer does not exist":
+	ES: "No se pueda encontrar el buffer"
+	srcfile="FXBuffer.cxx":class="FXBuffer":
+		ES: up
+
+"Device reopen has different mode":
+	ES: "El modo de operacion no es iqual que antes"
+	srcfile="FXBlkSocket.cxx":class="FXBlkSocket":
+		ES: up
+	srcfile="FXBuffer.cxx":class="FXBuffer":
+		ES: up
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
+	srcfile="FXGZipDevice.cxx":class="FXGZipDevice":
+		ES: up
+	srcfile="FXLocalPipe.cxx":class="FXLocalPipe":
+		ES: up
+	srcfile="FXMemMap.cxx":class="FXMemMap":
+		ES: up
+	srcfile="FXPipe.cxx":class="FXPipe":
+		ES: up
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Either i/o device is not open or not supported":
+	ES: "Cualquiera el dispositivo esta cerrado o sin soporte"
+	srcfile="FXIODevice.cxx":class="FXIODeviceS":
+		ES: up
+
+"Everything":
+	ES: "Todo"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"Exceeded Windows TLS hard key number limit":
+	ES: "Se rebase el numero maximo de llaves TLS de Windows"
+	srcfile="FXThread.cxx":class="FXThreadLocalStorage":
+		ES: up
+
+"FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)":
+	ES: "ERROR MORTAL: %1 (codigo 0x%2 archivo %3 linea %4 hilo %5)"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"FATAL ERROR: %1 (code 0x%2)":
+	ES: "ERROR MORTAL: %1 (codigo 0x%2)"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"Failed to read /dev/random":
+	ES: "Hay fracaso para leer /dev/random"
+	srcfile="FXSecure.cxx":class="FX::Secure::Randomness":
+		ES: up
+
+"Failed to read RSA public or private key from PEM file":
+	ES: "Hay fracaso para leer una llave RSA privada ni publica de archivo PEM"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Failed to start thread":
+	ES: "Hay fracaso para empazar un hilo de ejecucion"
+	srcfile="FXThread.cxx":class="FXThread":
+		ES: up
+
+"Fatal Error from %1":
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: "Error Mortal de %1"
+
+"File not found":
+	ES: "El archivo no se encontrado"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
+
+"File type devices not supported":
+	ES: "El tipo de dispositivo 'archivo' no es soportado"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)":
+	ES: "De otro lado de canal IPC: %1 (codigo 0x%2 archivo %3 linea %4 hilo %5)"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"From other end of IPC channel: %1 (code 0x%2)":
+	ES: "De otro lado de canal IPC: %1 (codigo 0x%2)"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"Full error report":
+	ES: "El informe total de error"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDetails":
+		ES: up
+
+"GUI toolkit (http://www.fox-toolkit.org/) and all rights are reserved\n\n":
+	ES: "portatil de GUI (http://www.fox-toolkit.org/) y todas derechas son reservados\n\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"Incorrect key":
+	ES: "Llave mala"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Key length must be a multiple of eight":
+	ES: "La longitud de llave necesita estar un multiplo de ocho"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Key of unknown encryption type":
+	ES: "El tipo de llave cryptographia no es conocido"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Key salt length must be smaller or equal to key length":
+	ES: "La longitud de sal de llave necesita estar menos o iqual a la longitud de llave"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Keys no bigger than 480 bits can be generated from plaintext":
+	ES: "Llaves no mas grande de 480 bites puedan generado de texto"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Maximum message size exceeded":
+	ES: "El tamaño maximo de mensaje rebasado"
+	srcfile="FXIPC.cxx":class="FXIPCChannel":
+		ES: up
+
+"Message already registered in this registry":
+	ES: "El mensaje esta todavia registrando en este registro"
+	srcfile="FXIPC.cxx":class="FXIPCMsgRegistry":
+		ES: up
+
+"Message failed CRC check":
+	ES: "El mensaje fallo su prueba de CRC"
+	srcfile="FXIPC.cxx":class="FXIPCChannel":
+		ES: up
+
+"Missing key test hash":
+	ES: "No hay hash de prueba de llave"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Module: %1 Language: %2 Country: %3\n":
+	ES: "Modulo: %1 Idioma: %2 Pais: %3\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"Must have root privileges for this operation":
+	ES: "Se necesita los privilegios de root para este operacion"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"Need private key to decrypt":
+	ES: "No hay llave privada"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Need public key to encrypt":
+	ES: "No hay llave publica"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Not a TnFOX secure data file":
+	ES: "No es un archivo seguro de TnFOX"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Not open for reading":
+	ES: "No esta abierto para leer"
+	srcfile="FXBlkSocket.cxx":class="FXBlkSocket":
+		ES: up
+	srcfile="FXBuffer.cxx":class="FXBuffer":
+		ES: up
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
+	srcfile="FXLocalPipe.cxx":class="FXLocalPipe":
+		ES: up
+	srcfile="FXMemMap.cxx":class="FXMemMap":
+		ES: up
+	srcfile="FXPipe.cxx":class="FXPipe":
+		ES: up
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Not open for writing":
+	ES: "No esta abierto para escribir"
+	srcfile="FXBlkSocket.cxx":class="FXBlkSocket":
+		ES: up
+	srcfile="FXBuffer.cxx":class="FXBuffer":
+		ES: up
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
+	srcfile="FXLocalPipe.cxx":class="FXLocalPipe":
+		ES: up
+	srcfile="FXMemMap.cxx":class="FXMemMap":
+		ES: up
+	srcfile="FXPipe.cxx":class="FXPipe":
+		ES: up
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"OpenSSL support not enabled":
+	ES: "OpenSSL no esta disponible"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Owner group":
+	ES: "Grupo de propietario"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"Owner":
+	ES: "Propietario"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"Owner: %1 (group: %2)\n  Deny          Grant         Entity\n":
+	ES: "Propietario: %1 (grupo %2)\n  Prohibir      Permitir      Entidad\n"
+	srcfile="FXACL.cxx":class="FXACL":
+		ES: up
+
+"Path not found":
+	ES: "La situacion no esta encontrado"
+	srcfile="FXFSMonitor.cxx":class="FXFSMonitor":
+		ES: up
+
+"Permission denied":
+	ES: "Permiso denegrado"
+	srcfile="FXACL.cxx":class="FXACL":
+		ES: up
+
+"Pipe not found":
+	ES: "Tubo no encontrado"
+	srcfile="FXPipe.cxx":class="FXPipe":
+		ES: up
+
+"Premature EOF encountered":
+	ES: "Se encontre el fin de archivo prematuro"
+	srcfile="FXStream.cxx":class="FXStream":
+		ES: up
+
+"Press to attempt to retry the operation":
+	ES: "Apriete para reintentar la operacion"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"Press to cancel the operation and return to the program":
+	ES: "Apriete para cancelar la operacion y volver a la programa"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"Press to immediately quit the program":
+	ES: "Apriete para salir directo la programa"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"Salt length must be a multiple of eight":
+	ES: "La longitud de sal de llave necesita estar un multiplo de ocho"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Salt length must be less than or equal to 64":
+	ES: "La longitud de sal de llave necesita estar menos o iqual que 64"
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Secure file format too new":
+	ES: "La version de archivo seguro es demasiada nueva"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Secure file missing symmetric key":
+	ES: "El archivo seguro no tiene su llave symetrica"
+	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
+		ES: up
+
+"Select this to cancel the action. Alt-select merely resets the dialog to its initial state":
+	ES: "Elige este para cancelar la accion. Alt-elige solo reinicia el dialogo a su principio"
+	srcfile="FXPrimaryButton.cxx":class="FXPrimaryButton":
+		ES: up
+
+"Select this to commit to the action. Alt-select merely applies the effects of committing but does not close the dialog":
+	ES: "Elige este para hacer la accion. Alt-elige solo applica los effectos sin cerrado del dialogo"
+	srcfile="FXPrimaryButton.cxx":class="FXPrimaryButton":
+		ES: up
+
+"Select to apply the changes and return to the program. Alt-select to apply without closing the dialog.":
+	ES: "Elige para applicar los cambios y volver a la programa. Alt-elige para applicar sin cerrar el dialogo."
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
+		ES: up
+
+"Select to cancel the operation and return to the program. Alt-select to reset the contents of the dialog.":
+	ES: "Elige para cancelar la operacion y volver a la programa. Alt-elige para reiniciar los contenidos a sus principios."
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
+		ES: up
+
+"Shadow password file unavailable":
+	ES: "Archivo en la sombra de contraseñas no esta disponible"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"Sockets are not enabled on this machine":
+	ES: "Los sockets no estan disponibles en este machina"
+	srcfile="FXBlkSocket.cxx":class="FXBlkSocket":
+		ES: up
+
+"System load: processor=%1, memory=%2, disc i/o=%3\n":
+	ES: "Carga de sistema: processadora=%1, memoria=%2, discos=%3\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"The current language is '%1' and the current region is '%2'\n":
+	ES: "La idioma ahora es '%1' y la region ahora es '%2'\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"The following language translations are provided:\n":
+	ES: "Hay estas idiomas providadas:\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"The host OS is: %1\n":
+	ES: "La sistema operativa anfitriona es: %1\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"The millisecond count is %1, process id is %2 and this machine has %3 processors\n":
+	ES: "La cuenta millisegunda es %1, id de proceso es %2 y este ordinador tiene %3 procesadores\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"There are the following files mapped into this process' memory:\n":
+	ES: "Hay estos archivos dentro la memoria de este proceso:\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"This describes the error which has occurred":
+	ES: "Este mostra el error"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"This is an absolute path":
+	ES: "Ese es un direccion absoluta"
+	srcfile="FXDir.cxx":class="FXDir":
+		ES: up
+
+"This is asking you what to do about the listed error":
+	ES: "Este pregunta te que hacer sobre el error"
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"This machine cannot perform IPv6":
+	ES: "Este ordinador no supporta IPv6"
+	srcfile="FXBlkSocket.cxx":class="FXBlkSocket":
+		ES: up
+
+"This process was created by the user %1 (group %2)\n":
+	ES: "Este proceso estuvo fabricando de usuario %1 (grupo %2)\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"TnFOX (http://www.nedprod.com/TnFOX/) is heavily based upon the FOX portable\n":
+	ES: "TnFOX (http://www.nedprod.com/TnFOX/) es mucho basado en FOX, el juego de herramientas\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"TnFOX system information:\n\n":
+	ES: "Informacion de sistema de TnFOX:\n\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"Too much random data requested":
+	ES: "Demasiado datos fortuitos fue solicitado"
+	srcfile="FXSecure.cxx":class="FX::Secure::Randomness":
+		ES: up
+
+"Translation dictionary contains %1 items (%2% full with %3 keys per slot)\n":
+	ES: "El diccionario de traduccion tiene %1 cosas (%2% lleno con %3 llaves de cada espacio)\n"
+	srcfile="FXTrans.cxx":class="FXTrans":
+		ES: up
+
+"Unable to read unmapped shared memory":
+	ES: "No es posible leer memoria compartida sin mapa"
+	srcfile="FXMemMap.cxx":class="FXMemMap":
+		ES: up
+
+"Unable to write unmapped shared memory":
+	ES: "No es posible escribir memoria compartida sin mapa"
+	srcfile="FXMemMap.cxx":class="FXMemMap":
+		ES: up
+
+"Unhandled message":
+	ES: "Mensaje no encargarse"
+	srcfile="FXIPC.cxx":class="FXIPCChannel":
+		ES: up
+
+"Unknown option '%1' passed to %2\n":
+	ES: "La opcion '%2' pasado a %2 no esta conocido\n"
+	srcfile="FXProcess.cxx":class="FXProcess":
+		ES: up
+
+"Unknown tag":
+	ES: "La etiqueta no esta conocido"
+	srcfile="FXSSLDevice.cxx":class="FXSSLPKey":
+		ES: up
+
+"Unknown user":
+	ES: "El usuario no esta conocido"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"You cannot destruct a running thread":
+	ES: "No es possible destruir un hilo de ejecucion que no ha terminado"
+	srcfile="FXThread.cxx":class="FXThread":
+		ES: up
+
+"You cannot set the permissions on this device":
+	ES: "No es posible cambiar los permisos en este dispositivo"
+	srcfile="FXIODevice.cxx":class="FXIODevice":
+		ES: up
+
+"You must authenticate an entity before you can set it as owner":
+	ES: "Se necesita autentificacion de una entidad antes pueda montar lo como propietario"
+	srcfile="FXACL.cxx":class="FXACL":
+		ES: up
+
+"\nFurthermore, %1 errors occurred during the handling of the above exception:\n":
+	ES: "\nTambien, hay %1 errores mas durante los reparaciones del mismo arriba:\n"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+
+"\nStack backtrace:\n":
+	ES: "\nBacktrace del stack:\n"
+	srcfile="FXException.cxx":class="FXException":
+		ES: up
+

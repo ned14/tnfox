@@ -1,0 +1,8 @@
+All material within this directory and all subdirectories is:
+
+(C) 2002, 2003, 2004 Niall Douglas
+
+... and is licensed for use ONLY in testing TnFOX facilities.
+
+It may not be used by other code or incorporated into code without
+prior written permission.

@@ -1,0 +1,129 @@
+#********************************************************************************
+#                                                                               *
+#                      TnFOX Python bindings make file                          *
+#                                                                               *
+#********************************************************************************
+#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
+#********************************************************************************
+# This code is free software; you can redistribute it and/or modify it under    *
+# the terms of the GNU Library General Public License v2.1 as published by the  *
+# Free Software Foundation EXCEPT that clause 3 does not apply ie; you may not  *
+# "upgrade" this code to the GPL without my prior written permission.           *
+# Please consult the file "License_Addendum2.txt" accompanying this file.       *
+#                                                                               *
+# This code is distributed in the hope that it will be useful,                  *
+# but WITHOUT ANY WARRANTY; without even the implied warranty of                *
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
+#********************************************************************************
+
+import os
+import string
+import sys
+from types import *
+execfile("../sconslib.py")
+init(globals(), "../")
+targetname="../lib/TnFOX"
+
+def getSources():
+    filelist=os.listdir(".")
+    idx=0
+    while idx<len(filelist):
+        if filelist[idx][0]!="_" or filelist[idx][-4:]!=".cpp":
+            del filelist[idx]
+        else: idx+=1
+    return filelist +["converters.cpp", "FXPython.cxx" ]
+def getIncludes():
+    filelist=os.listdir("../include")
+    idx=0
+    while idx<len(filelist):
+        type=filelist[idx][-2:]
+        if type!=".h":
+            del filelist[idx]
+        else: idx+=1
+    return filelist
+
+env['CPPDEFINES']+=[ "FOXDLL",
+                    "BOOST_PYTHON_DYNAMIC_LIB",
+                    "BOOST_PYTHON_SOURCE",
+                    ("BOOST_PYTHON_MAX_ARITY", 19),
+                    "FOXPYTHONDLL", "FOXPYTHONDLL_EXPORTS"
+                    ]
+env['CPPPATH']+=[ ".",
+                 "../include",
+                 "../../boost"
+                 ]
+env['LIBPATH']+=[]
+env['LIBS']=[ ]
+env['SHLIBPREFIX']="" # Force non-use of "lib" prefix
+
+if debugmode:
+    builddir="Debug"
+else:
+    builddir="Release"
+if onWindows:
+    env['LIBPATH']+=[ "../lib" ]
+    env['LIBS']+=[ libtnfox ]
+else:
+    env['LINKFLAGS'].append(os.path.abspath("../lib/lib"+libtnfox+libtnfoxsuffix))
+if not os.path.exists("../../boost"):
+    raise IOError, "There must be a copy of the Boost library next to the TnFOX directory"
+if not os.environ.has_key("PYTHON_INCLUDE"): raise IOError, "PYTHON_INCLUDE needs to be defined"
+env['CPPPATH'].append(os.environ["PYTHON_INCLUDE"])
+if onWindows:
+    if not os.environ.has_key("PYTHON_LIB"): raise IOError, "PYTHON_LIB needs to be defined"
+    env['LINKFLAGS'].append(os.environ["PYTHON_LIB"])
+
+conf=Configure(env)
+if sys.byteorder=="big": conf.env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
+if make64bit: conf.env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
+env=conf.Finish()
+
+#geninterfaces=env.Command("dont exist", None, ternary(onWindows, "", "python ")+"GenInterfaces.py")
+objects=[]
+#objects=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="-c -Os -DGCC_HASCLASSVISIBILITY -D_DEBUG -DUSE_POSIX -fexceptions")]
+#objects=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
+#objects=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
+objects+=[env.SharedObject(builddir+"/"+getBase(x), x) for x in getSources()]
+#for object in objects:
+#    env.Depends(object, geninterfaces)
+BPLObjects=["aix_init_module", "arg_to_python_base", "builtin_converters", "class", "dict",
+          "enum", "errors", "from_python", "function", "inheritance", "iterator",
+          "life_support", "list", "long", "module", "numeric", "object_operators",
+          "object_protocol", "pickle_support", "python_iterator", "registry", "slice",
+          "str", "tuple", "type_id"]
+BPLObjects=[BPLObjectsHome+"/"+obj+env['OBJSUFFIX'] for obj in BPLObjects]
+objects+=BPLObjects
+if onWindows:
+    versionrc="version.rc"
+    objects+=[env.RES(builddir+"/version.res", versionrc)]
+Clean(targetname, objects)
+base,ext=os.path.splitext(targetname)
+DLL=env.SharedLibrary(base, objects)
+if onWindows:
+    def runBind(target, source, env):
+        stem, leaf=os.path.split(os.path.normpath(targetname))
+        oldpath=os.getcwd()
+        try:
+            os.chdir(stem)
+            os.system('bind -u '+leaf)
+        finally:
+            os.chdir(oldpath)
+    AddPostAction(DLL, Action(runBind))
+
+if onWindows:
+    env.MSVSProject("../windows/TnFOXPythonProject"+env['MSVSPROJECTSUFFIX'],
+                srcs=["../Python/"+x for x in getSources()],
+                incs=["../include/"+x for x in getIncludes()],
+                localincs=["../config.py", "../Python/config/msvc.py", "../Python/config/g++.py",
+                           "../Python/common.h", "../Python/CArrays.h"],
+                resources="../Python/"+versionrc,
+                misc=["../"+x for x in ["ChangeLog.txt", "License.txt", "License_Addendum.txt",
+                      "License_Addendum2.txt", "Readme.txt", "ReadmePython.txt",
+                      "TnFOXTrans.txt", "Todo.txt"]],
+                buildtarget=DLL,
+                variant=["Release","Debug"][debugmode])
+    env.Alias("msvcproj", "../windows/TnFOXPythonProject"+env['MSVSPROJECTSUFFIX'])
+Default(DLL)
+targetfrombase=targetname[3:]
+Return("targetfrombase")

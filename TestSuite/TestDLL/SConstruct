@@ -1,0 +1,11 @@
+#specialLibs=["TestDLL"]
+execfile("../CommonSConstruct.py")
+
+def makeDLL(target, source, env):
+    oldpath=os.getcwd()
+    try:
+        os.chdir("DLL")
+        os.system('scons')
+    finally:
+        os.chdir(oldpath)
+env.Depends(EXE, env.Command("TestDLL", "DLL/maindll.cpp", makeDLL))

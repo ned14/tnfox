@@ -1,0 +1,2 @@
+wantPython=True
+execfile("../CommonSConstruct.py")
