@@ -96,6 +96,26 @@ FXTextCodec* FXTextCodecDict::find(const FXchar* name) const {
 // Dictionary maps names to codecs
 FXTextCodecDict* FXTextCodec::codecs=0;
 
+/* 27th Nov 2004 ned: It bugs me to see memory leaks after program exit, so here's
+a hacked in text code cleanup routine Jeroen really should implement himself by now */
+static struct DeleteFXTextCodecs
+{
+	~DeleteFXTextCodecs()
+	{
+		FXTextCodec *codec;
+		FXTextCodecDict *codecs=FXTextCodec::codecs;
+		if(codecs)
+		{
+			for(int n=0; n<codecs->size(); n++)
+			{
+				codec=(FXTextCodec *) codecs->data(n);
+				delete codec;
+			}
+			delete codecs; codecs=0;
+		}
+	}
+} deleteFXTextCodecs;
+
 
 // Register codec associated with this name.
 FXbool FXTextCodec::registerCodec(const FXchar* name,FXTextCodec* codec){
