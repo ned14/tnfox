@@ -730,7 +730,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		assert(msg->msgType());
 		if(p->maxMsgSize && msg->length()>p->maxMsgSize)
 		{
-			FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded"), FXIPCCHANNEL_MSGTOOBIG, 0);
+			FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msg->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 		}
 		if(p->garbageMessageCount && (msg->myid % p->garbageMessageCount)==0)
 		{	// Trash the message
