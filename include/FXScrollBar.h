@@ -61,17 +61,17 @@ enum {
 class FXAPI FXScrollBar : public FXWindow {
   FXDECLARE(FXScrollBar)
 protected:
-  FXint      range;           // Scrollable range
+  FXlong     range;           // Scrollable range
   FXint      page;            // Page size
   FXint      line;            // Line size
-  FXint      pos;             // Position
+  FXlong     pos;             // Position
   FXint      thumbsize;       // Thumb size
   FXint      thumbpos;        // Thumb position
   FXColor    hiliteColor;     // Hightlight color
   FXColor    shadowColor;     // Shadow color
   FXColor    borderColor;     // Border color
   FXColor    arrowColor;      // Arrow color
-  FXint      dragpoint;       // Point where grabbed
+  FXlong     dragpoint;       // Point where grabbed
   FXuchar    mode;            // Current mode of control
 protected:
   FXScrollBar();
@@ -132,10 +132,10 @@ public:
   virtual void layout();
 
   /// Set content size range
-  void setRange(FXint r);
+  void setRange(FXlong r);
 
   /// Return content size range
-  FXint getRange() const { return range; }
+  FXlong getRange() const { return range; }
 
   /// Set viewport page size
   void setPage(FXint p);
@@ -150,10 +150,10 @@ public:
   FXint getLine() const { return line; }
 
   /// Change current scroll position
-  void setPosition(FXint p);
+  void setPosition(FXlong p);
 
   /// return scroll position
-  FXint getPosition() const { return pos; }
+  FXlong getPosition() const { return pos; }
 
   /// Change highlight color
   void setHiliteColor(FXColor clr);
