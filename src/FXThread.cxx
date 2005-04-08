@@ -1493,6 +1493,7 @@ void FXThreadPoolPrivate::Thread::run()
 				assert(code);
 				//fxmessage("Thread pool calling %p\n", code);
 				Generic::BoundFunctorV *_code=code;
+				assert(dynamic_cast<void *>(_code));
 				(*_code)();
 				FXDELETE(code);
 				unlockme.dismiss();
