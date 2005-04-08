@@ -1159,6 +1159,8 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 #ifdef USE_WINAPI
 	SECURITY_DESCRIPTOR *sd;
 	LPSTR _path=(LPSTR) path.text();
+#if 0
+	// This code seems to require administrator access :(
 	if(':'==path[1] && 3==path.length())
 	{	/* Windows is funny and pops up various dialog boxes asking for removable media if
 		the drive is empty. We don't want this, we actually want an exception. Unfortunately,
@@ -1174,9 +1176,15 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 		DWORD ret=DeviceIoControl(h, IOCTL_DISK_GET_MEDIA_TYPES, NULL, 0, gms, sizeof(gms), &read, NULL);
 		if(!ret || FixedMedia!=gms[0].MediaType)
 		{	// Ask it if it has a disc in
-			FXERRHWIN(DeviceIoControl(h, IOCTL_STORAGE_CHECK_VERIFY, NULL, 0, NULL, 0, &read, NULL));
+			FXERRHWIN(DeviceIoControl(h, IOCTL_DISK_CHECK_VERIFY, NULL, 0, NULL, 0, &read, NULL));
 		}
 	}
+#else
+#ifdef DEBUG
+	DWORD mode=SetErrorMode(SEM_FAILCRITICALERRORS);
+	assert(mode & SEM_FAILCRITICALERRORS);
+#endif
+#endif
 	FXERRHWIN(ERROR_SUCCESS==GetNamedSecurityInfo(_path, mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
 		0, 0, 0, NULL, (PSID *) &sd));
