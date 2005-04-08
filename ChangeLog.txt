@@ -9,6 +9,7 @@ which could cause conflict with local definitions of "e"
 B FXIPCChannel wasn't retrying message sends if they part completed
 R Issued snapshot 1
 B FXPipe::writeBlock() wasn't detecting write errors on win32
+B Config failed due to lack of build directory on virgin builds
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -31,6 +32,10 @@ R Issued snapshot 1
 + Added support for MSVC8.0
 + Added FX::Pol::itRevCompare
 * FXSSLKey::setAsymmetricKey() now returns *this
++ Added MSVC project files for libjpeg, libtiff, zlib and placeholder
+directories for openssl and libpng
+- Removed administrator-only code in FXACL
+
 
 v0.85 13th Feb 2005:
 -=-=-=-=-=-=-=-=-=-=
