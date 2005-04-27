@@ -199,6 +199,9 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if architecture=="i486":
         env['CPPDEFINES']+=[("FX_X86PROCESSOR", i486_version)]
     if tcommonopts==2: env['CPPDEFINES']+=["BUILDING_TCOMMON"]
+    if onWindows:
+        # Seems to need this on some installations
+        env['ENV']['TMP']=os.environ['TMP']
     for key,value in locals().items():
         cglobals[key]=value
 
