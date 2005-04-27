@@ -209,6 +209,7 @@ public:
 	QMemArray<FXMutex *> locks;
 	static void lockingfunction(int mode, int n, const char *file, int line)
 	{
+		if(!myinit) return;
 		FXMutex *m=myinit->locks.at(n);
 		assert(m);
 		if(mode & CRYPTO_LOCK) m->lock(); else m->unlock();
