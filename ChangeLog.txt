@@ -10,6 +10,8 @@ B FXIPCChannel wasn't retrying message sends if they part completed
 R Issued snapshot 1
 B FXPipe::writeBlock() wasn't detecting write errors on win32
 B Config failed due to lack of build directory on virgin builds
+B FXACL would hang on win32 if program was not running as administrator
+B Fixed segfault in FXSSLDevice on process exit
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
