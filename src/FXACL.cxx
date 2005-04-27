@@ -1120,7 +1120,9 @@ void FXACL::init(void *_sd, FXACL::EntityType type)
 	FXRBOp unsd=FXRBFunc(&LocalFree, sd);
 	PACL acl;
 	SID *owner, *group;
-	assert(IsValidSecurityDescriptor(sd));
+	/* It seems that if the program is not running as Administrator, calls can return
+	a zero security descriptor with no error :( */
+	FXERRH(IsValidSecurityDescriptor(sd), FXTrans::tr("FXACL", "Invalid Security Descriptor"), FXACL_BADDESCRIPTOR, 0);
 	SECURITY_DESCRIPTOR_CONTROL sdc;
 	DWORD sdrev;
 	FXERRHWIN(GetSecurityDescriptorControl(sd, &sdc, &sdrev));
