@@ -123,7 +123,7 @@ namespace FX
 	inline FXMALLOCATTR char *strdup(const char *str) throw();
 	inline char *strdup(const char *str) throw()
 	{
-		int len=strlen(str);
+		size_t len=strlen(str);
 		void *ret=FX::malloc(len+1);
 		if(!ret) return NULL;
 		memcpy(ret, str, len+1);
