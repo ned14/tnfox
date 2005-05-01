@@ -29,41 +29,59 @@
 #include "FXRollback.h"
 
 #ifdef FXDISABLE_THREADS
-#undef USE_WINAPI
-#undef USE_OURMUTEX
-#undef USE_X86
+ #undef USE_WINAPI
+ #undef USE_OURMUTEX
+ #undef USE_X86
 #else
 // Decide which thread API to use
-#ifndef USE_POSIX
-#define USE_WINAPI
-#define USE_OURMUTEX
-#include "WindowsGubbins.h"
-#endif
-#ifdef USE_POSIX
-// POSIX threads for the Unices
-#define __CLEANUP_C			// for pthreads_win32
-//#define USE_OURTHREADID	// Define when pthread_self() is not unique across processes
-#include <semaphore.h>
-#include <pthread.h>
-#endif
+ #ifndef USE_POSIX
+  #define USE_WINAPI
+  #define USE_OURMUTEX
+  #include "WindowsGubbins.h"
+extern "C"
+{
+	LONG __cdecl _InterlockedCompareExchange(LPLONG volatile Dest, LONG Exchange, LONG Comp);
+	LONG __cdecl _InterlockedExchange(LPLONG volatile Target, LONG Value);
+	LONG __cdecl _InterlockedExchangeAdd(LPLONG volatile Addend, LONG Value);
+	LONG __cdecl _InterlockedIncrement(LONG volatile *Addend);
+	LONG __cdecl _InterlockedDecrement(LONG volatile *Addend);
+}
+ #endif
+ #ifdef USE_POSIX
+  // POSIX threads for the Unices
+  #define __CLEANUP_C			// for pthreads_win32
+  //#define USE_OURTHREADID	// Define when pthread_self() is not unique across processes
+  #include <semaphore.h>
+  #include <pthread.h>
+ #endif
 #endif
 
 #include <assert.h>
 
-namespace FX {
-
-#if defined(_M_IX86) || defined(__i386__) || defined(_X86_) || defined(__x86_64__)
-#define USE_X86 FX_X86PROCESSOR
-#define USE_OURMUTEX
-#if !defined(_MSC_VER) && !defined(__GNUC__)
-#error Unknown compiler, therefore do not know how to invoke x86 assembler
-#endif
+// On Windows, always use our mutex implementation
+#ifdef USE_WINAPI
+ #define USE_OURMUTEX
+ #ifdef _MSC_VER
+  // Use MSVC7.1 Intrinsics
+  #pragma intrinsic (_InterlockedCompareExchange)
+  #pragma intrinsic (_InterlockedExchange)
+  #pragma intrinsic (_InterlockedExchangeAdd)
+  #pragma intrinsic (_InterlockedIncrement)
+  #pragma intrinsic (_InterlockedDecrement)
+ #endif
+#else
+ // On GCC, if it's x86 or x64, use our mutex implementation with inline assembler
+ #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+  #define USE_X86 FX_X86PROCESSOR
+  #define USE_OURMUTEX
+ #endif
 #endif
 
 #ifndef USE_OURMUTEX
 #error Unsupported architecture, please add atomic int support to FXThread.cxx
 #endif
 
+namespace FX {
 
 FXMUTEX_INLINEI int FXAtomicInt::get() const throw()
 {
@@ -73,22 +91,13 @@ FXMUTEX_INLINEP FXAtomicInt::operator int() const throw() { return get(); }
 FXMUTEX_INLINEI int FXAtomicInt::set(int i) throw()
 {	// value=i; is write-buffered out and we need it immediate
 #ifdef USE_X86
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov edx, [i]
-		xchg edx, [ecx]
-	}
-#endif
 #ifdef __GNUC__
 	int d;
 
 	__asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (d) : "r" (&value), "0" (i));
 #endif
 #elif defined(USE_WINAPI)
-	InterlockedExchange((PLONG) &value, i);
+	_InterlockedExchange((PLONG) &value, i);
 #endif
 	return i;
 }
@@ -97,20 +106,6 @@ FXMUTEX_INLINEI int FXAtomicInt::incp() throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, 1
-#ifdef FX_SMPBUILD
-		lock xadd [ecx], eax
-#else
-		xadd [ecx], eax
-#endif
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -122,7 +117,7 @@ FXMUTEX_INLINEI int FXAtomicInt::incp() throw()
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	return InterlockedExchangeAdd((PLONG) &value, 1);
+	return _InterlockedExchangeAdd((PLONG) &value, 1);
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::operator++(int) throw() { return incp(); }
@@ -130,21 +125,6 @@ FXMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, 1
-#ifdef FX_SMPBUILD
-		lock xadd [ecx], eax
-#else
-		xadd [ecx], eax
-#endif
-		inc eax
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -156,7 +136,7 @@ FXMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	return InterlockedIncrement((PLONG) &value);
+	return _InterlockedIncrement((PLONG) &value);
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::operator++() throw() { return pinc(); }
@@ -164,26 +144,6 @@ FXMUTEX_INLINEI int FXAtomicInt::finc() throw()
 {	// Returns -1, 0, +1 on value AFTER inc
 #if defined(USE_X86)
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-#ifdef FX_SMPBUILD
-		lock inc dword ptr [ecx]
-#else
-		inc dword ptr [ecx]
-#endif
-		jl retm1
-		jg retp1
-		mov [myret], 0
-		jmp finish
-retm1:	mov [myret], -1
-		jmp finish
-retp1:	mov [myret], 1
-finish:
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -208,20 +168,6 @@ FXMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, [i]
-#ifdef FX_SMPBUILD
-		lock xadd [ecx], eax
-#else
-		xadd [ecx], eax
-#endif
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -233,7 +179,7 @@ FXMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 #endif
 	return myret+i;
 #elif defined(USE_WINAPI)
-	return InterlockedExchangeAdd((PLONG) &value, i)+i;
+	return _InterlockedExchangeAdd((PLONG) &value, i)+i;
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::operator+=(int i) throw() { return inc(i); }
@@ -241,20 +187,6 @@ FXMUTEX_INLINEI int FXAtomicInt::decp() throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, 0xffffffff
-#ifdef FX_SMPBUILD
-		lock xadd [ecx], eax
-#else
-		xadd [ecx], eax
-#endif
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -266,7 +198,7 @@ FXMUTEX_INLINEI int FXAtomicInt::decp() throw()
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	return InterlockedExchangeAdd((PLONG) &value, -1);
+	return _InterlockedExchangeAdd((PLONG) &value, -1);
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::operator--(int) throw() { return decp(); }
@@ -274,21 +206,6 @@ FXMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, -1
-#ifdef FX_SMPBUILD
-		lock xadd [ecx], eax
-#else
-		xadd [ecx], eax
-#endif
-		dec eax
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -300,7 +217,7 @@ FXMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	return InterlockedDecrement((PLONG) &value);
+	return _InterlockedDecrement((PLONG) &value);
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::operator--() throw() { return pdec(); }
@@ -308,26 +225,6 @@ FXMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 {	// Returns -1, 0, +1 on value AFTER inc
 #if defined(USE_X86)
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-#ifdef FX_SMPBUILD
-		lock dec dword ptr [ecx]
-#else
-		dec dword ptr [ecx]
-#endif
-		jl retm1
-		jg retp1
-		mov [myret], 0
-		jmp finish
-retm1:	mov [myret], -1
-		jmp finish
-retp1:	mov [myret], 1
-finish:
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -353,20 +250,6 @@ FXMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 #ifdef USE_X86
 	int myret;
 	i=-i;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, [i]
-#ifdef FX_SMPBUILD
-		lock xadd [ecx], eax
-#else
-		xadd [ecx], eax
-#endif
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -378,7 +261,7 @@ FXMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 #endif
 	return myret+i;
 #elif defined(USE_WINAPI)
-	return InterlockedExchangeAdd((PLONG) &value, -i)-i;
+	return _InterlockedExchangeAdd((PLONG) &value, -i)-i;
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::operator-=(int i) throw() { return dec(i); }
@@ -386,22 +269,12 @@ FXMUTEX_INLINEI int FXAtomicInt::swapI(int i) throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov eax, [i]
-		xchg eax, [ecx]
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (myret) : "r" (&value), "0" (i));
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	return InterlockedExchange((PLONG) &value, i);
+	return _InterlockedExchange((PLONG) &value, i);
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::swap(int i) throw() { return swapI(i); }
@@ -409,21 +282,6 @@ FXMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 {
 #ifdef USE_X86
 	int myret;
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		mov ecx, [val]
-		mov edx, [newval]
-		mov eax, [compare]
-#ifdef FX_SMPBUILD
-		lock cmpxchg [ecx], edx
-#else
-		cmpxchg [ecx], edx
-#endif
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
@@ -435,7 +293,7 @@ FXMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	return InterlockedExchange((PLONG) &value, i);
+	return _InterlockedCompareExchange((PLONG) &value, newval, compare);
 #endif
 }
 FXMUTEX_INLINEP int FXAtomicInt::cmpX(int compare, int newval) throw() { return cmpXI(compare, newval); }
@@ -447,26 +305,6 @@ FXMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
 {
 	int myret;
 #ifdef USE_X86
-#ifdef _MSC_VER
-	volatile int *val=&value;
-	_asm
-	{
-		xor eax, eax
-		mov ecx, [val]
-		mov edx, count
-loop1:	xchg eax, [ecx]
-		cmp eax, 1
-		je exitloop
-loop2:	dec edx
-		je exitloop
-		pause					// Hint to newer processors that this is a spin lock,
-		cmp [ecx], 1			// nop otherwise
-		jne loop2
-		jmp loop1
-exitloop:
-		mov [myret], eax
-	}
-#endif
 #ifdef __GNUC__
 #error todo
 	__asm__ __volatile__ (
@@ -479,7 +317,7 @@ exitloop:
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
-	for(int n=0; n<count && (myret=InterlockedExchange((PLONG) &value, 1)); n++)
+	for(int n=0; n<count && (myret=_InterlockedExchange((PLONG) &value, 1)); n++)
 	return myret;
 #endif
 }
