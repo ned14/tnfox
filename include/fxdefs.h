@@ -409,7 +409,9 @@ typedef long long              FXlong;
 
 // Integral types large enough to hold value of a pointer
 #if defined(_MSC_VER) && defined(_WIN64)
-#define FX_IS64BITPROCESSOR
+#ifndef FX_IS64BITPROCESSOR
+ #define FX_IS64BITPROCESSOR
+#endif
 typedef __int64                FXival;
 typedef unsigned __int64       FXuval;
 #else
