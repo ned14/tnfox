@@ -102,9 +102,9 @@ public:
 	//! \overload
 	operator const type *() const { return data(); }
 	//! Returns the number of elements in the array
-	uint size() const { return (extArray) ? extArrayLen : std::vector<type>::size(); }
+	uint size() const { return (extArray) ? extArrayLen : (uint) std::vector<type>::size(); }
 	//! \overload
-	uint count() const { return (extArray) ? extArrayLen : std::vector<type>::size(); }
+	uint count() const { return (extArray) ? extArrayLen : (uint) std::vector<type>::size(); }
 	//! Returns true if the array is empty
 	bool isEmpty() const { return isNull(); }
 	//! Returns true if the array is empty
