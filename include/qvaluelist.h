@@ -166,7 +166,7 @@ public:
 //! Writes the contents of the list to stream \em s
 template<class type> FXStream &operator<<(FXStream &s, const QValueList<type> &i)
 {
-	FXuint mysize=i.count();
+	FXuint mysize=(FXuint) i.count();
 	s << mysize;
 	for(typename QValueList<type>::const_iterator it=i.begin(); it!=i.end(); ++it)
 	{
