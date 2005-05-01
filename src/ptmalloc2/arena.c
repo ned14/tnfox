@@ -71,7 +71,7 @@ static int stat_n_heaps;
 #endif
 
 /* Mapped memory in non-main arenas (reliable only for NO_THREADS). */
-static unsigned long arena_mem;
+static INTERNAL_SIZE_T arena_mem;
 
 /* Already initialized? */
 int __malloc_initialized = -1;
@@ -100,7 +100,7 @@ int __malloc_initialized = -1;
 /* find the heap and corresponding arena for a given ptr */
 
 #define heap_for_ptr(ptr) \
- ((heap_info *)((unsigned long)(ptr) & ~(HEAP_MAX_SIZE-1)))
+ ((heap_info *)((INTERNAL_SIZE_T)(ptr) & ~(HEAP_MAX_SIZE-1)))
 #define arena_for_chunk(ptr) \
  (chunk_non_main_arena(ptr) ? heap_for_ptr(ptr)->ar_ptr : &main_arena)
 
@@ -529,13 +529,13 @@ dump_heap(heap) heap_info *heap;
   char *ptr;
   mchunkptr p;
 
-  fprintf(stderr, "Heap %p, size %10lx:\n", heap, (long)heap->size);
+  fprintf(stderr, "Heap %p, size %10lx:\n", heap, (INTERNAL_INTPTR_T)heap->size);
   ptr = (heap->ar_ptr != (mstate)(heap+1)) ?
     (char*)(heap + 1) : (char*)(heap + 1) + sizeof(struct malloc_state);
-  p = (mchunkptr)(((unsigned long)ptr + MALLOC_ALIGN_MASK) &
+  p = (mchunkptr)(((INTERNAL_SIZE_T)ptr + MALLOC_ALIGN_MASK) &
                   ~MALLOC_ALIGN_MASK);
   for(;;) {
-    fprintf(stderr, "chunk %p size %10lx", p, (long)p->size);
+    fprintf(stderr, "chunk %p size %10lx", p, (INTERNAL_INTPTR_T)p->size);
     if(p == top(heap->ar_ptr)) {
       fprintf(stderr, " (top)\n");
       break;
@@ -563,7 +563,7 @@ new_heap(size, top_pad) size_t size, top_pad;
 {
   size_t page_mask = malloc_getpagesize - 1;
   char *p1, *p2;
-  unsigned long ul;
+  INTERNAL_SIZE_T ul;
   heap_info *h;
 
   if(size+top_pad < HEAP_MIN_SIZE)
@@ -584,7 +584,7 @@ new_heap(size, top_pad) size_t size, top_pad;
   /* Win32 emulation function has special case for HEAP_MAX_SIZE */
   p1 = (char *)MMAP(0, HEAP_MAX_SIZE<<1, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE);
   if(p1 != MAP_FAILED) {
-    p2 = (char *)(((unsigned long)p1 + (HEAP_MAX_SIZE-1)) & ~(HEAP_MAX_SIZE-1));
+    p2 = (char *)(((INTERNAL_SIZE_T)p1 + (HEAP_MAX_SIZE-1)) & ~(HEAP_MAX_SIZE-1));
     ul = p2 - p1;
     munmap(p1, ul);
     munmap(p2 + HEAP_MAX_SIZE, HEAP_MAX_SIZE - ul);
@@ -596,7 +596,7 @@ new_heap(size, top_pad) size_t size, top_pad;
     p2 = (char *)MMAP(0, HEAP_MAX_SIZE, PROT_NONE, MAP_PRIVATE|MAP_NORESERVE);
     if(p2 == MAP_FAILED)
       return 0;
-    if((unsigned long)p2 & (HEAP_MAX_SIZE-1)) {
+    if((INTERNAL_SIZE_T)p2 & (HEAP_MAX_SIZE-1)) {
       munmap(p2, HEAP_MAX_SIZE);
       return 0;
     }
@@ -616,24 +616,24 @@ new_heap(size, top_pad) size_t size, top_pad;
 
 static int
 #if __STD_C
-grow_heap(heap_info *h, long diff)
+grow_heap(heap_info *h, INTERNAL_INTPTR_T diff)
 #else
-grow_heap(h, diff) heap_info *h; long diff;
+grow_heap(h, diff) heap_info *h; INTERNAL_INTPTR_T diff;
 #endif
 {
   size_t page_mask = malloc_getpagesize - 1;
-  long new_size;
+  INTERNAL_INTPTR_T new_size;
 
   if(diff >= 0) {
     diff = (diff + page_mask) & ~page_mask;
-    new_size = (long)h->size + diff;
+    new_size = (INTERNAL_INTPTR_T)h->size + diff;
     if(new_size > HEAP_MAX_SIZE)
       return -1;
     if(mprotect((char *)h + h->size, diff, PROT_READ|PROT_WRITE) != 0)
       return -2;
   } else {
-    new_size = (long)h->size + diff;
-    if(new_size < (long)sizeof(*h))
+    new_size = (INTERNAL_INTPTR_T)h->size + diff;
+    if(new_size < (INTERNAL_INTPTR_T)sizeof(*h))
       return -1;
     /* Try to re-map the extra heap space freshly to save memory, and
        make it inaccessible. */
@@ -659,10 +659,10 @@ heap_trim(heap, pad) heap_info *heap; size_t pad;
 #endif
 {
   mstate ar_ptr = heap->ar_ptr;
-  unsigned long pagesz = mp_.pagesize;
+  INTERNAL_SIZE_T pagesz = mp_.pagesize;
   mchunkptr top_chunk = top(ar_ptr), p, bck, fwd;
   heap_info *prev_heap;
-  long new_size, top_size, extra;
+  INTERNAL_INTPTR_T new_size, top_size, extra;
 
   /* Can this heap go away completely? */
   while(top_chunk == chunk_at_offset(heap, sizeof(*heap))) {
@@ -671,7 +671,7 @@ heap_trim(heap, pad) heap_info *heap; size_t pad;
     assert(p->size == (0|PREV_INUSE)); /* must be fencepost */
     p = prev_chunk(p);
     new_size = chunksize(p) + (MINSIZE-2*SIZE_SZ);
-    assert(new_size>0 && new_size<(long)(2*MINSIZE));
+    assert(new_size>0 && new_size<(INTERNAL_INTPTR_T)(2*MINSIZE));
     if(!prev_inuse(p))
       new_size += p->prev_size;
     assert(new_size>0 && new_size<HEAP_MAX_SIZE);
@@ -685,7 +685,7 @@ heap_trim(heap, pad) heap_info *heap; size_t pad;
       p = prev_chunk(p);
       unlink(p, bck, fwd);
     }
-    assert(((unsigned long)((char*)p + new_size) & (pagesz-1)) == 0);
+    assert(((INTERNAL_SIZE_T)((char*)p + new_size) & (pagesz-1)) == 0);
     assert( ((char*)p + new_size) == ((char*)heap + heap->size) );
     top(ar_ptr) = top_chunk = p;
     set_head(top_chunk, new_size | PREV_INUSE);
@@ -693,7 +693,7 @@ heap_trim(heap, pad) heap_info *heap; size_t pad;
   }
   top_size = chunksize(top_chunk);
   extra = ((top_size - pad - MINSIZE + (pagesz-1))/pagesz - 1) * pagesz;
-  if(extra < (long)pagesz)
+  if(extra < (INTERNAL_INTPTR_T)pagesz)
     return 0;
   /* Try to shrink. */
   if(grow_heap(heap, -extra) != 0)
@@ -778,7 +778,7 @@ _int_new_arena(size_t size)
   mstate a;
   heap_info *h;
   char *ptr;
-  unsigned long misalign;
+  INTERNAL_SIZE_T misalign;
 
   h = new_heap(size + (sizeof(*h) + sizeof(*a) + MALLOC_ALIGNMENT),
 	       mp_.top_pad);
@@ -796,14 +796,14 @@ _int_new_arena(size_t size)
   a->system_mem = a->max_system_mem = h->size;
   arena_mem += h->size;
 #ifdef NO_THREADS
-  if((unsigned long)(mp_.mmapped_mem + arena_mem + main_arena.system_mem) >
+  if((INTERNAL_SIZE_T)(mp_.mmapped_mem + arena_mem + main_arena.system_mem) >
      mp_.max_total_mem)
     mp_.max_total_mem = mp_.mmapped_mem + arena_mem + main_arena.system_mem;
 #endif
 
   /* Set up the top chunk, with proper alignment. */
   ptr = (char *)(a + 1);
-  misalign = (unsigned long)chunk2mem(ptr) & MALLOC_ALIGN_MASK;
+  misalign = (INTERNAL_SIZE_T)chunk2mem(ptr) & MALLOC_ALIGN_MASK;
   if (misalign > 0)
     ptr += MALLOC_ALIGNMENT - misalign;
   top(a) = (mchunkptr)ptr;

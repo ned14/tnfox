@@ -45,6 +45,14 @@
 #define HEAP_MAX_SIZE (1024*1024) /* must be a power of two */
 #endif
 
+/* Define INTERNAL_SIZE_T specially */
+#ifdef _WIN64
+ #define INTERNAL_SIZE_T unsigned __int64
+ #define INTERNAL_INTPTR_T __int64
+#else
+ #define INTERNAL_SIZE_T unsigned __int32
+ #define INTERNAL_INTPTR_T __int32
+#endif
 
 
 #ifdef _DEBUG
@@ -73,11 +81,17 @@ static INLINE LONG interlockedexchange(LONG volatile *data, LONG value)
 	return myret;
 }
 #else
-#define interlockedexchange InterlockedExchange
+#if defined(_MSC_VER) && _MSC_VER>=1310
+ // Use MSVC intrinsics
+ #pragma intrinsic (_InterlockedExchange)
+ #define interlockedexchange _InterlockedExchange
+#else
+ #define interlockedexchange InterlockedExchange
+#endif
 #endif
 
 /* Wait for spin lock */
-static INLINE long slwait (volatile long *sl) {
+static INLINE LONG slwait (volatile LONG *sl) {
     while (interlockedexchange (sl, 1) != 0) 
 #ifndef FX_SMPBUILD		// Faster not to sleep on multiprocessor machines
 	    Sleep (0)
@@ -87,22 +101,22 @@ static INLINE long slwait (volatile long *sl) {
 }
 
 /* Try waiting for spin lock */
-static INLINE long sltrywait (volatile long *sl) {
+static INLINE LONG sltrywait (volatile LONG *sl) {
     return (interlockedexchange (sl, 1) != 0);
 }
 
 /* Release spin lock */
-static INLINE long slrelease (volatile long *sl) {
+static INLINE LONG slrelease (volatile LONG *sl) {
     interlockedexchange (sl, 0);
     return 0;
 }
 
 /* Spin lock for emulation code */
-static volatile long g_sl;
+static volatile LONG g_sl;
 
 /* getpagesize for windows */
-static long getpagesize (void) {
-    static long g_pagesize = 0;
+static INTERNAL_INTPTR_T getpagesize (void) {
+    static INTERNAL_INTPTR_T g_pagesize = 0;
     if (! g_pagesize) {
         SYSTEM_INFO system_info;
         GetSystemInfo (&system_info);
@@ -110,8 +124,8 @@ static long getpagesize (void) {
     }
     return g_pagesize;
 }
-static long getregionsize (void) {
-    static long g_regionsize = 0;
+static INTERNAL_INTPTR_T getregionsize (void) {
+    static INTERNAL_INTPTR_T g_regionsize = 0;
     if (! g_regionsize) {
         SYSTEM_INFO system_info;
         GetSystemInfo (&system_info);
@@ -125,12 +139,12 @@ typedef struct _region_list_entry {
     void *top_allocated;
     void *top_committed;
     void *top_reserved;
-    long reserve_size;
+    INTERNAL_INTPTR_T reserve_size;
     struct _region_list_entry *previous;
 } region_list_entry;
 
 /* Allocate and link a region entry in the region list */
-static int region_list_append (region_list_entry **last, void *base_reserved, long reserve_size) {
+static int region_list_append (region_list_entry **last, void *base_reserved, INTERNAL_INTPTR_T reserve_size) {
     region_list_entry *next = (region_list_entry *) HeapAlloc (GetProcessHeap (), 0, sizeof (region_list_entry));
     if (! next)
         return FALSE;
@@ -160,9 +174,9 @@ static int region_list_remove (region_list_entry **last) {
 /* #define SBRK_SCALE  4  */
 
 /* sbrk for windows */
-static void *sbrk (long size) {
-    static long g_pagesize, g_my_pagesize;
-    static long g_regionsize, g_my_regionsize;
+static void *sbrk (INTERNAL_INTPTR_T size) {
+    static INTERNAL_INTPTR_T g_pagesize, g_my_pagesize;
+    static INTERNAL_INTPTR_T g_regionsize, g_my_regionsize;
     static region_list_entry *g_last;
     void *result = (void *) MORECORE_FAILURE;
 #ifdef TRACE
@@ -195,19 +209,19 @@ static void *sbrk (long size) {
     /* Allocation requested? */
     if (size >= 0) {
         /* Allocation size is the requested size */
-        long allocate_size = size;
+        INTERNAL_INTPTR_T allocate_size = size;
         /* Compute the size to commit */
-        long to_commit = (char *) g_last->top_allocated + allocate_size - (char *) g_last->top_committed;
+        INTERNAL_INTPTR_T to_commit = (char *) g_last->top_allocated + allocate_size - (char *) g_last->top_committed;
         /* Do we reach the commit limit? */
         if (to_commit > 0) {
             /* Round size to commit */
-            long commit_size = CEIL (to_commit, g_my_pagesize);
+            INTERNAL_INTPTR_T commit_size = CEIL (to_commit, g_my_pagesize);
             /* Compute the size to reserve */
-            long to_reserve = (char *) g_last->top_committed + commit_size - (char *) g_last->top_reserved;
+            INTERNAL_INTPTR_T to_reserve = (char *) g_last->top_committed + commit_size - (char *) g_last->top_reserved;
             /* Do we reach the reserve limit? */
             if (to_reserve > 0) {
                 /* Compute the remaining size to commit in the current region */
-                long remaining_commit_size = (char *) g_last->top_reserved - (char *) g_last->top_committed;
+                INTERNAL_INTPTR_T remaining_commit_size = (char *) g_last->top_reserved - (char *) g_last->top_committed;
                 if (remaining_commit_size > 0) {
                     /* Assert preconditions */
                     assert ((unsigned) g_last->top_committed % g_pagesize == 0);
@@ -232,7 +246,7 @@ static void *sbrk (long size) {
                     int found = FALSE;
                     MEMORY_BASIC_INFORMATION memory_info;
                     void *base_reserved;
-                    long reserve_size;
+                    INTERNAL_INTPTR_T reserve_size;
                     do {
                         /* Assume contiguous memory */
                         contiguous = TRUE;
@@ -295,7 +309,7 @@ static void *sbrk (long size) {
 #endif
                     /* Did we get contiguous memory? */
                     if (contiguous) {
-                        long start_size = (char *) g_last->top_committed - (char *) g_last->top_allocated;
+                        INTERNAL_INTPTR_T start_size = (char *) g_last->top_committed - (char *) g_last->top_allocated;
                         /* Adjust allocation size */
                         allocate_size -= start_size;
                         /* Adjust the regions allocation top */
@@ -340,11 +354,11 @@ static void *sbrk (long size) {
         result = (char *) g_last->top_allocated - size;
     /* Deallocation requested? */
     } else if (size < 0) {
-        long deallocate_size = - size;
-        /* As long as we have a region to release */
+        INTERNAL_INTPTR_T deallocate_size = - size;
+        /* As INTERNAL_INTPTR_T as we have a region to release */
         while ((char *) g_last->top_allocated - deallocate_size < (char *) g_last->top_reserved - g_last->reserve_size) {
             /* Get the size to release */
-            long release_size = g_last->reserve_size;
+            INTERNAL_INTPTR_T release_size = g_last->reserve_size;
             /* Get the base address */
             void *base_reserved = (char *) g_last->top_reserved - release_size;
             /* Assert preconditions */
@@ -367,10 +381,10 @@ static void *sbrk (long size) {
                 goto sbrk_exit;
         } {
             /* Compute the size to decommit */
-            long to_decommit = (char *) g_last->top_committed - ((char *) g_last->top_allocated - deallocate_size);
+            INTERNAL_INTPTR_T to_decommit = (char *) g_last->top_committed - ((char *) g_last->top_allocated - deallocate_size);
             if (to_decommit >= g_my_pagesize) {
                 /* Compute the size to decommit */
-                long decommit_size = FLOOR (to_decommit, g_my_pagesize);
+                INTERNAL_INTPTR_T decommit_size = FLOOR (to_decommit, g_my_pagesize);
                 /*  Compute the base address */
                 void *base_committed = (char *) g_last->top_committed - decommit_size;
                 /* Assert preconditions */
@@ -420,9 +434,9 @@ sbrk_exit:
 }
 
 /* mmap for windows */
-static void *mmap (void *ptr, long size, long prot, long type, long handle, long arg) {
-    static long g_pagesize;
-    static long g_regionsize;
+static void *mmap (void *ptr, INTERNAL_INTPTR_T size, INTERNAL_INTPTR_T prot, INTERNAL_INTPTR_T type, INTERNAL_INTPTR_T handle, INTERNAL_INTPTR_T arg) {
+    static INTERNAL_INTPTR_T g_pagesize;
+    static INTERNAL_INTPTR_T g_regionsize;
 #ifdef TRACE
     printf ("mmap %p %d %d %d\n", ptr, size, prot, type);
 #endif
@@ -438,7 +452,7 @@ static void *mmap (void *ptr, long size, long prot, long type, long handle, long
     assert (size % g_pagesize == 0);
     /* Allocate this */
 	DWORD alloc=MEM_RESERVE|MEM_TOP_DOWN, ntprot=0;
-	long rounding=0;
+	INTERNAL_INTPTR_T rounding=0;
 	if(!(type & MAP_NORESERVE)) alloc|=MEM_COMMIT;
 	if((prot & (PROT_READ|PROT_WRITE))==(PROT_READ|PROT_WRITE)) ntprot|=PAGE_READWRITE;
 	else if(prot & PROT_READ) ntprot|=PAGE_READONLY;
@@ -481,7 +495,7 @@ static void *mmap (void *ptr, long size, long prot, long type, long handle, long
 	if(rounding)
 	{
 		VirtualFree(ptr, 0, MEM_RELEASE);
-		ptr=(void *)(((unsigned long)ptr + (rounding-1)) & ~(rounding-1));
+		ptr=(void *)(((INTERNAL_SIZE_T)ptr + (rounding-1)) & ~(rounding-1));
 		if(!(ptr=VirtualAlloc(ptr, rounding, alloc, ntprot)))
 		{
 			ptr = (void *) MORECORE_FAILURE;
@@ -505,8 +519,8 @@ mmap_exit:
 }
 
 /* munmap for windows */
-static long munmap (void *ptr, long size) {
-    static long g_pagesize;
+static INTERNAL_INTPTR_T munmap (void *ptr, INTERNAL_INTPTR_T size) {
+    static INTERNAL_INTPTR_T g_pagesize;
     int rc = MUNMAP_FAILURE;
 #ifdef TRACE
     printf ("munmap %p %d\n", ptr, size);
@@ -517,7 +531,7 @@ static long munmap (void *ptr, long size) {
     if (! g_pagesize) 
         g_pagesize = getpagesize ();
     /* Assert preconditions */
-	assert (((unsigned long) ptr) % g_pagesize == 0);
+	assert (((INTERNAL_SIZE_T) ptr) % g_pagesize == 0);
     assert (size % g_pagesize == 0);
     /* Free this */
     if (! VirtualFree (ptr, 0, 
@@ -533,10 +547,10 @@ munmap_exit:
     return rc;
 }
 
-static int mprotect(const void *addr, long len, int prot)
+static int mprotect(const void *addr, INTERNAL_INTPTR_T len, int prot)
 {
-    static long g_pagesize;
-    static long g_regionsize;
+    static INTERNAL_INTPTR_T g_pagesize;
+    static INTERNAL_INTPTR_T g_regionsize;
     int rc = -1;
 #ifdef TRACE
     printf ("mprotect %p %d %d\n", addr, len, prot);
@@ -603,7 +617,7 @@ mprotect_exit:
     return rc;
 }
 
-static void vminfo (unsigned long  *free, unsigned long  *reserved, unsigned long  *committed) {
+static void vminfo (INTERNAL_SIZE_T  *free, INTERNAL_SIZE_T  *reserved, INTERNAL_SIZE_T  *committed) {
     MEMORY_BASIC_INFORMATION memory_info;
     memory_info.BaseAddress = 0;
     *free = *reserved = *committed = 0;
@@ -623,7 +637,7 @@ static void vminfo (unsigned long  *free, unsigned long  *reserved, unsigned lon
     }
 }
 
-static int cpuinfo (int whole, unsigned long  *kernel, unsigned long  *user) {
+static int cpuinfo (int whole, INTERNAL_SIZE_T  *kernel, INTERNAL_SIZE_T  *user) {
     if (whole) {
         __int64 creation64, exit64, kernel64, user64;
         int rc = GetProcessTimes (GetCurrentProcess (), 
@@ -636,8 +650,8 @@ static int cpuinfo (int whole, unsigned long  *kernel, unsigned long  *user) {
             *user = 0;
             return FALSE;
         } 
-        *kernel = (unsigned long) (kernel64 / 10000);
-        *user = (unsigned long) (user64 / 10000);
+        *kernel = (INTERNAL_SIZE_T) (kernel64 / 10000);
+        *user = (INTERNAL_SIZE_T) (user64 / 10000);
         return TRUE;
     } else {
         __int64 creation64, exit64, kernel64, user64;
@@ -651,8 +665,8 @@ static int cpuinfo (int whole, unsigned long  *kernel, unsigned long  *user) {
             *user = 0;
             return FALSE;
         } 
-        *kernel = (unsigned long) (kernel64 / 10000);
-        *user = (unsigned long) (user64 / 10000);
+        *kernel = (INTERNAL_SIZE_T) (kernel64 / 10000);
+        *user = (INTERNAL_SIZE_T) (user64 / 10000);
         return TRUE;
     }
 }
