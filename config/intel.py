@@ -74,12 +74,11 @@ env=conf.Finish()
 cppflags=[ "-w1",                       # All warnings
            "-cxxlib-gcc","-gcc-name=/usr/bin/g++" # Be compatible with GCC built binaries
            ]
-if architecture=="i486":
-    cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4", None ]
-    cppflags+=["-march="+cppflagsopts[i486_version-4] ]
-    if make64bit: cppflags+=["-m64"]
+if architecture=="x86":
+    cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4" ]
+    cppflags+=["-march="+cppflagsopts[architecture_version-4] ]
 else:
-    cppflags+=[ "-march="+architecture ]
+    raise IOError, "Unknown architecture type"
 if debugmode:
     cppflags+=["-O0",                   # Disable optimisation
                "-inline_debug_info",

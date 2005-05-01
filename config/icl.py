@@ -13,14 +13,16 @@ conf=Configure(env)
 env=conf.Finish()
 
 env['CPPPATH']+=[prefixpath+"windows"]
+if not os.path.exists(builddir):
+    os.mkdir(builddir)
 
 # Warnings, synchronous exceptions, enable RTTI, pool strings,
 # ANSI for scoping, ANSI aliasing
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Qansi_alias')
-assert architecture=="i486"
-cppflags+=[ "/G%d" % i486_version ]
-if   i486_SSE==1: cppflags+=[ "/arch:SSE" ]
-elif i486_SSE==2: cppflags+=[ "/arch:SSE2" ]
+assert architecture=="x86"
+cppflags+=[ "/G%d" % architecture_version ]
+if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
+elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=[#"/Od",        # Optimisation off
                #"/O3", "/Ob2",
@@ -42,7 +44,7 @@ else:
                "/MD"         # Select MSVCRT.dll
                ]
     env['CCWPOOPTS']=["/Qprof_use"] # Profile Guided Optimisation
-    if i486_version<6:
+    if x86_version<6:
         cppflags+=["/QaxW"]  # Also produce specialisation for Athlon/Pentium 4
 env['CPPFLAGS']=cppflags
 
@@ -52,7 +54,6 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/SUBSYSTEM:WINDOWS",
                   "/MAP:"+builddir+"\\TnFOXdll.map",
                   "/DLL",
-                  "/MACHINE:X86",
                   "/DEBUG",
                   "/OPT:NOWIN98",
                   "/LARGEADDRESSAWARE",
@@ -73,5 +74,5 @@ else:
 env['LIBS']+=["kernel32", "user32", "gdi32", "advapi32", "shell32",
               "comctl32", "winspool",
               "delayimp", "wsock32", "ws2_32", "psapi", "dbghelp",
-              "pdh", "netapi32", "secur32"
+              "pdh", "netapi32", "secur32", "userenv"
               ]

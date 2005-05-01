@@ -91,18 +91,20 @@ env=conf.Finish()
 
 # Warnings
 cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
-if architecture=="i486":
+if architecture=="x86":
     if i486_3dnow!=0:
-          cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4", "athlon64" ]
-    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4", None ]
-    cppflags+=["-march="+cppflagsopts[i486_version-4] ]
+          cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
+    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4" ]
+    cppflags+=["-march="+cppflagsopts[architecture_version-4] ]
     if i486_SSE!=0:
         cppflags+=["-mfpmath="+ ["387", "sse"][i486_SSE!=0] ]
         if i486_SSE>1: cppflags+=["-msse%d" % i486_SSE]
         else: cppflags+=["-msse"]
-    if make64bit: cppflags+=["-m64"]
+elif architecture=="x64":
+    cppflagsopts=["athlon64"]
+    cppflags+=["-m64", "-march="+cppflagsopts[architecture_version] ]
 else:
-    cppflags+=[ "-march="+architecture ]
+    raise IOError, "Unknown architecture type"
 cppflags+=["-fexceptions",              # Enable exceptions
            "-pipe"                      # Use faster pipes
            ]

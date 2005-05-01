@@ -33,16 +33,17 @@ if not os.path.exists(builddir):
 # Warnings, synchronous exceptions, enable RTTI, pool strings, ANSI for scoping,
 # types defined before pointers to members used
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /vmb /vmm')
-assert architecture=="i486"
+assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
-    cppflags+=[ "/Ow",                   # Only functions may alias
-                "/G%d" % i486_version    # Optimise for given processor revision
+    cppflags+=[ "/Ow",                        # Only functions may alias
+                "/G%d" % architecture_version # Optimise for given processor revision
               ]
 else:
     # Stop the stupid STDC function deprecated warnings
     env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
-if   i486_SSE==1: cppflags+=[ "/arch:SSE" ]
-elif i486_SSE==2: cppflags+=[ "/arch:SSE2" ]
+if architecture=="x86":
+    if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
+    elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=["/w34701",    # Report uninitialized variable use
                "/Od",        # Optimisation off
@@ -50,9 +51,9 @@ if debugmode:
                "/Zi",        # Program database debug info
                ####"/GL",
                "/Gm",        # Minimum rebuild
-               "/RTC1",      # Stack and uninit run time checks
+               #"/RTC1",      # Stack and uninit run time checks
                ####"/RTCc",      # Smaller data type without cast run time check
-               "/GS",        # Buffer overrun check
+               #"/GS",        # Buffer overrun check
                "/MDd",       # Select MSVCRTD.dll
                "/Fd"+builddir+"/vc70.pdb" # Set PDB location
                ]
@@ -68,16 +69,18 @@ env['CPPFLAGS']=cppflags
 
 # Sets version, base address
 env['LINKFLAGS']=["/version:"+targetversion,
-                  "/BASE:0x60000000",
                   "/SUBSYSTEM:WINDOWS",
                   "/MAP:"+builddir+"\\TnFOXdll.map",
                   "/DLL",
-                  "/MACHINE:X86",
                   "/DEBUG",
                   "/OPT:NOWIN98",
-                  "/LARGEADDRESSAWARE",
                   "/STACK:524288,65536"
                   ]
+if make64bit:
+    # This seems to be missing
+    env['LINKFLAGS']+=["/FORCE:UNRESOLVED"]
+else:
+    env['LINKFLAGS']+=["/BASE:0x60000000", "/LARGEADDRESSAWARE"]
 if debugmode:
     if MSVCVersion==710:
         env['LINKFLAGS']+=["/INCREMENTAL:NO"]
