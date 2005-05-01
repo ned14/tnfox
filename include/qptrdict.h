@@ -48,31 +48,31 @@ public:
 	void insert(void *k, const type *d)
 	{
 		FXuval k_=conv(k);
-		QDictBase<FXuval, type>::insert(k_, k_, const_cast<type *>(d));
+		QDictBase<FXuval, type>::insert((FXuint) k_, k_, const_cast<type *>(d));
 	}
 	//! Replaces item \em d in the dictionary under key \em k
 	void replace(void *k, const type *d)
 	{
 		FXuval k_=conv(k);
-		QDictBase<FXuval, type>::replace(k_, k_, const_cast<type *>(d));
+		QDictBase<FXuval, type>::replace((FXuint) k_, k_, const_cast<type *>(d));
 	}
 	//! Deletes the most recently placed item in the dictionary under key \em k
 	bool remove(void *k)
 	{
 		FXuval k_=conv(k);
-		return QDictBase<FXuval, type>::remove(k_, k_);
+		return QDictBase<FXuval, type>::remove((FXuint) k_, k_);
 	}
 	//! Removes the most recently placed item in the dictionary under key \em k without auto-deletion
 	type *take(void *k)
 	{
 		FXuval k_=conv(k);
-		return QDictBase<FXuval, type>::take(k_, k_);
+		return QDictBase<FXuval, type>::take((FXuint) k_, k_);
 	}
 	//! Finds the most recently placed item in the dictionary under key \em k
 	type *find(void *k) const
 	{
 		FXuval k_=conv(k);
-		return QDictBase<FXuval, type>::find(k_, k_);
+		return QDictBase<FXuval, type>::find((FXuint) k_, k_);
 	}
 	//! \overload
 	type *operator[](void *k) const { return find(k); }
