@@ -26,9 +26,7 @@
 #pragma warning(disable: 4786)
 #endif
 
-#include <list>
-#include <algorithm>
-#include "fxdefs.h"
+#include "qvaluelist.h"
 #include "FXException.h"
 #include "FXStream.h"
 
@@ -79,7 +77,7 @@ public:
 	void setAutoDelete(bool a) { autodel=a; }
 
 	//! Returns the number of items in the list
-	uint count() const { return std::list<type *>::size(); }
+	uint count() const { return (uint) std::list<type *>::size(); }
 	//! Returns true if the list is empty
 	bool isEmpty() const { return std::list<type *>::empty(); }
 	//! Inserts item \em d into the list at index \em i
@@ -221,20 +219,43 @@ public:
 		std::list<type *>::clear();
 	}
 private:
-	bool sortPredicate(type *a, type *b)
+	template<class type2> struct swapPolicy
 	{
-		return compareItems(a, b)==-1;
-	}
+		template<class L, class I> void swap(L &list, I &a, I &b) const
+		{	// Simply swap the pointers
+			type2 temp=*a;
+			*a=*b;
+			*b=temp;
+		}
+	};
+	template<class type2> struct comparePolicyFunc
+	{
+		bool (*comparer)(type2 a, type2 b);
+		template<class L, class I> bool compare(L &list, I &a, I &b) const
+		{
+			return comparer(*a, *b);
+		}
+	};
+	template<class type2> struct comparePolicyMe
+	{
+		template<class L, class I> bool compare(L &list, I &a, I &b) const
+		{
+			return ((QPtrList<type2> &) *this).compareItems(*a, *b)==-1;
+		}
+	};
 public:
 	//! Sorts the list using a user supplied callable entity taking two pointers of type \em type
-	template<class SortFunc> void sort(SortFunc sortfunc)
-	{
-		std::list<type *>::sort(sortfunc);
+	template<typename SortFuncSpec> void sort(SortFuncSpec sortfunc)
+	{	// Would use std::list<type *>::sort but this is faster
+		QValueListQSort<type *, Pol::itMove, swapPolicy, comparePolicyFunc> sorter((QValueList<type *> &) *this);
+		//sorter.comparer=sortfunc;
+		sorter.run();
 	}
 	//! Sorts the list
 	void sort()
 	{
-		std::list<type *>::sort(sortPredicate);
+		QValueListQSort<type *, Pol::itMove, swapPolicy, comparePolicyMe> sorter((QValueList<type *> &) *this);
+		sorter.run();
 	}
 	//! Returns the index of the position of item \em d via compareItems(), or -1 if not found
 	int find(const type *d)
