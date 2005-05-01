@@ -148,6 +148,9 @@ def ternary(val, A, B):
     else:
         return B
 
+def architectureSpec():
+    return architecture+"_"+str(architecture_version)
+
 def getBase(file):
     base,ext=os.path.splitext(file)
     base,leaf=os.path.split(base)
@@ -182,22 +185,21 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     else:
         libtnfox,libtnfoxsuffix=VersionedSharedLibraryName(env, tnfoxname, tnfoxversioninfo, debug=debugmode)
     if debugmode:
-        builddir="Debug_"+tool
+        builddir="Debug_"+tool+"_"+architectureSpec()
     else:
-        builddir="Release_"+tool
+        builddir="Release_"+tool+"_"+architectureSpec()
     env['CPPDEFINES']=[ "FOXDLL" ]
     env['CPPPATH']=[ prefixpath+"include" ]
     env['LIBPATH']=[ ]
     env['LIBS']=[ ]
     env['CCWPOOPTS']=[ ]
+    make64bit=(architecture=="x64")
     execfile(platformconfig)
     if sys.byteorder=="big": env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
     if debugmode: env['CPPDEFINES']+=["FXDISABLE_GLOBALALLOCATORREPLACEMENTS"]
-    if architecture=="i486":
-        env['CPPDEFINES']+=[("FX_X86PROCESSOR", i486_version)]
     if tcommonopts==2: env['CPPDEFINES']+=["BUILDING_TCOMMON"]
     if onWindows:
         # Seems to need this on some installations
@@ -230,36 +232,40 @@ def doConfTests(env, prefixpath=""):
     conf=Configure(env)
     def checkLib(conf, name, header, prefix=""):
         capsname=string.upper(name)
-        if os.path.exists(prefixpath+"windows/"+prefix+"lib"+name):
+        if os.path.exists(prefixpath+"windows/lib"+name+"/lib"+name+ternary(make64bit, "64", "32")+".lib"):
             print "Found "+capsname+" library"
             conf.env['CPPDEFINES']+=["HAVE_"+capsname+"_H"]
             conf.env['CPPPATH']+=[prefixpath+"windows/"+prefix+"lib"+name]
-            conf.env['LIBS']+=[prefixpath+"windows/lib"+name+"/lib"+name]
+            conf.env['LIBS']+=[prefixpath+"windows/lib"+name+"/lib"+name+ternary(make64bit, "64", "32")]
         elif conf.CheckCHeader(["stdio.h", header]):
             conf.env['CPPDEFINES']+=["HAVE_"+capsname+"_H"]
             conf.env['LIBS']+=[name]
         else:
             print capsname+" library not found, disabling support"
-    checkLib(conf, "jpeg", "jpeglib.h")
-    checkLib(conf, "png", "png.h")
-    checkLib(conf, "tiff", "tiff.h", "libtiff/")
-    if os.path.exists(prefixpath+"windows/zlib"):
+    haveZLib=False
+    if os.path.exists(prefixpath+"windows/zlib/zlib"+ternary(make64bit, "64", "32")+".lib"):
         print "Found ZLib"
         conf.env['CPPDEFINES']+=["HAVE_ZLIB_H"]
         conf.env['CPPPATH']+=[prefixpath+"windows/zlib"]
-        conf.env['LIBS']+=[prefixpath+"windows/zlib/zlib"]
+        conf.env['LIBS']+=[prefixpath+"windows/zlib/zlib"+ternary(make64bit, "64", "32")]
+        haveZLib=True
     elif conf.CheckCHeader("zlib.h"):
         conf.env['CPPDEFINES']+=["HAVE_ZLIB_H"]
         conf.env['LIBS']+=["z"]
+        haveZLib=True
     else:
         print "ZLib library not found, disabling support"
+    if haveZLib:
+        checkLib(conf, "jpeg", "jpeglib.h")
+        checkLib(conf, "png", "png.h")
+        checkLib(conf, "tiff", "tiff.h", "libtiff/")
 
     if os.path.exists(prefixpath+"../openssl"):
         print "Found OpenSSL library"
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['CPPPATH']+=[prefixpath+"../openssl/inc32"]
-        conf.env['LIBPATH']+=[prefixpath+"../openssl/out32dll"]
-        conf.env['LIBS']+=["libeay32", "ssleay32"]
+        conf.env['LIBPATH']+=[prefixpath+"../openssl/out"+ternary(make64bit, "64", "32")+"dll"]
+        conf.env['LIBS']+=["libeay"+ternary(make64bit, "64", "32"), "ssleay"+ternary(make64bit, "64", "32")]
     elif conf.CheckLibWithHeader("ssl", ["openssl/ssl.h"], "c", "SSL_library_init();"):
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['LIBS']+=["crypto"]

@@ -7,9 +7,6 @@ debugmode=False
 #    debugmode=False
 
 ### Global build options
-# Set to true to enable code optimised for a 64 bit address space
-# including asking the compiler to generate 64 bit code.
-make64bit=False
 # Set to true to create a SMP architecture compatible binary. This
 # is always safe though inefficient on uniprocessor machines.
 makeSMPBuild=True
@@ -20,20 +17,20 @@ inlineMutex=False  # not debugmode
 GenStaticLib=False       # Set to true to always generate a static library
 SeparateTnLibs=(sys.platform=="win32")
 
-architecture="i486"      # Can currently only be "i486"
-# =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon,
-# =7 for Pentium 4/Athlon XP, =8 for AMD64
-#i486_version=4           
-#i486_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
-#i486_3dnow=0             # =0 (disable), =1 (3dnow)
-i486_version=7           
-i486_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
-i486_3dnow=1             # =0 (disable), =1 (3dnow)
+architecture="x86"       # Can be "x86" or "x64"
+# For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
+# For x64: =0 for AMD64/EM64T
+#architecture_version=4           
+#x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+#x86_3dnow=0             # =0 (disable), =1 (3dnow)
+architecture_version=7           
+x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
+x86_3dnow=1             # =0 (disable), =1 (3dnow)
 
 toolset=None             # Let scons pick which compiler/linker to use
 #if sys.platform!="win32":
-#    i486_version=6
-#    i486_SSE=1
+#    architecture_version=6
+#    x86_SSE=1
 #    if sys.platform=="win32":
 #        toolset=["icl"]
 #    else:
@@ -51,13 +48,7 @@ tnfoxversioninfo=(tnfoxversion, tnfoxinterfaceidx, tnfoxsourceidx, tnfoxbackcomp
 libtnfoxname=tnfoxname
 
 print
-if make64bit:
-    if debugmode:
-        print "Configured for 64 bit DEBUG build ..."
-    else:
-        print "Configured for 64 bit RELEASE build ..."
+if debugmode:
+    print "Configured for "+architecture+" DEBUG build ..."
 else:
-    if debugmode:
-        print "Configured for 32 bit DEBUG build ..."
-    else:
-        print "Configured for 32 bit RELEASE build ..."
+    print "Configured for "+architecture+" RELEASE build ..."

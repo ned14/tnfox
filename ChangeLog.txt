@@ -12,6 +12,8 @@ B FXPipe::writeBlock() wasn't detecting write errors on win32
 B Config failed due to lack of build directory on virgin builds
 B FXACL would hang on win32 if program was not running as administrator
 B Fixed segfault in FXSSLDevice on process exit
+B If missing zlib was causing compile errors
+B Fixed occasional segfault in ~FXMemoryPool
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -37,6 +39,14 @@ R Issued snapshot 1
 + Added MSVC project files for libjpeg, libtiff, zlib and placeholder
 directories for openssl and libpng
 - Removed administrator-only code in FXACL
++ Added Windows x64 capability to build system and fixed loads of 64 bit
+warnings
+* Modified QPtrVectorIterator to not inherit vector::iterator
+* Reimplemented QPtrList::sort() with QValueListQSort (as list::sort()) is
+broken on MSVC8)
+* Reimplemented Windows version of FXAtomicInt in terms of Interlocked*
+intrinsics (as inline assembler not supported on x64). Gives a 17% performance
+increase in Tn TestIO due to skipping register dumping around _asm.
 
 
 v0.85 13th Feb 2005:
