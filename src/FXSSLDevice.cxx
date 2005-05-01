@@ -334,7 +334,7 @@ static int bread(BIO *b, char *buffer, int len)
 }
 static int bputs(BIO *b, const char *buffer)
 {
-	int len=strlen(buffer);
+	int len=(int) strlen(buffer);
 	FXIODevice *dev=(FXIODevice *) b->ptr;
 	TRAPFXERR1 {
 		return (int) dev->writeBlock(buffer, len);
@@ -1942,7 +1942,7 @@ FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
 			FXuval count=maxlen;
 			while((long) count>0)
 			{
-				int outlen=0, inlen=FXMIN((count-EVP_CIPHER_CTX_block_size(&p->read)), sizeof(buffer));
+				int outlen=0, inlen=FXMIN((int)(count-EVP_CIPHER_CTX_block_size(&p->read)), sizeof(buffer));
 				bool splice=(count<=(FXuval) EVP_CIPHER_CTX_block_size(&p->read));
 				FXuchar *dataptr=(splice) ? (buffer+32768) : (FXuchar *) data;
 				if(!(inlen=p->dev->readBlock(buffer, (splice) ? count : inlen))) break;
@@ -1988,7 +1988,7 @@ FXuval FXSSLDevice::writeBlock(const char *data, FXuval maxlen)
 			FXuval count=maxlen;
 			while((long) count>0)
 			{	// For writes <8 bytes may write nothing
-				int outlen=0, inlen=FXMIN(count, (sizeof(buffer)-EVP_CIPHER_CTX_block_size(&p->write)));
+				int outlen=0, inlen=FXMIN((int) count, (sizeof(buffer)-EVP_CIPHER_CTX_block_size(&p->write)));
 				FXERRHSSL(EVP_EncryptUpdate(&p->write, buffer, &outlen, (FXuchar *) data, inlen));
 				if(!outlen) break;
 				if(!(outlen=p->dev->writeBlock(buffer, outlen))) break;

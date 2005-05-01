@@ -1935,7 +1935,7 @@ FXString FXFile::time(const FXchar *format,FXTime filetime){
 #else
   time_t tmp=(time_t)FXMAX(filetime,0);
   FXchar buffer[512];
-  FXint len=strftime(buffer,sizeof(buffer),format,localtime(&tmp));
+  FXint len=(FXint) strftime(buffer,sizeof(buffer),format,localtime(&tmp));
   return FXString(buffer,len);
 #endif
   }

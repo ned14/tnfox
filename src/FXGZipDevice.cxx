@@ -515,6 +515,7 @@ bool FXGZipDevice::open(FXuint mode)
 
 void FXGZipDevice::close()
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	if(isOpen())
 	{
@@ -523,10 +524,12 @@ void FXGZipDevice::close()
 		p->uncomp.close();
 		setFlags(0);
 	}
+#endif
 }
 
 void FXGZipDevice::flush()
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	if(isOpen() && isWriteable())
 	{
@@ -552,81 +555,128 @@ void FXGZipDevice::flush()
 		p->src->truncate(p->src->at());
 		//p->src->flush();
 	}
+#endif
 }
 
 FXfval FXGZipDevice::size() const
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.size();
+#else
+	return 0;
+#endif
 }
 
 void FXGZipDevice::truncate(FXfval size)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	if((mode() & IO_ShredTruncate) && size<p->uncomp.size())
 		shredData(size);
 	p->uncomp.truncate(size);
+#endif
 }
 
 FXfval FXGZipDevice::at() const
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.at();
+#else
+	return 0;
+#endif
 }
 
 bool FXGZipDevice::at(FXfval newpos)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.at(newpos);
+#else
+	return false;
+#endif
 }
 
 bool FXGZipDevice::atEnd() const
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.atEnd();
+#else
+	return true;
+#endif
 }
 
 FXuval FXGZipDevice::readBlock(char *data, FXuval maxlen)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.readBlock(data, maxlen);
+#else
+	return 0;
+#endif
 }
 
 FXuval FXGZipDevice::writeBlock(const char *data, FXuval maxlen)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.writeBlock(data, maxlen);
+#else
+	return 0;
+#endif
 }
 
 FXuval FXGZipDevice::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	p->uncomp.at(pos);
 	return p->uncomp.readBlock(data, maxlen);
+#else
+	return 0;
+#endif
 }
 FXuval FXGZipDevice::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	p->uncomp.at(pos);
 	return p->uncomp.writeBlock(data, maxlen);
+#else
+	return 0;
+#endif
 }
 
 int FXGZipDevice::getch()
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.getch();
+#else
+	return -1;
+#endif
 }
 
 int FXGZipDevice::putch(int c)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.putch(c);
+#else
+	return -1;
+#endif
 }
 
 int FXGZipDevice::ungetch(int c)
 {
+#ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
 	return p->uncomp.ungetch(c);
+#else
+	return -1;
+#endif
 }
 
 } // namespace

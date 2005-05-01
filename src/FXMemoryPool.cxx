@@ -206,7 +206,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	}
 	FXuval size() const throw()
 	{
-		return heap->system_mem;
+		return heap ? heap->system_mem : 0;
 	}
 	void *malloc(FXuval size) throw()
 	{
@@ -480,7 +480,7 @@ void *malloc(size_t size, FXMemoryPool *heap) throw()
 	_ret[0]=*(FXuval *) "FXMPFXMP";
 	_ret[1]=(FXuval) mp;
 	_ret[2]=(FXuval) size;
-	if(mp) mp->allocated+=size;
+	if(mp) mp->allocated+=(int) size;
 #endif
 	//fxmessage("=%p\n", ret);
 	return ret;
@@ -611,7 +611,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	_ret[1]=(FXuval) mp;
 	_ret[2]=(FXuval) size;
 	if(realmp) realmp->allocated-=oldsize;
-	if(mp) mp->allocated+=size;
+	if(mp) mp->allocated+=(int) size;
 #endif
 	//fxmessage("=%p\n", ret);
 	return ret;
@@ -728,7 +728,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 	_ret[0]=*(FXuval *) "FXMPFXMP";
 	_ret[1]=(FXuval) mp;
 	_ret[2]=(FXuval) size;
-	if(mp) mp->allocated+=size;
+	if(mp) mp->allocated+=(int) size;
 #endif
 	return ret;
 }

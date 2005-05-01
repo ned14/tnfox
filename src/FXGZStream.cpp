@@ -32,6 +32,7 @@
 
 namespace FX {
 
+#ifdef HAVE_ZLIB_H
 
 // Initialize file stream
 FXGZFileStream::FXGZFileStream(const FXObject* cont): myfile(0), FXStream(0, cont){
@@ -74,6 +75,8 @@ FXGZFileStream::~FXGZFileStream(){
   setDevice(0);
   FXDELETE(myfile);
   }
+
+#endif
 
 }
 

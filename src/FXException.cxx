@@ -104,9 +104,13 @@ void FXException::int_enableNestedExceptionFramework(bool yes)
 
 #if defined(WIN32) && defined(_MSC_VER)
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
-#define COPY_STRING(d, s, maxlen) { int len=strlen(s); len=(len>maxlen) ? maxlen-1 : len; memcpy(d, s, len); d[len]=0; }
+#define COPY_STRING(d, s, maxlen) { size_t len=strlen(s); len=(len>maxlen) ? maxlen-1 : len; memcpy(d, s, len); d[len]=0; }
 
+#ifndef _M_AMD64
 static DWORD __stdcall GetModBase(HANDLE hProcess, DWORD dwAddr)
+#else
+static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
+#endif
 {
 	DWORD modulebase;
 	modulebase=SymGetModuleBase(hProcess, dwAddr);
@@ -145,6 +149,10 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	{	// Also breakpointing
 		int a=1;
 	}
+	if(FXEXCEPTION_NOMEMORY==__code)
+	{
+		int a=1;
+	}
 #endif
 	FXRBOp unconstr=FXRBConstruct(this);
 	_message=msg;
@@ -178,19 +186,32 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 		ct.ContextFlags=CONTEXT_FULL;
 		GetThreadContext(mythread, &ct);
 		sf.AddrPC.Mode=sf.AddrStack.Mode=sf.AddrFrame.Mode=AddrModeFlat;
+#ifndef _M_AMD64
 		sf.AddrPC.Offset   =ct.Eip;
 		sf.AddrStack.Offset=ct.Esp;
 		sf.AddrFrame.Offset=ct.Ebp;
+#else
+		sf.AddrPC.Offset   =ct.Rip;
+		sf.AddrStack.Offset=ct.Rsp;
+		sf.AddrFrame.Offset=ct.Rbp;
+#endif
 		for(i2=0; i2<FXEXCEPTION_STACKBACKTRACEDEPTH; i2++)
 		{
 			IMAGEHLP_MODULE ihm={ sizeof(IMAGEHLP_MODULE) };
 			char temp[MAX_PATH+sizeof(IMAGEHLP_SYMBOL)];
 			IMAGEHLP_SYMBOL *ihs;
 			IMAGEHLP_LINE ihl={ sizeof(IMAGEHLP_LINE) };
+#ifndef _M_AMD64
 			DWORD offset;
 			if(!StackWalk(IMAGE_FILE_MACHINE_I386, myprocess, mythread, &sf, &ct, NULL,
 				SymFunctionTableAccess, GetModBase, NULL))
 				break;
+#else
+			DWORD64 offset;
+			if(!StackWalk(IMAGE_FILE_MACHINE_AMD64, myprocess, mythread, &sf, &ct, NULL,
+				SymFunctionTableAccess, GetModBase, NULL))
+				break;
+#endif
 			if(0==sf.AddrPC.Offset)
 				break;
 			i=i2;
@@ -221,7 +242,8 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 				}
 				else
 					strcpy(stack[i-1].functname, "<unknown>");
-				if(SymGetLineFromAddr(myprocess, sf.AddrPC.Offset, &offset, &ihl))
+				DWORD lineoffset=0;
+				if(SymGetLineFromAddr(myprocess, sf.AddrPC.Offset, &lineoffset, &ihl))
 				{
 					char *leaf;
 					stack[i-1].lineno=ihl.LineNumber;
@@ -421,7 +443,7 @@ bool FXException::isPrimary() const
 FXint FXException::nestedLen() const
 {
 	if(!nestedlist) return 0;
-	return nestedlist->size();
+	return (FXint) nestedlist->size();
 }
 
 FXException &FXException::nested(FXint idx) const
@@ -531,7 +553,7 @@ void FXException::int_exitTryHandler() throw()
 					{
 						if(!ee->nestedlist)
 						{
-							if(!(ee->nestedlist=new QValueList<FXException>)) std::terminate();
+							if(!(ee->nestedlist=new QValueList<FXException>)) terminate();
 							ee->_flags|=FXERRH_HASNESTED;
 						}
 						ee->setFatal(true);

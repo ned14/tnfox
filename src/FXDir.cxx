@@ -422,7 +422,7 @@ void FXDir::setMatchAllDirs(bool matchAll)
 FXuint FXDir::count() const
 {
 	p->read();
-	return p->leafs.count();
+	return (FXuint) p->leafs.count();
 }
 const FXString &FXDir::operator[](int idx) const
 {

@@ -346,7 +346,7 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	SEC_WINNT_AUTH_IDENTITY_EX swai={ SEC_WINNT_AUTH_IDENTITY_VERSION, sizeof(swai) };
 	swai.User    =(FXuchar *) account;  swai.UserLength=accsize;
 	swai.Domain  =(FXuchar *) computer; swai.DomainLength=compsize;
-	swai.Password=(FXuchar *) password; swai.PasswordLength=strlen(password);
+	swai.Password=(FXuchar *) password; swai.PasswordLength=(int) strlen(password);
 	swai.Flags=SEC_WINNT_AUTH_IDENTITY_ANSI;
 	// Setup client & server
 	CredHandle clientcred, servercred; TimeStamp expiry;
@@ -1282,7 +1282,7 @@ void FXACL::setHasInherited(bool newval)
 }
 FXuint FXACL::count() const
 {
-	return p->count();
+	return (FXuint) p->count();
 }
 void FXACL::insert(const FXACLIterator &it, const FXACL::Entry &entry)
 {

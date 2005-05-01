@@ -2361,7 +2361,7 @@ void FXWindow::reparent(FXWindow* father,FXWindow* other){
       for(FXWindow *child=mytoplevelwin->parent->getFirst(); child; child=child->getNext()){
         if(child->isPopup() && isOwnerOf(child)){
           // Reparent the popup
-          SetWindowLong((HWND)child->xid, GWL_HWNDPARENT, (LONG) mytoplevelwin->xid);
+          SetWindowLongPtr((HWND)child->xid, GWLP_HWNDPARENT, (LONG_PTR) mytoplevelwin->xid);
           }
         }
 #endif
