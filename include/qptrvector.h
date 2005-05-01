@@ -88,7 +88,7 @@ public:
 	//! Sets how much over-allocation should be performed to avoid reallocating memory
 	using std::vector<type *>::reserve;
 	//! Returns the number of items in the list
-	uint count() const { return std::vector<type *>::size(); }
+	uint count() const { return (uint) std::vector<type *>::size(); }
 	//! Returns true if the list is empty
 	bool isEmpty() const { return std::vector<type *>::empty(); }
 	//! Inserts item \em d into the list at index \em i
@@ -315,35 +315,34 @@ template<class type> inline void QPtrVector<type>::deleteItem(type *d)
 \ingroup QTL
 \brief An iterator for a QPtrVector
 */
-template<class type> class QPtrVectorIterator : private std::vector<type *>::iterator
-{
+template<class type> class QPtrVectorIterator
+{	// std::vector::iterator is a ptr on some implementations, so play it safe
+	typename std::vector<type *>::iterator me;
 	mutable bool dead;
 	QPtrVector<type> *myvector;
 protected:
 	type *retptr() const
 	{
 		if(dead) return 0;
-		typename std::vector<type *>::iterator &me=const_cast<QPtrVectorIterator<type> &>(*this); 
 		if(myvector->int_end()==me) { dead=true; return 0; }
 		return *me;
 	}
 public:
-	typename std::vector<type *>::iterator &int_getIterator() { return static_cast<typename std::vector<type *>::iterator &>(*this); }
+	typename std::vector<type *>::iterator &int_getIterator() { return me; }
 	QPtrVectorIterator() : dead(true), myvector(0) { }
 	//! Construct an iterator to the specified QPtrVector
-	QPtrVectorIterator(const QPtrVector<type> &l) : dead(false), myvector(&const_cast<QPtrVector<type> &>(l)), std::vector<type *>::iterator(const_cast<QPtrVector<type> &>(l).int_begin()) { }
-	QPtrVectorIterator(const QPtrVectorIterator<type> &l) : dead(l.dead), myvector(l.myvector), std::vector<type *>::iterator(l) { }
+	QPtrVectorIterator(const QPtrVector<type> &l) : dead(false), myvector(&const_cast<QPtrVector<type> &>(l)), me(const_cast<QPtrVector<type> &>(l).int_begin()) { }
+	QPtrVectorIterator(const QPtrVectorIterator<type> &l) : dead(l.dead), myvector(l.myvector), me(l) { }
 	QPtrVectorIterator<type> &operator=(const QPtrVectorIterator<type> &it)
 	{
 		dead=it.dead; myvector=it.myvector;
-		typename std::vector<type *>::iterator &me=*this;
-		me=it;
+		me=it.me;
 		return *this;
 	}
-	bool operator==(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)==o; }
-	bool operator!=(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)!=o; }
-	bool operator<(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)<o; }
-	bool operator>(const QPtrVectorIterator &o) const { return static_cast<typename std::vector<type *>::iterator const &>(*this)>o; }
+	bool operator==(const QPtrVectorIterator &o) const { return me==o.me; }
+	bool operator!=(const QPtrVectorIterator &o) const { return me!=o.me; }
+	bool operator<(const QPtrVectorIterator &o) const { return me<o.me; }
+	bool operator>(const QPtrVectorIterator &o) const { return me>o.me; }
 	//! Returns the number of items in the list this iterator references
 	uint count() const   { return myvector->count(); }
 	//! Returns true if the list this iterator references is empty
@@ -351,27 +350,24 @@ public:
 	//! Returns true if this iterator is at the start of its list
 	bool atFirst() const
 	{
-		typename std::vector<type *>::iterator &me=const_cast<QPtrVectorIterator<type> &>(*this); 
 		return myvector->int_begin()==me;
 	}
 	//! Returns true if this iterator is at the end of its vector
 	bool atLast() const
 	{
-		typename std::vector<type *>::iterator next=*this;
+		typename std::vector<type *>::iterator next(me);
 		++next;
 		return myvector->int_end()==next;
 	}
 	//! Sets the iterator to point to the first item in the vector, then returns that item
 	type *toFirst()
 	{
-		typename std::vector<type *>::iterator &me=const_cast<QPtrVectorIterator<type> &>(*this); 
 		me=myvector->int_begin(); dead=false;
 		return retptr();
 	}
 	//! Sets the iterator to point to the last item in the vector, then returns that item
 	type *toLast()
 	{
-		typename std::vector<type *>::iterator &me=const_cast<QPtrVectorIterator<type> &>(*this);
 		me=myvector->int_end(); dead=false;
 		if(!myvector->isEmpty()) --me;
 		return retptr();
@@ -379,7 +375,6 @@ public:
 	//! Makes the iterator dead (ie; point to nothing)
 	QPtrVectorIterator<type> &makeDead()
 	{
-		typename std::vector<type *>::iterator &me=const_cast<QPtrVectorIterator<type> &>(*this);
 		me=myvector->int_end();
 		dead=true;
 		return *this;
@@ -395,13 +390,12 @@ public:
 	//! Increments the iterator
 	type *operator++()
 	{
-		typename std::vector<type *>::iterator &me=*this; ++me;
+		++me;
 		return retptr();
 	}
 	//! Increments the iterator
 	type *operator+=(uint j)
 	{
-		typename std::vector<type *>::iterator &me=*this;
 		typename std::vector<type *>::difference_type left=myvector->int_end()-me;
 		if(j>left) dead=true; else me+=j;
 		return retptr();
@@ -409,14 +403,12 @@ public:
 	//! Decrements the iterator
 	type *operator--()
 	{
-		typename std::vector<type *>::iterator &me=*this;
 		if(myvector->int_begin()==me) dead=true; else --me;
 		return retptr();
 	}
 	//! Decrements the iterator
 	type *operator-=(uint j)
 	{
-		typename std::vector<type *>::iterator &me=*this;
 		typename std::vector<type *>::difference_type left=me-myvector->int_begin();
 		if(j>left+1) dead=true; else me-=j;
 		return retptr();
