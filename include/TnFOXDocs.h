@@ -296,7 +296,6 @@ General questions:
 Build questions:
 <ol>
 <li>\ref msvcbuildnotfound
-<li>\ref iccvectoriterator
 </ol>
 
 Behaviour questions:
@@ -467,13 +466,6 @@ Wrote through TFileBySyncDev at 10538.028622Kb/sec
 	\endcode
 	Restart MSVC and you'll now find things work as expected.
 
-  <li>
-	\subsection iccvectoriterator Why am I getting errors about \c std::vector<>::iterator when compiling with Intel's C++ compiler?
-
-	The STL supplied with Intel's compiler enable a special fast iterator for \c std::vector which
-	is a direct pointer. TnFOX subclasses this iterator in order to implement the QTL iterators and
-	so this behaviour isn't very helpful. Find the file in the ICC include directory called "yvals.h",
-	find the line setting \c _HAS_TRADITIONAL_ITERATORS to \c 1 and change this to be \c 0 instead.
 </ol>
 
 \section behaviourqs Behaviour Questions:
@@ -2114,17 +2106,29 @@ Use valgrind instead on Linux.
 
 /*! \page windowsnotes Windows-specific notes
 
-This covers Windows 2000 and Windows XP. Windows 95, 98 and ME are not supported due to
+This covers Windows 2000 and Windows XP, both 32 bit and 64 bit editions. Windows 95, 98
+and ME are not supported due to
 insufficient host OS facilities (it's not particularly difficult to compile out the
 offending code). Windows NT should be mostly compatible - there are one or two calls
 here and there which may not work.
 
 \section supported Supported configuration:
+<u>Win32</u><br>
 MSVC6 is \b not supported, nor is MSVC7.0 (Visual Studio .NET). You need MSVC7.1 minimum
 (Visual Studio .NET 2003). GCC v3.2.2 to v4.0 is known to compile working binaries on Linux
 but is untested on Windows. The Digital Mars compiler has config files but currently the
 compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ compiler
 v8 for Windows works fine.
+
+<u>Win64</u><br>
+Currently only AMD64 is supported, though EM64T won't be far behind. For this the only
+compiler I have access to is the beta AMD64 edition of MSVC8 and unfortunately, the one that
+comes with the Windows 2003 SP1 Platform SDK is NOT suitable (as it comes with a MSVC6 STL).
+You NEED the MSVC7.1 or MSVC8 STL, the former you can get free off MS if you beg and plead
+(obviously they prefer you to buy MSVC8). To use, kick in the MSVC IDE using the /USEENV
+switch from within a command window configured to use the AMD64 compiler. You then may need
+to hack scons to use INCLUDE, LIB and PATH instead of values from the registry (see the
+msvc.py tool inside scons).
 
 As both FOX and TnFOX use very low-level and old API's in Windows, no libraries above those
 supplied by default with the system are required. It is recommended you have the latest
@@ -2141,11 +2145,14 @@ must be placed in the \c TnFOX/Windows directory - these include the ZLib librar
 (as \c libtiff). In all cases any version information is not used so openssl-0.9.7
 must be renamed to simply "openssl".
 
-If any library cannot be found, support for it is disabled automatically.
+If any library cannot be found, support for it is disabled automatically. You should bear
+in mind that after compiling using the enclosed project files where necessary, you should
+move the library to the root of its project and append either a 32 or 64 to the filename
+as appropriate so that scons can find the correct one.
 
-\section allocator The standard Win32 dynamic memory allocator:
-TnFOX replaces the standard Win32 dynamic memory allocator provided by MSVC's
-CRT library (really a thin wrapper around the Win32 \c HeapCreate() family) with its
+\section allocator The standard Windows dynamic memory allocator:
+TnFOX replaces the standard Windows dynamic memory allocator provided by MSVC's
+CRT library (really a thin wrapper around the Win32/64 \c HeapCreate() family) with its
 own based on FX::FXMemoryPool when the build mode is release. This is done because quite
 frankly, the Win32 standard allocator is crap - especially on systems with more than one
 processor. Admittedly it's nothing like as crap as the allocators used to be on older
