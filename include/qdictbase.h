@@ -256,7 +256,7 @@ public:
 				if(!kil.empty())
 				{
 					slotsused++;
-					keys+=kil.size();
+					keys+=(FXuint) kil.size();
 				}
 			}
 			if(slotsspread) *slotsspread=(float) 100.0*slotsused/FXMIN(mysize, items);
