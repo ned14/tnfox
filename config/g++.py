@@ -12,8 +12,74 @@ else:
 env['CPPPATH']+=["/usr/kerberos/include"]
 # Include X11
 env['CPPPATH']+=["/usr/X11R6/include"]
-env['LIBPATH']+=["/usr/X11R6/lib"]
-env['LIBS']+=["Xext", "X11"]
+env['LIBPATH']+=["/usr/X11R6/"+ternary(make64bit, "lib64", "lib")]
+
+# Warnings
+cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
+if architecture=="x86":
+    if x86_3dnow!=0:
+          cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
+    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4" ]
+    cppflags+=["-m32", "-march="+cppflagsopts[architecture_version-4] ]
+    if x86_SSE!=0:
+        cppflags+=["-mfpmath="+ ["387", "sse"][x86_SSE!=0] ]
+        if x86_SSE>1: cppflags+=["-msse%d" % x86_SSE]
+        else: cppflags+=["-msse"]
+elif architecture=="x64":
+    cppflagsopts=["athlon64"]
+    cppflags+=["-m64", "-march="+cppflagsopts[architecture_version] ]
+else:
+    raise IOError, "Unknown architecture type"
+cppflags+=["-fexceptions",              # Enable exceptions
+           "-pipe"                      # Use faster pipes
+           ]
+if debugmode:
+    cppflags+=["-O0",                   # No optimisation
+               "-g"                     # Debug info
+               ]
+else:
+    cppflags+=["-O2",                   # Optimise for fast code
+               #"-fno-default-inline",
+               #"-fno-inline-functions",
+               #"-fno-inline",
+               #"-finline-limit=0",
+               #"-g",
+               "-fomit-frame-pointer"   # No frame pointer
+               ]
+env['CPPFLAGS']+=cppflags
+
+# Linkage
+env['LINKFLAGS']+=[#"-Wl,--version-script=gnuld.script" # Specify symbol exports
+                   ternary(make64bit, "-m64", "-m32")
+                  ]
+
+if debugmode:
+    env['LINKFLAGS']+=[]
+else:
+    env['LINKFLAGS']+=["-O"             # Optimise
+                       ]
+
+# Include system libs (mandatory)
+env['CPPDEFINES']+=[("STDC_HEADERS",1),
+                    ("HAVE_SYS_TYPES_H",1),
+                    ("HAVE_SYS_STAT_H",1),
+                    ("HAVE_STDLIB_H",1),
+                    ("HAVE_STRING_H",1),
+                    ("HAVE_MEMORY_H",1),
+                    ("HAVE_STRINGS_H",1),
+                    ("HAVE_INTTYPES_H",1),
+                    ("HAVE_STDINT_H",1),
+                    ("HAVE_UNISTD_H",1),
+                    ("HAVE_DLFCN_H",1),
+                    ("TIME_WITH_SYS_TIME",1),
+                    ("HAVE_SYS_WAIT_H",1),
+                    ("HAVE_DIRENT_H",1),
+                    ("HAVE_UNISTD_H",1),
+                    ("HAVE_SYS_PARAM_H",1),
+                    ("HAVE_SYS_SELECT_H",1)
+                    ]
+env['LIBS']+=["m", "stdc++", "crypt" ]
+
 
 def CheckGCCHasVisibility(cc):
     cc.Message("Checking for GCC global symbol visibility support...")
@@ -38,6 +104,11 @@ if nothreads:
     print "Disabling thread support"
 del nothreads
 
+if not conf.CheckLib("X11", "XOpenDisplay"):
+    raise AssertionError, "TnFOX requires X11"
+if not conf.CheckLib("Xext", "XShmAttach"):
+    raise AssertionError, "TnFOX requires X11"
+    
 if not conf.CheckLib("rt", "shm_open") and not conf.CheckLib("c", "shm_open"):
     raise AssertionError, "TnFOX requires POSIX shared memory support"
 
@@ -88,69 +159,3 @@ else:
     raise "TnFOX::FXFSMonitor needs the FAM library"
 
 env=conf.Finish()
-
-# Warnings
-cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
-if architecture=="x86":
-    if i486_3dnow!=0:
-          cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
-    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4" ]
-    cppflags+=["-march="+cppflagsopts[architecture_version-4] ]
-    if i486_SSE!=0:
-        cppflags+=["-mfpmath="+ ["387", "sse"][i486_SSE!=0] ]
-        if i486_SSE>1: cppflags+=["-msse%d" % i486_SSE]
-        else: cppflags+=["-msse"]
-elif architecture=="x64":
-    cppflagsopts=["athlon64"]
-    cppflags+=["-m64", "-march="+cppflagsopts[architecture_version] ]
-else:
-    raise IOError, "Unknown architecture type"
-cppflags+=["-fexceptions",              # Enable exceptions
-           "-pipe"                      # Use faster pipes
-           ]
-if debugmode:
-    cppflags+=["-O0",                   # No optimisation
-               "-g"                     # Debug info
-               ]
-else:
-    cppflags+=["-O2",                   # Optimise for fast code
-               #"-fno-default-inline",
-               #"-fno-inline-functions",
-               #"-fno-inline",
-               #"-finline-limit=0",
-               #"-g",
-               "-fomit-frame-pointer"   # No frame pointer
-               ]
-env['CPPFLAGS']+=cppflags
-
-
-# Linkage
-env['LINKFLAGS']=[ #"-Wl,--version-script=gnuld.script" # Specify symbol exports
-                  ]
-
-if debugmode:
-    env['LINKFLAGS']+=[]
-else:
-    env['LINKFLAGS']+=["-O"             # Optimise
-                       ]
-
-# Include system libs (mandatory)
-env['CPPDEFINES']+=[("STDC_HEADERS",1),
-                    ("HAVE_SYS_TYPES_H",1),
-                    ("HAVE_SYS_STAT_H",1),
-                    ("HAVE_STDLIB_H",1),
-                    ("HAVE_STRING_H",1),
-                    ("HAVE_MEMORY_H",1),
-                    ("HAVE_STRINGS_H",1),
-                    ("HAVE_INTTYPES_H",1),
-                    ("HAVE_STDINT_H",1),
-                    ("HAVE_UNISTD_H",1),
-                    ("HAVE_DLFCN_H",1),
-                    ("TIME_WITH_SYS_TIME",1),
-                    ("HAVE_SYS_WAIT_H",1),
-                    ("HAVE_DIRENT_H",1),
-                    ("HAVE_UNISTD_H",1),
-                    ("HAVE_SYS_PARAM_H",1),
-                    ("HAVE_SYS_SELECT_H",1)
-                    ]
-env['LIBS']+=["m", "stdc++", "crypt" ]
