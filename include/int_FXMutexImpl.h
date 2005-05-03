@@ -38,6 +38,8 @@
   #define USE_WINAPI
   #define USE_OURMUTEX
   #include "WindowsGubbins.h"
+  #ifndef _M_AMD64
+// These are already defined on AMD64 builds
 extern "C"
 {
 	LONG __cdecl _InterlockedCompareExchange(LPLONG volatile Dest, LONG Exchange, LONG Comp);
@@ -46,6 +48,7 @@ extern "C"
 	LONG __cdecl _InterlockedIncrement(LONG volatile *Addend);
 	LONG __cdecl _InterlockedDecrement(LONG volatile *Addend);
 }
+  #endif
  #endif
  #ifdef USE_POSIX
   // POSIX threads for the Unices

@@ -401,8 +401,6 @@ public:
   FXString &arg(char c, FXint fieldwidth=0);
   FXString &arg(FXlong num,   FXint fieldwidth=0, FXint base=10);
   FXString &arg(FXulong num,  FXint fieldwidth=0, FXint base=10);
-  FXString &arg(long num,     FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((unsigned long) num) : (FXlong) num, fieldwidth, base); }
-  FXString &arg(unsigned long num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
   FXString &arg(FXint num,    FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXuint) num) : (FXlong) num, fieldwidth, base); }
   FXString &arg(FXuint num,   FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
   FXString &arg(FXshort num,  FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXushort) num) : (FXlong) num, fieldwidth, base); }
@@ -413,8 +411,6 @@ public:
   /// Generates statically a textual representation of a number
   static FXString number(FXlong num,   FXint base=10);
   static FXString number(FXulong num,  FXint base=10);
-  static FXString number(long num,     FXint base=10) { return number((base!=10) ? (FXulong)((unsigned long) num) : (FXlong) num, base); }
-  static FXString number(unsigned long num, FXint base=10) { return number((FXulong) num, base); }
   static FXString number(FXint num,    FXint base=10) { return number((base!=10) ? (FXulong)((FXuint) num) : (FXlong) num, base); }
   static FXString number(FXuint num,   FXint base=10) { return number((FXulong) num, base); }
   static FXString number(FXshort num,  FXint base=10) { return number((base!=10) ? (FXulong)((FXushort) num) : (FXlong) num, base); }
