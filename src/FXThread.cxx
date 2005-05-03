@@ -271,7 +271,7 @@ public:
 	FXWaitCondition writecntZeroed;
 	FXThreadLocalStorageBase myreadcnt;
 	FXRWMutexPrivate() : readcntZeroed(false, false), prewritecntZeroed(false, false), writecntZeroed(false, false), FXMutex() { }
-	FXuint readCnt() { return (FXuint) myreadcnt.getPtr(); }
+	FXuint readCnt() { return (FXuint)(FXuval) myreadcnt.getPtr(); }
 	void setReadCnt(FXuint v) { myreadcnt.setPtr((void *) v); }
 	void incReadCnt() { setReadCnt(readCnt()+1); }
 	void decReadCnt() { setReadCnt(readCnt()-1); }
@@ -849,7 +849,7 @@ void FXThreadPrivate::cleanup(FXThread *t)
 		h.relock();
 		forceCleanup(t);
 #ifdef DEBUG
-		fxmessage("Thread %u (%s) cleanup exits with code %d\n", (FXuint) FXThread::id(), t->name(), (int) *t->p->result);
+		fxmessage("Thread %u (%s) cleanup exits with code %d\n", (FXuint) FXThread::id(), t->name(), (int)(FXuval) *t->p->result);
 #endif
 		{
 #ifdef USE_OURTHREADID

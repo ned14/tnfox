@@ -292,7 +292,7 @@ bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **
 	int maxfd=0;
 	for(FXuint n=0; n<no; n++)
 	{
-		int fd=(int) list[n]->int_getOSHandle();
+		int fd=(int)(FXuval) list[n]->int_getOSHandle();
 		FXERRH(fd, FXTrans::tr("FXIODeviceS", "Either i/o device is not open or not supported"), 0, FXERRH_ISDEBUG);
 		FD_SET(fd, &fds);
 		if(fd>maxfd) maxfd=fd;
@@ -305,7 +305,7 @@ bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **
 		FXuint oidx=0;
 		for(FXuint n=0; n<no; n++)
 		{
-			int fd=(int) list[n]->int_getOSHandle();
+			int fd=(int)(FXuval) list[n]->int_getOSHandle();
 			if(FD_ISSET(fd, &fds))
 				signalled[oidx++]=list[n];
 		}

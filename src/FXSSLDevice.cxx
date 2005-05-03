@@ -60,7 +60,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #define EVP_MAX_KEY_LENGTH 64
 #endif
 
-#define FXERRHSSL(exp) { int __res=(int)(exp); if(__res<=0) { int __errorcode=ERR_get_error(); \
+#define FXERRHSSL(exp) { int __res=(int)(FXuval)(exp); if(__res<=0) { int __errorcode=ERR_get_error(); \
 	char __buffer[1024]; ERR_error_string_n(__errorcode, __buffer, sizeof(__buffer)); \
 	ERR_clear_error(); \
 	if(SSL_R_NO_SHARED_CIPHER==__errorcode) { FXERRG(__buffer, FXSSLDEVICE_NOSHAREDCIPHER, 0); } \

@@ -237,8 +237,8 @@ void FXTopWindow::create(){
 #ifdef WIN32
       RECT rect;
       SetRect(&rect,xpos,ypos,xpos+width,ypos+height);
-      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
-      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
+      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
       AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
       SetWindowPos((HWND)xid,NULL,rect.left,rect.top,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOZORDER|SWP_NOOWNERZORDER);
 #endif
@@ -656,7 +656,7 @@ void FXTopWindow::setdecorations(){
 #else
 
   // Get old style
-  DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
+  LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
   RECT rect;
 
   // Moved here just in case the size changes behind our backs
@@ -674,7 +674,7 @@ void FXTopWindow::setdecorations(){
   if(options&DECOR_MAXIMIZE) dwStyle|=(WS_MAXIMIZEBOX|WS_SYSMENU); else dwStyle&=~WS_MAXIMIZEBOX;
 
   // Set new style
-  SetWindowLong((HWND)xid,GWL_STYLE,dwStyle);
+  SetWindowLongPtr((HWND)xid,GWL_STYLE,dwStyle);
 
   // Patch from Stephane Ancelot <sancelot@wanadoo.fr> and Sander Jansen <sander@knology.net>
   HMENU sysmenu=GetSystemMenu((HWND)xid,FALSE);
@@ -685,9 +685,9 @@ void FXTopWindow::setdecorations(){
       EnableMenuItem(sysmenu,SC_CLOSE,MF_GRAYED);
     }
 
-  // Moved here just in case SetWindowLong GWL_STYLE has changed
+  // Moved here just in case SetWindowLongPtr GWL_STYLE has changed
   // the GWL_EXSTYLE behind the scenes...
-  DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+  LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
 
   // Adjust non-client area size based on new style
   AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
@@ -939,8 +939,8 @@ void FXTopWindow::move(FXint x,FXint y){
       // position of the *client* rectangle.
       RECT rect;
       SetRect(&rect,xpos,ypos,0,0);
-      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
-      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
+      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
       AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
       SetWindowPos((HWND)xid,NULL,rect.left,rect.top,0,0,SWP_NOSIZE|SWP_NOZORDER|SWP_NOOWNERZORDER);
 #endif
@@ -965,8 +965,8 @@ void FXTopWindow::resize(FXint w,FXint h){
       // size of the *client* rectangle.
       RECT rect;
       SetRect(&rect,0,0,width,height);
-      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
-      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
+      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
       AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
       SetWindowPos((HWND)xid,NULL,0,0,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOMOVE|SWP_NOZORDER|SWP_NOOWNERZORDER);
 #endif
@@ -996,8 +996,8 @@ void FXTopWindow::position(FXint x,FXint y,FXint w,FXint h){
       // position & size of the *client* rectangle.
       RECT rect;
       SetRect(&rect,xpos,ypos,xpos+width,ypos+height);
-      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
-      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
+      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
       AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
       SetWindowPos((HWND)xid,NULL,rect.left,rect.top,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOZORDER|SWP_NOOWNERZORDER);
 #endif

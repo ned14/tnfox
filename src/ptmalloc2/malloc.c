@@ -2049,7 +2049,7 @@ static unsigned int largebin_index(unsigned int sz) {
   if (x >= 0x10000) return NBINS-1;
 
   /* On intel, use BSRL instruction to find highest bit */
-#if defined(__GNUC__) && defined(i386)
+#if defined(__GNUC__) && (defined(i386) || defined(__x86_64__))
 
   __asm__("bsrl %1,%0\n\t"
           : "=r" (m) 
@@ -2061,6 +2061,11 @@ static unsigned int largebin_index(unsigned int sz) {
 	  bsr eax, [x]
 	  mov [m], eax
   }
+#elif defined(_MSC_VER) && defined(_M_AMD64)
+  // Use the intrinsic
+  DWORD _m;
+  _BitScanReverse(&_m, x);
+  m=(unsigned int) _m;
 #else
   {
     /*

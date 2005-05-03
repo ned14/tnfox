@@ -493,8 +493,9 @@ void FXProcess::init(int &argc, char *argv[])
 				QValueList<MappedFileInfo> list=FXProcess::mappedFiles();
 				for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
 				{
+					static const int addrwidth=sizeof(void *)*2;
 					FXTransString temp2(FXTrans::tr("FXProcess", "  %1 to %2 %3%4%5%6 %7\n"));
-					temp2.arg((FXulong) (*it).startaddr,-8,16).arg((FXulong) (*it).endaddr,-8,16);
+					temp2.arg((FXulong) (*it).startaddr,-addrwidth,16).arg((FXulong) (*it).endaddr,-addrwidth,16);
 					temp2.arg(((*it).read) ? 'r' : '-').arg(((*it).write) ? 'w' : '-').arg(((*it).execute) ? 'x' : '-').arg(((*it).copyonwrite) ? 'c' : '-');
 					temp2.arg((*it).path);
 					temp=temp2;
@@ -906,16 +907,22 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 	char rawbuffer[4096];
 	while(fh.readLine(rawbuffer, sizeof(rawbuffer)))
 	{	// Format is hexstart-_hexend_ rwxp hexofset dd:dd _inode     /path...
-		FXString buffer(rawbuffer);
-		bi.startaddr=buffer.mid(0,8).toULong(0,16);
-		bi.endaddr=buffer.mid(9,8).toULong(0,16);
+		unsigned long startaddr, endaddr, offset;
+		char _r, _w, _x, _p;
+		int t1, t2;
+		unsigned int pid;
+		char *path=rawbuffer+2048;
+		int len=sscanf(rawbuffer, "%lx-%lx %c%c%c%c %lx %d:%d %u %s", &startaddr, &endaddr,
+			&_r, &_w, &_x, &_p, &offset, &t1, &t2, &pid, path);
+		bi.startaddr=(FXulong) startaddr;
+		bi.endaddr=(FXulong) endaddr;
 		bi.length=bi.endaddr-bi.startaddr;
-		bi.read=('r'==rawbuffer[18]);
-		bi.write=('w'==rawbuffer[19]);
-		bi.execute=('x'==rawbuffer[20]);
-		bi.copyonwrite=('p'==rawbuffer[21]);
-		bi.offset=buffer.mid(23,8).toULong(0,16);
-		bi.path=buffer.mid(48,4048);
+		bi.read=('r'==_r);
+		bi.write=('w'==_w);
+		bi.execute=('x'==_x);
+		bi.copyonwrite=('p'==_p);
+		bi.offset=(FXulong) offset;
+		bi.path=path;
 		bi.path.trim();
 		if(!list.empty())
 		{	// Linux doesn't say RAM sections belong to DLL
@@ -976,10 +983,14 @@ const FXString &FXProcess::execpath()
 	main() but that causes more problems so best I could come up with was a
 	heuristic for each supported platform :( */
 #ifdef __linux__
-	const FXuval addr=0x08000000;
+#if defined(__LP64__) || defined(_LP64) || (_MIPS_SZLONG == 64) || (__WORDSIZE == 64)
+	static const FXuval addr=0x00400000;
+#else
+	static const FXuval addr=0x08000000;
+#endif
 #endif
 #ifdef __FreeBSD__
-	const FXuval addr=0x08000000;
+	static const FXuval addr=0x08000000;
 #endif
 	FXuval diff=(FXuval) -1;
 	QValueList<MappedFileInfo> list=mappedFiles();
@@ -1398,16 +1409,16 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 	FXuval pagesize=pageSize();
 	if(chunk<pagesize) chunk=pagesize;
 	/* Some notes:
-	Linux 2.4		Linux 2.6		FreeBSD 5.2		NT 5.0
-	0xbfffffff		0xffffffff		0xbfffffff		0x7fffffff
-	|| stacks		|| stacks		|| stacks		|| DLLs
-	\/				\/				\/				\/
-	/\ anon maps	0xf7050000		/\ anon maps	/\ anon maps
-	|| DLLs			|| anon maps	|| DLLs			|| sbrk()
-	0x40000000		\/				0x28240000		0x00300000
-	/\				/\				/\				0x00130000
-	|| sbrk()		|| sbrk()		|| sbrk()		|| stacks
-	0x08000000		0x08000000		0x08000000		\/
+	Linux 2.4		Linux 2.6 x86	Linux 2.6 x64			FreeBSD 5.2		NT 5.0
+	0xbfffffff		0xffffffff		0xffffffffffffffff		0xbfffffff		0x7fffffff
+	|| stacks		|| stacks		|| stacks				|| stacks		|| DLLs
+	\/				\/				\/						\/				\/
+	/\ anon maps	0xf7050000		0x0000007fc0000000		/\ anon maps	/\ anon maps
+	|| DLLs			|| anon maps	|| anon maps			|| DLLs			|| sbrk()
+	0x40000000		\/				\/						0x28240000		0x00300000
+	/\				/\				0x0000002a95556000		/\				0x00130000
+	|| sbrk()		|| sbrk()		|| sbrk()				|| sbrk()		|| stacks
+	0x08000000		0x08000000		0x0000000000400000		0x08000000		\/
 
 	* On Linux 2.6 DLLs live between 0x00111000-0x00f18000 and 0x0350d000-0x03d0000
 	growing upwars. Furthermore anon maps are always high growing downards. Some
@@ -1426,46 +1437,30 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 	return chunk+(FXuval) map2-(FXuval) map1;
 #endif
 #ifdef USE_POSIX
-	if(sizeof(void *)>4)
-	{
-		fxwarning("WARNING: FXProcess::virtualAddrSpaceLeft() does not support 64 bit architectures yet\n");
-		return 0;
-	}
 	FXuval stackaddr; stackaddr=((FXuval) &stackaddr) & ~(0x10000-1);	// Round down to Mb boundary
 	// On all supported POSIX implementations stacks live at the highest address
 	// but on Linux 2.6 the end of mapping space is 144Mb lower
 	int flags=MAP_PRIVATE|MAP_NORESERVE;	// Don't actually allocate memory
 	// MAP_AUTORESRV;
-	bool mapsGoUp=true;
 #ifdef __linux__
 	flags|=MAP_ANONYMOUS;
-	static int linuxver;
-	if(!linuxver)
-	{
-		char buffer[64];
-		FILE *ih=fopen("/proc/sys/kernel/osrelease", "rt");
-		if(!ih) FXERRGOS(errno, 0);
-		int len=fread(buffer, 1, 64, ih);
-		buffer[len-1]=0;
-		fclose(ih);
-		linuxver=(buffer[0]-'0')*10+(buffer[2]-'0');
-	}
-	if(linuxver>=25)
-		mapsGoUp=false;
 #endif
 #ifdef __FreeBSD__
 	flags|=MAP_ANON;
 #endif
-	void *map=::mmap(0, chunk, PROT_NONE, flags, -1, 0);
-	if(!map) return 0;
-	::munmap(map, chunk);
-	if(mapsGoUp)
-	{	// Maps grow upwards (Linux 2.4 and FreeBSD 5.2)
-		return stackaddr-(FXuval) map;
+	// Some POSIX systems allocate memory downwards rather than upwards (eg; x86 Linux 2.6)
+	void *map1=::mmap(0, chunk, PROT_NONE, flags, -1, 0);
+	void *map2=::mmap(0, chunk, PROT_NONE, flags, -1, 0);
+	if(map1) ::munmap(map1, chunk);
+	if(map2) ::munmap(map2, chunk);
+	if(!map1 || !map2) return 0;
+	if(map2>map1)
+	{	// Maps grow upwards
+		return stackaddr-(FXuval) map1;
 	}
 	else
-	{	// Maps grow downwards (Linux 2.6)
-		return ((FXuval)map)+chunk-(FXuval)sbrk(0);
+	{	// Maps grow downwards
+		return ((FXuval)map1)+chunk-(FXuval)sbrk(0);
 	}
 #endif
 }

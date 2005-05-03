@@ -164,7 +164,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	reporttxt=0;
 	uniqueId=GetCreationCnt();
 #if defined(DEBUG) || defined(BUILDING_TCOMMON)
-	fxmessage("FXException id %d created, '%s' at line %d in %s thread %d\n", uniqueId, msg.text(), _lineno, _filename, _threadId);
+	fxmessage("FXException id %d created, '%s' at line %d in %s thread %d\n", uniqueId, msg.text(), _lineno, _filename, (FXuint) _threadId);
 #endif
 #if defined(WIN32) && defined(_MSC_VER)
 	memset(stack, 0, sizeof(stack));
@@ -553,6 +553,7 @@ void FXException::int_exitTryHandler() throw()
 					{
 						if(!ee->nestedlist)
 						{
+							using namespace std;
 							if(!(ee->nestedlist=new QValueList<FXException>)) terminate();
 							ee->_flags|=FXERRH_HASNESTED;
 						}

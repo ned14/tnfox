@@ -3806,7 +3806,7 @@ long CALLBACK FXEventLoop::wndproc(FXID hwnd,unsigned int iMsg,unsigned int wPar
 
 
 
-#define GETFOXWINDOW(hwnd) (((hwnd)&&IsWindow((HWND)(hwnd)))?(FXWindow*)GetWindowLong((HWND)(hwnd),0):NULL)
+#define GETFOXWINDOW(hwnd) (((hwnd)&&IsWindow((HWND)(hwnd)))?(FXWindow*)GetWindowLongPtr((HWND)(hwnd),0):NULL)
 
 // Message dispatching
 long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,long lParam){
@@ -4257,13 +4257,13 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
         //FXTRACE((100,"WM_GETMINMAXINFO ptMaxSize=%d,%d ptMinTrackSize=%d,%d ptMaxTrackSize=%d,%d\n",((MINMAXINFO*)lParam)->ptMaxSize.x,((MINMAXINFO*)lParam)->ptMaxSize.y,((MINMAXINFO*)lParam)->ptMinTrackSize.x,((MINMAXINFO*)lParam)->ptMinTrackSize.y,((MINMAXINFO*)lParam)->ptMaxTrackSize.x,((MINMAXINFO*)lParam)->ptMaxTrackSize.y));
         if(!(((FXTopWindow*)window)->getDecorations()&DECOR_SHRINKABLE)){
           SetRect(&rect,0,0,window->getDefaultWidth(),window->getDefaultHeight());
-          AdjustWindowRectEx(&rect,GetWindowLong((HWND)hwnd,GWL_STYLE),FALSE,GetWindowLong((HWND)hwnd,GWL_EXSTYLE));
+          AdjustWindowRectEx(&rect,GetWindowLongPtr((HWND)hwnd,GWL_STYLE),FALSE,GetWindowLongPtr((HWND)hwnd,GWL_EXSTYLE));
           ((MINMAXINFO*)lParam)->ptMinTrackSize.x=rect.right-rect.left;
           ((MINMAXINFO*)lParam)->ptMinTrackSize.y=rect.bottom-rect.top;
           }
         if(!(((FXTopWindow*)window)->getDecorations()&DECOR_STRETCHABLE)){
           SetRect(&rect,0,0,window->getDefaultWidth(),window->getDefaultHeight());
-          AdjustWindowRectEx(&rect,GetWindowLong((HWND)hwnd,GWL_STYLE),FALSE,GetWindowLong((HWND)hwnd,GWL_EXSTYLE));
+          AdjustWindowRectEx(&rect,GetWindowLongPtr((HWND)hwnd,GWL_STYLE),FALSE,GetWindowLongPtr((HWND)hwnd,GWL_EXSTYLE));
           ((MINMAXINFO*)lParam)->ptMaxTrackSize.x=rect.right-rect.left;
           ((MINMAXINFO*)lParam)->ptMaxTrackSize.y=rect.bottom-rect.top;
           }

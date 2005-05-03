@@ -1103,8 +1103,8 @@ void FXDCWindow::end(){
     if(visual->colormap){SelectPalette((HDC)ctx,(HPALETTE)oldpalette,FALSE);}
     surface->ReleaseDC((HDC)ctx);
     if(needsClipReset){
-      DWORD dwFlags=GetWindowLong((HWND)surface->id(),GWL_STYLE);
-      SetWindowLong((HWND)surface->id(),GWL_STYLE,dwFlags|WS_CLIPCHILDREN);
+      LONG_PTR dwFlags=GetWindowLongPtr((HWND)surface->id(),GWL_STYLE);
+      SetWindowLongPtr((HWND)surface->id(),GWL_STYLE,dwFlags|WS_CLIPCHILDREN);
       }
     ctx=NULL;
     }
@@ -2353,7 +2353,7 @@ void FXDCWindow::setFont(FXFont *fnt){
 // Window will clip against child windows
 void FXDCWindow::clipChildren(FXbool yes){
   if(!surface){ fxerror("FXDCWindow::clipChildren: window has not yet been created.\n"); }
-  DWORD    dwFlags=GetWindowLong((HWND)surface->id(),GWL_STYLE);
+  LONG_PTR dwFlags=GetWindowLongPtr((HWND)surface->id(),GWL_STYLE);
   HPEN     hPen;
   HBRUSH   hBrush;
   HFONT    hFont;
@@ -2371,7 +2371,7 @@ void FXDCWindow::clipChildren(FXbool yes){
         fillmode=GetPolyFillMode((HDC)ctx);
 
         ReleaseDC((HWND)surface->id(),(HDC)ctx);
-        SetWindowLong((HWND)surface->id(),GWL_STYLE,dwFlags|WS_CLIPCHILDREN);
+        SetWindowLongPtr((HWND)surface->id(),GWL_STYLE,dwFlags|WS_CLIPCHILDREN);
         ctx=GetDC((HWND)surface->id());
 
         SelectObject((HDC)ctx,hFont);
@@ -2401,7 +2401,7 @@ void FXDCWindow::clipChildren(FXbool yes){
         fillmode=GetPolyFillMode((HDC)ctx);
 
         ReleaseDC((HWND)surface->id(),(HDC)ctx);
-        SetWindowLong((HWND)surface->id(),GWL_STYLE,dwFlags&~WS_CLIPCHILDREN);
+        SetWindowLongPtr((HWND)surface->id(),GWL_STYLE,dwFlags&~WS_CLIPCHILDREN);
         ctx=GetDC((HWND)surface->id());
 
         SelectObject((HDC)ctx,hFont);

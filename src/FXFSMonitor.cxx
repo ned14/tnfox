@@ -502,7 +502,7 @@ void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 	FXERRH(FXFile::exists(path), FXTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)
 	{	// Try starting it again
-		FXERRHFAM(FAMOpen(&fxfsmon->fc));
+		if(FAMOpen(&fxfsmon->fc)<0) return;
 		fxfsmon->nofam=false;
 	}
 #endif
