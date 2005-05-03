@@ -130,6 +130,7 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
     if libtool or genstaticlib:
         LIB=env.StaticLibrary(target+".a", sources, LIBSUFFIX=".a", **args)
         env.Depends(DLL, LIB)
+    if genstaticlib==2: DLL=LIB
     if libtool:
         AddPostAction(LIB, Action(dupLibrary))
         AddPreAction(DLL, Action(genLAIfile))
@@ -190,9 +191,11 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         builddir="Release_"+tool+"_"+architectureSpec()
     env['CPPDEFINES']=[ "FOXDLL" ]
     env['CPPPATH']=[ prefixpath+"include" ]
+    env['CPPFLAGS']=[ ]
     env['LIBPATH']=[ ]
     env['LIBS']=[ ]
     env['CCWPOOPTS']=[ ]
+    env['LINKFLAGS']=[ ]
     make64bit=(architecture=="x64")
     execfile(platformconfig)
     if sys.byteorder=="big": env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
