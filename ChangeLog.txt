@@ -47,6 +47,7 @@ broken on MSVC8)
 * Reimplemented Windows version of FXAtomicInt in terms of Interlocked*
 intrinsics (as inline assembler not supported on x64). Gives a 17% performance
 increase in Tn TestIO due to skipping register dumping around _asm.
+- Removed long and unsigned long overloads as they were unnecessary
 
 
 v0.85 13th Feb 2005:
