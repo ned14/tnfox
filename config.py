@@ -14,18 +14,21 @@ makeSMPBuild=True
 # source files. This can slightly increase code size and also drags
 # in a lot of extra system header files.
 inlineMutex=False  # not debugmode
-GenStaticLib=False       # Set to true to always generate a static library
+GenStaticLib=(sys.platform!="win32")          # 1=generate a static library, 2=only generate a static library
 SeparateTnLibs=(sys.platform=="win32")
 
 architecture="x86"       # Can be "x86" or "x64"
 # For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
-# For x64: =0 for AMD64/EM64T
 #architecture_version=4           
 #x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
 #x86_3dnow=0             # =0 (disable), =1 (3dnow)
-architecture_version=7           
+architecture_version=7
 x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
 x86_3dnow=1             # =0 (disable), =1 (3dnow)
+
+#architecture="x64"
+# For x64: =0 for AMD64/EM64T
+#architecture_version=0
 
 toolset=None             # Let scons pick which compiler/linker to use
 #if sys.platform!="win32":
