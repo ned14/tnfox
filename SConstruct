@@ -35,7 +35,7 @@ if onWindows:
     versionrc="src/version.rc"
     objects+=[env.RES(builddir+"/version.res", versionrc)]
 Clean(targetname, objects)
-DLL=VersionedSharedLibrary(env, targetname, tnfoxversioninfo, "/usr/local/lib", objects, debugmode, GenStaticLib)
+DLL=VersionedSharedLibrary(env, targetname, tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib)
 env.Precious(DLL)
 addBind(DLL)
 
@@ -59,9 +59,9 @@ def runSynopsis(target, source, env):
     syns=genSynopsis("include", getTnFOXIncludes())
     callSynopsis(syns)
 env.Command("synopsis", None, runSynopsis)
-# env.Command("install", DLL, "chown root::root "+libAsLA()+" && chmod a+s "+libAsLA()+" && libtool --mode=install cp "+libAsLA()+" /usr/local/lib")
-env.Command("install", DLL, "libtool --mode=install cp "+libAsLA()+" /usr/local/lib")
-env.Command("uninstall", DLL, "libtool --mode=uninstall rm /usr/local/lib/"+libAsLA(True))
+# env.Command("install", DLL, "chown root::root "+libAsLA()+" && chmod a+s "+libAsLA()+" && libtool --mode=install cp "+libAsLA()+" /usr/local/"+libPathSpec(make64bit))
+env.Command("install", DLL, "libtool --mode=install cp "+libAsLA()+" /usr/local/"+libPathSpec(make64bit))
+env.Command("uninstall", DLL, "libtool --mode=uninstall rm /usr/local/"+libPathSpec(make64bit)+"/"+libAsLA(True))
 Help("""TnFOX make options:
   scons tnfox     : Make TnFOX DLL
   scons python    : Make TnFOX Python bindings DLL
