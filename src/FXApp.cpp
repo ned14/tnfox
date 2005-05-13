@@ -959,9 +959,9 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
 
   // Make font
 #ifdef BUILDING_TCOMMON
-  normalFont=new FXFont(this,"luxi sans,80,normal,normal");
+  normalFont=new FXFont(this,"sans serif,80,normal,normal");
 #else
-  normalFont=new FXFont(this,"luxi sans,90,normal,normal");
+  normalFont=new FXFont(this,"sans serif,90,normal,normal");
 #endif
 
   // We delete the stock font
