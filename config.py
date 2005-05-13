@@ -19,12 +19,12 @@ SeparateTnLibs=(sys.platform=="win32")
 
 architecture="x86"       # Can be "x86" or "x64"
 # For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
-#architecture_version=4           
-#x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
-#x86_3dnow=0             # =0 (disable), =1 (3dnow)
-architecture_version=7
-x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
-x86_3dnow=1             # =0 (disable), =1 (3dnow)
+architecture_version=4           
+x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+x86_3dnow=0             # =0 (disable), =1 (3dnow)
+#architecture_version=7
+#x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
+#x86_3dnow=1             # =0 (disable), =1 (3dnow)
 
 #architecture="x64"
 # For x64: =0 for AMD64/EM64T
