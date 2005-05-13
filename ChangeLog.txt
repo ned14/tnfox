@@ -48,6 +48,7 @@ broken on MSVC8)
 intrinsics (as inline assembler not supported on x64). Gives a 17% performance
 increase in Tn TestIO due to skipping register dumping around _asm.
 - Removed long and unsigned long overloads as they were unnecessary
+* Fixed some small x64 FreeBSD incompatibilities
 
 
 v0.85 13th Feb 2005:
