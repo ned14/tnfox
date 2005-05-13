@@ -8,11 +8,14 @@ if debugmode:
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
+# Include the standard library locations (scons gets these wrong on mixed 32/64 bit)
+env['LIBPATH']+=["/usr/"+libPathSpec(make64bit)]
+env['LIBPATH']+=["/usr/local/"+libPathSpec(make64bit)]
 # Include Kerberos
 env['CPPPATH']+=["/usr/kerberos/include"]
 # Include X11
 env['CPPPATH']+=["/usr/X11R6/include"]
-env['LIBPATH']+=["/usr/X11R6/"+ternary(make64bit, "lib64", "lib")]
+env['LIBPATH']+=["/usr/X11R6/"+libPathSpec(make64bit)]
 
 # Warnings
 cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
@@ -49,14 +52,14 @@ else:
 env['CPPFLAGS']+=cppflags
 
 # Linkage
-env['LINKFLAGS']+=[#"-Wl,--version-script=gnuld.script" # Specify symbol exports
+env['LINKFLAGS']+=["-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    ternary(make64bit, "-m64", "-m32")
                   ]
 
 if debugmode:
     env['LINKFLAGS']+=[]
 else:
-    env['LINKFLAGS']+=["-O"             # Optimise
+    env['LINKFLAGS']+=["-O2"            # Optimise
                        ]
 
 # Include system libs (mandatory)
@@ -124,6 +127,12 @@ else:
    print "Disabling 32 bit colour cursor support"
     
 conf.env.ParseConfig("freetype-config --cflags --libs")
+if not make64bit:
+	# Annoyingly freetype-config adds lib64 on 64 bit platforms
+	for n in range(0, len(conf.env['LIBPATH'])):
+		if "lib64" in conf.env['LIBPATH'][n]:
+			print "   NOTE: Removing unneccessary library path", conf.env['LIBPATH'][n]
+			del conf.env['LIBPATH'][n]
 if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
    conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
    conf.env['LIBS']+=["Xft"]
