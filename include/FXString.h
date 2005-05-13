@@ -405,8 +405,13 @@ public:
   FXString &arg(FXuint num,   FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
   FXString &arg(FXshort num,  FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXushort) num) : (FXlong) num, fieldwidth, base); }
   FXString &arg(FXushort num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
+#if !(defined(__LP64__) || defined(_LP64) || (_MIPS_SZLONG == 64) || (__WORDSIZE == 64))
+  // Must declare overloads for long when long!=FXlong
+  FXString &arg(long num,     FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((unsigned long) num) : (FXlong) num, fieldwidth, base); }
+  FXString &arg(unsigned long num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
+#endif
   FXString &arg(double num,   FXint fieldwidth=0, FXchar fmt='g', int prec=-1);
-  FXString &arg(void *ptr,    FXint fieldwidth=-FXint(sizeof(FXuval)*2)) { return arg((FXuval) ptr, fieldwidth, 16); }
+  FXString &arg(void *ptr,    FXint fieldwidth=-FXint(sizeof(FXuval)*2)) { return arg((FXulong)(FXuval) ptr, fieldwidth, 16); }
 
   /// Generates statically a textual representation of a number
   static FXString number(FXlong num,   FXint base=10);
@@ -416,7 +421,7 @@ public:
   static FXString number(FXshort num,  FXint base=10) { return number((base!=10) ? (FXulong)((FXushort) num) : (FXlong) num, base); }
   static FXString number(FXushort num, FXint base=10) { return number((FXulong) num, base); }
   static FXString number(double num, FXchar fmt='g', int prec=-1);
-  static FXString number(void *ptr) { return number((FXuval) ptr, 16); }
+  static FXString number(void *ptr) { return number((FXulong)(FXuval) ptr, 16); }
 
   /// Converts a string to a number
   FXlong toLong(bool *ok=0, FXint base=10) const throw();
