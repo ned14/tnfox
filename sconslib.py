@@ -152,6 +152,13 @@ def ternary(val, A, B):
 def architectureSpec():
     return architecture+"_"+str(architecture_version)
 
+def libPathSpec(make64bit):
+    if make64bit and os.path.exists("/usr/lib64"):
+        # This system has parallel 32 & 64 bit libraries
+        return "lib64"
+    else:
+        return "lib"
+
 def getBase(file):
     base,ext=os.path.splitext(file)
     base,leaf=os.path.split(base)
@@ -240,9 +247,8 @@ def doConfTests(env, prefixpath=""):
             conf.env['CPPDEFINES']+=["HAVE_"+capsname+"_H"]
             conf.env['CPPPATH']+=[prefixpath+"windows/"+prefix+"lib"+name]
             conf.env['LIBS']+=[prefixpath+"windows/lib"+name+"/lib"+name+ternary(make64bit, "64", "32")]
-        elif conf.CheckCHeader(["stdio.h", header]):
+        elif conf.CheckLibWithHeader(name, ["stdio.h", header], "c"):
             conf.env['CPPDEFINES']+=["HAVE_"+capsname+"_H"]
-            conf.env['LIBS']+=[name]
         else:
             print capsname+" library not found, disabling support"
     haveZLib=False
@@ -252,9 +258,8 @@ def doConfTests(env, prefixpath=""):
         conf.env['CPPPATH']+=[prefixpath+"windows/zlib"]
         conf.env['LIBS']+=[prefixpath+"windows/zlib/zlib"+ternary(make64bit, "64", "32")]
         haveZLib=True
-    elif conf.CheckCHeader("zlib.h"):
+    elif conf.CheckLibWithHeader("z", "zlib.h", "c"):
         conf.env['CPPDEFINES']+=["HAVE_ZLIB_H"]
-        conf.env['LIBS']+=["z"]
         haveZLib=True
     else:
         print "ZLib library not found, disabling support"
