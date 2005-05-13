@@ -945,6 +945,8 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 	char *ptr=rawbuffer, *end;
 	{
 		FXFile fh(procpath, FXFile::WantLightFXFile());
+		if(!fh.exists()) // Probably /proc isn't mounted - let FXProcess take care of that
+			return list;
 		fh.open(IO_ReadOnly|IO_Translate);
 		FXuval read=fh.readBlock(rawbuffer, sizeof(rawbuffer)-2);
 		assert(read>0 && read<sizeof(rawbuffer)-2);
@@ -1369,7 +1371,7 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 #ifdef __FreeBSD__
 	// Ahh, this is the perfect solution! :)
 	int command1[2]={ CTL_VM, 1 /*VM_TOTAL*/ }, command2[2]={ CTL_HW, HW_PHYSMEM };
-	char vm[256]; int pm;
+	char vm[256]; long pm;
 	size_t vmlen=sizeof(vm), pmlen=sizeof(pm);
 	FXERRHOS(sysctl(command1, 2, vm, &vmlen, NULL, 0));
 	FXERRHOS(sysctl(command2, 2, &pm, &pmlen, NULL, 0));
