@@ -672,6 +672,43 @@ extern FXAPI FXString fxstrfval(FXfval len, FXint fw=0, char fmt='f', int prec=2
 /// A decreasing array of two's powered prime numbers (useful for adjust hash tables based on memory load)
 extern FXAPI const FXuint *fx2powerprimes(FXuint topval) throw();
 
+#if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=600) || defined(_M_AMD64))
+}
+// Get the intrinsic definitions
+#include "xmmintrin.h"
+namespace FX {
+/* One has a choice of increments: 32 for P6, 64 for Athlon and 128 for P4, so we choose 64 */
+inline void fxprefetchmemT(const void *ptr) throw()
+{
+	_mm_prefetch((const char *) ptr, _MM_HINT_T2);
+}
+inline void fxprefetchmemNT(const void *ptr) throw()
+{
+	_mm_prefetch((const char *) ptr, _MM_HINT_NTA);
+}
+#elif defined(__GNUC__) && (defined(__i686__) || defined(__x86_64__))
+inline void fxprefetchmemT(const void *ptr) throw()
+{
+	__builtin_prefetch(ptr, 0, 3);
+}
+inline void fxprefetchmemNT(const void *ptr) throw()
+{
+	__builtin_prefetch(ptr, 0, 0);
+}
+#else
+/*! Pretches a cache line into the processor cache temporally (ie; it will
+be used multiple times) */
+inline void fxprefetchmemT(const void *ptr) throw()
+{
+}
+/*! Pretches a cache line into the processor cache non-temporally (ie; it
+will be used only once) */
+inline void fxprefetchmemNT(const void *ptr) throw()
+{
+}
+#endif
+
+
 /// Allocate memory
 extern FXAPI FXint fxmalloc(void** ptr,unsigned long size);
 
