@@ -22,20 +22,15 @@ FOX's auto-destruction of children ie; FOX will delete objects without
 telling python so when python tries to delete them, you get at best heap
 corruption and at worst a fault. This may be fixable in the future.
 
-2: 64 BIT ARCHITECTURES ARE NOT FULLY SUPPORTED
-FXProcess::virtualAddrSpaceLeft() currently doesn't understand 64 bit
-Linux and FreeBSD architectures. Any advice here would be greatly
-appreciated. This problem won't affect any code which doesn't use this
-function (which is no other code in TnFOX at all)
 
-3: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
+2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
 See Todo.txt for a list of known bugs.
 
 Installation:
 -=-=-=-=-=-=-
 If you're installing the binary only on POSIX, simply do:
 
-libtool --mode=install cp libTnFOX-0.85.la /usr/local/lib
+libtool --mode=install cp libTnFOX-0.86.la /usr/local/lib
 
 
 You will need a make tool called scons from http://www.scons.org/ v0.95 or
@@ -92,9 +87,10 @@ Testing regime:
 Before this release, every program in the TestSuite was compiled and tested
 in both debug and release modes on:
 
-1. Microsoft Windows 2000 SP3 with MSVC7.1 (Visual Studio .NET 2003)
-2. RedHat Fedora Core 3 with GCC & libstdc++ 3.4.2 (stock release)
-3. FreeBSD v5.3 with GCC & libstdc++ 3.4.2 (with visibility patch)
+1. Microsoft Windows XP SP2 with MSVC7.1 (Visual Studio .NET 2003)
+2. Microsoft Windows XP x64 with AMD64SDK
+3. SuSE 9.2 with GCC & libstdc++ 4.0
+4. FreeBSD v5.4 with GCC & libstdc++ 4.0
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings
 in its compiler have forced me to drop it.
