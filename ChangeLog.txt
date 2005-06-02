@@ -7,13 +7,14 @@ B FXMtxHold wasn't being inlined on Win32
 B Various FXException macros were using "e" as their temporary exception
 which could cause conflict with local definitions of "e"
 B FXIPCChannel wasn't retrying message sends if they part completed
-R Issued snapshot 1
+R *** Issued snapshot 1
 B FXPipe::writeBlock() wasn't detecting write errors on win32
 B Config failed due to lack of build directory on virgin builds
 B FXACL would hang on win32 if program was not running as administrator
 B Fixed segfault in FXSSLDevice on process exit
 B If missing zlib was causing compile errors
 B Fixed occasional segfault in ~FXMemoryPool
+R *** Issued snapshot 2
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -30,7 +31,7 @@ source files
 * Changed FXFont to always specify anti-aliased and cleartype on Win32
 * Now replaces system allocator on FreeBSD too
 * FXFSMonitor now can disable itself if it detects a broken FAM implementation
-R Issued snapshot 1
+R *** Issued snapshot 1
 + Added FXACLEntity::homeDirectory()
 + Added FXDEPRECATED macro
 + Added support for MSVC8.0
@@ -49,6 +50,7 @@ intrinsics (as inline assembler not supported on x64). Gives a 17% performance
 increase in Tn TestIO due to skipping register dumping around _asm.
 - Removed long and unsigned long overloads as they were unnecessary
 * Fixed some small x64 FreeBSD incompatibilities
+R *** Issued snapshot 2
 
 
 v0.85 13th Feb 2005:
