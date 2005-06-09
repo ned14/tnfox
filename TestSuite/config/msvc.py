@@ -26,16 +26,17 @@ if conf.CheckMSVC80():
 env=conf.Finish()
 # Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope')
-assert architecture=="i486"
+assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
-    cppflags+=[ "/Ow",                   # Only functions may alias
-                "/G%d" % i486_version    # Optimise for given processor revision
+    cppflags+=[ "/Ow",                        # Only functions may alias
+                "/G%d" % architecture_version # Optimise for given processor revision
               ]
 else:
     # Stop the stupid STDC function deprecated warnings
     env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
-if   i486_SSE==1: cppflags+=[ "/arch:SSE" ]
-elif i486_SSE==2: cppflags+=[ "/arch:SSE2" ]
+if architecture=="x86":
+    if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
+    elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=["/Od",        # Optimisation off
                "/ZI",        # Edit & Continue debug info
@@ -60,11 +61,15 @@ env['CPPFLAGS']=cppflags
 # Sets version, base address
 env['LINKFLAGS']=["/version:"+tnfoxversion,
                   "/SUBSYSTEM:CONSOLE",
-                  "/MACHINE:X86",
                   "/DEBUG",
                   "/OPT:NOWIN98",
-                  "/LARGEADDRESSAWARE"
+                  "/STACK:524288,65536"
                   ]
+if make64bit:
+    # This seems to be missing
+    env['LINKFLAGS']+=["/FORCE:UNRESOLVED"]
+else:
+    env['LINKFLAGS']+=["/BASE:0x60000000", "/LARGEADDRESSAWARE"]
 if debugmode:
     env['LINKFLAGS']+=["/INCREMENTAL"]
 else:

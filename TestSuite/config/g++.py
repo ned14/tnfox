@@ -8,11 +8,14 @@ if debugmode:
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
+# Include the standard library locations (scons gets these wrong on mixed 32/64 bit)
+env['LIBPATH']+=["/usr/"+libPathSpec(make64bit)]
+env['LIBPATH']+=["/usr/local/"+libPathSpec(make64bit)]
 # Include Kerberos
 env['CPPPATH']+=["/usr/kerberos/include"]
 # Include X11
 env['CPPPATH']+=["/usr/X11R6/include"]
-env['LIBPATH']+=["/usr/X11R6/lib", "/usr/local/lib" ]
+env['LIBPATH']+=["/usr/X11R6/"+libPathSpec(make64bit)]
 env['LIBS']+=["Xext", "X11"]
 
 def CheckGCCHasVisibility(cc):
@@ -22,14 +25,16 @@ def CheckGCCHasVisibility(cc):
     except:
         temp=[]
     cc.env['CPPFLAGS']=temp+["-fvisibility=hidden"]
-    result=cc.TryCompile('int main(void) { struct __attribute__ ((visibility("default"))) Foo { int foo; } foo; return 0; }\n', '.cpp')
+    result=cc.TryCompile('struct __attribute__ ((visibility("default"))) Foo { int foo; };\nint main(void) { Foo foo; return 0; }\n', '.cpp')
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
 conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
 
 if conf.CheckGCCHasVisibility():
-    env['CPPFLAGS']+=["-fvisibility=hidden"]
+    env['CPPFLAGS']+=["-fvisibility=hidden",        # All symbols are hidden unless marked otherwise
+                      "-fvisibility-inlines-hidden" # All inlines are always hidden
+                     ]
     env['CPPDEFINES']+=["GCC_HASCLASSVISIBILITY"]
 else:
     print "Disabling -fvisibility support"
