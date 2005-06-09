@@ -1156,7 +1156,7 @@ FXbool FXGLViewer::getBoreVector(FXint sx,FXint sy,FXVec3f& point,FXVec3f& dir){
     point=eyeToWorld(screenToEye(sx,sy,0.0f));
   else
     point=eyeToWorld(FXVec3f(0.0f,0.0f,0.0f));
-  dir=normalize(p-point);
+  dir=vecnormalize(p-point);
   return TRUE;
   }
 
@@ -1235,7 +1235,7 @@ FXVec3f FXGLViewer::spherePoint(FXint px,FXint py){
   else{
     v.z=0.0f;
     }
-  return normalize(v);
+  return vecnormalize(v);
   }
 
 
@@ -1845,7 +1845,7 @@ long FXGLViewer::onMotion(FXObject*,FXSelector,void* ptr){
         break;
       case TRUCKING:            // Trucking camera forward or backward
         tmp=(FXfloat)(worldpx*(event->win_y-event->last_y));
-        vec=normalize(getEyeVector());
+        vec=vecnormalize(getEyeVector());
         translate(tmp*vec);
         changed=1;
         break;

@@ -219,7 +219,7 @@ void FXGLTriangleMesh::generatenormals(){
 
     FXVec3f normal=b^c;
 
-    normal=normalize(normal);
+    normal=vecnormalize(normal);
 
     normalBuffer[i+0]=normal.x;
     normalBuffer[i+1]=normal.y;
