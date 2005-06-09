@@ -143,5 +143,29 @@ void InitialiseTnFOXPython()
 						   "atexit.register(Internal_CallDeinitTnFOX)\n");
 		FXPython::int_initEmbeddedEnv();
 	}
+	/* Create magic functions FXMAPFUNC(), FXMAPFUNCS(), FXMAPTYPE() and FXMAPTYPES()
+	to aid usage of FXObject derived classes */
+	PyRun_SimpleString( "def INTFXOBJECTHANDLER(self, sender, sel, ptr):\n"
+						"    for mapentry in self.msgmappings:\n"
+						"        if mapentry[0]<=sel and sel<=mapentry[1]:\n"
+						"            return self.mapentry[2](sender, sel, ptr)\n"
+						"    return self.handle(sender, sel, ptr)\n"
+						"def FXMAPFUNC(obj, sel, id, handler):\n"
+						"    obj.handle=INTFXOBJECTHANDLER\n"
+						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
+						"    obj.msgmappings.append(((sel<<16)+id, (sel<<16)+id, handler))\n"
+						"def FXMAPFUNCS(obj, sel, idlo, idhi, handler):\n"
+						"    obj.handle=INTFXOBJECTHANDLER\n"
+						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
+						"    obj.msgmappings.append(((sel<<16)+idlo, (sel<<16)+idhi, handler))\n"
+						"def FXMAPTYPE(obj, sel, handler):\n"
+						"    obj.handle=INTFXOBJECTHANDLER\n"
+						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
+						"    obj.msgmappings.append(((sel<<16), (sel<<16)+65535, handler))\n"
+						"def FXMAPTYPES(obj, sello, selhi, handler):\n"
+						"    obj.handle=INTFXOBJECTHANDLER\n"
+						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
+						"    obj.msgmappings.append(((sello<<16), (selhi<<16)+65535, handler))\n"
+						);
 }
 
