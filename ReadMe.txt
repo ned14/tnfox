@@ -7,20 +7,14 @@ For full documentation, please consult the index.html file.
 
 Issues:
 -=-=-=-
-1: THE PYTHON BINDINGS ARE NOT FINISHED
-The python bindings remain incomplete until pyste gets its AllFromHeader()
-function working again. There is enough for most things but you'll need
-to manually define constants etc. Furthermore, on POSIX exceptions won't
-traverse shared object boundaries due to a problem with typeinfo and so
-the problems v0.75 had with the python bindings module on POSIX remain.
-Interestingly, debug builds let exceptions traverse just fine :(
-
-Any python code creating children of a FXObject (or anything derived from
-it eg; FXWindow) MUST ensure that the children are deleted before deleting
-the parent. This is due to python reference counting interacting with
-FOX's auto-destruction of children ie; FOX will delete objects without
-telling python so when python tries to delete them, you get at best heap
-corruption and at worst a fault. This may be fixable in the future.
+1: THE PYTHON BINDINGS ARE NOT OF RELEASE QUALITY
+The least tested part of TnFOX is the python bindings. Some issues include
+policies not being set correctly on some items (you'll recognise this by
+a return from a method vanishing when its parent vanishes when it shouldn't).
+Also, on POSIX exceptions won't traverse shared object boundaries due to a
+problem with typeinfo and so the problems v0.75 had with the python bindings
+module on POSIX remain. Interestingly, debug builds let exceptions traverse
+just fine :(
 
 
 2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
