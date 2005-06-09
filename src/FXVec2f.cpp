@@ -36,8 +36,8 @@
 
 namespace FX {
 
-FXVec2f normalize(const FXVec2f& a){
-  register FXfloat t=len(a);
+FXVec2f vecnormalize(const FXVec2f& a){
+  register FXfloat t=veclen(a);
   if(t>0.0f){ return FXVec2f(a.x/t,a.y/t); }
   return FXVec2f(0.0f,0.0f);
   }

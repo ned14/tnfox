@@ -54,26 +54,26 @@ FXVec3f& FXVec3f::operator=(FXColor color){
 
 
 FXVec3f::operator FXColor() const {
-  return FXRGB((x*255.0f),(y*255.0f),(z*255.0f));
+  return FXRGB((FXuchar)(x*255.0f),(FXuchar)(y*255.0f),(FXuchar)(z*255.0f));
   }
 
 
-FXVec3f normalize(const FXVec3f& a){
-  register FXfloat t=len(a);
+FXVec3f vecnormalize(const FXVec3f& a){
+  register FXfloat t=veclen(a);
   if(t>0.0f){ return FXVec3f(a.x/t,a.y/t,a.z/t); }
   return FXVec3f(0.0f,0.0f,0.0f);
   }
 
 
 // Compute normal from three points a,b,c
-FXVec3f normal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
-  return normalize((b-a)^(c-a));
+FXVec3f vecnormal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
+  return vecnormalize((b-a)^(c-a));
   }
 
 
 // Compute approximate normal from four points a,b,c,d
-FXVec3f normal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c,const FXVec3f& d){
-  return normalize((c-a)^(d-b));
+FXVec3f vecnormal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c,const FXVec3f& d){
+  return vecnormalize((c-a)^(d-b));
   }
 
 

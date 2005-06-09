@@ -55,54 +55,54 @@ FXVec4d& FXVec4d::operator=(FXColor color){
 
 
 FXVec4d::operator FXColor() const {
-  return FXRGBA((x*255.0),(y*255.0),(z*255.0),(w*255.0));
+  return FXRGBA((FXuchar)(x*255.0),(FXuchar)(y*255.0),(FXuchar)(z*255.0),(FXuchar)(w*255.0));
   }
 
 
-FXVec4d normalize(const FXVec4d& a){
-  register FXdouble t=len(a);
+FXVec4d vecnormalize(const FXVec4d& a){
+  register FXdouble t=veclen(a);
   if(t>0.0){ return FXVec4d(a.x/t,a.y/t,a.z/t,a.w/t); }
   return FXVec4d(0.0,0.0,0.0,0.0);
   }
 
 
 // Compute plane equation from 3 points a,b,c
-FXVec4d plane(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c){
-  FXVec3d nm(normal(a,b,c));
+FXVec4d vecplane(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c){
+  FXVec3d nm(vecnormal(a,b,c));
   return FXVec4d(nm,-(nm.x*a.x+nm.y*a.y+nm.z*a.z));
   }
 
 
 // Compute plane equation from vector and distance
-FXVec4d plane(const FXVec3d& vec,FXdouble dist){
-  FXVec3d nm(normalize(vec));
+FXVec4d vecplane(const FXVec3d& vec,FXdouble dist){
+  FXVec3d nm(vecnormalize(vec));
   return FXVec4d(nm,-dist);
   }
 
 
 // Compute plane equation from vector and point on plane
-FXVec4d plane(const FXVec3d& vec,const FXVec3d& p){
-  FXVec3d nm(normalize(vec));
+FXVec4d vecplane(const FXVec3d& vec,const FXVec3d& p){
+  FXVec3d nm(vecnormalize(vec));
   return FXVec4d(nm,-(nm.x*p.x+nm.y*p.y+nm.z*p.z));
   }
 
 
 // Compute plane equation from 4 vector
-FXVec4d plane(const FXVec4d& vec){
+FXVec4d vecplane(const FXVec4d& vec){
   register FXdouble t=sqrt(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
   return FXVec4d(vec.x/t,vec.y/t,vec.z/t,vec.w/t);
   }
 
 
 // Signed distance normalized plane and point
-FXdouble distance(const FXVec4d& plane,const FXVec3d& p){
+FXdouble vecdistance(const FXVec4d& plane,const FXVec3d& p){
   return plane.x*p.x+plane.y*p.y+plane.z*p.z+plane.z;
   }
 
 
 // Return true if edge a-b crosses plane
-FXbool crosses(const FXVec4d& plane,const FXVec3d& a,const FXVec3d& b){
-  return (distance(plane,a)>=0.0) ^ (distance(plane,b)>=0.0);
+FXbool veccrosses(const FXVec4d& plane,const FXVec3d& a,const FXVec3d& b){
+  return (vecdistance(plane,a)>=0.0) ^ (vecdistance(plane,b)>=0.0);
   }
 
 

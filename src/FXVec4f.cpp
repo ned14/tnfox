@@ -55,55 +55,55 @@ FXVec4f& FXVec4f::operator=(FXColor color){
 
 
 FXVec4f::operator FXColor() const {
-  return FXRGBA((x*255.0f),(y*255.0f),(z*255.0f),(w*255.0f));
+  return FXRGBA((FXuchar)(x*255.0f),(FXuchar)(y*255.0f),(FXuchar)(z*255.0f),(FXuchar)(w*255.0f));
   }
 
 
 // Normalize vector
-FXVec4f normalize(const FXVec4f& a){
-  register FXfloat t=len(a);
+FXVec4f vecnormalize(const FXVec4f& a){
+  register FXfloat t=veclen(a);
   if(t>0.0f){ return FXVec4f(a.x/t,a.y/t,a.z/t,a.w/t); }
   return FXVec4f(0.0f,0.0f,0.0f,0.0f);
   }
 
 
 // Compute plane equation from 3 points a,b,c
-FXVec4f plane(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
-  FXVec3f nm(normal(a,b,c));
+FXVec4f vecplane(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
+  FXVec3f nm(vecnormal(a,b,c));
   return FXVec4f(nm,-(nm.x*a.x+nm.y*a.y+nm.z*a.z));
   }
 
 
 // Compute plane equation from vector and distance
-FXVec4f plane(const FXVec3f& vec,FXfloat dist){
-  FXVec3f nm(normalize(vec));
+FXVec4f vecplane(const FXVec3f& vec,FXfloat dist){
+  FXVec3f nm(vecnormalize(vec));
   return FXVec4f(nm,-dist);
   }
 
 
 // Compute plane equation from vector and point on plane
-FXVec4f plane(const FXVec3f& vec,const FXVec3f& p){
-  FXVec3f nm(normalize(vec));
+FXVec4f vecplane(const FXVec3f& vec,const FXVec3f& p){
+  FXVec3f nm(vecnormalize(vec));
   return FXVec4f(nm,-(nm.x*p.x+nm.y*p.y+nm.z*p.z));
   }
 
 
 // Compute plane equation from 4 vector
-FXVec4f plane(const FXVec4f& vec){
+FXVec4f vecplane(const FXVec4f& vec){
   register FXfloat t=sqrtf(vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
   return FXVec4f(vec.x/t,vec.y/t,vec.z/t,vec.w/t);
   }
 
 
 // Signed distance normalized plane and point
-FXfloat distance(const FXVec4f& plane,const FXVec3f& p){
+FXfloat vecdistance(const FXVec4f& plane,const FXVec3f& p){
   return plane.x*p.x+plane.y*p.y+plane.z*p.z+plane.z;
   }
 
 
 // Return true if edge a-b crosses plane
-FXbool crosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b){
-  return (distance(plane,a)>=0.0f) ^ (distance(plane,b)>=0.0f);
+FXbool veccrosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b){
+  return (vecdistance(plane,a)>=0.0f) ^ (vecdistance(plane,b)>=0.0f);
   }
 
 
