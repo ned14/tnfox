@@ -492,8 +492,12 @@ template<typename type> type *FXOFFSETPTR(type *p, FXival offset) { return (type
 /// Swap a pair of numbers
 #define FXSWAP(a,b,t) ((t)=(a),(a)=(b),(b)=(t))
 
+
+/* We must define some of these macros as functions so BPL can pick them up */
+
 /// Linear interpolation between a and b, where 0<=f<=1
-#define FXLERP(a,b,f) ((a)+((b)-(a))*(f))
+inline float  FXLERP(float  a, float  b, float  f) { return ((a)+((b)-(a))*(f)); }
+inline double FXLERP(double a, double b, double f) { return ((a)+((b)-(a))*(f)); }
 
 /// Offset of member in a structure
 #define STRUCTOFFSET(str,member) (((char *)(&(((str *)0)->member)))-((char *)0))
@@ -505,19 +509,19 @@ template<typename type> type *FXOFFSETPTR(type *p, FXival offset) { return (type
 #define CONTAINER(ptr,str,mem) ((str*)(((char*)(ptr))-STRUCTOFFSET(str,mem)))
 
 /// Make int out of two shorts
-#define MKUINT(l,h) ((((FX::FXuint)(l))&0xffff) | (((FX::FXuint)(h))<<16))
+inline FXuint MKUINT(FXuint l, FXuint h) { return ((((FX::FXuint)(l))&0xffff) | (((FX::FXuint)(h))<<16)); }
 
 /// Make selector from message type and message id
-#define FXSEL(type,id) ((((FX::FXuint)(id))&0xffff) | (((FX::FXuint)(type))<<16))
+inline FXuint FXSEL(FXuint type, FXuint id) { return ((((FX::FXuint)(id))&0xffff) | (((FX::FXuint)(type))<<16)); }
 
 /// Get type from selector
-#define FXSELTYPE(s) ((FX::FXushort)(((s)>>16)&0xffff))
+inline FXushort FXSELTYPE(FXuint s) { return ((FX::FXushort)(((s)>>16)&0xffff)); }
 
 /// Get ID from selector
-#define FXSELID(s) ((FX::FXushort)((s)&0xffff))
+inline FXushort FXSELID(FXuint s) { return ((FX::FXushort)((s)&0xffff)); }
 
 /// Reverse bits in byte
-#define FXBITREVERSE(b) (((b&0x01)<<7)|((b&0x02)<<5)|((b&0x04)<<3)|((b&0x08)<<1)|((b&0x10)>>1)|((b&0x20)>>3)|((b&0x40)>>5)|((b&0x80)>>7))
+inline FXuchar FXBITREVERSE(FXuchar b) { return (((b&0x01)<<7)|((b&0x02)<<5)|((b&0x04)<<3)|((b&0x08)<<1)|((b&0x10)>>1)|((b&0x20)>>3)|((b&0x40)>>5)|((b&0x80)>>7)); }
 
 // The order in memory is [R G B A] matches that in FXColor
 
@@ -525,25 +529,25 @@ template<typename type> type *FXOFFSETPTR(type *p, FXival offset) { return (type
 #if FOX_BIGENDIAN == 1
 
 /// Make RGBA color
-#define FXRGBA(r,g,b,a)    (((FX::FXuint)(FX::FXuchar)(r)<<24) | ((FX::FXuint)(FX::FXuchar)(g)<<16) | ((FX::FXuint)(FX::FXuchar)(b)<<8) | ((FX::FXuint)(FX::FXuchar)(a)))
+inline FXuint FXRGBA(FXuchar r, FXuchar g, FXuchar b, FXuchar a)	{ return (((FX::FXuint)(FX::FXuchar)(r)<<24) | ((FX::FXuint)(FX::FXuchar)(g)<<16) | ((FX::FXuint)(FX::FXuchar)(b)<<8) | ((FX::FXuint)(FX::FXuchar)(a))); }
 
 /// Make RGB color
-#define FXRGB(r,g,b)       (((FX::FXuint)(FX::FXuchar)(r)<<24) | ((FX::FXuint)(FX::FXuchar)(g)<<16) | ((FX::FXuint)(FX::FXuchar)(b)<<8) | 0x000000ff)
+inline FXuint FXRGB(FXuchar r, FXuchar g, FXuchar b)				{ return (((FX::FXuint)(FX::FXuchar)(r)<<24) | ((FX::FXuint)(FX::FXuchar)(g)<<16) | ((FX::FXuint)(FX::FXuchar)(b)<<8) | 0x000000ff); }
 
 /// Get red value from RGBA color
-#define FXREDVAL(rgba)     ((FX::FXuchar)(((rgba)>>24)&0xff))
+inline FXuchar FXREDVAL(FXuint rgba)		{ return ((FX::FXuchar)(((rgba)>>24)&0xff)); }
 
 /// Get green value from RGBA color
-#define FXGREENVAL(rgba)   ((FX::FXuchar)(((rgba)>>16)&0xff))
+inline FXuchar FXGREENVAL(FXuint rgba)		{ return ((FX::FXuchar)(((rgba)>>16)&0xff)); }
 
 /// Get blue value from RGBA color
-#define FXBLUEVAL(rgba)    ((FX::FXuchar)(((rgba)>>8)&0xff))
+inline FXuchar FXBLUEVAL(FXuint rgba)		{ return ((FX::FXuchar)(((rgba)>>8)&0xff)); }
 
 /// Get alpha value from RGBA color
-#define FXALPHAVAL(rgba)   ((FX::FXuchar)((rgba)&0xff))
+inline FXuchar FXALPHAVAL(FXuint rgba)		{ return ((FX::FXuchar)((rgba)&0xff)); }
 
 /// Get component value of RGBA color
-#define FXRGBACOMPVAL(rgba,comp) ((FX::FXuchar)(((rgba)>>((3-(comp))<<3))&0xff))
+inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rgba)>>((3-(comp))<<3))&0xff)); }
 
 #endif
 
@@ -551,25 +555,25 @@ template<typename type> type *FXOFFSETPTR(type *p, FXival offset) { return (type
 #if FOX_BIGENDIAN == 0
 
 /// Make RGBA color
-#define FXRGBA(r,g,b,a)    (((FX::FXuint)(FX::FXuchar)(r)) | ((FX::FXuint)(FX::FXuchar)(g)<<8) | ((FX::FXuint)(FX::FXuchar)(b)<<16) | ((FX::FXuint)(FX::FXuchar)(a)<<24))
+inline FXuint FXRGBA(FXuchar r, FXuchar g, FXuchar b, FXuchar a)	{ return (((FX::FXuint)(FX::FXuchar)(r)) | ((FX::FXuint)(FX::FXuchar)(g)<<8) | ((FX::FXuint)(FX::FXuchar)(b)<<16) | ((FX::FXuint)(FX::FXuchar)(a)<<24)); }
 
 /// Make RGB color
-#define FXRGB(r,g,b)       (((FX::FXuint)(FX::FXuchar)(r)) | ((FX::FXuint)(FX::FXuchar)(g)<<8) | ((FX::FXuint)(FX::FXuchar)(b)<<16) | 0xff000000)
+inline FXuint FXRGB(FXuchar r, FXuchar g, FXuchar b)				{ return (((FX::FXuint)(FX::FXuchar)(r)) | ((FX::FXuint)(FX::FXuchar)(g)<<8) | ((FX::FXuint)(FX::FXuchar)(b)<<16) | 0xff000000); }
 
 /// Get red value from RGBA color
-#define FXREDVAL(rgba)     ((FX::FXuchar)((rgba)&0xff))
+inline FXuchar FXREDVAL(FXuint rgba)		{ return ((FX::FXuchar)((rgba)&0xff)); }
 
 /// Get green value from RGBA color
-#define FXGREENVAL(rgba)   ((FX::FXuchar)(((rgba)>>8)&0xff))
+inline FXuchar FXGREENVAL(FXuint rgba)		{ return ((FX::FXuchar)(((rgba)>>8)&0xff)); }
 
 /// Get blue value from RGBA color
-#define FXBLUEVAL(rgba)    ((FX::FXuchar)(((rgba)>>16)&0xff))
+inline FXuchar FXBLUEVAL(FXuint rgba)		{ return ((FX::FXuchar)(((rgba)>>16)&0xff)); }
 
 /// Get alpha value from RGBA color
-#define FXALPHAVAL(rgba)   ((FX::FXuchar)(((rgba)>>24)&0xff))
+inline FXuchar FXALPHAVAL(FXuint rgba)		{ return ((FX::FXuchar)(((rgba)>>24)&0xff)); }
 
 /// Get component value of RGBA color
-#define FXRGBACOMPVAL(rgba,comp) ((FX::FXuchar)(((rgba)>>((comp)<<3))&0xff))
+inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rgba)>>((comp)<<3))&0xff)); }
 
 #endif
 
@@ -786,7 +790,7 @@ extern FXAPI FXint fxieeedoubleclass(FXdouble number);
 extern FXAPI FXint fxparsegeometry(const FXchar *string,FXint& x,FXint& y,FXint& w,FXint& h);
 
 /// True if executable with given path is a console application
-extern FXbool fxisconsole(const FXchar *path);
+extern FXAPI FXbool fxisconsole(const FXchar *path);
 
 /// Demangles a raw symbol into a human-readable one
 extern FXAPI const FXString &fxdemanglesymbol(const FXString &rawsymbol);
@@ -826,6 +830,7 @@ extern FXAPI FXint fxfindHotKey(const FXString& string);
 * yield "Salt & Pepper".
 */
 extern FXAPI FXString fxstripHotKey(const FXString& string);
+
 
 }
 
