@@ -678,9 +678,9 @@ FXMat4f invert(const FXMat4f& s){
 FXMat4f& FXMat4f::look(const FXVec3f& eye,const FXVec3f& cntr,const FXVec3f& vup){
   register FXfloat x0,x1,x2,tx,ty,tz;
   FXVec3f rz,rx,ry;
-  rz=normalize(eye-cntr);
-  rx=normalize(vup^rz);
-  ry=normalize(rz^rx);
+  rz=vecnormalize(eye-cntr);
+  rx=vecnormalize(vup^rz);
+  ry=vecnormalize(rz^rx);
   tx= -eye[0]*rx[0]-eye[1]*rx[1]-eye[2]*rx[2];
   ty= -eye[0]*ry[0]-eye[1]*ry[1]-eye[2]*ry[2];
   tz= -eye[0]*rz[0]-eye[1]*rz[1]-eye[2]*rz[2];
