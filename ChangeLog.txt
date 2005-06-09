@@ -51,6 +51,11 @@ increase in Tn TestIO due to skipping register dumping around _asm.
 - Removed long and unsigned long overloads as they were unnecessary
 * Fixed some small x64 FreeBSD incompatibilities
 R *** Issued snapshot 2
++ Added fxprefetchmem() inline functions
+* Replaced many macros in fxdefs.h with inline functions so pyste can see them
++ Finally implemented AllFromHeader() in the Python bindings and added policies
+for all remaining classes. The bindings are now complete, if untested.
+* Renamed all vector friend functions so they are prefixed with 'vec'
 
 
 v0.85 13th Feb 2005:
