@@ -32,15 +32,13 @@ boostpath="../../boost"
 processors=1
 
 # List of files to be excluded
-excludelist=["FXArray.h", "FXDict.h",
+excludelist=["FXArray.h", "FXDict.h", "FXDLL.h", "FXElement.h",
              "FXErrCodes.h", "FXGenericTools.h", "FXHash.h", "FXIconDict.h",
              "FXLRUCache.h", "FXMemDbg.h", "FXMemoryPool.h", "FXPolicies.h",
              "FXPtrHold.h", "FXRefedObject.h", "FXRollback.h", "FXSecure.h",
              "FXString.h", "FXStringDict.h",
              "FXTextCodec.h", "FXURL.h", "FXUTF16Codec.h", "FXUTF32Codec.h",
              "FXUTF8Codec.h", "FXWString.h"]
-# AllFromHeader() broken bug
-excludelist+=["FXDLL.h", "FXElement.h", "FXHandedInterface.h", "FXIPC.h", "FXMDIButton.h"]
 # Pyste and/or psyco bug?
 excludelist+=["FXBZStream.h", "FXGZStream.h"]
 # TnFOX deprecated classes from FOX
@@ -56,7 +54,6 @@ includelist={"FXApp.h"          : [ "CArrays.h" ],
              "FXGLObject.h"     : [ "FXGLViewer.h" ],
              "FXGLTriangleMesh.h" : [ "CArrays.h" ],
              "FXGLViewer.h"     : [ "CArrays.h", "FXGLObject.h", "FXGLVisual.h" ],
-             "FXImage.h"        : [ "CArrays.h" ],
              "FXMat3d.h"        : [ "FXQuatd.h" ],
              "FXMat3f.h"        : [ "FXQuatf.h" ],
              "FXMat4d.h"        : [ "FXQuatd.h" ],
@@ -73,14 +70,12 @@ includelist={"FXApp.h"          : [ "CArrays.h" ],
              }
 
 # List of files with special additions
-appendlist={"FXObject.h" : """cclass=Class('FX::FXMetaClass', 'FXObject.h')
-FXObject.applyFXMetaClass(globals(), cclass)
-""" }
+appendlist={}
 
 # List of files with alternative instructions
-instructlist={  "FXDLL.h" : "awaiting AllFromHeader()",
-                "FXElement.h" : "awaiting AllFromHeader()",
-                "FXMDIButton.h" : "awaiting AllFromHeader()"}
+#instructlist={  "FXDLL.h" : "awaiting AllFromHeader()",
+#                "FXElement.h" : "awaiting AllFromHeader()",
+#                "FXMDIButton.h" : "awaiting AllFromHeader()"}
 
 # Files to be floated to top to avoid dependency issues
 floattoplist=[]
@@ -119,10 +114,12 @@ while idx<len(filelist):
         del filelist[idx]
         filelist.insert(0, temp)
     idx+=1
+# Add fxdefs.h as it contains many useful functions
+filelist.append("fxdefs.h")
 
 #print "Files to be processed:",filelist
 #filelist=[ "FXGLTriangleMesh.h" ]
-#filelist=["FXThread.h"]
+#filelist=["FXFoldingList.h"]
 if not os.path.isdir("Policies"):
     os.mkdir("Policies")
 modules=[]
@@ -130,21 +127,43 @@ try:
     for filename in filelist:
         base,ext=os.path.splitext(filename)
         outh=file(base+".pyste", "wt")
+        outh.write("import string\n")
         outh.write("from Policies import "+base+"\n")
+        outh.write("class MetaMembers(list):\n")
+        outh.write("    def append(self, item):\n")
+        outh.write("        # Invoke the policy if it's not internal\n")
+        outh.write("        itemname=item.name\n")
+        outh.write("        itemlocation=item.location[0]\n")
+        outh.write("        if itemname[:2]!='$_':\n")
+        outh.write("            name=string.replace(itemname, ':', '_')\n")
+        outh.write("            itemfile=itemlocation[string.rfind(itemlocation, '/')+1:string.rfind(itemlocation, '.')]\n")
+        outh.write("            cmd=itemfile+'.apply'+name\n")
+        outh.write("            cmd2='from Policies import '+itemfile+'\\n'+cmd\n")
+        outh.write("            cmd3=cmd2+'(globals(), self.cheader[name])'\n")
+        outh.write("            doit=False\n")
+        outh.write("            try:\n")
+        outh.write("                exec cmd2\n")
+        outh.write("                doit=True\n")
+        outh.write("            except: print '### Skipping '+cmd\n")
+        outh.write("            if doit:\n")
+        outh.write("                print '### Calling '+cmd\n")
+        outh.write("                exec cmd3\n")
+        outh.write("        list.append(self, item)\n")
         # outh.write("Include('"+filename+"')\n")
         outh.write("PCHInclude('common.h')\n")
         if includelist.has_key(filename):
             for includefile in includelist[filename]:
                 outh.write("Include('"+includefile+"')\n")
-        # outh.write("cclass=AllFromHeader('"+filename+"')\n")
-        if instructlist.has_key(filename):
-            outh.write(instructlist[filename])
-        else:
-            # outh.write("TnFOXPolicies.apply"+base+"(cclass."+base+")\n")
-            outh.write("baseclass="+base+".base"+base+"()\n")
-            outh.write("if baseclass: Import(baseclass+'.pyste')\n")
-            outh.write("cclass=Class('FX::"+base+"', '"+filename+"')\n")
-            outh.write(base+".apply"+base+"(globals(), cclass)\n")
+        # Include policies for any base classes
+        outh.write("baseclass="+base+".base"+base+"()\n")
+        outh.write("if baseclass: Import(baseclass+'.pyste')\n")
+        outh.write("print '??? Processing "+base+".pyste'\n")
+        ###outh.write("cclass=Class('FX::"+base+"', '"+filename+"')\n")
+        ###outh.write(base+".apply"+base+"(globals(), cclass)\n")
+        outh.write("cheader=AllFromHeader('"+headerspath+"/"+filename+"')\n")
+        # Poke our MetaMembers in instead of the exporter.members list
+        outh.write("cheader.exporter.members=MetaMembers()\n")
+        outh.write("cheader.exporter.members.cheader=cheader\n")
         outh.write("try: "+base+".customise(globals())\nexcept: pass\n")
         if appendlist.has_key(filename):
             outh.write(appendlist[filename])
@@ -159,7 +178,7 @@ print "Generated pyste files"
 herepath=os.getcwd()
 boostpath=os.path.abspath(boostpath)
 pystepath=os.path.abspath(boostpath+"/libs/python/pyste/src/Pyste/pyste.py")+" "
-args="--module="+module+" --multiple --no-default-include"
+args="--module="+module+" --multiple --no-default-include -DFX_RUNNING_PYSTE"
 args+=" --out "+herepath+" --pyste-ns "+module
 args+=" -I "+herepath+" -I "+boostpath+" -I "+headerspath
 if sys.platform=="win32": args+=" -DWIN32 "
@@ -185,11 +204,13 @@ for filename in filelist:
     filepath=os.path.join(headerspath, filename)
     base,ext=os.path.splitext(filename)
     pystelist+=base+".pyste\n"
+    policyfile=os.path.join("Policies", base+".py")
     try:
         lastupdate=os.path.getmtime("_"+base+".cpp")
     except os.error:
         lastupdate=0
-    if os.path.getmtime(filepath)>lastupdate:
+    # If the header or policy is newer than the output, remake
+    if os.path.getmtime(filepath)>lastupdate or os.path.getmtime(policyfile)>lastupdate:
         updatelist+=[base+".pyste"]
 pystelist="_regconvs.pyste\n"+pystelist
 print "Generating main ..."
