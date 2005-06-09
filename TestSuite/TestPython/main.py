@@ -20,7 +20,7 @@
 
 import sys
 import os
-sys.path+=[os.path.abspath("../../lib")] # In case TnFOX isn't installed
+sys.path=[os.path.abspath("../../lib")]+sys.path # In case TnFOX isn't installed
 from TnFOX import *
 
 from mainwindow import *

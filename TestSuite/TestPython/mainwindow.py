@@ -24,7 +24,7 @@ LAYOUT_FILL=LAYOUT_FILL_X | LAYOUT_FILL_Y
 
 class MainWindow(FXMainWindow):
     def __init__(self, app, title):
-        FXMainWindow.__init__(self, app, title)
+        FXMainWindow.__init__(self, app, title, None, None, DECOR_ALL, 100,100)
         self._vframe=FXVerticalFrame(self, LAYOUT_FILL)
         self._text=FXText(self._vframe, None, 0, LAYOUT_FILL)
         self._text.setEditable(False)
