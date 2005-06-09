@@ -563,8 +563,16 @@ within the carrying FXIPCChannel subclass, you should implement unknownMsgReceiv
 */
 struct FXIPCChannelPrivate;
 template<class type> class QPtrVector;
-class FXAPI FXIPCChannel : public FXMutex, protected FXThread
+class FXAPI FXIPCChannel : public FXMutex,
+#if !defined(BOOST_PYTHON_SOURCE) && !defined(FX_RUNNING_PYSTE)
+/* We must subvert normal access protection for the BPL bindings as pyste doesn't
+understand yet and it's easier to do this than fix pyste */
+	protected FXThread
 {
+#else
+	public FXThread
+{
+#endif
 	FXIPCChannelPrivate *p;
 	FXIPCChannel(const FXIPCChannel &);
 	FXIPCChannel &operator=(const FXIPCChannel &);
