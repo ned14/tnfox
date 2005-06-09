@@ -185,7 +185,7 @@ void FXColorWheel::updatedial(){
     for(register FXint x=0; x<dial->getWidth(); x++){
       if(xytohs(h,s,x,y)){
         fxhsv_to_rgb(r,g,b,h,s,hsv[2]);
-        dial->setPixel(x,y,FXRGB(255.0f*r,255.0f*g,255.0f*b));
+        dial->setPixel(x,y,FXRGB((FXuchar)(255.0f*r),(FXuchar)(255.0f*g),(FXuchar)(255.0f*b)));
         }
       else{
         dial->setPixel(x,y,backColor);
