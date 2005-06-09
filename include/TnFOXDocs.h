@@ -593,10 +593,9 @@ TnFOX's Python bindings are almost entirely automatically generated and you can
 find the necessary files in the Python directory. You will also need Python v2.3
 or later and the Boost library v1.31 or later.
 
-You'll also need a very new compiler. Supposedly MSVC6 works, but it made errors
-when I tried it and I haven't investigated further. I use MSVC7.1 (.NET 2003) so
-I suggest that for Windows. On POSIX, I use GCC v3.4 as it's between two and three
-times faster than GCC v3.3 and earlier, but it compiles fine even with GCC v3.2.2.
+You'll also need a modern compiler such as MSVC7.1 or later or GCC v3.22 or later
+(GCC v3.4 or later is far faster, so you should use that instead. GCC v4.0 or later
+comes with my symbol visibility patch which very substantially improves load times)
 
 You'll also need a fast computer. Anything using this much compile-time introspection
 takes an age but you can rest easy knowing that for every two years hence
@@ -627,6 +626,9 @@ caused fatal errors at link time due to symbols clashes of unnamed namespaces de
 within the Boost headers.
 
 \subsection build To build:
+
+Firstly, you need a \b minimum of 1Gb RAM. This is for linking the bindings, which
+takes a huge amount of RAM.
 
 Place Boost into a directory called "boost" next to the TnFOX directory.
 Overwrite the files in Boost.Python with the contents of BoostPatches.zip. Get a
@@ -674,7 +676,7 @@ all members (nested classes, enums, data etc) therein including a full
 duplication of the class inheritance structure, except for those
 retired for reasons of deprecation or where it doesn't make sense
 to include them. See the top of GenInterfaces.py for a list.
-\li Apart from one virtual method in FXGLViewer and one in FXApp,
+\li Apart from one virtual method in FXApp,
 every virtual thing can be overriden by python code.
 \li All method & function overloads are available.
 \li Default parameters work as expected.
@@ -708,8 +710,13 @@ expected to be managed entirely by \c new - if this isn't the case,
 do not modify the list - use the QPtrList methods directly. If you
 take references from a QPtrList, their lifetime is set to expire
 with the list reference.
-\li When FOX implements FXWString fully, I'll add a map to unicode
+\li When FOX implements unicode fully, I'll add a map to unicode
 python strings where the contents contain at least one unicode character.
+\li The same method for managing FXWindow message dispatching as FXPy
+was chosen for aiding compatibility. For each instance of the window
+class, in its constructor you should call the member functions FXMAPFUNC(),
+FXMAPFUNCS(), FXMAPTYPE() or FXMAPTYPES() as appropriate. These have
+the same spec as their macro counterparts in FXObject.h.
 
 \subsection caveats Caveats:
 
@@ -1997,11 +2004,15 @@ This has been done to support small displays. You shouldn't notice the change
 as there are \c DEFAULT_PAD and \c DEFAULT_SPACING macros which point to the
 new code. However, you should test your code after porting to TnFOX with
 the -fxscreenscale=25% argument.
+\li All friend functions of FX::FXVecXX classes have had 'vec' prefixed before
+them. This was primarily to aid the python bindings where the names were
+clashing with python ones, but I think it is more clear anyway.
 \li FX::FXApp has had its event loop dispatch code split off into
 FX::FXEventLoop and thus some things are no longer available through FXApp.
 This in practice should require no source changes to your code if you are
 not using per-thread event loops.
-\li FX::FXId now maintains what event loop it was created within.
+\li FX::FXId, and thus all derivative classes (eg; windows) now maintain
+what event loop it was created within.
 \li As TnFOX permits multiple window trees to run across multiple threads,
 you must not use static variables to store state in your GUI widgets unless
 it's read-only. Use FX::FXEventLoop_Static instead like as follows:
@@ -2027,7 +2038,7 @@ These trap any exceptions thrown and show a FX::FXExceptionDialog.
 
 Summary of what is not supported from FOX:
 \li Some FX::FXStream methods. You'll never normally notice these
-\li The application wide mutex
+\li The application wide mutex. It's a bad idea anyway.
 \li FXCondition (rewrite your code to use FX::FXWaitCondition, it's more
 useful anyway)
 \li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
