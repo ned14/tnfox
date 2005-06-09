@@ -983,6 +983,11 @@ const FXString &fxdemanglesymbol(const FXString &rawsymbol)
 	dealloc.dismiss();
 	return *ret;
 }
+#else
+const FXString &fxdemanglesymbol(const FXString &rawsymbol)
+{
+	return rawsymbol;
+}
 #endif
 
 
