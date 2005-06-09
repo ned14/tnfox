@@ -385,9 +385,6 @@ public:
   */
   FXbool removeInput(FXInputHandle fd,FXuint mode);
 
-  /// Return key state
-  FXbool getKeyState(FXuint keysym) const;
-
   /// Peek to determine if there's an event
   FXbool peekEvent();
 
