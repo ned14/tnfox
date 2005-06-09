@@ -22,6 +22,12 @@ import FXIODevice
 def baseFXSSLDevice():
     return "FXIODevice"
 
+def applyFXSSLKey(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cclass.asymmetricKey,          return_internal_reference())
+    set_policy(cclass.setAsymmetricKey,       return_self())
+
 def applyFXSSLDevice(g, cclass):
     for key,value in g.items():
         globals()[key]=value

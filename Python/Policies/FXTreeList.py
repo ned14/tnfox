@@ -18,9 +18,24 @@
 #********************************************************************************
 
 import FXScrollArea
+import FXObject
 
 def baseFXTreeList():
     return "FXScrollArea"
+
+def applyFXTreeItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getParent,        return_value_policy(reference_existing_object))
+    set_policy(cclass.getNext,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getPrev,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getFirst,         return_value_policy(reference_existing_object))
+    set_policy(cclass.getLast,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getBelow,         return_value_policy(reference_existing_object))
+    set_policy(cclass.getAbove,         return_value_policy(reference_existing_object))
+    set_policy(cclass.getOpenIcon,      return_value_policy(reference_existing_object))
+    set_policy(cclass.getClosedIcon,    return_value_policy(reference_existing_object))
 
 def applyFXTreeList(g, cclass):
     for key,value in g.items():
@@ -43,4 +58,9 @@ def applyFXTreeList(g, cclass):
     set_policy(cclass.getCursorItem,    return_internal_reference())
     exclude(cclass.getSortFunc)
     exclude(cclass.setSortFunc)
-    set_policy(cclass.getFont,          return_internal_reference())
+    set_policy(cclass.getFont,          return_value_policy(reference_existing_object))
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXTreeList")

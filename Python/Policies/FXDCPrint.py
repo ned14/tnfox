@@ -26,4 +26,6 @@ def applyFXDCPrint(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     FXDC.applyFXDC(g, cclass)
+    exclude(cclass.outhex)
+    exclude(cclass.outf)
     

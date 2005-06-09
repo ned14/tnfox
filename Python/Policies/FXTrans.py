@@ -20,9 +20,10 @@
 def baseFXTrans():
     return None
 
-def applyFXTrans(g, cclass):
+def applyFXTransString(g, cclass):
     for key,value in g.items():
         globals()[key]=value
+    set_policy(cclass.arg,           return_self())
 
 def customise(g):
     for key,value in g.items():

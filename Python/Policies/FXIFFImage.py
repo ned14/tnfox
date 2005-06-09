@@ -26,3 +26,9 @@ def applyFXIFFImage(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     FXImage.applyFXImage(g, cclass)
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    Include("CArrays.h")
+    declaration_code("DEFINE_MAKECARRAYITER(FXIFFImage, FX::FXColor, getData, (), (c.getWidth()*c.getHeight()))")

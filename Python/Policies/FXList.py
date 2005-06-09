@@ -18,9 +18,16 @@
 #********************************************************************************
 
 import FXScrollArea
+import FXObject
 
 def baseFXList():
     return "FXScrollArea"
+
+def applyFXListItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getIcon,       return_value_policy(reference_existing_object))
 
 def applyFXList(g, cclass):
     for key,value in g.items():
@@ -30,6 +37,6 @@ def applyFXList(g, cclass):
     set_policy(cclass.getItemIcon,   return_internal_reference())
     exclude(cclass.getItemData)
     exclude(cclass.setItemData)
-    set_policy(cclass.getFont,       return_internal_reference())
+    set_policy(cclass.getFont,       return_value_policy(reference_existing_object))
     exclude(cclass.getSortFunc)
     exclude(cclass.setSortFunc)

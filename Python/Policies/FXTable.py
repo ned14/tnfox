@@ -18,9 +18,17 @@
 #********************************************************************************
 
 import FXScrollArea
+import FXObject
 
 def baseFXTable():
     return "FXScrollArea"
+
+def applyFXTableItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getIcon,           return_value_policy(reference_existing_object))
+    set_policy(cclass.getControlFor,     return_internal_reference())
 
 def applyFXTable(g, cclass):
     for key,value in g.items():
@@ -32,4 +40,9 @@ def applyFXTable(g, cclass):
     set_policy(cclass.getItemIcon,       return_internal_reference())
     exclude(cclass.getItemData)
     exclude(cclass.setItemData)
-    set_policy(cclass.getFont,           return_internal_reference())
+    set_policy(cclass.getFont,           return_value_policy(reference_existing_object))
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXTable")

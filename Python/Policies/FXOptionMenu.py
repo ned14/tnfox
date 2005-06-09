@@ -22,6 +22,11 @@ import FXLabel
 def baseFXOptionMenu():
     return "FXLabel"
 
+def applyFXOption(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXLabel.applyFXLabel(g, cclass)
+
 def applyFXOptionMenu(g, cclass):
     for key,value in g.items():
         globals()[key]=value

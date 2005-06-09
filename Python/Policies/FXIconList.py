@@ -18,9 +18,17 @@
 #********************************************************************************
 
 import FXScrollArea
+import FXObject
 
 def baseFXIconList():
     return "FXScrollArea"
+
+def applyFXIconItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getBigIcon,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getMiniIcon,         return_value_policy(reference_existing_object))
 
 def applyFXIconList(g, cclass):
     for key,value in g.items():
@@ -33,6 +41,11 @@ def applyFXIconList(g, cclass):
     set_policy(cclass.getItemMiniIcon,     return_internal_reference())
     exclude(cclass.getItemData)
     exclude(cclass.setItemData)
-    set_policy(cclass.getFont,             return_internal_reference())
+    set_policy(cclass.getFont,             return_value_policy(reference_existing_object))
     exclude(cclass.getSortFunc)
     exclude(cclass.setSortFunc)
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXIconList")

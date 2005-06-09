@@ -27,3 +27,9 @@ def applyFXIcon(g, cclass):
         globals()[key]=value
     FXImage.applyFXImage(g, cclass)
     
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    Include("CArrays.h")
+    declaration_code("DEFINE_MAKECARRAYITER(FXIcon, FX::FXColor, getData, (), (c.getWidth()*c.getHeight()))")
+    

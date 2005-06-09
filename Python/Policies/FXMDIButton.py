@@ -17,9 +17,48 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
+import FXButton
+import FXMenuButton
+import FXMenuPane
+
 def baseFXMDIButton():
     return None
 
-def applyFXMDIButton(g, cclass):
+def applyFXMDIDeleteButton(g, cclass):
     for key,value in g.items():
         globals()[key]=value
+    FXButton.applyFXButton(g, cclass)
+
+def applyFXMDIRestoreButton(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXButton.applyFXButton(g, cclass)
+
+def applyFXMDIMaximizeButton(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXButton.applyFXButton(g, cclass)
+
+def applyFXMDIMinimizeButton(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXButton.applyFXButton(g, cclass)
+
+def applyFXMDIWindowButton(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXMenuButton.applyFXMenuButton(g, cclass)
+
+def applyFXMDIMenu(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXMenuPane.applyFXMenuPane(g, cclass)
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXMDIDeleteButton")
+    SplitOutput("FX::FXMDIRestoreButton")
+    SplitOutput("FX::FXMDIMaximizeButton")
+    SplitOutput("FX::FXMDIMinimizeButton")
+    SplitOutput("FX::FXMDIWindowButton")

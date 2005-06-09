@@ -18,9 +18,24 @@
 #********************************************************************************
 
 import FXIconList
+import FXObject
 
 def baseFXFoldingList():
     return "FXIconList"
+
+def applyFXFoldingItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getParent,        return_value_policy(reference_existing_object))
+    set_policy(cclass.getNext,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getPrev,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getFirst,         return_value_policy(reference_existing_object))
+    set_policy(cclass.getLast,          return_value_policy(reference_existing_object))
+    set_policy(cclass.getBelow,         return_value_policy(reference_existing_object))
+    set_policy(cclass.getAbove,         return_value_policy(reference_existing_object))
+    set_policy(cclass.getOpenIcon,      return_value_policy(reference_existing_object))
+    set_policy(cclass.getClosedIcon,    return_value_policy(reference_existing_object))
 
 def applyFXFoldingList(g, cclass):
     for key,value in g.items():
@@ -40,3 +55,8 @@ def applyFXFoldingList(g, cclass):
     set_policy(cclass.getCurrentItem,   return_internal_reference())
     set_policy(cclass.getAnchorItem,    return_internal_reference())
     set_policy(cclass.getCursorItem,    return_internal_reference())
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXFoldingList")

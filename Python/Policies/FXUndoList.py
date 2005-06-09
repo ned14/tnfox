@@ -22,6 +22,16 @@ import FXObject
 def baseFXUndoList():
     return "FXObject"
 
+def applyFXCommand(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+
+def applyFXCommandGroup(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+
 def applyFXUndoList(g, cclass):
     for key,value in g.items():
         globals()[key]=value

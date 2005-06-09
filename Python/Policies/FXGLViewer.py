@@ -45,4 +45,5 @@ static FXMallocHolder<FXGLObject *> *FXGLViewer_select(FXGLViewer &c, FXint x,FX
 {
     return new FXMallocHolder<FXGLObject *>(c.select(x,y,w,h));
 }""")
-    
+    SplitOutput("FX::FXGLViewer")
+

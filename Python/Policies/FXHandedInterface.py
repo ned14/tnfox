@@ -18,14 +18,32 @@
 #********************************************************************************
 
 import FXDialogBox
+import FXPopup
 
-def baseFXHandedInterfaceI_FXDialogBox():
+def baseFXHandedInterface():
     return "FXDialogBox"
 
-def applyFXHandedInterfaceI_FXDialogBox(g, cclass):
+def applyFXHandedInterfaceI(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXDialogBox.applyFXDialogBox(g, cclass)
     set_policy(cclass.buttonWell,       return_internal_reference())
     set_policy(cclass.okButton,         return_internal_reference())
     set_policy(cclass.cancelButton,     return_internal_reference())
+
+def applyFXHandedDialog(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXDialogBox.applyFXDialogBox(g, cclass)
+    applyFXHandedInterfaceI(g, cclass)
+
+def applyFXHandedPopup(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXPopup.applyFXPopup(g, cclass)
+    applyFXHandedInterfaceI(g, cclass)
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXHandedDialog")
+    SplitOutput("FX::FXHandedPopup")

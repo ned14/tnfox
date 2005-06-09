@@ -31,3 +31,7 @@ def applyFXThread(g, cclass):
     exclude(cclass.removeCleanupCall)
     exclude(cclass.int_cancelWaiterHandle)
     
+def applyFXThreadPool(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cclass.dispatch,         return_internal_reference())

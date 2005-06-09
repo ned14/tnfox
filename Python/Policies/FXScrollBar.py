@@ -26,3 +26,8 @@ def applyFXScrollBar(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     FXWindow.applyFXWindow(g, cclass)
+
+def applyFXScrollCorner(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXWindow.applyFXWindow(g, cclass)

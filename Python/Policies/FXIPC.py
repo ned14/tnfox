@@ -17,11 +17,33 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import base
+import FXThread
 
-def baseBaseClass():
-    return "Base"
+def baseFXIPC():
+    return "FXThread"
 
-def applyClass(g, cclass):
+def applyFXIPCMsg(g, cclass):
     for key,value in g.items():
         globals()[key]=value
+    exclude(cclass.originalData)
+    
+def applyFXIPCMsg_ErrorOccurred(g, cclass):
+    applyFXIPCMsg(g, cclass)
+
+def applyFXIPCChannel(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXThread.applyFXThread(g, cclass)
+    set_policy(cclass.registry,             return_value_policy(reference_existing_object))
+    set_policy(cclass.device,               return_value_policy(reference_existing_object))
+    set_policy(cclass.threadPool,           return_value_policy(reference_existing_object))
+    
+#def customise(g):
+#    for key,value in g.items():
+#        globals()[key]=value
+#    declaration_code("namespace boost {\n"
+#	"template<> struct is_convertible<FXIPCChannel *, FXThread *>\n"
+#	"{\n"
+#	"   static const int value=false;\n"
+#	"};\n"
+#	"}")

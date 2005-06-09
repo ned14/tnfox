@@ -26,3 +26,18 @@ def applyFXSeparator(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     FXFrame.applyFXFrame(g, cclass)
+
+def applyFXHorizontalSeparator(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    applyFXSeparator(g, cclass)
+
+def applyFXVerticalSeparator(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    applyFXSeparator(g, cclass)
+
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    SplitOutput("FX::FXSeparator")

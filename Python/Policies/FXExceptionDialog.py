@@ -25,5 +25,5 @@ def baseFXExceptionDialog():
 def applyFXExceptionDialog(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXHandedInterface.applyFXHandedInterfaceI_FXDialogBox(g, cclass)
+    FXHandedInterface.applyFXHandedDialog(g, cclass)
     

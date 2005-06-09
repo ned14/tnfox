@@ -22,6 +22,20 @@ import FXObject
 def baseFXApp():
     return "FXObject"
 
+def applyFXEventLoop(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getApp,           return_internal_reference())
+    set_policy(cclass.getRootWindow,    return_internal_reference())
+    set_policy(cclass.getCursorWindow,  return_internal_reference())
+    set_policy(cclass.getFocusWindow,   return_internal_reference())
+    set_policy(cclass.getPopupWindow,   return_internal_reference())
+    set_policy(cclass.findWindowWithId, return_internal_reference())
+    set_policy(cclass.findWindowAt,     return_internal_reference())
+    set_policy(cclass.getModalWindow,   return_internal_reference())
+    set_policy(cclass.getDragWindow,    return_internal_reference())
+
 def applyFXApp(g, cclass):
     for key,value in g.items():
         globals()[key]=value
@@ -30,8 +44,7 @@ def applyFXApp(g, cclass):
     exclude(cclass.getNextEvent)
     exclude(cclass.getDisplay)
     set_policy(cclass.getArgv,          return_internal_reference())
-    #set_policy(cclass.getEventLoop,     return_internal_reference())
-    set_policy(cclass.getEventLoop,     return_value_policy(return_opaque_pointer))
+    set_policy(cclass.getEventLoop,     return_internal_reference())
     set_policy(cclass.getPrimaryEventLoop,return_internal_reference())
     set_policy(cclass.getDefaultVisual, return_internal_reference())
     set_policy(cclass.getMonoVisual,    return_internal_reference())
@@ -74,4 +87,5 @@ static void FXApp_init2(FXApp &app, int argc, list argv)
 {
 	FXApp_init(app, argc, argv);
 }""")
+    SplitOutput("FX::FXApp")
     

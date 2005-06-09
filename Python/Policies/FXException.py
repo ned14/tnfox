@@ -26,6 +26,42 @@ def applyFXException(g, cclass):
     set_policy(cclass.nested,     return_internal_reference())
     exclude(cclass.int_enableNestedExceptionFramework)
 
+def applyFXRangeException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXPointerException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXResourceException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXMemoryException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXNotSupportedException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXNotFoundException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXIOException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXConnectionLostException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXNoPermissionException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXWindowException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXImageException(g, cclass):
+    applyFXException(g, cclass)
+
+def applyFXFontException(g, cclass):
+    applyFXException(g, cclass)
+
 def customise(g):
     for key,value in g.items():
         globals()[key]=value

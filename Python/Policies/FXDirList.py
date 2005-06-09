@@ -22,6 +22,12 @@ import FXTreeList
 def baseFXDirList():
     return "FXTreeList"
 
+def applyFXDirItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXTreeList.applyFXTreeItem(g, cclass)
+    set_policy(cclass.getAssoc,            return_value_policy(reference_existing_object))
+
 def applyFXDirList(g, cclass):
     for key,value in g.items():
         globals()[key]=value

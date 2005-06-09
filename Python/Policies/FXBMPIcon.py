@@ -27,3 +27,9 @@ def applyFXBMPIcon(g, cclass):
         globals()[key]=value
     FXIcon.applyFXIcon(g, cclass)
     
+def customise(g):
+    for key,value in g.items():
+        globals()[key]=value
+    Include("CArrays.h")
+    declaration_code("DEFINE_MAKECARRAYITER(FXBMPIcon, FX::FXColor, getData, (), (c.getWidth()*c.getHeight()))")
+    

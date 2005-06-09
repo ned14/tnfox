@@ -22,6 +22,12 @@ import FXIconList
 def baseFXFileList():
     return "FXIconList"
 
+def applyFXFileItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXIconList.applyFXIconItem(g, cclass)
+    set_policy(cclass.getAssoc,               return_value_policy(return_opaque_pointer))
+
 def applyFXFileList(g, cclass):
     for key,value in g.items():
         globals()[key]=value

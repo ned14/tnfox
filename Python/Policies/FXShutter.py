@@ -22,6 +22,13 @@ import FXVerticalFrame
 def baseFXShutter():
     return "FXVerticalFrame"
 
+def applyFXShutterItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXVerticalFrame.applyFXVerticalFrame(g, cclass)
+    set_policy(cclass.getButton,       return_value_policy(reference_existing_object))
+    set_policy(cclass.getContent,      return_value_policy(reference_existing_object))
+
 def applyFXShutter(g, cclass):
     for key,value in g.items():
         globals()[key]=value

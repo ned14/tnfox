@@ -18,9 +18,16 @@
 #********************************************************************************
 
 import FXFrame
+import FXObject
 
 def baseFXHeader():
     return "FXFrame"
+
+def applyFXHeaderItem(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    FXObject.applyFXObject(g, cclass)
+    set_policy(cclass.getIcon,       return_value_policy(reference_existing_object))
 
 def applyFXHeader(g, cclass):
     for key,value in g.items():
@@ -30,4 +37,4 @@ def applyFXHeader(g, cclass):
     set_policy(cclass.getItemIcon,   return_internal_reference())
     exclude(cclass.getItemData)
     exclude(cclass.setItemData)
-    set_policy(cclass.getFont,       return_internal_reference())
+    set_policy(cclass.getFont,       return_value_policy(reference_existing_object))
