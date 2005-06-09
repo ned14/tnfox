@@ -168,7 +168,7 @@ FXSphered& FXSphered::include(const FXSphered& sphere){
 
 // Intersect sphere with normalized plane ax+by+cz+w; returns -1,0,+1
 FXint FXSphered::intersect(const FXVec4d& plane) const {
-  register FXdouble dist=distance(plane,center);
+  register FXdouble dist=vecdistance(plane,center);
 
   // Lower point on positive side of plane
   if(dist>=radius) return 1;
@@ -186,12 +186,12 @@ FXbool FXSphered::intersect(const FXVec3d& u,const FXVec3d& v) const {
   if(0.0<=radius){
     FXdouble rr=radius*radius;
     FXVec3d uc=center-u;        // Vector from u to center
-    FXdouble dd=len2(uc);
+    FXdouble dd=veclen2(uc);
     if(dd>rr){                  // Ray start point outside sphere
       FXVec3d uv=v-u;           // Vector from u to v
       FXdouble hh=uc*uv;        // If hh<0, uv points away from center
       if(0.0<=hh){              // Not away from sphere
-        FXdouble kk=len2(uv);
+        FXdouble kk=veclen2(uv);
         FXdouble disc=hh*hh-kk*(dd-rr); // FIXME this needs to be checked again!
         if(disc<=0.0) return FALSE;
         return TRUE;
