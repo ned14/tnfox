@@ -163,13 +163,13 @@ FXbool overlap(const FXRangef& a,const FXRangef& b){
 
 // Union of two boxes
 FXRangef unite(const FXRangef& a,const FXRangef& b){
-  return FXRangef(lo(a.lower,b.lower),hi(a.upper,b.upper));
+  return FXRangef(veclo(a.lower,b.lower),vechi(a.upper,b.upper));
   }
 
 
 // Intersection of two boxes
 FXRangef intersect(const FXRangef& a,const FXRangef& b){
-  return FXRangef(hi(a.lower,b.lower),lo(a.upper,b.upper));
+  return FXRangef(vechi(a.lower,b.lower),veclo(a.upper,b.upper));
   }
 
 

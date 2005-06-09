@@ -162,13 +162,13 @@ FXbool overlap(const FXRanged& a,const FXRanged& b){
 
 // Union of two boxes
 FXRanged unite(const FXRanged& a,const FXRanged& b){
-  return FXRanged(lo(a.lower,b.lower),hi(a.upper,b.upper));
+  return FXRanged(veclo(a.lower,b.lower),vechi(a.upper,b.upper));
   }
 
 
 // Intersection of two boxes
 FXRanged intersect(const FXRanged& a,const FXRanged& b){
-  return FXRanged(hi(a.lower,b.lower),lo(a.upper,b.upper));
+  return FXRanged(vechi(a.lower,b.lower),veclo(a.upper,b.upper));
   }
 
 

@@ -67,7 +67,7 @@ FXQuatf::FXQuatf(const FXMat3f& mat){
 // Set axis and angle
 void FXQuatf::setAxisAngle(const FXVec3f& axis,FXfloat phi){
   register FXfloat a=0.5f*phi;
-  register FXfloat s=sinf(a)/len(axis);
+  register FXfloat s=sinf(a)/veclen(axis);
   x=axis.x*s;
   y=axis.y*s;
   z=axis.z*s;
