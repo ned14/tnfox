@@ -145,6 +145,7 @@ See FX::FXHandedInterfaceI
 class FXAPI FXHandedDialog : public FXTopWindow, public FXApplyResetList, public FXHandedInterfaceI
 {
 	FXDECLARE(FXHandedDialog)
+	FXHandedDialog(const FXHandedDialog &);
 	FXHandedDialog &operator=(const FXHandedDialog &);
 	static FXuint int_filter(FXuint opts, FXuint newopts)
 	{
@@ -196,6 +197,8 @@ class FXAPI FXHandedPopup : public FXPopup, public FXApplyResetList, public FXHa
 {
 	FXDECLARE(FXHandedPopup)
 	friend class FXHandedDialog;
+	FXHandedPopup(const FXHandedPopup &);
+	FXHandedPopup &operator=(const FXHandedPopup &);
 protected:
 	FXHandedPopup() { }
 public:
