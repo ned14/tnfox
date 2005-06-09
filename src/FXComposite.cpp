@@ -261,7 +261,7 @@ long FXComposite::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
       return handle(this,FXSEL(SEL_FOCUS_NEXT,0),ptr);
     case KEY_Prior:
     case KEY_ISO_Left_Tab:
-    case MKUINT(KEY_Tab,SHIFTMASK):     // Suggested by: chafar@alcances.net
+    case KEY_Tab|(SHIFTMASK<<16):     // Suggested by: chafar@alcances.net
       return handle(this,FXSEL(SEL_FOCUS_PREV,0),ptr);
     case KEY_Up:
     case KEY_KP_Up:
