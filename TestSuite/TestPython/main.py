@@ -49,9 +49,4 @@ for mapping in memmaps:
 
 # main loop
 retcode=myapp.run()
-
-# Delete everything before exit
-del memmaps
-del main
-del myapp
-#sys.exit(retcode)
+sys.exit(retcode)
