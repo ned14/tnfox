@@ -120,15 +120,15 @@ public:
   friend FXAPI int operator>=(FXfloat n,const FXVec2f& a){return n>=a.x && n>=a.y;}
 
   /// Length and square of length
-  friend FXAPI FXfloat len2(const FXVec2f& a){ return a.x*a.x+a.y*a.y; }
-  friend FXAPI FXfloat len(const FXVec2f& a){ return sqrtf(len2(a)); }
+  friend FXAPI FXfloat veclen2(const FXVec2f& a){ return a.x*a.x+a.y*a.y; }
+  friend FXAPI FXfloat veclen(const FXVec2f& a){ return sqrtf(veclen2(a)); }
 
   /// Normalize vector
-  friend FXAPI FXVec2f normalize(const FXVec2f& a);
+  friend FXAPI FXVec2f vecnormalize(const FXVec2f& a);
 
   /// Lowest or highest components
-  friend FXAPI FXVec2f lo(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMIN(a.x,b.x),FXMIN(a.y,b.y));}
-  friend FXAPI FXVec2f hi(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMAX(a.x,b.x),FXMAX(a.y,b.y));}
+  friend FXAPI FXVec2f veclo(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMIN(a.x,b.x),FXMIN(a.y,b.y));}
+  friend FXAPI FXVec2f vechi(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMAX(a.x,b.x),FXMAX(a.y,b.y));}
 
   /// Save vector to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec2f& v);

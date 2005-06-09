@@ -137,27 +137,27 @@ public:
   friend FXAPI int operator>=(FXdouble n,const FXVec4d& a){return n>=a.x && n>=a.y && n>=a.z && n>=a.w;}
 
   /// Length and square of length
-  friend FXAPI FXdouble len2(const FXVec4d& a){ return a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w; }
-  friend FXAPI FXdouble len(const FXVec4d& a){ return sqrt(len2(a)); }
+  friend FXAPI FXdouble veclen2(const FXVec4d& a){ return a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w; }
+  friend FXAPI FXdouble veclen(const FXVec4d& a){ return sqrt(veclen2(a)); }
 
   /// Normalize vector
-  friend FXAPI FXVec4d normalize(const FXVec4d& a);
+  friend FXAPI FXVec4d vecnormalize(const FXVec4d& a);
 
   /// Lowest or highest components
-  friend FXAPI FXVec4d lo(const FXVec4d& a,const FXVec4d& b){return FXVec4d(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z),FXMIN(a.w,b.w));}
-  friend FXAPI FXVec4d hi(const FXVec4d& a,const FXVec4d& b){return FXVec4d(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z),FXMAX(a.w,b.w));}
+  friend FXAPI FXVec4d veclo(const FXVec4d& a,const FXVec4d& b){return FXVec4d(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z),FXMIN(a.w,b.w));}
+  friend FXAPI FXVec4d vechi(const FXVec4d& a,const FXVec4d& b){return FXVec4d(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z),FXMAX(a.w,b.w));}
 
   /// Compute normalized plane equation ax+by+cz+d=0
-  friend FXAPI FXVec4d plane(const FXVec4d& vec);
-  friend FXAPI FXVec4d plane(const FXVec3d& vec,FXdouble dist);
-  friend FXAPI FXVec4d plane(const FXVec3d& vec,const FXVec3d& p);
-  friend FXAPI FXVec4d plane(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c);
+  friend FXAPI FXVec4d vecplane(const FXVec4d& vec);
+  friend FXAPI FXVec4d vecplane(const FXVec3d& vec,FXdouble dist);
+  friend FXAPI FXVec4d vecplane(const FXVec3d& vec,const FXVec3d& p);
+  friend FXAPI FXVec4d vecplane(const FXVec3d& a,const FXVec3d& b,const FXVec3d& c);
 
   /// Signed distance normalized plane and point
-  friend FXAPI FXdouble distance(const FXVec4d& plane,const FXVec3d& p);
+  friend FXAPI FXdouble vecdistance(const FXVec4d& plane,const FXVec3d& p);
 
   /// Return true if edge a-b crosses plane
-  friend FXAPI FXbool crosses(const FXVec4d& plane,const FXVec3d& a,const FXVec3d& b);
+  friend FXAPI FXbool veccrosses(const FXVec4d& plane,const FXVec3d& a,const FXVec3d& b);
 
   /// Save to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec4d& v);

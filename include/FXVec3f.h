@@ -134,21 +134,21 @@ public:
   friend FXAPI int operator>=(FXfloat n,const FXVec3f& a){return n>=a.x && n>=a.y && n>=a.z;}
 
   /// Length and square of length
-  friend FXAPI FXfloat len2(const FXVec3f& a){ return a.x*a.x+a.y*a.y+a.z*a.z; }
-  friend FXAPI FXfloat len(const FXVec3f& a){ return sqrtf(len2(a)); }
+  friend FXAPI FXfloat veclen2(const FXVec3f& a){ return a.x*a.x+a.y*a.y+a.z*a.z; }
+  friend FXAPI FXfloat veclen(const FXVec3f& a){ return sqrtf(veclen2(a)); }
 
   /// Normalize vector
-  friend FXAPI FXVec3f normalize(const FXVec3f& a);
+  friend FXAPI FXVec3f vecnormalize(const FXVec3f& a);
 
   /// Lowest or highest components
-  friend FXAPI FXVec3f lo(const FXVec3f& a,const FXVec3f& b){return FXVec3f(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z));}
-  friend FXAPI FXVec3f hi(const FXVec3f& a,const FXVec3f& b){return FXVec3f(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z));}
+  friend FXAPI FXVec3f veclo(const FXVec3f& a,const FXVec3f& b){return FXVec3f(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z));}
+  friend FXAPI FXVec3f vechi(const FXVec3f& a,const FXVec3f& b){return FXVec3f(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z));}
 
   /// Compute normal from three points a,b,c
-  friend FXAPI FXVec3f normal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c);
+  friend FXAPI FXVec3f vecnormal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c);
 
   /// Compute approximate normal from four points a,b,c,d
-  friend FXAPI FXVec3f normal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c,const FXVec3f& d);
+  friend FXAPI FXVec3f vecnormal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c,const FXVec3f& d);
 
   /// Save vector to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec3f& v);
