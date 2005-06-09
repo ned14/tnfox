@@ -57,10 +57,6 @@ env['LIBPATH']+=[]
 env['LIBS']=[ ]
 env['SHLIBPREFIX']="" # Force non-use of "lib" prefix
 
-if debugmode:
-    builddir="Debug"
-else:
-    builddir="Release"
 if onWindows:
     env['LIBPATH']+=[ "../lib" ]
     env['LIBS']+=[ libtnfox ]
@@ -80,10 +76,6 @@ if onWindows:
         if not os.environ.has_key("PYTHON_LIB"): raise IOError, "PYTHON_LIB needs to be defined"
         env['LINKFLAGS'].append(os.environ["PYTHON_LIB"])
 
-conf=Configure(env)
-if sys.byteorder=="big": conf.env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
-if make64bit: conf.env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
-env=conf.Finish()
 
 #geninterfaces=env.Command("dont exist", None, ternary(onWindows, "", "python ")+"GenInterfaces.py")
 objects=[]
@@ -108,16 +100,7 @@ if onWindows:
 Clean(targetname, objects)
 base,ext=os.path.splitext(targetname)
 DLL=env.SharedLibrary(base, objects)
-if onWindows:
-    def runBind(target, source, env):
-        stem, leaf=os.path.split(os.path.normpath(targetname))
-        oldpath=os.getcwd()
-        try:
-            os.chdir(stem)
-            os.system('bind -u '+leaf)
-        finally:
-            os.chdir(oldpath)
-    AddPostAction(DLL, Action(runBind))
+addBind(DLL)
 
 if onWindows:
     env.MSVSProject("../windows/TnFOXPythonProject"+env['MSVSPROJECTSUFFIX'],
