@@ -137,7 +137,7 @@ void FXColorBar::updatebar(){
       d=1.0f/(h-1.0f);
       for(y=0; y<h; y++){
         fxhsv_to_rgb(r,g,b,hsv[0],hsv[1],1.0f-y*d);
-        clr=FXRGB(255.0f*r,255.0f*g,255.0f*b);
+        clr=FXRGB((FXuchar)(255.0f*r),(FXuchar)(255.0f*g),(FXuchar)(255.0f*b));
         for(x=0; x<w; x++) bar->setPixel(x,y,clr);
         }
       }
@@ -147,7 +147,7 @@ void FXColorBar::updatebar(){
       d=1.0f/(w-1.0f);
       for(x=0; x<w; x++){
         fxhsv_to_rgb(r,g,b,hsv[0],hsv[1],x*d);
-        clr=FXRGB(255.0f*r,255.0f*g,255.0f*b);
+        clr=FXRGB((FXuchar)(255.0f*r),(FXuchar)(255.0f*g),(FXuchar)(255.0f*b));
         for(y=0; y<h; y++) bar->setPixel(x,y,clr);
         }
       }
