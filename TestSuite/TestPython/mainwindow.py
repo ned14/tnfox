@@ -18,9 +18,6 @@
 #********************************************************************************
 
 from TnFOX import *
-LAYOUT_FILL_X=0x400
-LAYOUT_FILL_Y=0x800
-LAYOUT_FILL=LAYOUT_FILL_X | LAYOUT_FILL_Y
 
 class MainWindow(FXMainWindow):
     def __init__(self, app, title):
@@ -31,13 +28,11 @@ class MainWindow(FXMainWindow):
         self._text.setText("Hello World!")
 
         self._okb=FXButton(self._vframe, "&Close", None, app, FXApp.ID_QUIT)
-        self.resize(320, 256)
+        self.resize(640, 480)
 
-    def __del__(self): # Temporary until pyste is enhanced
-        del self._okb
-        del self._text
-        del self._vframe
-    
+    def __del__(self):
+        print "### MainWindow destructor called"
+
     def addText(self, textstr):
         self._text.appendText(textstr, len(textstr))
         
