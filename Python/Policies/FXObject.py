@@ -40,3 +40,5 @@ def applyFXObject(g, cclass):
     set_policy(cclass.getMetaClass,     return_internal_reference())
     set_policy(cclass.manufacture,      return_value_policy(manage_new_object))
     exclude(cclass.FXMapEntry.func)
+    exclude(cclass.getPythonObject)
+    exclude(cclass.decouplePythonObject)
