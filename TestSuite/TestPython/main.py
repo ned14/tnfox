@@ -49,4 +49,14 @@ for mapping in memmaps:
 
 # main loop
 retcode=myapp.run()
-sys.exit(retcode)
+print "### myapp.run() returns",retcode
+
+# Delete everything before exit
+del memmaps
+print "### About to delete main + children"
+main.close()
+del main
+print "### About to delete app"
+del myapp
+print "### END!"
+#sys.exit(retcode)
