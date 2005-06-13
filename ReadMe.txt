@@ -16,6 +16,10 @@ problem with typeinfo and so the problems v0.75 had with the python bindings
 module on POSIX remain. Interestingly, debug builds let exceptions traverse
 just fine :(
 
+Note that on Windows, you need a *minimum* of 1Gb of RAM as that's what the
+MSVC linker requires to link. Anything less results in unacceptably slow
+link times
+
 
 2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
 See Todo.txt for a list of known bugs.
