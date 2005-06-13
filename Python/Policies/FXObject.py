@@ -39,6 +39,7 @@ def applyFXObject(g, cclass):
     exclude(cclass.metaClass)
     set_policy(cclass.getMetaClass,     return_internal_reference())
     set_policy(cclass.manufacture,      return_value_policy(manage_new_object))
+    set_wrapper(cclass.handle, "FXPython::int_FXObjectHandle")
     exclude(cclass.FXMapEntry.func)
     exclude(cclass.getPythonObject)
     exclude(cclass.decouplePythonObject)
