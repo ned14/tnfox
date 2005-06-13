@@ -29,10 +29,10 @@ def getSources():
     filelist=os.listdir(".")
     idx=0
     while idx<len(filelist):
-        if filelist[idx][0]!="_" or filelist[idx][-4:]!=".cpp":
+        if filelist[idx][0]!="_" or filelist[idx][-4:]!=".cpp": # or filelist[idx]=="_FXFile.cpp":
             del filelist[idx]
         else: idx+=1
-    return filelist +["converters.cpp", "FXPython.cxx" ]
+    return filelist #+["converters.cpp", "FXPython.cxx" ]
 def getIncludes():
     filelist=os.listdir("../include")
     idx=0
@@ -79,9 +79,9 @@ if onWindows:
 
 #geninterfaces=env.Command("dont exist", None, ternary(onWindows, "", "python ")+"GenInterfaces.py")
 objects=[]
-#objects=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="-c -Os -DGCC_HASCLASSVISIBILITY -D_DEBUG -DUSE_POSIX -fexceptions")]
-#objects=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
-#objects=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
+#objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="-c -Os -DGCC_HASCLASSVISIBILITY -D_DEBUG -DUSE_POSIX -fexceptions")]
+objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
+objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), x) for x in getSources()]
 #for object in objects:
 #    env.Depends(object, geninterfaces)
