@@ -235,12 +235,18 @@ long FXButton::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   flags&=~FLAG_TIP;
   if(isEnabled() && !(flags&FLAG_PRESSED)){
-    grab();
-    if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
-    if(state!=STATE_ENGAGED) setState(STATE_DOWN);
-    flags|=FLAG_PRESSED;
-    flags&=~FLAG_UPDATE;
-    return 1;
+    FXEvent *ev=(FXEvent *) ptr;
+    if(!(options&BUTTON_DANGEROUS) || ((options&BUTTON_DANGEROUS) && (ev->state&(SHIFTMASK|CONTROLMASK))==(SHIFTMASK|CONTROLMASK))){
+      grab();
+      if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
+      if(state!=STATE_ENGAGED) setState(STATE_DOWN);
+      flags|=FLAG_PRESSED;
+      flags&=~FLAG_UPDATE;
+      return 1;
+      }
+    else{
+      getApp()->beep();
+      }
     }
   return 0;
   }
@@ -344,6 +350,21 @@ long FXButton::onPaint(FXObject*,FXSelector,void* ptr){
   return 1;
   }
 
+// Slightly tints a colour red if button is dangerous
+inline FXColor FXButton::tintBackground(FXColor color) const{
+  if(!(options & BUTTON_DANGEROUS)) return color;
+  FXuchar r=FXREDVAL(color), g=FXGREENVAL(color), b=FXBLUEVAL(color), a=FXALPHAVAL(color);
+  static const int shift=48;
+  int odiff=r-(256-shift);
+  r=FXMIN(255, r+shift);
+  if(odiff>0)
+  {
+	  g=FXMAX(0, g-odiff);
+	  b=FXMAX(0, b-odiff);
+  }
+  return FXRGBA(r, g, b, a);
+  }
+
 // Draws the button
 void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint height){
   FXint tw=0,th=0,iw=0,ih=0,tx,ty,ix,iy;
@@ -356,7 +377,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
       // Enabled and cursor inside, and up
       if(isEnabled() && underCursor() && (state==STATE_UP)){
-        dc.setForeground(backColor);
+        dc.setForeground(tintBackground(backColor));
         dc.fillRectangle(border,border,width-border*2,height-border*2);
         if(options&FRAME_THICK) drawDoubleRaisedRectangle(dc,x,y,width,height);
         else drawRaisedRectangle(dc,x,y,width,height);
@@ -364,7 +385,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
       // Enabled and cursor inside and down
       else if(isEnabled() && underCursor() && (state==STATE_DOWN)){
-        dc.setForeground(backColor);
+        dc.setForeground(tintBackground(backColor));
         dc.fillRectangle(border,border,width-border*2,height-border*2);
         if(options&FRAME_THICK) drawDoubleSunkenRectangle(dc,x,y,width,height);
         else drawSunkenRectangle(dc,x,y,width,height);
@@ -372,7 +393,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
       // Enabled and checked
       else if(isEnabled() && (state==STATE_ENGAGED)){
-        dc.setForeground(hiliteColor);
+        dc.setForeground(tintBackground(hiliteColor));
         dc.fillRectangle(border,border,width-border*2,height-border*2);
         if(options&FRAME_THICK) drawDoubleSunkenRectangle(dc,x,y,width,height);
         else drawSunkenRectangle(dc,x,y,width,height);
@@ -380,7 +401,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
       // Disabled or unchecked or not under cursor
       else{
-        dc.setForeground(backColor);
+        dc.setForeground(tintBackground(backColor));
         dc.fillRectangle(x,y,width,height);
         }
       }
@@ -393,7 +414,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
         // Draw in up state if disabled or up
         if(!isEnabled() || (state==STATE_UP)){
-          dc.setForeground(backColor);
+          dc.setForeground(tintBackground(backColor));
           dc.fillRectangle(x+border+1,y+border+1,width-border*2-1,height-border*2-1);
           if(options&FRAME_THICK) drawDoubleRaisedRectangle(dc,x+1,y+1,width-1,height-1);
           else drawRaisedRectangle(dc,x+1,y+1,width-1,height-1);
@@ -401,7 +422,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
         // Draw sunken if enabled and either checked or pressed
         else{
-          if(state==STATE_ENGAGED) dc.setForeground(hiliteColor); else dc.setForeground(backColor);
+          if(state==STATE_ENGAGED) dc.setForeground(tintBackground(hiliteColor)); else dc.setForeground(tintBackground(backColor));
           dc.fillRectangle(x+border,y+border,width-border*2-1,height-border*2-1);
           if(options&FRAME_THICK) drawDoubleSunkenRectangle(dc,x,y,width-1,height-1);
           else drawSunkenRectangle(dc,x,y,width-1,height-1);
@@ -416,7 +437,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
         // Draw in up state if disabled or up
         if(!isEnabled() || (state==STATE_UP)){
-          dc.setForeground(backColor);
+          dc.setForeground(tintBackground(backColor));
           dc.fillRectangle(x+border,y+border,width-border*2,height-border*2);
           if(options&FRAME_THICK) drawDoubleRaisedRectangle(dc,x,y,width,height);
           else drawRaisedRectangle(dc,x,y,width,height);
@@ -424,7 +445,7 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
 
         // Draw sunken if enabled and either checked or pressed
         else{
-          if(state==STATE_ENGAGED) dc.setForeground(hiliteColor); else dc.setForeground(backColor);
+          if(state==STATE_ENGAGED) dc.setForeground(tintBackground(hiliteColor)); else dc.setForeground(tintBackground(backColor));
           dc.fillRectangle(x+border,y+border,width-border*2,height-border*2);
           if(options&FRAME_THICK) drawDoubleSunkenRectangle(dc,x,y,width,height);
           else drawSunkenRectangle(dc,x,y,width,height);
@@ -436,11 +457,11 @@ void FXButton::drawButton(FXDCWindow& dc,FXint x,FXint y,FXint width,FXint heigh
   // No borders
   else{
     if(isEnabled() && (state==STATE_ENGAGED)){
-      dc.setForeground(hiliteColor);
+      dc.setForeground(tintBackground(hiliteColor));
       dc.fillRectangle(x,y,width,height);
       }
     else{
-      dc.setForeground(backColor);
+      dc.setForeground(tintBackground(backColor));
       dc.fillRectangle(x,y,width,height);
       }
     }
