@@ -1171,7 +1171,7 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 		to CreateFile(). */
 		FXString temp("\\\\.\\"+path.left(2));
 		HANDLE h;
-		FXERRHWIN(INVALID_HANDLE_VALUE!=(h=CreateFile((LPSTR) temp.text(), 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL)));
+		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile((LPSTR) temp.text(), 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL)), temp);
 		FXRBOp unh=FXRBFunc(CloseHandle, h);
 		DWORD read=0;
 		DISK_GEOMETRY gms[20];
@@ -1187,14 +1187,14 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 	assert(mode & SEM_FAILCRITICALERRORS);
 #endif
 #endif
-	FXERRHWIN(ERROR_SUCCESS==GetNamedSecurityInfo(_path, mapType(type),
+	FXERRHWINFN(ERROR_SUCCESS==GetNamedSecurityInfo(_path, mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
-		0, 0, 0, NULL, (PSID *) &sd));
+		0, 0, 0, NULL, (PSID *) &sd), path);
 	init(sd, type);
 #endif
 #ifdef USE_POSIX
 	struct stat s={0};
-	FXERRHOS(stat(path.text(), &s));
+	FXERRHOSFN(stat(path.text(), &s), path);
 	FXACLEntity myowner;
 	FXERRHM(myowner.p=new FXACLEntityPrivate(s.st_uid, s.st_gid, false, FXString::nullStr()));
 	FXERRHM(p=new FXACLPrivate(type, myowner));
@@ -1448,7 +1448,7 @@ void FXACL::writeTo(const FXString &path) const
 			FXERRGWIN(GetLastError(), FXERRH_ISFATAL);
 		}
 	}
-	FXERRHWIN(ERROR_SUCCESS==ret);
+	FXERRHWINFN(ERROR_SUCCESS==ret, path);
 #endif
 #ifdef USE_POSIX
 	struct stat s={0};
@@ -1457,9 +1457,9 @@ void FXACL::writeTo(const FXString &path) const
 	FXERRHM(fileowner.p=new FXACLEntityPrivate(s.st_uid, s.st_gid, false, FXString::nullStr()));
 	if(fileowner!=p->owner)
 	{	// Try to change file owner (need superuser)
-		FXERRHOS(chown(path.text(), p->owner.p->userId, p->owner.p->groupId));
+		FXERRHOSFN(chown(path.text(), p->owner.p->userId, p->owner.p->groupId), path);
 	}
-	FXERRHOS(chmod(path.text(), p->fromACL(fileowner, s)));
+	FXERRHOSFN(chmod(path.text(), p->fromACL(fileowner, s)), path);
 #endif
 }
 void FXACL::writeTo(void *h) const

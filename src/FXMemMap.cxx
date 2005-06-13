@@ -469,7 +469,7 @@ void FXMemMap::winopen(int mode)
 			else
 				p->mappingh=OpenFileMapping(access, FALSE, name.text());
 		} while(false);
-		FXERRHWIN(p->mappingh);
+		FXERRHWINFN(p->mappingh, name);
 		p->acl=FXACL(p->mappingh, FXACL::MemMap);
 	}
 	else
@@ -564,7 +564,7 @@ bool FXMemMap::open(FXuint mode)
 						FXERRHIO(::ftruncate(p->filefd, p->size));
 						p->acl.writeTo(p->filefd);
 					}
-					else { FXERRHIO(-1); }
+					else { FXERRHOSFN(-1, name); }
 				}
 			} while(false);
 		}

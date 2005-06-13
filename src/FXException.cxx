@@ -655,17 +655,19 @@ bool FXException::setConstructionBreak(bool v)
 	return t;
 }
 
-void FXException::int_throwOSError(const char *file, int lineno, int code, FXuint flags)
+void FXException::int_throwOSError(const char *file, int lineno, int code, FXuint flags, const FXString &filename)
 {
 	FXString errstr(strerror(code));
 	errstr.append(" ("+FXString::number(code)+")");
 	if(ENOENT==code || ENOTDIR==code)
 	{
+		errstr=FXTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNotFoundException e(file, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(EACCES==code)
 	{
+		errstr=FXTrans::tr("FXException", "Access to '%1' denied [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNoPermissionException e(errstr, flags);
 		FXERRH_THROW(e);
 	}
@@ -675,7 +677,7 @@ void FXException::int_throwOSError(const char *file, int lineno, int code, FXuin
 		FXERRH_THROW(e);
 	}
 }
-void FXException::int_throwWinError(const char *file, int lineno, FXuint code, FXuint flags)
+void FXException::int_throwWinError(const char *file, int lineno, FXuint code, FXuint flags, const FXString &filename)
 {
 #ifdef WIN32
 	if(ERROR_SUCCESS==code)
@@ -703,11 +705,13 @@ void FXException::int_throwWinError(const char *file, int lineno, FXuint code, F
 	errstr.append(" ("+FXString::number(code)+")");
 	if(ERROR_FILE_NOT_FOUND==code || ERROR_PATH_NOT_FOUND==code)
 	{
+		errstr=FXTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNotFoundException e(file, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(ERROR_ACCESS_DENIED==code || ERROR_EA_ACCESS_DENIED==code)
 	{
+		errstr=FXTrans::tr("FXException", "Access to '%1' denied [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNoPermissionException e(errstr, flags);
 		FXERRH_THROW(e);
 	}

@@ -192,7 +192,7 @@ bool FXPipe::create(FXuint mode)
 			{
 				if(GetLastError()==ERROR_ALREADY_EXISTS && anonymous)
 					continue;
-				FXERRHWIN(0);
+				FXERRHWINFN(0, writename);
 			}
 		}
 		if(mode & IO_ReadOnly)
@@ -206,7 +206,7 @@ bool FXPipe::create(FXuint mode)
 			{
 				if(GetLastError()==ERROR_ALREADY_EXISTS && anonymous)
 					continue;
-				FXERRHWIN(0);
+				FXERRHWINFN(0, readname);
 			}
 		}
 		p->connected=false;
@@ -218,24 +218,24 @@ bool FXPipe::create(FXuint mode)
 		{
 			FXString readname(fullname+'r');
 #ifdef HAVE_WIDEUNISTD
-			if(-1==mkfifo(readname.utext(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHIO(-1); }
+			if(-1==mkfifo(readname.utext(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, readname); }
 #else
-			if(-1==mkfifo(readname.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHIO(-1); }
+			if(-1==mkfifo(readname.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, readname); }
 #endif
 			p->acl.writeTo(readname);
 #ifdef HAVE_WIDEUNISTD
-			FXERRHIO(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0));
+			FXERRHOSFN(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0), readname);
 #else
-			FXERRHIO(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0));
+			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
 #endif
 		}
 		if(mode & IO_WriteOnly)
 		{
 			FXString writename(fullname+'w');
 #ifdef HAVE_WIDEUNISTD
-			if(-1==mkfifo(writename.utext(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHIO(-1); }
+			if(-1==mkfifo(writename.utext(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, writename); }
 #else
-			if(-1==mkfifo(writename.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHIO(-1); }
+			if(-1==mkfifo(writename.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, writename); }
 #endif
 			p->acl.writeTo(writename);
 		}
@@ -263,22 +263,22 @@ bool FXPipe::open(FXuint mode)
 		{
 			FXString readname(fullname+'w');
 			h.unlock();
-			FXERRHWIN(WaitNamedPipe(readname.text(), NMPWAIT_USE_DEFAULT_WAIT));
+			FXERRHWINFN(WaitNamedPipe(readname.text(), NMPWAIT_USE_DEFAULT_WAIT), readname);
 			h.relock();
-			FXERRHWIN(INVALID_HANDLE_VALUE!=(p->readh=CreateFile(readname.text(),
+			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->readh=CreateFile(readname.text(),
 				GENERIC_READ,
-				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, NULL)));
+				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, NULL)), readname);
 			p->acl=FXACL(p->readh, FXACL::Pipe); doneACL=true;
 		}
 		if(mode & IO_WriteOnly)
 		{
 			FXString writename(fullname+'r');
 			h.unlock();
-			FXERRHWIN(WaitNamedPipe(writename.text(), NMPWAIT_USE_DEFAULT_WAIT));
+			FXERRHWINFN(WaitNamedPipe(writename.text(), NMPWAIT_USE_DEFAULT_WAIT), writename);
 			h.relock();
-			FXERRHWIN(INVALID_HANDLE_VALUE!=(p->writeh=CreateFile(writename.text(),
+			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->writeh=CreateFile(writename.text(),
 				GENERIC_WRITE,
-				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)));
+				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)), writename);
 			if(!doneACL) p->acl=FXACL(p->writeh, FXACL::Pipe);
 		}
 		p->connected=true;
@@ -298,9 +298,9 @@ bool FXPipe::open(FXuint mode)
 			if(!FXFile::exists(readname)) FXERRGNF(FXTrans::tr("FXPipe", "Pipe not found"), 0);
 			p->acl=FXACL(readname, FXACL::Pipe); doneACL=true;
 #ifdef HAVE_WIDEUNISTD
-			FXERRHIO(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0));
+			FXERRHOSFN(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0), readname);
 #else
-			FXERRHIO(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0));
+			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
 #endif
 		}
 		if(mode & IO_WriteOnly)
@@ -648,7 +648,7 @@ FXuval FXPipe::writeBlock(const char *data, FXuval maxlen)
 			p->writeh=::open(writename.text(), O_WRONLY, 0);
 #endif
 			h.relock();
-			FXERRHIO(p->writeh);
+			FXERRHOSFN(p->writeh, writename);
 		}
 		FXIODeviceS_SignalHandler::lockWrite();
 		h.unlock();

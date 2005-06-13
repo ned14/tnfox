@@ -261,7 +261,7 @@ bool FXFile::open(FXuint mode)
 		}
 		if(mode & IO_Append) access|=O_APPEND;
 		if(mode & IO_Truncate) access|=O_TRUNC;
-		if(!(access & O_CREAT) && !exists()) FXERRGNF(FXTrans::tr("FXFile", "File not found"), 0);
+		if(!(access & O_CREAT) && !exists()) FXERRGNF(FXTrans::tr("FXFile", "File '%1' not found").arg(p->filename), 0);
 #ifdef WIN32
 		access|=O_BINARY;
 		// Annoyingly, you must create a file handle with WRITE_DAC permission to
@@ -288,15 +288,15 @@ bool FXFile::open(FXuint mode)
 		default:
 			creation|=OPEN_EXISTING; break;
 		}
-		FXERRHWIN(INVALID_HANDLE_VALUE!=(h=CreateFile(p->filename.text(), accessw, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, psa,
-			creation, FILE_ATTRIBUTE_NORMAL, NULL)));
+		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(p->filename.text(), accessw, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, psa,
+			creation, FILE_ATTRIBUTE_NORMAL, NULL)), p->filename);
 		FXERRHIO(p->handle=_open_osfhandle((intptr_t) h, access));
 #endif
 #ifdef USE_POSIX
 #ifdef HAVE_WIDEUNISTD
-		FXERRHIO(p->handle=::wopen(p->filename.utext(), access, S_IREAD|S_IWRITE));
+		FXERRHIOFN(p->handle=::wopen(p->filename.utext(), access, S_IREAD|S_IWRITE), p->filename);
 #else
-		FXERRHIO(p->handle=::open(p->filename.text(), access, S_IREAD|S_IWRITE));
+		FXERRHIOFN(p->handle=::open(p->filename.text(), access, S_IREAD|S_IWRITE), p->filename);
 #endif
 #endif
 		if(access & O_CREAT)
