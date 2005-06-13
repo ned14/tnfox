@@ -48,6 +48,7 @@ enum {
   BUTTON_TOOLBAR   = 0x02000000,  /// Toolbar style button [flat look]
   BUTTON_DEFAULT   = 0x04000000,  /// May become default button when receiving focus
   BUTTON_INITIAL   = 0x08000000,  /// This button is the initial default button
+  BUTTON_DANGEROUS = 0x10000000,  /// This button performs a dangerous action (special clicking required)
   BUTTON_NORMAL    = (FRAME_RAISED|FRAME_THICK|JUSTIFY_NORMAL|ICON_BEFORE_TEXT)
   };
 
@@ -80,6 +81,7 @@ protected:
 private:
   FXButton(const FXButton&);
   FXButton& operator=(const FXButton&);
+  inline FXColor tintBackground(FXColor color) const;
 public:
   long onPaint(FXObject*,FXSelector,void*);
   long onUpdate(FXObject*,FXSelector,void*);

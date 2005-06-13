@@ -78,8 +78,8 @@ public:
 //! Primary button flags
 enum
 {
-	PBUTTON_POSITIVE = 0x10000000,	//!< Pressing the button is a positive action
-	PBUTTON_NEGATIVE = 0x20000000,	//!< Pressing the button is a negative action
+	PBUTTON_POSITIVE = 0x20000000,	//!< Pressing the button is a positive action
+	PBUTTON_NEGATIVE = 0x40000000,	//!< Pressing the button is a negative action
 	PBUTTON_NOAUTOLAYOUT = 0x80000000, //!< Disables auto layout to the left or right
 	PBUTTON_NORMAL=BUTTON_NORMAL|LAYOUT_BOTTOM,
 	//! Gives a positive action OK-style button
