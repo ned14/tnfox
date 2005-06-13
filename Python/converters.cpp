@@ -27,8 +27,44 @@
 #include "CArrays.h"
 #include "../include/qvaluelist.h"
 #include "../include/qptrlist.h"
+#include "../include/qptrdict.h"
 
 using namespace boost::python;
+
+//*******************************************************************************
+// integral integer type converter
+
+template<typename type> struct integral_to_python_int : public to_python_converter<type, integral_to_python_int<type> >
+{
+	static PyObject *convert(type v)
+	{
+		return PyInt_FromLong((long) v);
+	}
+};
+
+template<typename type> struct integral_from_python_int
+{
+	integral_from_python_int()
+	{
+		converter::registry::push_back(&convertible, &construct, type_id<type>());
+	}
+	static void *convertible(PyObject *obj)
+	{
+		return PyInt_Check(obj) ? obj : 0;
+	}
+	static void construct(PyObject *obj, converter::rvalue_from_python_stage1_data *data)
+	{
+		void *storage=((converter::rvalue_from_python_storage<type> *) data)->storage.bytes;
+		*((long *) storage)=PyInt_AsLong(obj);
+		data->convertible=storage;
+	}
+};
+
+template<typename type> void RegisterConvIntegralInt()
+{
+	integral_to_python_int<type>();
+	integral_from_python_int<type>();
+}
 
 //*******************************************************************************
 // FXString converter
@@ -109,6 +145,20 @@ static void RegisterConvFXException()
 using namespace FX;
 
 static FXPtrHold<FXProcess> myprocess;
+static QPtrDict<Generic::BoundFunctorV> myobjectinstances;
+
+void FXPython::int_pythonObjectCreated(Generic::BoundFunctorV *detach)
+{
+	FXPython_DoPython ctxhold;
+	myobjectinstances.insert(detach, detach);
+	QDICTDYNRESIZE(myobjectinstances);
+}
+void FXPython::int_pythonObjectDeleted(Generic::BoundFunctorV *detach)
+{
+	FXPython_DoPython ctxhold;
+	myobjectinstances.remove(detach);
+	QDICTDYNRESIZE(myobjectinstances);
+}
 
 static void DeinitialiseTnFOXPython()
 {
@@ -116,6 +166,13 @@ static void DeinitialiseTnFOXPython()
 	{	// Bit tricky here
 		FXPythonInterp::int_exitCPP();	// This silently fails when there's no FXProcess
 		PyThreadState *ts=PyThreadState_Get();
+		// Decouple all TnFOX objects still outstanding
+		Generic::BoundFunctorV *bf;
+		for(QPtrDictIterator<Generic::BoundFunctorV> it(myobjectinstances); (bf=it.current());)
+		{
+			(*bf)();	// This should cause deletion and thus the pointer to be removed
+		}
+		// Ok now delete our FXProcess
 		delete static_cast<FXProcess *>(myprocess);
 		myprocess=0;
 		PyEval_AcquireThread(ts);
@@ -127,6 +184,9 @@ static void DeinitialiseTnFOXPython()
 
 void InitialiseTnFOXPython()
 {
+	// Register the void_ structure so pointers to it can be passed around
+	class_<void_, boost::noncopyable>("voidptr");
+
 	RegisterConvFXException();
 	RegisterConvFXString();
 	def("DeinitTnFOX", &DeinitialiseTnFOXPython);
@@ -145,27 +205,45 @@ void InitialiseTnFOXPython()
 	}
 	/* Create magic functions FXMAPFUNC(), FXMAPFUNCS(), FXMAPTYPE() and FXMAPTYPES()
 	to aid usage of FXObject derived classes */
-	PyRun_SimpleString( "def INTFXOBJECTHANDLER(self, sender, sel, ptr):\n"
-						"    for mapentry in self.msgmappings:\n"
-						"        if mapentry[0]<=sel and sel<=mapentry[1]:\n"
-						"            return self.mapentry[2](sender, sel, ptr)\n"
-						"    return self.handle(sender, sel, ptr)\n"
-						"def FXMAPFUNC(obj, sel, id, handler):\n"
-						"    obj.handle=INTFXOBJECTHANDLER\n"
-						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
-						"    obj.msgmappings.append(((sel<<16)+id, (sel<<16)+id, handler))\n"
+	PyRun_SimpleString(	"def FXMAPFUNC(obj, sel, id, handler):\n"
+						"    if not obj.__dict__.has_key('int_FXObjectMsgMappings'): obj.int_FXObjectMsgMappings=[]\n"
+						"    obj.int_FXObjectMsgMappings.append(((sel<<16)+id, (sel<<16)+id, handler))\n"
 						"def FXMAPFUNCS(obj, sel, idlo, idhi, handler):\n"
-						"    obj.handle=INTFXOBJECTHANDLER\n"
-						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
-						"    obj.msgmappings.append(((sel<<16)+idlo, (sel<<16)+idhi, handler))\n"
+						"    if not obj.__dict__.has_key('int_FXObjectMsgMappings'): obj.int_FXObjectMsgMappings=[]\n"
+						"    obj.int_FXObjectMsgMappings.append(((sel<<16)+idlo, (sel<<16)+idhi, handler))\n"
 						"def FXMAPTYPE(obj, sel, handler):\n"
-						"    obj.handle=INTFXOBJECTHANDLER\n"
-						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
-						"    obj.msgmappings.append(((sel<<16), (sel<<16)+65535, handler))\n"
+						"    if not obj.__dict__.has_key('int_FXObjectMsgMappings'): obj.int_FXObjectMsgMappings=[]\n"
+						"    obj.int_FXObjectMsgMappings.append(((sel<<16), (sel<<16)+65535, handler))\n"
 						"def FXMAPTYPES(obj, sello, selhi, handler):\n"
-						"    obj.handle=INTFXOBJECTHANDLER\n"
-						"    if not obj.__dict__.has_key('msgmappings'): obj.msgmappings=[]\n"
-						"    obj.msgmappings.append(((sello<<16), (selhi<<16)+65535, handler))\n"
+						"    if not obj.__dict__.has_key('int_FXObjectMsgMappings'): obj.int_FXObjectMsgMappings=[]\n"
+						"    obj.int_FXObjectMsgMappings.append(((sello<<16), (selhi<<16)+65535, handler))\n"
 						);
+}
+
+bool FXPython::int_FXObjectHandle(long *ret, FXObject *self, FXObject *sender, FXSelector sel, void *ptrval)
+{	// return false to have default impl called
+	object me(handle<>(borrowed((PyObject *) self->getPythonObject())));
+	if(dict(me.attr("__dict__")).has_key("int_FXObjectMsgMappings"))
+	{
+		list msgmappings(me.attr("int_FXObjectMsgMappings"));
+		for(int n=0; n<msgmappings.attr("__len__")(); n++)
+		{
+			tuple msgmap(msgmappings[n]);
+			FXuint lo=extract<FXuint>(msgmap[0]), hi=extract<FXuint>(msgmap[1]);
+			if(lo<=sel && sel<=hi)
+			{	// We found a handler, so execute it by directly executing
+				// the function of the method instance
+				FXString methodname;
+				object handlerfunc(msgmap[2].attr("im_func"));
+				methodname=extract<const char *>(handlerfunc.attr("__name__"));
+				*ret=call_method<long>(me.ptr(), methodname.text(), ptr(sender), sel, ptr((void_ *) ptrval));
+#ifdef DEBUG
+				fxmessage("int_FXObjectHandle(%p, %p, %u, %p) returns %lu\n", self, sender, sel, ptrval, *ret);
+#endif
+				return true;
+			}
+		}
+	}
+	return false;
 }
 

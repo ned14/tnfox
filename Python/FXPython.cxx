@@ -603,5 +603,10 @@ void FXPython::int_runPythonThread(PyObject *self, FXThread *cthread)
 	}
 }
 
+// The following are defined in converters.cpp:
+// int_pythonObjectCreated(Generic::BoundFunctorV *detach);
+// int_pythonObjectDeleted(Generic::BoundFunctorV *detach);
+// long int_FXObjectHandle(FXObject *self, FXObject *sender, FXSelector sel, void_ *ptr);
+
 
 }

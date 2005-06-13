@@ -34,6 +34,7 @@
 #define FXPYTHON_H
 #include "../include/FXString.h"
 #include "../include/FXGenericTools.h"
+#include "../include/FXObject.h"
 #include <boost/python/opaque_pointer_converter.hpp>
 
 #ifdef WIN32
@@ -53,9 +54,8 @@
   #define FXPYTHONAPI
 #endif
 
-// Define a type for representing void *
+// Define a type for representing void *. Type is defined in converters.cpp
 struct void_ {};
-BOOST_PYTHON_OPAQUE_SPECIALIZED_TYPE_ID(void_);
 
 
 namespace FX {
@@ -70,6 +70,7 @@ class FXGLViewer;
 class FXIconList;
 class FXList;
 class FXTreeList;
+class FXComposite;
 
 /*! \class FXPythonException
 \ingroup python
@@ -149,6 +150,9 @@ public:
 	static void int_throwPythonException();
 	static void int_initEmbeddedEnv();
 	static void int_runPythonThread(PyObject *self, FXThread *cthread);
+	static void int_pythonObjectCreated(Generic::BoundFunctorV *detach);
+	static void int_pythonObjectDeleted(Generic::BoundFunctorV *detach);
+	static bool int_FXObjectHandle(long *ret, FXObject *self, FXObject *sender, FXSelector sel, void *ptr);
 };
 inline PyObject *fxerrhpy(PyObject *ptr)
 {
