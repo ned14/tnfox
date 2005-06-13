@@ -38,15 +38,19 @@
 
 // Define a special kind of error handler for Win32
 #ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGWIN(code, flags) { FXException::int_throwWinError(0, 0, code, flags); }
+#define FXERRGWIN(code, flags)				{ FX::FXException::int_throwWinError(0, 0, code, flags); }
+#define FXERRGWIN(code, flags, filename)	{ FX::FXException::int_throwWinError(0, 0, code, flags, filename); }
 #else
-#define FXERRGWIN(code, flags) { FXException::int_throwWinError(__FILE__, __LINE__, code, flags); }
+#define FXERRGWIN(code, flags)				{ FX::FXException::int_throwWinError(__FILE__, __LINE__, code, flags); }
+#define FXERRGWINFN(code, flags, filename)	{ FX::FXException::int_throwWinError(__FILE__, __LINE__, code, flags, filename); }
 #endif
 #ifdef DEBUG
-#define FXERRHWIN(exp)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FXException::int_testCondition()) FXERRGWIN(GetLastError(), 0); }
-#define FXERRHWIN2(exp, getlasterror)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FXException::int_testCondition()) FXERRGWIN(getlasterror, 0); }
+#define FXERRHWIN(exp)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FX::FXException::int_testCondition()) FXERRGWIN(GetLastError(), 0); }
+#define FXERRHWINFN(exp, filename)		{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FX::FXException::int_testCondition()) FXERRGWINFN(GetLastError(), 0, filename); }
+#define FXERRHWIN2(exp, getlasterror)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FX::FXException::int_testCondition()) FXERRGWIN(getlasterror, 0); }
 #else
 #define FXERRHWIN(exp)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(GetLastError(), 0); }
+#define FXERRHWINFN(exp, filename)		{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(GetLastError(), 0, filename); }
 #define FXERRHWIN2(exp, getlasterror)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(getlasterror, 0); }
 #endif
 #define FXERRGCOM(code, flags) { FXERRMAKE(e, tr("COM error 0x%1 occurred").arg(code), FXEXCEPTION_OSSPECIFIC, flags); \
