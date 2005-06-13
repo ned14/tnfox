@@ -22,8 +22,9 @@
 #ifndef FXMEMORYOPS_H
 #define FXMEMORYOPS_H
 
-//#define FXDISABLE_GLOBALALLOCATORREPLACEMENTS
-
+#if defined(DEBUG) // || 1
+#define FXDISABLE_GLOBALALLOCATORREPLACEMENTS 1
+#endif
 
 #include "FXMemoryPool.h"
 #include <string.h>
