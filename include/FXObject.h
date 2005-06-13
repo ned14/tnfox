@@ -191,6 +191,12 @@ public:
   /// (warning: uses a virtual method call, so can't use before construction)
   FXTransString tr(const char *text, const char *hint=0);
 
+  /// Returns the python object representing this instance (if created in python)
+  virtual void *getPythonObject() const { return 0; }
+
+  /// Causes decoupling of python object from this object (deletes self)
+  virtual void decouplePythonObject() const { }
+
   /// Virtual destructor
   virtual ~FXObject();
   };
