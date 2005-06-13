@@ -627,8 +627,8 @@ within the Boost headers.
 
 \subsection build To build:
 
-Firstly, you need a \b minimum of 1Gb RAM. This is for linking the bindings, which
-takes a huge amount of RAM.
+Firstly, on Windows you need a \b minimum of 1Gb RAM. This is for linking the
+bindings, which takes a huge amount of RAM.
 
 Place Boost into a directory called "boost" next to the TnFOX directory.
 Overwrite the files in Boost.Python with the contents of BoostPatches.zip. Get a
@@ -689,6 +689,11 @@ C++ plus embedding of python mini-scripts and python expression evaluations.
 Furthermore I've implemented a number of automatic conversions
 where TnFOX classes transparently become Python ones and vice versa:
 \li FXString with python strings.
+\li FX::FXuchar, FX::FXchar, FX::FXushort, FX::FXshort, FX::FXuint
+and possibly FX::FXint & FX::FXulong (depending on host long integer
+size) all automatically translate to/from a python integer. FX::FXulong and
+FX::FXlong on 32 bit machines automatically translate to/from a
+python long integer.
 \li A python list of strings becomes <tt>const char **</tt> and vice versa. Be
 VERY careful with this as I don't copy the strings so ensure the
 list lives forever. This was intended purely for use for argv
@@ -717,6 +722,40 @@ was chosen for aiding compatibility. For each instance of the window
 class, in its constructor you should call the member functions FXMAPFUNC(),
 FXMAPFUNCS(), FXMAPTYPE() or FXMAPTYPES() as appropriate. These have
 the same spec as their macro counterparts in FXObject.h.
+
+If you look inside the Python directory, there is a "FXPy examples" directory
+containing some of the same examples that come with FXPy except altered
+to use TnFOX. The changes in most cases were trivial, but you should note
+that these python bindings are automatically generated rather than by hand,
+so useful behaviour like FXPy had is not possible:
+\li If an enum is named, it is \b always accessed in TnFOX's python bindings
+by prefixing the constant with its enum name eg; \c FXSelType.SEL_COMMAND
+rather than just \c SEL_COMMAND. I know this isn't like the C++, but I
+agree with BPL's designers that more disambiguation is better than less.
+\li Another difference is that python object instances and their C++
+counterpart are tied together strongly in the direction of python upwards.
+In other words, TnFOX can delete the C++ side of a python object but
+the python object shall continue to exist, except that it becomes a
+zombie. Similarly to this, if you delete the python side of an object,
+it \b always deletes its C++ side. Typical code in C++ such as:
+\code
+new MenuCommand(parentmenu, ...)
+\endcode
+... cannot be done in these python bindings as BPL has no idea that
+you really want to leave the newed pointer dangling. Therefore, if
+you don't tie something to a reference lasting the length of the parent
+instance (eg; by setting \c self.something to it), python will delete it.
+This is a major difference from FXPy and code will need to be adjusted
+to support it - see \c imageviewer.py ported from FXPy to see what I mean.
+\li Lastly, and probably the most annoyingly, currently pyste doesn't
+support specifying the parameter names to BPL and thus you can't use
+python's named parameter feature eg;
+\code
+foo(x=5, y=7)
+\endcode
+This could probably be fixed if GCCXML exports the necessary information,
+which I haven't investigated. For now, work around by always specifying
+the full list of parameters without names
 
 \subsection caveats Caveats:
 
