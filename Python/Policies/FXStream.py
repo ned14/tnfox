@@ -24,10 +24,10 @@ def applyFXStream(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.device,           return_value_policy(reference_existing_object))
-    set_policy(cclass.readBytes,        return_self())
-    set_policy(cclass.readRawBytes,     return_self())
-    set_policy(cclass.writeBytes,       return_self())
-    set_policy(cclass.writeRawBytes,    return_self())
+    exclude(cclass.readBytes)
+    exclude(cclass.readRawBytes)
+    exclude(cclass.writeBytes)
+    exclude(cclass.writeRawBytes)
     set_policy(cclass.container,        return_value_policy(reference_existing_object))
     set_policy(cclass.save,             return_self())
     set_policy(cclass.load,             return_self())

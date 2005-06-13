@@ -27,6 +27,7 @@ def applyFXImage(g, cclass):
         globals()[key]=value
     FXDrawable.applyFXDrawable(g, cclass)
     set_policy(cclass.getData,     return_internal_reference())
+    exclude(cclass.setData)
 
 def customise(g):
     for key,value in g.items():

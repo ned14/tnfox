@@ -24,3 +24,6 @@ def applyFXIODevice(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.permissions,         return_internal_reference())
+    exclude(cclass.readBlock)
+    exclude(cclass.readLine)
+    exclude(cclass.readBlockFrom)
