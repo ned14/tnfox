@@ -119,7 +119,7 @@ filelist.append("fxdefs.h")
 
 #print "Files to be processed:",filelist
 #filelist=[ "FXGLTriangleMesh.h" ]
-#filelist=["FXFoldingList.h"]
+#filelist=["FXComposite.h", "FXSearchDialog.h" ]
 if not os.path.isdir("Policies"):
     os.mkdir("Policies")
 modules=[]
