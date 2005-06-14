@@ -56,6 +56,12 @@ R *** Issued snapshot 2
 + Finally implemented AllFromHeader() in the Python bindings and added policies
 for all remaining classes. The bindings are now complete, if untested.
 * Renamed all vector friend functions so they are prefixed with 'vec'
+* Added a series of FN postfixes to the error handling macros to take a
+filename so that it can be reported in the error message. Altered various
+i/o classes to support specifying the filename
+* Added full namespace specifiers to the error handling macros
+* Added FXBUTTON_DANGEROUS to FXButton
++ Added class FXHandedMsgBox
 
 
 v0.85 13th Feb 2005:
