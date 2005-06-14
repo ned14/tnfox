@@ -46,6 +46,7 @@ namespace FX {
 
 // Map
 FXDEFMAP(FXHandedMsgBox) FXHandedMsgBoxMap[]={
+	FXMAPFUNC(SEL_COMMAND, FXHandedMsgBox::ID_ACCEPT, FXHandedMsgBox::onCmdClicked),
 	FXMAPFUNC(SEL_COMMAND, FXHandedMsgBox::ID_CANCEL, FXHandedMsgBox::onCmdClicked),
 	FXMAPFUNC(SEL_COMMAND, FXHandedMsgBox::ID_RETRY,  FXHandedMsgBox::onCmdClicked)
 };
