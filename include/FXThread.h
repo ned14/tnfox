@@ -1051,8 +1051,7 @@ FXProcess::threadPool().dispatch(Generic::BindFuncN(obj, method, pars));
 \endcode
 
 Cancelling jobs with cancel() can get tricky. If it's a simple case of
-cancelling it before it has run, all is good and \c Cancelled is returned
-with the functor still allocated.
+cancelling it before it has run, all is good and \c Cancelled is returned.
 If the job is already running, you can optionally have cancel() wait until
 it's returned but in either case \c WasRunning is returned (if the job
 completed, the functor is deleted as usual). Be aware that
@@ -1061,7 +1060,6 @@ actually have cancelled the job and you'll need to call it again. Suggested
 code is as follows:
 \code
 while(FXThreadPool::WasRunning==threadpool.cancel(job));
-FXDELETE(job);
 \endcode
 */
 struct FXThreadPoolPrivate;
@@ -1097,7 +1095,7 @@ public:
 	void setDynamic(bool v);
 	/*! Dispatches a worker thread to execute this job, delaying by \em delay
 	milliseconds */
-	Generic::BoundFunctorV *dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay=0);
+	handle dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay=0);
 	//! Cancelled state
 	enum CancelledState
 	{
@@ -1106,14 +1104,13 @@ public:
 		WasRunning		//!< Job was already running
 	};
 	/*! Cancels a previously dispatched job. If the job is currently being executed and
-	\em wait is true, waits for that job to complete before returning. You should delete the
-	functor after return of this call unless you have something else in mind for it. */
-	CancelledState cancel(Generic::BoundFunctorV *code, bool wait=true);
+	\em wait is true, waits for that job to complete before returning. */
+	CancelledState cancel(handle code, bool wait=true);
 	/*! Resets a timed job to a new delay. If the job is currently executing or has finished,
 	returns false. */
-	bool reset(Generic::BoundFunctorV *code, FXuint delay);
+	bool reset(handle code, FXuint delay);
 	//! Waits for a job to complete
-	bool wait(Generic::BoundFunctorV *code, FXuint period=FXINFINITE);
+	bool wait(handle code, FXuint period=FXINFINITE);
 };
 
 } // namespace
