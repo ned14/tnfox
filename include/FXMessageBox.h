@@ -58,6 +58,8 @@ enum {
 
 
 /**
+* \deprecated This class is deprecated in favour of FX::FXHandedMsgBox
+*
 * A Message Box is a convenience class which provides a dialog for
 * very simple common yes/no type interactions with the user.
 * The message box has an optional icon, a title string, and the question
@@ -92,54 +94,54 @@ public:
 public:
 
   /// Construct message box with given caption, icon, and message text
-  FXMessageBox(FXWindow* owner,const FXString& caption,const FXString& text,FXIcon* ic=NULL,FXuint opts=0,FXint x=0,FXint y=0);
+  FXMessageBox(FXWindow* owner,const FXString& caption,const FXString& text,FXIcon* ic=NULL,FXuint opts=0,FXint x=0,FXint y=0) FXDEPRECATED;
 
   /// Construct free floating message box with given caption, icon, and message text
-  FXMessageBox(FXApp* app,const FXString& caption,const FXString& text,FXIcon* ic=NULL,FXuint opts=0,FXint x=0,FXint y=0);
+  FXMessageBox(FXApp* app,const FXString& caption,const FXString& text,FXIcon* ic=NULL,FXuint opts=0,FXint x=0,FXint y=0) FXDEPRECATED;
 
   /**
   * Show a modal error message.
   * The text message may contain printf-tyle formatting commands.
   */
-  static FXuint error(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint error(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show modal error message, in free floating window.
   */
-  static FXuint error(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint error(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show a modal warning message
   * The text message may contain printf-tyle formatting commands.
   */
-  static FXuint warning(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint warning(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show modal warning message, in free floating window.
   */
-  static FXuint warning(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint warning(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show a modal question dialog
   * The text message may contain printf-tyle formatting commands.
   */
-  static FXuint question(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint question(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show modal question message, in free floating window.
   */
-  static FXuint question(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint question(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show a modal information dialog
   * The text message may contain printf-tyle formatting commands.
   */
-  static FXuint information(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint information(FXWindow* owner,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   /**
   * Show modal information message, in free floating window.
   */
-  static FXuint information(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) ;
+  static FXuint information(FXApp* app,FXuint opts,const char* caption,const char* message,...) FX_PRINTF(4,5) FXDEPRECATED;
 
   };
 
