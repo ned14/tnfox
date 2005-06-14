@@ -43,7 +43,6 @@ class FXAPI FXExceptionDialog : public FXHandedDialog
 	FXDECLARE(FXExceptionDialog)
 	friend class FXExceptionDetails;
 	FXException *e;
-	FXIcon *ic;
 	FXExceptionDetails *details;
 	FXExceptionDialog(const FXExceptionDialog &);
 	FXExceptionDialog &operator=(const FXExceptionDialog &);
@@ -67,7 +66,6 @@ public:
 	FXExceptionDialog(FXWindow *owner, FXException &e, FXuint opts=DECOR_ALL,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 	~FXExceptionDialog();
 	virtual void create();
-	virtual void destroy();
 	/*! \return 0 for cancel operation, 1 for retry
 
 	Starts a modal execution of the dialog display. Internally quits the event loop if the user requested that.
