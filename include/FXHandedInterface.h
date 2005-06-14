@@ -42,13 +42,14 @@ namespace FX {
 enum FXHandedInterfaceFlags
 {
 	HANDEDINTERFACE_BOTTOMWELL		=0,				//!< Places the primary button well on the bottom
-	HANDEDINTERFACE_SIDEWELL		=0x10000000,	//!< Places the primary button well on the side
-	HANDEDINTERFACE_OKBUTTON		=0x20000000,	//!< Adds an OK button
-	HANDEDINTERFACE_DEFOKBUTTON		=0x20000000,	//!< Adds a default OK button
-	HANDEDINTERFACE_CANCELBUTTON	=0x40000000,	//!< Adds a Cancel button
-	HANDEDINTERFACE_OKCANCELBUTTONS	=0x60000000,	//!< Adds both OK and Cancel buttons
-	HANDEDINTERFACE_DEFCANCELBUTTON	=0xc0000000,	//!< Adds a default Cancel button
-	HANDEDINTERFACE_DEFCANCEL		=0x80000000		//!< Makes the cancel button the default
+	HANDEDINTERFACE_SIDEWELL		=0x08000000,	//!< Places the primary button well on the side
+	HANDEDINTERFACE_OKBUTTON		=0x10000000,	//!< Adds an OK button
+	HANDEDINTERFACE_DEFOKBUTTON		=0x10000000,	//!< Adds a default OK button
+	HANDEDINTERFACE_CANCELBUTTON	=0x20000000,	//!< Adds a Cancel button
+	HANDEDINTERFACE_OKCANCELBUTTONS	=0x30000000,	//!< Adds both OK and Cancel buttons
+	HANDEDINTERFACE_DEFCANCELBUTTON	=0x60000000,	//!< Adds a default Cancel button
+	HANDEDINTERFACE_DEFCANCEL		=0x40000000		//!< Makes the cancel button the default
+	// 0x80000000 used by FXHandedMsgBox
 };
 
 /*! \class FXHandedInterfaceI
