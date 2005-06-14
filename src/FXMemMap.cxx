@@ -599,10 +599,14 @@ void FXMemMap::close()
 			}
 		}
 #endif
+		p->acl=FXACL(FXACL::MemMap);
 		if(File==p->type)
 		{
 			if(p->myfile) p->file->close();
+			p->setPrivatePerms();
 		}
+		else
+			p->setAllAccessPerms();
 		p->size=0;
 		ioIndex=0;
 		setFlags(0);

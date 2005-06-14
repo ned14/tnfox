@@ -391,6 +391,8 @@ void FXPipe::close()
 #endif
 		}
 #endif
+		p->acl=FXACL(FXACL::Pipe);
+		p->makePerms();
 		setFlags(0);
 	}
 }

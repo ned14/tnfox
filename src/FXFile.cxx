@@ -321,6 +321,11 @@ void FXFile::close()
 		FXERRHIO(::close(p->handle));
 		p->handle=0;
 		p->size=0;
+		if(p->acl)
+		{	// Reset to default ACL
+			FXDELETE(p->acl);
+			FXERRHM(p->acl=new FXACL(FXACL::default_(FXACL::File)));
+		}
 		ioIndex=0;
 		setFlags(0);
 	}
