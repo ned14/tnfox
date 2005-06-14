@@ -476,8 +476,7 @@ void FXMemMap::winopen(int mode)
 	{
 		SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
 		sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
-		FXERRHWIN(p->mappingh=CreateFileMapping(fileh,
-			&sa, access,
+		FXERRHWIN(p->mappingh=CreateFileMapping(fileh, &sa, access,
 			(DWORD)(mappingsize>>32), (DWORD) mappingsize, NULL));
 		// Interestingly, trying to read the security descriptor of an
 		// unnamed section does not work :(
