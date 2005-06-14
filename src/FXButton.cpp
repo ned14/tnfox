@@ -108,6 +108,10 @@ FXButton::FXButton(FXComposite* p,const FXString& text,FXIcon* ic,FXObject* tgt,
     setInitial(TRUE);
     setDefault(TRUE);
     }
+  if(options&BUTTON_DANGEROUS)
+    setHelpTag(FXTrans::tr("FXButton", "Pressing this button performs a dangerous action. Hold Ctrl + Shift when clicking to activate"));
+  else
+    setHelpTag(FXTrans::tr("FXButton", "Pressing this button performs an action"));
   }
 
 
