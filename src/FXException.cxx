@@ -463,6 +463,7 @@ void FXException::int_setThrownException(FXException &e)
 		if(e.code()!=FXEXCEPTION_INTTHREADCANCEL)
 		{
 			FXException_TIB *tib=mytib;
+			assert(tib);
 			// Set this exception's stack level to the current level
 			e.stacklevel=tib->stack.count()-1;
 			if(e.stacklevel<0)
@@ -538,6 +539,7 @@ void FXException::int_exitTryHandler() throw()
 	if(CheckTIB())
 	{
 		FXException_TIB *tib=mytib;
+		assert(tib);
 		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		FXuint stackcount=tib->stack.count();
 		if(le && !le->currentExceptions.isEmpty())
@@ -580,6 +582,7 @@ void FXException::int_incDestructorCnt()
 {
 	if(CheckTIB())
 	{
+		assert(mytib);
 		FXException_TIB::LevelEntry *le=mytib->stack.getLast();
 		//assert(mytib->nestingCount>=0);
 		if(le) le->nestingCount++;
@@ -591,6 +594,7 @@ bool FXException::int_nestedException(FXException &e)
 	if(CheckTIB())
 	{
 		FXException_TIB *tib=mytib;
+		assert(mytib);
 		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		//fxmessage("Thread %u destructor caught exception %d in stack level %d, throwing already=%d, nestingCount=%d\n",
 		//	(FXuint) FXThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
@@ -611,6 +615,7 @@ void FXException::int_decDestructorCnt()
 {
 	if(CheckTIB())
 	{
+		assert(mytib);
 		FXException_TIB::LevelEntry *le=mytib->stack.getLast();
 		if(le) le->nestingCount--;
 		//assert(mytib->nestingCount>=0);
