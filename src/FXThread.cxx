@@ -1682,7 +1682,7 @@ void FXThreadPool::setDynamic(bool v)
 	p->dynamic=v;
 }
 
-Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay)
+FXThreadPool::handle FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay)
 {
 	Generic::BoundFunctorV *_code=0;
 	//fxmessage("Thread pool dispatch %p in %d ms\n", PtrPtr(code), delay);
@@ -1736,11 +1736,12 @@ Generic::BoundFunctorV *FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV>
 		}
 	}
 	assert(!code);
-	return _code;
+	return (handle) _code;
 }
 
-FXThreadPool::CancelledState FXThreadPool::cancel(Generic::BoundFunctorV *code, bool wait)
+FXThreadPool::CancelledState FXThreadPool::cancel(FXThreadPool::handle _code, bool wait)
 {
+	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	if(!code) return NotFound;
 	FXMtxHold h(p);
 	//fxmessage("Thread pool cancel %p\n", code);
@@ -1756,7 +1757,7 @@ FXThreadPool::CancelledState FXThreadPool::cancel(Generic::BoundFunctorV *code, 
 			{
 				if(this==entry->which && PtrPtr(entry->code)==code)
 				{
-					PtrRelease(entry->code);
+					PtrReset(entry->code, 0);		// deletes functor
 					mastertimekeeper->entries.removeRef(entry);
 					//fxmessage("Thread pool cancel %p found\n", code);
 					return Cancelled;
@@ -1776,6 +1777,7 @@ FXThreadPool::CancelledState FXThreadPool::cancel(Generic::BoundFunctorV *code, 
 						//fxmessage("Thread pool cancel %p waiting for completion\n", code);
 						h.unlock();
 						if(wait) { FXMtxHold h3(t); }
+						// Should be deleted if we waited
 						return WasRunning;
 					}
 				}
@@ -1787,8 +1789,9 @@ FXThreadPool::CancelledState FXThreadPool::cancel(Generic::BoundFunctorV *code, 
 	return Cancelled;
 }
 
-bool FXThreadPool::reset(Generic::BoundFunctorV *code, FXuint delay)
+bool FXThreadPool::reset(FXThreadPool::handle _code, FXuint delay)
 {
+	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	FXMtxHold h(mastertimekeeperlock);
 	if(!mastertimekeeper) return false;
 	FXThreadPoolTimeKeeper::Entry *entry;
@@ -1811,8 +1814,9 @@ bool FXThreadPool::reset(Generic::BoundFunctorV *code, FXuint delay)
 	return true;
 }
 
-bool FXThreadPool::wait(Generic::BoundFunctorV *code, FXuint period)
+bool FXThreadPool::wait(FXThreadPool::handle _code, FXuint period)
 {
+	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	FXMtxHold h(p);
 	if(-1==p->waiting.findRef(code))
 	{

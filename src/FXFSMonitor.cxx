@@ -65,14 +65,13 @@ struct FXFSMon : public FXRWMutex
 			struct Handler
 			{
 				FXFSMonitor::ChangeHandler handler;
-				Generic::BoundFunctorV *volatile callv;
+				volatile FXThreadPool::handle callv;
 				Handler(FXFSMonitor::ChangeHandler _handler) : handler(_handler), callv(0) { }
 				~Handler()
 				{
 					FXThreadPool::CancelledState state;
-					assert(!callv || dynamic_cast<void *>(callv));
 					while(FXThreadPool::WasRunning==(state=FXProcess::threadPool().cancel(callv)));
-					FXDELETE(callv);
+					callv=0;
 				}
 				void invoke(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi);
 			private:
