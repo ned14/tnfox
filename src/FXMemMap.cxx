@@ -256,6 +256,7 @@ void FXMemMap::setName(const FXString &name)
 	FXMtxHold h(p);
 	close();
 	p->name=name;
+	if(p->file) p->file->setName(name);
 	p->unique=!!name.empty();
 }
 
