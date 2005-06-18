@@ -15,6 +15,9 @@ B Fixed segfault in FXSSLDevice on process exit
 B If missing zlib was causing compile errors
 B Fixed occasional segfault in ~FXMemoryPool
 R *** Issued snapshot 2
+B i/o classes weren't resetting their acl on close() which caused
+problems if instance was reused
+B FXMemMap::setName() wasn't setting name of underlying FXFile
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -62,6 +65,10 @@ i/o classes to support specifying the filename
 * Added full namespace specifiers to the error handling macros
 * Added FXBUTTON_DANGEROUS to FXButton
 + Added class FXHandedMsgBox
+* Changed FXThreadPool to return handles instead of BoundFunctorV's lest
+external code go delete them without telling FXThreadPool (a problem somewhere
+inside Tn)
+* Added support for seeking, mixed reads & writes and truncating to FXSSLDevice
 
 
 v0.85 13th Feb 2005:
