@@ -995,9 +995,9 @@ public:
 	}
 	void verifyBitsize()
 	{
-		FXERRH((bitsize & 7)==0, FXTrans::tr("FXSSLKey", "Key length must be a multiple of eight"), FXSSLKEY_BADKEYLEN, 0);
+		FXERRH((bitsize & 63)==0, FXTrans::tr("FXSSLKey", "Key length must be a multiple of sixty-four"), FXSSLKEY_BADKEYLEN, 0);
 		if(FXSSLKey::Blowfish==type)
-            FXERRH(bitsize>=32 && bitsize<=448, FXTrans::tr("FXSSLKey", "Blowfish needs a key between 32 and 448 bits"), FXSSLKEY_BADKEYLEN, 0);
+            FXERRH(bitsize>=64 && bitsize<=448, FXTrans::tr("FXSSLKey", "Blowfish needs a key between 64 and 448 bits"), FXSSLKEY_BADKEYLEN, 0);
 		if(FXSSLKey::AES==type)
 			FXERRH(128==bitsize || 192==bitsize || 256==bitsize, FXTrans::tr("FXSSLKey", "AES needs a key of either 128, 192 or 256 bits"), FXSSLKEY_BADKEYLEN, 0);
 	}
@@ -1207,6 +1207,7 @@ FXStream &operator<<(FXStream &s, const FXSSLKey &i)
 	if(FXSSLKey::Encrypted!=i.p->type)
 	{
 		s << i.p->bitsize << i.p->saltlen;
+		i.p->verifyBitsize();
 	}
 	s.writeRawBytes((FXuchar *) i.p->key, i.p->size);
 	return s;
@@ -1250,16 +1251,32 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 	SSL *handle;
 	BIO *bio;
 	X509 *peercert;
-	EVP_CIPHER_CTX read, write;
+	EVP_CIPHER_CTX estream;
+	FXuchar *nonce;			// Holds the nonce
+	FXuval noncelen;
+	FXuchar *ebuffer;		// Holds a block of encryption stream
+	FXfval ebufferIoIndex;
 #endif
 	FXSSLDevicePrivate(FXIODevice *ed) : dev(ed), amServer(false), connected(false),
 		ciphers("HIGH:@STRENGTH"), key(0),
 #ifdef HAVE_OPENSSL
-		handle(0), bio(0), peercert(0),
+		handle(0), bio(0), peercert(0), nonce(0), noncelen(0), ebuffer(0), ebufferIoIndex((FXfval)-1),
 #endif
 		FXMutex() { }
 	~FXSSLDevicePrivate()
 	{
+#ifdef HAVE_OPENSSL
+		if(nonce)
+		{
+			Secure::free(nonce);
+			nonce=0; noncelen=0;
+		}
+		if(ebuffer)
+		{
+			Secure::free(ebuffer);
+			ebuffer=0;
+		}
+#endif
 	}
 #ifdef HAVE_OPENSSL
 	void setupSSL()
@@ -1357,6 +1374,61 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 void *FXSSLDevice::int_getOSHandle() const
 {
 	return p->dev->isSynchronous() ? static_cast<FXIODeviceS *>(p->dev)->int_getOSHandle() : 0;
+}
+inline void FXSSLDevice::int_genEBuffer() const
+{
+	FXfval cblock=ioIndex-(ioIndex % p->noncelen);
+	if(p->ebufferIoIndex!=cblock)
+	{	// XOR the nonce and ioIndex and encrypt to generate ebuffer
+		FXuchar *buffer=(FXuchar *) alloca(p->noncelen);	// use alloca() for speed
+		assert(p->noncelen>=8);
+		// Keysize is guaranteed to be multiple of 8
+		FXSTATIC_ASSERT(sizeof(FXfval)==8, FXfval_Is_Not_Eight);
+		for(FXuval n=0; n<p->noncelen/sizeof(FXfval); n++)
+			((FXfval *) buffer)[n]=((FXfval *) p->nonce)[n] ^ (cblock+n*sizeof(FXfval));
+		int outlen=0, ret;
+		ret=EVP_EncryptUpdate(&p->estream, p->ebuffer, &outlen, buffer, p->noncelen);
+		memset(buffer, 0, p->noncelen);		// Ensure buffer is wiped on exit
+		FXERRHSSL(ret);
+		assert(outlen==p->noncelen);
+		p->ebufferIoIndex=cblock;
+	}
+}
+
+void FXSSLDevice::int_xorInEBuffer(char *dest, const char *src, FXuval amount)
+{	// Keysize must be a multiple of 8, so we can process in 64 bit words for speed
+	FXSTATIC_ASSERT(sizeof(FXulong)==8, FXulong_Is_Not_Eight);
+	// Try to optimise by address alignment
+	while(amount)
+	{
+		FXival ebufferoffset=(FXival)(ioIndex % p->noncelen);
+		FXuchar *e=FXOFFSETPTR(p->ebuffer, ebufferoffset);
+		if(!ebufferoffset)
+			int_genEBuffer();
+		FXuval d=(FXuval) dest, s=(FXuval) src, todo=FXMIN(amount, p->noncelen-ebufferoffset), size=0;
+		if(todo>=8 && !(d & 7) && !(s & 7))
+		{	// Do it as one 64 bit op
+			*((FXulong *) dest)=*((FXulong *) src) ^ *((FXuchar *) e);
+			size=8;
+			goto end;
+		}
+		if(todo>=4 && !(d & 3) && !(s & 3))
+		{	// Do it as one 32 bit op
+			*((FXuint *) dest)=*((FXuint *) src) ^ *((FXuint *) e);
+			size=4;
+			goto end;
+		}
+		if(todo>=2 && !(d & 1) && !(s & 1))
+		{	// Do it as one 16 bit op
+			*((FXushort *) dest)=*((FXushort *) src) ^ *((FXushort *) e);
+			size=2;
+			goto end;
+		}
+		*((FXuchar *) dest)=*((FXuchar *) src) ^ *((FXuchar *) e);
+		size=1;
+end:
+		dest+=size; src+=size; ioIndex+=size; amount-=size;
+	}
 }
 
 FXSSLDevice::FXSSLDevice(FXIODevice *encrypteddev, bool enablev2) : p(0), FXIODeviceS()
@@ -1574,6 +1646,7 @@ bool FXSSLDevice::open(FXuint mode)
 	}
 	else
 	{
+		FXERRH(mode & IO_ReadWrite, "You must specify at least one of IO_ReadOnly or IO_WriteOnly!", 0, FXERRH_ISDEBUG);
 		FXMtxHold h(p);
 		if(p->dev->isSynchronous())
 		{
@@ -1604,7 +1677,7 @@ bool FXSSLDevice::open(FXuint mode)
 				FXulong header;
 				s.readRawBytes((char *) &header, 8); s >> version;
 				FXERRH(header==*((FXulong *)"TNFXSECD"), FXTrans::tr("FXSSLDevice", "Not a TnFOX secure data file"), FXSSLDEVICE_BADFORMAT, 0);
-				FXERRH(1==version, FXTrans::tr("FXSSLDevice", "Secure file format too new"), FXSSLDEVICE_BADFORMAT, 0);
+				FXERRH(2==version, FXTrans::tr("FXSSLDevice", "Secure file format too new"), FXSSLDEVICE_BADFORMAT, 0);
 				if(pkey)
 				{	// Read header for key
 					int ret;
@@ -1685,7 +1758,7 @@ bool FXSSLDevice::open(FXuint mode)
 			else if(p->dev->isWriteable())
 			{	// Write header
 				s.writeRawBytes("TNFXSECD", 8);
-				version=1;
+				version=2;
 				s << version;
 				if(pkey)
 				{	// Write header for key
@@ -1742,6 +1815,10 @@ bool FXSSLDevice::open(FXuint mode)
 				s.writeRawBytes(keyhash.data.bytes, sizeof(keyhash));
 			}
 
+
+			// Okay set up for reading & writing
+			assert(!p->nonce);
+			assert(!p->ebuffer);
 			const EVP_CIPHER *cipher=0;
 			switch(key.type())
 			{
@@ -1749,20 +1826,20 @@ bool FXSSLDevice::open(FXuint mode)
 				cipher=EVP_enc_null();
 				break;
 			case FXSSLKey::Blowfish:
-				cipher=EVP_bf_cbc();
+				cipher=EVP_bf_ecb();
 				break;
 			case FXSSLKey::AES:
 				{
 					switch(key.bitsLen())
 					{
 					case 128:
-						cipher=EVP_aes_128_cbc();
+						cipher=EVP_aes_128_ecb();
 						break;
 					case 192:
-						cipher=EVP_aes_192_cbc();
+						cipher=EVP_aes_192_ecb();
 						break;
 					case 256:
-						cipher=EVP_aes_256_cbc();
+						cipher=EVP_aes_256_ecb();
 						break;
 					default:
 						{ assert(0); }
@@ -1772,31 +1849,25 @@ bool FXSSLDevice::open(FXuint mode)
 			default:
 				FXERRG(FXTrans::tr("FXSSLDevice", "Key of unknown encryption type"), FXSSLDEVICE_UNKNOWNENCRYPTION, 0);
 			}
-			FXuchar iv[EVP_MAX_IV_LENGTH];
+			// Initialise the cipher
+			EVP_CIPHER_CTX_init(&p->estream);
+			FXERRHSSL(EVP_EncryptInit_ex(&p->estream, cipher, NULL, (FXuchar *) key.p->key, NULL));
+			if(FXSSLKey::Blowfish==key.type())
+				FXERRHSSL(EVP_CIPHER_CTX_set_key_length(&p->estream, key.bitsLen()));
+			p->noncelen=EVP_CIPHER_CTX_block_size(&p->estream);
+			// Allocate nonce and buffers
+			FXERRHM(p->nonce=Secure::malloc<FXuchar>(p->noncelen));
+			FXERRHM(p->ebuffer=Secure::malloc<FXuchar>(p->noncelen));
+			p->ebufferIoIndex=(FXfval)-1;
+
 			if(mode & IO_ReadOnly && !p->dev->atEnd())
-			{	// Read in the IV
-				s.readRawBytes(iv, EVP_CIPHER_iv_length(cipher));
+			{	// Read in the nonce
+				s.readRawBytes(p->nonce, p->noncelen);
 			}
 			else
-			{
-				FXERRHSSL(RAND_pseudo_bytes(iv, EVP_MAX_IV_LENGTH));
-				s.writeRawBytes(iv, EVP_CIPHER_iv_length(cipher));
-			}
-			if(mode & IO_ReadOnly)
-			{
-				EVP_CIPHER_CTX_init(&p->read);
-				FXERRHSSL(EVP_DecryptInit_ex(&p->read,  cipher, NULL, NULL, NULL));
-				if(FXSSLKey::Blowfish==key.type())
-					FXERRHSSL(EVP_CIPHER_CTX_set_key_length(&p->read,  key.bitsLen()));
-				FXERRHSSL(EVP_DecryptInit_ex(&p->read,  NULL, NULL, (FXuchar *) key.p->key, iv));
-			}
-			if(mode & IO_WriteOnly)
-			{
-				EVP_CIPHER_CTX_init(&p->write);
-				FXERRHSSL(EVP_EncryptInit_ex(&p->write, cipher, NULL, NULL, NULL));
-				if(FXSSLKey::Blowfish==key.type())
-					FXERRHSSL(EVP_CIPHER_CTX_set_key_length(&p->write, key.bitsLen()));
-				FXERRHSSL(EVP_EncryptInit_ex(&p->write, NULL, NULL, (FXuchar *) key.p->key, iv));
+			{	// Generate and write the nonce
+				FXERRHSSL(RAND_pseudo_bytes(p->nonce, p->noncelen));
+				s.writeRawBytes(p->nonce, p->noncelen);
 			}
 			ioIndex=0;
 		}
@@ -1816,22 +1887,14 @@ void FXSSLDevice::close()
 		FXMtxHold h(p);
 		if(!p->dev->isSynchronous())
 		{
-			FXuchar *buffer;
-			FXERRHM(buffer=Secure::malloc<FXuchar>(65536));
-			FXRBOp unbuffer=FXRBFunc(&Secure::free<FXuchar>, buffer);
 			int bufflen=0;
-			if(isReadable())
-			{
-				FXERRHSSL(EVP_DecryptFinal_ex(&p->read, buffer, &bufflen));
-				memset(buffer, 0, bufflen);
-				FXERRHSSL(EVP_CIPHER_CTX_cleanup(&p->read));
-			}
-			if(isWriteable())
-			{
-				FXERRHSSL(EVP_EncryptFinal_ex(&p->write, buffer, &bufflen));
-				p->dev->writeBlock(buffer, bufflen);
-				FXERRHSSL(EVP_CIPHER_CTX_cleanup(&p->write));
-			}
+			// Throw away remainder
+			FXERRHSSL(EVP_EncryptFinal_ex(&p->estream, p->ebuffer, &bufflen));
+			FXERRHSSL(EVP_CIPHER_CTX_cleanup(&p->estream));
+			Secure::free(p->nonce);
+			p->nonce=0; p->noncelen=0;
+			Secure::free(p->ebuffer);
+			p->ebuffer=0;
 		}
 		if(p->peercert)
 		{
@@ -1893,14 +1956,12 @@ FXfval FXSSLDevice::size() const
 void FXSSLDevice::truncate(FXfval size)
 {
 #ifdef HAVE_OPENSSL
-	/*if(isOpen())
+	if(isOpen() && !p->dev->isSynchronous())
 	{
 		FXMtxHold h(p);
-		if(!p->dev->isSynchronous())
-		{
-			FXERRG("Currently not supported", 0, FXERRH_ISDEBUG);
-		}
-	}*/
+		FXfval diff=p->dev->at()-ioIndex;
+		p->dev->truncate(size+diff);
+	}
 #endif
 }
 
@@ -1911,7 +1972,16 @@ FXfval FXSSLDevice::at() const
 
 bool FXSSLDevice::at(FXfval newpos)
 {
-	if(newpos) FXERRG("Currently not supported", 0, FXERRH_ISDEBUG);
+#ifdef HAVE_OPENSSL
+	if(isOpen() && newpos!=ioIndex && !p->dev->isSynchronous())
+	{
+		FXMtxHold h(p);
+		FXfval diff=p->dev->at()-ioIndex;
+		ioIndex=newpos;
+		p->dev->at(ioIndex+diff);
+		return true;
+	}
+#endif
 	return false;
 }
 
@@ -1938,21 +2008,14 @@ FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
 		}
 		else
 		{
-			FXuchar buffer[65536];
 			FXuval count=maxlen;
-			while((long) count>0)
-			{
-				int outlen=0, inlen=FXMIN((int)(count-EVP_CIPHER_CTX_block_size(&p->read)), sizeof(buffer));
-				bool splice=(count<=(FXuval) EVP_CIPHER_CTX_block_size(&p->read));
-				FXuchar *dataptr=(splice) ? (buffer+32768) : (FXuchar *) data;
-				if(!(inlen=p->dev->readBlock(buffer, (splice) ? count : inlen))) break;
-				FXERRHSSL(EVP_DecryptUpdate(&p->read, dataptr, &outlen, buffer, inlen));
-				if(splice)
-				{	// Annoyingly EVP_Decrypt can write data len + cipher block size to output (thus corrupting stack)
-					memcpy(data, dataptr, count);
-					memset(dataptr, 0, count);
-				}
-				data+=outlen; count-=outlen; ioIndex+=outlen;
+			while(count)
+			{	// Read same amount of bytes from source
+				FXuval read=0;
+				if(!(read=p->dev->readBlock(data, count))) break;
+				// Now decrypt, block by block
+				int_xorInEBuffer(data, data, read);		// advances ioIndex for us
+				count-=read;
 			}
 			return maxlen-count;
 		}
@@ -1984,15 +2047,16 @@ FXuval FXSSLDevice::writeBlock(const char *data, FXuval maxlen)
 		}
 		else
 		{
-			FXuchar buffer[65536];
+			static const int blockSize=65536;
 			FXuval count=maxlen;
-			while((long) count>0)
-			{	// For writes <8 bytes may write nothing
-				int outlen=0, inlen=FXMIN((int) count, (sizeof(buffer)-EVP_CIPHER_CTX_block_size(&p->write)));
-				FXERRHSSL(EVP_EncryptUpdate(&p->write, buffer, &outlen, (FXuchar *) data, inlen));
-				if(!outlen) break;
-				if(!(outlen=p->dev->writeBlock(buffer, outlen))) break;
-				data+=outlen; count-=outlen; ioIndex+=outlen;
+			char buffer[blockSize];
+			while(count)
+			{	// Encrypt to buffer and write
+				FXuval written, towrite=FXMIN(count, blockSize);
+				int_xorInEBuffer(buffer, data, towrite);		// advances ioIndex for us
+				if(!(written=p->dev->writeBlock(buffer, towrite))) break;
+				ioIndex-=towrite-written;
+				count-=written;
 			}
 			return maxlen-count;
 		}
