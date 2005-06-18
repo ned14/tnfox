@@ -23,8 +23,6 @@ This will get fixed soon.
 
 Known bugs:
 -=-=-=-=-=-
-* FXSSLDevice throws a "bad decrypt" exception on close() with Blowfish
-with certain key lengths. The cause is currently unknown.
 * Valgrind complains about how we fake a primary thread object. It also doesn't
 like the marker test FXMemoryPool's global allocator operators perform to detect
 which blocks belong to the system allocator.
@@ -41,8 +39,6 @@ in ICC).
 
 Coming shortly:
 -=-=-=-=-=-=-=-
-* Test custodian & ward policies in python bindings to try and solve
-FXWindow children being deleted twice problem
 * Get FXTrans to run per-thread locales
 * Have FXPacker dynamically cause horizontally packed items to go
 vertical if there isn't enough space (small screen support)
@@ -55,7 +51,6 @@ to requester (hard as threads can shift processor suddenly)
 Eventually:
 -=-=-=-=-=-
 * FXBlkSocket::writeBlock() for UDP
-* Move all my stuff over to use FXWString (when FOX does so too)
 * Temp string additions to FXString (use templates?)
 * Currency and time formatting extensions to FXTrans (needs more std support
 though - maybe those extended GNU functions or <locale>?)
