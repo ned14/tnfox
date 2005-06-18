@@ -224,7 +224,7 @@ public:
 	enum KeyType
 	{
 		None=0,			//!< No encryption is performed OR type will be set by private key decryption
-		Blowfish,		//!< A Blowfish key between 32 and 448 bits
+		Blowfish,		//!< A Blowfish key between 64 and 448 bits which must be a multiple of 64
 		AES,			//!< An AES key of 128, 192 or 256 bits
 		Encrypted=0xffff //!< A key encrypted by a FX::FXSSLPKey
 	};
@@ -482,9 +482,21 @@ bit when opening any secure file.
 greater than 2Gb cannot be worked with. Attempting to do so causes
 undefined operation. This problem goes away on 64 bit systems.
 
-\note Seeking is currently not implemented. You'd also want to avoid
-mixing read & writes ie; do a block read of all data or a block write of
-all data. Truncates also don't work.
+As of v0.86, support for seeking, mixing reads & writes and truncating has been added.
+This comes at the cost of no longer being able to use Cipher-Block Chaining
+(CBC) mode (as previous versions did) as you'd need to know all the data up
+to the seek point. A similar restriction would obviously apply to Cipher
+Feedback (CFB) mode, so that leaves us with Output Feedback (OFB) mode or
+Counter (CTR) mode. Counter mode is really Electronic Codebook (ECB) with
+the input as a combination of nonce and counter with the output XORed with
+the plaintext to generate the ciphertext.
+
+Now OFB and CTR modes are weaker than CFB and CBC as the plaintext has no
+effect on the encryption - it is determined entirely by starting conditions.
+CTR mode has the advantage of instant seeks whereas OFB must be iterated
+from beginning to the seek point on each seek - so I have opted for CTR
+mode despite that it is probably slightly weaker.
+
 
 <h4>Usage:</h4>
 Usage is as with all things in TnFOX, ridiculously easy:
@@ -561,7 +573,7 @@ my inexperience with cryptography. If you are an expert and see one,
 please notify me. I have built in versioning to allow seamless upgrades.
 
 +0: "TNFXSECD"<br>
-+8: File version, currently 1<br>
++8: File version, currently 2<br>
 +9: If "SKEY" then a FX::FXSSLKey but with the key data encrypted by the
 public part of its asymmetric key. The encryption is done by binding the
 key data (in big-endian format), the bitsize (little-endian 4 bytes), the
@@ -569,8 +581,9 @@ salt length (little-endian 4 bytes) and the type (little-endian 2 bytes)
 together and asymmetrically encrypting<br>
 +9[+skeylen]: "TEST" then a 192 bit Tiger hash of the key with 16
 bits of salt if salting on the key wasn't used (used to test for bad keys)<br>
-...: The encrypted data preceded by a random initialisation vector for
-the cipher in its particular configuration.
++37[+skeylen]: A random nonce of the same size as the cipher's block size<br>
++37+noncelen[+skeylen]: The encrypted data, encrypted by XORing original data
+with the output of the encryption of the nonce XORed by the file pointer (CTR mode)
 
 <b>Cryptoanalysis:</b> As I previously mentioned, I've never touched cryptography
 before writing this class and while I have learned lots in the past few weeks,
@@ -586,9 +599,17 @@ An attacker can not know from the file format:
 \li Whether the key was generated from a password or not
 \li If either the same key was used for more than one file or if the
 contents of two files are identical
-\li Ample sanity checks are used so even malicious altering of the file
-will not help you. Alterations totally corrupt all data after that point
-thus rendering thereafter random garbage.
+\li Ample sanity checks are used so even malicious altering of the file structure
+will not help you.
+
+Known weaknesses:
+\li Altering the encrypted data alters the same portion of the decrypted
+data - in particular, bitflipping the encrypted bitflips the decrypted.
+If you know the format of the original data, this can be used effectively
+as an attack, though you still need to know the key length as the encrypted
+data is offset by that amount.
+\li You can calculate the input data to the cipher. This enables certain methods
+of attack.
 
 However an attacker \em can know the following:
 \li The size of the public key used to encrypt the symmetric key
@@ -640,6 +661,8 @@ class FXAPIR FXSSLDevice : public FXIODeviceS
 	FXSSLDevice(const FXSSLDevice &);
 	FXSSLDevice &operator=(const FXSSLDevice &);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
+	inline FXDLLLOCAL void int_genEBuffer() const;
+	FXDLLLOCAL void int_xorInEBuffer(char *dest, const char *src, FXuval amount);
 public:
 	/*! Constructs an instance working with encrypted data device \em encrypteddev.
 	Setting enablev2 to false permanently disables the SSL v2 protocol for this
@@ -698,6 +721,7 @@ public:
 	virtual void close();
 	virtual void flush();
 	virtual FXfval size() const;
+	//! Note that unlike most FX::FXIODevice's, extending the file sets random data rather than zeros
 	virtual void truncate(FXfval size);
 	virtual FXfval at() const;
 	virtual bool at(FXfval newpos);
