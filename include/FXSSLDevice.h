@@ -497,6 +497,17 @@ CTR mode has the advantage of instant seeks whereas OFB must be iterated
 from beginning to the seek point on each seek - so I have opted for CTR
 mode despite that it is probably slightly weaker.
 
+Performance-wise, throughput is heavily dependent on the speed at which
+your processor can XOR portions of memory. There is an SSE2 instruction for
+XORing 16 bytes at a time, but it requires 16 byte aligned memory which
+is highly unlikely in general purpose usage. This implementation does
+make use of memory alignment up to eight (for which the src, dest AND
+offset inside encrypted stream buffer must all be multiples of eight) but
+profiling shows that even that is rarely used compared against the four
+byte aligned XOR on 32 bit systems. If however you are using a cipher with
+a large (>16) block size, you could see substantial speed increases if you always
+pass a buffer to readBlock() and writeBlock() which is eight byte aligned.
+
 
 <h4>Usage:</h4>
 Usage is as with all things in TnFOX, ridiculously easy:
@@ -725,8 +736,11 @@ public:
 	virtual void truncate(FXfval size);
 	virtual FXfval at() const;
 	virtual bool at(FXfval newpos);
+	virtual bool atEnd() const;
 	virtual FXuval readBlock(char *data, FXuval maxlen);
 	virtual FXuval writeBlock(const char *data, FXuval maxlen);
+	virtual FXuval readBlockFrom(char *data, FXuval maxlen, FXfval pos);
+	virtual FXuval writeBlockTo(FXfval pos, const char *data, FXuval maxlen);
 	virtual int ungetch(int c);
 public:
 	/*! Sets the certificate file to be used for all new FXSSLDevice connections.
