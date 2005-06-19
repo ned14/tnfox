@@ -18,6 +18,7 @@ R *** Issued snapshot 2
 B i/o classes weren't resetting their acl on close() which caused
 problems if instance was reused
 B FXMemMap::setName() wasn't setting name of underlying FXFile
+B FXSSLDevice was corrupting data if data length wasn't multiple of key size
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
