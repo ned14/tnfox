@@ -78,6 +78,26 @@ static void dumpSSLStats(FXSSLDevice &d)
 	fxmessage("%s", msg.text());
 }
 
+static void stippledTransfer(FXIODevice *dest, FXIODevice *src)
+{
+	FXuval r=0;
+	FXfval oldpos;
+	char buffer[256];
+	do
+	{
+		r=32*rand()/RAND_MAX;
+		oldpos=src->at();
+		//fxmessage("Reading %u from offset %u\n", r, (FXuint) oldpos);
+		r=src->readBlock(buffer, r);
+		dest->writeBlock(buffer, r);
+		//dest->putch(src->getch());
+		if(rand()>RAND_MAX/2)
+		{
+			src->at(oldpos); dest->at(oldpos);
+		}
+	} while(!src->atEnd());
+}
+
 int main(int argc, char *argv[])
 {
 	FXProcess myprocess(argc, argv);
@@ -85,6 +105,50 @@ int main(int argc, char *argv[])
 			  "-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 	FXERRH_TRY
 	{
+		if(1)
+		{
+			fxmessage("\nStippled i/o test:\n"
+					    "-=-=-=-=-=-=-=-=-=\n");
+			FXSSLKey key(128, FXSSLKey::Blowfish);
+			FXSSLPKey pkey(1024, FXSSLPKey::RSA);
+			FXMemMap src("../ReadMe.txt"), dest("BigFile.txt"), dest2("BigFile2.txt");
+			FXSSLDevice dev(&dest);
+
+			// Encrypt
+			key.setAsymmetricKey(&pkey.publicKey());
+			dev.setKey(key);
+			src.open(IO_ReadOnly);
+			src.mapIn();
+			dev.open(IO_WriteOnly);
+			stippledTransfer(&dev, &src);
+			dev.close();
+			src.close();
+
+			// Decrypt
+			key.setAsymmetricKey(&pkey);
+			dev.setKey(key);
+			dev.open(IO_ReadOnly);
+			dest2.open(IO_WriteOnly);
+			stippledTransfer(&dest2, &dev);
+			//{
+			//	char buffer[65536];
+			//	dest2.writeBlock(buffer, dev.readBlock(buffer, 65536));
+			//}
+			dest2.close();
+			dev.close();
+
+			// Compare
+			src.open(IO_ReadOnly);
+			dest2.open(IO_ReadOnly);
+			void *p1=src.mapIn();
+			void *p2=dest2.mapIn();
+			if(src.size()!=dest2.size())
+				fxwarning("Error: File sizes are different!\n");
+			if(memcmp(p1, p2, (size_t) src.size()))
+				fxwarning("Error: File contents are different!\n");
+			else
+				fxmessage("File contents are the same\n");
+		}
 		if(1)
 		{
 			const FXuint testsize=16*1024*1024;
