@@ -1380,7 +1380,8 @@ inline void FXSSLDevice::int_genEBuffer() const
 	FXfval cblock=ioIndex-(ioIndex % p->noncelen);
 	if(p->ebufferIoIndex!=cblock)
 	{	// XOR the nonce and ioIndex and encrypt to generate ebuffer
-		FXuchar *buffer=(FXuchar *) alloca(p->noncelen);	// use alloca() for speed
+		FXuchar *buffer=(FXuchar *) alloca(p->noncelen+4);	// use alloca() for speed
+		if((((FXuval) buffer) & 4)) buffer+=4;	// align
 		assert(p->noncelen>=8);
 		// Keysize is guaranteed to be multiple of 8
 		FXSTATIC_ASSERT(sizeof(FXfval)==8, FXfval_Is_Not_Eight);
@@ -1398,33 +1399,38 @@ inline void FXSSLDevice::int_genEBuffer() const
 void FXSSLDevice::int_xorInEBuffer(char *dest, const char *src, FXuval amount)
 {	// Keysize must be a multiple of 8, so we can process in 64 bit words for speed
 	FXSTATIC_ASSERT(sizeof(FXulong)==8, FXulong_Is_Not_Eight);
+	bool first=true;
 	// Try to optimise by address alignment
 	while(amount)
 	{
 		FXival ebufferoffset=(FXival)(ioIndex % p->noncelen);
-		FXuchar *e=FXOFFSETPTR(p->ebuffer, ebufferoffset);
-		if(!ebufferoffset)
+		FXuchar *ebuffer=FXOFFSETPTR(p->ebuffer, ebufferoffset);
+		if(first || !ebufferoffset)
+		{	// Only call this when needed
 			int_genEBuffer();
-		FXuval d=(FXuval) dest, s=(FXuval) src, todo=FXMIN(amount, p->noncelen-ebufferoffset), size=0;
-		if(todo>=8 && !(d & 7) && !(s & 7))
+			first=false;
+		}
+		FXuval d=(FXuval) dest, s=(FXuval) src, e=(FXuval) ebuffer, todo=FXMIN(amount, p->noncelen-ebufferoffset), size=0;
+		// TODO: Use SSE2 16 byte XOR
+		if(todo>=8 && !(d & 7) && !(s & 7) && !(e & 7))
 		{	// Do it as one 64 bit op
-			*((FXulong *) dest)=*((FXulong *) src) ^ *((FXuchar *) e);
+			*((FXulong *) dest)=*((FXulong *) src) ^ *((FXulong *) ebuffer);
 			size=8;
 			goto end;
 		}
-		if(todo>=4 && !(d & 3) && !(s & 3))
+		if(todo>=4 && !(d & 3) && !(s & 3) && !(e & 3))
 		{	// Do it as one 32 bit op
-			*((FXuint *) dest)=*((FXuint *) src) ^ *((FXuint *) e);
+			*((FXuint *) dest)=*((FXuint *) src) ^ *((FXuint *) ebuffer);
 			size=4;
 			goto end;
 		}
-		if(todo>=2 && !(d & 1) && !(s & 1))
+		if(todo>=2 && !(d & 1) && !(s & 1) && !(e & 1))
 		{	// Do it as one 16 bit op
-			*((FXushort *) dest)=*((FXushort *) src) ^ *((FXushort *) e);
+			*((FXushort *) dest)=*((FXushort *) src) ^ *((FXushort *) ebuffer);
 			size=2;
 			goto end;
 		}
-		*((FXuchar *) dest)=*((FXuchar *) src) ^ *((FXuchar *) e);
+		*((FXuchar *) dest)=*((FXuchar *) src) ^ *((FXuchar *) ebuffer);
 		size=1;
 end:
 		dest+=size; src+=size; ioIndex+=size; amount-=size;
@@ -1947,7 +1953,7 @@ FXfval FXSSLDevice::size() const
 		if(p->dev->isSynchronous())
             return SSL_pending(p->handle);
 		else
-			return p->dev->size();
+			return p->dev->size()-(p->dev->at()-ioIndex);
 	}
 #endif
 	return 0;
@@ -1985,6 +1991,20 @@ bool FXSSLDevice::at(FXfval newpos)
 	return false;
 }
 
+bool FXSSLDevice::atEnd() const
+{
+#ifdef HAVE_OPENSSL
+	if(isOpen())
+	{
+		if(p->dev->isSynchronous())
+			return size()!=0;
+		else
+			return p->dev->atEnd();
+	}
+#endif
+	return true;
+}
+
 FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
 {
 	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXSSLDevice", "Not open for reading"));
@@ -2012,7 +2032,9 @@ FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
 			while(count)
 			{	// Read same amount of bytes from source
 				FXuval read=0;
+				h.unlock();
 				if(!(read=p->dev->readBlock(data, count))) break;
+				h.relock();
 				// Now decrypt, block by block
 				int_xorInEBuffer(data, data, read);		// advances ioIndex for us
 				count-=read;
@@ -2049,12 +2071,17 @@ FXuval FXSSLDevice::writeBlock(const char *data, FXuval maxlen)
 		{
 			static const int blockSize=65536;
 			FXuval count=maxlen;
-			char buffer[blockSize];
+			char _buffer[blockSize+4];	// aligns to a 4 byte boundary
+			char *buffer=_buffer;
+			// Align to data
+			if((((FXuval) data) & 4)!=(((FXuval) buffer) & 4)) buffer+=4;
 			while(count)
 			{	// Encrypt to buffer and write
 				FXuval written, towrite=FXMIN(count, blockSize);
 				int_xorInEBuffer(buffer, data, towrite);		// advances ioIndex for us
+				h.unlock();
 				if(!(written=p->dev->writeBlock(buffer, towrite))) break;
+				h.relock();
 				ioIndex-=towrite-written;
 				count-=written;
 			}
@@ -2062,6 +2089,29 @@ FXuval FXSSLDevice::writeBlock(const char *data, FXuval maxlen)
 		}
 	}
 #endif
+	return 0;
+}
+
+FXuval FXSSLDevice::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
+{
+	if(isOpen())
+	{
+		FXMtxHold h(p);
+		if(ioIndex!=newpos)
+			FXSSLDevice::at(newpos);
+		return readBlock(data, maxlen);
+	}
+	return 0;
+}
+FXuval FXSSLDevice::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
+{
+	if(isOpen())
+	{
+		FXMtxHold h(p);
+		if(ioIndex!=newpos)
+			FXSSLDevice::at(newpos);
+		return writeBlock(data, maxlen);
+	}
 	return 0;
 }
 
