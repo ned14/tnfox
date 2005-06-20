@@ -173,7 +173,8 @@ restore the correct representation. FX::FXHandedInterfaceI implements an interfa
 handed primary button well and further automates the apply/reset protocol. Small screens
 are better supported with dynamic layout spacing via FX::FXWindow::defaultPadding() and
 FX::FXWindow::defaultSpacing() plus extra command line arguments such as \c -fxscreenscale
-and \c -fxscreensize.
+and \c -fxscreensize. There are a number of convenient implementations of handed interfaces
+such as FX::FXExceptionDialog, FX::FXHandedDialog, FX::FXHandedPopup and FX::FXHandedMsgBox.
 
 <li><b>Full strength encryption facilities</b><br>
 FX::FXSSLDevice is built upon the excellent OpenSSL library and provides integrated full strength
