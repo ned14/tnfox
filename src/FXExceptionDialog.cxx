@@ -185,19 +185,27 @@ void FXExceptionDialog::create()
 
 FXuint FXExceptionDialog::execute(FXuint placement)
 {
+	FXuint ret=0;
 	create();
 	show(placement);
 	switch(getApp()->runModalFor(this))
 	{
 	case ID_CANCEL:
-		return 0;
+		ret=0;
+		break;
 	case ID_RETRY:
-		return 1;
+		ret=1;
+		break;
 	case ID_QUIT:
-		{
-			getApp()->exit(1);
-			FXProcess::exit(1);
-		}
+		ret=2;
+		break;
+	}
+	// If fatal, we must quit
+	if((e->flags() & FXERRH_ISFATAL)) ret=2;
+	if(2==ret)
+	{
+		getApp()->exit(1);
+		FXProcess::exit(1);
 	}
 	return 0;
 }
