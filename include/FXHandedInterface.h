@@ -42,14 +42,15 @@ namespace FX {
 enum FXHandedInterfaceFlags
 {
 	HANDEDINTERFACE_BOTTOMWELL		=0,				//!< Places the primary button well on the bottom
-	HANDEDINTERFACE_SIDEWELL		=0x08000000,	//!< Places the primary button well on the side
-	HANDEDINTERFACE_OKBUTTON		=0x10000000,	//!< Adds an OK button
-	HANDEDINTERFACE_DEFOKBUTTON		=0x10000000,	//!< Adds a default OK button
-	HANDEDINTERFACE_CANCELBUTTON	=0x20000000,	//!< Adds a Cancel button
-	HANDEDINTERFACE_OKCANCELBUTTONS	=0x30000000,	//!< Adds both OK and Cancel buttons
-	HANDEDINTERFACE_DEFCANCELBUTTON	=0x60000000,	//!< Adds a default Cancel button
-	HANDEDINTERFACE_DEFCANCEL		=0x40000000		//!< Makes the cancel button the default
-	// 0x80000000 used by FXHandedMsgBox
+	HANDEDINTERFACE_SIDEWELL		=0x02000000,	//!< Places the primary button well on the side
+	HANDEDINTERFACE_OKBUTTON		=0x04000000,	//!< Adds an OK button
+	HANDEDINTERFACE_DEFOKBUTTON		=0x04000000,	//!< Adds a default OK button
+	HANDEDINTERFACE_CANCELBUTTON	=0x08000000,	//!< Adds a Cancel button
+	HANDEDINTERFACE_OKCANCELBUTTONS	=0x0c000000,	//!< Adds both OK and Cancel buttons
+	HANDEDINTERFACE_DEFCANCELBUTTON	=0x18000000,	//!< Adds a default Cancel button
+	HANDEDINTERFACE_DEFCANCEL		=0x10000000,	//!< Makes the cancel button the default
+	HANDEDINTERFACE_USEYESNO		=0x20000000		//!< Uses the text "Yes" instead of "Ok" and "No" instead of "Cancel"
+	// 0x40000000 used by FXHandedMsgBox
 };
 
 /*! \class FXHandedInterfaceI
@@ -92,8 +93,7 @@ cases, you can just create your child widgets and everything else is taken
 care of for you.
 
 \note Under Tn, you are NOT permitted to create a modal dialog so execute()
-isn't present. If you must use modal dialogs look at the source of
-FX::FXExceptionDialog for how it's done.
+isn't present. If you must use modal dialogs consider using FX::FXHandedMsgBox.
 */
 struct FXHandedInterfaceIPrivate;
 class FXAPI FXHandedInterfaceI

@@ -41,12 +41,17 @@ enum FXHandedMsgBoxFlags
 	HANDEDMSGBOX_OKCANCELBUTTONS= HANDEDINTERFACE_OKCANCELBUTTONS,	//!< Adds both OK and Cancel buttons
 	HANDEDMSGBOX_DEFCANCELBUTTON= HANDEDINTERFACE_DEFCANCELBUTTON,	//!< Adds a default Cancel button
 	HANDEDMSGBOX_DEFCANCEL		= HANDEDINTERFACE_DEFCANCEL,		//!< Makes the cancel button the default
-	HANDEDMSGBOX_RETRYBUTTON	= 0x80000000						//!< Adds a Retry button
+	HANDEDMSGBOX_USEYESNO		= HANDEDINTERFACE_USEYESNO,			//!< Uses the text "Yes" instead of "Ok" and "No" instead of "Cancel"
+	HANDEDMSGBOX_RETRYBUTTON	= 0x40000000						//!< Adds a Retry button
 };
 
 /*! \class FXHandedMsgBox
 \brief A user handed message box
 
+Probably the majority use of this class will be via its static functions fatalerror(),
+error(), question() and informational() which simply instantiate and call execute().
+You can supply your own icon, no icon or use fatalErrorIcon(), errorIcon(), questionIcon()
+or informationalIcon().
 */
 struct FXHandedMsgBoxPrivate;
 class FXAPI FXHandedMsgBox : public FXHandedDialog
@@ -77,7 +82,7 @@ public:
 	void setText(const FXString &text);
 	/*! \return 0 for cancel operation, 1 for OK, 2 for retry
 
-	Starts a modal execution of the dialog display. Internally quits the event loop if the user requested that.
+	Starts a modal execution of the dialog display.
 	*/
 	virtual FXuint execute(FXuint placement=PLACEMENT_CURSOR);
 
@@ -102,12 +107,12 @@ public:
 		return FXHandedMsgBox(window, caption, text, errorIcon(), opts, x,y,w,h, pl,pr,pt,pb, hs,vs).execute();
 	}
 	//! Issues a question message box
-	static FXuint question(FXApp *a, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
+	static FXuint question(FXApp *a, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON|HANDEDMSGBOX_USEYESNO,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
 	{
 		return FXHandedMsgBox(a, caption, text, questionIcon(), opts, x,y,w,h, pl,pr,pt,pb, hs,vs).execute();
 	}
 	//! Issues a question message box
-	static FXuint question(FXWindow *window, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
+	static FXuint question(FXWindow *window, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON|HANDEDMSGBOX_USEYESNO,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
 	{
 		return FXHandedMsgBox(window, caption, text, questionIcon(), opts, x,y,w,h, pl,pr,pt,pb, hs,vs).execute();
 	}
