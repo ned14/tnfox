@@ -509,7 +509,7 @@ public:
 	FXRangeException(const FXchar *msg)
 		: FXException(0, 0, msg, FXEXCEPTION_BADRANGE, 0) { }
 };
-/*! \return A FXRangeException
+/*! \return A FX::FXRangeException
 
 Use this macro to generically indicate a parameter exceeding the permitted range. As this is a common
 failure in all code, this should greatly help intuitive writing of handlers for this
@@ -531,7 +531,7 @@ public:
 		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, 0) { }
 };
 #define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
-/*! \return A FXPointerException
+/*! \return A FX::FXPointerException
 
 Use this macro to test for null pointers
 */
@@ -570,7 +570,7 @@ public:
 		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, 0) { }
 };
 #define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
-/*! \return A FXMemoryException
+/*! \return A FX::FXMemoryException
 
 Use this macro to wrap malloc, calloc and new eg;
 \code
@@ -595,6 +595,10 @@ public:
 	FXNotSupportedException(const char *_filename, int _lineno, const FXString &msg)
 		: FXException(_filename, _lineno, msg, FXEXCEPTION_NOTSUPPORTED, FXERRH_ISNORETRY|FXERRH_ISDEBUG) { }
 };
+/*! \return A FX::FXNotSupportedException
+
+Use this macro to indicate that an operation is not supported
+*/
 #define FXERRGNOTSUPP(msg)	{ FX::FXNotSupportedException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXNotFoundException
@@ -607,7 +611,7 @@ public:
 	FXNotFoundException(const char *_filename, int _lineno, const FXString &_msg, FXint flags)
 		: FXResourceException(_filename, _lineno, _msg, FXEXCEPTION_NOTFOUND, flags|FXERRH_ISINFORMATIONAL) { }
 };
-/*! \return A FXNotFoundException
+/*! \return A FX::FXNotFoundException
 
 Use this macro to generically indicate failures to find things. As this is a common
 failure in all code, this should greatly help intuitive writing of handlers for this
@@ -626,7 +630,7 @@ public:
 		: FXResourceException(_filename, _lineno, msg, code, flags) { }
 };
 #define FXERRGIO(msg)		{ FX::FXIOException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
-/*! \return A FXIOException
+/*! \return A FX::FXIOException
 
 Use this macro to wrap standard C library type calls eg;
 \code
@@ -658,10 +662,10 @@ class FXEXCEPTIONAPI(FXAPI) FXNoPermissionException : public FXException
 {
 public:
 	//! Use FXERRGNOPERM() to instantiate
-	FXNoPermissionException(const FXString &msg, FXuint flags)
-		: FXException(0, 0, msg, FXEXCEPTION_NOPERMISSION, flags|FXERRH_ISINFORMATIONAL) { }
+	FXNoPermissionException(const FXString &msg, FXuint code=FXEXCEPTION_NOPERMISSION, FXuint flags=0)
+		: FXException(0, 0, msg, code, flags|FXERRH_ISINFORMATIONAL) { }
 };
-#define FXERRGNOPERM(msg, flags)		{ FX::FXNoPermissionException _int_temp_e(msg, flags); FXERRH_THROW(_int_temp_e); }
+#define FXERRGNOPERM(msg, flags)		{ FX::FXNoPermissionException _int_temp_e(msg, FXEXCEPTION_NOPERMISSION, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXWindowException
 \brief A failure in the windowing system
