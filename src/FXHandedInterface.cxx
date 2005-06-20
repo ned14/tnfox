@@ -198,13 +198,17 @@ FXHandedInterfaceI::FXHandedInterfaceI(FXApplyResetList *arl, FXShell *me, FXint
 	p->buttonwell->enable();
 	if(me->options & HANDEDINTERFACE_OKBUTTON)
 	{
-		FXERRHM(p->okButton=new FXPrimaryButton(p->buttonwell, FXTrans::tr("FXHandedInterface", "&Ok"), NULL, me, ID_ACCEPT, ((me->options & HANDEDINTERFACE_DEFCANCEL) ? PBUTTON_OK : PBUTTON_DEFOK)));
+		FXERRHM(p->okButton=new FXPrimaryButton(p->buttonwell,
+			(me->options & HANDEDINTERFACE_USEYESNO) ? FXTrans::tr("FXHandedInterface", "&Yes") : FXTrans::tr("FXHandedInterface", "&Ok"),
+			NULL, me, ID_ACCEPT, ((me->options & HANDEDINTERFACE_DEFCANCEL) ? PBUTTON_OK : PBUTTON_DEFOK)));
 		p->okButton->setHelpTag(FXTrans::tr("FXHandedInterface", "Select to apply the changes and return to the program. Alt-select to apply without closing the dialog."));
 		if(!(me->options & HANDEDINTERFACE_DEFCANCEL)) p->okButton->setFocus();
 	}
 	if(me->options & HANDEDINTERFACE_CANCELBUTTON)
 	{
-		FXERRHM(p->cancelButton=new FXPrimaryButton(p->buttonwell, FXTrans::tr("FXHandedInterface", "&Cancel"), NULL, me, ID_CANCEL, ((me->options & HANDEDINTERFACE_DEFCANCEL) ? PBUTTON_DEFCANCEL : PBUTTON_CANCEL)));
+		FXERRHM(p->cancelButton=new FXPrimaryButton(p->buttonwell,
+			(me->options & HANDEDINTERFACE_USEYESNO) ? FXTrans::tr("FXHandedInterface", "&No") : FXTrans::tr("FXHandedInterface", "&Cancel"),
+			NULL, me, ID_CANCEL, ((me->options & HANDEDINTERFACE_DEFCANCEL) ? PBUTTON_DEFCANCEL : PBUTTON_CANCEL)));
 		p->cancelButton->setHelpTag(FXTrans::tr("FXHandedInterface", "Select to cancel the operation and return to the program. Alt-select to reset the contents of the dialog."));
 		if(me->options & HANDEDINTERFACE_DEFCANCEL) p->cancelButton->setFocus();
 	}
