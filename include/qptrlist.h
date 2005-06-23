@@ -412,13 +412,9 @@ public:
 		return *this;
 	}
 	//! Returns what the iterator points to
-	operator type *() const { return retptr(); }
-	//! Returns what the iterator points to
-	type *operator*() { return retptr(); }
+	type *operator*() const { return retptr(); }
 	//! Returns the item this iterator points to
 	type *current() const { return retptr(); }
-	//! Returns the item this iterator points to
-	type *operator()() { return retptr(); }
 	//! Increments the iterator
 	type *operator++()
 	{
