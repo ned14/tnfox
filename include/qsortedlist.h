@@ -114,6 +114,10 @@ public:
 	correctly sorted position.
 	*/
 	bool insert(const type *d);
+	/*! Merges the specified list into this list, emptying the source list. If
+	\em exclusive is set, if the item being merged equals an already existing item,
+	it is thrown away. */
+	void merge(QSortedList<type> &list, bool exclusive=false);
 };
 
 template<class type> inline int QSortedList<type>::compareItems(type *a, type *b) const
@@ -153,7 +157,7 @@ public:
 
 template<class type> inline QSortedListIterator<type> QSortedList<type>::findRefInternal(const type *d) const
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	if(!findInternal(&it, 0, d)) return it.makeDead();
 	QSortedListIterator<type> it1(it), it2(it);
 	type *a;
@@ -174,7 +178,7 @@ template<class type> inline QSortedListIterator<type> QSortedList<type>::findRef
 
 template<class type> inline bool QSortedList<type>::remove(const type *d)
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	if(!findInternal(&it, 0, d)) return false;
 	return QPtrList<type>::removeByIter(it);
 }
@@ -188,7 +192,7 @@ template<class type> inline bool QSortedList<type>::removeRef(const type *d)
 
 template<class type> inline bool QSortedList<type>::take(const type *d)
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	if(!findInternal(&it, 0, d)) return false;
 	return QPtrList<type>::takeByIter(it);
 }
@@ -202,7 +206,7 @@ template<class type> inline bool QSortedList<type>::takeRef(const type *d)
 
 template<class type> inline QSortedListIterator<type> QSortedList<type>::findIter(const type *d) const
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	if(!findInternal(&it, 0, d))
 		it.makeDead();
 	return it;
@@ -210,28 +214,28 @@ template<class type> inline QSortedListIterator<type> QSortedList<type>::findIte
 
 template<class type> inline type *QSortedList<type>::findP(const type *d) const
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	if(!findInternal(&it, 0, d)) return 0;
 	return it.current();
 }
 
 template<class type> inline QSortedListIterator<type> QSortedList<type>::findClosestIter(const type *d) const
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	findInternal(&it, 0, d);
 	return it;
 }
 
 template<class type> inline type *QSortedList<type>::findClosestP(const type *d) const
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	findInternal(&it, 0, d);
 	return it.current();
 }
 
 template<class type> inline bool QSortedList<type>::insert(const type *d)
 {
-	QSortedListIterator<type> it(*this);
+	QSortedListIterator<type> it;
 	findInternal(&it, 0, d);
 	return QPtrList<type>::insertAtIter(it, d);
 }
@@ -271,6 +275,24 @@ template<class type> inline bool QSortedList<type>::findInternal(QSortedListIter
 	}
 	if(idx) *idx=lbound;
 	return false;
+}
+
+template<class type> inline void QSortedList<type>::merge(QSortedList<type> &list, bool exclusive)
+{
+	QSortedListIterator<type> it;
+	type *ne;
+	for(QSortedListIterator<type> nit(list); (ne=nit.current());)
+	{
+		QSortedListIterator<type> nit2(nit); ++nit;
+		if(findInternal(&it, 0, ne) && exclusive)
+			QPtrList<type>::removeByIter(nit2);
+		else
+		{	// Might as well splice as it avoids malloc
+			std::list<type *>::splice(it.int_getIterator(), list, nit2.int_getIterator());
+			//QPtrList<type>::insertAtIter(it, ne);
+			//list.takeByIter(nit2);
+		}
+	}
 }
 
 //! Writes the contents of the list to stream \em s
