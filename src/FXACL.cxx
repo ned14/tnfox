@@ -585,6 +585,8 @@ const FXACLEntity &FXACLEntity::currentUser()
 	static FXACLEntity ret;
 	if(ret.p) return ret;
 	FXMtxHold lh(staticmethodlock);
+	if(ret.p) return ret;
+	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
 	HANDLE token;
 	DWORD userinfolen=0, groupinfolen=0;
@@ -608,9 +610,10 @@ const FXACLEntity &FXACLEntity::currentUser()
 	FXERRHM(groupinfo=(TOKEN_PRIMARY_GROUP *) malloc(groupinfolen));
 	FXRBOp unalloc2=FXRBAlloc(groupinfo);
 	FXERRHWIN(GetTokenInformation(token, TokenPrimaryGroup, groupinfo, groupinfolen, &groupinfolen));
-	FXERRHM(ret.p=new FXACLEntityPrivate((SID *) userinfo->User.Sid, (SID *) groupinfo->PrimaryGroup, FXString::nullStr()));
-	ret.p->token=token;
+	FXERRHM(p=new FXACLEntityPrivate((SID *) userinfo->User.Sid, (SID *) groupinfo->PrimaryGroup, FXString::nullStr()));
+	p->token=token;
 	untoken.dismiss();
+	ret.p=p;
 #endif
 #ifdef USE_POSIX
 	FXERRHM(ret.p=new FXACLEntityPrivate(getuid(), getgid(), false, FXString::nullStr()));
@@ -623,10 +626,13 @@ const FXACLEntity &FXACLEntity::everything()
 	static FXACLEntity ret;
 	if(ret.p) return ret;
 	FXMtxHold lh(staticmethodlock);
+	if(ret.p) return ret;
+	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
 	SID_IDENTIFIER_AUTHORITY SIDAuthWorld=SECURITY_WORLD_SID_AUTHORITY, CreatorAuth=SECURITY_CREATOR_SID_AUTHORITY;
 	SID *world, *_creatorgroup;
-	FXERRHM(ret.p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));
+	FXERRHM(p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));
+	FXRBOp unp=FXRBNew(p);
 	FXERRHWIN(AllocateAndInitializeSid(&SIDAuthWorld, 1,
 		SECURITY_WORLD_RID,
 		0, 0, 0, 0, 0, 0, 0,
@@ -635,12 +641,15 @@ const FXACLEntity &FXACLEntity::everything()
 		SECURITY_CREATOR_GROUP_RID,
 		0, 0, 0, 0, 0, 0, 0,
         (PSID *) &_creatorgroup));
-	ret.p->sid=world;
-	ret.p->group=_creatorgroup;
+	p->sid=world;
+	p->group=_creatorgroup;
+	unp.dismiss();
+	ret.p=p;
 #endif
 #ifdef USE_POSIX
-	FXERRHM(ret.p=new FXACLEntityPrivate((uid_t)-1, (gid_t)-1, true, FXString::nullStr()));
-	ret.p->amPublic=true;
+	FXERRHM(p=new FXACLEntityPrivate((uid_t)-1, (gid_t)-1, true, FXString::nullStr()));
+	p->amPublic=true;
+	ret.p=p;
 #endif
 	return ret;
 }
@@ -649,10 +658,13 @@ const FXACLEntity &FXACLEntity::root()
 	static FXACLEntity ret;
 	if(ret.p) return ret;
 	FXMtxHold lh(staticmethodlock);
+	if(ret.p) return ret;
+	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
 	SID_IDENTIFIER_AUTHORITY SIDAuth=SECURITY_NT_AUTHORITY;
 	SID *_root, *_rootgroup;
-	FXERRHM(ret.p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));
+	FXERRHM(p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));
+	FXRBOp unp=FXRBNew(p);
 	// Ask local computer for its admin account and transfer (this is way too hard ... :( )
 	USER_MODALS_INFO_2 *umi=0;
 	FXERRHWIN(NERR_Success==NetUserModalsGet(NULL, 2, (LPBYTE *) &umi));
@@ -673,8 +685,10 @@ const FXACLEntity &FXACLEntity::root()
 		SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS,
 		0, 0, 0, 0, 0, 0,
         (PSID *) &_rootgroup));
-	ret.p->sid=_root;
-	ret.p->group=_rootgroup;	// Note: used also by lookupUser and other things
+	p->sid=_root;
+	p->group=_rootgroup;	// Note: used also by lookupUser and other things
+	unp.dismiss();
+	ret.p=p;
 #endif
 #ifdef USE_POSIX
 	// Am I safe in assuming root will always be uid 0, gid 0?
@@ -687,10 +701,13 @@ const FXACLEntity &FXACLEntity::owner()
 	static FXACLEntity ret;
 	if(ret.p) return ret;
 	FXMtxHold lh(staticmethodlock);
+	if(ret.p) return ret;
+	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
 	SID_IDENTIFIER_AUTHORITY CreatorAuth=SECURITY_CREATOR_SID_AUTHORITY;
 	SID *_creatorowner, *_creatorgroup;
-	FXERRHM(ret.p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));
+	FXERRHM(p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));
+	FXRBOp unp=FXRBNew(p);
 	FXERRHWIN(AllocateAndInitializeSid(&CreatorAuth, 1,
 		SECURITY_CREATOR_OWNER_RID,
 		0, 0, 0, 0, 0, 0, 0,
@@ -699,12 +716,15 @@ const FXACLEntity &FXACLEntity::owner()
 		SECURITY_CREATOR_GROUP_RID,
 		0, 0, 0, 0, 0, 0, 0,
         (PSID *) &_creatorgroup));
-	ret.p->sid=_creatorowner;
-	ret.p->group=_creatorgroup;
+	p->sid=_creatorowner;
+	p->group=_creatorgroup;
+	unp.dismiss();
+	ret.p=p;
 #endif
 #ifdef USE_POSIX
-	FXERRHM(ret.p=new FXACLEntityPrivate((uid_t)-2, (gid_t)-2, false, FXString::nullStr()));
-	ret.p->amOwner=true;
+	FXERRHM(p=new FXACLEntityPrivate((uid_t)-2, (gid_t)-2, false, FXString::nullStr()));
+	p->amOwner=true;
+	ret.p=p;
 #endif
 	return ret;
 }
@@ -714,12 +734,12 @@ FXACLEntity FXACLEntity::lookupUser(const FXString &username, const FXString &ma
 #ifdef USE_WINAPI
 	const FXACLEntity &_root=root();
 	char sidbuff[64], compbuff[512];
-	SID *sid=(SID *) sidbuff;
+	SID *sid=(SID *) sidbuff, *group=_root.p->group;
 	DWORD sidlen=sizeof(sidbuff), complen=sizeof(compbuff);
 	SID_NAME_USE use;
 	FXERRHWIN(LookupAccountName(machine.empty() ? 0 : machine.text(), username.text(),
 		sidbuff, &sidlen, compbuff, &complen, &use));
-	FXERRHM(ret.p=new FXACLEntityPrivate(sid, _root.p->group, machine));
+	FXERRHM(ret.p=new FXACLEntityPrivate(sid, group, machine));
 #endif
 #ifdef USE_POSIX
 	int _ret;
