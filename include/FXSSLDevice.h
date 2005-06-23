@@ -102,9 +102,9 @@ public:
 	//! Returns true if the two keys are not the same
 	bool operator!=(const FXSSLPKey &other) const { return !(*this==other); }
 	//! Returns true if this key is smaller than the other
-	bool operator<(const FXSSLPKey &other) const { return bitsLen()<other.bitsLen(); }
+	bool operator<(const FXSSLPKey &other) const;
 	//! Returns true if this key is bigger than the other
-	bool operator>(const FXSSLPKey &other) const { return bitsLen()>other.bitsLen(); }
+	bool operator>(const FXSSLPKey &other) const { return !(*this<other); }
 	//! Returns the type of the key
 	KeyType type() const throw();
 	//! Sets the type of the key, clearing any key data if the type has changed
@@ -241,9 +241,9 @@ public:
 	//! Returns true if the two keys are not the same
 	bool operator!=(const FXSSLKey &other) const { return !(*this==other); }
 	//! Returns true if this key is smaller than the other one
-	bool operator<(const FXSSLKey &other) const { return bitsLen()<other.bitsLen(); }
+	bool operator<(const FXSSLKey &other) const;
 	//! Returns true if this key is bigger than the other one
-	bool operator>(const FXSSLKey &other) const { return bitsLen()>other.bitsLen(); }
+	bool operator>(const FXSSLKey &other) const { return !(*this<other); }
 	//! Returns the type of the key
 	KeyType type() const throw();
 	//! Sets the type of the key, clearing any key data if the type has changed
