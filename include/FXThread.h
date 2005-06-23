@@ -504,7 +504,8 @@ constructor - this unlocks the mutex and relocks it on destruction.
 */
 class FXMtxHold
 {
-	bool rw, locked, inverted, rwmutexwrite, locklost;
+	FXuint flags;
+	bool locklost;
 	FXMutex *mutex;
 	FXRWMutex *rwmutex;
 
@@ -512,57 +513,72 @@ class FXMtxHold
 	FXMtxHold &operator=(const FXMtxHold &);
 public:
 	//! Enumerates kinds of lock hold
-	enum Hold
+	enum Flags
 	{
-		LockAndUnlock,		//!< Locks on construction and unlocks on destruction (the default)
-		UnlockAndRelock		//!< The opposite (very rarely used)
+		LockAndUnlock=0,		//!< Locks on construction and unlocks on destruction (the default)
+		UnlockAndRelock=1,		//!< The opposite (very rarely used)
+		AcceptNullMutex=2,		//!< Accepts a null mutex pointer
+
+		IsRWMutex=(1<<27),
+		IsLocked=(1<<28),
+		IsRWMutexWrite=(1<<29)
 	};
 	//! Constructs an instance holding the lock to mutex \em m
-	FXFORCEINLINE FXMtxHold(const FXMutex *m, Hold type=LockAndUnlock)
-		: rw(false), inverted(type==UnlockAndRelock), mutex(const_cast<FXMutex *>(m))
+	FXFORCEINLINE FXMtxHold(const FXMutex *m, FXuint _flags=LockAndUnlock)
+		: flags(_flags), locklost(false), mutex(const_cast<FXMutex *>(m))
 	{
-		if(inverted) mutex->unlock(); else mutex->lock();
-		locked=true;
+		if((flags & AcceptNullMutex) && !mutex) return;
+		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
+		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(const FXMutex &m, Hold type=LockAndUnlock)
-		: rw(false), inverted(type==UnlockAndRelock), mutex(const_cast<FXMutex *>(&m))
+	FXFORCEINLINE FXMtxHold(const FXMutex &m, FXuint _flags=LockAndUnlock)
+		: flags(_flags), locklost(false), mutex(const_cast<FXMutex *>(&m))
 	{
-		if(inverted) mutex->unlock(); else mutex->lock();
-		locked=true;
+		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
+		flags|=IsLocked;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXFORCEINLINE FXMtxHold(FXRWMutex *m, bool write=true) : rw(true), rwmutex(m), rwmutexwrite(write)
-		{ locklost=rwmutex->lock(rwmutexwrite); locked=true; }
+	FXFORCEINLINE FXMtxHold(FXRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(m)
+	{
+		if((flags & AcceptNullMutex) && !rwmutex) return;
+		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
+		flags|=IsLocked;
+	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(FXRWMutex &m, bool write=true) : rw(true), rwmutex(&m), rwmutexwrite(write)
-		{ locklost=rwmutex->lock(rwmutexwrite); locked=true; }
+	FXFORCEINLINE FXMtxHold(FXRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), rwmutex(&m)
+	{
+		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
+		flags|=IsLocked;
+	}
 	//! Used to unlock the held mutex earlier than destruction.
 	FXFORCEINLINE void unlock()
 	{
-		if(locked)
+		if((flags & AcceptNullMutex) && !mutex && !rwmutex) return;
+		if(flags & IsLocked)
 		{
-			if(rw)
-				rwmutex->unlock(rwmutexwrite);
+			if(flags & IsRWMutex)
+				rwmutex->unlock(!!(flags & IsRWMutexWrite));
 			else
 			{
-				if(inverted) mutex->lock(); else mutex->unlock();
+				if(flags & UnlockAndRelock) mutex->lock(); else mutex->unlock();
 			}
-			locked=0;
+			flags&=~IsLocked;
 		}
 	}
 	//! Used to relock a previously unlocked held mutex
 	FXFORCEINLINE void relock()
 	{
-		if(!locked)
+		if((flags & AcceptNullMutex) && !mutex && !rwmutex) return;
+		if(!(flags & IsLocked))
 		{
-			if(rw)
-				locklost=rwmutex->lock(rwmutexwrite);
+			if(flags & IsRWMutex)
+				locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 			else
 			{
-				if(inverted) mutex->unlock(); else mutex->lock();
+				if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 			}
-			locked=1;
+			flags|=IsLocked;
 		}
 	}
 	/*! \overload
