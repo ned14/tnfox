@@ -21,6 +21,9 @@ B FXMemMap::setName() wasn't setting name of underlying FXFile
 B FXSSLDevice was corrupting data if data length wasn't multiple of key size
 B FXExceptionDialog would cancel instead of quit if Escape were pressed
 during a fatal exception
+B FXACLEntity static methods weren't threadsafe :(
+B FXSSLPKey operator < and > wasn't comparing key contents
+B FXSSLKey operator < and > wasn't comparing key contents
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -72,6 +75,9 @@ i/o classes to support specifying the filename
 external code go delete them without telling FXThreadPool (a problem somewhere
 inside Tn)
 * Added support for seeking, mixed reads & writes and truncating to FXSSLDevice
++ Added QSortedList::merge()
++ Added ability to send null pointer to FXMtxHold and added UnlockAndRelock for
+FXRWMutex
 
 
 v0.85 13th Feb 2005:
