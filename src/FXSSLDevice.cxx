@@ -566,15 +566,34 @@ bool FXSSLPKey::operator==(const FXSSLPKey &o) const
 			{
 			case RSA:
 				{
-					if(!p->key.rsa->n || !o.p->key.rsa->n || BN_cmp(p->key.rsa->n, o.p->key.rsa->n)) return false;
-					if(!p->key.rsa->e || !o.p->key.rsa->e || BN_cmp(p->key.rsa->e, o.p->key.rsa->e)) return false;
-					if(!p->key.rsa->d || !o.p->key.rsa->d || BN_cmp(p->key.rsa->d, o.p->key.rsa->d)) return false;
+					if(p->key.rsa->n && o.p->key.rsa->n && BN_cmp(p->key.rsa->n, o.p->key.rsa->n)) return false;
+					if(p->key.rsa->e && o.p->key.rsa->e && BN_cmp(p->key.rsa->e, o.p->key.rsa->e)) return false;
+					if(p->key.rsa->d && o.p->key.rsa->d && BN_cmp(p->key.rsa->d, o.p->key.rsa->d)) return false;
 					return true;
 				}
 			}
 #endif
 		}
 	}
+	return false;
+}
+bool FXSSLPKey::operator<(const FXSSLPKey &other) const
+{
+	if(p->bitsize<other.p->bitsize) return true;
+	if(p->key.contents && !other.p->key.contents) return true;
+	if(!p->key.contents && other.p->key.contents) return false;
+#ifdef HAVE_OPENSSL
+	switch(p->type)
+	{
+	case RSA:
+		{
+			if(p->key.rsa->n && other.p->key.rsa->n && BN_cmp(p->key.rsa->n, other.p->key.rsa->n)>0) return false;
+			if(p->key.rsa->e && other.p->key.rsa->e && BN_cmp(p->key.rsa->e, other.p->key.rsa->e)>0) return false;
+			if(p->key.rsa->d && other.p->key.rsa->d && BN_cmp(p->key.rsa->d, other.p->key.rsa->d)>0) return false;
+			return true;
+		}
+	}
+#endif
 	return false;
 }
 
@@ -1059,6 +1078,13 @@ bool FXSSLKey::operator==(const FXSSLKey &o) const
 		if(p->key && o.p->key) return !memcmp(p->key, o.p->key, p->size);
 	}
 	return false;
+}
+bool FXSSLKey::operator<(const FXSSLKey &o) const
+{
+	if(p->bitsize<o.p->bitsize || p->size<o.p->size || p->type<o.p->type) return true;
+	if(!p->key && o.p->key) return true;
+	if(p->key && !o.p->key) return false;
+	return memcmp(p->key, o.p->key, p->size)<0;
 }
 
 FXSSLKey::KeyType FXSSLKey::type() const throw()
