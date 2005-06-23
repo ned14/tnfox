@@ -116,6 +116,7 @@ namespace FXRefedObjectImpl
 		//! \overload
 		const type &refCount() const throw() { return myrefcount; }
 	};
+#ifdef FX_SMPBUILD		// Don't need it on non-SMP builds
 	template<> class countHolder<FXAtomicInt>
 	{	/* This specialisation for FXAtomicInt features a serialised checking and
 		setting of dying so we can know when you can't create a new reference safely
@@ -154,6 +155,7 @@ namespace FXRefedObjectImpl
 		// Deliberately prevent direct alteration
 		const int &refCount() const throw() { return myrefcount; }
 	};
+#endif
 }
 
 namespace Pol {
