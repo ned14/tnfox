@@ -507,7 +507,9 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						{
 						case NotHandled:
 							{
+#ifndef DEBUG
 								if(p->printstats)
+#endif
 									fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
 								if(tmsg.hasAck())
 								{
@@ -533,7 +535,9 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				}
 				else
 				{	// If has ack, reply we don't know this
+#ifndef DEBUG
 					if(p->printstats)
+#endif
 						fxmessage("Thread %u msg 0x%x (%s) unknown\n", (FXuint) FXThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
 					HandledCode handled=unknownMsgReceived(&tmsg, data.data());
 					if(NotHandled==handled && tmsg.hasAck())
@@ -867,7 +871,9 @@ void FXIPCChannel::doAsyncHandled(FXIPCMsg *msg, HandledCode handled)
 {
 	if(NotHandled==handled)
 	{
+#ifndef DEBUG
 		if(p->printstats)
+#endif
 			fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
 		if(msg->hasAck())
 		{
