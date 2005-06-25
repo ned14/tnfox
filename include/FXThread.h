@@ -539,14 +539,14 @@ public:
 		flags|=IsLocked;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXFORCEINLINE FXMtxHold(FXRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(m)
+	FXFORCEINLINE FXMtxHold(const FXRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<FXRWMutex *>(m))
 	{
 		if((flags & AcceptNullMutex) && !rwmutex) return;
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(FXRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), rwmutex(&m)
+	FXFORCEINLINE FXMtxHold(const FXRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<FXRWMutex *>(&m))
 	{
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
