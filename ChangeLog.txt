@@ -79,6 +79,7 @@ inside Tn)
 + Added ability to send null pointer to FXMtxHold and added UnlockAndRelock for
 FXRWMutex
 * Allowed const FXRWMutex to be taken by FXMtxHold
++ Added Generic::lockedAccessor
 
 
 v0.85 13th Feb 2005:
