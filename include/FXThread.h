@@ -591,6 +591,86 @@ public:
 //! For FOX compatibility only
 typedef FXMtxHold FXMutexLock;
 
+// Needs to go here as FXMtxHold needs to be defined
+namespace Generic {
+
+/*! \struct lockedAccessor
+\brief Holds a lock after a function exits
+
+As anyone familiar with multithreaded programming is aware, often one must make a choice
+between efficiency and thread-safety when writing member functions of a lockable class eg;
+\code
+QStringList Class::foo() const
+{
+	FXMtxHold h(this);
+	return p->mystrings();
+}
+\endcode
+Above, one sees a whole copy of an entire FX::QStringList because you cannot return a
+reference for fear of the list being changed by another thread while the lock isn't held.
+Sometimes this is desirable, but what if one merely wanted to check if the list were empty?
+Then an entire copy is being performed just for it to be thrown away.
+
+lockedAccessor solves this problem by extending the hold of the lock past the return of
+the member function:
+\code
+Generic::lockedAccessor<const QStringList> Class::foo() const
+{
+	Generic::lockedAccessor<const QStringList> ret(p->mystrings(), this);
+	// You can do stuff to ret as though it were p->mystrings()
+	return ret;
+}
+\endcode
+This handles simple cases like \c class->foo().empty(), but you still must be careful -
+if you write <tt>QStringList list(class->foo());</tt> then you are safe, but if you
+use the return directly then you can lose the lock inadvertently.
+*/
+template<class type> struct lockedAccessor
+{
+private:
+	FXMtxHold *h;
+	type &val;
+	lockedAccessor &operator=(const lockedAccessor &);
+public:
+	//! Constructs an instance reflecting \em _val while locking \em m
+	lockedAccessor(type &_val, const FXMutex *m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	//! \overload
+	lockedAccessor(type &_val, const FXMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	//! \overload
+	lockedAccessor(type &_val, const FXRWMutex *m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	//! \overload
+	lockedAccessor(type &_val, const FXRWMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+#ifndef HAVE_MOVECONSTRUCTORS
+#ifdef HAVE_CONSTTEMPORARIES
+	lockedAccessor(const lockedAccessor &_o)
+	{
+		lockedAccessor &o=const_cast<lockedAccessor &>(_o);
+#else
+	lockedAccessor(lockedAccessor &o)
+	{
+#endif
+#else
+private:
+	lockedAccessor(const lockedAccessor &);	// disable copy constructor
+public:
+	lockedAccessor(lockedAccessor &&o)
+	{
+#endif
+		h=o.h;
+		o.h=0;
+	}
+	~lockedAccessor()
+	{
+		FXDELETE(h);
+	}
+
+	//! Returns the value
+	type *operator*() const { return const_cast<type *>(&val); }
+	//! Returns the value
+	type &operator->() const { return const_cast<type &>(val); }
+};
+} // namespace
+
 /*! \class FXZeroedWait
 \brief A zero activated wait condition
 
