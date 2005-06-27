@@ -33,7 +33,7 @@
 #ifdef WIN32
 #include <shellapi.h>
 #else
-#include <utime.h>
+#include <sys/time.h>
 #endif
 #include "FXException.h"
 #include "FXThread.h"
@@ -563,22 +563,58 @@ int FXFile::ungetch(int c)
 	return -1;
 }
 
-void FXFile::stampCreationMetadata(const FXString &path, FXTime creationdate)
+void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed)
 {
 #ifndef WIN32
-	// If modification is older than access time, sets creation time to modification
-	struct ::utimbuf times;
-	times.actime=creationdate+1;		// accessed
-	times.modtime=creationdate;			// modified
-	FXERRHOS(::utime(path.text(), &times));		// Sets created
-	times.actime=creationdate;			// accessed
-	FXERRHOS(::utime(path.text(), &times));		// Sets modified and accessed
+	struct ::timeval times[2]; // [0] is accessed, [1] is modified
+	if(created)
+	{	// Uses non-standard extension to set created time, but if this isn't supported
+		// then set lastModified and lastAccessed after
+		// NOTE: If modification is older than access time, sets creation time to modification
+		times[1].tv_sec =*created;
+		times[1].tv_usec=0;
+		times[0].tv_sec =times[1].tv_sec+1;
+		times[0].tv_usec=times[1].tv_usec;
+		FXERRHIOFN(::times(path.text(), times), path);
+	}
+	if(lastModified || lastAccessed)
+	{
+		struct ::stat orig;
+		FXERRHIOFN(::stat(path.text(), &orig), path);
+		times[0].tv_sec=orig.st_atime;
+		times[0].tv_usec=0;
+		times[1].tv_sec=orig.st_mtime;
+		times[1].tv_usec=0;
+		if(lastAccessed) times[0].tv_sec=*lastAccessed;
+		if(lastModified) times[1].tv_sec=*lastModified;
+		FXERRHIOFN(::times(path.text(), times), path);
+	}
 #else
-	FXFile fh(path);
-	fh.open(IO_ReadWrite);
-	FILETIME ft;
-	*(FXulong *)(&ft)=((FXulong) creationdate*10000000)+116444736000000000ULL;
-	FXERRHWIN(SetFileTime((HANDLE) _get_osfhandle(fh.p->handle), &ft, &ft, &ft));
+	if(created && lastModified && lastAccessed)
+	{	// Need to open with special semantics if it's a directory
+		HANDLE h;
+		FXERRHWINFN(h=CreateFile(path.text(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL), path);
+		FXRBOp unh=FXRBFunc(&CloseHandle, h);
+		FILETIME _cre, _mod, _acc;
+		FILETIME *cre=0, *mod=0, *acc=0;
+		if(created)
+		{
+			cre=&_cre;
+			*(FXulong *)(cre)=((FXulong) *created*10000000)+116444736000000000ULL;
+		}
+		if(lastModified)
+		{
+			mod=&_mod;
+			*(FXulong *)(mod)=((FXulong) *lastModified*10000000)+116444736000000000ULL;
+		}
+		if(lastAccessed)
+		{
+			acc=&_acc;
+			*(FXulong *)(acc)=((FXulong) *lastAccessed*10000000)+116444736000000000ULL;
+		}
+		FXERRHWIN(SetFileTime(h, cre, acc, mod));
+	}
 #endif
 }
 
@@ -2144,9 +2180,9 @@ FXbool FXFile::identical(const FXString& file1,const FXString& file2){
     FXbool same=FALSE;
     HANDLE hFile1;
     HANDLE hFile2;
-    hFile1=CreateFile(file1.text(),GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+    hFile1=CreateFile(file1.text(),GENERIC_READ,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
     if(hFile1!=INVALID_HANDLE_VALUE){
-      hFile2=CreateFile(file2.text(),GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+      hFile2=CreateFile(file2.text(),GENERIC_READ,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
       if(hFile2!=INVALID_HANDLE_VALUE){
         BY_HANDLE_FILE_INFORMATION info1;
         BY_HANDLE_FILE_INFORMATION info2;
@@ -2203,7 +2239,7 @@ FXbool FXFile::createFile(const FXString& file,FXuint mode){
   if(fd>=0){ ::close(fd); return TRUE; }
   return FALSE;
 #else
-  HANDLE hFile=CreateFile(file.text(),GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
+  HANDLE hFile=CreateFile(file.text(),GENERIC_WRITE,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
   if(hFile!=INVALID_HANDLE_VALUE){ CloseHandle(hFile); return TRUE; }
   return FALSE;
 #endif
@@ -2508,11 +2544,11 @@ FXbool FXFile::concatenate(const FXString& srcfile1,const FXString& srcfile2,con
   if(GetFileAttributes(dstfile.text())!=0xFFFFFFFF){
     if(!overwrite) return FALSE;
     }
-  dst=CreateFile(dstfile.text(),GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
+  dst=CreateFile(dstfile.text(),GENERIC_WRITE,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
   if(dst!=INVALID_HANDLE_VALUE){
-    src1=CreateFile(srcfile1.text(),GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+    src1=CreateFile(srcfile1.text(),GENERIC_READ,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
     if(src1!=INVALID_HANDLE_VALUE){
-      src2=CreateFile(srcfile2.text(),GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+      src2=CreateFile(srcfile2.text(),GENERIC_READ,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
       if(src2!=INVALID_HANDLE_VALUE){
         while(1){
           if(!ReadFile(src1,buffer,sizeof(buffer),&nread,NULL)) goto err;
