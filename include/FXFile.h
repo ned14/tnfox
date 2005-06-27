@@ -147,7 +147,7 @@ public:
 	/*! Stamps the path entry with metadata consistent with the entry having been
 	created at \em creationdate. Needed to work around the Windows "file tunnelling"
 	misfeature. */
-	static void stampCreationMetadata(const FXString &path, FXTime creationdate=FXFile::now());
+	static void writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed);
 
 
 	// These are directly copied from FOX
