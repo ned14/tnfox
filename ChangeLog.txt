@@ -24,6 +24,7 @@ during a fatal exception
 B FXACLEntity static methods weren't threadsafe :(
 B FXSSLPKey operator < and > wasn't comparing key contents
 B FXSSLKey operator < and > wasn't comparing key contents
+B On Win32, multiple read/write access wasn't being permitted
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -80,6 +81,8 @@ inside Tn)
 FXRWMutex
 * Allowed const FXRWMutex to be taken by FXMtxHold
 + Added Generic::lockedAccessor
+* Changed FXTime to always be FXlong on all platforms
+* Changed FXFile::stampCreationMetadata() to writeMetadata()
 
 
 v0.85 13th Feb 2005:
