@@ -1191,7 +1191,7 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 		to CreateFile(). */
 		FXString temp("\\\\.\\"+path.left(2));
 		HANDLE h;
-		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile((LPSTR) temp.text(), 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL)), temp);
+		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile((LPSTR) temp.text(), 0, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL)), temp);
 		FXRBOp unh=FXRBFunc(CloseHandle, h);
 		DWORD read=0;
 		DISK_GEOMETRY gms[20];

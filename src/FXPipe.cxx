@@ -267,7 +267,7 @@ bool FXPipe::open(FXuint mode)
 			h.relock();
 			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->readh=CreateFile(readname.text(),
 				GENERIC_READ,
-				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, NULL)), readname);
+				FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, NULL)), readname);
 			p->acl=FXACL(p->readh, FXACL::Pipe); doneACL=true;
 		}
 		if(mode & IO_WriteOnly)
@@ -278,7 +278,7 @@ bool FXPipe::open(FXuint mode)
 			h.relock();
 			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->writeh=CreateFile(writename.text(),
 				GENERIC_WRITE,
-				FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)), writename);
+				FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)), writename);
 			if(!doneACL) p->acl=FXACL(p->writeh, FXACL::Pipe);
 		}
 		p->connected=true;

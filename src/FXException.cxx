@@ -126,7 +126,7 @@ static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
             HANDLE hFile = NULL ;
             dwNameLen = GetModuleFileName ( (HINSTANCE) stMBI.AllocationBase , szFile, MAX_PATH );
             if ( 0 != dwNameLen )
-                hFile = CreateFile ( szFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, 0);
+                hFile = CreateFile ( szFile, GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, 0);
             SymLoadModule ( hProcess, hFile, (PSTR)( (dwNameLen) ? szFile : 0), NULL, (DWORD)stMBI.AllocationBase, 0);
 			if(hFile) CloseHandle(hFile);
             return (DWORD) stMBI.AllocationBase;
