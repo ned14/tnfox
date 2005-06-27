@@ -665,9 +665,9 @@ public:
 	}
 
 	//! Returns the value
-	type *operator*() const { return const_cast<type *>(&val); }
+	type &operator*() const { return const_cast<type &>(val); }
 	//! Returns the value
-	type &operator->() const { return const_cast<type &>(val); }
+	type *operator->() const { return const_cast<type *>(&val); }
 };
 } // namespace
 
