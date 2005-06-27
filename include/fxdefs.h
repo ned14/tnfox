@@ -430,7 +430,7 @@ typedef void*                  FXID;
 #endif
 
 // Time since January 1, 1970 (UTC)
-typedef long                   FXTime;
+typedef FXlong                 FXTime;
 
 // Pixel type (could be color index)
 typedef unsigned long          FXPixel;
