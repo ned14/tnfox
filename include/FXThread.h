@@ -642,21 +642,20 @@ public:
 	lockedAccessor(type &_val, const FXRWMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
-	lockedAccessor(const lockedAccessor &_o)
+	lockedAccessor(const lockedAccessor &_o) : h(_o.h), val(_o.val)
 	{
 		lockedAccessor &o=const_cast<lockedAccessor &>(_o);
 #else
-	lockedAccessor(lockedAccessor &o)
+	lockedAccessor(lockedAccessor &o) : h(o.h), val(o.val)
 	{
 #endif
 #else
 private:
 	lockedAccessor(const lockedAccessor &);	// disable copy constructor
 public:
-	lockedAccessor(lockedAccessor &&o)
+	lockedAccessor(lockedAccessor &&o) : h(o.h), val(o.val)
 	{
 #endif
-		h=o.h;
 		o.h=0;
 	}
 	~lockedAccessor()
