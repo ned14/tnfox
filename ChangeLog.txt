@@ -25,6 +25,7 @@ B FXACLEntity static methods weren't threadsafe :(
 B FXSSLPKey operator < and > wasn't comparing key contents
 B FXSSLKey operator < and > wasn't comparing key contents
 B On Win32, multiple read/write access wasn't being permitted
+B FXACLIterator::atEnd() was missing
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
