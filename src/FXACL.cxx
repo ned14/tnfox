@@ -1651,6 +1651,10 @@ bool FXACLIterator::operator!=(const FXACLIterator &o) const
 {
 	return *p!=*o.p;
 }
+bool FXACLIterator::atEnd() const
+{
+	return *p==p->list.p->end();
+}
 const FXACL::Entry &FXACLIterator::operator *() const
 {
 	return *(*p);
