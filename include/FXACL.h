@@ -445,6 +445,7 @@ public:
 	FXACLIterator &operator=(const FXACLIterator &o);
 	bool operator==(const FXACLIterator &o) const;
 	bool operator!=(const FXACLIterator &o) const;
+	bool atEnd() const;
 	const FXACL::Entry &operator *() const;
 	const FXACL::Entry *operator->() const;
 	FXACLIterator &operator++();
