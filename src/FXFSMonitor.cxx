@@ -49,12 +49,13 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-struct FXFSMon : public FXRWMutex
+struct FXFSMon : public FXMutex
 {
-	struct Watcher : public FXThread
+	struct Watcher : public FXMutex, public FXThread
 	{
 		struct Path
 		{
+			Watcher *parent;
 			FXAutoPtr<FXDir> pathdir;
 #ifdef USE_WINAPI
 			HANDLE h;
@@ -62,25 +63,53 @@ struct FXFSMon : public FXRWMutex
 #ifdef USE_POSIX
 			FAMRequest h;
 #endif
+			struct Change
+			{
+				FXFSMonitor::Change change;
+				const FXFileInfo *oldfi, *newfi;
+				FXuint myoldfi : 1;
+				FXuint mynewfi : 1;
+				Change(const FXFileInfo *_oldfi, const FXFileInfo *_newfi) : oldfi(_oldfi), newfi(_newfi), myoldfi(0), mynewfi(0) { }
+				~Change()
+				{
+					if(myoldfi) { FXDELETE(oldfi); }
+					if(mynewfi) { FXDELETE(newfi); }
+				}
+				bool operator==(const Change &o) const { return oldfi==o.oldfi && newfi==o.newfi; }
+				void make_fis()
+				{
+					if(oldfi)
+					{
+						FXERRHM(oldfi=new FXFileInfo(*oldfi));
+						myoldfi=true;
+					}
+					if(newfi)
+					{
+						FXERRHM(newfi=new FXFileInfo(*newfi));
+						mynewfi=true;
+					}
+				}
+				void reset_fis()
+				{
+					oldfi=0; myoldfi=false;
+					newfi=0; mynewfi=false;
+				}
+			};
 			struct Handler
 			{
+				Path *parent;
 				FXFSMonitor::ChangeHandler handler;
-				volatile FXThreadPool::handle callv;
-				Handler(FXFSMonitor::ChangeHandler _handler) : handler(_handler), callv(0) { }
-				~Handler()
-				{
-					FXThreadPool::CancelledState state;
-					while(FXThreadPool::WasRunning==(state=FXProcess::threadPool().cancel(callv)));
-					callv=0;
-				}
-				void invoke(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi);
+				QPtrList<void> callvs;
+				Handler(Path *_parent, FXFSMonitor::ChangeHandler _handler) : parent(_parent), handler(_handler) { }
+				~Handler();
+				void invoke(const QValueList<Change> &changes, QPtrListIterator<void> callvit);
 			private:
 				Handler(const Handler &);
 				Handler &operator=(const Handler &);
 			};
 			QPtrVector<Handler> handlers;
-			Path(const FXString &_path)
-				: handlers(true)
+			Path(Watcher *_parent, const FXString &_path)
+				: parent(_parent), handlers(true)
 #ifdef USE_WINAPI
 				, h(0)
 #endif
@@ -89,14 +118,12 @@ struct FXFSMon : public FXRWMutex
 				pathdir->entryInfoList();
 			}
 			~Path();
-			void callHandlers();
-			struct Change
+			void resetChanges(QValueList<Change> *changes)
 			{
-				FXFSMonitor::Change change;
-				const FXFileInfo *oldfi, *newfi;
-				Change(const FXFileInfo *_oldfi, const FXFileInfo *_newfi) : oldfi(_oldfi), newfi(_newfi) { }
-				bool operator==(const Change &o) const { return oldfi==o.oldfi && newfi==o.newfi; }
-			};
+				for(QValueList<Change>::iterator it=changes->begin(); it!=changes->end(); ++it)
+					it->reset_fis();
+			}
+			void callHandlers();
 		};
 		QDict<Path> paths;
 #ifdef USE_WINAPI
@@ -119,7 +146,7 @@ struct FXFSMon : public FXRWMutex
 };
 static FXProcess_StaticInit<FXFSMon> fxfsmon("FXFSMonitor");
 
-FXFSMon::FXFSMon() : watchers(true), FXRWMutex()
+FXFSMon::FXFSMon() : watchers(true)
 {
 #ifdef USE_POSIX
 	nofam=true;
@@ -185,7 +212,7 @@ void FXFSMon::Watcher::run()
 	hlist[1]=latch;
 	for(;;)
 	{
-		FXMtxHold h(fxfsmon, false);
+		FXMtxHold h(this);
 		Path *p;
 		int idx=2;
 		for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
@@ -225,7 +252,7 @@ void FXFSMon::Watcher::run()
 				FXERRHFAM(ret);
 				if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
 					|| FAMAcknowledge==fe.code) continue;
-				FXMtxHold h(fxfsmon, false);
+				FXMtxHold h(this);
 				Path *p;
 				for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
 				{
@@ -270,13 +297,36 @@ FXFSMon::Watcher::Path::~Path()
 #endif
 }
 
-void FXFSMon::Watcher::Path::Handler::invoke(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi)
+FXFSMon::Watcher::Path::Handler::~Handler()
+{
+	FXMtxHold h(parent->parent);
+	while(!callvs.isEmpty())
+	{
+		FXThreadPool::CancelledState state;
+		while(FXThreadPool::WasRunning==(state=FXProcess::threadPool().cancel(callvs.getFirst())));
+		callvs.removeFirst();
+	}
+}
+
+void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, QPtrListIterator<void> callvit)
 {
 	//fxmessage("FXFSMonitor dispatch %p\n", callv);
-	fxfsmon->lock();	// necessary as dispatch may execute before callv gets written
-	callv=0;
-	fxfsmon->unlock();
-	handler(change, oldfi, newfi);
+	FXMtxHold h(parent->parent);
+	for(QValueList<Change>::const_iterator it=changes.begin(); it!=changes.end(); ++it)
+	{
+		const Change &ch=*it;
+		if(*((FXuint *)&ch.change))
+		{	// Don't bother if it's just accessed time change (non portable anyway)
+			const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
+			const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
+#ifdef DEBUG
+			//fxmessage("File %s had changes 0x%x old=%s, new=%s\n", oldfi.filePath().text(), *(int *) &ch.change,
+			//	oldfi.createdAsString().text(), newfi.createdAsString().text());
+#endif
+			callvs.removeByIter(callvit);
+			handler(ch.change, oldfi, newfi);
+		}
+	}
 }
 
 
@@ -291,7 +341,7 @@ static const FXFileInfo *findFIByName(const QFileInfoList *list, const FXString 
 	return 0;
 }
 void FXFSMon::Watcher::Path::callHandlers()
-{	// Read lock is held on entry
+{	// Lock is held on entry
 	FXAutoPtr<FXDir> newpathdir;
 	FXERRHM(newpathdir=new FXDir(pathdir->path(), "*", FXDir::Unsorted, FXDir::All|FXDir::Hidden));
 	newpathdir->entryInfoList();
@@ -370,45 +420,38 @@ void FXFSMon::Watcher::Path::callHandlers()
 		}
 	}
 	// Mark off created/deleted
+	static FXulong eventcounter=0;
 	for(QValueList<Change>::iterator it=changes.begin(); it!=changes.end(); ++it)
 	{
 		Change &ch=*it;
+		ch.change.eventNo=++eventcounter;
 		if(ch.oldfi && ch.newfi) continue;
 		if(ch.change.renamed) continue;
 		ch.change.created=(!ch.oldfi && ch.newfi);
 		ch.change.deleted=(ch.oldfi && !ch.newfi);
 	}
+	FXRBOp resetchanges=FXRBObj(*this, &FXFSMon::Watcher::Path::resetChanges, &changes);
 	// Dispatch
-	for(QValueList<Change>::iterator it=changes.begin(); it!=changes.end(); ++it)
+	Watcher::Path::Handler *handler;
+	for(QPtrVectorIterator<Watcher::Path::Handler> it(handlers); (handler=it.current()); ++it)
 	{
-		Change &ch=*it;
-		Watcher::Path::Handler *handler;
-		if(*((FXuint *)&ch.change))
-		{	// Don't bother if it's just accessed time change (non portable anyway)
-			const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
-			const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
+		handler->callvs.append(0);
+		QPtrListIterator<void> callvit(handler->callvs); callvit.toLast();
+		typedef Generic::TL::create<void, QValueList<Change>, QPtrListIterator<void> >::value Spec;
+		// Detach changes per dispatch
+		for(QValueList<Change>::iterator it=changes.begin(); it!=changes.end(); ++it)
+			it->make_fis();
+		handler->callvs.replaceAtIter(callvit, FXProcess::threadPool().dispatch(new Generic::BoundFunctor<Spec>(Generic::Functor<Spec>(*handler, &Watcher::Path::Handler::invoke), changes, callvit)));
 #ifdef DEBUG
-			//fxmessage("File %s had changes 0x%x old=%s, new=%s\n", oldfi.filePath().text(), *(int *) &ch.change,
-			//	oldfi.createdAsString().text(), newfi.createdAsString().text());
+		fxmessage("Dispatched FXFSMonitor change %p\n", callvit.current());
 #endif
-			for(QPtrVectorIterator<Watcher::Path::Handler> it(handlers); (handler=it.current()); ++it)
-			{
-				if(!handler->callv)
-				{
-					handler->callv=FXProcess::threadPool().dispatch(new Generic::BoundFunctor<FXFSMonitor::ChangeHandlerPars>(Generic::Functor<FXFSMonitor::ChangeHandlerPars>(*handler, &Watcher::Path::Handler::invoke), ch.change, oldfi, newfi));
-#ifdef DEBUG
-					fxmessage("Dispatched FXFSMonitor change %p\n", handler->callv);
-#endif
-				}
-			}
-		}
 	}
 	pathdir=newpathdir;
 }
 
 void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 {
-	FXMtxHold lh(this, true);
+	FXMtxHold lh(fxfsmon);
 	Watcher *w;
 	for(QPtrListIterator<Watcher> it(watchers); (w=it.current()); ++it)
 	{
@@ -430,7 +473,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 	Watcher::Path *p=w->paths.find(path);
 	if(!p)
 	{
-		FXERRHM(p=new Watcher::Path(path));
+		FXERRHM(p=new Watcher::Path(w, path));
 		FXRBOp unnew=FXRBNew(p);
 #ifdef USE_WINAPI
 		HANDLE h;
@@ -450,7 +493,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 		unnew.dismiss();
 	}
 	Watcher::Path::Handler *h;
-	FXERRHM(h=new Watcher::Path::Handler(handler));
+	FXERRHM(h=new Watcher::Path::Handler(p, handler));
 	FXRBOp unh=FXRBNew(h);
 	p->handlers.append(h);
 	unh.dismiss();
@@ -458,7 +501,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 
 bool FXFSMon::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
 {
-	FXMtxHold hl(this, true);
+	FXMtxHold hl(fxfsmon);
 	Watcher *w;
 	for(QPtrListIterator<Watcher> it(watchers); (w=it.current()); ++it)
 	{
