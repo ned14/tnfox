@@ -214,6 +214,7 @@ bool FXACLEntity::operator==(const FXACLEntity &o) const
 {
 	if(!p && !o.p) return true;
 	if(!p || !o.p) return false;
+	if(p==o.p) return true;
 #ifdef USE_WINAPI
 	return EqualSid(p->sid, o.p->sid) ? true : false;
 #endif
@@ -987,52 +988,61 @@ struct FXDLLLOCAL FXACLIteratorPrivate : public QValueList<FXACL::Entry>::iterat
 };
 #ifdef USE_WINAPI
 void FXACLPrivate::readACL(PACL _acl)
-{
-	assert(IsValidAcl(_acl));
-	ACL_SIZE_INFORMATION asi;
-	FXERRHWIN(GetAclInformation(_acl, &asi, sizeof(asi), AclSizeInformation));
-	for(DWORD idx=0; idx<asi.AceCount; idx++)
+{	// 29th June 2005 ned: If acl is zero, means null DACL ie; all access
+	if(acl)
 	{
-		ACE_HEADER *aceh;
-		FXERRHWIN(GetAce(_acl, idx, (LPVOID *) &aceh));
-		switch(aceh->AceType)
+		assert(IsValidAcl(_acl));
+		ACL_SIZE_INFORMATION asi;
+		FXERRHWIN(GetAclInformation(_acl, &asi, sizeof(asi), AclSizeInformation));
+		for(DWORD idx=0; idx<asi.AceCount; idx++)
 		{
-		case ACCESS_DENIED_ACE_TYPE:
+			ACE_HEADER *aceh;
+			FXERRHWIN(GetAce(_acl, idx, (LPVOID *) &aceh));
+			switch(aceh->AceType)
 			{
-				ACCESS_DENIED_ACE *ace=(ACCESS_DENIED_ACE *) aceh;
-				FXACLEntity entity;
-				FXERRHM(entity.p=new FXACLEntityPrivate((SID *)(&(ace->SidStart)), (SID *)(&(ace->SidStart)), FXString::nullStr()));
-				FXACL::Entry entry(entity, translateBack(ace->Mask, type), 0, (aceh->AceFlags & CONTAINER_INHERIT_ACE|OBJECT_INHERIT_ACE)!=0);
-				entry.inherited=(aceh->AceFlags & INHERITED_ACE)!=0;
-				push_back(entry);
-				break;
-			}
-		case ACCESS_ALLOWED_ACE_TYPE:
-			{
-				ACCESS_ALLOWED_ACE *ace=(ACCESS_ALLOWED_ACE *) aceh;
-				SID *sid=(SID *)(&(ace->SidStart));
-				// Can we scavenge a denied entry?
-				QValueList<FXACL::Entry>::iterator it=begin();
-				for(; it!=end(); ++it)
+			case ACCESS_DENIED_ACE_TYPE:
 				{
-					FXACL::Entry &e=*it;
-					if(EqualSid(e.entity.p->sid, sid) && 0==e.grant)
-					{
-						e.grant=translateBack(ace->Mask, type);
-						break;
-					}
-				}
-				if(it==end())
-				{
+					ACCESS_DENIED_ACE *ace=(ACCESS_DENIED_ACE *) aceh;
 					FXACLEntity entity;
-					FXERRHM(entity.p=new FXACLEntityPrivate(sid, sid, FXString::nullStr()));
-					FXACL::Entry entry(entity, 0, translateBack(ace->Mask, type), (aceh->AceFlags & CONTAINER_INHERIT_ACE|OBJECT_INHERIT_ACE)!=0);
+					FXERRHM(entity.p=new FXACLEntityPrivate((SID *)(&(ace->SidStart)), (SID *)(&(ace->SidStart)), FXString::nullStr()));
+					FXACL::Entry entry(entity, translateBack(ace->Mask, type), 0, (aceh->AceFlags & CONTAINER_INHERIT_ACE|OBJECT_INHERIT_ACE)!=0);
 					entry.inherited=(aceh->AceFlags & INHERITED_ACE)!=0;
 					push_back(entry);
+					break;
 				}
-				break;
+			case ACCESS_ALLOWED_ACE_TYPE:
+				{
+					ACCESS_ALLOWED_ACE *ace=(ACCESS_ALLOWED_ACE *) aceh;
+					SID *sid=(SID *)(&(ace->SidStart));
+					// Can we scavenge a denied entry?
+					QValueList<FXACL::Entry>::iterator it=begin();
+					for(; it!=end(); ++it)
+					{
+						FXACL::Entry &e=*it;
+						if(EqualSid(e.entity.p->sid, sid) && 0==e.grant)
+						{
+							e.grant=translateBack(ace->Mask, type);
+							break;
+						}
+					}
+					if(it==end())
+					{
+						FXACLEntity entity;
+						FXERRHM(entity.p=new FXACLEntityPrivate(sid, sid, FXString::nullStr()));
+						FXACL::Entry entry(entity, 0, translateBack(ace->Mask, type), (aceh->AceFlags & CONTAINER_INHERIT_ACE|OBJECT_INHERIT_ACE)!=0);
+						entry.inherited=(aceh->AceFlags & INHERITED_ACE)!=0;
+						push_back(entry);
+					}
+					break;
+				}
 			}
 		}
+	}
+	else
+	{	// Enter that Everything has all access. Twold happen on a FAT partition
+		FXACL::Entry entry(FXACLEntity::everything(), 0, FXACL::Permissions().setAll(true), false);
+		entry.inherited=false;
+		push_back(entry);
 	}
 }
 static SE_OBJECT_TYPE mapType(FXACL::EntityType type)
@@ -1146,6 +1156,7 @@ void FXACL::init(void *_sd, FXACL::EntityType type)
 	SECURITY_DESCRIPTOR_CONTROL sdc;
 	DWORD sdrev;
 	FXERRHWIN(GetSecurityDescriptorControl(sd, &sdc, &sdrev));
+	BOOL present, defaulted;
 	/*if(sdc & SE_SELF_RELATIVE)
 	{	// Unpack it
 		DWORD absSize=0, daclSize=0, saclSize=0, ownerSize=0, groupSize=0;
@@ -1164,7 +1175,6 @@ void FXACL::init(void *_sd, FXACL::EntityType type)
 	}
 	else*/
 	{
-		BOOL present, defaulted;
 		FXERRHWIN(GetSecurityDescriptorDacl(sd, &present, &acl, &defaulted));
 		FXERRHWIN(GetSecurityDescriptorOwner(sd, (PSID *) &owner, &defaulted));
 		FXERRHWIN(GetSecurityDescriptorGroup(sd, (PSID *) &group, &defaulted));
@@ -1172,7 +1182,7 @@ void FXACL::init(void *_sd, FXACL::EntityType type)
 	FXACLEntity myowner;
 	FXERRHM(myowner.p=new FXACLEntityPrivate(owner, group, FXString::nullStr()));
 	FXERRHM(p=new FXACLPrivate(type, myowner));
-	if(acl) p->readACL(acl);
+	if(present) p->readACL(acl);
 #endif
 }
 FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
