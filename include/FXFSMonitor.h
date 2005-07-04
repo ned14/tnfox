@@ -56,10 +56,12 @@ to work around system limits - the limit of 64 maximum waitable objects on
 Windows has been worked around using multiple threads and FAM can scale to
 1024 watches per process. This should be sufficient for most users.
 
-Each path
 When the contents of a directory change, this class will upcall a supplied
 FX::Generic::Functor. Your functor will be called via the process-wide thread pool
-as provided by FX::FXProcess so ensure your handler is thread safe.
+as provided by FX::FXProcess so ensure your handler is thread safe. Ordering
+of event upcalls is in the order that the operating system reports them,
+though you should note that thread pools can be unreliable here if the host OS
+scheduler deems it so - use the event index in the changes structure.
 
 Note that on Windows, for each 62 paths you monitor a thread must run. Upcalls
 are issued via the process-wide thread pool available through FX::FXProcess::threadPool().
@@ -94,14 +96,15 @@ public:
 	//! Specifies what to monitor and what has changed
 	struct Change
 	{
+		FXulong eventNo;	//!< Non zero event number index
 		bool modified;		//!< When an entry is modified
 		bool created;		//!< When an entry is created
 		bool deleted;		//!< When an entry is deleted
 		bool renamed;		//!< When an entry is renamed
 		bool attrib;		//!< When the attributes of an entry are changed 
 		bool security;		//!< When the security of an entry is changed
-		Change() : modified(false), created(false), deleted(false), renamed(false), attrib(false), security(false) { }
-		Change(int) : modified(true), created(true), deleted(true), renamed(true), attrib(true), security(true) { }
+		Change() : eventNo(0), modified(false), created(false), deleted(false), renamed(false), attrib(false), security(false) { }
+		Change(int) : eventNo(0), modified(true), created(true), deleted(true), renamed(true), attrib(true), security(true) { }
 	};
 	typedef Generic::TL::create<void, Change, FXFileInfo, FXFileInfo>::value ChangeHandlerPars;
 	//! Defines the type of functor change handlers are
