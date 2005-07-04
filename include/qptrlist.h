@@ -307,6 +307,8 @@ public:
 		//list<type *>::insert(list<type *>::begin()+i, d);
 		return true;
 	}
+	//! Replaces item at iterator with \em d
+	bool replaceAtIter(QPtrListIterator<type> &it, const type *d);
 	//! Returns the item at index \em i
 	type *at(uint i) { return std::list<type *>::empty() ? 0 : *int_idx(i); }
 	//! Returns the first item in the list
@@ -463,6 +465,12 @@ template<class type> inline bool QPtrList<type>::removeByIter(QPtrListIterator<t
 template<class type> inline bool QPtrList<type>::takeByIter(QPtrListIterator<type> &it)
 {
 	std::list<type *>::erase(it.int_getIterator());
+	return true;
+}
+
+template<class type> inline bool QPtrList<type>::replaceAtIter(QPtrListIterator<type> &it, const type *d)
+{
+	*it.int_getIterator()=const_cast<type *>(d);
 	return true;
 }
 

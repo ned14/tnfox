@@ -276,6 +276,8 @@ public:
 		//list<type *>::insert(list<type *>::begin()+i, d);
 		return true;
 	}
+	//! Replaces item at iterator with \em d
+	bool replaceAtIter(QPtrVectorIterator<type> &it, const type *d);
 	//! Returns the item at index \em i
 	type *at(uint i) const { return std::vector<type *>::empty() ? 0 : *(std::vector<type *>::begin()+i); }
 	//! \overload
@@ -431,6 +433,12 @@ template<class type> inline bool QPtrVector<type>::removeByIter(QPtrVectorIterat
 template<class type> inline bool QPtrVector<type>::takeByIter(QPtrVectorIterator<type> &it)
 {
 	std::vector<type *>::erase(it.int_getIterator());
+	return true;
+}
+
+template<class type> inline bool QPtrVector<type>::replaceAtIter(QPtrVectorIterator<type> &it, const type *d)
+{
+	*it.int_getIterator()=const_cast<type *>(d);
 	return true;
 }
 
