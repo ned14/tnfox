@@ -302,7 +302,7 @@ public:
 			execute=traverse=v;
 			return *this;
 		}
-		//! Sets all possible
+		//! Sets all possible, including copy on write and take ownership
 		Permissions &setAll(bool plusExecute=false)
 		{
 			setGenRead().setGenWrite(); if(plusExecute) setGenExecute();
