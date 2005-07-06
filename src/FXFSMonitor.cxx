@@ -51,7 +51,7 @@ namespace FX {
 
 struct FXFSMon : public FXMutex
 {
-	struct Watcher : public FXMutex, public FXThread
+	struct Watcher : public FXThread
 	{
 		struct Path
 		{
@@ -102,7 +102,7 @@ struct FXFSMon : public FXMutex
 				QPtrList<void> callvs;
 				Handler(Path *_parent, FXFSMonitor::ChangeHandler _handler) : parent(_parent), handler(_handler) { }
 				~Handler();
-				void invoke(const QValueList<Change> &changes, QPtrListIterator<void> callvit);
+				void invoke(const QValueList<Change> &changes, FXThreadPool::handle callv);
 			private:
 				Handler(const Handler &);
 				Handler &operator=(const Handler &);
@@ -212,7 +212,7 @@ void FXFSMon::Watcher::run()
 	hlist[1]=latch;
 	for(;;)
 	{
-		FXMtxHold h(this);
+		FXMtxHold h(fxfsmon);
 		Path *p;
 		int idx=2;
 		for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
@@ -252,7 +252,7 @@ void FXFSMon::Watcher::run()
 				FXERRHFAM(ret);
 				if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
 					|| FAMAcknowledge==fe.code) continue;
-				FXMtxHold h(this);
+				FXMtxHold h(fxfsmon);
 				Path *p;
 				for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
 				{
@@ -299,7 +299,7 @@ FXFSMon::Watcher::Path::~Path()
 
 FXFSMon::Watcher::Path::Handler::~Handler()
 {
-	FXMtxHold h(parent->parent);
+	FXMtxHold h(fxfsmon);
 	while(!callvs.isEmpty())
 	{
 		FXThreadPool::CancelledState state;
@@ -308,10 +308,10 @@ FXFSMon::Watcher::Path::Handler::~Handler()
 	}
 }
 
-void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, QPtrListIterator<void> callvit)
+void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, FXThreadPool::handle callv)
 {
 	//fxmessage("FXFSMonitor dispatch %p\n", callv);
-	FXMtxHold h(parent->parent);
+	FXMtxHold h(fxfsmon);
 	for(QValueList<Change>::const_iterator it=changes.begin(); it!=changes.end(); ++it)
 	{
 		const Change &ch=*it;
@@ -320,10 +320,9 @@ void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, 
 			const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
 			const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
 #ifdef DEBUG
-			//fxmessage("File %s had changes 0x%x old=%s, new=%s\n", oldfi.filePath().text(), *(int *) &ch.change,
-			//	oldfi.createdAsString().text(), newfi.createdAsString().text());
+			fxmessage("File %s had changes 0x%x\n", oldfi.filePath().text(), *(int *) &ch.change);
 #endif
-			callvs.removeByIter(callvit);
+			callvs.removeRef(callv);
 			handler(ch.change, oldfi, newfi);
 		}
 	}
@@ -435,16 +434,15 @@ void FXFSMon::Watcher::Path::callHandlers()
 	Watcher::Path::Handler *handler;
 	for(QPtrVectorIterator<Watcher::Path::Handler> it(handlers); (handler=it.current()); ++it)
 	{
-		handler->callvs.append(0);
-		QPtrListIterator<void> callvit(handler->callvs); callvit.toLast();
-		typedef Generic::TL::create<void, QValueList<Change>, QPtrListIterator<void> >::value Spec;
+		typedef Generic::TL::create<void, QValueList<Change>, FXThreadPool::handle>::value Spec;
+		Generic::BoundFunctor<Spec> *functor;
 		// Detach changes per dispatch
 		for(QValueList<Change>::iterator it=changes.begin(); it!=changes.end(); ++it)
 			it->make_fis();
-		handler->callvs.replaceAtIter(callvit, FXProcess::threadPool().dispatch(new Generic::BoundFunctor<Spec>(Generic::Functor<Spec>(*handler, &Watcher::Path::Handler::invoke), changes, callvit)));
-#ifdef DEBUG
-		fxmessage("Dispatched FXFSMonitor change %p\n", callvit.current());
-#endif
+		FXThreadPool::handle callv=FXProcess::threadPool().dispatch((functor=new Generic::BoundFunctor<Spec>(Generic::Functor<Spec>(*handler, &Watcher::Path::Handler::invoke), changes, 0)));
+		handler->callvs.append(callv);
+		// Poke in the callv
+		Generic::TL::instance<1>(functor->parameters()).value=callv;
 	}
 	pathdir=newpathdir;
 }
