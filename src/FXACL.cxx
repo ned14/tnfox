@@ -1217,9 +1217,10 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 	assert(mode & SEM_FAILCRITICALERRORS);
 #endif
 #endif
-	FXERRHWINFN(ERROR_SUCCESS==GetNamedSecurityInfo(_path, mapType(type),
+	DWORD errcode;
+	FXERRHWIN2FN(ERROR_SUCCESS==(errcode=GetNamedSecurityInfo(_path, mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
-		0, 0, 0, NULL, (PSID *) &sd), path);
+		0, 0, 0, NULL, (PSID *) &sd)), errcode, path);
 	init(sd, type);
 #endif
 #ifdef USE_POSIX
@@ -1237,9 +1238,10 @@ FXACL::FXACL(void *h, FXACL::EntityType type) : p(0)
 	FXRBOp unconstr=FXRBConstruct(this);
 #ifdef USE_WINAPI
 	SECURITY_DESCRIPTOR *sd;
-	FXERRHWIN(ERROR_SUCCESS==GetSecurityInfo((HANDLE) h, mapType(type),
+	DWORD errcode;
+	FXERRHWIN2(ERROR_SUCCESS==(errcode=GetSecurityInfo((HANDLE) h, mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
-		0, 0, 0, NULL, (PSID *) &sd));
+		0, 0, 0, NULL, (PSID *) &sd)), errcode);
 	init(sd, type);
 #endif
 #ifdef USE_POSIX
@@ -1254,9 +1256,10 @@ FXACL::FXACL(int fd, FXACL::EntityType type) : p(0)
 	// Decode to HANDLE
 	void *h=(void *) _get_osfhandle(fd);
 	SECURITY_DESCRIPTOR *sd;
-	FXERRHWIN(ERROR_SUCCESS==GetSecurityInfo((HANDLE) h, mapType(type),
+	DWORD errcode;
+	FXERRHWIN2(ERROR_SUCCESS==(errcode=GetSecurityInfo((HANDLE) h, mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
-		0, 0, 0, NULL, (PSID *) &sd));
+		0, 0, 0, NULL, (PSID *) &sd)), errcode);
 	init(sd, type);
 #endif
 #ifdef USE_POSIX
@@ -1478,7 +1481,7 @@ void FXACL::writeTo(const FXString &path) const
 			FXERRGWIN(GetLastError(), FXERRH_ISFATAL);
 		}
 	}
-	FXERRHWINFN(ERROR_SUCCESS==ret, path);
+	FXERRHWIN2FN(ERROR_SUCCESS==ret, ret, path);
 #endif
 #ifdef USE_POSIX
 	struct stat s={0};
@@ -1518,7 +1521,7 @@ void FXACL::writeTo(void *h) const
 			FXERRGWIN(GetLastError(), FXERRH_ISFATAL);
 		}
 	}
-	FXERRHWIN(ERROR_SUCCESS==ret);
+	FXERRHWIN2(ERROR_SUCCESS==ret, ret);
 #endif
 #ifdef USE_POSIX
 	FXERRG("Not supported under POSIX", 0, FXERRH_ISDEBUG);
