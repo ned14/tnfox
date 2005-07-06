@@ -132,6 +132,8 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 			if(!m->addr)
 			{
 #ifdef USE_WINAPI
+				assert(mappingh);
+				if(!mappingh) return;
 				DWORD pageacc=pageaccess;
 				if(m->copyOnWrite) pageacc|=FILE_MAP_COPY;
 				m->addr=MapViewOfFileEx(mappingh, pageacc, (DWORD)(m->offset>>32),
@@ -144,7 +146,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 					TCHAR buffer[1024];
 					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, code, 0, buffer, sizeof(buffer)/sizeof(TCHAR), 0);
 					fxmessage("NOTE: FXMemMap map of %s (%x:%x) failed with %s (%d)\n",
-						name.text(), (FXuint) m->offset, m->len, buffer, code);
+						name.text(), (FXuint) m->offset, (FXuint) m->len, buffer, code);
 				}
 #endif
 #endif
@@ -156,7 +158,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 				if(!m->addr)
 				{
 					fxmessage("NOTE: FXMemMap map of %s (%x:%x) failed with %s (%d)\n",
-						name.text(), (FXuint) m->offset, m->len, strerror(errno), errno);
+						name.text(), (FXuint) m->offset, (FXuint) m->len, strerror(errno), errno);
 				}
 #endif
 #endif
@@ -315,14 +317,18 @@ void FXMemMap::maximiseMappableSize()
 		FXMtxHold h(p);
 #ifdef USE_WINAPI
 		{	// Ok, close mapping and reopen
-			p->unmap(0, p->size, false);
-			FXERRHWIN(CloseHandle(p->mappingh));
-			p->mappingh=0;
+			if(p->mappingh)
+			{
+				p->unmap(0, p->size, false);
+				FXERRHWIN(CloseHandle(p->mappingh));
+				p->mappingh=0;
+			}
 			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
 			p->size=p->file->size();
 			winopen(mode());
 			closeit.dismiss();
-			p->map();	// In theory maps everything back to where it was (hopefully)
+			if(p->mappingh)
+				p->map();	// In theory maps everything back to where it was (hopefully)
 		}
 #endif
 #ifdef USE_POSIX
@@ -347,6 +353,9 @@ void *FXMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
 	p->mappings.insert(m);
 	unm.dismiss();
 	if(noMappings) p->cmappingit.toFirst();
+#ifdef USE_WINAPI
+	if(!p->mappingh) winopen(mode());
+#endif
 	p->map();
 	setIoIndex(ioIndex);
 	return m->addr;
@@ -446,9 +455,9 @@ void FXMemMap::winopen(int mode)
 		p->pageaccess|=FILE_MAP_READ;
 	}
 	FXfval mappingsize=p->size;
-	if(!mappingsize) mappingsize=1;
 	if(INVALID_HANDLE_VALUE==fileh)
 	{	
+		if(!mappingsize) mappingsize=1;
 		FXString name;
 		do
 		{
@@ -473,8 +482,8 @@ void FXMemMap::winopen(int mode)
 		FXERRHWINFN(p->mappingh, name);
 		p->acl=FXACL(p->mappingh, FXACL::MemMap);
 	}
-	else
-	{
+	else if(mappingsize)
+	{	// If zero sized mapping, can't create
 		SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
 		sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
 		FXERRHWIN(p->mappingh=CreateFileMapping(fileh, &sa, access,
@@ -661,9 +670,12 @@ void FXMemMap::truncate(FXfval newsize)
 		}
 #ifdef USE_WINAPI
 		{	// Ok, close mapping and reopen
-			p->unmap(0, p->size, false);
-			FXERRHWIN(CloseHandle(p->mappingh));
-			p->mappingh=0;
+			if(p->mappingh)
+			{
+				p->unmap(0, p->size, false);
+				FXERRHWIN(CloseHandle(p->mappingh));
+				p->mappingh=0;
+			}
 			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
 			if(File==p->type) p->file->truncate(newsize);
 			p->size=newsize;
@@ -718,7 +730,9 @@ void FXMemMap::setPermissions(const FXACL &perms)
 	if(isOpen())
 	{
 #ifdef USE_WINAPI
-		perms.writeTo(p->mappingh);
+		assert(p->mappingh);
+		if(p->mappingh)
+			perms.writeTo(p->mappingh);
 #endif
 #ifdef USE_POSIX
 		if(Memory==p->type)
