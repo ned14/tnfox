@@ -1886,8 +1886,16 @@ FXString FXString::numToText(FXulong num, FXint fw, FXint base)
 		if(d>9) c='A'+d-10; else c='0'+d;
 		buff[--l]=c;
 	}
-	while(20-l<abs(fw))
-		buff[--l]=((fw<0) ? '0' : ' ');
+	if(fw<0)
+	{
+		while(20-l<-fw)
+			buff[--l]='0';
+	}
+	else
+	{
+		while(20-l<fw)
+			buff[--l]=' ';
+	}
 	return buff.mid(l);
 }
 
