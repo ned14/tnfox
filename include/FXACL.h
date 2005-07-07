@@ -373,6 +373,8 @@ public:
 	void checkE(Perms what) const;
 	//! Returns the ACL as a string
 	FXString report() const;
+	//! \overload
+	FXString asString() const { return report(); }
 
 	//! Writes the ACL to the specified path in the filing system
 	void writeTo(const FXString &path) const;
