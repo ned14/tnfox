@@ -38,9 +38,9 @@ TnFOX-specific acknowledgements here
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
 from v1.4.1), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
-is (C) 2001-2004 Niall Douglas and all code rests under the same licence as FOX but with
+is (C) 2001-2005 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
-so therefore <u><b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b></u>. If you want to know more
+so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b>. If you want to know more
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the
 \c LICENCE-ADDENDUM.txt file and you can find out more about mine in the \c LICENCE-ADDENDUM2.txt
 
@@ -127,7 +127,7 @@ structure and logic.
 find TnFOX of great interest, particularly for mission-critical and heavily multithreaded
 applications. I know of no competitor to TnFOX's nested exception handling framework and its threading
 classes are as efficient and feature-rich as it's possible to make them (ie; directly written
-in assembler on x86 machines). Portable support for host OS ACL based security as well as
+in assembler on x86/x64 machines). Portable support for host OS ACL based security as well as
 integrated strong encryption and data shredding facilities are unusual in a GUI toolkit but we have them!
 Facilities such as transaction rollback support, smart pointers and
 use of containers for all memory use ensure that resource leakage never happens. Extensive
