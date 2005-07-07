@@ -525,6 +525,11 @@ bool FXMemMap::open(FXuint mode)
 			p->file->open(filemode);
 			p->filefd=p->file->int_fileDescriptor();
 			p->size=p->file->size();
+			const FXACLEntity &owner=p->file->permissions().owner();
+			if(FXACLEntity::everything()!=owner)
+			{	// Ensure mapping owner is always file owner
+				p->acl.setOwner(owner);
+			}
 		}
 		p->pageaccess=0;
 #ifdef USE_WINAPI
