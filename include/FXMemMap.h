@@ -50,8 +50,7 @@ the mapped section nor off the start. Use as shared memory between processes
 is also ridiculously easy - you simply name the device the same in both processes
 and voilá, you're now working with the same patch of memory! Remember to
 synchronise multiple process access - the most portable is via msgs using a pipe,
-however if there is low contention in access it can be done via FX::FXAtomicInt
-bearing in mind such usage is non-portable (currently works only on x86 machines).
+however if there is low contention in access it can be done via FX::FXShrdMemMutex.
 
 You can map in an existing FX::FXFile device and indeed internally FXMemMap creates
 one if you don't specify a FX::FXFile but do a filename. If you choose shared memory
@@ -138,6 +137,12 @@ corresponding location in memory or zero if that section is not mapped.
 
 \note Other minor thing is that if you access memory directly using the
 return from mapIn() no character translation has been performed (IO_Translate)
+
+\note There is a bug on WinNT whereby if you map the same file in for write
+access using two or more FXMemMap's, the second and thereafter will never allow
+any mapping whatsoever. Either share the one FXMemMap, or accept lower
+performance. This problem does not affect multiple read access instances or a
+write with many reads - only two or more write access instances.
 */
 
 struct FXMemMapPrivate;
