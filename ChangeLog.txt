@@ -29,6 +29,8 @@ B FXACLIterator::atEnd() was missing
 B FXACL thought Win32 null DACLs meant no access instead of total access
 B FXFSMonitor was failing to invoke change handler if handler invocation
 was already in progress
+B FXMemMap was extending zero size files to one byte
+B FXACL was losing the error code on win32
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
