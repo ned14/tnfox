@@ -4,8 +4,13 @@ Before v0.86 release:
 
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
-NT v5.0 Failures:
-  None known.
+NT v5.0 to v5.2 Failures:
+  1. If FXMemMap maps in a file for write access, then another FXMemMap maps in
+the same file for write access, you will find you cannot map in parts of the
+second section because of an "Access Denied" error (which is silently eaten
+and only reported by TnFOX to the console). Cause: totally unknown, it
+appears to be a misfeature of NT long reported by others all over the internet.
+This problem does not apply if either file is not write access.
 
 Linux Kernel v2.4.20 (RH9) Failures:
   None known, but thread cancellation during pipe operations is a little flaky
