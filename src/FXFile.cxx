@@ -294,9 +294,9 @@ bool FXFile::open(FXuint mode)
 #endif
 #ifdef USE_POSIX
 #ifdef HAVE_WIDEUNISTD
-		FXERRHIOFN(p->handle=::wopen(p->filename.utext(), access, S_IREAD|S_IWRITE), p->filename);
+		FXERRHOSFN(p->handle=::wopen(p->filename.utext(), access, S_IREAD|S_IWRITE), p->filename);
 #else
-		FXERRHIOFN(p->handle=::open(p->filename.text(), access, S_IREAD|S_IWRITE), p->filename);
+		FXERRHOSFN(p->handle=::open(p->filename.text(), access, S_IREAD|S_IWRITE), p->filename);
 #endif
 #endif
 		if(access & O_CREAT)
@@ -575,19 +575,19 @@ void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FX
 		times[1].tv_usec=0;
 		times[0].tv_sec =times[1].tv_sec+1;
 		times[0].tv_usec=times[1].tv_usec;
-		FXERRHIOFN(::times(path.text(), times), path);
+		FXERRHOSFN(::utimes(path.text(), times), path);
 	}
 	if(lastModified || lastAccessed)
 	{
 		struct ::stat orig;
-		FXERRHIOFN(::stat(path.text(), &orig), path);
+		FXERRHOSFN(::stat(path.text(), &orig), path);
 		times[0].tv_sec=orig.st_atime;
 		times[0].tv_usec=0;
 		times[1].tv_sec=orig.st_mtime;
 		times[1].tv_usec=0;
 		if(lastAccessed) times[0].tv_sec=*lastAccessed;
 		if(lastModified) times[1].tv_sec=*lastModified;
-		FXERRHIOFN(::times(path.text(), times), path);
+		FXERRHOSFN(::utimes(path.text(), times), path);
 	}
 #else
 	if(created && lastModified && lastAccessed)
@@ -738,7 +738,7 @@ FXString FXFile::getUserDirectory(const FXString& user){
 #else
   if(user.empty()){
     register const FXchar *str1,*str2;
-    if((str1=getenv("USERPROFILE"))!=NULL) return str1; // Daniël Hörchner <dbjh@gmx.net>
+    if((str1=getenv("USERPROFILE"))!=NULL) return str1; // Daniï¿½ Hï¿½chner <dbjh@gmx.net>
     if((str1=getenv("HOME"))!=NULL) return str1;
     if((str2=getenv("HOMEPATH"))!=NULL){      // This should be good for WinNT, Win2K according to MSDN
       if((str1=getenv("HOMEDRIVE"))==NULL) str1="c:";
