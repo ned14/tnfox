@@ -630,7 +630,6 @@ template<class type> struct lockedAccessor
 private:
 	FXMtxHold *h;
 	type &val;
-	lockedAccessor &operator=(const lockedAccessor &);
 public:
 	//! Constructs an instance reflecting \em _val while locking \em m
 	lockedAccessor(type &_val, const FXMutex *m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
@@ -645,9 +644,24 @@ public:
 	lockedAccessor(const lockedAccessor &_o) : h(_o.h), val(_o.val)
 	{
 		lockedAccessor &o=const_cast<lockedAccessor &>(_o);
+		o.h=0;
+	}
+	lockedAccessor &operator=(const lockedAccessor &_o)
+	{
+		lockedAccessor &o=const_cast<lockedAccessor &>(_o);
+		this->~lockedAccessor();
+		return *new(this) lockedAccessor(o);
+	}
 #else
 	lockedAccessor(lockedAccessor &o) : h(o.h), val(o.val)
 	{
+		o.h=0;
+	}
+	lockedAccessor &operator=(lockedAccessor &o)
+	{
+		this->~lockedAccessor();
+		return *new(this) lockedAccessor(o);
+	}
 #endif
 #else
 private:
@@ -655,9 +669,14 @@ private:
 public:
 	lockedAccessor(lockedAccessor &&o) : h(o.h), val(o.val)
 	{
-#endif
 		o.h=0;
 	}
+	lockedAccessor &operator=(lockedAccessor &&o)
+	{
+		this->~lockedAccessor();
+		return *new(this) lockedAccessor(o);
+	}
+#endif
 	~lockedAccessor()
 	{
 		FXDELETE(h);
