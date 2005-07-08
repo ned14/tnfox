@@ -2031,6 +2031,15 @@ bool FXSSLDevice::atEnd() const
 	return true;
 }
 
+const FXACL &FXSSLDevice::permissions() const
+{
+	return p->dev->permissions();
+}
+void FXSSLDevice::setPermissions(const FXACL &perms)
+{
+	p->dev->setPermissions(perms);
+}
+
 FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
 {
 	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXSSLDevice", "Not open for reading"));
