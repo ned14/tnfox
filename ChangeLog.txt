@@ -90,6 +90,7 @@ FXRWMutex
 * Changed FXTime to always be FXlong on all platforms
 * Changed FXFile::stampCreationMetadata() to writeMetadata()
 + Added QPtrList::replaceAtIter() and QPtrVector::replaceAtIter() for iterators
++ Added permissions() and setPermissions() to FXSSLDevice
 
 
 v0.85 13th Feb 2005:
