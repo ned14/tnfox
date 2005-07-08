@@ -93,7 +93,7 @@ public:
 	};
 	/*! Constructs an asymmetric key of size \em bitsize and type \em type. Calls
 	generate() if type has been set */
-	FXSSLPKey(FXuint bitsize=0, KeyType type=None);
+	explicit FXSSLPKey(FXuint bitsize=0, KeyType type=None);
 	~FXSSLPKey();
 	FXSSLPKey(const FXSSLPKey &other);
 	FXSSLPKey &operator=(const FXSSLPKey &other);
@@ -232,7 +232,7 @@ public:
 	text is null, generates a cryptographically sound random key of the specified type
 	(generate()) otherwise uses generateFromText()
 	*/
-	FXSSLKey(FXuint bitsize=0, KeyType type=None, const FXString &text=(const char *) 0);
+	explicit FXSSLKey(FXuint bitsize=0, KeyType type=None, const FXString &text=(const char *) 0);
 	~FXSSLKey();
 	FXSSLKey(const FXSSLKey &other);
 	FXSSLKey &operator=(const FXSSLKey &other);
@@ -737,6 +737,8 @@ public:
 	virtual FXfval at() const;
 	virtual bool at(FXfval newpos);
 	virtual bool atEnd() const;
+	virtual const FXACL &permissions() const;
+	virtual void setPermissions(const FXACL &);
 	virtual FXuval readBlock(char *data, FXuval maxlen);
 	virtual FXuval writeBlock(const char *data, FXuval maxlen);
 	virtual FXuval readBlockFrom(char *data, FXuval maxlen, FXfval pos);
