@@ -632,11 +632,11 @@ private:
 	type &val;
 public:
 	//! Constructs an instance reflecting \em _val while locking \em m
-	lockedAccessor(type &_val, const FXMutex *m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	lockedAccessor(type &_val, const FXMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
 	//! \overload
 	lockedAccessor(type &_val, const FXMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
 	//! \overload
-	lockedAccessor(type &_val, const FXRWMutex *m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	lockedAccessor(type &_val, const FXRWMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
 	//! \overload
 	lockedAccessor(type &_val, const FXRWMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
 #ifndef HAVE_MOVECONSTRUCTORS
