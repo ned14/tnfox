@@ -30,8 +30,9 @@
 #include "FXRollback.h"
 #include "FXFile.h"
 #include "FXNetwork.h"
+#include "FXBuffer.h"
 #include "FXErrCodes.h"
-#include <qmemarray.h>
+#include <qcstring.h>
 #ifdef HAVE_OPENSSL
 #include "openssl/err.h"
 #include "openssl/bio.h"
@@ -1278,6 +1279,7 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 	BIO *bio;
 	X509 *peercert;
 	EVP_CIPHER_CTX estream;
+	FXfval headerdiff;		// The diff between source dev and us due to the TNFXSECD header
 	FXuchar *nonce;			// Holds the nonce
 	FXuval noncelen;
 	FXuchar *ebuffer;		// Holds a block of encryption stream
@@ -1286,7 +1288,7 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 	FXSSLDevicePrivate(FXIODevice *ed) : dev(ed), amServer(false), connected(false),
 		ciphers("HIGH:@STRENGTH"), key(0),
 #ifdef HAVE_OPENSSL
-		handle(0), bio(0), peercert(0), nonce(0), noncelen(0), ebuffer(0), ebufferIoIndex((FXfval)-1),
+		handle(0), bio(0), peercert(0), headerdiff(0), nonce(0), noncelen(0), ebuffer(0), ebufferIoIndex((FXfval)-1),
 #endif
 		FXMutex() { }
 	~FXSSLDevicePrivate()
@@ -1644,6 +1646,11 @@ void FXSSLDevice::renegotiate()
 #endif
 }
 
+FXuint FXSSLDevice::fileHeaderLen() const throw()
+{
+	return (FXuint) p->headerdiff;
+}
+
 bool FXSSLDevice::isSynchronous() const
 {
 	if(p->dev) return p->dev->isSynchronous();
@@ -1698,7 +1705,7 @@ bool FXSSLDevice::open(FXuint mode)
 				if(mode & IO_WriteOnly)
 				{
 					FXERRH(pkey->hasPublicKey(), FXTrans::tr("FXSSLDevice", "Need public key to encrypt"), FXSSLDEVICE_NEEDPUBLICKEY, 0);
-					FXERRH(!(pkey->hasPublicKey() && pkey->hasPrivateKey()), "Security check: asymmetric encryption with both public & private keys", 0, FXERRH_ISDEBUG);
+					FXERRH((mode & IO_ReadOnly) || !(pkey->hasPublicKey() && pkey->hasPrivateKey()), "Security check: asymmetric encryption with both public & private keys", 0, FXERRH_ISDEBUG);
 				}
 			}
 			p->dev->open(mode);
@@ -1846,7 +1853,7 @@ bool FXSSLDevice::open(FXuint mode)
 				Secure::TigerHashValue keyhash=Secure::TigerHash().calc(hashbuffer, keylen+(!key.saltLen() ? 2 : 0));
 				s.writeRawBytes(keyhash.data.bytes, sizeof(keyhash));
 			}
-
+			p->headerdiff=p->dev->at();
 
 			// Okay set up for reading & writing
 			assert(!p->nonce);
@@ -1887,19 +1894,28 @@ bool FXSSLDevice::open(FXuint mode)
 			if(FXSSLKey::Blowfish==key.type())
 				FXERRHSSL(EVP_CIPHER_CTX_set_key_length(&p->estream, key.bitsLen()));
 			p->noncelen=EVP_CIPHER_CTX_block_size(&p->estream);
+			if(p->noncelen<8) p->noncelen=8;	// For null cipher
+			p->headerdiff+=p->noncelen;
 			// Allocate nonce and buffers
 			FXERRHM(p->nonce=Secure::malloc<FXuchar>(p->noncelen));
 			FXERRHM(p->ebuffer=Secure::malloc<FXuchar>(p->noncelen));
 			p->ebufferIoIndex=(FXfval)-1;
 
-			if(mode & IO_ReadOnly && !p->dev->atEnd())
+			if((mode & IO_ReadOnly) && !p->dev->atEnd())
 			{	// Read in the nonce
 				s.readRawBytes(p->nonce, p->noncelen);
+#ifdef DEBUG
+				fxmessage("FXSSLDevice: Reading nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
+#endif
 			}
 			else
 			{	// Generate and write the nonce
-				FXERRHSSL(RAND_pseudo_bytes(p->nonce, p->noncelen));
+				//if(EVP_enc_null()!=cipher)
+					FXERRHSSL(RAND_pseudo_bytes(p->nonce, p->noncelen));
 				s.writeRawBytes(p->nonce, p->noncelen);
+#ifdef DEBUG
+				fxmessage("FXSSLDevice: Writing nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
+#endif
 			}
 			ioIndex=0;
 		}
@@ -1991,8 +2007,8 @@ void FXSSLDevice::truncate(FXfval size)
 	if(isOpen() && !p->dev->isSynchronous())
 	{
 		FXMtxHold h(p);
-		FXfval diff=p->dev->at()-ioIndex;
-		p->dev->truncate(size+diff);
+		p->dev->truncate(size+p->headerdiff);
+		ioIndex=p->dev->at()-p->headerdiff;
 	}
 #endif
 }
@@ -2008,9 +2024,8 @@ bool FXSSLDevice::at(FXfval newpos)
 	if(isOpen() && newpos!=ioIndex && !p->dev->isSynchronous())
 	{
 		FXMtxHold h(p);
-		FXfval diff=p->dev->at()-ioIndex;
+		p->dev->at(newpos+p->headerdiff);
 		ioIndex=newpos;
-		p->dev->at(ioIndex+diff);
 		return true;
 	}
 #endif

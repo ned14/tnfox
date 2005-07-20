@@ -726,6 +726,9 @@ public:
 	*/
 	void renegotiate();
 
+	//! Returns the size of the TNFXSECD header for this instance
+	FXuint fileHeaderLen() const throw();
+
 	virtual bool isSynchronous() const;
 	virtual bool create(FXuint mode=IO_ReadWrite);
 	virtual bool open(FXuint mode=IO_ReadWrite);
