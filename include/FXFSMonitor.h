@@ -96,15 +96,16 @@ public:
 	//! Specifies what to monitor and what has changed
 	struct Change
 	{
-		FXulong eventNo;	//!< Non zero event number index
-		bool modified;		//!< When an entry is modified
-		bool created;		//!< When an entry is created
-		bool deleted;		//!< When an entry is deleted
-		bool renamed;		//!< When an entry is renamed
-		bool attrib;		//!< When the attributes of an entry are changed 
-		bool security;		//!< When the security of an entry is changed
+		FXulong eventNo;			//!< Non zero event number index
+		FXuint modified	: 1;		//!< When an entry is modified
+		FXuint created	: 1;		//!< When an entry is created
+		FXuint deleted	: 1;		//!< When an entry is deleted
+		FXuint renamed	: 1;		//!< When an entry is renamed
+		FXuint attrib	: 1;		//!< When the attributes of an entry are changed 
+		FXuint security	: 1;		//!< When the security of an entry is changed
 		Change() : eventNo(0), modified(false), created(false), deleted(false), renamed(false), attrib(false), security(false) { }
 		Change(int) : eventNo(0), modified(true), created(true), deleted(true), renamed(true), attrib(true), security(true) { }
+		operator FXuint() const throw() { return ((const FXuint &) modified); }
 	};
 	typedef Generic::TL::create<void, Change, FXFileInfo, FXFileInfo>::value ChangeHandlerPars;
 	//! Defines the type of functor change handlers are

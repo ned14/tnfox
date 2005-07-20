@@ -315,16 +315,22 @@ void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, 
 	for(QValueList<Change>::const_iterator it=changes.begin(); it!=changes.end(); ++it)
 	{
 		const Change &ch=*it;
-		if(*((FXuint *)&ch.change))
-		{	// Don't bother if it's just accessed time change (non portable anyway)
-			const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
-			const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
+		const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
+		const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
 #ifdef DEBUG
-			fxmessage("File %s had changes 0x%x\n", oldfi.filePath().text(), *(int *) &ch.change);
-#endif
-			callvs.removeRef(callv);
-			handler(ch.change, oldfi, newfi);
+		{
+			FXString file(oldfi.filePath()), chs;
+			if(ch.change.modified) chs.append("modified ");
+			if(ch.change.created)  { chs.append("created "); file=newfi.filePath(); }
+			if(ch.change.deleted)  chs.append("deleted ");
+			if(ch.change.renamed)  chs.append("renamed (to "+newfi.filePath()+") ");
+			if(ch.change.attrib)   chs.append("attrib ");
+			if(ch.change.security) chs.append("security ");
+			fxmessage("FXFSMonitor: File %s had changes: %s\n", file.text(), chs.text());
 		}
+#endif
+		callvs.removeRef(callv);
+		handler(ch.change, oldfi, newfi);
 	}
 }
 
@@ -428,6 +434,15 @@ void FXFSMon::Watcher::Path::callHandlers()
 		if(ch.change.renamed) continue;
 		ch.change.created=(!ch.oldfi && ch.newfi);
 		ch.change.deleted=(ch.oldfi && !ch.newfi);
+	}
+	// Remove any which don't have something set
+	for(QValueList<Change>::iterator it=changes.begin(); it!=changes.end();)
+	{
+		Change &ch=*it;
+		if(!ch.change)
+			it=changes.erase(it);
+		else
+			++it;
 	}
 	FXRBOp resetchanges=FXRBObj(*this, &FXFSMon::Watcher::Path::resetChanges, &changes);
 	// Dispatch
