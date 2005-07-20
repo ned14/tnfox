@@ -303,6 +303,14 @@ bool FXMemMap::remove()
 	return true;
 }
 
+FXfval FXMemMap::reloadSize()
+{
+	FXMtxHold h(p);
+	if(isOpen() && File==p->type)
+		return p->file->reloadSize();
+	return 0;
+}
+
 FXfval FXMemMap::mappableSize() const
 {
 	FXMtxHold h(p);
@@ -324,7 +332,7 @@ void FXMemMap::maximiseMappableSize()
 				p->mappingh=0;
 			}
 			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
-			p->size=p->file->size();
+			p->size=p->file->reloadSize();
 			winopen(mode());
 			closeit.dismiss();
 			if(p->mappingh)
@@ -333,7 +341,7 @@ void FXMemMap::maximiseMappableSize()
 #endif
 #ifdef USE_POSIX
 		{	// Considerably easier this, as it should be in fact
-			p->size=p->file->size();
+			p->size=p->file->reloadSize();
 		}
 #endif
 	}

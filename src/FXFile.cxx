@@ -229,6 +229,21 @@ bool FXFile::remove()
 	return remove(p->filename)!=0;
 }
 
+FXfval FXFile::reloadSize()
+{
+	FXMtxHold h(p);
+	if(isOpen())
+	{
+#ifdef WIN32
+		DWORD high;
+		return (p->size=(GetFileSize((HANDLE) _get_osfhandle(p->handle), &high)|(((FXfval) high)<<32)));
+#else
+		return (p->size=filelength(p->handle));
+		check for 64 bit compat;
+#endif
+	}
+}
+
 FXIODevice &FXFile::stdio(bool applyCRLFTranslation)
 {
 	if(!stdiofile)
@@ -306,7 +321,7 @@ bool FXFile::open(FXuint mode)
 		if(p->acl) *p->acl=FXACL(p->handle, FXACL::File);
 		setFlags((mode & IO_ModeMask)|IO_Open);
 		p->lastop=FXFilePrivate::NoOp;
-		p->size=size(p->filename);
+		reloadSize();
 		ioIndex=(mode & IO_Append) ? p->size : 0;
 	}
 	return true;

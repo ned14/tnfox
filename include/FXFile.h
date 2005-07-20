@@ -62,6 +62,12 @@ Most likely you'll prefer to use FX::FXMemMap all the time as it offers
 superior performance and facilities in most cases. Indeed, FXFile does no
 internal buffering as it is expected it will only be used rarely.
 
+For speed, FXFile maintains its own record of file length which it manages.
+This normally isn't a problem, but when multiple FXFile's are working on the
+same file (either in-process or across processes) then the internal count
+can become desynchronised with the actual length. If you want to reset the
+length, call reloadSize().
+
 One major difference is default security, especially on NT. FXFile like
 all TnFOX sets very conservative permissions on all things it creates -
 see FX::FXACL::default_(). Note that until the file is opened, permissions()
@@ -105,6 +111,8 @@ public:
 	bool exists() const;
 	//! Deletes the file name, closing the file first if open. Returns false if file doesn't exist
 	bool remove();
+	//! Reloads the size of the file. See description above
+	FXfval reloadSize();
 	/*! Returns an FXIODevice referring to stdin/stdout. This is somewhat of a special device
 	in that it can't be closed, doesn't have a size and reads from it can block.
 	\sa FXPipe

@@ -53,7 +53,9 @@ synchronise multiple process access - the most portable is via msgs using a pipe
 however if there is low contention in access it can be done via FX::FXShrdMemMutex.
 
 You can map in an existing FX::FXFile device and indeed internally FXMemMap creates
-one if you don't specify a FX::FXFile but do a filename. If you choose shared memory
+one if you don't specify a FX::FXFile but do a filename. You should note that as a
+result, FXMemMap can lose track of the real file length under the same conditions
+as FX::FXFile for which reloadSize() is also provided. If you choose shared memory
 (FXMemMap::Memory) rather than a filename (FXMemMap::File) then the file used is kept in
 memory as much as possible rather than being flushed to disc as soon as possible.
 
@@ -197,6 +199,8 @@ public:
 	bool exists() const;
 	//! Deletes the file name, closing the file first if open. Returns false if file doesn't exist
 	bool remove();
+	//! Reloads the size of the file. See description above
+	FXfval reloadSize();
 	//! Returns the current mappable extent of the file (which may be shorter than the file length)
 	FXfval mappableSize() const;
 	//! Extends the mappable extent of the file to the current file length
