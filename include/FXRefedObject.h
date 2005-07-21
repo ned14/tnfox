@@ -168,8 +168,8 @@ namespace Pol {
 	protected:
 		struct ReferrerEntry { };
 		unknownReferrers() { }
-		void int_addReferrer(FXRefingObjectBase *r) { }
-		void int_removeReferrer(FXRefingObjectBase *r) { }
+		void int_addReferrer(FXRefingObjectBase *r, FXMutex *lock) { }
+		void int_removeReferrer(FXRefingObjectBase *r, FXMutex *lock) { }
 		const QValueList<ReferrerEntry> *int_referrers() const { return 0; }
 	};
 #ifdef _MSC_VER
@@ -192,12 +192,14 @@ namespace Pol {
 		};
 		QValueList<ReferrerEntry> referrers;
 		knowReferrers() { }
-		void int_addReferrer(FXRefingObjectBase *r)
+		void int_addReferrer(FXRefingObjectBase *r, FXMutex *lock)
 		{
+			FXMtxHold h(lock, FXMtxHold::AcceptNullMutex);
 			referrers.push_back(ReferrerEntry(r));
 		}
-		void int_removeReferrer(FXRefingObjectBase *r)
+		void int_removeReferrer(FXRefingObjectBase *r, FXMutex *lock)
 		{
+			FXMtxHold h(lock, FXMtxHold::AcceptNullMutex);
 			referrers.remove(ReferrerEntry(r));
 		}
 		const QValueList<ReferrerEntry> *int_referrers() const { return &referrers; }
@@ -236,7 +238,12 @@ reaches zero, the virtual method noMoreReferrers() is called which by default ca
 noMoreReferrers() will never be called more than once and once it has been called,
 even if the object is not deleted all attempts to open a new reference upon it
 will return a null reference. If you don't want this, specialise FX::FXRefedObjectImpl::countHolder
-(see the header file)
+(see the header file).
+
+You can temporarily disable the reference counting mechanism by instantiating a
+FX::FXRefedObject_DisableCount. This is useful during refed object initialisation
+where it may end up temporarily opening a reference on itself, thus causing
+deletion of itself during construction as no other reference exists yet.
 
 A specialisation exists for FX::FXAtomicInt which implements an atomic reference
 count (despite not actually using FX::FXAtomicInt directly to do it). 
@@ -248,11 +255,13 @@ template<typename intType,
 {
 	template<class type> friend class FXRefingObjectImpl::refedObject;
 	template<bool mutexed, class type> friend struct FXRefingObjectImpl::dataHolderI;
+	template<class type> friend class FXRefedObject_DisableCount;
 	typedef FXRefedObject MyFXRefedObjectSpec;
+	FXAtomicInt disableCount;
 public:
-	FXRefedObject() { }
+	FXRefedObject() : disableCount(0) { }
 	virtual ~FXRefedObject() { }
-	FXRefedObject(const FXRefedObject &o) : lastUsed(o), referrersPolicy() { /* new instance */ }
+	FXRefedObject(const FXRefedObject &o) : lastUsed(o), referrersPolicy(), disableCount(o.disableCount) { /* new instance */ }
 protected:
 	//! Called when the reference count reaches zero
 	virtual void noMoreReferrers() { delete this; }
@@ -303,7 +312,7 @@ namespace FXRefingObjectImpl {
 		typedef lastUsedI<Generic::convertible<Pol::hasLastUsed &, type &>::value, type> Base;
 		void inc()
 		{
-			if(Base::data)
+			if(Base::data && !Base::data->disableCount)
 			{
 				if(Base::data->int_increfcount())
 					Base::addRef();
@@ -313,7 +322,7 @@ namespace FXRefingObjectImpl {
 		}
 		void dec()
 		{
-			if(Base::data)
+			if(Base::data && !Base::data->disableCount)
 			{
 				Base::delRef();
 				if(!Base::data->int_decrefcount())
@@ -342,6 +351,17 @@ namespace FXRefingObjectImpl {
 	};
 
 } // namespace
+
+/*! \class FXRefedObject_DisableCount
+\brief Disables the reference count mechanism for the duration of its existence
+*/
+template<class type> class FXRefedObject_DisableCount
+{
+	type *object;
+public:
+	FXRefedObject_DisableCount(type *obj) : object(obj) { ++object->disableCount; }
+	~FXRefedObject_DisableCount() { --object->disableCount; }
+};
 
 /*! \class FXRefingObject
 \brief A handle to a reference counted object
@@ -427,21 +447,19 @@ namespace FXRefingObjectImpl
 {	// Now that we know FXRefingObject's relationship to its policy classes, we can static_cast<>
 	template<bool mutexed, class type> inline void dataHolderI<mutexed, type>::addRef()
 	{
-		data->int_addReferrer(static_cast<FXRefingObject<type> *>(this));
+		data->int_addReferrer(static_cast<FXRefingObject<type> *>(this), 0);
 	}
 	template<bool mutexed, class type> inline void dataHolderI<mutexed, type>::delRef()
 	{
-		data->int_removeReferrer(static_cast<FXRefingObject<type> *>(this));
+		data->int_removeReferrer(static_cast<FXRefingObject<type> *>(this), 0);
 	}
 	template<class type> inline void dataHolderI<true, type>::addRef()
 	{
-		FXMtxHold h(data);
-		data->int_addReferrer(static_cast<FXRefingObject<type> *>(this));
+		data->int_addReferrer(static_cast<FXRefingObject<type> *>(this), data);
 	}
 	template<class type> inline void dataHolderI<true, type>::delRef()
 	{
-		FXMtxHold h(data);
-		data->int_removeReferrer(static_cast<FXRefingObject<type> *>(this));
+		data->int_removeReferrer(static_cast<FXRefingObject<type> *>(this), data);
 	}
 }
 
