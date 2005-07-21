@@ -93,6 +93,10 @@ FXRWMutex
 + Added permissions() and setPermissions() to FXSSLDevice
 + Added reloadSize() to FXFile and FXMemMap
 + Added fileHeaderLen() to FXSSLDevice
+* Marked loads of extra stuff as FXDEPRECATEDEXT ie; deprecated for external use
+* Made FXRefedObject more efficient by avoiding a lock when referrers are unknown
++ Added FXRefedObject_DisableCount
+
 
 
 v0.85 13th Feb 2005:
