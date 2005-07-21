@@ -1439,7 +1439,12 @@ void FXSSLDevice::int_xorInEBuffer(char *dest, const char *src, FXuval amount)
 			first=false;
 		}
 		FXuval d=(FXuval) dest, s=(FXuval) src, e=(FXuval) ebuffer, todo=FXMIN(amount, p->noncelen-ebufferoffset), size=0;
-		// TODO: Use SSE2 16 byte XOR
+#if 0
+		if(todo>=16 && !(d & 15) && !(s & 15) && !(e & 15))
+		{	// TODO: Use SSE2 16 byte XOR
+			int a=1;
+		}
+#endif
 		if(todo>=8 && !(d & 7) && !(s & 7) && !(e & 7))
 		{	// Do it as one 64 bit op
 			*((FXulong *) dest)=*((FXulong *) src) ^ *((FXulong *) ebuffer);
