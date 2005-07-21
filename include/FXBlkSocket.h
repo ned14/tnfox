@@ -234,7 +234,7 @@ public:
 	/*! \overload
 	\deprecated For Qt compatibility only
 	*/
-	FXfval bytesAvailable() const { return size(); }
+	FXDEPRECATEDEXT FXfval bytesAvailable() const { return size(); }
 	//! Returns an all public access ACL
 	virtual const FXACL &permissions() const;
 
@@ -272,11 +272,11 @@ public:
 	FXBlkSocket *waitForConnection(FXuint waitfor=FXINFINITE);
 public:
 	//! \deprecated For Qt compatibility only
-	bool blocking() const { return true; }
+	FXDEPRECATEDEXT bool blocking() const { return true; }
 	//! \deprecated For Qt compatibility only
-	void setBlocking(bool) { }
+	FXDEPRECATEDEXT void setBlocking(bool) { }
 	//! \deprecated For Qt compatibility only
-	FXuval waitForMore(int msecs, bool *timeout=0);
+	FXDEPRECATEDEXT FXuval waitForMore(int msecs, bool *timeout=0);
 };
 
 } // namespace

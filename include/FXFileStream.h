@@ -37,7 +37,7 @@ class FXAPI FXFileStream : public FXStream {
 public:
 
   /// Create file store
-  FXFileStream(const FXObject* cont=NULL);
+  FXDEPRECATEDEXT FXFileStream(const FXObject* cont=NULL);
 
   /**
   * Open binary data file stream; allocate a buffer of the given size

@@ -40,7 +40,7 @@ class FXAPI FXMemoryStream : public FXStream {
 public:
 
   /// Create memory store
-  FXMemoryStream(const FXObject* cont=NULL);
+  FXDEPRECATEDEXT FXMemoryStream(const FXObject* cont=NULL);
 
   /// Open file store
   FXbool open(FXStreamDirection save_or_load,FXuchar* data);

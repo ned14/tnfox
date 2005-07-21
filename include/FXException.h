@@ -410,7 +410,7 @@ public:
   */
   FXException() : uniqueId(0), reporttxt(0), nestedlist(0) { }
   //! \deprecated For backward code compatibility only
-  FXException(const FXchar *msg) : reporttxt(0), nestedlist(0) { init(0, 0, msg, 0, 0); }
+  FXDEPRECATEDEXT FXException(const FXchar *msg) : reporttxt(0), nestedlist(0) { init(0, 0, msg, 0, 0); }
   FXException(const FXException &o);
   FXException &operator=(const FXException &o);
   //! Returns if this exception object is valid or not
@@ -437,7 +437,7 @@ public:
   */
   const FXString &report() const;
   //! \deprecated For backward code compatibility only
-  const FXchar *what() const { return _message.text(); }
+  FXDEPRECATEDEXT const FXchar *what() const { return _message.text(); }
   //! Returns true if this exception is the primary (first) exception currently being thrown ie; not nested
   bool isPrimary() const;
   //! Returns the number of nested exceptions which occurred during the handling of this exception
@@ -506,7 +506,7 @@ public:
 	FXRangeException(const char *_filename, int _lineno, const FXString &_msg)
 		: FXException(_filename, _lineno, _msg, FXEXCEPTION_BADRANGE, 0) { }
 	//! \deprecated For backward code compatibility only
-	FXRangeException(const FXchar *msg)
+	FXDEPRECATEDEXT FXRangeException(const FXchar *msg)
 		: FXException(0, 0, msg, FXEXCEPTION_BADRANGE, 0) { }
 };
 /*! \return A FX::FXRangeException
@@ -527,7 +527,7 @@ public:
 	FXPointerException(const char *_filename, int _lineno, FXint _flags)
 		: FXException(_filename, _lineno, "Null pointer", FXEXCEPTION_NULLPOINTER, _flags) { }
 	//! \deprecated For backward code compatibility only
-	FXPointerException(const FXchar *msg)
+	FXDEPRECATEDEXT FXPointerException(const FXchar *msg)
 		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, 0) { }
 };
 #define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
@@ -552,7 +552,7 @@ public:
 		FXuint _code=FXEXCEPTION_NORESOURCE, FXuint _flags=0)
 		: FXException(_filename, _lineno, _msg, _code, _flags) { }
 	//! \deprecated For backward code compatibility only
-	FXResourceException(const FXchar *msg)
+	FXDEPRECATEDEXT FXResourceException(const FXchar *msg)
 		: FXException(0, 0, msg, FXEXCEPTION_NORESOURCE, 0) { }
 };
 
@@ -566,7 +566,7 @@ public:
 	FXMemoryException(const char *_filename, int _lineno)
 		: FXResourceException(_filename, _lineno, "Out of memory", FXEXCEPTION_NOMEMORY, 0) { }
 	//! \deprecated For backward code compatibility only
-	FXMemoryException(const FXchar *msg)
+	FXDEPRECATEDEXT FXMemoryException(const FXchar *msg)
 		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, 0) { }
 };
 #define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
@@ -677,7 +677,7 @@ class FXEXCEPTIONAPI(FXAPI) FXWindowException : public FXResourceException
 {
 public:
 	//! \deprecated For backward code compatibility only
-	FXWindowException(const FXchar *msg)
+	FXDEPRECATEDEXT FXWindowException(const FXchar *msg)
 		: FXResourceException(0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFATAL) { }
 };
 
@@ -691,7 +691,7 @@ class FXEXCEPTIONAPI(FXAPI) FXImageException : public FXResourceException
 {
 public:
 	//! \deprecated For backward code compatibility only
-	FXImageException(const FXchar *msg)
+	FXDEPRECATEDEXT FXImageException(const FXchar *msg)
 		: FXResourceException(0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFATAL) { }
 };
 
@@ -705,7 +705,7 @@ class FXEXCEPTIONAPI(FXAPI) FXFontException : public FXResourceException
 {
 public:
 	//! \deprecated For backward code compatibility only
-	FXFontException(const FXchar *msg)
+	FXDEPRECATEDEXT FXFontException(const FXchar *msg)
 		: FXResourceException(0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFATAL) { }
 };
 

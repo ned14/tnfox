@@ -34,26 +34,26 @@ namespace FX {
 * Open library with given name, returning handle to the
 * library, or NULL if the operation failed.
 */
-extern FXAPI void* fxdllOpen(const FXchar *dllname);
+extern FXAPI FXDEPRECATEDEXT void* fxdllOpen(const FXchar *dllname);
 
 
 /**
 * Close library represented by dllhandle.
 */
-extern FXAPI void fxdllClose(void* dllhandle);
+extern FXAPI FXDEPRECATEDEXT void fxdllClose(void* dllhandle);
 
 
 /**
 * Return address of the symbol in the library represented by
 * dllhandle, or NULL if the operation failed.
 */
-extern FXAPI void* fxdllSymbol(void* dllhandle,const FXchar* dllsymbol);
+extern FXAPI FXDEPRECATEDEXT void* fxdllSymbol(void* dllhandle,const FXchar* dllsymbol);
 
 
 /**
 * Return the string error message when loading dll's.
 */
-extern FXAPI FXString fxdllError();
+extern FXAPI FXDEPRECATEDEXT FXString fxdllError();
 
 
 }

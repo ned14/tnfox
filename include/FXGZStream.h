@@ -40,7 +40,7 @@ class FXAPI FXGZFileStream : public FXStream {
 public:
 
   /// Create GZIP compressed file stream
-  FXGZFileStream(const FXObject* cont=NULL);
+  FXDEPRECATEDEXT FXGZFileStream(const FXObject* cont=NULL);
 
   /// Open file stream
   FXbool open(const FXString& filename,FXStreamDirection save_or_load,unsigned long size=8192);

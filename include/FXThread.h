@@ -583,7 +583,7 @@ public:
 	}
 	/*! \overload
 	\deprecated For FOX compatibility only */
-	FXFORCEINLINE void lock() { relock(); }
+	FXFORCEINLINE FXDEPRECATEDEXT void lock() { relock(); }
 	//! Returns true if when during a read-to-write lock transition the lock was lost
 	FXFORCEINLINE bool lockLost() const { return locklost; }
 	FXFORCEINLINE ~FXMtxHold() { unlock(); }
@@ -968,7 +968,7 @@ public:
 	bool wait(FXuint time=FXINFINITE);
 	/*! \overload
 	\deprecated For FOX compatibility only */
-	FXbool join() { return wait(); }
+	FXDEPRECATEDEXT FXbool join() { return wait(); }
 	/*! \param waitTillStarted True if you want the call to wait until the thread is running before returning
 
 	Call this to start the separate parallel execution of this thread object from its run(). Remember
@@ -983,9 +983,9 @@ public:
 	bool running () const  throw(){ return isRunning; }
 	/*! \overload
 	\deprecated For FOX compatibility only */
-	FXbool isrunning() const { return running(); }
+	FXDEPRECATEDEXT FXbool isrunning() const { return running(); }
 	//! \deprecated For FOX compatibility only
-	FXbool iscurrent() const { return FXThread::current()==this; }
+	FXDEPRECATEDEXT FXbool iscurrent() const { return FXThread::current()==this; }
 	//! Returns true if the thread is in the process of finishing (in its cleanup handler)
 	bool inCleanup() const  throw(){ return isInCleanup; }
 	//! Returns true if this object is valid (ie; not deleted)
@@ -1004,7 +1004,7 @@ public:
 	void requestTermination();
 	/*! \overload
 	\deprecated For FOX compatibility only */
-	FXbool cancel() { requestTermination(); return TRUE; }
+	FXDEPRECATEDEXT FXbool cancel() { requestTermination(); return TRUE; }
 	//! Returns a unique number identifying this thread within this kernel
 	static FXulong id() throw();
 	//! Returns a unique number identifying the thread represented by this instance

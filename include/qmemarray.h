@@ -126,17 +126,17 @@ public:
 		return true;
 	}
 	//! \deprecated For Qt compatibility only
-	void detach() { }
+	FXDEPRECATEDEXT void detach() { }
 	//! \deprecated For Qt compatibility only
-	QMemArray<type> copy() const { return *this; }
+	FXDEPRECATEDEXT QMemArray<type> copy() const { return *this; }
 	//! \deprecated For Qt compatibility only
-	QMemArray<type> &assign(const QMemArray<type> &o) { std::vector<type>::operator=(o); return *this; }
+	FXDEPRECATEDEXT QMemArray<type> &assign(const QMemArray<type> &o) { std::vector<type>::operator=(o); return *this; }
 	//! \overload
-	QMemArray<type> &assign(const type *a, uint n) { return setRawData(a, n); }
+	FXDEPRECATEDEXT QMemArray<type> &assign(const type *a, uint n) { return setRawData(a, n); }
 	//! \deprecated For Qt compatibility only
-	QMemArray<type> &duplicate(const QMemArray<type> &o) { std::vector<type>::operator=(o); return *this; }
+	FXDEPRECATEDEXT QMemArray<type> &duplicate(const QMemArray<type> &o) { std::vector<type>::operator=(o); return *this; }
 	//! \overload
-	QMemArray<type> &duplicate(const type *a, uint n) { return setRawData(a, n); }
+	FXDEPRECATEDEXT QMemArray<type> &duplicate(const type *a, uint n) { return setRawData(a, n); }
 	/*! Sets QMemArray<> to use an external array. Note that not all methods are implemented for this
 	(see the header file). Note also that like Qt's version, you must not resize or reassign the array
 	when in this state. Failure to call resetRawData() before destruction causes \c delete on the data.

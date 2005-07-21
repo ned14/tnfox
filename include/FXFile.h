@@ -172,7 +172,7 @@ public:
 	/*! Return the home directory for a given user.
 	\deprecated This call doesn't work correctly, use FX::FXACLEntity::homeDirectory()
 	instead */
-	static FXString  getUserDirectory(const FXString& user);
+	static FXDEPRECATEDEXT FXString  getUserDirectory(const FXString& user);
 
 	/// Return temporary directory.
 	static FXString  getTempDirectory();

@@ -154,7 +154,7 @@ public:
   //! Sets the i/o device this stream is using
   void setDevice(FXIODevice *dev);
   //! \deprecated For Qt compatibility only
-  void unsetDevice() { setDevice(0); }
+  FXDEPRECATEDEXT void unsetDevice() { setDevice(0); }
   //! Returns true if there is no more data to be read
   bool atEnd() const;
   enum ByteOrder
@@ -168,13 +168,13 @@ public:
   void setByteOrder(int b) { swap=(b==BigEndian) ? !FOX_BIGENDIAN : FOX_BIGENDIAN; }
 
   //! \deprecated For Qt compatibility only
-  FXStream &readBytes(char *&s, FXuint &l);
+  FXDEPRECATEDEXT FXStream &readBytes(char *&s, FXuint &l);
   //! Reads preformatted byte data into the specified buffer
   FXStream &readRawBytes(char *buffer, FXuval len);
   //! \overload
   FXStream &readRawBytes(FXuchar *buffer, FXuval len) { return readRawBytes((char *) buffer, len); }
   //! \deprecated For Qt compatibility only
-  FXStream &writeBytes(const char *s, FXuint l);
+  FXDEPRECATEDEXT FXStream &writeBytes(const char *s, FXuint l);
   //! Writes preformatted byte data from the specified buffer
   FXStream &writeRawBytes(const char *buffer, FXuval len);
   //! \overload
@@ -192,7 +192,7 @@ public:
   * but which may be referenced by other objects.  These references will be
   * properly saved and restored.
   */
-  FXStream(const FXObject* cont);
+  FXDEPRECATEDEXT FXStream(const FXObject* cont);
 
   /** \deprecated For FOX compatibility only
 
@@ -201,37 +201,37 @@ public:
   * If data is not NULL, it is expected to point to an external data buffer
   * of length size; otherwise stream will use an internally managed buffer.
   */
-  FXbool open(FXStreamDirection save_or_load,unsigned long size=8192,FXuchar* data=NULL);
+  FXDEPRECATEDEXT FXbool open(FXStreamDirection save_or_load,unsigned long size=8192,FXuchar* data=NULL);
 
   /** \deprecated For FOX compatibility only
 
   Close; return TRUE if OK
   */
-  virtual FXbool close();
+  virtual FXDEPRECATEDEXT FXbool close();
 
   /** \deprecated For FOX compatibility only
   
   Flush buffer
   */
-  virtual FXbool flush();
+  virtual FXDEPRECATEDEXT FXbool flush();
 
   /** \deprecated For FOX compatibility only
 
   Get available buffer space
   */
-  unsigned long getSpace() const;
+  FXDEPRECATEDEXT unsigned long getSpace() const;
 
   /** \deprecated For FOX compatibility only
 
   Set available buffer space
   */
-  void setSpace(unsigned long sp);
+  FXDEPRECATEDEXT void setSpace(unsigned long sp);
 
   /** \deprecated For FOX compatibility only
   
   Get status code
   */
-  FXStreamStatus status() const { return code; }
+  FXDEPRECATEDEXT FXStreamStatus status() const { return code; }
 
   /// Return TRUE if at end of file or error
   FXbool eof() const { return atEnd(); }
@@ -240,19 +240,19 @@ public:
   
   Set status code
   */
-  void setError(FXStreamStatus err);
+  FXDEPRECATEDEXT void setError(FXStreamStatus err);
 
   /** \deprecated For FOX compatibility only
   
   Obtain stream direction
   */
-  FXStreamDirection direction() const { return dir; }
+  FXDEPRECATEDEXT FXStreamDirection direction() const { return dir; }
 
   /** \deprecated For FOX compatibility only
   
   Get parent object
   */
-  const FXObject* container() const { return parent; }
+  FXDEPRECATEDEXT const FXObject* container() const { return parent; }
 
   /// Get position
   FXfval position() const;
