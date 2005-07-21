@@ -53,7 +53,7 @@
 #define FXERRHWIN(exp)								{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(GetLastError(), 0); }
 #define FXERRHWINFN(exp, filename)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWINFN(GetLastError(), 0, filename); }
 #define FXERRHWIN2(exp, getlasterror)				{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWIN(getlasterror, 0); }
-#define FXERRHWIN2(exp, getlasterror, filename)		{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWINFN(getlasterror, 0, filename); }
+#define FXERRHWIN2FN(exp, getlasterror, filename)	{ DWORD __errcode=(DWORD)(exp); if(!__errcode) FXERRGWINFN(getlasterror, 0, filename); }
 #endif
 #define FXERRGCOM(code, flags) { FXERRMAKE(e, tr("COM error 0x%1 occurred").arg(code), FXEXCEPTION_OSSPECIFIC, flags); \
 	FXERRH_THROW(e); }
