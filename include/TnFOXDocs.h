@@ -143,25 +143,25 @@ C++ to describe itself.
 \section diffs Detailed list of enhancements
 <ol>
 <li><b>Qt-like automated human language translation</b><br>
-When combined with FX::FXTrans, human-language translation is now easy as pie! Simply wrap all of your
+When combined with FX::QTrans, human-language translation is now easy as pie! Simply wrap all of your
 user-visible string literals with <tt>tr()</tt>, extract into a text file using the provided
 utility CppMunge.py and add your translations. You can then choose to embed the file, or place it next
 to the executable. You can even place translations within DLL's and arbitrarily load and unload them!
-\note Until FOX finalises support for Unicode, FXTrans is limited to Latin-1.
+\note Until FOX finalises support for Unicode, QTrans is limited to Latin-1.
 
-<li><b>FX::FXStream now works with a FX::FXIODevice & 64 bit file i/o is now used throughout</b><br>
+<li><b>FX::FXStream now works with a FX::QIODevice & 64 bit file i/o is now used throughout</b><br>
 A FXfval now holds a file pointer or size, ready for the transition to 128 bit disc i/o around
-2025. The i/o structure is now based around a Qt-compatible FXIODevice which is much much
+2025. The i/o structure is now based around a Qt-compatible QIODevice which is much much
 more flexible than the old FOX structure and for backwards compatibility
 FOX's FX::FXFileStream, FX::FXMemoryStream & FX::FXGZStream have been rewritten to use
-FX::FXFile + FX::FXStream, FX::FXBuffer + FX::FXStream & FX::FXGZipDevice + FX::FXStream
+FX::FXFile + FX::FXStream, FX::QBuffer + FX::FXStream & FX::QGZipDevice + FX::FXStream
 combinations respectively (note that their use in new code is deprecated).
 
 <li><b>Enhanced i/o facilities</b><br>
-FX::FXPipe provides a feature-rich portable named pipe across all platforms and 
-FX::FXLocalPipe provides an intra-process pipe. FX::FXBlkSocket and
-FX::FXHostAddress provide Qt-compatible network access including full IPv4 and IPv6 support.
-FX::FXGZipDevice provides a transparent gzip format compressor and decompressor which uses LZW
+FX::QPipe provides a feature-rich portable named pipe across all platforms and 
+FX::QLocalPipe provides an intra-process pipe. FX::QBlkSocket and
+FX::QHostAddress provide Qt-compatible network access including full IPv4 and IPv6 support.
+FX::QGZipDevice provides a transparent gzip format compressor and decompressor which uses LZW
 compression to substantially decrease data size.
 
 <li><b>Improved User Interface facilities</b><br>
@@ -177,7 +177,7 @@ and \c -fxscreensize. There are a number of convenient implementations of handed
 such as FX::FXExceptionDialog, FX::FXHandedDialog, FX::FXHandedPopup and FX::FXHandedMsgBox.
 
 <li><b>Full strength encryption facilities</b><br>
-FX::FXSSLDevice is built upon the excellent OpenSSL library and provides integrated full strength
+FX::QSSLDevice is built upon the excellent OpenSSL library and provides integrated full strength
 encryption facilities which can work with any of the other i/o devices in TnFOX. Both
 communications and file data may be encrypted with any supported cipher and key length.
 File data can be encrypted by AES or Blowfish symmetric encryption and also by RSA
@@ -186,12 +186,12 @@ FX::FXSSLPKey is a container for asymmetric keys and both can be loaded and save
 compatibility facilities with other programs through X509/PEM file support. Furthermore, TnFOX provides a
 cross-platform entropy gatherer (FX::Secure::Randomness) which ensures up to 8192 bits of
 randomness is available plus a number of cryptographically useful routines such
-as FX::FXIODevice::shredData().
+as FX::QIODevice::shredData().
 
 <li><b>Superior provision of host OS facilities portably</b><br>
 FX::FXACL and FX::FXACLEntity provide a portable method of setting detailed access
 control list based security on those platforms which support it and a reasonable
-emulation for everything else. FX::FXDir and FX::FXFileInfo are mostly Qt compatible classes
+emulation for everything else. FX::QDir and FX::QFileInfo are mostly Qt compatible classes
 which permit easy enumeration and traversal of directories as well as obtaining detailed
 information about files. FX::FXFSMonitor permits portable monitoring of directories
 for changes.
@@ -225,14 +225,14 @@ transaction rollbacks
 support for MSVC's CRT debug library's memory leak checking.
 
 <li><b>Multithreading</b><br>
-FX::FXAtomicInt, FX::FXWaitCondition, FX::FXMutex, FX::FXShrdMemMutex, FX::FXRWMutex, FX::FXMtxHold and
+FX::FXAtomicInt, FX::QWaitCondition, FX::QMutex, FX::FXShrdMemMutex, FX::QRWMutex, FX::FXMtxHold and
 FX::FXZeroedWait all are written for the optimum in efficiency and features.
-FX::FXThreadLocalStorage provides a portable and C++ friendly interface to host OS TLS
+FX::QThreadLocalStorage provides a portable and C++ friendly interface to host OS TLS
 facilities. Even on platforms without POSIX threads support, they can
 be compiled into placeholder functionality so that the rest of the library remains useful.
-FX::FXThread provides a wealth of features, including cleanup handlers, self-destruction, names,
+FX::QThread provides a wealth of features, including cleanup handlers, self-destruction, names,
 parent-child relationships, portable priority, exit codes and per-thread atexit() handlers.
-FX::FXThreadPool provides pools of worker threads capable of accepting jobs (FX::Generic::BoundFunctor)
+FX::QThreadPool provides pools of worker threads capable of accepting jobs (FX::Generic::BoundFunctor)
 whether for immediate execution or for delayed (timed) execution.
 
 <li><b>Generic programming support</b><br>
@@ -359,10 +359,10 @@ FreeBSD questions:
 
 	Internal linkage:
 	\li FX::FXACL, FX::FXACLEntity, FX::FXACLIterator
-	\li FX::FXBlkSocket, FX::FXBuffer, FX::FXFile, FX::FXGZipDevice, FX::FXLocalPipe,
-	FX::FXMemMap, FX::FXPipe, FX::FXSSLDevice
-	\li FX::FXDir, FX::FXFileInfo, FX::FXFSMonitor
-	\li FX::FXHostAddress, FX::FXNetwork
+	\li FX::QBlkSocket, FX::QBuffer, FX::FXFile, FX::QGZipDevice, FX::QLocalPipe,
+	FX::QMemMap, FX::QPipe, FX::QSSLDevice
+	\li FX::QDir, FX::QFileInfo, FX::FXFSMonitor
+	\li FX::QHostAddress, FX::FXNetwork
 	\li FX::FXRegistry
 
 	Not compiled:
@@ -391,13 +391,13 @@ TestDeviceIO with 128Mb test file:
 
 Reading test file and writing into a FXFile ...
 That took 3.969000 seconds, average speed=33023Kb/sec
-Reading test file and writing into a FXMemMap ...
+Reading test file and writing into a QMemMap ...
 That took 1.125000 seconds, average speed=116508Kb/sec
-Reading test file and writing into a FXBuffer ...
+Reading test file and writing into a QBuffer ...
 That took 0.812000 seconds, average speed=161418Kb/sec
-Writing lots of data to a FXLocalPipe ...
+Writing lots of data to a QLocalPipe ...
 That took 1.203000 seconds, average speed=108954Kb/sec
-Writing lots of data to a FXPipe ...
+Writing lots of data to a QPipe ...
 That took 1.328000 seconds, average speed=98698Kb/sec
 Writing lots of data to a FXSocket ...
 That took 1.609000 seconds, average speed=81461Kb/sec
@@ -409,13 +409,13 @@ TestSSL with 128Mb test file:
 Reading test file and writing into a FXFile ...
 Encryption took 1.312000 seconds, average speed=12487Kb/sec
 Decryption took 0.782000 seconds, average speed=20951Kb/sec
-Reading test file and writing into a FXMemMap ...
+Reading test file and writing into a QMemMap ...
 Encryption took 0.860000 seconds, average speed=19051Kb/sec
 Decryption took 0.906000 seconds, average speed=18083Kb/sec
-Reading test file and writing into a FXBuffer ...
+Reading test file and writing into a QBuffer ...
 Encryption took 0.594000 seconds, average speed=27582Kb/sec
 Decryption took 0.766000 seconds, average speed=21389Kb/sec
-Writing lots of data to a FXPipe ...
+Writing lots of data to a QPipe ...
 SSL used ADH-AES256-SHA at 256 bits (ADH-AES256-SHA          SSLv3 Kx=DH       Au=None Enc=AES(256)  Mac=SHA1)
 That took 0.875000 seconds, average speed=18724Kb/sec
 Writing lots of data to a FXSocket ...
@@ -781,7 +781,7 @@ an immediate fatal exit).
 \li Python code cannot be cancelled via a POSIX thread cancellation
 (it would leave reference counts dangling) and so thread cancellation
 is automatically disabled during calls into python code. This means
-you must take care to call FXThread::checkForTerminate() which if it
+you must take care to call QThread::checkForTerminate() which if it
 returns true, raise a SystemExit exception or something (SystemExit
 is ignored by the default python run() call code).
 
@@ -817,12 +817,12 @@ wants to before FOX gets a chance.
 
 Finally, there is the issue of lifetime management. Boost.Python
 allows you to tie the lifetime of things together to prevent
-dangling references eg; you get the address() from a FXBlkSocket
-and delete the FXBlkSocket - now the address is clearly no longer
+dangling references eg; you get the address() from a QBlkSocket
+and delete the QBlkSocket - now the address is clearly no longer
 valid unless you made a copy of it which is exactly what has been
 enforced.
 
-As it happens, actually in this case as a FXHostAddress is copyable,
+As it happens, actually in this case as a QHostAddress is copyable,
 a copy is made silently for you. But the point remains valid -
 wherever I have had a choice, I erred on the side of caution and
 chose anything returned (all reference and pointer types - values are
@@ -1001,11 +1001,11 @@ something like this:
 \code
 "Device reopen has different mode":
 	ES: "El modo de operacion no es iqual que antes"
-	srcfile="FXBuffer.cxx":class="FXBuffer":
+	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="FXFile.cxx":class="FXFile":
 		ES: up
-	srcfile="FXGZipDevice.cxx":class="FXGZipDevice":
+	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
 \endcode
 By convention, all source files and classes are listed in the translation
@@ -1893,10 +1893,10 @@ as well as the documentation for FX::FXException.
 Managing access control is tough to do across systems portably as they vary so
 much. Yet TnFOX's FX::FXACL and FX::FXACLEntity enable most of the native access control
 security features available on both Windows NT and POSIX Unix for files (FX::FXFile),
-directories, named pipes (FX::FXPipe) and memory mapped sections (FX::FXMemMap).
+directories, named pipes (FX::QPipe) and memory mapped sections (FX::QMemMap).
 
 Via the OpenSSL library, TnFOX also provides a range of strong encryption
-facilities (FX::FXSSLDevice), strong public and private key manipulation
+facilities (FX::QSSLDevice), strong public and private key manipulation
 (FX::FXSSLPKey, FX::FXSSLKey) as well as a portable high-quality entropy gatherer
 (FX::Secure::Randomness) and fast cryptographically secure hashing facilities
 (FX::Secure::TigerHash).
@@ -1905,7 +1905,7 @@ Sensitive data when on disc should be accessed via i/o devices with the \c
 IO_ShredTruncate flag set as the open mode - this shreds any data truncated off
 the file, thus ensuring data does not leak into the disc drive's free space.
 Similarly if deleting a sensitive data file you should open it, \c truncate(0)
-it, and close before deletion. You can manually shred data using FX::FXIODevice::shredData().
+it, and close before deletion. You can manually shred data using FX::QIODevice::shredData().
 
 Sensitive data when in memory should be allocated from the FX::Secure namespace
 which provides its own \c new, \c delete, \c malloc() and \c free() implementations
@@ -1942,11 +1942,11 @@ More about Qt can be found at http://www.trolltech.com/
 Firstly, there exist API compatible classes for the following Qt classes:
 
 <table>
-<tr><td>FX::FXBuffer (QBuffer)		<td>FX::FXBlkSocket (QSocketDevice)	<td>FX::FXDir (QDir)
-<tr><td>FX::FXFile (QFile)			<td>FX::FXFileInfo (QFileInfo)	<td>FX::FXHostAddress (QHostAddress)
-<tr><td>FX::FXIODevice (QIODevice)	<td>FX::FXMutex (QMutex)		<td>FX::FXStream (QDataStream)
-<tr><td>FX::FXString (QString)		<td>FX::FXThread (QThread)		<td>FX::FXTrans (tr())
-<tr><td>FX::FXWaitCondition (QWaitCondition)<td>FX::QByteArray		<td>FX::QCache
+<tr><td>FX::QBuffer (QBuffer)		<td>FX::QBlkSocket (QSocketDevice)	<td>FX::QDir (QDir)
+<tr><td>FX::FXFile (QFile)			<td>FX::QFileInfo (QFileInfo)	<td>FX::QHostAddress (QHostAddress)
+<tr><td>FX::QIODevice (QIODevice)	<td>FX::QMutex (QMutex)		<td>FX::FXStream (QDataStream)
+<tr><td>FX::FXString (QString)		<td>FX::QThread (QThread)		<td>FX::QTrans (tr())
+<tr><td>FX::QWaitCondition (QWaitCondition)<td>FX::QByteArray		<td>FX::QCache
 <tr><td>FX::QCacheIterator			<td>FX::QDict					<td>FX::QDictIterator
 <tr><td>FX::QFileInfoList			<td>FX::QIntCache				<td>FX::QIntCacheIterator
 <tr><td>FX::QIntDict				<td>FX::QIntDictIterator		<td>FX::QPtrList
@@ -2017,7 +2017,7 @@ doesn't know any better and so neither should your code.
 \li FOX's threading support was added substantially after TnFOX's and so uses some
 of the same API names for different things. I've done what I can to ease your
 journey here, but you'll just have to modify your code as the classes do not have
-a one to one relationship (eg; FX::FXWaitCondition simply does not behave like FOX's
+a one to one relationship (eg; FX::QWaitCondition simply does not behave like FOX's
 FX::FXCondition). Similarly, FOX has
 gone with a process-wide lock to enable concurrent GUI usage by multiple threads
 despite my pleas on foxgui-users to not repeat a mistake evident in every
@@ -2079,13 +2079,13 @@ These trap any exceptions thrown and show a FX::FXExceptionDialog.
 Summary of what is not supported from FOX:
 \li Some FX::FXStream methods. You'll never normally notice these
 \li The application wide mutex. It's a bad idea anyway.
-\li FXCondition (rewrite your code to use FX::FXWaitCondition, it's more
+\li FXCondition (rewrite your code to use FX::QWaitCondition, it's more
 useful anyway)
 \li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
-FX::FXWaitCondition. Also consider FX::FXZeroedWait)
-\li FXMemMap (rewrite your code to use TnFOX's FX::FXMemMap, it's also superior
+FX::QWaitCondition. Also consider FX::FXZeroedWait)
+\li QMemMap (rewrite your code to use TnFOX's FX::QMemMap, it's also superior
 anyway)
-\li There are some API thunks for FX::FXMutex, FX::FXMutexLock and FX::FXThread.
+\li There are some API thunks for FX::QMutex, FX::QMutexLock and FX::QThread.
 But you'll have to try and see for yourself
 */
 
@@ -2142,7 +2142,7 @@ learn it), please consult the book "Modern C++ Design" by Andrei Alexandrescu.
 TnFOX comes with a number of inbuilt debugging and stress-testing facilities:
 \li FX::FXException::setGlobalErrorCreationCount() allows you to have random
 exceptions fire, thus letting you test that the stack unwinds correctly.
-\li FX::FXMutex::setMutexDebugYield() allows you to have all mutex locks
+\li FX::QMutex::setMutexDebugYield() allows you to have all mutex locks
 immediately yield the processor, thus helping any code altering data without
 holding a suitable lock to become more evident.
 \li FX::FXProcess::overrideFreeResources() lets you override memory, processor
@@ -2596,27 +2596,27 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXProcess, provides assorted information about the running process
 <li>FX::FXRegistry, either the Windows or FOX registry
 <li>FX::FXStream, endian-neutral data (de)serialiser
-<li>FX::FXTrans, automatic human language translation
+<li>FX::QTrans, automatic human language translation
 
 <li>FX::FXIPCChannel, an inter process communication channel
 <li>FX::FXIPCMsg, an inter process communication message
 <li>FX::FXIPCMsgChunk, an inter process message block
 <li>FX::FXIPCMsgRegistry, an inter process message namespace
 
-<li>FX::FXDir, provides detailed information about a directory
+<li>FX::QDir, provides detailed information about a directory
 <li>FX::FXFileAssoc, registers information about a file extension (eg; icon, MIME type)
-<li>FX::FXFileInfo, provides detailed information about a file
+<li>FX::QFileInfo, provides detailed information about a file
 <li>FX::FXFSMonitor, monitors a path for changes
 
-<li>FX::FXHostAddress, an IPv4 or IPv6 address
+<li>FX::QHostAddress, an IPv4 or IPv6 address
 <li>FX::FXNetwork, miscellaneous networking facilities such as name lookups
 
-<li>FX::FXThread, a thread of execution
-<li>FX::FXMutex, a mutual exclusion object
-<li>FX::FXMtxHold, a holder of a FX::FXMutex
-<li>FX::FXWaitCondition, an OS/2 style event object
+<li>FX::QThread, a thread of execution
+<li>FX::QMutex, a mutual exclusion object
+<li>FX::FXMtxHold, a holder of a FX::QMutex
+<li>FX::QWaitCondition, an OS/2 style event object
 <li>FX::FXZeroedWait, an event which signals when its count becomes zero
-<li>FX::FXThreadPool, a pool of worker threads
+<li>FX::QThreadPool, a pool of worker threads
 
 <li>FX::FXPython, miscellaneous python-related facilities
 <li>FX::FXPythonInterp, a python interpreter instance

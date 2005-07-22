@@ -25,7 +25,7 @@
 #define FXOBJECT_H
 
 #include "FXStream.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 
 namespace FX {
 
@@ -189,7 +189,7 @@ public:
 
   /// Returns a human translated version of the text to the locale language
   /// (warning: uses a virtual method call, so can't use before construction)
-  FXTransString tr(const char *text, const char *hint=0);
+  QTransString tr(const char *text, const char *hint=0);
 
   /// Returns the python object representing this instance (if created in python)
   virtual void *getPythonObject() const { return 0; }

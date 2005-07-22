@@ -36,7 +36,7 @@ namespace FX {
 */
 template<class type> class QMemArray;
 class FXMemoryPool;
-class FXThread;
+class QThread;
 
 #if defined(_MSC_VER) && _MSC_VER>=1400
 #define FXMALLOCATTR __declspec(restrict)
@@ -162,7 +162,7 @@ For simplicity and virtual address space exhaustion considerations, if you
 create a custom heap one arena only is ever allocated to it. Therefore if you
 have multiple threads working with a custom heap, performance can nose-dive
 quickly - you can of course do as ptmalloc2 does and store a FXMemoryPool
-pointer in a FX::FXThreadLocalStorage (eg; current()).
+pointer in a FX::QThreadLocalStorage (eg; current()).
 
 <h3>Usage:</h3>
 You are guaranteed though that irrespective of which memory pool you allocate from,
@@ -222,7 +222,7 @@ public:
 	and associate the pool with a thread whereby when that thread exits, the pool will
 	be deleted. Setting \em lazydeleted means the pool doesn't really die after destruction
 	until the last block is freed from it. */
-	FXMemoryPool(FXuval maximum=(FXuval)-1, const char *identifier=0, FXThread *owner=0, bool lazydeleted=false);
+	FXMemoryPool(FXuval maximum=(FXuval)-1, const char *identifier=0, QThread *owner=0, bool lazydeleted=false);
 	~FXMemoryPool();
 	//! Returns the size of the pool
 	FXuval size() const throw();
@@ -268,7 +268,7 @@ public:
 	struct MemoryPoolInfo
 	{
 		bool deleted;			//!< Pool is pending deletion
-		FXThread *owner;		//!< Owning thread (=0 for process-wide)
+		QThread *owner;		//!< Owning thread (=0 for process-wide)
 		const char *identifier;	//!< Pool identifier
 		FXuval maximum;			//!< Maximum size of this pool in bytes
 		FXuval allocated;		//!< Allocated bytes right now

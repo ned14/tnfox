@@ -168,8 +168,8 @@ namespace Pol {
 	protected:
 		struct ReferrerEntry { };
 		unknownReferrers() { }
-		void int_addReferrer(FXRefingObjectBase *r, FXMutex *lock) { }
-		void int_removeReferrer(FXRefingObjectBase *r, FXMutex *lock) { }
+		void int_addReferrer(FXRefingObjectBase *r, QMutex *lock) { }
+		void int_removeReferrer(FXRefingObjectBase *r, QMutex *lock) { }
 		const QValueList<ReferrerEntry> *int_referrers() const { return 0; }
 	};
 #ifdef _MSC_VER
@@ -187,17 +187,17 @@ namespace Pol {
 		{
 			FXRefingObjectBase *ref;
 			FXulong threadId;
-			ReferrerEntry(FXRefingObjectBase *_ref) : ref(_ref), threadId(FXThread::id()) { }
+			ReferrerEntry(FXRefingObjectBase *_ref) : ref(_ref), threadId(QThread::id()) { }
 			bool operator==(const ReferrerEntry &o) const throw() { return ref==o.ref; }
 		};
 		QValueList<ReferrerEntry> referrers;
 		knowReferrers() { }
-		void int_addReferrer(FXRefingObjectBase *r, FXMutex *lock)
+		void int_addReferrer(FXRefingObjectBase *r, QMutex *lock)
 		{
 			FXMtxHold h(lock, FXMtxHold::AcceptNullMutex);
 			referrers.push_back(ReferrerEntry(r));
 		}
-		void int_removeReferrer(FXRefingObjectBase *r, FXMutex *lock)
+		void int_removeReferrer(FXRefingObjectBase *r, QMutex *lock)
 		{
 			FXMtxHold h(lock, FXMtxHold::AcceptNullMutex);
 			referrers.remove(ReferrerEntry(r));
@@ -285,9 +285,9 @@ namespace FXRefingObjectImpl {
 		inline void delRef();
 	};
 	template<class type> struct dataHolder
-		: public dataHolderI<Generic::convertible<FXMutex &, type &>::value, type>
+		: public dataHolderI<Generic::convertible<QMutex &, type &>::value, type>
 	{
-		dataHolder(type *p) : dataHolderI<Generic::convertible<FXMutex &, type &>::value, type>(p) { }
+		dataHolder(type *p) : dataHolderI<Generic::convertible<QMutex &, type &>::value, type>(p) { }
 	};
 	template<bool hasLastUsed, class type> class lastUsedI : protected dataHolder<type>
 	{
@@ -380,13 +380,13 @@ In v0.6 of TnFOX the old implementation of this taken from Tornado was replaced
 with a much superior version based on FX::Generic::ptr. This has enabled a much
 greater degree of self-determination - now FXRefingObject configures itself
 automatically according to how you configure its FXRefedObject - you no longer
-need to reproduce the policies. Also when \em type inherits a FX::FXMutex that
+need to reproduce the policies. Also when \em type inherits a FX::QMutex that
 mutex is automatically locked around modifications to the referrers list if
 enabled.
 
 The basic form is as follows:
 \code
-class Foo : public FXRefedObject<FXAtomicInt>, public FXMutex
+class Foo : public FXRefedObject<FXAtomicInt>, public QMutex
 {
    bool foo();
 };

@@ -20,11 +20,11 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#include "FXGZipDevice.h"
+#include "QGZipDevice.h"
 #include "FXException.h"
-#include "FXBuffer.h"
-#include "FXThread.h"
-#include "FXTrans.h"
+#include "QBuffer.h"
+#include "QThread.h"
+#include "QTrans.h"
 #include <qcstring.h>
 #include "FXErrCodes.h"
 #include "FXMemDbg.h"
@@ -71,7 +71,7 @@ typedef struct gz_stream {
     z_stream stream;
     int      z_err;   /* error code for last stream operation */
     int      z_eof;   /* set if end of input file */
-	FX::FXIODevice *file; /* .gz file */
+	FX::QIODevice *file; /* .gz file */
     Byte     *inbuf;  /* input buffer */
     Byte     *outbuf; /* output buffer */
     uLong    crc;     /* crc32 of uncompressed data */
@@ -170,7 +170,7 @@ static int destroy (gz_stream *s)
     return err;
 }
 
-static gzFile gz_open (FX::FXIODevice *fd, bool write)
+static gzFile gz_open (FX::QIODevice *fd, bool write)
 {
     int err;
     int level = Z_DEFAULT_COMPRESSION; /* compression level */
@@ -399,7 +399,7 @@ static int do_flush (gzFile file, int flush)
     return  s->z_err == Z_STREAM_END ? Z_OK : s->z_err;
 }
 
-static void putLong (FX::FXIODevice *file, uLong x)
+static void putLong (FX::QIODevice *file, uLong x)
 {
     int n;
     for (n = 0; n < 4; n++) {
@@ -430,22 +430,22 @@ static int gz_close (gzFile file)
 namespace FX {
 
 
-struct FXDLLLOCAL FXGZipDevicePrivate : public FXMutex
+struct FXDLLLOCAL QGZipDevicePrivate : public QMutex
 {
-	FXIODevice *src;
-	FXBuffer uncomp;
+	QIODevice *src;
+	QBuffer uncomp;
 #ifdef HAVE_ZLIB_H
 	gzFile inh, outh;
 #endif
-	FXGZipDevicePrivate(FXIODevice *_src) : src(_src), FXMutex() { }
+	QGZipDevicePrivate(QIODevice *_src) : src(_src), QMutex() { }
 };
 
-FXGZipDevice::FXGZipDevice(FXIODevice *src) : p(0), FXIODevice()
+QGZipDevice::QGZipDevice(QIODevice *src) : p(0), QIODevice()
 {
-	FXERRHM(p=new FXGZipDevicePrivate(src));
+	FXERRHM(p=new QGZipDevicePrivate(src));
 }
 
-FXGZipDevice::~FXGZipDevice()
+QGZipDevice::~QGZipDevice()
 { FXEXCEPTIONDESTRUCT1 {
 	if(p)
 	{
@@ -454,22 +454,22 @@ FXGZipDevice::~FXGZipDevice()
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
-FXIODevice *FXGZipDevice::GZData() const
+QIODevice *QGZipDevice::GZData() const
 {
 	return p->src;
 }
 
-void FXGZipDevice::setGZData(FXIODevice *src)
+void QGZipDevice::setGZData(QIODevice *src)
 {
 	p->src=src;
 }
 
-bool FXGZipDevice::open(FXuint mode)
+bool QGZipDevice::open(FXuint mode)
 {
 	FXMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXGZipDevice", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QGZipDevice", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -513,7 +513,7 @@ bool FXGZipDevice::open(FXuint mode)
 	return true;
 }
 
-void FXGZipDevice::close()
+void QGZipDevice::close()
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -527,7 +527,7 @@ void FXGZipDevice::close()
 #endif
 }
 
-void FXGZipDevice::flush()
+void QGZipDevice::flush()
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -558,7 +558,7 @@ void FXGZipDevice::flush()
 #endif
 }
 
-FXfval FXGZipDevice::size() const
+FXfval QGZipDevice::size() const
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -568,7 +568,7 @@ FXfval FXGZipDevice::size() const
 #endif
 }
 
-void FXGZipDevice::truncate(FXfval size)
+void QGZipDevice::truncate(FXfval size)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -578,7 +578,7 @@ void FXGZipDevice::truncate(FXfval size)
 #endif
 }
 
-FXfval FXGZipDevice::at() const
+FXfval QGZipDevice::at() const
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -588,7 +588,7 @@ FXfval FXGZipDevice::at() const
 #endif
 }
 
-bool FXGZipDevice::at(FXfval newpos)
+bool QGZipDevice::at(FXfval newpos)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -598,7 +598,7 @@ bool FXGZipDevice::at(FXfval newpos)
 #endif
 }
 
-bool FXGZipDevice::atEnd() const
+bool QGZipDevice::atEnd() const
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -608,7 +608,7 @@ bool FXGZipDevice::atEnd() const
 #endif
 }
 
-FXuval FXGZipDevice::readBlock(char *data, FXuval maxlen)
+FXuval QGZipDevice::readBlock(char *data, FXuval maxlen)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -618,7 +618,7 @@ FXuval FXGZipDevice::readBlock(char *data, FXuval maxlen)
 #endif
 }
 
-FXuval FXGZipDevice::writeBlock(const char *data, FXuval maxlen)
+FXuval QGZipDevice::writeBlock(const char *data, FXuval maxlen)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -628,7 +628,7 @@ FXuval FXGZipDevice::writeBlock(const char *data, FXuval maxlen)
 #endif
 }
 
-FXuval FXGZipDevice::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
+FXuval QGZipDevice::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -638,7 +638,7 @@ FXuval FXGZipDevice::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 	return 0;
 #endif
 }
-FXuval FXGZipDevice::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
+FXuval QGZipDevice::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -649,7 +649,7 @@ FXuval FXGZipDevice::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 #endif
 }
 
-int FXGZipDevice::getch()
+int QGZipDevice::getch()
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -659,7 +659,7 @@ int FXGZipDevice::getch()
 #endif
 }
 
-int FXGZipDevice::putch(int c)
+int QGZipDevice::putch(int c)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);
@@ -669,7 +669,7 @@ int FXGZipDevice::putch(int c)
 #endif
 }
 
-int FXGZipDevice::ungetch(int c)
+int QGZipDevice::ungetch(int c)
 {
 #ifdef HAVE_ZLIB_H
 	FXMtxHold h(p);

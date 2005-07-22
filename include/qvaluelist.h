@@ -257,13 +257,13 @@ If you have three interdependent lists in the same order and want to sort
 them, usually it's best to consider merging those lists somehow. If that's
 impossible or unwise, then you'll need to sort them all at the same time.
 
-A good example is FX::FXDir which this class was originally written for.
+A good example is FX::QDir which this class was originally written for.
 It maintains a QStringList of directory names and creates the QFileInfoList
 for those same names only on demand as this is an expensive operation (often
 in the order of milliseconds). If however it's already generated, it's
 wasteful to throw them away just because the sort order has changed -
-therefore, FXDir uses this class to sort the string list and if the
-FXFileInfo list is also available, then that too.
+therefore, QDir uses this class to sort the string list and if the
+QFileInfo list is also available, then that too.
 
 Best thing to do is to look at its source (one of the many benefits of
 open source). I should point out that the indirection item list which

@@ -67,7 +67,7 @@ struct FXInput {
 
 
 // Holds the event loop for the calling thread
-static FXThreadLocalStorage<FXEventLoop> myeventloop;
+static QThreadLocalStorage<FXEventLoop> myeventloop;
 // Deletes the same as a thread cleanup
 static void deleteEventLoop(FXEventLoop *el)
 {
@@ -75,38 +75,38 @@ static void deleteEventLoop(FXEventLoop *el)
 }
 
 // Base event loop
-class FXDLLLOCAL EventLoopBase : public FXMutex, public FXEventLoop
+class FXDLLLOCAL EventLoopBase : public QMutex, public FXEventLoop
 {
 	FXDECLARE(EventLoopBase)
-	FXThread *creator;
+	QThread *creator;
 protected:
-	virtual void* makeStaticPtr(void* val) { return new FXThreadLocalStorageBase(val); }
-	virtual void deleteStaticPtr(void* ref) { delete (FXThreadLocalStorageBase *) ref; }
+	virtual void* makeStaticPtr(void* val) { return new QThreadLocalStorageBase(val); }
+	virtual void deleteStaticPtr(void* ref) { delete (QThreadLocalStorageBase *) ref; }
 	virtual void* getStaticPtr(const void* ref) const
 	{
-		FXThreadLocalStorageBase *tls=(FXThreadLocalStorageBase *) ref;
+		QThreadLocalStorageBase *tls=(QThreadLocalStorageBase *) ref;
 		return tls->getPtr();
 	}
 	virtual void setStaticPtr(void* ref,void* val)
 	{
-		FXThreadLocalStorageBase *tls=(FXThreadLocalStorageBase *) ref;
+		QThreadLocalStorageBase *tls=(QThreadLocalStorageBase *) ref;
 		tls->setPtr(val);
 	}
 	virtual void latchLoop()
 	{	// Stop cancellation
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXEventLoop::latchLoop();
 	}
 	virtual void resetLoopLatch()
 	{	// Stop cancellation
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXEventLoop::resetLoopLatch();
 	}
 public:
-	EventLoopBase(TnFXApp *app=NULL) : FXEventLoop(app), creator(FXThread::current()) { }
+	EventLoopBase(TnFXApp *app=NULL) : FXEventLoop(app), creator(QThread::current()) { }
 	void setup() { FXEventLoop::setup(); }
-	virtual void lock() { FXMutex::lock(); }
-	virtual void unlock() { FXMutex::unlock(); }
+	virtual void lock() { QMutex::lock(); }
+	virtual void unlock() { QMutex::unlock(); }
 	virtual FXulong getThreadId() const { return creator->myId(); }
 };
 FXIMPLEMENT(EventLoopBase,FXEventLoop,NULL,0)
@@ -117,7 +117,7 @@ class FXDLLLOCAL EventLoopC : public EventLoopBase
 	friend class EventLoopP;
 	FXDECLARE(EventLoopC)
 protected:
-	FXWaitCondition newevent;
+	QWaitCondition newevent;
 	QValueList<FXRawEvent> events;
 protected:
 #ifndef WIN32
@@ -138,7 +138,7 @@ class FXDLLLOCAL EventLoopP : public EventLoopBase
 	friend class TnFXApp;
 	FXDECLARE(EventLoopP)
 	QPtrList<EventLoopC> eventLoops;
-	FXWaitCondition noEventLoops;
+	QWaitCondition noEventLoops;
 protected:
 	virtual FXbool getNextEventI(FXRawEvent& ev,FXbool blocking);
     virtual FXbool dispatchEvent(FXRawEvent& ev);
@@ -357,10 +357,10 @@ FXEventLoop *TnFXApp::getEventLoop() const
 		{
 			EventLoopC *el;
 			FXERRHM(myeventloop=ml=el=new EventLoopC(const_cast<TnFXApp *>(this)));
-			FXThread::current()->addCleanupCall(Generic::BindFuncN(deleteEventLoop, el), true);
+			QThread::current()->addCleanupCall(Generic::BindFuncN(deleteEventLoop, el), true);
 			el->setup();
 #ifdef DEBUG
-			fxmessage("Created event loop 0x%p in thread %u\n", el, (FXuint) FXThread::id());
+			fxmessage("Created event loop 0x%p in thread %u\n", el, (FXuint) QThread::id());
 #endif
 		}
 	} FXEXCEPTION_FOXCALLING2;
@@ -370,7 +370,7 @@ FXEventLoop *TnFXApp::getEventLoop() const
 long TnFXApp::onCmdQuit(FXObject*,FXSelector,void*)
 {	// Exit loop
 #ifdef DEBUG
-	fxmessage("Loop 0x%p in thread %u wants to quit\n", getEventLoop(), (FXuint) FXThread::id());
+	fxmessage("Loop 0x%p in thread %u wants to quit\n", getEventLoop(), (FXuint) QThread::id());
 #endif
 	stop(0); // Stop the calling event loop
 	return 1;
@@ -433,11 +433,11 @@ void TnFXApp::exit(FXint code)
 
 void TnFXApp::lock()
 { FXEXCEPTION_FOXCALLING1 {
-	FXMutex::lock();
+	QMutex::lock();
 } FXEXCEPTION_FOXCALLING2; }
 void TnFXApp::unlock()
 { FXEXCEPTION_FOXCALLING1 {
-	FXMutex::unlock();
+	QMutex::unlock();
 } FXEXCEPTION_FOXCALLING2; }
 
 FXint TnFXApp::run(TnFXAppEventLoop &pl)
@@ -461,7 +461,7 @@ struct FXDLLLOCAL TnFXAppEventLoopPrivate
 };
 FXIMPLEMENT_ABSTRACT(TnFXAppEventLoop,FXObject,NULL,0)
 
-TnFXAppEventLoop::TnFXAppEventLoop(const char *threadname, TnFXApp *app) : FXThread(threadname), p(0)
+TnFXAppEventLoop::TnFXAppEventLoop(const char *threadname, TnFXApp *app) : QThread(threadname), p(0)
 {
 	FXERRHM(p=new TnFXAppEventLoopPrivate(app));
 }

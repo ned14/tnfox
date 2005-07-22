@@ -22,15 +22,15 @@
 #define SEED_SIZE 512				// 4096 bits (this will need to be increased some day)
 #define PRIVATEKEY_SIZE 3072
 
-#include "FXSSLDevice.h"
+#include "QSSLDevice.h"
 #include "FXProcess.h"
 #include "FXException.h"
-#include "FXThread.h"
-#include "FXTrans.h"
+#include "QThread.h"
+#include "QTrans.h"
 #include "FXRollback.h"
 #include "FXFile.h"
 #include "FXNetwork.h"
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include "FXErrCodes.h"
 #include <qcstring.h>
 #ifdef HAVE_OPENSSL
@@ -200,23 +200,23 @@ static DH *getDHParams(SSL *ssl, int isexport, int keylen)
 
 #endif
 
-class FXSSLDevice_Init;
-static FXSSLDevice_Init *myinit;
-class FXSSLDevice_Init : public FXMutex
+class QSSLDevice_Init;
+static QSSLDevice_Init *myinit;
+class QSSLDevice_Init : public QMutex
 {
 public:
 #ifdef HAVE_OPENSSL
 	SSL_CTX *ctx;
-	QMemArray<FXMutex *> locks;
+	QMemArray<QMutex *> locks;
 	static void lockingfunction(int mode, int n, const char *file, int line)
 	{
 		if(!myinit) return;
-		FXMutex *m=myinit->locks.at(n);
+		QMutex *m=myinit->locks.at(n);
 		assert(m);
 		if(mode & CRYPTO_LOCK) m->lock(); else m->unlock();
 	}
 #endif
-	FXSSLDevice_Init() : FXMutex()
+	QSSLDevice_Init() : QMutex()
 	{
 #ifdef HAVE_OPENSSL
 		ctx=0;
@@ -225,7 +225,7 @@ public:
 		locks.resize(CRYPTO_num_locks());
 		for(FXuint n=0; n<locks.size(); n++)
 		{
-			FXERRHM(locks[n]=new FXMutex);
+			FXERRHM(locks[n]=new QMutex);
 		}
 		CRYPTO_set_locking_callback(lockingfunction);
 		myinit=this;
@@ -272,7 +272,7 @@ public:
 		}
 #endif
 	}
-	~FXSSLDevice_Init()
+	~QSSLDevice_Init()
 	{
 #ifdef HAVE_OPENSSL
 		FXMtxHold h(this);
@@ -306,7 +306,7 @@ public:
 #endif
 	}
 };
-static FXProcess_StaticInit<FXSSLDevice_Init> mystaticinit("FXSSLDevice");
+static FXProcess_StaticInit<QSSLDevice_Init> mystaticinit("QSSLDevice");
 
 #ifdef HAVE_OPENSSL
 namespace Wrap {
@@ -318,7 +318,7 @@ namespace Wrap {
 
 static int bwrite(BIO *b, const char *buffer, int len)
 {
-	FXIODevice *dev=(FXIODevice *) b->ptr;
+	QIODevice *dev=(QIODevice *) b->ptr;
 	TRAPFXERR1 {
 		//printf("bwrite %s", fxdump8((FXuchar *) buffer, len).text());
 		return (int) dev->writeBlock(buffer, len);
@@ -326,7 +326,7 @@ static int bwrite(BIO *b, const char *buffer, int len)
 }
 static int bread(BIO *b, char *buffer, int len)
 {
-	FXIODevice *dev=(FXIODevice *) b->ptr;
+	QIODevice *dev=(QIODevice *) b->ptr;
 	TRAPFXERR1 {
 		int read=(int) dev->readBlock(buffer, len);
 		//printf("bread %s", fxdump8((FXuchar *) buffer, read).text());
@@ -336,14 +336,14 @@ static int bread(BIO *b, char *buffer, int len)
 static int bputs(BIO *b, const char *buffer)
 {
 	int len=(int) strlen(buffer);
-	FXIODevice *dev=(FXIODevice *) b->ptr;
+	QIODevice *dev=(QIODevice *) b->ptr;
 	TRAPFXERR1 {
 		return (int) dev->writeBlock(buffer, len);
 	} TRAPFXERR2(BIO_F_BIO_WRITE);
 }
 static long ctrl(BIO *b, int cmd, long num, void *ptr)
 {
-	FXIODevice *dev=(FXIODevice *) b->ptr;
+	QIODevice *dev=(QIODevice *) b->ptr;
 	long ret=1;
 	TRAPFXERR1 {
 		switch(cmd)
@@ -377,8 +377,8 @@ static long ctrl(BIO *b, int cmd, long num, void *ptr)
 			{
 				if(b->init)
 				{
-					FXIODevice **dev=(FXIODevice **) ptr;
-					if(dev) *dev=(FXIODevice *) b->ptr;
+					QIODevice **dev=(QIODevice **) ptr;
+					if(dev) *dev=(QIODevice *) b->ptr;
 				}
 				else ret=-1;
 				break;
@@ -422,9 +422,9 @@ static int destroy(BIO *b)
 	return 1;
 }
 } // namespace
-static BIO_METHOD BIO_s_FXIODevice={
+static BIO_METHOD BIO_s_QIODevice={
 	64|BIO_TYPE_SOURCE_SINK,	// custom type
-	"FXIODevice wrapper",
+	"QIODevice wrapper",
 	Wrap::bwrite,
 	Wrap::bread,
 	Wrap::bputs,
@@ -800,11 +800,11 @@ bool FXSSLPKey::verify() const
 	return false;
 }
 
-void FXSSLPKey::readFromPEM(FXIODevice *dev)
+void FXSSLPKey::readFromPEM(QIODevice *dev)
 {
 #ifdef HAVE_OPENSSL
 	BIO *bio;
-	FXERRHSSL(bio=BIO_new(&BIO_s_FXIODevice));
+	FXERRHSSL(bio=BIO_new(&BIO_s_QIODevice));
 	FXRBOp unbio=FXRBFunc(BIO_free_all, bio);
 	BIO_set_fp(bio, dev, 0);
 	p->clear();
@@ -813,7 +813,7 @@ void FXSSLPKey::readFromPEM(FXIODevice *dev)
 		::RSA *publickey=0, *privatekey=0;
 		publickey=PEM_read_bio_RSAPublicKey(bio, NULL, NULL, 0);
 		privatekey=PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, 0);
-		FXERRH(publickey || privatekey, FXTrans::tr("FXSSLKey", "Failed to read RSA public or private key from PEM file"), FXSSLKEY_PEMNODATA, 0);
+		FXERRH(publickey || privatekey, QTrans::tr("FXSSLKey", "Failed to read RSA public or private key from PEM file"), FXSSLKEY_PEMNODATA, 0);
 		if(privatekey)
 		{
 			p->key.rsa=privatekey;
@@ -832,11 +832,11 @@ void FXSSLPKey::readFromPEM(FXIODevice *dev)
 #endif
 }
 
-void FXSSLPKey::writeAsPEM(FXIODevice *dev) const
+void FXSSLPKey::writeAsPEM(QIODevice *dev) const
 {
 #ifdef HAVE_OPENSSL
 	BIO *bio;
-	FXERRHSSL(bio=BIO_new(&BIO_s_FXIODevice));
+	FXERRHSSL(bio=BIO_new(&BIO_s_QIODevice));
 	FXRBOp unbio=FXRBFunc(BIO_free_all, bio);
 	BIO_set_fp(bio, dev, 0);
 	switch(p->type)
@@ -958,7 +958,7 @@ FXStream &operator>>(FXStream &s, FXSSLPKey &i)
 					FXERRHSSL(i.p->key.rsa->d=BN_bin2bn(buffer, len, NULL));
 				}
 				else if(*(FXuint *)"ENDK"==tag) break;
-				else FXERRG(FXTrans::tr("FXSSLPKey", "Unknown tag"), FXSSLPKEY_BADFORMAT, 0);
+				else FXERRG(QTrans::tr("FXSSLPKey", "Unknown tag"), FXSSLPKEY_BADFORMAT, 0);
 				break;
 			}
 		}
@@ -1015,11 +1015,11 @@ public:
 	}
 	void verifyBitsize()
 	{
-		FXERRH((bitsize & 63)==0, FXTrans::tr("FXSSLKey", "Key length must be a multiple of sixty-four"), FXSSLKEY_BADKEYLEN, 0);
+		FXERRH((bitsize & 63)==0, QTrans::tr("FXSSLKey", "Key length must be a multiple of sixty-four"), FXSSLKEY_BADKEYLEN, 0);
 		if(FXSSLKey::Blowfish==type)
-            FXERRH(bitsize>=64 && bitsize<=448, FXTrans::tr("FXSSLKey", "Blowfish needs a key between 64 and 448 bits"), FXSSLKEY_BADKEYLEN, 0);
+            FXERRH(bitsize>=64 && bitsize<=448, QTrans::tr("FXSSLKey", "Blowfish needs a key between 64 and 448 bits"), FXSSLKEY_BADKEYLEN, 0);
 		if(FXSSLKey::AES==type)
-			FXERRH(128==bitsize || 192==bitsize || 256==bitsize, FXTrans::tr("FXSSLKey", "AES needs a key of either 128, 192 or 256 bits"), FXSSLKEY_BADKEYLEN, 0);
+			FXERRH(128==bitsize || 192==bitsize || 256==bitsize, QTrans::tr("FXSSLKey", "AES needs a key of either 128, 192 or 256 bits"), FXSSLKEY_BADKEYLEN, 0);
 	}
 	void int_setKey(void *data, FXuint _size)
 	{
@@ -1120,8 +1120,8 @@ FXuint FXSSLKey::saltLen() const throw()
 
 void FXSSLKey::setSaltLen(FXuint saltlen)
 {
-	FXERRH(0==(saltlen & 7), FXTrans::tr("FXSSLKey", "Salt length must be a multiple of eight"), FXSSLKEY_BADSALTLEN, 0);
-	FXERRH(saltlen<=64, FXTrans::tr("FXSSLKey", "Salt length must be less than or equal to 64"), FXSSLKEY_BADSALTLEN, 0);
+	FXERRH(0==(saltlen & 7), QTrans::tr("FXSSLKey", "Salt length must be a multiple of eight"), FXSSLKEY_BADSALTLEN, 0);
+	FXERRH(saltlen<=64, QTrans::tr("FXSSLKey", "Salt length must be less than or equal to 64"), FXSSLKEY_BADSALTLEN, 0);
 	p->saltlen=saltlen;
 }
 
@@ -1213,7 +1213,7 @@ void FXSSLKey::generateFromText(const FXString &text, int rounds)
 		}
 		if(p->bitsize>480)	// 192+160+128
 		{	// Now what?
-			FXERRG(FXTrans::tr("FXSSLKey", "Keys no bigger than 480 bits can be generated from plaintext"), FXSSLKEY_BADKEYLEN, 0);
+			FXERRG(QTrans::tr("FXSSLKey", "Keys no bigger than 480 bits can be generated from plaintext"), FXSSLKEY_BADKEYLEN, 0);
 		}
 		memcpy(temp, key, p->size);
 		textdata=temp; textlength=p->size;
@@ -1262,9 +1262,9 @@ FXStream &operator>>(FXStream &s, FXSSLKey &i)
 
 
 
-struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
+struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 {
-	FXIODevice *dev;
+	QIODevice *dev;
 	bool amServer, authenticated;
 	volatile bool connected;
 	struct enabled_t
@@ -1274,7 +1274,7 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 	FXString ciphers;
 	FXSSLKey key;
 #ifdef HAVE_OPENSSL
-	FXMutex negotiationlock, readlock, writelock;
+	QMutex negotiationlock, readlock, writelock;
 	SSL *handle;
 	BIO *bio;
 	X509 *peercert;
@@ -1285,13 +1285,13 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 	FXuchar *ebuffer;		// Holds a block of encryption stream
 	FXfval ebufferIoIndex;
 #endif
-	FXSSLDevicePrivate(FXIODevice *ed) : dev(ed), amServer(false), connected(false),
+	QSSLDevicePrivate(QIODevice *ed) : dev(ed), amServer(false), connected(false),
 		ciphers("HIGH:@STRENGTH"), key(0),
 #ifdef HAVE_OPENSSL
 		handle(0), bio(0), peercert(0), headerdiff(0), nonce(0), noncelen(0), ebuffer(0), ebufferIoIndex((FXfval)-1),
 #endif
-		FXMutex() { }
-	~FXSSLDevicePrivate()
+		QMutex() { }
+	~QSSLDevicePrivate()
 	{
 #ifdef HAVE_OPENSSL
 		if(nonce)
@@ -1328,7 +1328,7 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 			FXERRHSSL(SSL_set_ssl_method(handle, SSLv3_method()));
 		}
 		FXERRHSSL(SSL_set_cipher_list(handle, ciphers.text()));
-		FXERRHSSL(bio=BIO_new(&BIO_s_FXIODevice));
+		FXERRHSSL(bio=BIO_new(&BIO_s_QIODevice));
 		BIO_set_fp(bio, dev, 0);
 		SSL_set_bio(handle, bio, bio);
 	}
@@ -1399,11 +1399,11 @@ struct FXDLLLOCAL FXSSLDevicePrivate : public FXMutex
 #endif
 };
 
-void *FXSSLDevice::int_getOSHandle() const
+void *QSSLDevice::int_getOSHandle() const
 {
-	return p->dev->isSynchronous() ? static_cast<FXIODeviceS *>(p->dev)->int_getOSHandle() : 0;
+	return p->dev->isSynchronous() ? static_cast<QIODeviceS *>(p->dev)->int_getOSHandle() : 0;
 }
-inline void FXSSLDevice::int_genEBuffer() const
+inline void QSSLDevice::int_genEBuffer() const
 {
 	FXfval cblock=ioIndex-(ioIndex % p->noncelen);
 	if(p->ebufferIoIndex!=cblock)
@@ -1424,7 +1424,7 @@ inline void FXSSLDevice::int_genEBuffer() const
 	}
 }
 
-void FXSSLDevice::int_xorInEBuffer(char *dest, const char *src, FXuval amount)
+void QSSLDevice::int_xorInEBuffer(char *dest, const char *src, FXuval amount)
 {	// Keysize must be a multiple of 8, so we can process in 64 bit words for speed
 	FXSTATIC_ASSERT(sizeof(FXulong)==8, FXulong_Is_Not_Eight);
 	bool first=true;
@@ -1470,78 +1470,78 @@ end:
 	}
 }
 
-FXSSLDevice::FXSSLDevice(FXIODevice *encrypteddev, bool enablev2) : p(0), FXIODeviceS()
+QSSLDevice::QSSLDevice(QIODevice *encrypteddev, bool enablev2) : p(0), QIODeviceS()
 {
 #ifndef HAVE_OPENSSL
-	FXERRH(false, FXTrans::tr("FXSSLDevice", "OpenSSL support not enabled"), FXSSLDEVICE_NOTENABLED, 0);
+	FXERRH(false, QTrans::tr("QSSLDevice", "OpenSSL support not enabled"), FXSSLDEVICE_NOTENABLED, 0);
 #endif
 	FXRBOp unconstruct=FXRBConstruct(this);
-	FXERRHM(p=new FXSSLDevicePrivate(encrypteddev));
+	FXERRHM(p=new QSSLDevicePrivate(encrypteddev));
 	myinit->setup();
 	p->enabled.v2=enablev2;
 	p->enabled.v3=true;
 	unconstruct.dismiss();
 }
 
-FXSSLDevice::~FXSSLDevice()
+QSSLDevice::~QSSLDevice()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXIODevice *FXSSLDevice::encryptedDev() const throw()
+QIODevice *QSSLDevice::encryptedDev() const throw()
 {
 	FXMtxHold h(p);
 	return p->dev;
 }
 
-void FXSSLDevice::setEncryptedDev(FXIODevice *dev)
+void QSSLDevice::setEncryptedDev(QIODevice *dev)
 {
 	FXMtxHold h(p);
 	close();
 	p->dev=dev;
 }
 
-const FXSSLKey &FXSSLDevice::key() const
+const FXSSLKey &QSSLDevice::key() const
 {
 	FXMtxHold h(p);
 	return p->key;
 }
 
-void FXSSLDevice::setKey(const FXSSLKey &key)
+void QSSLDevice::setKey(const FXSSLKey &key)
 {
 	FXMtxHold h(p);
 	p->key=key;
 }
 
-bool FXSSLDevice::SSLv2Available() const throw()
+bool QSSLDevice::SSLv2Available() const throw()
 {
 	FXMtxHold h(p);
 	return p->enabled.v2;
 }
-void FXSSLDevice::setSSLv2Available(bool a)
+void QSSLDevice::setSSLv2Available(bool a)
 {
 	FXMtxHold h(p);
 	p->enabled.v2=a;
 }
-bool FXSSLDevice::SSLv3Available() const throw()
+bool QSSLDevice::SSLv3Available() const throw()
 {
 	FXMtxHold h(p);
 	return p->enabled.v3;
 }
-void FXSSLDevice::setSSLv3Available(bool a)
+void QSSLDevice::setSSLv3Available(bool a)
 {
 	FXMtxHold h(p);
 	p->enabled.v3=a;
 }
-FXString FXSSLDevice::ciphers() const
+FXString QSSLDevice::ciphers() const
 {
 	FXMtxHold h(p);
 	FXString ret;
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXERRH(p->dev->isSynchronous(), FXTrans::tr("FXSSLDevice", "File type devices not supported"), FXSSLDEVICE_FILENOTSUPP, 0);
+		FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), FXSSLDEVICE_FILENOTSUPP, 0);
 		const char *cipherlist=0;
 		int n=0;
 		do
@@ -1555,7 +1555,7 @@ FXString FXSSLDevice::ciphers() const
 #endif
 	return ret;
 }
-void FXSSLDevice::setCiphers(const FXString &list)
+void QSSLDevice::setCiphers(const FXString &list)
 {
 	FXMtxHold h(p);
 	p->ciphers=list;
@@ -1563,7 +1563,7 @@ void FXSSLDevice::setCiphers(const FXString &list)
 
 
 
-bool FXSSLDevice::usingSSLv2() const
+bool QSSLDevice::usingSSLv2() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1572,7 +1572,7 @@ bool FXSSLDevice::usingSSLv2() const
 	return false;
 #endif
 }
-bool FXSSLDevice::usingSSLv3() const
+bool QSSLDevice::usingSSLv3() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1581,7 +1581,7 @@ bool FXSSLDevice::usingSSLv3() const
 	return false;
 #endif
 }
-bool FXSSLDevice::usingTLSv1() const
+bool QSSLDevice::usingTLSv1() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1590,7 +1590,7 @@ bool FXSSLDevice::usingTLSv1() const
 	return false;
 #endif
 }
-FXString FXSSLDevice::peerHostNameByCertificate() const
+FXString QSSLDevice::peerHostNameByCertificate() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1604,7 +1604,7 @@ FXString FXSSLDevice::peerHostNameByCertificate() const
 #endif
 	return FXString();
 }
-FXString FXSSLDevice::cipherName() const
+FXString QSSLDevice::cipherName() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1616,7 +1616,7 @@ FXString FXSSLDevice::cipherName() const
 	return FXString();
 #endif
 }
-FXuint FXSSLDevice::cipherBits() const
+FXuint QSSLDevice::cipherBits() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1628,7 +1628,7 @@ FXuint FXSSLDevice::cipherBits() const
 	return 0;
 #endif
 }
-FXString FXSSLDevice::cipherDescription() const
+FXString QSSLDevice::cipherDescription() const
 {
 	FXMtxHold h(p);
 #ifdef HAVE_OPENSSL
@@ -1644,30 +1644,30 @@ FXString FXSSLDevice::cipherDescription() const
 #endif
 }
 
-void FXSSLDevice::renegotiate()
+void QSSLDevice::renegotiate()
 {	// Don't hold the mutex
 #ifdef HAVE_OPENSSL
 	p->negotiate();
 #endif
 }
 
-FXuint FXSSLDevice::fileHeaderLen() const throw()
+FXuint QSSLDevice::fileHeaderLen() const throw()
 {
 	return (FXuint) p->headerdiff;
 }
 
-bool FXSSLDevice::isSynchronous() const
+bool QSSLDevice::isSynchronous() const
 {
 	if(p->dev) return p->dev->isSynchronous();
 	return false;
 }
-bool FXSSLDevice::create(FXuint mode)
+bool QSSLDevice::create(FXuint mode)
 {
 #ifdef HAVE_OPENSSL
-	FXERRH(p->dev->isSynchronous(), FXTrans::tr("FXSSLDevice", "File type devices not supported"), FXSSLDEVICE_FILENOTSUPP, 0);
+	FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), FXSSLDEVICE_FILENOTSUPP, 0);
 	FXMtxHold h(p);
 	close();
-	FXIODeviceS *sdev=(FXIODeviceS *) p->dev;
+	QIODeviceS *sdev=(QIODeviceS *) p->dev;
 	if(sdev->isClosed()) sdev->create(IO_ReadWrite);
 	p->setupSSL();
 	p->amServer=true;
@@ -1681,12 +1681,12 @@ bool FXSSLDevice::create(FXuint mode)
 #define writeLE2(ptr, val) { (ptr)[0]=(FXuchar)(((val)>>0) & 0xff); (ptr)[1]=(FXuchar)(((val)>>8) & 0xff); }
 #define readLE4(val, ptr) { readLE2(val, (ptr)+2); val<<=16; readLE2(val, ptr); }
 #define writeLE4(ptr, val) { writeLE2(ptr, val); writeLE2((ptr)+2, val>>16); }
-bool FXSSLDevice::open(FXuint mode)
+bool QSSLDevice::open(FXuint mode)
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXSSLDevice", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QSSLDevice", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -1705,11 +1705,11 @@ bool FXSSLDevice::open(FXuint mode)
 			{
 				if(mode & IO_ReadOnly)
 				{
-					FXERRH(pkey->hasPrivateKey(), FXTrans::tr("FXSSLDevice", "Need private key to decrypt"), FXSSLDEVICE_NEEDPRIVATEKEY, 0);
+					FXERRH(pkey->hasPrivateKey(), QTrans::tr("QSSLDevice", "Need private key to decrypt"), FXSSLDEVICE_NEEDPRIVATEKEY, 0);
 				}
 				if(mode & IO_WriteOnly)
 				{
-					FXERRH(pkey->hasPublicKey(), FXTrans::tr("FXSSLDevice", "Need public key to encrypt"), FXSSLDEVICE_NEEDPUBLICKEY, 0);
+					FXERRH(pkey->hasPublicKey(), QTrans::tr("QSSLDevice", "Need public key to encrypt"), FXSSLDEVICE_NEEDPUBLICKEY, 0);
 					FXERRH((mode & IO_ReadOnly) || !(pkey->hasPublicKey() && pkey->hasPrivateKey()), "Security check: asymmetric encryption with both public & private keys", 0, FXERRH_ISDEBUG);
 				}
 			}
@@ -1720,14 +1720,14 @@ bool FXSSLDevice::open(FXuint mode)
 			{	// Read the header
 				FXulong header;
 				s.readRawBytes((char *) &header, 8); s >> version;
-				FXERRH(header==*((FXulong *)"TNFXSECD"), FXTrans::tr("FXSSLDevice", "Not a TnFOX secure data file"), FXSSLDEVICE_BADFORMAT, 0);
-				FXERRH(2==version, FXTrans::tr("FXSSLDevice", "Secure file format too new"), FXSSLDEVICE_BADFORMAT, 0);
+				FXERRH(header==*((FXulong *)"TNFXSECD"), QTrans::tr("QSSLDevice", "Not a TnFOX secure data file"), FXSSLDEVICE_BADFORMAT, 0);
+				FXERRH(2==version, QTrans::tr("QSSLDevice", "Secure file format too new"), FXSSLDEVICE_BADFORMAT, 0);
 				if(pkey)
 				{	// Read header for key
 					int ret;
 					FXuint keytag=0;
 					s.readRawBytes((char *) &keytag, 4);
-					FXERRH(keytag==*((FXuint *)"SKEY"), FXTrans::tr("FXSSLDevice", "Secure file missing symmetric key"), FXSSLDEVICE_MISSINGKEY, 0);
+					FXERRH(keytag==*((FXuint *)"SKEY"), QTrans::tr("QSSLDevice", "Secure file missing symmetric key"), FXSSLDEVICE_MISSINGKEY, 0);
 					s >> key;
 					FXuchar *buffer;
 					FXERRHM(buffer=Secure::malloc<FXuchar>(SEED_SIZE));
@@ -1736,7 +1736,7 @@ bool FXSSLDevice::open(FXuint mode)
 					if(-1==(ret=RSA_private_decrypt(key.bytesLen(), (FXuchar *) key.p->key, buffer,
 						pkey->p->key.rsa, RSA_PKCS1_PADDING)))
 					{
-						FXERRG(FXTrans::tr("FXSSLDevice", "Incorrect key"), FXSSLDEVICE_INCORRECTKEY, 0);
+						FXERRG(QTrans::tr("QSSLDevice", "Incorrect key"), FXSSLDEVICE_INCORRECTKEY, 0);
 					}
 					ret-=2*sizeof(FXuint)+sizeof(FXushort);
 					FXuint bitsize=0, saltlen=0; FXushort type=0;
@@ -1751,7 +1751,7 @@ bool FXSSLDevice::open(FXuint mode)
 				}
 				FXuint testtag;
 				s.readRawBytes((char *) &testtag, 4);
-				FXERRH(testtag==*((FXuint *)"TEST"), FXTrans::tr("FXSSLDevice", "Missing key test hash"), FXSSLDEVICE_BADFORMAT, 0);
+				FXERRH(testtag==*((FXuint *)"TEST"), QTrans::tr("QSSLDevice", "Missing key test hash"), FXSSLDEVICE_BADFORMAT, 0);
 				Secure::TigerHashValue testkeyhash;
 				s.readRawBytes(testkeyhash.data.bytes, sizeof(testkeyhash));
 				FXulong keysalt=0, keysaltlen=(1<<key.saltLen())-1; bool gotIt=false;
@@ -1795,7 +1795,7 @@ bool FXSSLDevice::open(FXuint mode)
 						hashbuffer[n/8]^=(FXuchar)((keysalt>>n) & 0xff);
 					}
 				} while(keysalt++<=keysaltlen);
-				FXERRH(gotIt, FXTrans::tr("FXSSLDevice", "Incorrect key"), FXSSLDEVICE_INCORRECTKEY, 0);
+				FXERRH(gotIt, QTrans::tr("QSSLDevice", "Incorrect key"), FXSSLDEVICE_INCORRECTKEY, 0);
 				keysalt=0;
 				memcpy(key.p->key, hashbuffer, keylen);
 			}
@@ -1827,7 +1827,7 @@ bool FXSSLDevice::open(FXuint mode)
 				}
 				if(key.saltLen())
 				{	// EOR in some saltiness
-					FXERRH(key.saltLen()<key.bitsLen(), FXTrans::tr("FXSSLDevice", "Key salt length must be smaller or equal to key length"), FXSSLKEY_BADSALTLEN, 0);
+					FXERRH(key.saltLen()<key.bitsLen(), QTrans::tr("QSSLDevice", "Key salt length must be smaller or equal to key length"), FXSSLKEY_BADSALTLEN, 0);
 					FXulong saltdata=0;
 					FXuchar *salt=(FXuchar *) &saltdata, *keydata=(FXuchar *) key.p->key;
 					FXuint saltlen=(7+key.saltLen())/8;
@@ -1891,7 +1891,7 @@ bool FXSSLDevice::open(FXuint mode)
 					break;
 				}
 			default:
-				FXERRG(FXTrans::tr("FXSSLDevice", "Key of unknown encryption type"), FXSSLDEVICE_UNKNOWNENCRYPTION, 0);
+				FXERRG(QTrans::tr("QSSLDevice", "Key of unknown encryption type"), FXSSLDEVICE_UNKNOWNENCRYPTION, 0);
 			}
 			// Initialise the cipher
 			EVP_CIPHER_CTX_init(&p->estream);
@@ -1910,7 +1910,7 @@ bool FXSSLDevice::open(FXuint mode)
 			{	// Read in the nonce
 				s.readRawBytes(p->nonce, p->noncelen);
 #ifdef DEBUG
-				fxmessage("FXSSLDevice: Reading nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
+				fxmessage("QSSLDevice: Reading nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
 #endif
 			}
 			else
@@ -1919,7 +1919,7 @@ bool FXSSLDevice::open(FXuint mode)
 					FXERRHSSL(RAND_pseudo_bytes(p->nonce, p->noncelen));
 				s.writeRawBytes(p->nonce, p->noncelen);
 #ifdef DEBUG
-				fxmessage("FXSSLDevice: Writing nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
+				fxmessage("QSSLDevice: Writing nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
 #endif
 			}
 			ioIndex=0;
@@ -1932,7 +1932,7 @@ bool FXSSLDevice::open(FXuint mode)
 	return true;
 }
 
-void FXSSLDevice::close()
+void QSSLDevice::close()
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen())
@@ -1975,7 +1975,7 @@ void FXSSLDevice::close()
 #endif
 }
 
-void FXSSLDevice::flush()
+void QSSLDevice::flush()
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen())
@@ -1991,7 +1991,7 @@ void FXSSLDevice::flush()
 #endif
 }
 
-FXfval FXSSLDevice::size() const
+FXfval QSSLDevice::size() const
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen())
@@ -2006,7 +2006,7 @@ FXfval FXSSLDevice::size() const
 	return 0;
 }
 
-void FXSSLDevice::truncate(FXfval size)
+void QSSLDevice::truncate(FXfval size)
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen() && !p->dev->isSynchronous())
@@ -2018,12 +2018,12 @@ void FXSSLDevice::truncate(FXfval size)
 #endif
 }
 
-FXfval FXSSLDevice::at() const
+FXfval QSSLDevice::at() const
 {
 	return ioIndex;
 }
 
-bool FXSSLDevice::at(FXfval newpos)
+bool QSSLDevice::at(FXfval newpos)
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen() && newpos!=ioIndex && !p->dev->isSynchronous())
@@ -2037,7 +2037,7 @@ bool FXSSLDevice::at(FXfval newpos)
 	return false;
 }
 
-bool FXSSLDevice::atEnd() const
+bool QSSLDevice::atEnd() const
 {
 #ifdef HAVE_OPENSSL
 	if(isOpen())
@@ -2051,18 +2051,18 @@ bool FXSSLDevice::atEnd() const
 	return true;
 }
 
-const FXACL &FXSSLDevice::permissions() const
+const FXACL &QSSLDevice::permissions() const
 {
 	return p->dev->permissions();
 }
-void FXSSLDevice::setPermissions(const FXACL &perms)
+void QSSLDevice::setPermissions(const FXACL &perms)
 {
 	p->dev->setPermissions(perms);
 }
 
-FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
+FXuval QSSLDevice::readBlock(char *data, FXuval maxlen)
 {
-	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXSSLDevice", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QSSLDevice", "Not open for reading"));
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
@@ -2101,9 +2101,9 @@ FXuval FXSSLDevice::readBlock(char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXSSLDevice::writeBlock(const char *data, FXuval maxlen)
+FXuval QSSLDevice::writeBlock(const char *data, FXuval maxlen)
 {
-	if(!FXIODevice::isWriteable()) FXERRGIO(FXTrans::tr("FXSSLDevice", "Not open for writing"));
+	if(!QIODevice::isWriteable()) FXERRGIO(QTrans::tr("QSSLDevice", "Not open for writing"));
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
@@ -2147,35 +2147,35 @@ FXuval FXSSLDevice::writeBlock(const char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXSSLDevice::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
+FXuval QSSLDevice::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
 {
 	if(isOpen())
 	{
 		FXMtxHold h(p);
 		if(ioIndex!=newpos)
-			FXSSLDevice::at(newpos);
+			QSSLDevice::at(newpos);
 		return readBlock(data, maxlen);
 	}
 	return 0;
 }
-FXuval FXSSLDevice::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
+FXuval QSSLDevice::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
 {
 	if(isOpen())
 	{
 		FXMtxHold h(p);
 		if(ioIndex!=newpos)
-			FXSSLDevice::at(newpos);
+			QSSLDevice::at(newpos);
 		return writeBlock(data, maxlen);
 	}
 	return 0;
 }
 
-int FXSSLDevice::ungetch(int c)
+int QSSLDevice::ungetch(int c)
 {
 	return -1;	// not supported
 }
 
-void FXSSLDevice::setCertificateFile(const FXString &path)
+void QSSLDevice::setCertificateFile(const FXString &path)
 {
 #ifdef HAVE_OPENSSL
 	myinit->setup();
@@ -2193,7 +2193,7 @@ static int returnPassword(char *buffer, int size, int rwflag, void *userdata)
 	return PrivateKeyFilePassword.length();
 }
 #endif
-void FXSSLDevice::setPrivateKeyFile(const FXString &path, const FXString &password)
+void QSSLDevice::setPrivateKeyFile(const FXString &path, const FXString &password)
 {
 #ifdef HAVE_OPENSSL
 	PrivateKeyFilePassword=password;
@@ -2203,12 +2203,12 @@ void FXSSLDevice::setPrivateKeyFile(const FXString &path, const FXString &passwo
 #endif
 }
 
-const FXString &FXSSLDevice::strongestAnonCipher()
+const FXString &QSSLDevice::strongestAnonCipher()
 {
 	static FXString temp("ADH-AES256-SHA");
 	return temp;
 }
-const FXString &FXSSLDevice::fastestAnonCipher()
+const FXString &QSSLDevice::fastestAnonCipher()
 {
 	static FXString temp("ADH-AES128-SHA");
 	return temp;

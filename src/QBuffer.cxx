@@ -20,10 +20,10 @@
 ********************************************************************************/
 
 #include <qcstring.h>
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include "FXException.h"
-#include "FXThread.h"
-#include "FXTrans.h"
+#include "QThread.h"
+#include "QTrans.h"
 #include "FXRollback.h"
 #include "FXErrCodes.h"
 #include "FXMemDbg.h"
@@ -33,17 +33,17 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-struct FXDLLLOCAL FXBufferPrivate : public FXMutex
+struct FXDLLLOCAL QBufferPrivate : public QMutex
 {
 	bool mine;
 	QByteArray *buffer;
-	FXBufferPrivate() : mine(false), buffer(0), FXMutex() { }
+	QBufferPrivate() : mine(false), buffer(0), QMutex() { }
 };
 
-FXBuffer::FXBuffer(FXuval len) : p(0), FXIODevice()
+QBuffer::QBuffer(FXuval len) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXBufferPrivate);
+	FXERRHM(p=new QBufferPrivate);
 	if(len)
 	{
 		FXERRHM(p->buffer=new QByteArray(len));
@@ -52,15 +52,15 @@ FXBuffer::FXBuffer(FXuval len) : p(0), FXIODevice()
 	unconstr.dismiss();
 }
 
-FXBuffer::FXBuffer(QByteArray &buffer) : p(0), FXIODevice()
+QBuffer::QBuffer(QByteArray &buffer) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXBufferPrivate);
+	FXERRHM(p=new QBufferPrivate);
 	setBuffer(buffer);
 	unconstr.dismiss();
 }
 
-FXBuffer::~FXBuffer()
+QBuffer::~QBuffer()
 { FXEXCEPTIONDESTRUCT1 {
 	if(p)
 	{
@@ -70,7 +70,7 @@ FXBuffer::~FXBuffer()
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
-QByteArray &FXBuffer::buffer() const
+QByteArray &QBuffer::buffer() const
 {
 	if(!p->buffer)
 	{
@@ -84,7 +84,7 @@ QByteArray &FXBuffer::buffer() const
 	return *p->buffer;
 }
 
-void FXBuffer::setBuffer(QByteArray &buffer)
+void QBuffer::setBuffer(QByteArray &buffer)
 {
 	FXMtxHold h(p);
 	if(p->mine) FXDELETE(p->buffer);
@@ -92,13 +92,13 @@ void FXBuffer::setBuffer(QByteArray &buffer)
 	p->buffer=&buffer;
 }
 
-bool FXBuffer::open(FXuint mode)
+bool QBuffer::open(FXuint mode)
 {
 	FXMtxHold h(p);
 	mode&=~IO_Translate;
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXBuffer", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QBuffer", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -106,7 +106,7 @@ bool FXBuffer::open(FXuint mode)
 		{
 			if(!(mode & IO_WriteOnly))
 			{
-				FXERRGIO(FXTrans::tr("FXBuffer", "Buffer does not exist"));
+				FXERRGIO(QTrans::tr("QBuffer", "Buffer does not exist"));
 			}
 			FXERRHM(p->buffer=new QByteArray);
 			p->mine=true;
@@ -118,7 +118,7 @@ bool FXBuffer::open(FXuint mode)
 	return true;
 }
 
-void FXBuffer::close()
+void QBuffer::close()
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -128,20 +128,20 @@ void FXBuffer::close()
 	}
 }
 
-void FXBuffer::flush()
+void QBuffer::flush()
 {
 }
 
-FXfval FXBuffer::size() const
+FXfval QBuffer::size() const
 {
 	// FXMtxHold h(p);	can do without
 	return p->buffer->size();
 }
 
-void FXBuffer::truncate(FXfval size)
+void QBuffer::truncate(FXfval size)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for writing"));
 	if(isOpen())
 	{
 		if((mode() & IO_ShredTruncate) && size<p->buffer->size())
@@ -151,10 +151,10 @@ void FXBuffer::truncate(FXfval size)
 	}
 }
 
-FXuval FXBuffer::readBlock(char *data, FXuval maxlen)
+FXuval QBuffer::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isReadable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for reading"));
+	if(!isReadable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for reading"));
 	if(isOpen() && ioIndex<p->buffer->size())
 	{
 		FXuval left=(FXuval)(p->buffer->size()-ioIndex);
@@ -166,10 +166,10 @@ FXuval FXBuffer::readBlock(char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXBuffer::writeBlock(const char *data, FXuval maxlen)
+FXuval QBuffer::writeBlock(const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for writing"));
 	if(isOpen())
 	{
 		FXuval buffersize=p->buffer->size();
@@ -183,13 +183,13 @@ FXuval FXBuffer::writeBlock(const char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXBuffer::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
+FXuval QBuffer::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
 	FXMtxHold h(p);
 	ioIndex=pos;
 	return readBlock(data, maxlen);
 }
-FXuval FXBuffer::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
+FXuval QBuffer::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
 	ioIndex=pos;
@@ -197,10 +197,10 @@ FXuval FXBuffer::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 }
 
 
-int FXBuffer::getch()
+int QBuffer::getch()
 {
 	FXMtxHold h(p);
-	if(!isReadable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for reading"));
+	if(!isReadable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for reading"));
 	if(isOpen() && ioIndex<p->buffer->size())
 	{
 		FXuval left=(FXuval)(p->buffer->size()-ioIndex);
@@ -210,10 +210,10 @@ int FXBuffer::getch()
 	return -1;
 }
 
-int FXBuffer::putch(int c)
+int QBuffer::putch(int c)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXBuffer", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for writing"));
 	if(isOpen())
 	{
 		FXuval buffersize=p->buffer->size();
@@ -226,7 +226,7 @@ int FXBuffer::putch(int c)
 	return -1;
 }
 
-int FXBuffer::ungetch(int c)
+int QBuffer::ungetch(int c)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -241,13 +241,13 @@ int FXBuffer::ungetch(int c)
 	return -1;
 }
 
-FXStream &operator<<(FXStream &s, const FXBuffer &i)
+FXStream &operator<<(FXStream &s, const QBuffer &i)
 {
 	FXMtxHold h(i.p);
 	return s.writeRawBytes(i.buffer().data(), (FXuval) i.size());
 }
 
-FXStream &operator>>(FXStream &s, FXBuffer &i)
+FXStream &operator>>(FXStream &s, QBuffer &i)
 {
 	FXMtxHold h(i.p);
 	FXuval len=(FXuval) s.device()->size();

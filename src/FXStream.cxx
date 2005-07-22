@@ -29,11 +29,11 @@
 #include "FXString.h"
 #include "FXHash.h"
 #include "FXObject.h"
-#include "FXIODevice.h"
+#include "QIODevice.h"
 #include "FXException.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXFile.h"
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include <qcstring.h>
 
 #ifdef _MSC_VER
@@ -61,7 +61,7 @@ namespace FX {
 
 
 // Create PersistentStore object
-FXStream::FXStream(FXIODevice *_dev, const FXObject *cont){
+FXStream::FXStream(QIODevice *_dev, const FXObject *cont){
   parent=cont;
   begptr=NULL;
   endptr=NULL;
@@ -109,7 +109,7 @@ FXStream::~FXStream(){
 
   // TnFOX stuff
   FXDELETE(hash);
-  dev=(FXIODevice *)-1L;
+  dev=(QIODevice *)-1L;
   }
 
 
@@ -215,7 +215,7 @@ FXbool FXStream::position(FXfval newpos,FXWhence whence)
 	return dev->at(newpos);
 }
 
-void FXStream::setDevice(FXIODevice *_dev)
+void FXStream::setDevice(QIODevice *_dev)
 {
 	dev=_dev;
 }
@@ -234,7 +234,7 @@ FXStream &FXStream::readBytes(char *&s, FXuint &l)
 
 FXStream &FXStream::readRawBytes(char *buffer, FXuval len)
 {
-	if(len!=dev->readBlock(buffer, len)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+	if(len!=dev->readBlock(buffer, len)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
 	return *this;
 }
 
@@ -416,36 +416,36 @@ FXStream& FXStream::save(const FXulong* p,unsigned long n){
 FXStream& FXStream::operator>>(FXuchar& v){
   int _v=dev->getch();
   v=(FXuchar) _v;
-  if(-1==_v) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(-1==_v) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   return *this;
   }
 
 FXStream& FXStream::operator>>(FXushort& v){
-  if(2!=dev->readBlock((char *) &v,2)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(2!=dev->readBlock((char *) &v,2)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap){swap2(&v);}
   return *this;
   }
 
 FXStream& FXStream::operator>>(FXuint& v){
-  if(4!=dev->readBlock((char *) &v,4)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(4!=dev->readBlock((char *) &v,4)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap){swap4(&v);}
   return *this;
   }
 
 FXStream& FXStream::operator>>(FXfloat& v){
-  if(4!=dev->readBlock((char *) &v,4)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(4!=dev->readBlock((char *) &v,4)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap){swap4(&v);}
   return *this;
   }
 
 FXStream& FXStream::operator>>(FXdouble& v){
-  if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap){swap8(&v);}
   return *this;
   }
 
 FXStream& FXStream::operator>>(FXulong& v){
-  if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap){swap8(&v);}
   return *this;
   }
@@ -453,7 +453,7 @@ FXStream& FXStream::operator>>(FXulong& v){
 FXStream& FXStream::operator>>(bool& v){
   int _v=dev->getch();
   v=(_v!=0);
-  if(-1==_v) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(-1==_v) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   return *this;
   }
 
@@ -462,41 +462,41 @@ FXStream& FXStream::operator>>(bool& v){
 
 FXStream& FXStream::load(FXuchar* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n!=dev->readBlock((char *) p,n)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(n!=dev->readBlock((char *) p,n)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   return *this;
   }
 
 FXStream& FXStream::load(FXushort* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n<<1!=dev->readBlock((char *) p,n<<1)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(n<<1!=dev->readBlock((char *) p,n<<1)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap&&n){do{swap2(p++);}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXuint* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n<<2!=dev->readBlock((char *) p,n<<2)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(n<<2!=dev->readBlock((char *) p,n<<2)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap&&n){do{swap4(p++);}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXfloat* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n<<2!=dev->readBlock((char *) p,n<<2)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(n<<2!=dev->readBlock((char *) p,n<<2)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap&&n){do{swap4(p++);}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXdouble* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap&&n){do{swap8(p++);}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXulong* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(FXTrans::tr("FXStream", "Premature EOF encountered"));
+  if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
   if(swap&&n){do{swap8(p++);}while(--n);}
   return *this;
   }

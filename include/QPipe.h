@@ -20,19 +20,19 @@
 ********************************************************************************/
 
 
-#ifndef FXPIPE_H
-#define FXPIPE_H
-#include "FXIODeviceS.h"
+#ifndef QPIPE_H
+#define QPIPE_H
+#include "QIODeviceS.h"
 
 namespace FX {
 
-/*! \file FXPipe.h
+/*! \file QPipe.h
 \brief Defines classes used to provide a portable named pipe
 */
 
 class FXString;
 
-/*! \class FXPipe
+/*! \class QPipe
 \ingroup siodevices
 \brief A named pipe i/o device
 
@@ -41,7 +41,7 @@ of the first classes written for Tornado originally and it is a testament to
 how API compatible with Qt TnFOX is that very little work had to be done to port it.
 In fact, the below docs are almost identical too :)
 
-FXPipe is a \em synchronous i/o device like FX:FXBlkSocket - in other words,
+QPipe is a \em synchronous i/o device like FX:QBlkSocket - in other words,
 reads from it block until data is available. To avoid this, check atEnd() before
 reading - however generally, <i>you want it</i> to block because you will have
 allocated a special thread whose sole purpose is to wait on incoming data and
@@ -56,8 +56,8 @@ so two threads writing at the same time will cause the read data to be mixed
 blocks of data - which you probably don't want. If you do use a pipe which has
 more than two users, ensure all data transfers are less than maxAtomicLength(). If
 you want a pipe with less restrictions and only for intra-process communication,
-see FX::FXLocalPipe. If you need less restrictions across multiple processes, see
-FX::FXBlkSocket (though this is inefficient).
+see FX::QLocalPipe. If you need less restrictions across multiple processes, see
+FX::QBlkSocket (though this is inefficient).
 
 Default security is for FX::FXACLEntity::everything() to have full access. This
 makes sense as named pipes are generally for inter-process communication -
@@ -67,7 +67,7 @@ Note that until the pipe is opened, permissions()
 returns what will be applied to the pipe on open() rather than the pipe
 itself - if you want the latter, use the static method.
 
-Like FX::FXMemMap, the pipe name is deleted by its creator on POSIX
+Like FX::QMemMap, the pipe name is deleted by its creator on POSIX
 only (on Windows it lasts until the last thing referring to it closes). If
 you don't want this, specify IO_DontUnlink in the flags to open().
 
@@ -97,7 +97,7 @@ cancellation on Win32). You shouldn't ever notice this.
 broken in various minor ways plus must cope with thread cancellation. I originally spent
 many months getting this code to work around all the problems and make them behave like
 on Unix as much as possible - however it's possible I've missed some area. Please look at
-the source of FXPipe to get some idea of the problems :(
+the source of QPipe to get some idea of the problems :(
 
 \warning Due to issues with cancelling overlapped i/o on Windows, close() the pipe from the
 same thread you last performed a read operation. Failure to do this results in free space
@@ -105,25 +105,25 @@ corruption in the heap which may or may not have the CRT library throw an assert
 validating the MSVC heap. This bug took me two days to find, so I hope that you won't suffer the same!
 */
 
-struct FXPipePrivate;
-class FXAPIR FXPipe : public FXIODeviceS
+struct QPipePrivate;
+class FXAPIR QPipe : public QIODeviceS
 {
-	FXPipePrivate *p;
+	QPipePrivate *p;
 	bool creator, anonymous;
-	FXPipe(const FXPipe &);
-	FXPipe &operator=(const FXPipe &);
+	QPipe(const QPipe &);
+	QPipe &operator=(const QPipe &);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 	friend class FXIPCChannel;
 	void FXDLLLOCAL int_hack_makeWriteNonblocking() const;
 public:
-	FXPipe();
+	QPipe();
 	/*! \param name Name you wish this pipe to refer to. If null, the pipe is set as anonymous
 	\param isDeepPipe True if this pipe has extra-deep buffers (useful when shifting data rapidly is paramount)
 
 	Constructs a pipe referring to \em name on the local machine
 	*/
-	FXPipe(const FXString &name, bool isDeepPipe=false);
-	~FXPipe();
+	QPipe(const FXString &name, bool isDeepPipe=false);
+	~QPipe();
 
 	//! The name of the pipe
 	const FXString &name() const;
@@ -168,7 +168,7 @@ public:
 
 	Reads a block of data from the pipe into the given buffer. Will wait forever
 	until requested amount of data has been read if necessary. Is compatible
-	with thread cancellation in FX::FXThread on all platforms. 
+	with thread cancellation in FX::QThread on all platforms. 
 	*/
 	FXuval readBlock(char *data, FXuval maxlen);
 	/*! \return The number of bytes written.

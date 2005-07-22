@@ -19,11 +19,11 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#include "FXBlkSocket.h"
+#include "QBlkSocket.h"
 #include "FXString.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXException.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXProcess.h"
 #include "FXRollback.h"
 #include "FXErrCodes.h"
@@ -166,10 +166,10 @@ enum SocketState
 	IPv6
 };
 static SocketState socketsEnabled;
-class FXBlkSocket_SocketInit
+class QBlkSocket_SocketInit
 {
 public:
-	FXBlkSocket_SocketInit()
+	QBlkSocket_SocketInit()
 	{
 #ifdef USE_WINAPI
 		WSADATA wd;
@@ -183,7 +183,7 @@ public:
 		socketsEnabled=IPv6;
 #endif
 	}
-	~FXBlkSocket_SocketInit()
+	~QBlkSocket_SocketInit()
 	{
 #ifdef USE_WINAPI
 		WSACleanup();
@@ -191,34 +191,34 @@ public:
 		socketsEnabled=NoIP;
 	}
 };
-FXProcess_StaticInit<FXBlkSocket_SocketInit> mystaticinit("FXBlkSocket");
+FXProcess_StaticInit<QBlkSocket_SocketInit> mystaticinit("QBlkSocket");
 
-struct FXDLLLOCAL FXBlkSocketPrivate : public FXMutex
+struct FXDLLLOCAL QBlkSocketPrivate : public QMutex
 {
-	FXBlkSocket::Type type;
+	QBlkSocket::Type type;
 	bool unique, amServer, connected, monitoring;
 	FXint maxPending;
 	struct Req_t
 	{
-		FXHostAddress addr;
+		QHostAddress addr;
 		FXushort port;
 	} req;
 	struct Mine_t
 	{
-		FXHostAddress addr;
+		QHostAddress addr;
 		FXushort port;
 	} mine;
 	struct Peer_t
 	{
-		FXHostAddress addr;
+		QHostAddress addr;
 		FXushort port;
 	} peer;
 	int handle;
 #ifdef USE_WINAPI
 	OVERLAPPED olr, olw;
 #endif
-	FXBlkSocketPrivate(FXBlkSocket::Type _type, FXushort port) : type(_type), unique(false), amServer(false),
-		connected(false), monitoring(false), maxPending(50), handle(0), FXMutex()
+	QBlkSocketPrivate(QBlkSocket::Type _type, FXushort port) : type(_type), unique(false), amServer(false),
+		connected(false), monitoring(false), maxPending(50), handle(0), QMutex()
 	{
 		req.port=port; mine.port=0; peer.port=0;
 #ifdef USE_WINAPI
@@ -226,8 +226,8 @@ struct FXDLLLOCAL FXBlkSocketPrivate : public FXMutex
 		memset(&olw, 0, sizeof(olw));
 #endif
 	}
-	FXBlkSocketPrivate(const FXBlkSocketPrivate &o, int h) : type(o.type), unique(o.unique), amServer(o.amServer),
-		connected(o.connected), monitoring(o.monitoring), maxPending(o.maxPending), handle(h), req(o.req), mine(o.mine), FXMutex()
+	QBlkSocketPrivate(const QBlkSocketPrivate &o, int h) : type(o.type), unique(o.unique), amServer(o.amServer),
+		connected(o.connected), monitoring(o.monitoring), maxPending(o.maxPending), handle(h), req(o.req), mine(o.mine), QMutex()
 	{
 		peer.port=0;
 #ifdef USE_WINAPI
@@ -237,7 +237,7 @@ struct FXDLLLOCAL FXBlkSocketPrivate : public FXMutex
 	}
 };
 
-void *FXBlkSocket::int_getOSHandle() const
+void *QBlkSocket::int_getOSHandle() const
 {
 #ifdef USE_WINAPI
 	return (void *) p->olr.hEvent;
@@ -247,113 +247,113 @@ void *FXBlkSocket::int_getOSHandle() const
 #endif
 }
 
-FXBlkSocket::FXBlkSocket(FXBlkSocket::Type type, FXushort port) : p(0), FXIODeviceS()
+QBlkSocket::QBlkSocket(QBlkSocket::Type type, FXushort port) : p(0), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRH(NoIP!=socketsEnabled, FXTrans::tr("FXBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
-	FXERRHM(p=new FXBlkSocketPrivate(type, port));
+	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
+	FXERRHM(p=new QBlkSocketPrivate(type, port));
 	unconstr.dismiss();
 }
 
-FXBlkSocket::FXBlkSocket(const FXHostAddress &addr, FXushort port, FXBlkSocket::Type type) : p(0), FXIODeviceS()
+QBlkSocket::QBlkSocket(const QHostAddress &addr, FXushort port, QBlkSocket::Type type) : p(0), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRH(NoIP!=socketsEnabled, FXTrans::tr("FXBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
-	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), FXTrans::tr("FXBlkSocket", "This machine cannot perform IPv6"), FXBLKSOCKET_NOIPV6, 0);
-	FXERRHM(p=new FXBlkSocketPrivate(type, port));
+	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
+	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), QTrans::tr("QBlkSocket", "This machine cannot perform IPv6"), FXBLKSOCKET_NOIPV6, 0);
+	FXERRHM(p=new QBlkSocketPrivate(type, port));
 	p->req.addr=addr;
 	unconstr.dismiss();
 }
 
-FXBlkSocket::FXBlkSocket(const FXString &addrname, FXushort port, FXBlkSocket::Type type) : p(0), FXIODeviceS()
+QBlkSocket::QBlkSocket(const FXString &addrname, FXushort port, QBlkSocket::Type type) : p(0), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRH(NoIP!=socketsEnabled, FXTrans::tr("FXBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
-	FXHostAddress addr=FXNetwork::dnsLookup(addrname);
-	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), FXTrans::tr("FXBlkSocket", "This machine cannot perform IPv6"), FXBLKSOCKET_NOIPV6, 0);
-	FXERRHM(p=new FXBlkSocketPrivate(type, port));
+	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
+	QHostAddress addr=FXNetwork::dnsLookup(addrname);
+	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), QTrans::tr("QBlkSocket", "This machine cannot perform IPv6"), FXBLKSOCKET_NOIPV6, 0);
+	FXERRHM(p=new QBlkSocketPrivate(type, port));
 	p->req.addr=addr;
 	unconstr.dismiss();
 }
 
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
-FXBlkSocket::FXBlkSocket(const FXBlkSocket &other) : p(other.p), FXIODeviceS(other)
+QBlkSocket::QBlkSocket(const QBlkSocket &other) : p(other.p), QIODeviceS(other)
 {
-	FXBlkSocket &o=const_cast<FXBlkSocket &>(other);
+	QBlkSocket &o=const_cast<QBlkSocket &>(other);
 #else
-FXBlkSocket::FXBlkSocket(FXBlkSocket &o) : p(o.p), FXIODeviceS(o)
+QBlkSocket::QBlkSocket(QBlkSocket &o) : p(o.p), QIODeviceS(o)
 {
 #endif
 #else
-FXBlkSocket::FXBlkSocket(FXBlkSocket &&o) : p(o.p), FXIODeviceS(o)
+QBlkSocket::QBlkSocket(QBlkSocket &&o) : p(o.p), QIODeviceS(o)
 {
 #endif
 	o.p=0;
 	o.setFlags(0);
 }
 
-FXBlkSocket::FXBlkSocket(const FXBlkSocket &o, int h) : p(0), FXIODeviceS(o)
+QBlkSocket::QBlkSocket(const QBlkSocket &o, int h) : p(0), QIODeviceS(o)
 {
-	FXERRHM(p=new FXBlkSocketPrivate(*o.p, h));
+	FXERRHM(p=new QBlkSocketPrivate(*o.p, h));
 }
 
-FXBlkSocket::~FXBlkSocket()
+QBlkSocket::~QBlkSocket()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXBlkSocket::Type FXBlkSocket::type() const
+QBlkSocket::Type QBlkSocket::type() const
 {
 	FXMtxHold h(p);
 	return p->type;
 }
 
-void FXBlkSocket::setType(Type type)
+void QBlkSocket::setType(Type type)
 {
 	FXMtxHold h(p);
 	p->type=type;
 }
 
-const FXHostAddress &FXBlkSocket::address() const
+const QHostAddress &QBlkSocket::address() const
 {
 	FXMtxHold h(p);
 	return p->mine.addr;
 }
 
-FXushort FXBlkSocket::port() const
+FXushort QBlkSocket::port() const
 {
 	FXMtxHold h(p);
 	return p->mine.port;
 }
 
-const FXHostAddress &FXBlkSocket::peerAddress() const
+const QHostAddress &QBlkSocket::peerAddress() const
 {
 	FXMtxHold h(p);
 	return p->peer.addr;
 }
 
-FXushort FXBlkSocket::peerPort() const
+FXushort QBlkSocket::peerPort() const
 {
 	FXMtxHold h(p);
 	return p->peer.port;
 }
 
-bool FXBlkSocket::isUnique() const
+bool QBlkSocket::isUnique() const
 {
 	FXMtxHold h(p);
 	return p->unique;
 }
 
-void FXBlkSocket::setUnique(bool a)
+void QBlkSocket::setUnique(bool a)
 {
 	FXMtxHold h(p);
 	p->unique=a;
 	p->mine.port=0;
 }
 
-FXuval FXBlkSocket::receiveBufferSize() const
+FXuval QBlkSocket::receiveBufferSize() const
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -366,7 +366,7 @@ FXuval FXBlkSocket::receiveBufferSize() const
 	return 0;
 }
 
-void FXBlkSocket::setReceiveBufferSize(FXuval newsize)
+void QBlkSocket::setReceiveBufferSize(FXuval newsize)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -376,7 +376,7 @@ void FXBlkSocket::setReceiveBufferSize(FXuval newsize)
 	}
 }
 
-FXuval FXBlkSocket::sendBufferSize() const
+FXuval QBlkSocket::sendBufferSize() const
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -389,7 +389,7 @@ FXuval FXBlkSocket::sendBufferSize() const
 	return 0;
 }
 
-void FXBlkSocket::setSendBufferSize(FXuval newsize)
+void QBlkSocket::setSendBufferSize(FXuval newsize)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -399,13 +399,13 @@ void FXBlkSocket::setSendBufferSize(FXuval newsize)
 	}
 }
 
-FXint FXBlkSocket::maxPending() const
+FXint QBlkSocket::maxPending() const
 {
 	FXMtxHold h(p);
 	return p->maxPending;
 }
 
-void FXBlkSocket::setMaxPending(FXint newp)
+void QBlkSocket::setMaxPending(FXint newp)
 {
 	FXMtxHold h(p);
 	p->maxPending=newp;
@@ -415,7 +415,7 @@ void FXBlkSocket::setMaxPending(FXint newp)
 	}
 }
 
-bool FXBlkSocket::addressReusable() const
+bool QBlkSocket::addressReusable() const
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -428,7 +428,7 @@ bool FXBlkSocket::addressReusable() const
 	return true;
 }
 
-void FXBlkSocket::setAddressReusable(bool newar)
+void QBlkSocket::setAddressReusable(bool newar)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -438,7 +438,7 @@ void FXBlkSocket::setAddressReusable(bool newar)
 	}
 }
 
-bool FXBlkSocket::keepAlive() const
+bool QBlkSocket::keepAlive() const
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -451,7 +451,7 @@ bool FXBlkSocket::keepAlive() const
 	return false;
 }
 
-void FXBlkSocket::setKeepAlive(bool newar)
+void QBlkSocket::setKeepAlive(bool newar)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -461,7 +461,7 @@ void FXBlkSocket::setKeepAlive(bool newar)
 	}
 }
 
-FXint FXBlkSocket::lingerPeriod() const
+FXint QBlkSocket::lingerPeriod() const
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -475,7 +475,7 @@ FXint FXBlkSocket::lingerPeriod() const
 	return 0;
 }
 
-void FXBlkSocket::setLingerPeriod(FXint period)
+void QBlkSocket::setLingerPeriod(FXint period)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -488,7 +488,7 @@ void FXBlkSocket::setLingerPeriod(FXint period)
 	}
 }
 
-bool FXBlkSocket::usingNagles() const
+bool QBlkSocket::usingNagles() const
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -504,7 +504,7 @@ bool FXBlkSocket::usingNagles() const
 	return true;
 }
 
-void FXBlkSocket::setUsingNagles(bool newar)
+void QBlkSocket::setUsingNagles(bool newar)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -517,13 +517,13 @@ void FXBlkSocket::setUsingNagles(bool newar)
 	}
 }
 
-bool FXBlkSocket::connected() const
+bool QBlkSocket::connected() const
 {
 	FXMtxHold h(p);
 	return p->connected;
 }
 
-static inline sockaddr *makeSockAddr(int &salen, sockaddr_in6 &sa6, const FXHostAddress &addr, FXushort port)
+static inline sockaddr *makeSockAddr(int &salen, sockaddr_in6 &sa6, const QHostAddress &addr, FXushort port)
 {
 	if(addr.isIp4Addr())
 	{
@@ -545,7 +545,7 @@ static inline sockaddr *makeSockAddr(int &salen, sockaddr_in6 &sa6, const FXHost
 	return (sockaddr *) &sa6;
 }
 
-static inline void readSockAddr(FXHostAddress &addr, FXushort &port, sockaddr_in6 *sa6)
+static inline void readSockAddr(QHostAddress &addr, FXushort &port, sockaddr_in6 *sa6)
 {
 	if(AF_INET6==sa6->sin6_family)
 	{	// It's IPv6
@@ -561,7 +561,7 @@ static inline void readSockAddr(FXHostAddress &addr, FXushort &port, sockaddr_in
 	else { assert(0); }
 }
 
-void FXBlkSocket::fillInAddrs(bool incPeer)
+void QBlkSocket::fillInAddrs(bool incPeer)
 {
 	{	// Mine
 		sockaddr_in6 sa6={0};
@@ -578,13 +578,13 @@ void FXBlkSocket::fillInAddrs(bool incPeer)
 	}
 }
 
-void FXBlkSocket::zeroAddrs()
+void QBlkSocket::zeroAddrs()
 {
-	p->mine.addr=p->peer.addr=FXHostAddress();
+	p->mine.addr=p->peer.addr=QHostAddress();
 	p->mine.port=p->peer.port=0;
 }
 
-void FXBlkSocket::setupSocket()
+void QBlkSocket::setupSocket()
 {	// Called to "fix up" any newly created socket handles
 #ifdef SO_NOSIGPIPE
 	// Use FreeBSD extension to disable broken pipe signals
@@ -593,10 +593,10 @@ void FXBlkSocket::setupSocket()
 #endif
 }
 
-bool FXBlkSocket::create(FXuint mode)
+bool QBlkSocket::create(FXuint mode)
 {
 	FXMtxHold h(p);
-	FXThread_DTHold dth;
+	QThread_DTHold dth;
 	close();
 	FXERRH(p->mine.addr.isLocalMachine() || p->mine.addr.isNull(), "Server sockets must be local", FXBLKSOCKET_NONLOCALCREATE, FXERRH_ISDEBUG);
 	FXERRHSKT(p->handle=::socket(p->mine.addr.isIp6Addr() ? PF_INET6 : PF_INET, (p->type==Datagram) ? SOCK_DGRAM : SOCK_STREAM, 0));
@@ -629,16 +629,16 @@ bool FXBlkSocket::create(FXuint mode)
 	return true;
 }
 
-bool FXBlkSocket::open(FXuint mode)
+bool QBlkSocket::open(FXuint mode)
 {
 	FXMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXBlkSocket", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QBlkSocket", "Device reopen has different mode"));
 	}
 	else
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXERRHSKT(p->handle=::socket(p->mine.addr.isIp6Addr() ? PF_INET6 : PF_INET, (p->type==Datagram) ? SOCK_DGRAM : SOCK_STREAM, 0));
 #ifdef USE_WINAPI
 		if(mode & IO_ReadOnly)
@@ -681,12 +681,12 @@ bool FXBlkSocket::open(FXuint mode)
 	return true;
 }
 
-void FXBlkSocket::close()
+void QBlkSocket::close()
 {
 	if(p)
 	{
 		FXMtxHold h(p);
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		if(p->connected)
 		{	// Ignore any errors
 #ifdef USE_WINAPI
@@ -726,7 +726,7 @@ void FXBlkSocket::close()
 	}
 }
 
-void FXBlkSocket::flush()
+void QBlkSocket::flush()
 {
 #if 0
 	// Can't implement this on Windows :(
@@ -742,19 +742,19 @@ void FXBlkSocket::flush()
 #endif
 }
 
-bool FXBlkSocket::reset()
+bool QBlkSocket::reset()
 {
 	close();
 	return (p->amServer) ? create(flags()) : open(flags());
 }
 
-FXfval FXBlkSocket::size() const
+FXfval QBlkSocket::size() const
 {
 	FXMtxHold h(p);
 	u_long waiting=0;
 	if(isOpen())
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 #ifdef USE_WINAPI
 		FXERRHSKT(::ioctlsocket(p->handle, FIONREAD, &waiting));
 #endif
@@ -765,9 +765,9 @@ FXfval FXBlkSocket::size() const
 	return (FXfval) waiting;
 }
 
-const FXACL &FXBlkSocket::permissions() const
+const FXACL &QBlkSocket::permissions() const
 {
-	static FXMutex lock;
+	static QMutex lock;
 	static FXACL perms;
 	FXMtxHold lh(lock);
 	if(perms.count()) return perms;
@@ -775,10 +775,10 @@ const FXACL &FXBlkSocket::permissions() const
 	return perms;
 }
 
-FXuval FXBlkSocket::readBlock(char *data, FXuval maxlen)
+FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXBlkSocket", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for reading"));
 	if(isOpen())
 	{
 		FXuval readed;
@@ -801,7 +801,7 @@ FXuval FXBlkSocket::readBlock(char *data, FXuval maxlen)
 				if(WSA_IO_PENDING==WSAGetLastError())
 				{
 					h.unlock();
-					HANDLE hs[2]; hs[0]=p->olr.hEvent; hs[1]=FXThread::int_cancelWaiterHandle();
+					HANDLE hs[2]; hs[0]=p->olr.hEvent; hs[1]=QThread::int_cancelWaiterHandle();
 					DWORD ret=WaitForMultipleObjects(2, hs, FALSE, INFINITE);
 					h.relock();
 					if(WAIT_OBJECT_0+1==ret)
@@ -811,7 +811,7 @@ FXuval FXBlkSocket::readBlock(char *data, FXuval maxlen)
 						p->handle=0;
 						p->connected=false;
 						h.unlock();
-						FXThread::current()->checkForTerminate();
+						QThread::current()->checkForTerminate();
 					}
 					else if(WAIT_OBJECT_0!=ret)
 					{ FXERRHSKT(ret); }
@@ -838,10 +838,10 @@ FXuval FXBlkSocket::readBlock(char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
+FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXBlkSocket", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for writing"));
 	if(isOpen())
 	{
 		FXuval written;
@@ -855,7 +855,7 @@ FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
 				if(WSA_IO_PENDING==WSAGetLastError())
 				{
 					h.unlock();
-					HANDLE hs[2]; hs[0]=p->olw.hEvent; hs[1]=FXThread::int_cancelWaiterHandle();
+					HANDLE hs[2]; hs[0]=p->olw.hEvent; hs[1]=QThread::int_cancelWaiterHandle();
 					DWORD ret=WaitForMultipleObjects(2, hs, FALSE, INFINITE);
 					h.relock();
 					if(WAIT_OBJECT_0+1==ret)
@@ -865,7 +865,7 @@ FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
 						p->handle=0;
 						p->connected=false;
 						h.unlock();
-						FXThread::current()->checkForTerminate();
+						QThread::current()->checkForTerminate();
 					}
 					else if(WAIT_OBJECT_0!=ret)
 					{ FXERRHSKT(ret); }
@@ -878,7 +878,7 @@ FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
 		}
 #endif
 #ifdef USE_POSIX
-		FXIODeviceS_SignalHandler::lockWrite();
+		QIODeviceS_SignalHandler::lockWrite();
 		h.unlock();
 #ifdef __linux__
 		// send() is a cancellable point on Linux
@@ -889,7 +889,7 @@ FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
 #endif
 		h.relock();
 		FXERRHSKT(written);
-		if(FXIODeviceS_SignalHandler::unlockWrite())		// Nasty this
+		if(QIODeviceS_SignalHandler::unlockWrite())		// Nasty this
 			FXERRGCONLOST("Broken socket", 0);
 #endif
 		if(isRaw()) flush();
@@ -898,12 +898,12 @@ FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXBlkSocket::writeBlock(const char *data, FXuval maxlen, const FXHostAddress &addr, FXushort port)
+FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen, const QHostAddress &addr, FXushort port)
 {
 	FXERRG("Currently not implemented", 0, 0);
 }
 
-int FXBlkSocket::ungetch(int c)
+int QBlkSocket::ungetch(int c)
 {
 	return -1;
 }
@@ -919,7 +919,7 @@ int FXBlkSocket::ungetch(int c)
 		FD_SET(p->handle, &fds);
 		int ret=::select(p->handle+1, &fds, 0, 0, &tv); 
 		if(ret) break;
-		if(WAIT_OBJECT_0==WaitForSingleObject(FXThread::int_cancelWaiterHandle(), 0))
+		if(WAIT_OBJECT_0==WaitForSingleObject(QThread::int_cancelWaiterHandle(), 0))
 		{	// There appears to be no way to cancel overlapping i/o on sockets, so here's best attempt
 			h.relock();
 			FXERRHSKT(::shutdown(p->handle, SD_BOTH));
@@ -927,12 +927,12 @@ int FXBlkSocket::ungetch(int c)
 			p->handle=0;
 			p->connected=false;
 			h.unlock();
-			FXThread::current()->checkForTerminate();
+			QThread::current()->checkForTerminate();
 		}
 	}
 #endif
 
-FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
+QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 {
 	FXMtxHold h(p);
 	FXERRH(isOpen(), "Server socket isn't open", FXBLKSOCKET_NOTOPEN, 0);
@@ -952,7 +952,7 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 		if(WSA_IO_PENDING==WSAGetLastError())
 		{
 			h.unlock();
-			HANDLE hs[2]; hs[0]=p->olr.hEvent; hs[1]=FXThread::int_cancelWaiterHandle();
+			HANDLE hs[2]; hs[0]=p->olr.hEvent; hs[1]=QThread::int_cancelWaiterHandle();
 			DWORD ret=WaitForMultipleObjects(2, hs, FALSE, (FXINFINITE==waitfor) ? INFINITE : waitfor);
 			h.relock();
 			if(WAIT_OBJECT_0+1==ret)
@@ -963,7 +963,7 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 				p->handle=0;
 				p->connected=false;
 				h.unlock();
-				FXThread::current()->checkForTerminate();
+				QThread::current()->checkForTerminate();
 			}
 			else if(WAIT_TIMEOUT==ret)
 				return 0;
@@ -980,8 +980,8 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 		GetAcceptExSockaddrs(buffer, 0, 16+MaxSockAddr, 16+MaxSockAddr, &foo, &foolen, (SOCKADDR **) &sa6addr, &salen);
 	}
 	FXERRHSKT(setsockopt(newskt, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&p->handle, sizeof(p->handle)));
-	FXAutoPtr<FXBlkSocket> ret;
-	FXERRHM(ret=new FXBlkSocket(*this, newskt));
+	FXAutoPtr<QBlkSocket> ret;
+	FXERRHM(ret=new QBlkSocket(*this, newskt));
 	unnewskt.dismiss();
 	if(isReadable())
 	{
@@ -1008,8 +1008,8 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 	int newskt=::accept(p->handle, (sockaddr *) sa6addr, &salen);
 	h.relock();
 	FXERRHSKT(newskt);
-	FXAutoPtr<FXBlkSocket> ret;
-	FXERRHM(ret=new FXBlkSocket(*this, newskt));
+	FXAutoPtr<QBlkSocket> ret;
+	FXERRHM(ret=new QBlkSocket(*this, newskt));
 	ret->setupSocket();
 #endif
 	readSockAddr(ret->p->peer.addr, ret->p->peer.port, sa6addr);
@@ -1017,13 +1017,13 @@ FXBlkSocket *FXBlkSocket::waitForConnection(FXuint waitfor)
 	return PtrRelease(ret);
 }
 
-FXuval FXBlkSocket::waitForMore(int msecs, bool *timeout)
+FXuval QBlkSocket::waitForMore(int msecs, bool *timeout)
 {
 	FXMtxHold h(p);
-	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXBlkSocket", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for reading"));
 	if(isOpen())
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		struct ::timeval tv;
 		tv.tv_sec=msecs/1000;
 		tv.tv_usec=(msecs % 1000)*1000;
@@ -1053,11 +1053,11 @@ FXString FXNetwork::hostname()
 	return buffer;
 }
 
-FXHostAddress FXNetwork::dnsLookup(const FXString &name)
+QHostAddress FXNetwork::dnsLookup(const FXString &name)
 {
-	FXHostAddress ret;
+	QHostAddress ret;
 	FXushort port;
-	FXThread_DTHold dth;
+	QThread_DTHold dth;
 #ifdef USE_WINAPI
 	hostent *he=::gethostbyname(name.text());
 	if(!he) return ret;
@@ -1101,9 +1101,9 @@ FXHostAddress FXNetwork::dnsLookup(const FXString &name)
 	return ret;
 }
 
-FXString FXNetwork::dnsReverseLookup(const FXHostAddress &addr)
+FXString FXNetwork::dnsReverseLookup(const QHostAddress &addr)
 {
-	FXThread_DTHold dth;
+	QThread_DTHold dth;
 #ifdef USE_WINAPI
 	FXuint ip4=htonl(addr.ip4Addr());
 	hostent *he=::gethostbyaddr((const char *) &ip4, sizeof(ip4), PF_INET);

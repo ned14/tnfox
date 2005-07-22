@@ -19,25 +19,25 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXTHREAD_H
-#define FXTHREAD_H
+#ifndef QTHREAD_H
+#define QTHREAD_H
 
 #include "FXProcess.h"
 
 namespace FX {
 
-/*! \file FXThread.h
+/*! \file QThread.h
 \brief Defines classes used in implementation of threads
 */
 /*!
 \def FXDISABLE_THREADS
 Defining this replaces threading classes implementation with static defaults
-ie; sufficient to make code run. Note that creating an FXThread causes an
+ie; sufficient to make code run. Note that creating an QThread causes an
 exception.
 */
 /*!
 \def FXINLINE_MUTEX_IMPLEMENTATION
-Defining this causes the implementation of FX::FXAtomicInt and FX::FXMutex
+Defining this causes the implementation of FX::FXAtomicInt and FX::QMutex
 to be defined inline. This can give substantial speed improvements but also
 increases code bloat.
 */
@@ -52,12 +52,12 @@ increases code bloat.
 #else
  #define FXMUTEX_FXAPI FXAPI
  #define FXMUTEX_GLOBALS_FXAPI
- #define FXMUTEX_INLINEI FXFORCEINLINE	// internally inlined inside FXThread.cxx
+ #define FXMUTEX_INLINEI FXFORCEINLINE	// internally inlined inside QThread.cxx
  #define FXMUTEX_INLINEP				// publicly inlined
 #endif
 
 //! For compatibility with FOX
-typedef FXuint FXThreadID;
+typedef FXuint QThreadID;
 
 /*! \class FXAtomicInt
 \brief Provides portable interlocked increment, decrement and exchange
@@ -68,10 +68,10 @@ a multiprocessor capable system needs is an atomic swap instruction).
 All synchronisation primitives (such as a semaphore or mutex) require
 atomic integer manipulation support in hardware.
 
-There are a number of instances when using FXMutex or other TnFOX
+There are a number of instances when using QMutex or other TnFOX
 synchronisation classes are overkill and inefficient eg; a thread-safe
 incrementing counter. In these cases, FXAtomicInt can provide
-substantially improved performance. Indeed, FXMutex is implemented using it.
+substantially improved performance. Indeed, QMutex is implemented using it.
 
 On all Intel x86 architectures, FXAtomicInt is written directly in assembler
 which due to the 80486 and later's full support, requires only one core instruction.
@@ -86,14 +86,14 @@ bus operations are, write a simple loop incrementing a FXAtomicInt and watch how
 slow your machine becomes!
 
 As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
-to all code including FXThread.h. This can cause substantial performance
+to all code including QThread.h. This can cause substantial performance
 improvement at the cost of code size.
 */
 class FXMUTEX_FXAPI FXAtomicInt
 {
 	volatile int lock;		// Unused on systems with atomic increment/decrement/exchange-compare
 	volatile int value;
-	friend class FXMutex;
+	friend class QMutex;
 	friend class FXShrdMemMutex;
 	FXMUTEX_INLINEI FXDLLLOCAL int get() const throw();
 	FXMUTEX_INLINEI FXDLLLOCAL int set(int i) throw();
@@ -146,7 +146,7 @@ public:
 /*! \class FXShrdMemMutex
 \brief A very lightweight mutex object to synchronise access to shared memory regions
 
-What goes for FX::FXMutex goes for this. However, there are further restrictions: because
+What goes for FX::QMutex goes for this. However, there are further restrictions: because
 inter-process mutex support is not available on all platforms, this object provides
 a working alternative based on FX::FXAtomicInt. It however does not invoke kernel waits
 so hence your process will waste processor time spinning on the lock if it is held by
@@ -165,7 +165,7 @@ Because of all these problems, it is advisable that for anything more than trivi
 use of shared memory, another synchronisation method should be used eg; IPC messaging.
 
 As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
-to all code including FXThread.h. This can cause substantial performance
+to all code including QThread.h. This can cause substantial performance
 improvement at the cost of code size.
 */
 class FXMUTEX_FXAPI FXShrdMemMutex
@@ -187,7 +187,7 @@ public:
 	FXMUTEX_INLINEP bool tryLock();
 };
 
-/*! \class FXMutex
+/*! \class QMutex
 \brief A MUTual EXclusion object to synchronise threads accessing the same data (Qt compatible)
 
 Basically, when more than one thing uses data at the same time, corruption inevitably
@@ -203,17 +203,17 @@ Win32/64, such a thing is called a <i>critical section</i> (NOT a mutex - they h
 much more functionality and are much much slower) and under POSIX such a thing is
 called a \em mutex.
 
-Generally FXMutex is used by compositing it into your class eg;
+Generally QMutex is used by compositing it into your class eg;
 \code
-class MyProtectedClass : public FXMutex
+class MyProtectedClass : public QMutex
 {
-	MyProtectedClass() : FXMutex()
+	MyProtectedClass() : QMutex()
 	{
 		...
 	}
 };
 \endcode
-The API of FXMutex has been designed to be highly non-intrusive so that it may
+The API of QMutex has been designed to be highly non-intrusive so that it may
 be subclassed easily.
 
 <h3>Performance</h3>
@@ -222,7 +222,7 @@ their performance is extremely important. Unfortunately, POSIX threads
 implementation of mutexs is mostly woeful, and critical section objects on
 Win32 are less than optimal as well.
 
-Hence on Intel x86 architectures, or on all MS Windows, FXMutex is implemented
+Hence on Intel x86 architectures, or on all MS Windows, QMutex is implemented
 directly using inlined FXAtomicInt operations. This solution has proved in
 benchmarks to be as optimal as it gets for the supported platforms. On those
 POSIX platforms which allow POSIX semaphores to be used from within signal/cleanup
@@ -250,30 +250,30 @@ should set your spin count so it takes the same time to make the count as the
 average period the lock is held as so the other processor will have released the
 lock before the count is completed.
 
-\note FXMutex internally sets spin counts to zero on uniprocessor machines. This is
+\note QMutex internally sets spin counts to zero on uniprocessor machines. This is
 a runtime check performed during construction and is overriden by setSpinCount() (as
 there are some uses for spin counts occasionally on uniprocessor machines).
 
 <h3>Debugging:</h3>
 Finding where data is being altered without holding a lock can be difficult - this
-is where setting the debug yield flag using FXMutex::setMutexDebugYield() can be
-useful. When set the mutex calls FX::FXThread::yield() directly after any lock
+is where setting the debug yield flag using QMutex::setMutexDebugYield() can be
+useful. When set the mutex calls FX::QThread::yield() directly after any lock
 thus ensuring that anything else wanting that lock will go to sleep on it so you
 can inspect the situation using the debugger. Obviously this can severely degrade
 performance so only set for certain periods around the area you require it.
 
 <h3>Performance:</h3>
-Now that FXMutex has been hand tuned and optimised, we can present some figures
+Now that QMutex has been hand tuned and optimised, we can present some figures
 (which were valid for v0.85):
 \code
-                        FXAtomicInt   FXMutex
+                        FXAtomicInt   QMutex
     SMP Build, 1 thread :  51203277  18389113
     SMP Build, 2 threads:   4793978   5337603
 Non-SMP Build, 1 thread : 103305785  27352297
 Non-SMP Build, 2 threads:  54929964  10978153
 \endcode
 These are the results from TestMutex in the TestSuite directory. As you can see,
-atomic int operations upon which FXMutex is very reliant nosedive when the
+atomic int operations upon which QMutex is very reliant nosedive when the
 location is in contention with another thread (by around 10.7 times). Indeed, the
 very fact that the mutex which does multiple atomic int operations per lock &
 unlock is faster than a simple increment shows how the CPU isn't optimised for
@@ -285,27 +285,27 @@ superior to other fast mutex implementations. On non-SMP builds, it's a factor o
 2.5 but then atomic int operations are around precisely half as you'd expect with
 two threads.
 
-Non-SMP builds' FXMutex is between 48% and 106% faster than the SMP build's.
+Non-SMP builds' QMutex is between 48% and 106% faster than the SMP build's.
 
 As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
-to all code including FXThread.h. This can cause substantial performance
+to all code including QThread.h. This can cause substantial performance
 improvement at the cost of code size.
 
-\sa FXRWMutex
+\sa QRWMutex
 */
-struct FXMutexPrivate;
-class FXMUTEX_FXAPI FXMutex
+struct QMutexPrivate;
+class FXMUTEX_FXAPI QMutex
 {
-	FXMutexPrivate *p;
-	FXMutex(const FXMutex &);
-	FXMutex &operator=(const FXMutex &);
-	friend class FXRWMutex;
+	QMutexPrivate *p;
+	QMutex(const QMutex &);
+	QMutex &operator=(const QMutex &);
+	friend class QRWMutex;
 	FXMUTEX_INLINEI FXDLLLOCAL void int_lock();
 	FXMUTEX_INLINEI FXDLLLOCAL void int_unlock();
 public:
 	//! Constructs a mutex with the given spin count
-	FXMUTEX_INLINEP FXMutex(FXuint spinCount=4000);
-	FXMUTEX_INLINEP ~FXMutex();
+	FXMUTEX_INLINEP QMutex(FXuint spinCount=4000);
+	FXMUTEX_INLINEP ~QMutex();
 	//! Returns if the mutex is locked
 	FXMUTEX_INLINEP bool isLocked() const;
 	/*! \overload For FOX compatibility
@@ -338,7 +338,7 @@ public:
 };
 
 
-/*! \class FXWaitCondition
+/*! \class QWaitCondition
 \brief An OS/2 style event object (Qt compatible)
 
 This wait condition object functions very similarly to an event object in OS/2 or Win32. Essentially, this
@@ -355,26 +355,26 @@ Unlike OS/2 or Win32, you are not guaranteed that the first thread to wait on
 the object \b will be the first thread released with wakeOne(). Due to POSIX limitations, the
 actual thread released will be random.
 
-\note On all platforms FXWaitCondition will cancel the thread during a wait if a cancellation has
-been requested. Please consult the documentation for FXThread.
+\note On all platforms QWaitCondition will cancel the thread during a wait if a cancellation has
+been requested. Please consult the documentation for QThread.
 
 \warning POSIX does not guarantee that POSIX wait conditions can be used from cleanup/signal
 handlers (most annoyingly). Indeed FreeBSD aborts the process if you try which is even more
-serious, so FXWaitCondition::wait() issues a warning on all platforms in debug mode.
+serious, so QWaitCondition::wait() issues a warning on all platforms in debug mode.
 */
-class FXWaitConditionPrivate;
-class FXAPI FXWaitCondition
+class QWaitConditionPrivate;
+class FXAPI QWaitCondition
 {
-	FXWaitConditionPrivate *p;
+	QWaitConditionPrivate *p;
 	bool isSignalled, isAutoReset;
-	FXWaitCondition(const FXWaitCondition &);
-	FXWaitCondition &operator=(const FXWaitCondition &);
+	QWaitCondition(const QWaitCondition &);
+	QWaitCondition &operator=(const QWaitCondition &);
 public:
 	/*! \param autoreset When true, object automatically reset()'s itself after releasing all threads with a wakeAll()
 	\param initialstate When true, object starts life signalled
 	*/
-	FXWaitCondition(bool autoreset=false, bool initialstate=false);
-	~FXWaitCondition();
+	QWaitCondition(bool autoreset=false, bool initialstate=false);
+	~QWaitCondition();
 	/*! \return True if wait succeeded, false if it timed out
 	Waits \em time milliseconds for the object to become signalled. FXINFINITE specifies wait forever.
 	*/
@@ -394,17 +394,17 @@ public:
 	bool signalled() const { return isSignalled; }
 };
 
-/*! \class FXRWMutex
+/*! \class QRWMutex
 \brief A mutex object permitting multiple reads simultaneously
 
-One of these functions quite similarly to a FXMutex, except that when you lock() it you can
+One of these functions quite similarly to a QMutex, except that when you lock() it you can
 specify if you want write access in addition to read access. If you do request write access,
 only one thread (you) is permitted to use the data. If you want merely read access, anyone
 else requesting only read access will be permitted to read without blocking.
 
-FXRWMutex is useful when you have many threads mostly reading the same data because it can
+QRWMutex is useful when you have many threads mostly reading the same data because it can
 in some cases vastly improve performance. It does however arrive with a greater cost
-than a FXMutex which is in the order of fractions of a microsecond - a FXRWMutex will take
+than a QMutex which is in the order of fractions of a microsecond - a QRWMutex will take
 possibly up to four to five times longer.
 
 This implementation fully supports recursion of both read and write locks and furthermore
@@ -429,13 +429,13 @@ experience - <b>always assume when requesting write access when already holding 
 lock that you have effectively unlocked completely</b> ie; retest entries have not
 been since added to a list, or assume pointers or references remain valid etc.
 */
-class FXRWMutexPrivate;
+class QRWMutexPrivate;
 class FXMtxHold;
-class FXAPI FXRWMutex
+class FXAPI QRWMutex
 {
-	FXRWMutexPrivate *p;
-	FXRWMutex(const FXRWMutex &);
-	FXRWMutex &operator=(const FXRWMutex &);
+	QRWMutexPrivate *p;
+	QRWMutex(const QRWMutex &);
+	QRWMutex &operator=(const QRWMutex &);
 public:
 	enum LockedState
 	{
@@ -446,11 +446,11 @@ public:
 private:
 	LockedState lockedstate;
 public:
-	FXRWMutex();
-	~FXRWMutex();
-	//! Returns the spin count of the underlying FXMutex
+	QRWMutex();
+	~QRWMutex();
+	//! Returns the spin count of the underlying QMutex
 	FXuint spinCount() const;
-	//! Sets the spin count of the underlying FXMutex. It would be rare you'd want to set this as the default is about right.
+	//! Sets the spin count of the underlying QMutex. It would be rare you'd want to set this as the default is about right.
 	void setSpinCount(FXuint c);
 	/*! \return True if nested write lock request while read lock was held resulted
 	in unlock for other thread (ie; reread all your pointers etc)
@@ -493,11 +493,11 @@ private:
 /*! \class FXMtxHold
 \brief Helper class for using mutexes
 
-FXMtxHold simply takes a FX::FXMutex or FX::FXRWMutex (or pointers to the same) as an argument
+FXMtxHold simply takes a FX::QMutex or FX::QRWMutex (or pointers to the same) as an argument
 to its constructor and locks the mutex for you. Hence then when FXMtxHold is destructed,
 the mutex is guaranteed to be freed.
 
-A FXMutex or FXRWMutex can also be specified via passing a FX::FXPol_lockable policy.
+A QMutex or QRWMutex can also be specified via passing a FX::FXPol_lockable policy.
 
 A rarely used other possibility is to pass FXMtxHold::UnlockAndRelock as the second argument to the
 constructor - this unlocks the mutex and relocks it on destruction.
@@ -506,8 +506,8 @@ class FXMtxHold
 {
 	FXuint flags;
 	bool locklost;
-	FXMutex *mutex;
-	FXRWMutex *rwmutex;
+	QMutex *mutex;
+	QRWMutex *rwmutex;
 
 	FXMtxHold(const FXMtxHold &);
 	FXMtxHold &operator=(const FXMtxHold &);
@@ -524,29 +524,29 @@ public:
 		IsRWMutexWrite=(1<<29)
 	};
 	//! Constructs an instance holding the lock to mutex \em m
-	FXFORCEINLINE FXMtxHold(const FXMutex *m, FXuint _flags=LockAndUnlock)
-		: flags(_flags), locklost(false), mutex(const_cast<FXMutex *>(m))
+	FXFORCEINLINE FXMtxHold(const QMutex *m, FXuint _flags=LockAndUnlock)
+		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(m))
 	{
 		if((flags & AcceptNullMutex) && !mutex) return;
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(const FXMutex &m, FXuint _flags=LockAndUnlock)
-		: flags(_flags), locklost(false), mutex(const_cast<FXMutex *>(&m))
+	FXFORCEINLINE FXMtxHold(const QMutex &m, FXuint _flags=LockAndUnlock)
+		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(&m))
 	{
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 		flags|=IsLocked;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXFORCEINLINE FXMtxHold(const FXRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<FXRWMutex *>(m))
+	FXFORCEINLINE FXMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(m))
 	{
 		if((flags & AcceptNullMutex) && !rwmutex) return;
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(const FXRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<FXRWMutex *>(&m))
+	FXFORCEINLINE FXMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(&m))
 	{
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
@@ -589,7 +589,7 @@ public:
 	FXFORCEINLINE ~FXMtxHold() { unlock(); }
 };
 //! For FOX compatibility only
-typedef FXMtxHold FXMutexLock;
+typedef FXMtxHold QMutexLock;
 
 // Needs to go here as FXMtxHold needs to be defined
 namespace Generic {
@@ -632,13 +632,13 @@ private:
 	type &val;
 public:
 	//! Constructs an instance reflecting \em _val while locking \em m
-	lockedAccessor(type &_val, const FXMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
+	lockedAccessor(type &_val, const QMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
 	//! \overload
-	lockedAccessor(type &_val, const FXMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	lockedAccessor(type &_val, const QMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
 	//! \overload
-	lockedAccessor(type &_val, const FXRWMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
+	lockedAccessor(type &_val, const QRWMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
 	//! \overload
-	lockedAccessor(type &_val, const FXRWMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	lockedAccessor(type &_val, const QRWMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
 	lockedAccessor(const lockedAccessor &_o) : h(_o.h), val(_o.val)
@@ -705,7 +705,7 @@ class FXZeroedWait
 {
 	FXAtomicInt count;
 	bool doChecks;
-	FXWaitCondition wc;
+	QWaitCondition wc;
 	void handleCount(int nc)
 	{
 		if(doChecks)
@@ -741,26 +741,26 @@ public:
 	void setChecks(bool d) { doChecks=d; }
 };
 
-/*! \class FXThreadLocalStorage
+/*! \class QThreadLocalStorage
 \brief Permits process-global storage local to a thread only
 
-FXThreadLocalStorage represents data which is local to a thread only ie; when queryed, the
+QThreadLocalStorage represents data which is local to a thread only ie; when queryed, the
 data returned is the same across any code in the process but changes according to which thread is
 currently executing. Multithreading novices may not be able to think of why you would
 ever want to use this (given that using the stack is usually sufficient), but experts will
 know there are some problems unsolvable without TLS (Thread Local Storage) nor ability to
 retrieve a unique thread id.
 
-Tornado implements TLS using FXThreadLocalStorageBase which basically permits setting
-and retrieving of a <tt>void *</tt>. FXThreadLocalStorage is then implemented as a template
-over FXThreadLocalStorageBase to make it more C++ friendly. To use FXThreadLocalStorage,
+Tornado implements TLS using QThreadLocalStorageBase which basically permits setting
+and retrieving of a <tt>void *</tt>. QThreadLocalStorage is then implemented as a template
+over QThreadLocalStorageBase to make it more C++ friendly. To use QThreadLocalStorage,
 pass the \b pointer to the type of the data you wish to make thread-local:
 \code
 class MyLocalData
 {
 	int foo;
 };
-static FXThreadLocalStorage<MyLocalDataBase *> thrlocaldata;
+static QThreadLocalStorage<MyLocalDataBase *> thrlocaldata;
 ...
 // NOTE: Very very important you ALWAYS initialise on first use with TLS (think about it!)
 if(!thrlocaldata) thrlocaldata=new MyLocalData;
@@ -769,27 +769,27 @@ if(thrlocaldata->foo>8) ...
 \endcode
 Generally, though not always, you will use TLS as a static mostly-global variable.
 \note Ensure you do not forget to release any memory stored into TLS. Have your thread's
-cleanup routine perform the appropriate checks or else use FXThread::addCleanupCall().
+cleanup routine perform the appropriate checks or else use QThread::addCleanupCall().
 */
-class FXThreadLocalStorageBasePrivate;
-class FXAPI FXThreadLocalStorageBase
+class QThreadLocalStorageBasePrivate;
+class FXAPI QThreadLocalStorageBase
 {
-	FXThreadLocalStorageBasePrivate *p;
-	FXThreadLocalStorageBase(const FXThreadLocalStorageBase &);
-	FXThreadLocalStorageBase &operator=(const FXThreadLocalStorageBase &);
+	QThreadLocalStorageBasePrivate *p;
+	QThreadLocalStorageBase(const QThreadLocalStorageBase &);
+	QThreadLocalStorageBase &operator=(const QThreadLocalStorageBase &);
 public:
-	FXThreadLocalStorageBase(void *initval=0);
-	~FXThreadLocalStorageBase();
+	QThreadLocalStorageBase(void *initval=0);
+	~QThreadLocalStorageBase();
 	//! Sets the TLS value
 	void setPtr(void *val);
 	//! Retrieves the TLS value
 	void *getPtr() const;
 };
-template<class type> class FXThreadLocalStorage : private FXThreadLocalStorageBase
+template<class type> class QThreadLocalStorage : private QThreadLocalStorageBase
 {
 public:
 	//! Constructs the TLS, optionally storing an initial value (for the current thread) immediately
-	FXThreadLocalStorage(type *initval=0) : FXThreadLocalStorageBase(static_cast<void *>(initval)) { }
+	QThreadLocalStorage(type *initval=0) : QThreadLocalStorageBase(static_cast<void *>(initval)) { }
 	/*! Operator overload allowing the pointer to the type represented by
 	this object to be set
 	*/
@@ -802,15 +802,15 @@ public:
 };
 
 
-/*! \class FXThread
+/*! \class QThread
 \brief The base class for all threads in FOX (Qt compatible)
 
-FXThread is designed to be one of the most comprehensive C++ thread classes around. Some of its many
+QThread is designed to be one of the most comprehensive C++ thread classes around. Some of its many
 features include:
 \li You can name your threads. This may seem trivial, but we've found it to be a real boon for debugging
 \li You can define a POSIX thread cleanup handler to be called upon thread cancellation
 \li id() returns something unique on all platforms portably
-\li Facilities for Thread Local Storage (TLS) is provided by FXThreadLocalStorage
+\li Facilities for Thread Local Storage (TLS) is provided by QThreadLocalStorage
 \li A default FXException handler is provided as standard which routes all exceptions to somewhere
 capable of displaying GUI stuff where it is then FXERRH_REPORT()'ed
 \li Threads can self-destruct using setAutoDelete().
@@ -835,7 +835,7 @@ Obviously one thing you cannot protect against is calling other code which \em d
 on the stack and waits on the kernel. For these situations alone you should use disableTermination()
 and enableTermination() around the appropriate calls. These two functions can be nested ie; you must
 call enableTermination() as many times as disableTermination() for termination to be actually
-reenabled. See FX::FXThread_DTHold.
+reenabled. See FX::QThread_DTHold.
 
 My suggestion is to try and keep as much code cancellable as possible. Doing this pays off when
 your thread is asked to quit and the user isn't left with a thread that won't quit for five
@@ -847,15 +847,15 @@ constantly disabling termination, firstly consider a redesign. If you can't do t
 OS/2 or Win32 approach of creating a flag (consider FXAtomicInt as a thread-safe flag) that the
 thread polls can work well.
 
-\note On Win32 there is no such thing as cleanup handlers, so FXThread emulates them along with special support
-by various other classes such as FXWaitCondition, FXPipe and FXBlkSocket. Some FOX file i/o functions
+\note On Win32 there is no such thing as cleanup handlers, so QThread emulates them along with special support
+by various other classes such as QWaitCondition, QPipe and QBlkSocket. Some FOX file i/o functions
 do not have this special support, so it is strongly recommended that for identical cross-platform
 behaviour you regularly call checkForTerminate() which on Win32 is implemented rather brutally
 by calling the cleanup handler and immediately exiting the thread.
 
 \warning Cleanup handlers are invoked on most POSIX platforms via a synchronous signal. This
 implies that all the restrictions placed on signal handling code also apply to cleanup code -
-the most annoying is that FXWaitCondition is totally unusable.
+the most annoying is that QWaitCondition is totally unusable.
 
 <h3>Self-destruction:</h3>
 In some circumstances, you may wish to spin off self-managed thread objects which perform their
@@ -863,7 +863,7 @@ function before self-destructing when they determine they are no longer necessar
 and \b must not use <tt>delete this</tt> because during destruction the cleanup handler is
 invoked by POSIX threads thus reentering object destruction and crashing the program.
 
-Instead, use setAutoDelete() which has FXThread safely destroy the object after POSIX threads
+Instead, use setAutoDelete() which has QThread safely destroy the object after POSIX threads
 has been moved out of the way. Any attempts to <tt>delete this</tt> should be trapped as a
 fatal exception.
 
@@ -897,35 +897,35 @@ unless it's a process-wide signal like \c SIGTERM. This is not at all guaranteed
 things will break on some POSIX platforms - however the above situation is unresolvable
 without this behaviour, so I'm hoping that most POSIX implementations will do as above (Linux and FreeBSD do).
 Certainly for \c SIGPIPE itself it's logical that most implementations of \c write()
-raise the signal there & then so FXPipe's assumption will be correct.
+raise the signal there & then so QPipe's assumption will be correct.
 
 One major problem is if you are modifying data which a signal handler also modifies.
 If the signal is raised right in the middle of your changes then the handler will
 also get the lock (as it recurses) and thus corrupt your data. To prevent this
-instantiate a FX::FXThread_DisableSignals around the critical code.
+instantiate a FX::QThread_DisableSignals around the critical code.
 
 FXProcess sets up most of the fatal signals to call an internal handler which performs
 the fatal exit upcall before printing some info to \c stderr and exiting. This handler
 has been designed to be called in the context of any thread at all.
 
 <h3>Qt</h3>
-You may notice an uncanny similarity with QThread in Qt. This is because FXThread was originally
+You may notice an uncanny similarity with QThread in Qt. This is because QThread was originally
 a drop-in superset replacement for QThread.
 
-\sa FXThread_DTHold
+\sa QThread_DTHold
 */
-class FXThreadPrivate;
-class FXAPI FXThread
+class QThreadPrivate;
+class FXAPI QThread
 {
-	friend class FXThreadPrivate;
+	friend class QThreadPrivate;
 	friend class FXPrimaryThread;
 	const char *myname;
 	FXuint magic;
-	FXThreadPrivate *p;
+	QThreadPrivate *p;
 	bool isRunning, isFinished, isInCleanup;
 	int termdisablecnt;
-	FXThread(const FXThread &);
-	FXThread &operator=(const FXThread &);
+	QThread(const QThread &);
+	QThread &operator=(const QThread &);
 public:
 	//! Specifies where this thread shall run
 	enum ThreadScheduler
@@ -937,9 +937,9 @@ public:
 	/*! Constructs a thread object named \em _name. The thread is constructed in the calling thread's
 	context and does not actually run the new thread until you call start()
 	*/
-	FXThread(const char *name=0, bool autodelete=false, FXuval stacksize=524288/*512Kb*/, ThreadScheduler schedloc=Auto);
+	QThread(const char *name=0, bool autodelete=false, FXuval stacksize=524288/*512Kb*/, ThreadScheduler schedloc=Auto);
 	//! Destructs the thread. Causes an exception if the thread is still running
-	virtual ~FXThread();
+	virtual ~QThread();
 	//! Returns the name of the thread
 	const char *name() const throw() { return myname; }
 	//! Returns the stack size that the thread is given
@@ -963,7 +963,7 @@ public:
 
 	Waits for the thread to finish. A thread waiting on itself will never succeed.
 	\warning On POSIX Unix, when specified with something other than FXINFINITE, if the thread died in a way that
-	didn't permit FXThread to be notified then this may wait forever
+	didn't permit QThread to be notified then this may wait forever
 	*/
 	bool wait(FXuint time=FXINFINITE);
 	/*! \overload
@@ -972,8 +972,8 @@ public:
 	/*! \param waitTillStarted True if you want the call to wait until the thread is running before returning
 
 	Call this to start the separate parallel execution of this thread object from its run(). Remember
-	never to access any data in the FXThread object after calling this method without first synchronising
-	access. Our suggestion is to also subclass FXMutex so then you can simply use lock() and unlock()
+	never to access any data in the QThread object after calling this method without first synchronising
+	access. Our suggestion is to also subclass QMutex so then you can simply use lock() and unlock()
 	(preferably via FXMtxHold) around every access.
 	*/
 	void start(bool waitTillStarted=false) ;
@@ -985,7 +985,7 @@ public:
 	\deprecated For FOX compatibility only */
 	FXDEPRECATEDEXT FXbool isrunning() const { return running(); }
 	//! \deprecated For FOX compatibility only
-	FXDEPRECATEDEXT FXbool iscurrent() const { return FXThread::current()==this; }
+	FXDEPRECATEDEXT FXbool iscurrent() const { return QThread::current()==this; }
 	//! Returns true if the thread is in the process of finishing (in its cleanup handler)
 	bool inCleanup() const  throw(){ return isInCleanup; }
 	//! Returns true if this object is valid (ie; not deleted)
@@ -1009,20 +1009,20 @@ public:
 	static FXulong id() throw();
 	//! Returns a unique number identifying the thread represented by this instance
 	FXulong myId() const;
-	/*! Returns the currently executing FXThread object. Note that the primary thread
+	/*! Returns the currently executing QThread object. Note that the primary thread
 	(ie; the one main() was called by first thing) correctly returns a pointer to an internal thread object.
-	\warning All FXThread usage is non-trivial and thus should not be used during static data initialisation
+	\warning All QThread usage is non-trivial and thus should not be used during static data initialisation
 	and destruction. I've put in an \c assert() to help you catch these in debug mode.
 	*/
-	static FXThread *current();
+	static QThread *current();
 	//! Returns the primary thread object in the process
-	static FXThread *primaryThread() throw();
-	/*! Returns the FXThread which created this thread. Is zero if a non-FXThread thread
+	static QThread *primaryThread() throw();
+	/*! Returns the QThread which created this thread. Is zero if a non-QThread thread
 	created this thread.
 	\warning The pointer returned by this function will be invalid if the creating thread
 	has since been deleted. Use isValid() to determine any returned pointer's validity.
 	*/
-	FXThread *creator() const;
+	QThread *creator() const;
 	/*! Returns the scheduling priority of the thread where -127 is lowest priority
 	and 128 is maximum. 0 always equals system default ie; normal.
 	\sa setPriority()
@@ -1063,11 +1063,11 @@ public:
 	*/
 	void enableTermination();
 	//! The specification type of a thread creation upcall vector
-	typedef Generic::Functor<Generic::TL::create<void, FXThread *>::value> CreationUpcallSpec;
+	typedef Generic::Functor<Generic::TL::create<void, QThread *>::value> CreationUpcallSpec;
 	/*! Registers code to be called when a thread is created. The form of the code is:
 	\code
-	void function(FXThread *);
-	void Object::member(FXThread *);
+	void function(QThread *);
+	void Object::member(QThread *);
 	\endcode
 	The most common is a member function as this can be in some arbitrary object instance,
 	thus making finding your data much easier. If \em inThread is true, the upcall is made just after setting up
@@ -1100,44 +1100,44 @@ protected:
 public:
 	static FXDLLLOCAL void *int_cancelWaiterHandle();
 private:
-	friend class FXThread_DisableSignals;
+	friend class QThread_DisableSignals;
 	static void *int_disableSignals();
 	static void int_enableSignals(void *oldmask);
 };
 
-/*! \class FXThread_DTHold
+/*! \class QThread_DTHold
 \brief Wraps thread termination disables in an exception-proof fashion
 
 This little helper class works similarly to FX::FXMtxHold in disabling
 thread termination on construction and disabling it on destruction.
-Since FX::FXThread::disableTermination() works by a reference count
+Since FX::QThread::disableTermination() works by a reference count
 this works nicely. You can use undo() and redo() if needed.
 */
-class FXThread_DTHold : public Generic::DoUndo<FXThread, void (FXThread::*)(), void (FXThread::*)()>
+class QThread_DTHold : public Generic::DoUndo<QThread, void (QThread::*)(), void (QThread::*)()>
 {
 public:
 	//! Constructs an instance disabling thread termination for thread \em t
-	FXThread_DTHold(FXThread *t=FXThread::current())
-		: Generic::DoUndo<FXThread, void (FXThread::*)(), void (FXThread::*)()>(t, &FXThread::disableTermination, &FXThread::enableTermination) { }
+	QThread_DTHold(QThread *t=QThread::current())
+		: Generic::DoUndo<QThread, void (QThread::*)(), void (QThread::*)()>(t, &QThread::disableTermination, &QThread::enableTermination) { }
 };
 
-/*! \class FXThread_DisableSignals
+/*! \class QThread_DisableSignals
 \brief Disables signals in an exception-proof fashion
 
 This little helper class works similarly to FX::FXMtxHold in disabling
 POSIX signals for the calling thread on construction and reenabling them
 on destruction.
 */
-class FXThread_DisableSignals
+class QThread_DisableSignals
 {
     void *old_mask;
 public:
 	//! Constructs an instance disabling signals for the current thread
-    FXThread_DisableSignals() : old_mask(FXThread::int_disableSignals()) { }
-    ~FXThread_DisableSignals() { FXThread::int_enableSignals(old_mask); }
+    QThread_DisableSignals() : old_mask(QThread::int_disableSignals()) { }
+    ~QThread_DisableSignals() { QThread::int_enableSignals(old_mask); }
 };
 
-/*! \class FXThreadPool
+/*! \class QThreadPool
 \brief Provides a pool of worker threads
 
 Thread pools are an old & common invention used to work around the cost of
@@ -1173,15 +1173,15 @@ if your job reschedules itself, cancel() when returning \c WasRunning won't
 actually have cancelled the job and you'll need to call it again. Suggested
 code is as follows:
 \code
-while(FXThreadPool::WasRunning==threadpool.cancel(job));
+while(QThreadPool::WasRunning==threadpool.cancel(job));
 \endcode
 */
-struct FXThreadPoolPrivate;
-class FXAPI FXThreadPool
+struct QThreadPoolPrivate;
+class FXAPI QThreadPool
 {
-	FXThreadPoolPrivate *p;
-	FXThreadPool(const FXThreadPool &);
-	FXThreadPool &operator=(const FXThreadPool &);
+	QThreadPoolPrivate *p;
+	QThreadPool(const QThreadPool &);
+	QThreadPool &operator=(const QThreadPool &);
 	void startThreads(FXuint newno);
 public:
 	//! A handle to a job within the thread pool
@@ -1190,8 +1190,8 @@ public:
 	being the number of processors in the local machine. \em dynamic when
 	true means create threads on demand up until \em total.
 	*/
-	FXThreadPool(FXuint total=FXProcess::noOfProcessors(), bool dynamic=false);
-	~FXThreadPool();
+	QThreadPool(FXuint total=FXProcess::noOfProcessors(), bool dynamic=false);
+	~QThreadPool();
 	//! Returns the number of threads in total in the pool
 	FXuint total() const throw();
 	//! Returns the maximum number of threads permitted
@@ -1229,13 +1229,13 @@ public:
 
 } // namespace
 
-#ifndef FXBEING_INCLUDED_BY_FXTHREAD
+#ifndef FXBEING_INCLUDED_BY_QTHREAD
  #ifdef FXINLINE_MUTEX_IMPLEMENTATION
-  #define FXBEING_INCLUDED_BY_FXTHREAD
-  #include "int_FXMutexImpl.h"
-  #undef FXBEING_INCLUDED_BY_FXTHREAD
+  #define FXBEING_INCLUDED_BY_QTHREAD
+  #include "int_QMutexImpl.h"
+  #undef FXBEING_INCLUDED_BY_QTHREAD
 
-  // Also undef stuff from FXMutexImpl.h
+  // Also undef stuff from QMutexImpl.h
   #undef USE_WINAPI
   #undef USE_OURMUTEX
   #undef USE_X86

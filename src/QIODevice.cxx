@@ -19,12 +19,12 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#include "FXIODeviceS.h"
+#include "QIODeviceS.h"
 #include "FXStream.h"
 #include "FXACL.h"
 #include "FXException.h"
-#include "FXTrans.h"
-#include "FXThread.h"
+#include "QTrans.h"
+#include "QThread.h"
 #include "FXSecure.h"
 #include <string.h>
 #include "FXErrCodes.h"
@@ -40,25 +40,25 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-FXfval FXIODevice::at() const
+FXfval QIODevice::at() const
 {
 	return ioIndex;
 }
 
-bool FXIODevice::at(FXfval newpos)
+bool QIODevice::at(FXfval newpos)
 {
 	ioIndex=newpos;
 	return true;
 }
 
-bool FXIODevice::atEnd() const
+bool QIODevice::atEnd() const
 {
 	return at()>=size();
 }
 
-const FXACL &FXIODevice::permissions() const
+const FXACL &QIODevice::permissions() const
 {
-	static FXMutex lock;
+	static QMutex lock;
 	static FXACL perms;
 	FXMtxHold lh(lock);
 	if(perms.count()) return perms;
@@ -66,12 +66,12 @@ const FXACL &FXIODevice::permissions() const
 	perms.append(FXACL::Entry(FXACLEntity::owner(), 0, FXACL::Permissions().setAll()));
 	return perms;
 }
-void FXIODevice::setPermissions(const FXACL &perms)
+void QIODevice::setPermissions(const FXACL &perms)
 {
-	FXERRG(FXTrans::tr("FXIODevice", "You cannot set the permissions on this device"), FXIODEVICE_BADPERMISSIONS, 0);
+	FXERRG(QTrans::tr("QIODevice", "You cannot set the permissions on this device"), FXIODEVICE_BADPERMISSIONS, 0);
 }
 
-FXuval FXIODevice::readLine(char *data, FXuval maxlen)
+FXuval QIODevice::readLine(char *data, FXuval maxlen)
 {
 	FXuval count=0;
 	int c;
@@ -84,7 +84,7 @@ FXuval FXIODevice::readLine(char *data, FXuval maxlen)
 	return count;
 }
 
-int FXIODevice::getch()
+int QIODevice::getch()
 {
 	char ret=0;
 	if(readBlock(&ret, 1))
@@ -93,7 +93,7 @@ int FXIODevice::getch()
 		return -1;
 }
 
-int FXIODevice::putch(int c)
+int QIODevice::putch(int c)
 {
 	char val=(char) c;
 	if(writeBlock(&val, 1))
@@ -102,7 +102,7 @@ int FXIODevice::putch(int c)
 		return -1;
 }
 
-FXuval FXIODevice::applyCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, FXIODevice::CRLFType type)
+FXuval QIODevice::applyCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, QIODevice::CRLFType type)
 {
 	if(Default==type)
 #ifdef WIN32
@@ -141,7 +141,7 @@ FXuval FXIODevice::applyCRLF(bool &midNL, FXuchar *output, const FXuchar *input,
 	return o;
 }
 
-FXuval FXIODevice::removeCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval len)
+FXuval QIODevice::removeCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval len)
 {
 	FXuval writeidx=0;
 	midNL=false;
@@ -168,7 +168,7 @@ FXuval FXIODevice::removeCRLF(bool &midNL, FXuchar *output, const FXuchar *input
 	return writeidx;
 }
 
-FXfval FXIODevice::shredData(FXfval offset, FXfval len)
+FXfval QIODevice::shredData(FXfval offset, FXfval len)
 {
 	FXfval cpos=at(), idx;
 	FXuchar buffer[16384];
@@ -202,7 +202,7 @@ FXfval FXIODevice::shredData(FXfval offset, FXfval len)
 	return len;
 }
 
-FXStream &operator<<(FXStream &s, FXIODevice &i)
+FXStream &operator<<(FXStream &s, QIODevice &i)
 {
 	FXfval currentpos=i.at();
 	char buffer[256*1024];
@@ -216,11 +216,11 @@ FXStream &operator<<(FXStream &s, FXIODevice &i)
 	return s;
 }
 
-FXStream &operator>>(FXStream &s, FXIODevice &i)
+FXStream &operator>>(FXStream &s, QIODevice &i)
 {
 	char buffer[256*1024];
 	FXuval read;
-	FXIODevice *sdev=s.device();
+	QIODevice *sdev=s.device();
 	i.at(0);
 	while((read=sdev->readBlock(buffer, sizeof(buffer))))
 	{
@@ -233,17 +233,17 @@ FXStream &operator>>(FXStream &s, FXIODevice &i)
 
 //***************************************************************************************
 
-FXuval FXIODeviceS::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
+FXuval QIODeviceS::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
 	FXERRGNOTSUPP("readBlockFrom not supported for synchronous i/o devices");
 }
 
-FXuval FXIODeviceS::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
+FXuval QIODeviceS::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
 	FXERRGNOTSUPP("readBlockFrom not supported for synchronous i/o devices");
 }
 
-bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **list, FXuint waitfor)
+bool QIODeviceS::waitForData(QIODeviceS **signalled, FXuint no, QIODeviceS **list, FXuint waitfor)
 {
 	if(signalled) signalled[0]=0;
 #ifndef USE_POSIX
@@ -252,14 +252,14 @@ bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **
 	for(FXuint n=0; n<no; n++)
 	{
 		hlist[n]=list[n]->int_getOSHandle();
-		FXERRH(hlist[n], FXTrans::tr("FXIODeviceS", "Either i/o device is not open or not supported"), 0, FXERRH_ISDEBUG);
+		FXERRH(hlist[n], QTrans::tr("QIODeviceS", "Either i/o device is not open or not supported"), 0, FXERRH_ISDEBUG);
 	}
-	hlist[no]=FXThread::int_cancelWaiterHandle();
+	hlist[no]=QThread::int_cancelWaiterHandle();
 	DWORD ret=WaitForMultipleObjects(no+1, hlist, FALSE, (waitfor==FXINFINITE) ? INFINITE : waitfor);
 	if(ret==WAIT_TIMEOUT) return false;
 	if(WAIT_OBJECT_0+no==ret)
 	{
-		FXThread::current()->checkForTerminate();
+		QThread::current()->checkForTerminate();
 		return false;
 	}
 	if(ret>=WAIT_OBJECT_0 && ret<WAIT_OBJECT_0+no)
@@ -293,7 +293,7 @@ bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **
 	for(FXuint n=0; n<no; n++)
 	{
 		int fd=(int)(FXuval) list[n]->int_getOSHandle();
-		FXERRH(fd, FXTrans::tr("FXIODeviceS", "Either i/o device is not open or not supported"), 0, FXERRH_ISDEBUG);
+		FXERRH(fd, QTrans::tr("QIODeviceS", "Either i/o device is not open or not supported"), 0, FXERRH_ISDEBUG);
 		FD_SET(fd, &fds);
 		if(fd>maxfd) maxfd=fd;
 	}
@@ -314,7 +314,7 @@ bool FXIODeviceS::waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **
 	return true;
 #endif
 }
-FXuint FXIODeviceS::waitForDataMax() throw()
+FXuint QIODeviceS::waitForDataMax() throw()
 {
 #ifndef USE_POSIX
 	return MAXIMUM_WAIT_OBJECTS-1;

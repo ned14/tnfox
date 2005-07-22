@@ -24,8 +24,8 @@
 namespace FX {
 
 #ifdef USE_POSIX
-FXThreadLocalStorageBase FXIODeviceS_SignalHandler::data;
-static FXProcess_StaticInit<FXIODeviceS_SignalHandler> mystaticinit("FXIODeviceS_SignalHandler");
+QThreadLocalStorageBase QIODeviceS_SignalHandler::data;
+static FXProcess_StaticInit<QIODeviceS_SignalHandler> mystaticinit("QIODeviceS_SignalHandler");
 #endif
 
 } // namespace

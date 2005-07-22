@@ -129,7 +129,7 @@ manipulating portably this long integer - what FXACLEntity provides is
 about as much as is common across all platforms.
 
 Where possible, for construction and writing use the methods in all
-FX::FXIODevice derived classes - these are called permissions() and
+FX::QIODevice derived classes - these are called permissions() and
 setPermissions(). Usually a static method is provided as well to aid
 accessing entities not belonging to the local process.
 
@@ -229,8 +229,8 @@ public:
 		Unknown=0,
 		File,			//!< This ACL describes a file (FX::FXFile)
 		Directory,		//!< This ACL describes a directory
-		Pipe,			//!< This ACL describes a pipe (FX::FXPipe)
-		MemMap			//!< This ACL describes memory mapped data (FX::FXMemMap)
+		Pipe,			//!< This ACL describes a pipe (FX::QPipe)
+		MemMap			//!< This ACL describes memory mapped data (FX::QMemMap)
 	};
 	//! Permissions as an integer
 	typedef FXuint Perms;

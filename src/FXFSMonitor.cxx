@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#include "FXThread.h"		// May undefine USE_WINAPI and USE_POSIX
+#include "QThread.h"		// May undefine USE_WINAPI and USE_POSIX
 #ifndef USE_POSIX
 #define USE_WINAPI
 #include "WindowsGubbins.h"
@@ -35,8 +35,8 @@
 #include "FXRollback.h"
 #include "FXFile.h"
 #include "FXDir.h"
-#include "FXFileInfo.h"
-#include "FXTrans.h"
+#include "QFileInfo.h"
+#include "QTrans.h"
 #include "FXErrCodes.h"
 #include <qptrlist.h>
 #include <qdict.h>
@@ -49,9 +49,9 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-struct FXFSMon : public FXMutex
+struct FXFSMon : public QMutex
 {
-	struct Watcher : public FXThread
+	struct Watcher : public QThread
 	{
 		struct Path
 		{
@@ -66,10 +66,10 @@ struct FXFSMon : public FXMutex
 			struct Change
 			{
 				FXFSMonitor::Change change;
-				const FXFileInfo *oldfi, *newfi;
+				const QFileInfo *oldfi, *newfi;
 				FXuint myoldfi : 1;
 				FXuint mynewfi : 1;
-				Change(const FXFileInfo *_oldfi, const FXFileInfo *_newfi) : oldfi(_oldfi), newfi(_newfi), myoldfi(0), mynewfi(0) { }
+				Change(const QFileInfo *_oldfi, const QFileInfo *_newfi) : oldfi(_oldfi), newfi(_newfi), myoldfi(0), mynewfi(0) { }
 				~Change()
 				{
 					if(myoldfi) { FXDELETE(oldfi); }
@@ -80,12 +80,12 @@ struct FXFSMon : public FXMutex
 				{
 					if(oldfi)
 					{
-						FXERRHM(oldfi=new FXFileInfo(*oldfi));
+						FXERRHM(oldfi=new QFileInfo(*oldfi));
 						myoldfi=true;
 					}
 					if(newfi)
 					{
-						FXERRHM(newfi=new FXFileInfo(*newfi));
+						FXERRHM(newfi=new QFileInfo(*newfi));
 						mynewfi=true;
 					}
 				}
@@ -102,7 +102,7 @@ struct FXFSMon : public FXMutex
 				QPtrList<void> callvs;
 				Handler(Path *_parent, FXFSMonitor::ChangeHandler _handler) : parent(_parent), handler(_handler) { }
 				~Handler();
-				void invoke(const QValueList<Change> &changes, FXThreadPool::handle callv);
+				void invoke(const QValueList<Change> &changes, QThreadPool::handle callv);
 			private:
 				Handler(const Handler &);
 				Handler &operator=(const Handler &);
@@ -181,7 +181,7 @@ FXFSMon::~FXFSMon()
 #endif
 } FXEXCEPTIONDESTRUCT2; }
 
-FXFSMon::Watcher::Watcher() : FXThread("Filing system monitor", false, 128*1024, FXThread::InProcess), paths(13, true, true)
+FXFSMon::Watcher::Watcher() : QThread("Filing system monitor", false, 128*1024, QThread::InProcess), paths(13, true, true)
 #ifdef USE_WINAPI
 	, latch(0)
 #endif
@@ -208,7 +208,7 @@ FXFSMon::Watcher::~Watcher()
 void FXFSMon::Watcher::run()
 {
 	HANDLE hlist[MAXIMUM_WAIT_OBJECTS];
-	hlist[0]=FXThread::int_cancelWaiterHandle();
+	hlist[0]=QThread::int_cancelWaiterHandle();
 	hlist[1]=latch;
 	for(;;)
 	{
@@ -302,21 +302,21 @@ FXFSMon::Watcher::Path::Handler::~Handler()
 	FXMtxHold h(fxfsmon);
 	while(!callvs.isEmpty())
 	{
-		FXThreadPool::CancelledState state;
-		while(FXThreadPool::WasRunning==(state=FXProcess::threadPool().cancel(callvs.getFirst())));
+		QThreadPool::CancelledState state;
+		while(QThreadPool::WasRunning==(state=FXProcess::threadPool().cancel(callvs.getFirst())));
 		callvs.removeFirst();
 	}
 }
 
-void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, FXThreadPool::handle callv)
+void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, QThreadPool::handle callv)
 {
 	//fxmessage("FXFSMonitor dispatch %p\n", callv);
 	FXMtxHold h(fxfsmon);
 	for(QValueList<Change>::const_iterator it=changes.begin(); it!=changes.end(); ++it)
 	{
 		const Change &ch=*it;
-		const FXFileInfo &oldfi=ch.oldfi ? *ch.oldfi : FXFileInfo();
-		const FXFileInfo &newfi=ch.newfi ? *ch.newfi : FXFileInfo();
+		const QFileInfo &oldfi=ch.oldfi ? *ch.oldfi : QFileInfo();
+		const QFileInfo &newfi=ch.newfi ? *ch.newfi : QFileInfo();
 #ifdef DEBUG
 		{
 			FXString file(oldfi.filePath()), chs;
@@ -335,11 +335,11 @@ void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, 
 }
 
 
-static const FXFileInfo *findFIByName(const QFileInfoList *list, const FXString &name)
+static const QFileInfo *findFIByName(const QFileInfoList *list, const FXString &name)
 {
 	for(QFileInfoList::const_iterator it=list->begin(); it!=list->end(); ++it)
 	{
-		const FXFileInfo &fi=*it;
+		const QFileInfo &fi=*it;
 		// Need a case sensitive compare
 		if(fi.fileName()==name) return &fi;
 	}
@@ -395,7 +395,7 @@ void FXFSMon::Watcher::Path::callHandlers()
 			Change &ch2=*it2;
 			if(ch2.oldfi && ch2.newfi) continue;
 			if(ch2.change.renamed) continue;
-			const FXFileInfo *a=0, *b=0;
+			const QFileInfo *a=0, *b=0;
 			if(ch1.oldfi && ch2.newfi) { a=ch1.oldfi; b=ch2.newfi; }
 			else if(ch1.newfi && ch2.oldfi) { a=ch2.oldfi; b=ch1.newfi; }
 			else continue;
@@ -449,12 +449,12 @@ void FXFSMon::Watcher::Path::callHandlers()
 	Watcher::Path::Handler *handler;
 	for(QPtrVectorIterator<Watcher::Path::Handler> it(handlers); (handler=it.current()); ++it)
 	{
-		typedef Generic::TL::create<void, QValueList<Change>, FXThreadPool::handle>::value Spec;
+		typedef Generic::TL::create<void, QValueList<Change>, QThreadPool::handle>::value Spec;
 		Generic::BoundFunctor<Spec> *functor;
 		// Detach changes per dispatch
 		for(QValueList<Change>::iterator it=changes.begin(); it!=changes.end(); ++it)
 			it->make_fis();
-		FXThreadPool::handle callv=FXProcess::threadPool().dispatch((functor=new Generic::BoundFunctor<Spec>(Generic::Functor<Spec>(*handler, &Watcher::Path::Handler::invoke), changes, 0)));
+		QThreadPool::handle callv=FXProcess::threadPool().dispatch((functor=new Generic::BoundFunctor<Spec>(Generic::Functor<Spec>(*handler, &Watcher::Path::Handler::invoke), changes, 0)));
 		handler->callvs.append(callv);
 		// Poke in the callv
 		Generic::TL::instance<1>(functor->parameters()).value=callv;
@@ -554,7 +554,7 @@ void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 {
 	FXString path=FXFile::absolute(_path);
 #ifdef USE_POSIX
-	FXERRH(FXFile::exists(path), FXTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
+	FXERRH(FXFile::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)
 	{	// Try starting it again
 		if(FAMOpen(&fxfsmon->fc)<0) return;

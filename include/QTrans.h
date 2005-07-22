@@ -19,46 +19,46 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXTRANS_H
-#define FXTRANS_H
+#ifndef QTRANS_H
+#define QTRANS_H
 
 #include "fxdefs.h"
 #include "FXProcess.h"
 
 namespace FX {
 
-/*! \file FXTrans.h
+/*! \file QTrans.h
 \brief Defines classes and items used for human language translation
 */
 
 class FXString;
 class FXStream;
 
-/*! \class FXTransString
+/*! \class QTransString
 \brief Provides a delayed translation string
 
-FXTrans::tr() returns one of these which basically accumulates argument inserts
+QTrans::tr() returns one of these which basically accumulates argument inserts
 via arg() and then when asked to cast to FXString, actually performs the translation
 based upon any parameter specialisations defined for the current locale in the
 translation file.
 
-FXTransString also can convert to arbitrary language ids, but this functionality
-is protected as FXTransString has an implicit conversion to FXString. It can even
+QTransString also can convert to arbitrary language ids, but this functionality
+is protected as QTransString has an implicit conversion to FXString. It can even
 invoke a functor to return what language id to use, a facility used by Tn to return
 Just-In-Time-Help strings to multiple clients in multiple languages in a thread safe
-fashion. If you want this extended functionality, subclass FXTransString.
+fashion. If you want this extended functionality, subclass QTransString.
 */
-struct FXTransStringPrivate;
-class FXAPI FXTransString
+struct QTransStringPrivate;
+class FXAPI QTransString
 {
-	friend class FXTrans;
-	friend struct FXTransStringPrivate;
-	FXTransStringPrivate *p;
+	friend class QTrans;
+	friend struct QTransStringPrivate;
+	QTransStringPrivate *p;
 protected:
-	FXTransString() : p(0) { }
-	FXTransString(const char *context, const char *text, const char *hint, const FXString *langid=0);
+	QTransString() : p(0) { }
+	QTransString(const char *context, const char *text, const char *hint, const FXString *langid=0);
 	//! Returns a copy of the string
-	FXTransString copy() const;
+	QTransString copy() const;
 	//! The type of functor called to determine destination translation language
 	typedef Generic::Functor<Generic::TL::create<const FXString *>::value> GetLangIdSpec;
 	//! Gets the langid functor setting (=0 for none ie; use current user's)
@@ -73,37 +73,37 @@ protected:
 public:
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
-	FXTransString(const FXTransString &o);
-	FXTransString &operator=(const FXTransString &);
+	QTransString(const QTransString &o);
+	QTransString &operator=(const QTransString &);
 #else
-	FXTransString(FXTransString &o);
-	FXTransString &operator=(FXTransString &);
+	QTransString(QTransString &o);
+	QTransString &operator=(QTransString &);
 #endif
 #else
 private:
-	FXTransString(const FXTransString &);	// disable copy constructor
+	QTransString(const QTransString &);	// disable copy constructor
 public:
-	FXTransString(FXTransString &&o);
+	QTransString(QTransString &&o);
 #endif
-	~FXTransString();
+	~QTransString();
 	/*! Inserts an argument into the lowest numbered %x. Specifying a negative number
 	for \em fieldwidth fills with zeros instead of spaces except for the string insert
 	where negative numbers align to the left rather than right (as Qt does but for all
 	these)
 	*/
-	FXTransString &arg(const FXString &str, FXint fieldwidth=0);
+	QTransString &arg(const FXString &str, FXint fieldwidth=0);
 	//! \overload
-	FXTransString &arg(char c, FXint fieldwidth=0);
+	QTransString &arg(char c, FXint fieldwidth=0);
 	//! \overload
-	FXTransString &arg(FXlong num,  FXint fieldwidth=0, FXint base=10);
+	QTransString &arg(FXlong num,  FXint fieldwidth=0, FXint base=10);
 	//! \overload
-	FXTransString &arg(FXulong num, FXint fieldwidth=0, FXint base=10);
+	QTransString &arg(FXulong num, FXint fieldwidth=0, FXint base=10);
 	//! \overload
-	FXTransString &arg(FXint num,  FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXuint) num) : (FXlong) num, fieldwidth, base); }
+	QTransString &arg(FXint num,  FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXuint) num) : (FXlong) num, fieldwidth, base); }
 	//! \overload
-	FXTransString &arg(FXuint num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
+	QTransString &arg(FXuint num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
 	//! \overload
-	FXTransString &arg(double num, FXint fieldwidth=0, FXchar fmt='g', int prec=-1);
+	QTransString &arg(double num, FXint fieldwidth=0, FXchar fmt='g', int prec=-1);
 	/*! \overload */
 	operator FXString() { return translate(); }
 
@@ -114,16 +114,16 @@ public:
 };
 
 
-/*! \class FXTrans
+/*! \class QTrans
 \brief The central class for human language translation (Qt compatible)
 
-FXTrans translates text displayed to the user to their preferred language, falling
+QTrans translates text displayed to the user to their preferred language, falling
 back on English if no translation is available. To do this,
 it reads in a file at startup containing translations from English to whatever
 number of human languages - however the database can also be dynamically altered.
 
 Usage of automatic human language conversion is very easy - simply wrap your
-literal strings with tr() which returns the converted text as an FXTransString. If you
+literal strings with tr() which returns the converted text as an QTransString. If you
 use the %n insert identifiers and arg() it permits easy substitution of run-time
 information into strings in a language neutral way ie; inserts can be reordered
 based on accurate translation requirements. Furthermore, the translation file
@@ -132,9 +132,9 @@ see the tutorial on writing translation files.
 \endlink
 
 Even easier use of tr() can occur in subclasses of FXObject as this
-automatically adds the class name before calling tr() in FXTrans for you (watch out
+automatically adds the class name before calling tr() in QTrans for you (watch out
 you don't call FXObject::tr() in your constructor - virtual tables haven't been set yet!).
-In those classes which don't subclass FXObject, you must call the static method FXTrans::tr()
+In those classes which don't subclass FXObject, you must call the static method QTrans::tr()
 manually specifying the class name.
 
 The python script \link CppMunge
@@ -146,12 +146,12 @@ should extend each string definition with an appropriate translation and place i
 the same directory as the executable. You may optionally apply gzip to the file, thus
 calling it &lt;exename&gt;Trans.gz and it will be automatically decompressed on load.
 Alternatively you can embed the translation file into your executable using the
-provided reswrap utility and FXTRANS_SETTRANSFILE(). \link transfiletutorial
+provided reswrap utility and QTRANS_SETTRANSFILE(). \link transfiletutorial
 See the tutorial for more details.
 \endlink
 
-Note that FXTrans is instantiated by FXProcess on startup. FXProcess provides special
-command line support for FXTrans so that the following command line
+Note that QTrans is instantiated by FXProcess on startup. FXProcess provides special
+command line support for QTrans so that the following command line
 arguments when provided to the application have effect:
 \li \c -fxtrans-language=&lt;ll&gt; where &lt;ll&gt; is a ISO639 two letter code sets that
 language to override the locale-determined one. This is useful for testing.
@@ -167,17 +167,17 @@ The last two are intended for end-users who are not programmers to easily
 extract and extend locale customisations of your application - even if they
 only have the binaries.
 
-\note All FXTrans functions are thread-safe
+\note All QTrans functions are thread-safe
 
 <h4>Implementation notes:</h4>
-As noted above, embedded data is registered statically with FXTrans which then
-loads it on FXProcess startup. However if FXTrans is already created, it
+As noted above, embedded data is registered statically with QTrans which then
+loads it on FXProcess startup. However if QTrans is already created, it
 immediately loads in the data - plus if embedded data is destructed, it
 removes the data that was loaded from the particular containing module.
 
 This means that you can embed translation files into your dynamically
 loaded shared libraries and when you kick them in or out of memory it correctly
-adds and removes the translations. FXTrans determines which translation
+adds and removes the translations. QTrans determines which translation
 bank it should preferentially use by checking if the address of the string
 literal you wish to translate lies near to the static data initialised for
 that binary - thus where each module defines a different translation of the
@@ -187,17 +187,17 @@ define its own translation, the first registered translation is used instead
 to how you have set up your FXProcess static init dependencies).
 */
 template<class type> class QValueList;
-class FXTransPrivate;
-struct FXTransEmbeddedFile;
-class FXAPI FXTrans
+class QTransPrivate;
+struct QTransEmbeddedFile;
+class FXAPI QTrans
 {
-	FXTransPrivate *p;
-	friend class FXTransInit;
-	FXTrans(int &argc, char **argv, FXStream &txtout);
-	FXDLLLOCAL void addData(FXTransEmbeddedFile &data);
-	FXDLLLOCAL void removeData(const FXTransEmbeddedFile &data);
+	QTransPrivate *p;
+	friend class QTransInit;
+	QTrans(int &argc, char **argv, FXStream &txtout);
+	FXDLLLOCAL void addData(QTransEmbeddedFile &data);
+	FXDLLLOCAL void removeData(const QTransEmbeddedFile &data);
 public:
-	~FXTrans();
+	~QTrans();
 	/*! \return The human language translated version of the text
 	\param context Usually the classname of where you are calling from
 	\param text The string to be translated in English. <b>This must be a literal</b> as
@@ -208,7 +208,7 @@ public:
 
 	Begins a translation of the text based upon the currently set user language.
 	*/
-	static FXTransString tr(const char *context, const char *text, const char *hint=0);
+	static QTransString tr(const char *context, const char *text, const char *hint=0);
 	enum LanguageType
 	{
 		ISO639=0	//!< Two letter ISO639 standard
@@ -242,7 +242,7 @@ public:
 		ProvidedInfo(const FXString &_module, const FXString &_language, const FXString &_country)
 			: module(_module), language(_language), country(_country) { }
 	};
-	//! Defines a list of FXTrans::ProvidedInfo
+	//! Defines a list of QTrans::ProvidedInfo
 	typedef QValueList<ProvidedInfo> ProvidedInfoList;
 	/*! Returns a list of supported languages by each currently loaded library.
 	Not every library will provide the same languages so to determine what
@@ -252,34 +252,34 @@ public:
 	*/
 	static ProvidedInfoList provided();
 private:
-	friend class FXTrans_EmbeddedTranslationFile;
-	friend class FXTransString;
-	FXDLLLOCAL void int_translateString(FXString &dest, FXTransString &src, const FXString *langid=0);
+	friend class QTrans_EmbeddedTranslationFile;
+	friend class QTransString;
+	FXDLLLOCAL void int_translateString(FXString &dest, QTransString &src, const FXString *langid=0);
 	static void int_registerEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr);
 	static void int_deregisterEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr);
 };
 
-class FXTrans_EmbeddedTranslationFile
+class QTrans_EmbeddedTranslationFile
 {
 	const char *buffer;
 	FXuint len;
 public:
-	FXTrans_EmbeddedTranslationFile(const FXuchar *_buffer, FXuint _len) : buffer((const char *) _buffer), len(_len)
+	QTrans_EmbeddedTranslationFile(const FXuchar *_buffer, FXuint _len) : buffer((const char *) _buffer), len(_len)
 	{
-		FXTrans::int_registerEmbeddedTranslationFile(buffer, len, this);
+		QTrans::int_registerEmbeddedTranslationFile(buffer, len, this);
 	}
-	FXTrans_EmbeddedTranslationFile(const char *_buffer, FXuint _len) : buffer(_buffer), len(_len)
+	QTrans_EmbeddedTranslationFile(const char *_buffer, FXuint _len) : buffer(_buffer), len(_len)
 	{
-		FXTrans::int_registerEmbeddedTranslationFile(buffer, len, this);
+		QTrans::int_registerEmbeddedTranslationFile(buffer, len, this);
 	}
-	~FXTrans_EmbeddedTranslationFile()
+	~QTrans_EmbeddedTranslationFile()
 	{
-		FXTrans::int_deregisterEmbeddedTranslationFile(buffer, len, this);
+		QTrans::int_deregisterEmbeddedTranslationFile(buffer, len, this);
 	}
 };
 /*! Registers a static char buffer to be an embedded translation file for the application.
 */
-#define FXTRANS_SETTRANSFILE(buffer, len) static FXTrans_EmbeddedTranslationFile _tnfox_myembeddedtranslationfile_(buffer, len)
+#define QTRANS_SETTRANSFILE(buffer, len) static QTrans_EmbeddedTranslationFile _tnfox_myembeddedtranslationfile_(buffer, len)
 
 } // namespace
 

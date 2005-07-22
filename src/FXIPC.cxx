@@ -20,12 +20,12 @@
 ********************************************************************************/
 
 #include "FXIPC.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXRollback.h"
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include "FXProcess.h"
-#include "FXGZipDevice.h"
-#include "FXPipe.h"
+#include "QGZipDevice.h"
+#include "QPipe.h"
 #include "FXErrCodes.h"
 #include <qintdict.h>
 #include <qptrvector.h>
@@ -39,7 +39,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-struct FXDLLLOCAL FXIPCMsgRegistryPrivate : public FXMutex
+struct FXDLLLOCAL FXIPCMsgRegistryPrivate : public QMutex
 {
 	struct Entry
 	{
@@ -76,7 +76,7 @@ FXIPCMsgRegistry::~FXIPCMsgRegistry()
 void FXIPCMsgRegistry::int_register(FXuint code, FXIPCMsgRegistry::deendianiseSpec deendianise, FXIPCMsgRegistry::makeMsgSpec makeMsg, FXIPCMsgRegistry::delMsgSpec delMsg, Generic::typeInfoBase &ti)
 {
 	FXMtxHold h(p);
-	FXERRH(p->msgs.find(code)==0, FXTrans::tr("FXIPCMsgRegistry", "Message already registered in this registry"), FXIPCMSGREGISTRY_MSGALREADYREGED, 0);
+	FXERRH(p->msgs.find(code)==0, QTrans::tr("FXIPCMsgRegistry", "Message already registered in this registry"), FXIPCMSGREGISTRY_MSGALREADYREGED, 0);
 	FXIPCMsgRegistryPrivate::Entry *e;
 	FXERRHM(e=new FXIPCMsgRegistryPrivate::Entry(code, deendianise, makeMsg, delMsg, ti));
 	FXRBOp unnew=FXRBNew(e);
@@ -134,21 +134,21 @@ static FXuint pageSize=FXProcess::pageSize();
 struct FXDLLLOCAL FXIPCChannelPrivate
 {
 	FXIPCMsgRegistry *registry;
-	FXIODeviceS *dev;
+	QIODeviceS *dev;
 	bool unreliable, compressed, errorTrans, quit, noquitmsg, peerUntrusted, printstats;
 	FXIPCChannel::EndianConversionKinds endianConversion;
 	FXuint maxMsgSize, garbageMessageCount;
-	FXBuffer buffer;
-	FXGZipDevice *compressedbuffer;
+	QBuffer buffer;
+	QGZipDevice *compressedbuffer;
 	FXStream endianiser;
-	QPtrList<FXWaitCondition> wcsFree;
+	QPtrList<QWaitCondition> wcsFree;
 	struct AckEntry
 	{
 		FXIPCMsg *msg, *ack;
-		FXWaitCondition *wc;
+		QWaitCondition *wc;
 		FXuint timesent;
 		FXException *erroroccurred;
-		AckEntry(FXIPCMsg *_msg, FXIPCMsg *_ack, FXWaitCondition *_wc)
+		AckEntry(FXIPCMsg *_msg, FXIPCMsg *_ack, QWaitCondition *_wc)
 			: msg(_msg), ack(_ack), wc(_wc), timesent(FXProcess::getMsCount()), erroroccurred(0) { }
 		~AckEntry() { FXDELETE(wc); }
 	};
@@ -156,9 +156,9 @@ struct FXDLLLOCAL FXIPCChannelPrivate
 	FXuint msgidcount;
 	FXulong monitorThreadId;
 	QPtrVector<FXIPCChannel::MsgFilterSpec> premsgfilters;
-	FXThreadPool *threadPool;
+	QThreadPool *threadPool;
 	QPtrList<Generic::BoundFunctorV> msgHandlings;
-	FXIPCChannelPrivate(FXIPCMsgRegistry *_registry, FXIODeviceS *_dev, bool _peerUntrusted, FXThreadPool *_threadPool)
+	FXIPCChannelPrivate(FXIPCMsgRegistry *_registry, QIODeviceS *_dev, bool _peerUntrusted, QThreadPool *_threadPool)
 		: registry(_registry), dev(_dev), unreliable(false), compressed(false), errorTrans(true),
 		quit(false), noquitmsg(false), peerUntrusted(_peerUntrusted), printstats(false), endianConversion(FXIPCChannel::AutoEndian),
 		maxMsgSize(65536), garbageMessageCount(0), buffer(pageSize), compressedbuffer(0), endianiser(&buffer), wcsFree(true),
@@ -171,8 +171,8 @@ struct FXDLLLOCAL FXIPCChannelPrivate
 	}
 };
 
-FXIPCChannel::FXIPCChannel(FXIPCMsgRegistry &registry, FXIODeviceS *dev, bool peerUntrusted, FXThreadPool *threadPool, const char *threadname)
-	: FXThread(threadname, false, 128*1024, FXThread::InProcess), p(0)
+FXIPCChannel::FXIPCChannel(FXIPCMsgRegistry &registry, QIODeviceS *dev, bool peerUntrusted, QThreadPool *threadPool, const char *threadname)
+	: QThread(threadname, false, 128*1024, QThread::InProcess), p(0)
 {
 	FXERRHM(p=new FXIPCChannelPrivate(&registry, dev, peerUntrusted, threadPool));
 }
@@ -187,7 +187,7 @@ FXIPCChannel::~FXIPCChannel()
 	Generic::BoundFunctorV *callv;
 	for(QPtrListIterator<Generic::BoundFunctorV> it(p->msgHandlings); (callv=it.current());)
 	{
-		if(FXThreadPool::Cancelled==p->threadPool->cancel(callv, false))
+		if(QThreadPool::Cancelled==p->threadPool->cancel(callv, false))
 		{
 			QPtrListIterator<Generic::BoundFunctorV> it2=it;
 			++it;
@@ -196,7 +196,7 @@ FXIPCChannel::~FXIPCChannel()
 		else ++it;
 	}
 	h.unlock();
-	while(!p->msgHandlings.isEmpty()) FXThread::yield();
+	while(!p->msgHandlings.isEmpty()) QThread::yield();
 	FXDELETE(p->compressedbuffer);
 	assert(p->msgs.isEmpty());
 	FXDELETE(p);
@@ -211,22 +211,22 @@ void FXIPCChannel::setRegistry(FXIPCMsgRegistry &registry)
 	// FXMtxHold h(this); can do without
 	p->registry=&registry;
 }
-FXIODeviceS *FXIPCChannel::device() const
+QIODeviceS *FXIPCChannel::device() const
 {
 	// FXMtxHold h(this); can do without
 	return p->dev;
 }
-void FXIPCChannel::setDevice(FXIODeviceS *dev)
+void FXIPCChannel::setDevice(QIODeviceS *dev)
 {
 	// FXMtxHold h(this); can do without
 	p->dev=dev;
 }
-FXThreadPool *FXIPCChannel::threadPool() const
+QThreadPool *FXIPCChannel::threadPool() const
 {
 	// FXMtxHold h(this); can do without
 	return p->threadPool;
 }
-void FXIPCChannel::setThreadPool(FXThreadPool *threadPool)
+void FXIPCChannel::setThreadPool(QThreadPool *threadPool)
 {
 	// FXMtxHold h(this); can do without
 	p->threadPool=threadPool;
@@ -347,17 +347,17 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 			FXuval justread=0;
 			if(waitfor!=FXINFINITE && p->dev->atEnd())
 			{
-				if(!FXIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
+				if(!QIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
 			}
 			read+=(justread=p->dev->readBlock(data.data()+read, pageSize-read));
 			if(!justread) return true;
 		}
-		//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) FXThread::id(), read);
+		//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) QThread::id(), read);
 		{
-			FXThread_DTHold dthold;
+			QThread_DTHold dthold;
 			FXIPCMsg tmsg(0);
 			FXMtxHold h(this);
-			if(!p->monitorThreadId) p->monitorThreadId=FXThread::id();
+			if(!p->monitorThreadId) p->monitorThreadId=QThread::id();
 			while(!p->quit)
 			{
 				p->buffer.at(0);
@@ -369,7 +369,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				assert(tmsg.msgType());
 				if(p->maxMsgSize && tmsg.length()>p->maxMsgSize)
 				{
-					FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(tmsg.length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
+					FXERRG(QTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(tmsg.length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 				}
 				if(p->buffer.size()<tmsg.length())
 					p->buffer.truncate(tmsg.length());
@@ -379,17 +379,17 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					h.unlock();
 					if(waitfor!=FXINFINITE && p->dev->atEnd())
 					{
-						if(!FXIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
+						if(!QIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
 					}
 					read+=p->dev->readBlock(data.data()+read, togo);
-					//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) FXThread::id(), read);
+					//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) QThread::id(), read);
 					h.relock();
 					togo=tmsg.length()-read;
 				}
 				if(tmsg.crc)
 				{
 					FXuint crc=fxadler32(1, data.data()+2*sizeof(FXuint), tmsg.length()-2*sizeof(FXuint));
-					FXERRH(crc=tmsg.crc, FXTrans::tr("FXIPCChannel", "Message failed CRC check"), FXIPCCHANNEL_BADMESSAGE, 0);
+					FXERRH(crc=tmsg.crc, QTrans::tr("FXIPCChannel", "Message failed CRC check"), FXIPCCHANNEL_BADMESSAGE, 0);
 				}
 				//fxmessage("IPCRead %s", fxdump8(data.data(), tmsg.length()).text());
 				FXIPCMsgRegistry::deendianiseSpec deendianise;
@@ -429,11 +429,11 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					{
 						if(!p->compressedbuffer)
 						{
-							FXERRHM(p->compressedbuffer=new FXGZipDevice);
+							FXERRHM(p->compressedbuffer=new QGZipDevice);
 						}
 						p->compressedbuffer->setGZData(&p->buffer);
 						p->compressedbuffer->open(IO_ReadOnly);
-						FXRBOp unopen=FXRBObj(*p->compressedbuffer, &FXGZipDevice::close);
+						FXRBOp unopen=FXRBObj(*p->compressedbuffer, &QGZipDevice::close);
 						FXStream compressed(p->compressedbuffer);
 						deendianise(msg, compressed);
 					}
@@ -445,7 +445,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					p->endianiser.setDevice(0);
 #endif
 					if(p->printstats)
-						fxmessage("Thread %u received msg 0x%x (%s), len=%d bytes\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), msg->length());
+						fxmessage("Thread %u received msg 0x%x (%s), len=%d bytes\n", (FXuint) QThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), msg->length());
 
 					if(FXIPCMsg_Disconnect::id::code==msg->msgType())
 					{
@@ -457,7 +457,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						if(ae)
 						{
 							FXIPCMsg_Unhandled *uh=(FXIPCMsg_Unhandled *) msg;
-							FXERRHM(ae->erroroccurred=new FXException(0, 0, FXTrans::tr("FXIPCChannel", "Unhandled message"), FXIPCCHANNEL_UNHANDLED, FXERRH_ISFROMOTHER));
+							FXERRHM(ae->erroroccurred=new FXException(0, 0, QTrans::tr("FXIPCChannel", "Unhandled message"), FXIPCCHANNEL_UNHANDLED, FXERRH_ISFROMOTHER));
 						}
 					}
 					else if(FXIPCMsg_ErrorOccurred::id::code==msg->msgType())
@@ -510,7 +510,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 #ifndef DEBUG
 								if(p->printstats)
 #endif
-									fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
+									fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) QThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
 								if(tmsg.hasAck())
 								{
 									FXIPCMsg_Unhandled badmsg(tmsg.msgId());
@@ -538,7 +538,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 #ifndef DEBUG
 					if(p->printstats)
 #endif
-						fxmessage("Thread %u msg 0x%x (%s) unknown\n", (FXuint) FXThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
+						fxmessage("Thread %u msg 0x%x (%s) unknown\n", (FXuint) QThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
 					HandledCode handled=unknownMsgReceived(&tmsg, data.data());
 					if(NotHandled==handled && tmsg.hasAck())
 					{
@@ -550,7 +550,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				if(read)
 				{
 					memmove(data.data(), data.data()+tmsg.length(), read);
-					//fxmessage("Thread %u channel loop read=%d bytes\n", (FXuint) FXThread::id(), read);
+					//fxmessage("Thread %u channel loop read=%d bytes\n", (FXuint) QThread::id(), read);
 				}
 				else break;
 			}
@@ -656,7 +656,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 	//FXERRH(running(), "Communications monitor thread appears not to be running", 0, FXERRH_ISDEBUG);
 	assert(!endianise || p->registry->lookup(msg->msgType()));
 	{
-		FXThread_DTHold dthold;
+		QThread_DTHold dthold;
 		FXMtxHold h(this);
 		FXIPCChannelPrivate::AckEntry *ae=0;
 		if(msg->hasAck())
@@ -665,10 +665,10 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 			{
 				msg->myflags|=FXIPCMsg::FlagsWantAck;		// Tell other end we do want the ack
 				msg->myid=int_makeUniqueMsgId();
-				FXWaitCondition *wc=p->wcsFree.getFirst(); p->wcsFree.takeFirst();
+				QWaitCondition *wc=p->wcsFree.getFirst(); p->wcsFree.takeFirst();
 				if(!wc)
 				{
-					FXERRHM(wc=new FXWaitCondition);
+					FXERRHM(wc=new QWaitCondition);
 				}
 				FXRBOp unwc=FXRBNew(wc);
 				FXERRHM(ae=new FXIPCChannelPrivate::AckEntry(msg, msgack, wc));
@@ -680,7 +680,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 			}
 		}
 		FXRBOp unackentry=FXRBObj(*this, &FXIPCChannel::removeAck, ae);
-		FXBuffer buffer(pageSize);
+		QBuffer buffer(pageSize);
 		buffer.open(IO_ReadWrite);
 		p->endianiser.setDevice(&buffer);
 		switch(p->endianConversion)
@@ -706,11 +706,11 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 			{	// If using this, execution speed is hardly a priority
 				if(!p->compressedbuffer)
 				{
-					FXERRHM(p->compressedbuffer=new FXGZipDevice);
+					FXERRHM(p->compressedbuffer=new QGZipDevice);
 				}
 				p->compressedbuffer->setGZData(&buffer);
 				p->compressedbuffer->open(IO_WriteOnly);
-				FXRBOp unopen=FXRBObj(*p->compressedbuffer, &FXGZipDevice::close);
+				FXRBOp unopen=FXRBObj(*p->compressedbuffer, &QGZipDevice::close);
 				FXStream compressed(p->compressedbuffer);
 				endianise(msg, compressed);
 				p->compressedbuffer->close();
@@ -734,7 +734,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		assert(msg->msgType());
 		if(p->maxMsgSize && msg->length()>p->maxMsgSize)
 		{
-			FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msg->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
+			FXERRG(QTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msg->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 		}
 		if(p->garbageMessageCount && (msg->myid % p->garbageMessageCount)==0)
 		{	// Trash the message
@@ -757,7 +757,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 #endif
 		h.unlock();
 		if(p->printstats)
-			fxmessage("Thread %u sending msg 0x%x (%s), len=%d bytes\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), (int) len);
+			fxmessage("Thread %u sending msg 0x%x (%s), len=%d bytes\n", (FXuint) QThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), (int) len);
 		assert(p->dev);
 		FXERRH_TRY
 		{
@@ -785,7 +785,7 @@ bool FXIPCChannel::getMsgAck(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor)
 	FXMtxHold h(this);
 	FXIPCChannelPrivate::AckEntry *ae=p->msgs.find(msg->msgId());
 	FXERRH(ae, "Message not found in awaiting ack list", 0, FXERRH_ISDEBUG);
-	if(p->monitorThreadId==FXThread::id())
+	if(p->monitorThreadId==QThread::id())
 	{
 		FXERRH(!waitfor, "Message monitor thread may only poll msg ack, not wait for it", 0, FXERRH_ISDEBUG);
 	}
@@ -819,8 +819,8 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 	// NOTE TO SELF: Keep in sync with sendMsgI() above
 	QByteArray data; data.setRawData(rawmsg, msgheader->length());
 	FXRBOp unsetrawdata=FXRBObj(data, &QByteArray::resetRawData, rawmsg, msgheader->length());
-	FXBuffer buffer(data);
-	FXThread_DTHold dthold;
+	QBuffer buffer(data);
+	QThread_DTHold dthold;
 	buffer.open(IO_ReadWrite);
 	FXMtxHold h(this);
 	p->endianiser.setDevice(&buffer);
@@ -833,7 +833,7 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 	assert(msgheader->msgType());
 	if(p->maxMsgSize && msgheader->length()>p->maxMsgSize)
 	{
-		FXERRG(FXTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msgheader->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
+		FXERRG(QTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msgheader->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 	}
 	msgheader->write(p->endianiser);
 	if(p->unreliable)
@@ -847,7 +847,7 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 #endif
 	h.unlock();
 	if(p->printstats)
-		fxmessage("Thread %u resending msg 0x%x (%s), len=%d bytes\n", (FXuint) FXThread::id(), msgheader->msgType(), p->registry->decodeType(msgheader->msgType()).text(), (int) msgheader->length());
+		fxmessage("Thread %u resending msg 0x%x (%s), len=%d bytes\n", (FXuint) QThread::id(), msgheader->msgType(), p->registry->decodeType(msgheader->msgType()).text(), (int) msgheader->length());
 	assert(p->dev);
 	FXERRH_TRY
 	{
@@ -874,7 +874,7 @@ void FXIPCChannel::doAsyncHandled(FXIPCMsg *msg, HandledCode handled)
 #ifndef DEBUG
 		if(p->printstats)
 #endif
-			fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) FXThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
+			fxmessage("Thread %u msg 0x%x (%s) not handled\n", (FXuint) QThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text());
 		if(msg->hasAck())
 		{
 			FXIPCMsg_Unhandled badmsg(msg->msgId());
@@ -911,11 +911,11 @@ void *FXIPCChannel::cleanup()
 	{
 #ifdef USE_POSIX
 		/* 29th January 2005 ned: I've had problems with this code on POSIX since day
-		one when the device is a pipe. FXPipe lazily creates the write side of the pipe
+		one when the device is a pipe. QPipe lazily creates the write side of the pipe
 		which causes a stall until the read end reads on POSIX and the problem was that
 		various systems don't seem to like this being done in a cancellation handler much.
 		So, having failed to come up with a solution, if it's a pipe we simply SIGPIPE it */
-		FXPipe *mypipe=dynamic_cast<FXPipe *>(p->dev);
+		QPipe *mypipe=dynamic_cast<QPipe *>(p->dev);
 		if(mypipe)
 		{	// Don't send the message
 			return 0;

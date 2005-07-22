@@ -21,14 +21,14 @@
 
 #include "xincs.h"
 #include "fxdefs.h"
-#include "FXMemMap.h"
+#include "QMemMap.h"
 #include "FXString.h"
 #include "FXFile.h"
 #include "FXException.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXProcess.h"
 #include "FXRollback.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXErrCodes.h"
 #include "FXPtrHold.h"
 #include "FXACL.h"
@@ -66,9 +66,9 @@ struct FXDLLLOCAL Mapping
 	bool operator==(const Mapping &o) const { return offset==o.offset; }
 	bool operator<(const Mapping &o) const { return offset<o.offset; }
 };
-struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
+struct FXDLLLOCAL QMemMapPrivate : public QMutex
 {
-	FXMemMap::Type type;
+	QMemMap::Type type;
 	bool myfile, creator, mappingsFailed, unique;
 	FXFile *file;
 	int filefd;				// Either than of file (all platforms) or shared memory object (POSIX)
@@ -88,14 +88,14 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 #ifdef USE_POSIX
 	int pageaccess;
 #endif
-	FXMemMapPrivate(FXMemMap::Type _type, FXFile *f=0) : type(_type), myfile(0==f), creator(false),
+	QMemMapPrivate(QMemMap::Type _type, FXFile *f=0) : type(_type), myfile(0==f), creator(false),
 		mappingsFailed(false), unique(false), file(f), filefd(0), size(0), acl(FXACL::MemMap), mappings(true),
 		pageSize(FXProcess::pageSize()), cmapping(0), cmappingit(mappings),
 #ifdef USE_WINAPI
 		mappingh(0),
 #endif
-		pageaccess(0), FXMutex() { }
-	~FXMemMapPrivate() { if(myfile) FXDELETE(file); }
+		pageaccess(0), QMutex() { }
+	~QMemMapPrivate() { if(myfile) FXDELETE(file); }
 	void setPrivatePerms()
 	{
 		acl.append(FXACL::Entry(FXACLEntity::owner(), 0, FXACL::Permissions().setAll()));
@@ -145,7 +145,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 					DWORD code=GetLastError();
 					TCHAR buffer[1024];
 					FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 0, code, 0, buffer, sizeof(buffer)/sizeof(TCHAR), 0);
-					fxmessage("NOTE: FXMemMap map of %s (%x:%x) failed with %s (%d)\n",
+					fxmessage("NOTE: QMemMap map of %s (%x:%x) failed with %s (%d)\n",
 						name.text(), (FXuint) m->offset, (FXuint) m->len, buffer, code);
 				}
 #endif
@@ -157,7 +157,7 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 #ifdef DEBUG
 				if(!m->addr)
 				{
-					fxmessage("NOTE: FXMemMap map of %s (%x:%x) failed with %s (%d)\n",
+					fxmessage("NOTE: QMemMap map of %s (%x:%x) failed with %s (%d)\n",
 						name.text(), (FXuint) m->offset, (FXuint) m->len, strerror(errno), errno);
 				}
 #endif
@@ -201,20 +201,20 @@ struct FXDLLLOCAL FXMemMapPrivate : public FXMutex
 	}
 };
 
-FXMemMap::FXMemMap() : p(0), FXIODevice()
+QMemMap::QMemMap() : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXMemMapPrivate(File));
+	FXERRHM(p=new QMemMapPrivate(File));
 	p->setPrivatePerms();
 	FXERRHM(p->file=new FXFile);
 	p->myfile=true;
 	unconstr.dismiss();
 }
 
-FXMemMap::FXMemMap(const FXString &filename) : p(0), FXIODevice()
+QMemMap::QMemMap(const FXString &filename) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXMemMapPrivate(File));
+	FXERRHM(p=new QMemMapPrivate(File));
 	p->setPrivatePerms();
 	FXERRHM(p->file=new FXFile(filename));
 	p->myfile=true;
@@ -222,38 +222,38 @@ FXMemMap::FXMemMap(const FXString &filename) : p(0), FXIODevice()
 	unconstr.dismiss();
 }
 
-FXMemMap::FXMemMap(FXFile &file) : p(0), FXIODevice()
+QMemMap::QMemMap(FXFile &file) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXMemMapPrivate(File, &file));
+	FXERRHM(p=new QMemMapPrivate(File, &file));
 	p->setPrivatePerms();
 	p->name=p->file->name();
 	unconstr.dismiss();
 }
 
-FXMemMap::FXMemMap(const FXString &name, FXuval len) : p(0), FXIODevice()
+QMemMap::QMemMap(const FXString &name, FXuval len) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXMemMapPrivate(Memory));
+	FXERRHM(p=new QMemMapPrivate(Memory));
 	p->setAllAccessPerms();
 	setName(name);
 	p->size=len;
 	unconstr.dismiss();
 }
 
-FXMemMap::~FXMemMap()
+QMemMap::~QMemMap()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-const FXString &FXMemMap::name() const
+const FXString &QMemMap::name() const
 {
 	FXMtxHold h(p);
 	return p->name;
 }
 
-void FXMemMap::setName(const FXString &name)
+void QMemMap::setName(const FXString &name)
 {
 	FXMtxHold h(p);
 	close();
@@ -262,31 +262,31 @@ void FXMemMap::setName(const FXString &name)
 	p->unique=!!name.empty();
 }
 
-bool FXMemMap::isUnique() const
+bool QMemMap::isUnique() const
 {
 	FXMtxHold h(p);
 	return p->unique;
 }
 
-void FXMemMap::setUnique(bool v)
+void QMemMap::setUnique(bool v)
 {
 	FXMtxHold h(p);
 	p->unique=v;
 }
 
-FXMemMap::Type FXMemMap::type() const
+QMemMap::Type QMemMap::type() const
 {
 	FXMtxHold h(p);
 	return p->type;
 }
 
-void FXMemMap::setType(FXMemMap::Type type)
+void QMemMap::setType(QMemMap::Type type)
 {
 	FXMtxHold h(p);
 	p->type=type;
 }
 
-bool FXMemMap::exists() const
+bool QMemMap::exists() const
 {
 	FXMtxHold h(p);
 	if(File==p->type)
@@ -294,7 +294,7 @@ bool FXMemMap::exists() const
 	return isOpen();
 }
 
-bool FXMemMap::remove()
+bool QMemMap::remove()
 {
 	FXMtxHold h(p);
 	close();
@@ -303,7 +303,7 @@ bool FXMemMap::remove()
 	return true;
 }
 
-FXfval FXMemMap::reloadSize()
+FXfval QMemMap::reloadSize()
 {
 	FXMtxHold h(p);
 	if(isOpen() && File==p->type)
@@ -311,15 +311,15 @@ FXfval FXMemMap::reloadSize()
 	return 0;
 }
 
-FXfval FXMemMap::mappableSize() const
+FXfval QMemMap::mappableSize() const
 {
 	FXMtxHold h(p);
 	return p->size;
 }
 
-void FXMemMap::maximiseMappableSize()
+void QMemMap::maximiseMappableSize()
 {
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for writing"));
 	if(isOpen() && File==p->type)
 	{	// NOTE TO SELF: Keep consistent with truncate()
 		FXMtxHold h(p);
@@ -331,7 +331,7 @@ void FXMemMap::maximiseMappableSize()
 				FXERRHWIN(CloseHandle(p->mappingh));
 				p->mappingh=0;
 			}
-			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
+			FXRBOp closeit=FXRBObj(*this, &QMemMap::close);
 			p->size=p->file->reloadSize();
 			winopen(mode());
 			closeit.dismiss();
@@ -347,7 +347,7 @@ void FXMemMap::maximiseMappableSize()
 	}
 }
 
-void *FXMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
+void *QMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
 {
 	FXMtxHold h(p);
 	Mapping *m;
@@ -369,7 +369,7 @@ void *FXMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
 	return m->addr;
 }
 
-void FXMemMap::mapOut(FXfval offset, FXfval amount)
+void QMemMap::mapOut(FXfval offset, FXfval amount)
 {
 	FXMtxHold h(p);
 	if((FXfval) -1==amount) amount=p->size;
@@ -377,7 +377,7 @@ void FXMemMap::mapOut(FXfval offset, FXfval amount)
 	if(p->mappingsFailed) p->map();
 }
 
-void FXMemMap::mapOut(void *area)
+void QMemMap::mapOut(void *area)
 {
 	FXMtxHold h(p);
 	QSortedListIterator<Mapping> it(p->mappings);
@@ -392,7 +392,7 @@ void FXMemMap::mapOut(void *area)
 	}
 }
 
-bool FXMemMap::mappedRegion(FXMemMap::MappedRegion *current, FXMemMap::MappedRegion *next, FXfval offset) const
+bool QMemMap::mappedRegion(QMemMap::MappedRegion *current, QMemMap::MappedRegion *next, FXfval offset) const
 {
 	bool ret=false;
 	FXMtxHold h(p);
@@ -429,7 +429,7 @@ bool FXMemMap::mappedRegion(FXMemMap::MappedRegion *current, FXMemMap::MappedReg
 	}
 	return ret;
 }
-void *FXMemMap::mapOffset(FXfval offset) const
+void *QMemMap::mapOffset(FXfval offset) const
 {
 	FXMtxHold h(p);
 	if((FXfval) -1==offset)
@@ -446,7 +446,7 @@ void *FXMemMap::mapOffset(FXfval offset) const
 		return 0;
 }
 
-void FXMemMap::winopen(int mode)
+void QMemMap::winopen(int mode)
 {
 #ifdef USE_WINAPI
 	HANDLE fileh=INVALID_HANDLE_VALUE;
@@ -502,7 +502,7 @@ void FXMemMap::winopen(int mode)
 #endif
 }
 
-inline void FXMemMap::setIoIndex(FXfval newpos)
+inline void QMemMap::setIoIndex(FXfval newpos)
 {
 	if(!p->cmapping) p->cmapping=p->findMapping(newpos, &p->cmappingit);
 	else if(newpos>=p->cmapping->offset+p->cmapping->len)
@@ -516,12 +516,12 @@ inline void FXMemMap::setIoIndex(FXfval newpos)
 	ioIndex=newpos;
 }
 
-bool FXMemMap::open(FXuint mode)
+bool QMemMap::open(FXuint mode)
 {
 	FXMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXMemMap", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QMemMap", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -563,7 +563,7 @@ bool FXMemMap::open(FXuint mode)
 		if(Memory==p->type)
 		{
 			FXString name;
-			static FXMutex locallock;	// Lock to prevent race between determining name doesn't exist and creating it
+			static QMutex locallock;	// Lock to prevent race between determining name doesn't exist and creating it
 			FXMtxHold h(locallock);
 			do
 			{
@@ -597,7 +597,7 @@ bool FXMemMap::open(FXuint mode)
 	return true;
 }
 
-void FXMemMap::close()
+void QMemMap::close()
 {
 	if(isOpen())
 	{
@@ -615,7 +615,7 @@ void FXMemMap::close()
 		{
 			if(p->creator && !(flags() & IO_DontUnlink))
 			{
-				FXThread_DTHold dth;
+				QThread_DTHold dth;
 				FXString name(POSIX_SHARED_MEM_PREFIX+p->name);
 				FXERRHIO(::close(p->filefd));
 				FXERRHIO(::shm_unlink(name.text()));
@@ -636,7 +636,7 @@ void FXMemMap::close()
 	}
 }
 
-void FXMemMap::flush()
+void QMemMap::flush()
 {
 	if(isOpen() && isWriteable())
 	{
@@ -646,7 +646,7 @@ void FXMemMap::flush()
 		{
 			if(m->addr)
 			{
-				FXThread_DTHold dth;
+				QThread_DTHold dth;
 #ifdef USE_WINAPI
 				FXERRHWIN(FlushViewOfFile(m->addr, (DWORD) m->len));
 #endif
@@ -659,7 +659,7 @@ void FXMemMap::flush()
 	}
 }
 
-FXfval FXMemMap::size() const
+FXfval QMemMap::size() const
 {
 	if(isOpen())
 	{
@@ -669,9 +669,9 @@ FXfval FXMemMap::size() const
 	return 0;
 }
 
-void FXMemMap::truncate(FXfval newsize)
+void QMemMap::truncate(FXfval newsize)
 {
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for writing"));
 	if(isOpen())
 	{	// NOTE TO SELF: Keep consistent with maximiseMappableSize()
 		FXMtxHold h(p);
@@ -689,7 +689,7 @@ void FXMemMap::truncate(FXfval newsize)
 				FXERRHWIN(CloseHandle(p->mappingh));
 				p->mappingh=0;
 			}
-			FXRBOp closeit=FXRBObj(*this, &FXMemMap::close);
+			FXRBOp closeit=FXRBObj(*this, &QMemMap::close);
 			if(File==p->type) p->file->truncate(newsize);
 			p->size=newsize;
 			winopen(mode());
@@ -707,13 +707,13 @@ void FXMemMap::truncate(FXfval newsize)
 	}
 }
 
-FXfval FXMemMap::at() const
+FXfval QMemMap::at() const
 {
 	if(isOpen()) return ioIndex;
 	return 0;
 }
 
-bool FXMemMap::at(FXfval newpos)
+bool QMemMap::at(FXfval newpos)
 {
 	if(isOpen() && ioIndex!=newpos)
 	{
@@ -725,7 +725,7 @@ bool FXMemMap::at(FXfval newpos)
 	return false;
 }
 
-bool FXMemMap::atEnd() const
+bool QMemMap::atEnd() const
 {
 	if(isOpen())
 	{
@@ -734,11 +734,11 @@ bool FXMemMap::atEnd() const
 	return false;
 }
 
-const FXACL &FXMemMap::permissions() const
+const FXACL &QMemMap::permissions() const
 {
 	return p->acl;
 }
-void FXMemMap::setPermissions(const FXACL &perms)
+void QMemMap::setPermissions(const FXACL &perms)
 {
 	if(isOpen())
 	{
@@ -754,7 +754,7 @@ void FXMemMap::setPermissions(const FXACL &perms)
 	}
 	p->acl=perms;
 }
-FXACL FXMemMap::permissions(const FXString &name)
+FXACL QMemMap::permissions(const FXString &name)
 {
 #ifdef USE_WINAPI
 	FXString _name="Global\\"+name;
@@ -768,7 +768,7 @@ FXACL FXMemMap::permissions(const FXString &name)
 	return FXACL(fd, FXACL::MemMap);
 #endif
 }
-void FXMemMap::setPermissions(const FXString &name, const FXACL &perms)
+void QMemMap::setPermissions(const FXString &name, const FXACL &perms)
 {
 #ifdef USE_WINAPI
 	FXString _name="Global\\"+name;
@@ -783,10 +783,10 @@ void FXMemMap::setPermissions(const FXString &name, const FXACL &perms)
 #endif
 }
 
-FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
+FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for reading"));
 	FXfval mysize=(File==p->type) ? p->file->size() : p->size;
 	if(isOpen() && ioIndex<mysize && maxlen)
 	{
@@ -814,7 +814,7 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 				if(readed==maxlen) break;
 			}
 			if(readed==maxlen) break;
-			FXERRH(p->file, FXTrans::tr("FXMemMap", "Unable to read unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
+			FXERRH(p->file, QTrans::tr("QMemMap", "Unable to read unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
 			// Ok do file read
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
 			FXfval tillnextsection=((nextm && nextm->addr) ? nextm->offset : mysize)-ioIndex;
@@ -844,10 +844,10 @@ FXuval FXMemMap::readBlock(char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
+FXuval QMemMap::writeBlock(const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXMemMap", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for writing"));
 	if(isOpen() && maxlen)
 	{
 		FXuval written=0, trmaxlen=maxlen;
@@ -885,7 +885,7 @@ FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
 				if(written==maxlen) break;
 			}
 			if(written==maxlen) break;
-			FXERRH(p->file, FXTrans::tr("FXMemMap", "Unable to write unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
+			FXERRH(p->file, QTrans::tr("QMemMap", "Unable to write unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
 			// Ok do file write
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
 			FXfval tillnextsection=((nextm && nextm->addr) ? nextm->offset-ioIndex : (FXfval)-1);
@@ -900,7 +900,7 @@ FXuval FXMemMap::writeBlock(const char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXMemMap::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
+FXuval QMemMap::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
 {
 	if(isOpen())
 	{
@@ -914,7 +914,7 @@ FXuval FXMemMap::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
 	}
 	return 0;
 }
-FXuval FXMemMap::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
+FXuval QMemMap::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
 {
 	if(isOpen())
 	{
@@ -929,7 +929,7 @@ FXuval FXMemMap::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
 	return 0;
 }
 
-int FXMemMap::getch()
+int QMemMap::getch()
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -962,7 +962,7 @@ int FXMemMap::getch()
 	return -1;
 }
 
-int FXMemMap::putch(int c)
+int QMemMap::putch(int c)
 {
 	FXMtxHold h(p);
 	if(isOpen())
@@ -999,7 +999,7 @@ int FXMemMap::putch(int c)
 	return -1;
 }
 
-int FXMemMap::ungetch(int c)
+int QMemMap::ungetch(int c)
 {
 	FXMtxHold h(p);
 	if(isOpen())

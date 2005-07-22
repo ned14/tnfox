@@ -19,12 +19,12 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXBUFFER_H
-#define FXBUFFER_H
+#ifndef QBUFFER_H
+#define QBUFFER_H
 
-#include "FXIODevice.h"
+#include "QIODevice.h"
 
-/*! \file FXBuffer.h
+/*! \file QBuffer.h
 \brief Defines classes used for accessing memory like a file
 */
 
@@ -32,7 +32,7 @@ namespace FX {
 
 class QByteArray;
 
-/*! \class FXBuffer
+/*! \class QBuffer
 \ingroup fiodevices
 \brief An i/o device accessing memory (Qt compatible)
 
@@ -41,29 +41,29 @@ provide an i/o device working directly with memory. It auto-extends the array
 if needed etc. It's also thread-safe so multiple threads can use the i/o
 device at once.
 
-Note that FXBuffer ignores CR/LF translation (IO_Translate). Anything dealing
+Note that QBuffer ignores CR/LF translation (IO_Translate). Anything dealing
 with files in TnFOX does though, so the conversion can be done then.
 
 \note If you don't set a buffer, an internal one is created for you which is
 deleted on destruction or setBuffer(). If you set your own buffer, it is never
-deleted by FXBuffer.
+deleted by QBuffer.
 
 <h3>Differences from QBuffer</h3>
 Since there is no reference counted sharing in TnFOX, buffer() and setBuffer()
 return and take references.
 */
-struct FXBufferPrivate;
-class FXAPIR FXBuffer : public FXIODevice
+struct QBufferPrivate;
+class FXAPIR QBuffer : public QIODevice
 {
-	FXBufferPrivate *p;
-	FXBuffer(const FXBuffer &);
-	FXBuffer &operator=(const FXBuffer &);
+	QBufferPrivate *p;
+	QBuffer(const QBuffer &);
+	QBuffer &operator=(const QBuffer &);
 public:
 	//! Constructs a new instance using an internal QByteArray of length \em len
-	FXBuffer(FXuval len=0);
+	QBuffer(FXuval len=0);
 	//! Constructs a new instance using \em buffer as the memory array
-	FXBuffer(QByteArray &buffer);
-	~FXBuffer();
+	QBuffer(QByteArray &buffer);
+	~QBuffer();
 	//! Returns the byte array being addressed by this device.
 	QByteArray &buffer() const;
 	//! Sets the byte array being addressed by this device. Closes the old buffer first.
@@ -81,18 +81,18 @@ public:
 	virtual int getch();
 	virtual int putch(int c);
 	virtual int ungetch(int c);
-	friend FXAPI FXStream &operator<<(FXStream &s, const FXBuffer &i);
-	friend FXAPI FXStream &operator>>(FXStream &s, FXBuffer &i);
+	friend FXAPI FXStream &operator<<(FXStream &s, const QBuffer &i);
+	friend FXAPI FXStream &operator>>(FXStream &s, QBuffer &i);
 };
 
 /*! Appends the contents of a buffer to stream \em s.
-\note This is an optimised overload of FXIODevice's which is also thread-safe
+\note This is an optimised overload of QIODevice's which is also thread-safe
 */
-FXAPI FXStream &operator<<(FXStream &s, const FXBuffer &i);
+FXAPI FXStream &operator<<(FXStream &s, const QBuffer &i);
 /*! Reads all available contents of the stream \em s to a buffer, replacing its current contents.
-\note This is an optimised overload of FXIODevice's which is also thread-safe
+\note This is an optimised overload of QIODevice's which is also thread-safe
 */
-FXAPI FXStream &operator>>(FXStream &s, FXBuffer &i);
+FXAPI FXStream &operator>>(FXStream &s, QBuffer &i);
 
 }
 #endif

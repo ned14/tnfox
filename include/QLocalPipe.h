@@ -20,17 +20,17 @@
 ********************************************************************************/
 
 
-#ifndef FXLOCALPIPE_H
-#define FXLOCALPIPE_H
-#include "FXIODeviceS.h"
+#ifndef QLOCALPIPE_H
+#define QLOCALPIPE_H
+#include "QIODeviceS.h"
 
 namespace FX {
 
-/*! \file FXLocalPipe.h
+/*! \file QLocalPipe.h
 \brief Defines classes used to provide a process local pipe
 */
 
-/*! \class FXLocalPipe
+/*! \class QLocalPipe
 \ingroup siodevices
 \brief A process-local pipe
 
@@ -39,42 +39,42 @@ process and is intended as the primary method for threads to communicate
 with each other. It is extremely efficient, threadsafe and has no effective
 pipe buffer length as it uses the freestore.
 
-See FX::FXPipe for more information about how such objects work. One
+See FX::QPipe for more information about how such objects work. One
 difference that there is no create(), instead there is an
-otherEnd() method which returns an instance of FXLocalPipe reflecting
+otherEnd() method which returns an instance of QLocalPipe reflecting
 the other end of the local pipe.
 
-Note that on some platforms FX::FXLocalPipe can appear to be slower than
+Note that on some platforms FX::QLocalPipe can appear to be slower than
 a system pipe (the i/o test shows this). I can't explain this except to
 say that if you set the granularity to 512Kb you get the same speed but
 at 1Mb sequential performance suddenly doubles - so I'm assuming that
 the MSVC6 STL \c <vector> implementation is crossing over some boundary
 where it reallocates every time. One thing my tests \b do confirm is that
-FXLocalPipe has a \em much lower latency than FX::FXPipe which means
+QLocalPipe has a \em much lower latency than FX::QPipe which means
 anything working without a sliding window will benefit a lot.
 */
 
-struct FXLocalPipePrivate;
-class FXAPIR FXLocalPipe : public FXIODeviceS
+struct QLocalPipePrivate;
+class FXAPIR QLocalPipe : public QIODeviceS
 {
-	friend struct FXLocalPipePrivate;
-	FXLocalPipePrivate *p;
+	friend struct QLocalPipePrivate;
+	QLocalPipePrivate *p;
 	bool creator;
-	FXLocalPipe &operator=(const FXLocalPipe &);
+	QLocalPipe &operator=(const QLocalPipe &);
 	virtual void *int_getOSHandle() const;
 public:
 	//! Constructs a process-local pipe
-	FXLocalPipe();
+	QLocalPipe();
 	//! The copy is the other end of the pipe ie; effectively the same as clientEnd()
-	FXLocalPipe(const FXLocalPipe &o);
-	~FXLocalPipe();
+	QLocalPipe(const QLocalPipe &o);
+	~QLocalPipe();
 
 	//! Returns the granularity of memory allocation. The default is 64Kb.
 	FXuval granularity() const;
 	//! Sets the granularity of memory allocation. Set only when the device is closed.
 	void setGranularity(FXuval newval);
 	//!	Returns an instance of this local pipe reflecting the client end of the local pipe
-	FXLocalPipe clientEnd() const { return *this; }
+	QLocalPipe clientEnd() const { return *this; }
 	//! Opens the local pipe for usage
 	bool create(FXuint mode=IO_ReadWrite) { return open(mode); }
 	//! \overload
@@ -101,7 +101,7 @@ public:
 
 	Reads a block of data from the pipe into the given buffer. Will wait forever
 	until requested amount of data has been read if necessary. Is compatible
-	with thread cancellation in FX::FXThread on all platforms. 
+	with thread cancellation in FX::QThread on all platforms. 
 	*/
 	FXuval readBlock(char *data, FXuval maxlen);
 	/*! \return The number of bytes written.

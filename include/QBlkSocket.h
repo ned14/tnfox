@@ -20,20 +20,20 @@
 ********************************************************************************/
 
 
-#ifndef FXBLKSOCKET_H
-#define FXBLKSOCKET_H
-#include "FXIODeviceS.h"
-#include "FXHostAddress.h"
+#ifndef QBLKSOCKET_H
+#define QBLKSOCKET_H
+#include "QIODeviceS.h"
+#include "QHostAddress.h"
 
 namespace FX {
 
-/*! \file FXBlkSocket.h
+/*! \file QBlkSocket.h
 \brief Defines classes used to provide a portable network socket
 */
 
 class FXString;
 
-/*! \class FXBlkSocket
+/*! \class QBlkSocket
 \ingroup siodevices
 \brief A synchronous TCP or UDP network socket (Qt compatible)
 
@@ -44,11 +44,11 @@ events - instead a much simpler and elegant structure is required of having
 a unique thread wait on input and it can handle and/or dispatch incoming data.
 
 It is also almost API compatible with Qt's QSocketDevice which is Qt's
-core socket class. Unlike QSocketDevice, FXBlkSocket can only behave in
+core socket class. Unlike QSocketDevice, QBlkSocket can only behave in
 a blocking fashion.
 
-Furthermore, FXBlkSocket provides a full IPv6 interface as well as IPv4
-facilities. All you need to do is set an IPv6 address in FX:FXHostAddress
+Furthermore, QBlkSocket provides a full IPv6 interface as well as IPv4
+facilities. All you need to do is set an IPv6 address in FX:QHostAddress
 and the rest is taken care of for you.
 
 The send and receive buffer sizes are important. If the send buffer size
@@ -60,19 +60,19 @@ more than readBufferSize() bytes. On Win32, the default read and write
 buffer sizes appear to be 8192 bytes which is a little small. On Linux on
 FreeBSD, they are a much more reasonable 49152 bytes.
 
-To create the server end of a socket, instantiate a FXBlkSocket just as
+To create the server end of a socket, instantiate a QBlkSocket just as
 type and optionally port (if port is zero, it chooses any free port which isn't
 really useful for server sockets) and call
 create(). This will bind the socket to any local network adaptor which is chosen by
 whichever adaptor the incoming connection is using and can be retrieved
 after connection by address() and port(). If your server socket is for
 localhost communication only you should use the other constructor specifying
-the loopback address \c 127.0.0.1 or \c ::1 (FXHOSTADDRESS_LOCALHOST) - this on many systems internally
+the loopback address \c 127.0.0.1 or \c ::1 (QHOSTADDRESS_LOCALHOST) - this on many systems internally
 optimises the connection, making it much faster. Lastly if you want a client
 socket connecting to some server socket, specify the address and port you want
 to connect to and call open().
 
-Stream type can be either FXBlkSocket::Stream or FXBlkSocket::Datagram. The
+Stream type can be either QBlkSocket::Stream or QBlkSocket::Datagram. The
 former uses TCP over IP and is a connection-based reliable full-duplex
 general-purpose data transport protocol. The latter uses UDP over IP and is a
 connection-less unreliable packet protocol - unreliable means your packets 
@@ -92,7 +92,7 @@ man pages, MSVC help files, books and RFC's available. Note that by default
 socket linger is enabled and set to five seconds.
 
 Default security on sockets is full public access and you cannot change
-this. If you want to control security, consider using FX::FXPipe which
+this. If you want to control security, consider using FX::QPipe which
 is more efficient anyway.
 
 Lastly FX::FXConnectionLostException with error code FXEXCEPTION_CONNECTIONLOST
@@ -117,27 +117,27 @@ it makes sense to make it easier to use.
 <h3>Usage:</h3>
 To create a TCP server socket on port 12345:
 \code
-FXBlkSocket server(FXBlkSocket::Stream, (FXushort) 12345);
+QBlkSocket server(QBlkSocket::Stream, (FXushort) 12345);
 server.create(IO_ReadWrite);
 \endcode
 To wait for someone to connect to your TCP server socket:
 \code
-FXPtrHold<FXBlkSocket> transport=server.waitForConnection();
+FXPtrHold<QBlkSocket> transport=server.waitForConnection();
 FXProcess::threadPool().dispatch(Generic::BindFuncN(clientHandler, transport));
 transport=0;
 \endcode
 \sa FX:FXNetwork
 */
 
-struct FXBlkSocketPrivate;
-class FXAPIR FXBlkSocket : public FXIODeviceS
+struct QBlkSocketPrivate;
+class FXAPIR QBlkSocket : public QIODeviceS
 {
-	FXBlkSocketPrivate *p;
-	FXBlkSocket &operator=(const FXBlkSocket &);
+	QBlkSocketPrivate *p;
+	QBlkSocket &operator=(const QBlkSocket &);
 	FXDLLLOCAL void fillInAddrs(bool incPeer);
 	FXDLLLOCAL void zeroAddrs();
 	FXDLLLOCAL void setupSocket();
-	FXBlkSocket(const FXBlkSocket &o, int h);
+	QBlkSocket(const QBlkSocket &o, int h);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 public:
 	//! The types of connection you can have
@@ -147,36 +147,36 @@ public:
 		Datagram	//!< A packet based unreliable socket (UDP)
 	};
 	//! Constructs a socket on the local machine on port \em port (you still need to call create())
-	FXBlkSocket(Type type=Stream, FXushort port=0);
+	QBlkSocket(Type type=Stream, FXushort port=0);
 	//! Constructs a socket to connect to \em addr (you still need to call open()) or a server on localhost
-	FXBlkSocket(const FXHostAddress &addr, FXushort port, Type type=Stream);
+	QBlkSocket(const QHostAddress &addr, FXushort port, Type type=Stream);
 	//! Constructs a socket to connect to whatever addr resolves to by DNS (you still need to call open()) or a server on localhost
-	FXBlkSocket(const FXString &addr, FXushort port, Type type=Stream);
+	QBlkSocket(const FXString &addr, FXushort port, Type type=Stream);
 	//! Destructive copy constructor. Best to not use explicitly.
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
-	FXBlkSocket(const FXBlkSocket &o);
+	QBlkSocket(const QBlkSocket &o);
 #else
-	FXBlkSocket(FXBlkSocket &o);
+	QBlkSocket(QBlkSocket &o);
 #endif
 #else
 private:
-	FXBlkSocket(const FXBlkSocket &);	// disable copy constructor
+	QBlkSocket(const QBlkSocket &);	// disable copy constructor
 public:
-	FXBlkSocket(FXBlkSocket &&o);
+	QBlkSocket(QBlkSocket &&o);
 #endif
-	~FXBlkSocket();
+	~QBlkSocket();
 
 	//! Returns the type of the socket
 	Type type() const;
 	//! Sets the type of the socket. Closes the socket if already open
 	void setType(Type type);
 	//! The address of the socket. This will be null until a connection is made.
-	const FXHostAddress &address() const;
+	const QHostAddress &address() const;
 	//! The port of the socket. This will be null until a connection is made.
 	FXushort port() const;
 	//! The address of what's connected to the socket. This will be null until a connection is made.
-	const FXHostAddress &peerAddress() const;
+	const QHostAddress &peerAddress() const;
 	//! The port of what's connected to the socket. This will be null until a connection is made.
 	FXushort peerPort() const;
 	//! Returns true if this socket uses a unique port
@@ -244,7 +244,7 @@ public:
 
 	Reads a block of data from the socket into the given buffer. Will wait forever
 	until requested amount of data has been read if necessary. Is compatible
-	with thread cancellation in FX::FXThread on all platforms. 
+	with thread cancellation in FX::QThread on all platforms. 
 	*/
 	FXuval readBlock(char *data, FXuval maxlen);
 	/*! \return The number of bytes written.
@@ -260,16 +260,16 @@ public:
 	/*! \overload
 	Useful for UDP packet sends
 	*/
-	FXuval writeBlock(const char *data, FXuval maxlen, const FXHostAddress &addr, FXushort port);
+	FXuval writeBlock(const char *data, FXuval maxlen, const QHostAddress &addr, FXushort port);
 	//! Tries to unread a character. Unsupported for sockets.
 	int ungetch(int);
-	/*! \return A new'ed instance of FXBlkSocket for the new connection or 0 if timed out
+	/*! \return A new'ed instance of QBlkSocket for the new connection or 0 if timed out
 
 	Waits for a client to connect to a server socket, spawning a new instance
 	of itself for the new connection. The original socket (ie; the one you
 	call waitForConnection() upon) is unaffected.
 	*/
-	FXBlkSocket *waitForConnection(FXuint waitfor=FXINFINITE);
+	QBlkSocket *waitForConnection(FXuint waitfor=FXINFINITE);
 public:
 	//! \deprecated For Qt compatibility only
 	FXDEPRECATEDEXT bool blocking() const { return true; }

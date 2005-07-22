@@ -20,23 +20,23 @@
 ********************************************************************************/
 
 
-#ifndef FXHOSTADDRESS_H
-#define FXHOSTADDRESS_H
+#ifndef QHOSTADDRESS_H
+#define QHOSTADDRESS_H
 
 #include "fxdefs.h"
 
 namespace FX {
 
-/*! \file FXHostAddress.h
+/*! \file QHostAddress.h
 \brief Defines classes used to provide an IP address
 */
 
 class FXString;
 
-//! Simple macro creating a FX::FXHostAddress containing \c localhost
-#define FXHOSTADDRESS_LOCALHOST FXHostAddress(0x7f000001)
+//! Simple macro creating a FX::QHostAddress containing \c localhost
+#define QHOSTADDRESS_LOCALHOST QHostAddress(0x7f000001)
 
-/*! \class FXHostAddress
+/*! \class QHostAddress
 \brief A container holding an IPv4 or IPv6 address (Qt compatible)
 
 This is a Qt compatible IP address container capable of working transparently
@@ -55,24 +55,24 @@ Some mapping though is provided. IPv4 maps to IPv6 where an IPv4 address
 127.0.0.1 is equivalent to ::1 and vice versa. In the comparison operators,
 0.0.0.0 is treated as being equivalent to loopback.
 */
-struct FXHostAddressPrivate;
-class FXAPIR FXHostAddress
+struct QHostAddressPrivate;
+class FXAPIR QHostAddress
 {
-	FXHostAddressPrivate *p;
+	QHostAddressPrivate *p;
 public:
 	//! Constructs a null address
-	FXHostAddress();
+	QHostAddress();
 	//! Constructs the specified IPv4 address
-	FXHostAddress(FXuint ip4addr);
+	QHostAddress(FXuint ip4addr);
 	//! Constructs the specified IPv6 address. Must be in network order.
-	FXHostAddress(const FXuchar *ip6addr);
-	FXHostAddress(const FXHostAddress &o);
-	FXHostAddress &operator=(const FXHostAddress &o);
-	~FXHostAddress();
+	QHostAddress(const FXuchar *ip6addr);
+	QHostAddress(const QHostAddress &o);
+	QHostAddress &operator=(const QHostAddress &o);
+	~QHostAddress();
 	//! Returns true if both addresses are the same by ruleset
-	bool operator==(const FXHostAddress &o) const;
+	bool operator==(const QHostAddress &o) const;
 	//! Returns true if both addresses are not the same
-	bool operator!=(const FXHostAddress &o) const { return !(*this==o); }
+	bool operator!=(const QHostAddress &o) const { return !(*this==o); }
 
 	//! Sets the contents to the specified IPv4 address
 	void setAddress(FXuint ip4addr);
@@ -104,14 +104,14 @@ public:
 	FXString toString() const;
 	//! Returns true if the address is the local machine
 	bool isLocalMachine() const;
-	friend FXStream &operator<<(FXStream &s, const FXHostAddress &i);
-	friend FXStream &operator>>(FXStream &s, FXHostAddress &i);
+	friend FXStream &operator<<(FXStream &s, const QHostAddress &i);
+	friend FXStream &operator>>(FXStream &s, QHostAddress &i);
 };
 
 //! Writes the contents of the IP address to stream \em s
-FXStream &operator<<(FXStream &s, const FXHostAddress &i);
+FXStream &operator<<(FXStream &s, const QHostAddress &i);
 //! Reads an IP address from stream \em s
-FXStream &operator>>(FXStream &s, FXHostAddress &i);
+FXStream &operator>>(FXStream &s, QHostAddress &i);
 
 } // namespace
 

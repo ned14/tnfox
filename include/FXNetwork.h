@@ -21,7 +21,7 @@
 
 #ifndef FXNETWORK_H
 #define FXNETWORK_H
-#include "FXHostAddress.h"
+#include "QHostAddress.h"
 
 namespace FX {
 
@@ -54,14 +54,14 @@ public:
 	If the name isn't found due to not existing or no DNS server available, a
 	null address is returned - however an exception is still thrown for errors.
 	*/
-	static FXHostAddress dnsLookup(const FXString &name);
+	static QHostAddress dnsLookup(const FXString &name);
 	/*! Performs a translation of an IP address to a textual name by querying a
 	DNS provider on the network. This call can especially take a long time. If
 	there is no name associated with the IP address or no DNS server is
 	available, a null string is returned - however an exception is still thrown
 	for errors.
 	*/
-	static FXString dnsReverseLookup(const FXHostAddress &addr);
+	static FXString dnsReverseLookup(const QHostAddress &addr);
 };
 
 } // namespace

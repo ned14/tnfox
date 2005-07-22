@@ -30,8 +30,8 @@
 #include "FXText.h"
 #include "FXPrimaryButton.h"
 #include "FXProcess.h"
-#include "FXTrans.h"
-#include "FXIODevice.h"
+#include "QTrans.h"
+#include "QIODevice.h"
 #include "FXRollback.h"
 #include <stdlib.h>
 #include <string.h>
@@ -69,7 +69,7 @@ public:
 		ID_LAST
 	};
 	FXExceptionDetails(FXExceptionDialog *owner,  FXuint opts=DECOR_ALL,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
-		: myowner(owner), FXHandedDialog(owner, FXTrans::tr("FXExceptionDetails", "Full error report"), opts|HANDEDINTERFACE_OKBUTTON, x,y,w,h, pl,pr,pt,pb, hs,vs)
+		: myowner(owner), FXHandedDialog(owner, QTrans::tr("FXExceptionDetails", "Full error report"), opts|HANDEDINTERFACE_OKBUTTON, x,y,w,h, pl,pr,pt,pb, hs,vs)
 	{
 		FXText *text;
 		FXERRHM(text=   new FXText(this, NULL, 0, TEXT_READONLY|TEXT_WORDWRAP|LAYOUT_FILL));
@@ -85,7 +85,7 @@ public:
 		FXMALLOC(&buff, FXuchar, (txt.length()+1)*2);
 		bool midNL;
 		FXuval inputlen=txt.length();
-		FXuval actuallen=FXIODevice::applyCRLF(midNL, buff, (FXuchar *) txt.text(), (txt.length()+1)*2, inputlen);
+		FXuval actuallen=QIODevice::applyCRLF(midNL, buff, (FXuchar *) txt.text(), (txt.length()+1)*2, inputlen);
 		setDNDData(FROM_CLIPBOARD, stringType, (FXuchar *) buff, actuallen+1);
 		return 1;
 	}
@@ -122,7 +122,7 @@ long FXExceptionDialog::onCmdFullDetail(FXObject *sender, FXSelector sel, void *
 
 FXExceptionDialog::FXExceptionDialog(FXApp *a, FXException &_e,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs)
 	: e(&_e), details(0),
-	FXHandedDialog(a, (_e.isFatal() ? FXTrans::tr("FXExceptionDialog", "Fatal Error from %1") : FXTrans::tr("FXExceptionDialog", "Error from %1")).arg(a->getAppName()),
+	FXHandedDialog(a, (_e.isFatal() ? QTrans::tr("FXExceptionDialog", "Fatal Error from %1") : QTrans::tr("FXExceptionDialog", "Error from %1")).arg(a->getAppName()),
 	opts|HANDEDINTERFACE_DEFCANCELBUTTON,x,y,w,h,pl,pr,pt,pb,hs,vs)
 {
 	init();
@@ -130,7 +130,7 @@ FXExceptionDialog::FXExceptionDialog(FXApp *a, FXException &_e,FXuint opts,FXint
 
 FXExceptionDialog::FXExceptionDialog(FXWindow *owner, FXException &_e,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb,FXint hs,FXint vs)
 	: e(&_e), details(0),
-	FXHandedDialog(owner, (_e.isFatal() ? FXTrans::tr("FXExceptionDialog", "Fatal Error from %1") : FXTrans::tr("FXExceptionDialog", "Error from %1")).arg(owner->getApp()->getAppName()),
+	FXHandedDialog(owner, (_e.isFatal() ? QTrans::tr("FXExceptionDialog", "Fatal Error from %1") : QTrans::tr("FXExceptionDialog", "Error from %1")).arg(owner->getApp()->getAppName()),
 	opts|HANDEDINTERFACE_DEFCANCELBUTTON,x,y,w,h,pl,pr,pt,pb,hs,vs)
 {
 	init();

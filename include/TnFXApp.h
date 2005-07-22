@@ -24,7 +24,7 @@
 #define TNFXAPP_H
 
 #include "FXApp.h"
-#include "FXThread.h"
+#include "QThread.h"
 
 namespace FX {
 
@@ -147,7 +147,7 @@ wouldn't be hard to add, but I personally have no use for it and I view
 it as a pure legacy feature.
 */
 struct TnFXAppPrivate;
-class FXAPI TnFXApp : public FXMutex, public FXApp
+class FXAPI TnFXApp : public QMutex, public FXApp
 {
 	FXDECLARE(TnFXApp)
 	TnFXAppPrivate *p;
@@ -187,7 +187,7 @@ except for the primary loop.
 \sa FX::TnFXApp
 */
 struct TnFXAppEventLoopPrivate;
-class FXAPI TnFXAppEventLoop : public FXMutex, public FXObject, public FXThread
+class FXAPI TnFXAppEventLoop : public QMutex, public FXObject, public QThread
 {
 	FXDECLARE_ABSTRACT(TnFXAppEventLoop)
 	TnFXAppEventLoopPrivate *p;

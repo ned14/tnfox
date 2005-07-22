@@ -22,8 +22,8 @@
 #include "FXACL.h"
 #include "FXException.h"
 #include "FXRollback.h"
-#include "FXThread.h"
-#include "FXTrans.h"
+#include "QThread.h"
+#include "QTrans.h"
 #include "FXProcess.h"
 #include "FXErrCodes.h"
 #include "qvaluelist.h"
@@ -276,10 +276,10 @@ FXString FXACLEntity::asString(bool full) const
 #ifdef USE_POSIX
 	if(p->amOwner)
 	{
-		return p->amGroup ? FXTrans::tr("FXACLEntity", "Owner group")
-			: FXTrans::tr("FXACLEntity", "Owner");
+		return p->amGroup ? QTrans::tr("FXACLEntity", "Owner group")
+			: QTrans::tr("FXACLEntity", "Owner");
 	}
-	if(p->amPublic) return FXTrans::tr("FXACLEntity", "Everything");
+	if(p->amPublic) return QTrans::tr("FXACLEntity", "Everything");
 	int ret;
 	QByteArray store(1024);
 	struct passwd *_userinfo=0, userinfo={0};
@@ -454,7 +454,7 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 			static void faildelay(int, unsigned int micro_sec, void *)
 			{	// Two seconds is too much. Let's use a half second
 				//fxmessage("Waiting %d ms ...\n", 200+micro_sec/10000);
-				FXThread::msleep(200+micro_sec/10000);
+				QThread::msleep(200+micro_sec/10000);
 			}
 		};
 		pam_handle_t *pamh;
@@ -462,7 +462,7 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 		struct pam_conv conv={ PamCode::convfunc, (void *) password };
 		/* Ensure we're root or can act like root. PAM does appear to work without
 		being root but only for uid!=0 which is annoying. Best be consistent */
-		FXERRH(!getuid() /*|| !geteuid()*/, FXTrans::tr("FXACLEntity", "Must have root privileges for this operation"), FXACLENTITY_NEEDROOTPRIVS, 0);
+		FXERRH(!getuid() /*|| !geteuid()*/, QTrans::tr("FXACLEntity", "Must have root privileges for this operation"), FXACLENTITY_NEEDROOTPRIVS, 0);
 		if(PAM_SUCCESS==(ret=pam_start("passwd", userinfo.pw_name, &conv, &pamh)))
 		{
 			FXRBOp unpam=FXRBFunc(pam_end, pamh, ret);
@@ -502,7 +502,7 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 			if(ret && ERANGE!=ret) FXERRHOS(-1);
 			store.resize(store.size()+1024);
 		}
-		FXERRH(_suserinfo && suserinfo.sp_pwdp, FXTrans::tr("FXACLEntity", "Shadow password file unavailable"), FXACLENTITY_NOSHADOWPASSWORDFILE, 0);
+		FXERRH(_suserinfo && suserinfo.sp_pwdp, QTrans::tr("FXACLEntity", "Shadow password file unavailable"), FXACLENTITY_NOSHADOWPASSWORDFILE, 0);
 		fxmessage("mine is %s his is %s\n", epass.text(), suserinfo.sp_pwdp);
 		if(epass==suserinfo.sp_pwdp) return true;
 	}*/
@@ -514,7 +514,7 @@ FXString FXACLEntity::homeDirectory(bool filesdir) const
 #ifdef USE_WINAPI
 	if(filesdir)
 	{	// Ask the shell where this user's My Documents lives
-		FXERRH(p->token, FXTrans::tr("FXACLEntity", "You must authenticate an entity before you can retrieve its home directory"), FXACLENTITY_HOMEDIRNEEDSAUTH, 0);
+		FXERRH(p->token, QTrans::tr("FXACLEntity", "You must authenticate an entity before you can retrieve its home directory"), FXACLENTITY_HOMEDIRNEEDSAUTH, 0);
 		TCHAR outpath[MAX_PATH];
 		HRESULT ret=SHGetFolderPath(NULL, CSIDL_PERSONAL, p->token, SHGFP_TYPE_CURRENT, outpath);
 		FXERRHWIN(ret!=S_FALSE && ret!=E_FAIL);
@@ -580,7 +580,7 @@ FXString FXACLEntity::homeDirectory(bool filesdir) const
 #endif
 }
 
-static FXMutex staticmethodlock;
+static QMutex staticmethodlock;
 const FXACLEntity &FXACLEntity::currentUser()
 {
 	static FXACLEntity ret;
@@ -752,7 +752,7 @@ FXACLEntity FXACLEntity::lookupUser(const FXString &username, const FXString &ma
 		if(_ret && ERANGE!=_ret) FXERRHOS(-1);
 		store.resize(store.size()+1024);
 	}
-	FXERRH(_userinfo, FXTrans::tr("FXACLEntity", "Unknown user"), FXACLENTITY_UNKNOWNUSER, 0);
+	FXERRH(_userinfo, QTrans::tr("FXACLEntity", "Unknown user"), FXACLENTITY_UNKNOWNUSER, 0);
 	FXERRHM(ret.p=new FXACLEntityPrivate(userinfo.pw_uid, userinfo.pw_gid, false, machine));
 #endif
 	return ret;
@@ -1152,7 +1152,7 @@ void FXACL::init(void *_sd, FXACL::EntityType type)
 	SID *owner, *group;
 	/* It seems that if the program is not running as Administrator, calls can return
 	a zero security descriptor with no error :( */
-	FXERRH(IsValidSecurityDescriptor(sd), FXTrans::tr("FXACL", "Invalid Security Descriptor"), FXACL_BADDESCRIPTOR, 0);
+	FXERRH(IsValidSecurityDescriptor(sd), QTrans::tr("FXACL", "Invalid Security Descriptor"), FXACL_BADDESCRIPTOR, 0);
 	SECURITY_DESCRIPTOR_CONTROL sdc;
 	DWORD sdrev;
 	FXERRHWIN(GetSecurityDescriptorControl(sd, &sdc, &sdrev));
@@ -1438,13 +1438,13 @@ void FXACL::checkE(FXACL::Perms what) const
 {
 	if(!check(what))
 	{
-		FXERRGNOPERM(FXTrans::tr("FXACL", "Permission denied"), 0);
+		FXERRGNOPERM(QTrans::tr("FXACL", "Permission denied"), 0);
 	}
 }
 
 FXString FXACL::report() const
 {
-	FXString ret=FXTrans::tr("FXACL",	"Owner: %1 (group: %2)\n  Deny          Grant         Entity\n").arg(p->owner.asString()).arg(p->owner.group().asString());
+	FXString ret=QTrans::tr("FXACL",	"Owner: %1 (group: %2)\n  Deny          Grant         Entity\n").arg(p->owner.asString()).arg(p->owner.group().asString());
 	for(QValueList<FXACL::Entry>::iterator it=p->begin(); it!=p->end(); ++it)
 	{
 		FXACL::Entry &e=*it;
@@ -1469,7 +1469,7 @@ void FXACL::writeTo(const FXString &path) const
 	bool doImpers=FXACLEntity::currentUser()!=p->owner;
 	if(doImpers)
 	{
-		FXERRH(p->owner.p->token, FXTrans::tr("FXACL", "You must authenticate an entity before you can set it as owner"), FXACL_OWNERNEEDSAUTH, 0);
+		FXERRH(p->owner.p->token, QTrans::tr("FXACL", "You must authenticate an entity before you can set it as owner"), FXACL_OWNERNEEDSAUTH, 0);
 		FXERRHWIN(SetThreadToken(NULL, p->owner.p->token));
 	}
 	DWORD ret=SetNamedSecurityInfo(_path, mapType(p->type), si, (PSID) p->owner.p->sid,
@@ -1509,7 +1509,7 @@ void FXACL::writeTo(void *h) const
 	bool doImpers=FXACLEntity::currentUser()!=p->owner;
 	if(doImpers)
 	{
-		FXERRH(p->owner.p->token, FXTrans::tr("FXACL", "You must authenticate an entity before you can set it as owner"), FXACL_OWNERNEEDSAUTH, 0);
+		FXERRH(p->owner.p->token, QTrans::tr("FXACL", "You must authenticate an entity before you can set it as owner"), FXACL_OWNERNEEDSAUTH, 0);
 		FXERRHWIN(SetThreadToken(NULL, p->owner.p->token));
 	}
 	DWORD ret=SetSecurityInfo((HANDLE) h, mapType(p->type), si, (PSID) p->owner.p->sid,

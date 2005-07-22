@@ -24,15 +24,15 @@
 
 #include "fxdefs.h"
 #include <signal.h>
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXException.h"
 
 namespace FX {
 
 #ifdef USE_POSIX
-class FXIODeviceS_SignalHandler
+class QIODeviceS_SignalHandler
 {
-	static FXThreadLocalStorageBase data;
+	static QThreadLocalStorageBase data;
 	static void handler(int)
 	{
 #ifdef DEBUG
@@ -41,7 +41,7 @@ class FXIODeviceS_SignalHandler
 		data.setPtr((void *) 1);
 	}
 public:
-	FXIODeviceS_SignalHandler()
+	QIODeviceS_SignalHandler()
 	{
 		if(SIG_ERR==signal(SIGPIPE, handler)) FXERRHOS(-1);
 	}

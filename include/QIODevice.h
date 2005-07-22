@@ -19,14 +19,14 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXIODEVICE_H
-#define FXIODEVICE_H
+#ifndef QIODEVICE_H
+#define QIODEVICE_H
 
 #include "fxdefs.h"
 
 namespace FX {
 
-/*! \file FXIODevice.h
+/*! \file QIODevice.h
 \brief Defines classes and values used for i/o
 */
 
@@ -39,8 +39,8 @@ patch of contiguous data
 
 class FXACL;
 
-//! A set of flags passed to FX::FXIODevice::open() combined bitwise
-enum FXIODeviceFlags
+//! A set of flags passed to FX::QIODevice::open() combined bitwise
+enum QIODeviceFlags
 {
 	IO_ReadOnly=	0x0001,		//!< This specifies that the device should be opened for read-only access
 	IO_WriteOnly=	0x0002,		//!< This specifies that the device should be opened for write-only access
@@ -55,18 +55,18 @@ enum FXIODeviceFlags
 	IO_Translate=	0x0010,
 	/*! This specifies that truncates to smaller than the current file size should
 	destroy the data being truncated first. This prevents data "leaking" out of a
-	file into the disc's free space. See FX::FXIODevice::shredData() */
+	file into the disc's free space. See FX::QIODevice::shredData() */
 	IO_ShredTruncate=0x080,
 	IO_ModeMask=	0x00ff,		//!< This can be used to mask out the mode() flags
 
 	IO_Raw=			0x0100,		//!< Causes immediate buffer flushes after every write operation
-	IO_QuietSocket=	0x0200,		//!< Prevents server sockets from listening (see FX::FXBlkSocket)
+	IO_QuietSocket=	0x0200,		//!< Prevents server sockets from listening (see FX::QBlkSocket)
 	IO_DontUnlink=  0x0400,		//!< Prevents creator deleting its entry on close()
 	IO_Open=		0x1000,		//!< This is set if the device is currently open
 	IO_StateMask=   0xf000		//!< This can be used to mask out the state() flags
 };
 
-/*! \class FXIODevice
+/*! \class QIODevice
 \ingroup fiodevices
 \ingroup security
 \brief The abstract base class for all i/o classes in TnFOX (Qt compatible)
@@ -90,12 +90,12 @@ truncated data when IO_ShredTruncate is specified in the mode. If you wish
 to destroy an existing file, open it with IO_ShredTruncate, call truncate(0)
 and close before deleting.
 
-FXIODevice is extremely straightforward, so I won't bother explaining any more.
+QIODevice is extremely straightforward, so I won't bother explaining any more.
 What I will say is that there are two types of i/o device in TnFOX: (a) file
-and (b) synchronous. File i/o devices (eg; FX::FXFile, FX::FXBuffer, FX::FXMemMap,
-FX::FXGZipDevice etc) let you perform reads and writes on a patch of data and
-thus they are interchangeable. Synchronous i/o devices (eg; FX::FXPipe,
-FX::FXBlkSocket, FX::FXLocalPipe etc) which inherit off FX::FXIODeviceS imply
+and (b) synchronous. File i/o devices (eg; FX::FXFile, FX::QBuffer, FX::QMemMap,
+FX::QGZipDevice etc) let you perform reads and writes on a patch of data and
+thus they are interchangeable. Synchronous i/o devices (eg; FX::QPipe,
+FX::QBlkSocket, FX::QLocalPipe etc) which inherit off FX::QIODeviceS imply
 the use of two threads to use them
 because data reads in all of them wait for data to be written by the other side.
 Things like at() have no meaning and size() returns how much data is waiting
@@ -121,27 +121,27 @@ have this? All devices must also provide readBlockFrom() and writeBlockTo().
 the exception of not found errors which are FX::FXNotFoundException
 \li getch(), putch() aren't pure virtual
 
-\sa FX::FXBuffer, FX::FXFile, FX::FXBlkSocket, FX::FXPipe, FX::FXMemMap
+\sa FX::QBuffer, FX::FXFile, FX::QBlkSocket, FX::QPipe, FX::QMemMap
 */
-class FXAPI FXIODevice
+class FXAPI QIODevice
 {
 public:
 	typedef FXfval Offset;
 private:
 	FXuint mymode;
 protected:
-	FXIODevice(const FXIODevice &o) : mymode(o.mymode), ioIndex(o.ioIndex) { }
-	FXIODevice &operator=(const FXIODevice &o) { mymode=o.mymode; ioIndex=o.ioIndex; return *this; }
+	QIODevice(const QIODevice &o) : mymode(o.mymode), ioIndex(o.ioIndex) { }
+	QIODevice &operator=(const QIODevice &o) { mymode=o.mymode; ioIndex=o.ioIndex; return *this; }
 	FXfval ioIndex;
 public:
-	FXIODevice() : mymode(0), ioIndex(0) { }
-	virtual ~FXIODevice() { }
+	QIODevice() : mymode(0), ioIndex(0) { }
+	virtual ~QIODevice() { }
 
 	//! Returns the flags of this device
 	FXuint flags() const { return mymode; }
-	/*! Returns the mode of this device \sa FXIODeviceOpenFlags */
+	/*! Returns the mode of this device \sa QIODeviceOpenFlags */
 	FXuint mode() const { return mymode & IO_ModeMask; }
-	/*! Returns the state of this device \sa FXIODeviceStateFlags */
+	/*! Returns the state of this device \sa QIODeviceStateFlags */
 	FXuint state() const { return mymode & IO_StateMask; }
 	//! Returns true if the device is buffered
 	bool isBuffered() const { return IO_Raw!=(mymode & IO_Raw); }
@@ -265,19 +265,19 @@ protected:
 	void setMode(int m) { mymode=(mymode & ~IO_ModeMask)|m; }
 	//! Sets the state
 	void setState(int s) { mymode=(mymode & ~IO_StateMask)|s; }
-	friend FXAPI FXStream &operator<<(FXStream &s, FXIODevice &i);
-	friend FXAPI FXStream &operator>>(FXStream &s, FXIODevice &i);
+	friend FXAPI FXStream &operator<<(FXStream &s, QIODevice &i);
+	friend FXAPI FXStream &operator>>(FXStream &s, QIODevice &i);
 };
 
 /*! Appends the contents of an i/o device to stream \em s
 \warning This operation is not thread-safe
 */
-FXAPI FXStream &operator<<(FXStream &s, FXIODevice &i);
+FXAPI FXStream &operator<<(FXStream &s, QIODevice &i);
 /*! Reads all available contents of the stream \em s to an i/o device, replacing
 its current contents and resetting the file pointer to the start
 \warning This operation is not thread-safe
 */
-FXAPI FXStream &operator>>(FXStream &s, FXIODevice &i);
+FXAPI FXStream &operator>>(FXStream &s, QIODevice &i);
 
 
 } // namespace

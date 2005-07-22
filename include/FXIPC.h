@@ -23,7 +23,7 @@
 #define FXIPC_H
 
 #include "FXException.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXStream.h"
 
 namespace FX {
@@ -32,20 +32,20 @@ namespace FX {
 \brief Defines classes used in providing inter-process communication
 */
 
-class FXIODeviceS;
+class QIODeviceS;
 
 /*! \defgroup IPC Inter Process Communication & Data Transport
 
 TnFOX provides a lightweight but powerful IPC framework based around message
 passing. It has been designed primarily with efficiency in mind - not only
 in terms of execution, but especially in terms of maintainence and extensibility.
-The IPC framework can use any FX::FXIODeviceS eg; FX::FXPipe, FX::FXBlkSocket,
-FX::FXLocalPipe or FX::FXSSLDevice and via threads can provide full portable
+The IPC framework can use any FX::QIODeviceS eg; FX::QPipe, FX::QBlkSocket,
+FX::QLocalPipe or FX::QSSLDevice and via threads can provide full portable
 asynchronous i/o (ie; you can send a message, go do something else and get
 notified when its acknowledgement returns).
 
 Messages can be of any size though generally they are unsuited for very large
-blocks of data (consider using a FX::FXMemMap if machine-local). If you are
+blocks of data (consider using a FX::QMemMap if machine-local). If you are
 streaming over an external connection (socket) then you'd usually want to
 chop them up into lots of smaller messages. For maximum flexibility there are
 broadcast type messages (one way) and synchronous messages (send and wait
@@ -165,7 +165,7 @@ struct FXAPI FXIPCMsg
 	enum Flags				// NOTE TO SELF: May not exceed a byte
 	{
 		FlagsWantAck=1,		//!< If unset and this message has an ack, don't bother serialising the ack
-		FlagsGZipped=2,		//!< If set, data has been run through a FX::FXGZipDevice
+		FlagsGZipped=2,		//!< If set, data has been run through a FX::QGZipDevice
 		FlagsHasRouting=4,	//!< If set, msg contains routing number
 		FlagsIsBigEndian=8	//!< If set, the sender was big endian
 	};
@@ -404,7 +404,7 @@ typedef FXIPCMsgChunk<Generic::TL::create<
 
 /*! \class FXIPCChannel
 \ingroup IPC
-\brief Base class for an IPC channel over an arbitrary FX::FXIODeviceS
+\brief Base class for an IPC channel over an arbitrary FX::QIODeviceS
 
 While you could use FX::FXIPCMsg manually, chances are you'll use this base
 class which provides almost everything you need to implement a TnFOX IPC
@@ -420,7 +420,7 @@ items of FXIPCMsg for you before writing to the transport device. If
 unreliable() is set, a slight amount of overhead is incurred to calculate
 the adler32 checksum of the message contents. If compression() is set, a
 \b great amount of overhead is incurred by compressing the message data
-using an internal FX::FXGZipDevice - it makes no sense to use this except
+using an internal FX::QGZipDevice - it makes no sense to use this except
 when the transport is very, very slow indeed (eg; a modem dialup). Note
 that one end can be compressed and the other not as indeed one end can
 be unreliable and the other not.
@@ -499,7 +499,7 @@ possibility of deadlock.
 In order to outsource message processing, there is a facility to detach
 the message you have received so you can perform the process and return
 the ack in your own good time. Simply return \c HandledAsync after dispatching
-the heavy processing to a FX::FXThreadPool, passing the message pointer
+the heavy processing to a FX::QThreadPool, passing the message pointer
 which must now be deleted by you. Ensure you don't throw an exception
 before returning \c HandledAsync in this case as FXIPCChannel will delete
 it on you.
@@ -563,14 +563,14 @@ within the carrying FXIPCChannel subclass, you should implement unknownMsgReceiv
 */
 struct FXIPCChannelPrivate;
 template<class type> class QPtrVector;
-class FXAPI FXIPCChannel : public FXMutex,
+class FXAPI FXIPCChannel : public QMutex,
 #if !defined(BOOST_PYTHON_SOURCE) && !defined(FX_RUNNING_PYSTE)
 /* We must subvert normal access protection for the BPL bindings as pyste doesn't
 understand yet and it's easier to do this than fix pyste */
-	protected FXThread
+	protected QThread
 {
 #else
-	public FXThread
+	public QThread
 {
 #endif
 	FXIPCChannelPrivate *p;
@@ -578,20 +578,20 @@ understand yet and it's easier to do this than fix pyste */
 	FXIPCChannel &operator=(const FXIPCChannel &);
 public:
 	//! Constructs an instance using namespace \em registry working with device \em dev and naming the monitor thread \em threadname
-	FXIPCChannel(FXIPCMsgRegistry &registry, FXIODeviceS *dev, bool peerUntrusted=false, FXThreadPool *threadPool=0, const char *threadname="IPC channel monitor");
+	FXIPCChannel(FXIPCMsgRegistry &registry, QIODeviceS *dev, bool peerUntrusted=false, QThreadPool *threadPool=0, const char *threadname="IPC channel monitor");
 	~FXIPCChannel();
 	//! Returns the message registry the channel uses
 	FXIPCMsgRegistry &registry() const;
 	//! Sets the message registry the channel uses
 	void setRegistry(FXIPCMsgRegistry &registry);
 	//! Returns the device providing the transport for the channel
-	FXIODeviceS *device() const;
+	QIODeviceS *device() const;
 	//! Sets the device providing the transport for the channel
-	void setDevice(FXIODeviceS *dev);
+	void setDevice(QIODeviceS *dev);
 	//! Returns the thread pool the channel uses
-	FXThreadPool *threadPool() const;
+	QThreadPool *threadPool() const;
 	//! Sets the thread pool for the channel to use
-	void setThreadPool(FXThreadPool *threadPool);
+	void setThreadPool(QThreadPool *threadPool);
 	//! Returns if CRC checking is enabled for this channel
 	bool unreliable() const;
 	//! Sets if CRC checking is enabled for this channel
@@ -636,20 +636,20 @@ public:
 	//! Causes the channel to close
 	void requestClose();
 
-	// From FXThread
-	using FXThread::name;
-	using FXThread::wait;
-	using FXThread::start;
-	using FXThread::finished;
-	using FXThread::running;
-	using FXThread::inCleanup;
-	using FXThread::isValid;
-	using FXThread::setAutoDelete;
-	using FXThread::creator;
-	using FXThread::priority;
-	using FXThread::setPriority;
-	using FXThread::addCleanupCall;
-	using FXThread::removeCleanupCall;
+	// From QThread
+	using QThread::name;
+	using QThread::wait;
+	using QThread::start;
+	using QThread::finished;
+	using QThread::running;
+	using QThread::inCleanup;
+	using QThread::isValid;
+	using QThread::setAutoDelete;
+	using QThread::creator;
+	using QThread::priority;
+	using QThread::setPriority;
+	using QThread::addCleanupCall;
+	using QThread::removeCleanupCall;
 
 	//! Specifies how the message was handled
 	enum HandledCode
@@ -744,7 +744,7 @@ protected:
 	/*!	You must define this in your subclass to handle/dispatch received messages.
 	Called in the context of the internal monitor thread and as there is limited
 	stack space plus requirements for low latency, consider dispatching heavier
-	processing to a FX::FXThreadPool */
+	processing to a FX::QThreadPool */
 	virtual HandledCode msgReceived(FXIPCMsg *msg)=0;
 	/*! Called when a message of unknown type is received. Default action is to return
 	an \c NotHandled code which causes a FX::FXIPCMsg_Unhandled to be returned to the

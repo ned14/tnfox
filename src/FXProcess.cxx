@@ -26,10 +26,10 @@
 #include "FXPtrHold.h"
 #include "FXErrCodes.h"
 #include "FXFile.h"
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include "FXStream.h"
-#include "FXTrans.h"
-#include "FXThread.h"
+#include "QTrans.h"
+#include "QThread.h"
 #include "FXACL.h"
 #include "FXApp.h"
 #include "FXRollback.h"
@@ -124,7 +124,7 @@ static QList<FXProcess_StaticInitBase> *SIlist;
 static QList<FXProcess_StaticDepend> *SIdepend;
 static struct ExitUpcalls
 {
-	FXMutex lock;
+	QMutex lock;
 	QPtrList<FXProcess::FatalExitUpcallSpec> upcalls;
 	ExitUpcalls() : upcalls(true) { }
 } *exitupcalls;
@@ -350,7 +350,7 @@ static void MyUnhandledSignalHandler(int sig, siginfo_t *si, void *data)
 }
 #endif
 
-struct FXDLLLOCAL FXProcessPrivate : public FXMutex
+struct FXDLLLOCAL FXProcessPrivate : public QMutex
 {
 	struct args_t
 	{
@@ -364,7 +364,7 @@ struct FXDLLLOCAL FXProcessPrivate : public FXMutex
         FXfloat discio;
         Overrides_t() : memory(-1), processor(-1), discio(-1) { }
     } overrides;
-	FXThreadPool *threadpool;
+	QThreadPool *threadpool;
 	FXProcess::UserHandedness handedness;
 	FXuint screenScale;
 	FXint maxScreenWidth, maxScreenHeight;
@@ -439,62 +439,62 @@ void FXProcess::init(int &argc, char *argv[])
 		p->argscopy.argc=0;
 		p->argscopy.argv=0;
 		p->threadpool=0;
-		FXBuffer txtholder;
+		QBuffer txtholder;
 		txtholder.open(IO_ReadWrite);
 		FXStream stxtholder(&txtholder);
 		if(runPendingStaticInits(argc, argv, stxtholder)) inHelpMode=true;
 		p->argscopy.argc=argc;
 		p->argscopy.argv=argv;
-		FXIODevice &stdio=FXFile::stdio(true);
+		QIODevice &stdio=FXFile::stdio(true);
 		FXStream sstdio(&stdio);
 		for(int argi=0; argi<argc; argi++)
 		{
 			if(0==strcmp(argv[argi], "-help"))
 			{
 				inHelpMode=true;
-				FXTransString temp2=FXTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n");
+				QTransString temp2=QTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n");
 				temp2.arg(FXFile::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR);
 				temp2.arg(FOX_MAJOR).arg(FOX_MINOR).arg(FOX_LEVEL).arg(FXString(__TIME__)).arg(FXString(__DATE__));
 				FXString temp(temp2);
 				sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "TnFOX (http://www.nedprod.com/TnFOX/) is heavily based upon the FOX portable\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "GUI toolkit (http://www.fox-toolkit.org/) and all rights are reserved\n\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "  -sysinfo               : Show information about the system & environment\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "  -fxhanded=<left|right> : Overrides the handedness of the user\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "  -fxmemoryfull=<fpno>   : Overrides the memory full setting\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "  -fxscreenscale=<%>     : Overrides the window layout scaling factor\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "  -fxscreensize=w,h      : Constrains the screen (debug only)\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "TnFOX (http://www.nedprod.com/TnFOX/) is heavily based upon the FOX portable\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "GUI toolkit (http://www.fox-toolkit.org/) and all rights are reserved\n\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "  -sysinfo               : Show information about the system & environment\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "  -fxhanded=<left|right> : Overrides the handedness of the user\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "  -fxmemoryfull=<fpno>   : Overrides the memory full setting\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "  -fxscreenscale=<%>     : Overrides the window layout scaling factor\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "  -fxscreensize=w,h      : Constrains the screen (debug only)\n"); sstdio << temp.text();
 				break;
 			}
 			else if(0==strcmp(argv[argi], "-sysinfo"))
 			{
 				inHelpMode=true;
 				FXString temp;
-				temp=FXTrans::tr("FXProcess", "TnFOX system information:\n\n"); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "The host OS is: %1\n").arg(FXProcess::hostOSDescription()); sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "The millisecond count is %1, process id is %2 and this machine has %3 processors\n")
+				temp=QTrans::tr("FXProcess", "TnFOX system information:\n\n"); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "The host OS is: %1\n").arg(FXProcess::hostOSDescription()); sstdio << temp.text();
+				temp=QTrans::tr("FXProcess", "The millisecond count is %1, process id is %2 and this machine has %3 processors\n")
 					.arg(FXProcess::getMsCount()).arg(FXProcess::id()).arg(FXProcess::noOfProcessors());
 				sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n")
+				temp=QTrans::tr("FXProcess", "System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n")
 					.arg(FXProcess::hostOSProcessorLoad(), 0, 'f', 2).arg(FXProcess::hostOSMemoryLoad(), 0, 'f', 2)
 					.arg(FXProcess::hostOSDiscIOLoad(FXProcess::execpath()), 0, 'f', 2)
 					.arg(fxstrfval(FXProcess::virtualAddrSpaceLeft()));
 				sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "This process was created by the user %1 (group %2)\n")
+				temp=QTrans::tr("FXProcess", "This process was created by the user %1 (group %2)\n")
 					.arg(FXACLEntity::currentUser().asString()).arg(FXACLEntity::currentUser().group().asString());
 				sstdio << temp.text();
 				if(LEFT_HANDED==userHandedness())
-					temp=FXTrans::tr("FXProcess", "    who will experience a left-handed interface\n");
+					temp=QTrans::tr("FXProcess", "    who will experience a left-handed interface\n");
 				else
-					temp=FXTrans::tr("FXProcess", "    who will experience a right-handed interface\n");
+					temp=QTrans::tr("FXProcess", "    who will experience a right-handed interface\n");
 				sstdio << temp.text();
-				temp=FXTrans::tr("FXProcess", "There are the following files mapped into this process' memory:\n");
+				temp=QTrans::tr("FXProcess", "There are the following files mapped into this process' memory:\n");
 				sstdio << temp.text();
 				QValueList<MappedFileInfo> list=FXProcess::mappedFiles();
 				for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
 				{
 					static const int addrwidth=sizeof(void *)*2;
-					FXTransString temp2(FXTrans::tr("FXProcess", "  %1 to %2 %3%4%5%6 %7\n"));
+					QTransString temp2(QTrans::tr("FXProcess", "  %1 to %2 %3%4%5%6 %7\n"));
 					temp2.arg((FXulong) (*it).startaddr,-addrwidth,16).arg((FXulong) (*it).endaddr,-addrwidth,16);
 					temp2.arg(((*it).read) ? 'r' : '-').arg(((*it).write) ? 'w' : '-').arg(((*it).execute) ? 'x' : '-').arg(((*it).copyonwrite) ? 'c' : '-');
 					temp2.arg((*it).path);
@@ -511,7 +511,7 @@ void FXProcess::init(int &argc, char *argv[])
 					overrideUserHandedness(RIGHT_HANDED);
 				else
 				{
-					FXString temp=FXTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxhanded");
+					FXString temp=QTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxhanded");
 					fxwarning("%s\n", temp.text());
 				}
 			}
@@ -524,7 +524,7 @@ void FXProcess::init(int &argc, char *argv[])
 					overrideFreeResources((FXfloat) val);
 				else
 				{
-					FXString temp=FXTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxmemoryfull");
+					FXString temp=QTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxmemoryfull");
 					fxwarning("%s\n", temp.text());
 				}
 			}
@@ -537,7 +537,7 @@ void FXProcess::init(int &argc, char *argv[])
 					overrideScreenScale(val);
 				else
 				{
-					FXString temp=FXTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxscreenscale");
+					FXString temp=QTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxscreenscale");
 					fxwarning("%s\n", temp.text());
 				}
 			}
@@ -555,7 +555,7 @@ void FXProcess::init(int &argc, char *argv[])
 				else bad=true;
 				if(bad)
 				{
-					FXString temp=FXTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxscreensize");
+					FXString temp=QTrans::tr("FXProcess", "Unknown option '%1' passed to %2\n").arg(s).arg("-fxscreensize");
 					fxwarning("%s\n", temp.text());
 				}
 			}
@@ -1094,7 +1094,7 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	}
 allgood:
 #endif
-	FXBuffer txtholder;
+	QBuffer txtholder;
 	txtholder.open(IO_ReadWrite);
 	FXStream stxtholder(&txtholder);
 	myprocess->runPendingStaticInits(myprocess->p->argscopy.argc, myprocess->p->argscopy.argv, stxtholder);
@@ -1290,7 +1290,7 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 {
 	if(!myprocess) return 0;
     if(myprocess->p->overrides.memory>=0) return myprocess->p->overrides.memory;
-	static FXMutex lock;
+	static QMutex lock;
 	static FXuint lastcheck;
 	static FXfloat lastret;
 	FXMtxHold h(lock);
@@ -1468,14 +1468,14 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 }
 
 
-FXThreadPool &FXProcess::threadPool()
+QThreadPool &FXProcess::threadPool()
 {
 	if(!myprocess->p->threadpool)
 	{
 		FXMtxHold h(myprocess->p);
 		if(!myprocess->p->threadpool)
 		{
-			FXERRHM(myprocess->p->threadpool=new FXThreadPool(FXPROCESS_POOLTHREADS));
+			FXERRHM(myprocess->p->threadpool=new QThreadPool(FXPROCESS_POOLTHREADS));
 		}
 	}
 	return *myprocess->p->threadpool;
@@ -1553,7 +1553,7 @@ bool FXProcess::removeFatalExitUpcall(FXProcess::FatalExitUpcallSpec upcallv)
 
 
 
-static struct LockedMem : public FXMutex
+static struct LockedMem : public QMutex
 {
 	FXuval pageSizeM1;
 	struct MemLockEntry

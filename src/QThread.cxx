@@ -20,13 +20,13 @@
 ********************************************************************************/
 
 #define FXBEING_INCLUDED_BY_FXTHREAD 1
-#include "FXThread.h"
-// Include the FXAtomicInt and FXMutex implementations as they
+#include "QThread.h"
+// Include the FXAtomicInt and QMutex implementations as they
 // are disabled by FXBEING_INCLUDED_BY_FXTHREAD
-#include "int_FXMutexImpl.h"
+#include "int_QMutexImpl.h"
 #undef FXBEING_INCLUDED_BY_FXTHREAD
 
-namespace FX { namespace FXMutexImpl {
+namespace FX { namespace QMutexImpl {
 
 // Globals
 KernelWaitObjectCache waitObjectCache;
@@ -39,7 +39,7 @@ FXuint systemProcessors;
 #include <qptrlist.h>
 #include <qptrdict.h>
 #include <qsortedlist.h>
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXApp.h"
 #include "FXProcess.h"
 #include "FXPtrHold.h"
@@ -67,7 +67,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-class FXWaitConditionPrivate : public FXMutex
+class QWaitConditionPrivate : public QMutex
 {
 public:
 	int waitcnt;
@@ -78,13 +78,13 @@ public:
 	pthread_mutex_t m;
 	pthread_cond_t wc;
 #endif
-	FXWaitConditionPrivate() : waitcnt(0), FXMutex() { }
+	QWaitConditionPrivate() : waitcnt(0), QMutex() { }
 };
 
-FXWaitCondition::FXWaitCondition(bool autoreset, bool initialstate) : p(0)
+QWaitCondition::QWaitCondition(bool autoreset, bool initialstate) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXWaitConditionPrivate);
+	FXERRHM(p=new QWaitConditionPrivate);
 #ifdef USE_WINAPI
 	FXERRHWIN(p->wc=CreateEvent(NULL, FALSE, initialstate, NULL));
 #endif
@@ -97,7 +97,7 @@ FXWaitCondition::FXWaitCondition(bool autoreset, bool initialstate) : p(0)
 	unconstr.dismiss();
 }
 
-FXWaitCondition::~FXWaitCondition()
+QWaitCondition::~QWaitCondition()
 { FXEXCEPTIONDESTRUCT1 {
 	if(p)
 	{
@@ -113,7 +113,7 @@ FXWaitCondition::~FXWaitCondition()
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
-bool FXWaitCondition::wait(FXuint time)
+bool QWaitCondition::wait(FXuint time)
 {
 #ifndef FXDISABLE_THREADS
 	if(p)
@@ -127,20 +127,20 @@ bool FXWaitCondition::wait(FXuint time)
 		}
 		else p->waitcnt++;
 #ifdef DEBUG
-		if(FXThread::current()->inCleanup())
-			fxwarning("WARNING: Calling FXWaitCondition::wait() from a cleanup handler is non-portable\n");
+		if(QThread::current()->inCleanup())
+			fxwarning("WARNING: Calling QWaitCondition::wait() from a cleanup handler is non-portable\n");
 #endif
 #ifdef USE_WINAPI
 		{
 			HANDLE waitlist[2];
 			waitlist[0]=p->wc;
-			waitlist[1]=FXThread::int_cancelWaiterHandle();
+			waitlist[1]=QThread::int_cancelWaiterHandle();
 			ret=ResetEvent(p->wc);
 			h.unlock();
 			if(!ret) goto exit;
 			ret=WaitForMultipleObjects(2, waitlist, FALSE, (FXINFINITE!=time) ? time : INFINITE);
 		}
-		if(ret==WAIT_OBJECT_0+1) FXThread::current()->checkForTerminate();
+		if(ret==WAIT_OBJECT_0+1) QThread::current()->checkForTerminate();
 exit:
 		h.relock();
 		p->waitcnt--;
@@ -181,7 +181,7 @@ exit:
 	return true;
 }
 
-void FXWaitCondition::wakeOne()
+void QWaitCondition::wakeOne()
 {
 #ifndef FXDISABLE_THREADS
 	if(p)
@@ -204,7 +204,7 @@ void FXWaitCondition::wakeOne()
 #endif
 }
 
-void FXWaitCondition::wakeAll()
+void QWaitCondition::wakeAll()
 {
 #ifndef FXDISABLE_THREADS
 	if(p)
@@ -235,7 +235,7 @@ exit:
 #endif
 }
 
-void FXWaitCondition::reset()
+void QWaitCondition::reset()
 {
 #ifndef FXDISABLE_THREADS
 	if(p)
@@ -248,7 +248,7 @@ void FXWaitCondition::reset()
 
 
 /**************************************************************************************************************/
-class FXRWMutexPrivate : public FXMutex
+class QRWMutexPrivate : public QMutex
 {
 #ifndef FXDISABLE_THREADS
 public:
@@ -256,21 +256,21 @@ public:
 	{
 		volatile int count;
 	} read;
-	FXWaitCondition readcntZeroed;
+	QWaitCondition readcntZeroed;
 	struct PreWriteInfo
 	{
 		volatile int count, rws;
 	} prewrite;
-	FXWaitCondition prewritecntZeroed;
+	QWaitCondition prewritecntZeroed;
 	struct WriteInfo
 	{
 		FXulong threadid;
 		volatile int count;
 		bool readLockLost;
 	} write;
-	FXWaitCondition writecntZeroed;
-	FXThreadLocalStorageBase myreadcnt;
-	FXRWMutexPrivate() : readcntZeroed(false, false), prewritecntZeroed(false, false), writecntZeroed(false, false), FXMutex() { }
+	QWaitCondition writecntZeroed;
+	QThreadLocalStorageBase myreadcnt;
+	QRWMutexPrivate() : readcntZeroed(false, false), prewritecntZeroed(false, false), writecntZeroed(false, false), QMutex() { }
 	FXuint readCnt() { return (FXuint)(FXuval) myreadcnt.getPtr(); }
 	void setReadCnt(FXuint v) { myreadcnt.setPtr((void *) v); }
 	void incReadCnt() { setReadCnt(readCnt()+1); }
@@ -278,9 +278,9 @@ public:
 #endif
 };
 
-FXRWMutex::FXRWMutex() : p(0)
+QRWMutex::QRWMutex() : p(0)
 {
-	FXERRHM(p=new FXRWMutexPrivate);
+	FXERRHM(p=new QRWMutexPrivate);
 #ifndef FXDISABLE_THREADS
 	p->read.count=0;
 	p->prewrite.count=0;
@@ -292,20 +292,20 @@ FXRWMutex::FXRWMutex() : p(0)
 #endif
 }
 
-FXRWMutex::~FXRWMutex()
+QRWMutex::~QRWMutex()
 { FXEXCEPTIONDESTRUCT1 {
 	if(p)
 	{
 		lock(true);
 		FXMtxHold h(p);
-		FXRWMutexPrivate *_p=p;
+		QRWMutexPrivate *_p=p;
 		p=0;
 		h.unlock();
 		FXDELETE(_p);
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
-FXuint FXRWMutex::spinCount() const
+FXuint QRWMutex::spinCount() const
 {
 	if(p)
 		return p->spinCount();
@@ -313,7 +313,7 @@ FXuint FXRWMutex::spinCount() const
 		return 0;
 }
 
-void FXRWMutex::setSpinCount(FXuint c)
+void QRWMutex::setSpinCount(FXuint c)
 {
 	if(p) p->setSpinCount(c);
 }
@@ -325,11 +325,11 @@ of stuff was reading and that was causing poor performance. This new algorithm u
 thread local storage to replace the old array so I've also removed the limit on max
 threads.
 */
-inline bool FXRWMutex::_lock(FXMtxHold &h, bool write)
+inline bool QRWMutex::_lock(FXMtxHold &h, bool write)
 {
 	bool lockLost=false;
 #ifndef FXDISABLE_THREADS
-	FXulong myid=FXThread::id();
+	FXulong myid=QThread::id();
 	if(write)
 	{
 		if(p->write.threadid!=myid)
@@ -342,9 +342,9 @@ inline bool FXRWMutex::_lock(FXMtxHold &h, bool write)
 				while(p->write.count)
 				{
 					h.unlock();
-					FXThread::current()->disableTermination();
+					QThread::current()->disableTermination();
 					p->writecntZeroed.wait();
-					FXThread::current()->enableTermination();
+					QThread::current()->enableTermination();
 					h.relock();
 				}
 				// Wait for readers to exit, except those read locks I hold
@@ -354,9 +354,9 @@ inline bool FXRWMutex::_lock(FXMtxHold &h, bool write)
 				while(p->read.count)
 				{
 					h.unlock();
-					FXThread::current()->disableTermination();
+					QThread::current()->disableTermination();
 					p->readcntZeroed.wait();
-					FXThread::current()->enableTermination();
+					QThread::current()->enableTermination();
 					h.relock();
 				}
 				p->read.count+=thisthreadreadcnt;
@@ -385,9 +385,9 @@ inline bool FXRWMutex::_lock(FXMtxHold &h, bool write)
 			while(p->prewrite.count)
 			{
 				h.unlock();
-				FXThread::current()->disableTermination();
+				QThread::current()->disableTermination();
 				p->prewritecntZeroed.wait();
-				FXThread::current()->enableTermination();
+				QThread::current()->enableTermination();
 				h.relock();
 			}
 			lockedstate=ReadOnly;
@@ -399,7 +399,7 @@ inline bool FXRWMutex::_lock(FXMtxHold &h, bool write)
 	return lockLost;
 }
 
-void FXRWMutex::unlock(bool write)
+void QRWMutex::unlock(bool write)
 {
 #ifndef FXDISABLE_THREADS
 	if(p)
@@ -408,8 +408,8 @@ void FXRWMutex::unlock(bool write)
 		if(write)
 		{
 #ifdef DEBUG
-			FXulong myid=FXThread::id();
-			FXERRH(p->write.threadid==myid, "FXRWMutex::unlock(true) called by thread which did not have write lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
+			FXulong myid=QThread::id();
+			FXERRH(p->write.threadid==myid, "QRWMutex::unlock(true) called by thread which did not have write lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 			// Release writers before readers (makes no difference on POSIX though)
 			if(!--p->write.count)
@@ -429,7 +429,7 @@ void FXRWMutex::unlock(bool write)
 		else
 		{
 #ifdef DEBUG
-			FXERRH(p->readCnt(), "FXRWMutex::unlock(false) called by thread which did not have read lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
+			FXERRH(p->readCnt(), "QRWMutex::unlock(false) called by thread which did not have read lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 			p->decReadCnt();
 			if(!--p->read.count)
@@ -442,7 +442,7 @@ void FXRWMutex::unlock(bool write)
 #endif
 }
 
-bool FXRWMutex::lock(bool write)
+bool QRWMutex::lock(bool write)
 {
 #ifndef FXDISABLE_THREADS
 	if(p)
@@ -454,7 +454,7 @@ bool FXRWMutex::lock(bool write)
 	return false;
 }
 
-bool FXRWMutex::trylock(bool write)
+bool QRWMutex::trylock(bool write)
 {
 #ifdef FXDISABLE_THREADS
 	return true;
@@ -474,7 +474,7 @@ bool FXRWMutex::trylock(bool write)
 }
 
 /**************************************************************************************************************/
-class FXThreadLocalStorageBasePrivate
+class QThreadLocalStorageBasePrivate
 {
 public:
 #ifdef FXDISABLE_THREADS
@@ -488,16 +488,16 @@ public:
 #endif
 };
 
-FXThreadLocalStorageBase::FXThreadLocalStorageBase(void *initval) : p(0)
+QThreadLocalStorageBase::QThreadLocalStorageBase(void *initval) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXThreadLocalStorageBasePrivate);
+	FXERRHM(p=new QThreadLocalStorageBasePrivate);
 #ifdef FXDISABLE_THREADS
 	p->data=initval;
 #endif
 #ifdef USE_WINAPI
 	p->key=TlsAlloc();
-	FXERRH(p->key!=(DWORD) -1, FXTrans::tr("FXThreadLocalStorage", "Exceeded Windows TLS hard key number limit"), FXTHREADLOCALSTORAGE_NOMORETLS, FXERRH_ISDEBUG);
+	FXERRH(p->key!=(DWORD) -1, QTrans::tr("QThreadLocalStorage", "Exceeded Windows TLS hard key number limit"), FXTHREADLOCALSTORAGE_NOMORETLS, FXERRH_ISDEBUG);
 	FXERRHWIN(TlsSetValue(p->key, initval));
 #endif
 #ifdef USE_POSIX
@@ -508,7 +508,7 @@ FXThreadLocalStorageBase::FXThreadLocalStorageBase(void *initval) : p(0)
 }
 
 
-FXThreadLocalStorageBase::~FXThreadLocalStorageBase() FXERRH_NODESTRUCTORMOD
+QThreadLocalStorageBase::~QThreadLocalStorageBase() FXERRH_NODESTRUCTORMOD
 {
 	if(p)
 	{
@@ -522,7 +522,7 @@ FXThreadLocalStorageBase::~FXThreadLocalStorageBase() FXERRH_NODESTRUCTORMOD
 	}
 }
 
-void FXThreadLocalStorageBase::setPtr(void *val)
+void QThreadLocalStorageBase::setPtr(void *val)
 {
 	if(p)
 	{
@@ -538,7 +538,7 @@ void FXThreadLocalStorageBase::setPtr(void *val)
 	}
 }
 
-void *FXThreadLocalStorageBase::getPtr() const
+void *QThreadLocalStorageBase::getPtr() const
 {
 #ifdef FXDISABLE_THREADS
 	if(p)
@@ -556,7 +556,7 @@ void *FXThreadLocalStorageBase::getPtr() const
 }
 
 /**************************************************************************************************************/
-class FXThreadPrivate : public FXMutex
+class QThreadPrivate : public QMutex
 {
 public:
 	void **result;
@@ -571,10 +571,10 @@ public:
 	bool plsCancel;
 	bool autodelete;
 	FXuval stackSize;
-	FXThread::ThreadScheduler threadLocation;
+	QThread::ThreadScheduler threadLocation;
 	FXulong id;
-	FXThread *creator;
-	FXWaitCondition *startedwc, *stoppedwc;
+	QThread *creator;
+	QWaitCondition *startedwc, *stoppedwc;
 	struct CleanupCall
 	{
 		Generic::BoundFunctorV *code;
@@ -583,15 +583,15 @@ public:
 		~CleanupCall() { FXDELETE(code); }
 	};
 	QPtrList<CleanupCall> cleanupcalls;
-	static FXThreadLocalStorage<FXThread> currentThread;
+	static QThreadLocalStorage<QThread> currentThread;
 	static FXAtomicInt idlistlock;
 	static QValueList<FXushort> idlist;
-	static void setResultAddr(FXThread *t, void **res) { t->p->result=res; }
-	static void run(FXThread *t);
-	static void cleanup(FXThread *t);
-	static void forceCleanup(FXThread *t);
-	FXThreadPrivate(bool autodel, FXuval stksize, FXThread::ThreadScheduler threadloc)
-		: autodelete(autodel), plsCancel(false), stackSize(stksize), threadLocation(threadloc), startedwc(0), stoppedwc(0), cleanupcalls(true), FXMutex()
+	static void setResultAddr(QThread *t, void **res) { t->p->result=res; }
+	static void run(QThread *t);
+	static void cleanup(QThread *t);
+	static void forceCleanup(QThread *t);
+	QThreadPrivate(bool autodel, FXuval stksize, QThread::ThreadScheduler threadloc)
+		: autodelete(autodel), plsCancel(false), stackSize(stksize), threadLocation(threadloc), startedwc(0), stoppedwc(0), cleanupcalls(true), QMutex()
 #ifdef USE_POSIX
 		, threadh(0)
 #endif
@@ -604,7 +604,7 @@ public:
 		FXERRHWIN(NULL!=(plsCancelWaiter=CreateEvent(NULL, FALSE, FALSE, NULL)));
 #endif
 	}
-	~FXThreadPrivate()
+	~QThreadPrivate()
 	{
 #ifdef USE_WINAPI
 		if(threadh)
@@ -630,31 +630,31 @@ public:
 	}
 };
 // Used by methods to know what thread they're in at any given time
-FXThreadLocalStorage<FXThread> FXThreadPrivate::currentThread;
+QThreadLocalStorage<QThread> QThreadPrivate::currentThread;
 #ifdef USE_OURTHREADID
-FXAtomicInt FXThreadPrivate::idlistlock;
-QValueList<FXushort> FXThreadPrivate::idlist;
+FXAtomicInt QThreadPrivate::idlistlock;
+QValueList<FXushort> QThreadPrivate::idlist;
 #endif
-static FXThread *primaryThread;
-// An internal dummy FXThread used to make primary thread code work correctly
-class FXPrimaryThread : public FXThread
+static QThread *primaryThread;
+// An internal dummy QThread used to make primary thread code work correctly
+class FXPrimaryThread : public QThread
 {
 	static void zeroCThread()
 	{
-		FXThreadPrivate::currentThread=0;
+		QThreadPrivate::currentThread=0;
 	}
 public:
-	FXPrimaryThread() : FXThread("Primary thread")
+	FXPrimaryThread() : QThread("Primary thread")
 	{
 		FX::primaryThread=this;
 #ifdef USE_WINAPI
-		p->id=FXThread::id();
+		p->id=QThread::id();
 #endif
 #ifdef USE_POSIX
 #ifdef USE_OURTHREADID
 		p->id=(FXProcess::id()<<16)+0xffff;	// Highest id possible for POSIX
 #else
-		p->id=FXThread::id();
+		p->id=QThread::id();
 #endif
 #endif
 		p->currentThread=this;
@@ -662,9 +662,9 @@ public:
 	}
 	~FXPrimaryThread()
 	{
-		FXThreadPrivate::forceCleanup(this);
+		QThreadPrivate::forceCleanup(this);
 		// Need to delay setting currentThread to zero to after cleanup calls
-		FXThread::addCleanupCall(Generic::BindFuncN(zeroCThread));
+		QThread::addCleanupCall(Generic::BindFuncN(zeroCThread));
 	}
 	void run()
 	{
@@ -675,46 +675,46 @@ public:
 static FXProcess_StaticInit<FXPrimaryThread> primarythreadinit("FXPrimaryThread");
 struct CreationUpcall
 {
-	FXThread::CreationUpcallSpec upcallv;
+	QThread::CreationUpcallSpec upcallv;
 	bool inThread;
-	CreationUpcall(FXThread::CreationUpcallSpec &_upcallv, bool _inThread) : upcallv(_upcallv), inThread(_inThread) { }
+	CreationUpcall(QThread::CreationUpcallSpec &_upcallv, bool _inThread) : upcallv(_upcallv), inThread(_inThread) { }
 };
-static FXMutex creationupcallslock;
+static QMutex creationupcallslock;
 static QPtrList<CreationUpcall> creationupcalls(true);
 
-class FXThreadIntException : public FXException
+class QThreadIntException : public FXException
 {
 public:
-	FXThreadIntException() : FXException(0, 0, "Internal FXThread cancellation exception", FXEXCEPTION_INTTHREADCANCEL, FXERRH_ISINFORMATIONAL) { }
+	QThreadIntException() : FXException(0, 0, "Internal QThread cancellation exception", FXEXCEPTION_INTTHREADCANCEL, FXERRH_ISINFORMATIONAL) { }
 };
 
 static void cleanup_thread(void *t)
 {
-	FXThread *tt=(FXThread *) t;
+	QThread *tt=(QThread *) t;
 #ifdef DEBUG
-	fxmessage("Thread %u (%s) cleanup\n", (FXuint) FXThread::id(), tt->name());
+	fxmessage("Thread %u (%s) cleanup\n", (FXuint) QThread::id(), tt->name());
 #endif
-	FXThreadPrivate::cleanup(tt);
+	QThreadPrivate::cleanup(tt);
 }
 static void *start_thread(void *t)
 {
 	void *result=0;		// This is stored into by code further down the call stack
-	FXThread *tt=(FXThread *) t;
+	QThread *tt=(QThread *) t;
 	if(!tt->isValid())
 	{
 		fxwarning("Thread appears to have been destructed before it could start!\n");
 		return (void *)-1;
 	}
-	FXThreadPrivate::setResultAddr(tt, &result);
+	QThreadPrivate::setResultAddr(tt, &result);
 	// Set currentThread to point to t so we will know who we are in the future
 	// Must be done for nested exception handling framework to function
-	FXThreadPrivate::currentThread=tt;
+	QThreadPrivate::currentThread=tt;
 	FXERRH_TRY
 	{
-		FXThreadPrivate::run(tt);
+		QThreadPrivate::run(tt);
 		return result;
 	}
-	FXERRH_CATCH(FXThreadIntException &)
+	FXERRH_CATCH(QThreadIntException &)
 	{
 		cleanup_thread(t);
 		return result;
@@ -722,11 +722,11 @@ static void *start_thread(void *t)
 	FXERRH_CATCH(FXException &e)
 	{
 #ifdef DEBUG
-		fxmessage("Exception occurred in thread %u (%s): %s\n", (FXuint) FXThread::id(), tt->name(), e.report().text());
+		fxmessage("Exception occurred in thread %u (%s): %s\n", (FXuint) QThread::id(), tt->name(), e.report().text());
 #endif
 		if(e.flags() & FXERRH_ISFATAL)
 		{
-			FXThreadPrivate::forceCleanup(tt);
+			QThreadPrivate::forceCleanup(tt);
 			if(FXApp::instance()) FXApp::instance()->exit(1);
 			FXProcess::exit(1);
 		}
@@ -741,18 +741,18 @@ static void *start_thread(void *t)
 			catch(FXException &e)
 			{
 #ifdef DEBUG
-				fxmessage("Exception occurred in cleanup of thread %u (%s) after other exception\n", (FXuint) FXThread::id(), tt->name());
+				fxmessage("Exception occurred in cleanup of thread %u (%s) after other exception\n", (FXuint) QThread::id(), tt->name());
 #endif
 				if(e.flags() & FXERRH_ISFATAL)
 				{
-					FXThreadPrivate::forceCleanup(tt);
+					QThreadPrivate::forceCleanup(tt);
 					if(FXApp::instance()) FXApp::instance()->exit(1);
 					FXProcess::exit(1);
 				}
 				//QThread::postEvent(TProcess::getProcess(), new TNonGUIThreadExceptionEvent(e));
 			}
 		}
-		FXThreadPrivate::forceCleanup(tt);
+		QThreadPrivate::forceCleanup(tt);
 		return result;
 	}
 	FXERRH_ENDTRY
@@ -764,7 +764,7 @@ static DWORD WINAPI start_threadwin(void *p)
 }
 #endif
 
-void FXThreadPrivate::run(FXThread *t)
+void QThreadPrivate::run(QThread *t)
 {
 #ifdef USE_POSIX
 	FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)); 
@@ -772,12 +772,12 @@ void FXThreadPrivate::run(FXThread *t)
 #endif
 	{
 #ifdef USE_WINAPI
-		t->p->id=FXThread::id();
+		t->p->id=QThread::id();
 #endif
 #ifdef USE_POSIX
 #ifdef USE_OURTHREADID
 		static FXushort idt=0;
-		// Can't use a FXMutex as idlistlock as FXMutex depends on FXThread::id()
+		// Can't use a QMutex as idlistlock as QMutex depends on QThread::id()
 		while(idlistlock.cmpX(0,1));	// Lock list
 		while(-1!=idlist.findIndex(idt))
 		{
@@ -788,13 +788,13 @@ void FXThreadPrivate::run(FXThread *t)
 		// May need someday to take a CRC of the pid as it don't fit into 16 bit
 		t->p->id=idt | (FXProcess::id()<<16);
 #else
-		t->p->id=FXThread::id();
+		t->p->id=QThread::id();
 #endif
 #endif
 	}
 	FXMtxHold h(t->p);
 #ifdef DEBUG
-	fxmessage("Thread %u (%s) started\n", (FXuint) FXThread::id(), t->name());
+	fxmessage("Thread %u (%s) started\n", (FXuint) QThread::id(), t->name());
 #endif
 #ifdef USE_POSIX
 #ifdef _MSC_VER
@@ -834,12 +834,12 @@ void FXThreadPrivate::run(FXThread *t)
 	// t and t->p now considered dead
 }
 
-void FXThreadPrivate::cleanup(FXThread *t)
+void QThreadPrivate::cleanup(QThread *t)
 {
 	bool doAutoDelete=false;
-	FXWaitCondition *stoppedwc=0;
+	QWaitCondition *stoppedwc=0;
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXMtxHold h(t->p);
 		FXERRH(t->p, "Possibly a 'delete this' was called during thread cleanup?", FXTHREAD_DELETETHIS, FXERRH_ISFATAL);
 		FXERRH(!t->isInCleanup, "Exception occured during thread cleanup", FXTHREAD_CLEANUPEXCEPTION, FXERRH_ISFATAL);
@@ -849,7 +849,7 @@ void FXThreadPrivate::cleanup(FXThread *t)
 		h.relock();
 		forceCleanup(t);
 #ifdef DEBUG
-		fxmessage("Thread %u (%s) cleanup exits with code %d\n", (FXuint) FXThread::id(), t->name(), (int)(FXuval) *t->p->result);
+		fxmessage("Thread %u (%s) cleanup exits with code %d\n", (FXuint) QThread::id(), t->name(), (int)(FXuval) *t->p->result);
 #endif
 		{
 #ifdef USE_OURTHREADID
@@ -876,17 +876,17 @@ void FXThreadPrivate::cleanup(FXThread *t)
 	}
 }
 
-void FXThreadPrivate::forceCleanup(FXThread *t)
+void QThreadPrivate::forceCleanup(QThread *t)
 {	// Note: called by primary thread destructor too
 	t->isRunning=false;
 	t->isFinished=true;
-	FXThreadPrivate::CleanupCall *cc;
-	for(QPtrListIterator<FXThreadPrivate::CleanupCall> it(t->p->cleanupcalls); (cc=it.current());)
+	QThreadPrivate::CleanupCall *cc;
+	for(QPtrListIterator<QThreadPrivate::CleanupCall> it(t->p->cleanupcalls); (cc=it.current());)
 	{
 		if(cc->inThread)
 		{
 			(*cc->code)();
-			QPtrListIterator<FXThreadPrivate::CleanupCall> it2(it);
+			QPtrListIterator<QThreadPrivate::CleanupCall> it2(it);
 			++it;
 			t->p->cleanupcalls.removeByIter(it2);
 		}
@@ -894,9 +894,9 @@ void FXThreadPrivate::forceCleanup(FXThread *t)
 	}
 }
 
-FXThread::FXThread(const char *name, bool autodelete, FXuval stackSize, FXThread::ThreadScheduler threadloc) : magic(*((FXuint *) "THRD")), p(0), myname(name)
+QThread::QThread(const char *name, bool autodelete, FXuval stackSize, QThread::ThreadScheduler threadloc) : magic(*((FXuint *) "THRD")), p(0), myname(name)
 {
-	FXERRHM(p=new FXThreadPrivate(autodelete, stackSize, threadloc));
+	FXERRHM(p=new QThreadPrivate(autodelete, stackSize, threadloc));
 	isRunning=isFinished=isInCleanup=false;
 	termdisablecnt=0;
 #ifdef FXDISABLE_THREADS
@@ -904,13 +904,13 @@ FXThread::FXThread(const char *name, bool autodelete, FXuval stackSize, FXThread
 #endif
 }
 
-FXThread::~FXThread()
+QThread::~QThread()
 { FXEXCEPTIONDESTRUCT1 {
 	if(isFinished || !isRunning)
 	{
 		FXMtxHold h(p);
-		FXThreadPrivate::CleanupCall *cc;
-		for(QPtrListIterator<FXThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
+		QThreadPrivate::CleanupCall *cc;
+		for(QPtrListIterator<QThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
 		{
 			h.unlock();
 			(*cc->code)();
@@ -919,35 +919,35 @@ FXThread::~FXThread()
 		h.unlock();
 		FXDELETE(p);
 	}
-	else FXERRG(FXTrans::tr("FXThread", "You cannot destruct a running thread"), FXTHREAD_STILLRUNNING, FXERRH_ISDEBUG);
+	else FXERRG(QTrans::tr("QThread", "You cannot destruct a running thread"), FXTHREAD_STILLRUNNING, FXERRH_ISDEBUG);
 	magic=0;
 } FXEXCEPTIONDESTRUCT2; }
 
-FXuval FXThread::stackSize() const
+FXuval QThread::stackSize() const
 {
 	FXMtxHold h(p);
 	return p->stackSize;
 }
 
-void FXThread::setStackSize(FXuval newsize)
+void QThread::setStackSize(FXuval newsize)
 {
 	FXMtxHold h(p);
 	p->stackSize=newsize;
 }
 
-FXThread::ThreadScheduler FXThread::threadLocation() const
+QThread::ThreadScheduler QThread::threadLocation() const
 {
 	FXMtxHold h(p);
 	return p->threadLocation;
 }
 
-void FXThread::setThreadLocation(FXThread::ThreadScheduler threadloc)
+void QThread::setThreadLocation(QThread::ThreadScheduler threadloc)
 {
 	FXMtxHold h(p);
 	p->threadLocation=threadloc;
 }
 
-bool FXThread::wait(FXuint time)
+bool QThread::wait(FXuint time)
 {
 	FXMtxHold h(p);
 	if (isFinished || !isRunning) return true;
@@ -971,8 +971,8 @@ bool FXThread::wait(FXuint time)
 	}
 	else
 	{
-		FXWaitCondition *wc;
-		if(!p->stoppedwc) FXERRHM(p->stoppedwc=new FXWaitCondition);
+		QWaitCondition *wc;
+		if(!p->stoppedwc) FXERRHM(p->stoppedwc=new QWaitCondition);
 		wc=p->stoppedwc;
 		h.unlock();
 		if(!wc->wait(time)) return false;
@@ -981,13 +981,13 @@ bool FXThread::wait(FXuint time)
 	return true;
 }
 
-void FXThread::start(bool waitTillStarted)
+void QThread::start(bool waitTillStarted)
 {
 	static FXuint noOfProcessors=FXProcess::noOfProcessors();
 	FXMtxHold h(p);
 	if(waitTillStarted && !p->startedwc)
 	{
-		FXERRHM(p->startedwc=new FXWaitCondition(false, false));
+		FXERRHM(p->startedwc=new QWaitCondition(false, false));
 	}
 #ifdef USE_WINAPI
 	{
@@ -1054,17 +1054,17 @@ void FXThread::start(bool waitTillStarted)
 	h.unlock();
 	if(waitTillStarted)
 	{
-		FXERRH(p->startedwc->wait(10000), FXTrans::tr("FXThread", "Failed to start thread"), FXTHREAD_STARTFAILED, 0);
+		FXERRH(p->startedwc->wait(10000), QTrans::tr("QThread", "Failed to start thread"), FXTHREAD_STARTFAILED, 0);
 		FXDELETE(p->startedwc);
 	}
 }
 
-bool FXThread::isValid() const throw()
+bool QThread::isValid() const throw()
 {
 	return *((FXuint *) "THRD")==magic;
 }
 
-bool FXThread::setAutoDelete(bool doso) throw()
+bool QThread::setAutoDelete(bool doso) throw()
 {
 	FXMtxHold h(p);
 	bool ret=p->autodelete;
@@ -1072,7 +1072,7 @@ bool FXThread::setAutoDelete(bool doso) throw()
 	return ret;
 }
 
-void FXThread::requestTermination()
+void QThread::requestTermination()
 {
 	if(isRunning)
 	{
@@ -1087,14 +1087,14 @@ void FXThread::requestTermination()
 	}
 }
 
-FXulong FXThread::id() throw()
+FXulong QThread::id() throw()
 {
 #ifdef USE_WINAPI
 	return (FXulong) GetCurrentThreadId();
 #endif
 #ifdef USE_POSIX
  #ifdef USE_OURTHREADID
-	FXThread *me=FXThread::current();
+	QThread *me=QThread::current();
 	if(me && me->p)
 		return me->p->id;
 	else
@@ -1129,31 +1129,31 @@ FXulong FXThread::id() throw()
 	return 0;
 }
 
-FXulong FXThread::myId() const
+FXulong QThread::myId() const
 {
 	return p->id;
 }
 
-FXThread *FXThread::current()
+QThread *QThread::current()
 {
-	FXThread *c=FXThreadPrivate::currentThread;
+	QThread *c=QThreadPrivate::currentThread;
 #ifdef DEBUG
 	//assert(c);
 #endif
 	return c;
 }
 
-FXThread *FXThread::primaryThread() throw()
+QThread *QThread::primaryThread() throw()
 {
 	return FX::primaryThread;
 }
 
-FXThread *FXThread::creator() const
+QThread *QThread::creator() const
 {
 	return p->creator;
 }
 
-signed char FXThread::priority() const
+signed char QThread::priority() const
 {
 #ifdef USE_WINAPI
 	if(p && p->threadh)
@@ -1176,7 +1176,7 @@ signed char FXThread::priority() const
 	return 0;
 }
 
-void FXThread::setPriority(signed char pri)
+void QThread::setPriority(signed char pri)
 {
 #ifdef USE_WINAPI
 	if(p && p->threadh)
@@ -1199,7 +1199,7 @@ void FXThread::setPriority(signed char pri)
 #endif
 }
 
-void FXThread::sleep(FXuint t)
+void QThread::sleep(FXuint t)
 {
 #ifdef USE_WINAPI
 	msleep(t*1000);
@@ -1209,12 +1209,12 @@ void FXThread::sleep(FXuint t)
 #endif
 }
 
-void FXThread::msleep(FXuint t)
+void QThread::msleep(FXuint t)
 {
 #ifdef USE_WINAPI
-	if(WAIT_OBJECT_0==WaitForSingleObject((HANDLE) FXThread::int_cancelWaiterHandle(), t))
+	if(WAIT_OBJECT_0==WaitForSingleObject((HANDLE) QThread::int_cancelWaiterHandle(), t))
 	{
-		FXThread::current()->checkForTerminate();
+		QThread::current()->checkForTerminate();
 	}
 #endif
 #ifdef USE_POSIX
@@ -1222,7 +1222,7 @@ void FXThread::msleep(FXuint t)
 #endif
 }
 
-void FXThread::yield()
+void QThread::yield()
 {
 #ifdef USE_WINAPI
 	Sleep(0);
@@ -1232,7 +1232,7 @@ void FXThread::yield()
 #endif
 }
 
-void FXThread::exit(void *r)
+void QThread::exit(void *r)
 {
 #ifdef USE_WINAPI
 	ExitThread((DWORD) r);
@@ -1242,7 +1242,7 @@ void FXThread::exit(void *r)
 #endif
 }
 
-void *FXThread::result() const throw()
+void *QThread::result() const throw()
 {
 	if(isValid() && p)
 		return *p->result;
@@ -1250,7 +1250,7 @@ void *FXThread::result() const throw()
 		return 0;
 }
 
-void FXThread::disableTermination()
+void QThread::disableTermination()
 {
 	if(this)
 	{
@@ -1270,7 +1270,7 @@ void FXThread::disableTermination()
 	}
 }
 
-bool FXThread::checkForTerminate()
+bool QThread::checkForTerminate()
 {
 #ifdef USE_WINAPI
 	// FXMtxHold h(p); I think we can get away with not having this?
@@ -1281,7 +1281,7 @@ bool FXThread::checkForTerminate()
 		cleanup_thread((void *) this);
 		ExitThread((DWORD) *resultaddr);
 		// This alternative mechanism is much nicer but unfortunately unavailable to POSIX :(
-		//FXERRH_THROW(FXThreadIntException());
+		//FXERRH_THROW(QThreadIntException());
 	}
 #endif
 #ifdef USE_POSIX
@@ -1290,7 +1290,7 @@ bool FXThread::checkForTerminate()
 	return p->plsCancel;
 }
 
-void FXThread::enableTermination()
+void QThread::enableTermination()
 {
 	if(this)
 	{
@@ -1312,16 +1312,16 @@ void FXThread::enableTermination()
 }
 
 
-void *FXThread::int_cancelWaiterHandle()
+void *QThread::int_cancelWaiterHandle()
 {
 #ifdef USE_WINAPI
-	return (void *) FXThread::current()->p->plsCancelWaiter;
+	return (void *) QThread::current()->p->plsCancelWaiter;
 #else
 	return 0;
 #endif
 }
 
-void FXThread::addCreationUpcall(FXThread::CreationUpcallSpec upcallv, bool inThread)
+void QThread::addCreationUpcall(QThread::CreationUpcallSpec upcallv, bool inThread)
 {
 	FXMtxHold h(creationupcallslock);
 	CreationUpcall *cu;
@@ -1331,7 +1331,7 @@ void FXThread::addCreationUpcall(FXThread::CreationUpcallSpec upcallv, bool inTh
 	unnew.dismiss();
 }
 
-bool FXThread::removeCreationUpcall(FXThread::CreationUpcallSpec upcallv)
+bool QThread::removeCreationUpcall(QThread::CreationUpcallSpec upcallv)
 {
 	FXMtxHold h(creationupcallslock);
 	CreationUpcall *cu;
@@ -1346,22 +1346,22 @@ bool FXThread::removeCreationUpcall(FXThread::CreationUpcallSpec upcallv)
 	return false;
 }
 
-Generic::BoundFunctorV *FXThread::addCleanupCall(FXAutoPtr<Generic::BoundFunctorV> handler, bool inThread)
+Generic::BoundFunctorV *QThread::addCleanupCall(FXAutoPtr<Generic::BoundFunctorV> handler, bool inThread)
 {
 	assert(this);	// Static init check
 	FXMtxHold h(p);
 	FXERRHM(PtrPtr(handler));
-	FXPtrHold<FXThreadPrivate::CleanupCall> cc=new FXThreadPrivate::CleanupCall(PtrPtr(handler), inThread);
+	FXPtrHold<QThreadPrivate::CleanupCall> cc=new QThreadPrivate::CleanupCall(PtrPtr(handler), inThread);
 	p->cleanupcalls.append(cc);
 	cc=0;
 	return PtrRelease(handler);
 }
 
-bool FXThread::removeCleanupCall(Generic::BoundFunctorV *handler)
+bool QThread::removeCleanupCall(Generic::BoundFunctorV *handler)
 {
 	FXMtxHold h(p);
-	FXThreadPrivate::CleanupCall *cc;
-	for(QPtrListIterator<FXThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
+	QThreadPrivate::CleanupCall *cc;
+	for(QPtrListIterator<QThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
 	{
 		if(cc->code==handler)
 		{
@@ -1373,7 +1373,7 @@ bool FXThread::removeCleanupCall(Generic::BoundFunctorV *handler)
 	return false;
 }
 
-void *FXThread::int_disableSignals()
+void *QThread::int_disableSignals()
 {
 #ifdef USE_WINAPI
 	return 0;
@@ -1389,7 +1389,7 @@ void *FXThread::int_disableSignals()
 #endif
 	return 0;
 }
-void FXThread::int_enableSignals(void *oldmask)
+void QThread::int_enableSignals(void *oldmask)
 {
 #ifdef USE_POSIX
 	sigset_t *old=(sigset_t *) oldmask;
@@ -1399,19 +1399,19 @@ void FXThread::int_enableSignals(void *oldmask)
 }
 
 /**************************************************************************************************************/
-struct FXDLLLOCAL FXThreadPoolPrivate : public FXMutex
+struct FXDLLLOCAL QThreadPoolPrivate : public QMutex
 {
 	FXuint total, maximum;
 	FXAtomicInt free;
 	bool dynamic;
-	struct Thread : public FXMutex, public FXThread
+	struct Thread : public QMutex, public QThread
 	{
-		FXThreadPoolPrivate *parent;
+		QThreadPoolPrivate *parent;
 		volatile bool free;
-		FXWaitCondition wc;
+		QWaitCondition wc;
 		Generic::BoundFunctorV *volatile code;
-		Thread(FXThreadPoolPrivate *_parent)
-			: parent(_parent), free(true), wc(true), code(0), FXThread("Pool thread", true) { }
+		Thread(QThreadPoolPrivate *_parent)
+			: parent(_parent), free(true), wc(true), code(0), QThread("Pool thread", true) { }
 		~Thread() { parent=0; assert(!code); code=0; }
 		void run();
 		void *cleanup() { return 0; }
@@ -1426,11 +1426,11 @@ struct FXDLLLOCAL FXThreadPoolPrivate : public FXMutex
 	};
 	QPtrList<Thread> threads;
 	QPtrList<Generic::BoundFunctorV> timed, waiting;
-	QPtrDict<FXWaitCondition> waitingwcs;
+	QPtrDict<QWaitCondition> waitingwcs;
 	QPtrDict<FXuint> timedtimes;
 
-	FXThreadPoolPrivate(bool _dynamic) : total(0), maximum(0), free(0), dynamic(_dynamic), threads(true), timed(true), waiting(true), waitingwcs(7, true), FXMutex() { }
-	~FXThreadPoolPrivate()
+	QThreadPoolPrivate(bool _dynamic) : total(0), maximum(0), free(0), dynamic(_dynamic), threads(true), timed(true), waiting(true), waitingwcs(7, true), QMutex() { }
+	~QThreadPoolPrivate()
 	{
 		FXMtxHold h(this);
 		Thread *t;
@@ -1448,7 +1448,7 @@ struct FXDLLLOCAL FXThreadPoolPrivate : public FXMutex
 	}
 };
 
-void FXThreadPoolPrivate::Thread::run()
+void QThreadPoolPrivate::Thread::run()
 {
 	for(;;)
 	{
@@ -1488,8 +1488,8 @@ void FXThreadPoolPrivate::Thread::run()
 					lock();
 				}
 
-				FXRBOp unlockme=FXRBObj(*this, &FXThreadPoolPrivate::Thread::unlock);
-				FXThread_DTHold dth(this);
+				FXRBOp unlockme=FXRBObj(*this, &QThreadPoolPrivate::Thread::unlock);
+				QThread_DTHold dth(this);
 				assert(code);
 				//fxmessage("Thread pool calling %p\n", code);
 				Generic::BoundFunctorV *_code=code;
@@ -1501,7 +1501,7 @@ void FXThreadPoolPrivate::Thread::run()
 				//if(!parent->waitingwcs.isEmpty())
 				{
 					FXMtxHold h(parent);
-					FXWaitCondition *codewc=parent->waitingwcs.find(_code);
+					QWaitCondition *codewc=parent->waitingwcs.find(_code);
 					if(codewc)
 					{
 						//fxmessage("Waking %p\n", _code);
@@ -1518,16 +1518,16 @@ void FXThreadPoolPrivate::Thread::run()
 	}
 }
 
-static FXMutex mastertimekeeperlock;
-class FXThreadPoolTimeKeeper : public FXThread
+static QMutex mastertimekeeperlock;
+class QThreadPoolTimeKeeper : public QThread
 {
 public:
 	struct Entry
 	{
 		FXuint when;
-		FXThreadPool *which;
+		QThreadPool *which;
 		FXAutoPtr<Generic::BoundFunctorV> code;
-		Entry(FXuint _when, FXThreadPool *creator, FXAutoPtr<Generic::BoundFunctorV> _code) : when(_when), which(creator), code(_code) { }
+		Entry(FXuint _when, QThreadPool *creator, FXAutoPtr<Generic::BoundFunctorV> _code) : when(_when), which(creator), code(_code) { }
 		~Entry()
 		{
 			assert(!code);
@@ -1535,10 +1535,10 @@ public:
 		bool operator<(const Entry &o) const { return o.when-when<0x80000000; }
 		bool operator==(const Entry &o) const { return when==o.when && which==o.which && code==o.code; }
 	};
-	FXWaitCondition wc;
+	QWaitCondition wc;
 	QSortedList<Entry> entries;
-	FXThreadPoolTimeKeeper() : wc(true), entries(true), FXThread("Thread pool time keeper") { }
-	~FXThreadPoolTimeKeeper()
+	QThreadPoolTimeKeeper() : wc(true), entries(true), QThread("Thread pool time keeper") { }
+	~QThreadPoolTimeKeeper()
 	{
 		requestTermination();
 		wait();
@@ -1596,28 +1596,28 @@ public:
 		return 0;
 	}
 };
-static FXPtrHold<FXThreadPoolTimeKeeper> mastertimekeeper;
+static FXPtrHold<QThreadPoolTimeKeeper> mastertimekeeper;
 static void DestroyThreadPoolTimeKeeper()
 {
-	delete static_cast<FXThreadPoolTimeKeeper *>(mastertimekeeper);
+	delete static_cast<QThreadPoolTimeKeeper *>(mastertimekeeper);
 	mastertimekeeper=0;
 }
 
-FXThreadPool::FXThreadPool(FXuint total, bool dynamic) : p(0)
+QThreadPool::QThreadPool(FXuint total, bool dynamic) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXThreadPoolPrivate(dynamic));
+	FXERRHM(p=new QThreadPoolPrivate(dynamic));
 	setTotal(total);
 	unconstr.dismiss();
 }
 
-FXThreadPool::~FXThreadPool()
+QThreadPool::~QThreadPool()
 { FXEXCEPTIONDESTRUCT1 {
 	if(mastertimekeeper)
 	{
 		FXMtxHold h(mastertimekeeperlock);
-		FXThreadPoolTimeKeeper::Entry *entry;
-		for(QSortedListIterator<FXThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current());)
+		QThreadPoolTimeKeeper::Entry *entry;
+		for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current());)
 		{
 			if(this==entry->which)
 			{
@@ -1630,59 +1630,59 @@ FXThreadPool::~FXThreadPool()
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXuint FXThreadPool::total() const throw()
+FXuint QThreadPool::total() const throw()
 {
 	return p->total;
 }
 
-FXuint FXThreadPool::maximum() const throw()
+FXuint QThreadPool::maximum() const throw()
 {
 	return p->maximum;
 }
 
-FXuint FXThreadPool::free() const throw()
+FXuint QThreadPool::free() const throw()
 {
 	return p->free;
 }
 
-void FXThreadPool::startThreads(FXuint newno)
+void QThreadPool::startThreads(FXuint newno)
 {
-	FXThreadPoolPrivate::Thread *t;
+	QThreadPoolPrivate::Thread *t;
 	if(newno>p->total)
 	{
 		for(FXuint n=p->total; n<newno; n++)
 		{
-			FXERRHM(t=new FXThreadPoolPrivate::Thread(p));
+			FXERRHM(t=new QThreadPoolPrivate::Thread(p));
 			FXRBOp unnew=FXRBNew(t);
 			p->threads.append(t);
 			unnew.dismiss();
 		}
 	}
 	p->total=newno;
-	for(QPtrListIterator<FXThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
+	for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 	{
 		if(!t->running()) t->start();
 	}
 }
 
-void FXThreadPool::setTotal(FXuint newno)
+void QThreadPool::setTotal(FXuint newno)
 {
 	FXMtxHold h(p);
 	p->maximum=newno;
 	if(!p->dynamic) startThreads(newno);
 }
 
-bool FXThreadPool::dynamic() const throw()
+bool QThreadPool::dynamic() const throw()
 {
 	return p->dynamic;
 }
 
-void FXThreadPool::setDynamic(bool v)
+void QThreadPool::setDynamic(bool v)
 {
 	p->dynamic=v;
 }
 
-FXThreadPool::handle FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay)
+QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay)
 {
 	Generic::BoundFunctorV *_code=0;
 	//fxmessage("Thread pool dispatch %p in %d ms\n", PtrPtr(code), delay);
@@ -1692,14 +1692,14 @@ FXThreadPool::handle FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> co
 		FXMtxHold h(mastertimekeeperlock);
 		if(!mastertimekeeper)
 		{
-			FXERRHM(mastertimekeeper=new FXThreadPoolTimeKeeper);
+			FXERRHM(mastertimekeeper=new QThreadPoolTimeKeeper);
 			mastertimekeeper->start();
 			// Slightly nasty this :)
 			primaryThread->addCleanupCall(Generic::BindFuncN(DestroyThreadPoolTimeKeeper));
 		}
-		FXThreadPoolTimeKeeper::Entry *entry;
+		QThreadPoolTimeKeeper::Entry *entry;
 		_code=PtrPtr(code);
-		FXERRHM(entry=new FXThreadPoolTimeKeeper::Entry(FXProcess::getMsCount()+delay, this, code));
+		FXERRHM(entry=new QThreadPoolTimeKeeper::Entry(FXProcess::getMsCount()+delay, this, code));
 		FXRBOp unnew=FXRBNew(entry);
 		mastertimekeeper->entries.insert(entry);
 		unnew.dismiss();
@@ -1711,8 +1711,8 @@ FXThreadPool::handle FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> co
 		FXMtxHold h(p);
 		if(p->free)
 		{
-			FXThreadPoolPrivate::Thread *t;
-			for(QPtrListIterator<FXThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
+			QThreadPoolPrivate::Thread *t;
+			for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 			{
 				if(t->free && !t->code)
 				{
@@ -1739,7 +1739,7 @@ FXThreadPool::handle FXThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> co
 	return (handle) _code;
 }
 
-FXThreadPool::CancelledState FXThreadPool::cancel(FXThreadPool::handle _code, bool wait)
+QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool wait)
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	if(!code) return NotFound;
@@ -1752,8 +1752,8 @@ FXThreadPool::CancelledState FXThreadPool::cancel(FXThreadPool::handle _code, bo
 		h.relock();
 		if(!p->waiting.takeRef(code))
 		{
-			FXThreadPoolTimeKeeper::Entry *entry;
-			for(QSortedListIterator<FXThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current()); ++it)
+			QThreadPoolTimeKeeper::Entry *entry;
+			for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current()); ++it)
 			{
 				if(this==entry->which && PtrPtr(entry->code)==code)
 				{
@@ -1765,12 +1765,12 @@ FXThreadPool::CancelledState FXThreadPool::cancel(FXThreadPool::handle _code, bo
 			}
 			h2.unlock();	// Unlock time keeper
 			{	// Ok, is it currently being executed? If so, wait till it's done
-				FXThreadPoolPrivate::Thread *t;
-				for(QPtrListIterator<FXThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
+				QThreadPoolPrivate::Thread *t;
+				for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 				{
 					if(t->code==code)
 					{	// Wait for it to complete
-						if(FXThread::id()==t->myId())
+						if(QThread::id()==t->myId())
 						{
 							FXERRH(!wait, "You cannot cancel a thread pool dispatch from within that dispatch with wait as a deadlock would occur!", 0, FXERRH_ISDEBUG);
 						}
@@ -1789,13 +1789,13 @@ FXThreadPool::CancelledState FXThreadPool::cancel(FXThreadPool::handle _code, bo
 	return Cancelled;
 }
 
-bool FXThreadPool::reset(FXThreadPool::handle _code, FXuint delay)
+bool QThreadPool::reset(QThreadPool::handle _code, FXuint delay)
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	FXMtxHold h(mastertimekeeperlock);
 	if(!mastertimekeeper) return false;
-	FXThreadPoolTimeKeeper::Entry *entry;
-	QSortedListIterator<FXThreadPoolTimeKeeper::Entry> it=mastertimekeeper->entries;
+	QThreadPoolTimeKeeper::Entry *entry;
+	QSortedListIterator<QThreadPoolTimeKeeper::Entry> it=mastertimekeeper->entries;
 	for(; (entry=it.current()); ++it)
 	{
 #if defined(__GNUC__) && __GNUC__==3 && __GNUC_MINOR__<=2
@@ -1814,14 +1814,14 @@ bool FXThreadPool::reset(FXThreadPool::handle _code, FXuint delay)
 	return true;
 }
 
-bool FXThreadPool::wait(FXThreadPool::handle _code, FXuint period)
+bool QThreadPool::wait(QThreadPool::handle _code, FXuint period)
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	FXMtxHold h(p);
 	if(-1==p->waiting.findRef(code))
 	{
-		FXThreadPoolPrivate::Thread *t;
-		for(QPtrListIterator<FXThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
+		QThreadPoolPrivate::Thread *t;
+		for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 		{
 			if(t->code==code) break;
 		}
@@ -1829,8 +1829,8 @@ bool FXThreadPool::wait(FXThreadPool::handle _code, FXuint period)
 		{
 			if(mastertimekeeper)
 			{
-				FXThreadPoolTimeKeeper::Entry *e;
-				for(QSortedListIterator<FXThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (e=it.current()); ++it)
+				QThreadPoolTimeKeeper::Entry *e;
+				for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (e=it.current()); ++it)
 				{
 #if defined(__GNUC__) && __GNUC__==3 && __GNUC_MINOR__<=2
 					// Assuming GCC v3.4 will fix this
@@ -1845,10 +1845,10 @@ bool FXThreadPool::wait(FXThreadPool::handle _code, FXuint period)
 			else return true;
 		}
 	}
-	FXWaitCondition *wc=p->waitingwcs.find(code);
+	QWaitCondition *wc=p->waitingwcs.find(code);
 	if(!wc)
 	{
-		FXERRHM(wc=new FXWaitCondition);
+		FXERRHM(wc=new QWaitCondition);
 		FXRBOp unnew=FXRBNew(wc);
 		p->waitingwcs.insert(code, wc);
 		unnew.dismiss();

@@ -22,7 +22,7 @@
 #include "FXApp.h"
 #include "FXPrimaryButton.h"
 #include "FXDCWindow.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 
 #define POSITIVECOL FXRGB(135, 255, 135)
 #define NEGATIVECOL FXRGB(255, 135, 135)
@@ -78,12 +78,12 @@ FXPrimaryButton::FXPrimaryButton(FXComposite *parent,const FXString &text,FXIcon
 	else if(opts & PBUTTON_POSITIVE)
 	{
 		surcol=POSITIVECOL;
-		setHelpTag(FXTrans::tr("FXPrimaryButton", "Select this to commit to the action. Alt-select merely applies the effects of committing but does not close the dialog"));
+		setHelpTag(QTrans::tr("FXPrimaryButton", "Select this to commit to the action. Alt-select merely applies the effects of committing but does not close the dialog"));
 	}
 	else if(opts & PBUTTON_NEGATIVE)
 	{
 		surcol=NEGATIVECOL;
-		setHelpTag(FXTrans::tr("FXPrimaryButton", "Select this to cancel the action. Alt-select merely resets the dialog to its initial state"));
+		setHelpTag(QTrans::tr("FXPrimaryButton", "Select this to cancel the action. Alt-select merely resets the dialog to its initial state"));
 	}
 }
 

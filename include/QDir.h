@@ -19,8 +19,8 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXDIR_H
-#define FXDIR_H
+#ifndef QDIR_H
+#define QDIR_H
 
 #include "FXString.h"
 #include "qstringlist.h"
@@ -28,21 +28,21 @@
 
 namespace FX {
 
-/*! \file FXDir.h
+/*! \file QDir.h
 \brief Defines classes used to detail a directory entry
 */
 
-class FXFileInfo;
-typedef QValueList<FXFileInfo> QFileInfoList;
+class QFileInfo;
+typedef QValueList<QFileInfo> QFileInfoList;
 
-/*! \class FXDir
+/*! \class QDir
 \brief Provides detailed information about a directory in the file system (Qt compatible)
 
 This class permits you to enumerate the contents of a directory in a very flexible
-fashion. It works in tandem with FX::FXFileInfo to provide the ultimate in both
+fashion. It works in tandem with FX::QFileInfo to provide the ultimate in both
 directory enumeration and comparing before & after snapshots of directory contents.
 
-\warning The wildcard mechanism used by FXDir is not the same as QDir. QDir uses a
+\warning The wildcard mechanism used by QDir is not the same as QDir. QDir uses a
 space-separated set of *.x as a file open dialog would use. As Tn has disposed
 permanently of file open dialogs, FOX-style wildcards were far more useful to me - sorry!
 
@@ -55,17 +55,17 @@ foo.a, foo.b and foo.c. You can escape any of these special characters with \
 
 You should (like QDir) try to avoid fancy filtering as it's slow - often getting
 the full list and copying the items you want into a new list based upon a speculative
-retrieval of FXFileInfo's can be faster than
+retrieval of QFileInfo's can be faster than
 running a regular expression match on a subset filter though care has been taken
 to avoid quadratic behaviour (unlike Qt, which goes real slow on large directories).
 In particular, setting FilterSpec or SortSpec options which require fetching a
-FXFileInfo for each item can be particularly slow. Note that all expression matches
+QFileInfo for each item can be particularly slow. Note that all expression matches
 are case insensitive - this can cause too much data to be returned on POSIX, but
 also means consistent behaviour between Windows and POSIX.
 
-FXDir like QDir performs a certain amount of caching - the list of names are cached.
-If a list of FX::FXFileInfo's is requested, the cached list of names are used to
-generate the list of FX::FXFileInfo's - which may mean an incomplete listing. If
+QDir like QDir performs a certain amount of caching - the list of names are cached.
+If a list of FX::QFileInfo's is requested, the cached list of names are used to
+generate the list of FX::QFileInfo's - which may mean an incomplete listing. If
 the directory enumerated has vanished altogether, then a null pointer is returned.
 The static method extractChanges() is additional functionality over Qt.
 
@@ -73,7 +73,7 @@ Note that as with all TnFOX functionality, if something fails it throws an excep
 Thus many of the boolean returns are always true.
 */
 struct FXDirPrivate;
-class FXAPIR FXDir
+class FXAPIR QDir
 {
 	FXDirPrivate *p;
 public:
@@ -118,18 +118,18 @@ public:
 		DefaultSort=0xffffffff
 	};
 	//! Constructs a new instance
-	FXDir();
+	QDir();
 	/*! Constructs a new instance enumerating items matching regular expression
 	\em regex in the directory \em path, sorted by \em sortBy and filtered by \em filter */
-	FXDir(const FXString &path, const FXString &regex=FXString::nullStr(), int sortBy=Name|IgnoreCase, int filter=All);
-	FXDir(const FXDir &o);
-	FXDir &operator=(const FXDir &o);
-	FXDir &operator=(const FXString &path);
-	~FXDir();
+	QDir(const FXString &path, const FXString &regex=FXString::nullStr(), int sortBy=Name|IgnoreCase, int filter=All);
+	QDir(const QDir &o);
+	QDir &operator=(const QDir &o);
+	QDir &operator=(const FXString &path);
+	~QDir();
 	//! Note that if the fileinfo list has not been generated in both, it is not compared
-	bool operator==(const FXDir &o) const;
+	bool operator==(const QDir &o) const;
 	//! \overload
-	bool operator!=(const FXDir &o) const;
+	bool operator!=(const QDir &o) const;
 
 	//! Sets the path being enumerated
 	void setPath(const FXString &path);
@@ -178,7 +178,7 @@ public:
 	//! Returns a string list containing all the items in the enumeration which match \em filter and \em sorting
 	QStringList entryList(int filter=DefaultFilter, int sorting=DefaultSort) { return entryList(FXString::nullStr(), filter, sorting); }
 	/*! Returns a list of all the items in the enumeration like entryList()
-	but as FX::FXFileInfo's. Needless to say, this call is not as fast as entryList()
+	but as FX::QFileInfo's. Needless to say, this call is not as fast as entryList()
 	and it returns zero if the directory does not exist */
 	const QFileInfoList *entryInfoList(const FXString &regex, int filter=DefaultFilter, int sorting=DefaultSort);
 	//! \overload
@@ -216,11 +216,11 @@ public:
 	//! Returns the directory separator character. Same as PATHSEPSTRING
 	static FXString separator();
 	//! Returns the current directory for this process
-	static FXDir current();
+	static QDir current();
 	//! Returns the home directory of the current user
-	static FXDir home();
+	static QDir home();
 	//! Returns the root directory of the system (on Windows, where WINNT lives)
-	static FXDir root();
+	static QDir root();
 	//! Returns the current directory path
 	static FXString currentDirPath();
 	//! Returns the home directory path
@@ -236,9 +236,9 @@ public:
 	/*! Returns a list consisting of those filenames in A and B which
 	are either not of the same name in both or one or more of their characteristics
 	has changed. Needs to run entryInfoList() on both so if the older of the
-	two does not contain cached FXFileInfo records, they will have to be reread -
+	two does not contain cached QFileInfo records, they will have to be reread -
 	which means the characteristics will match */
-	static QStringList extractChanges(const FXDir &A, const FXDir &B);
+	static QStringList extractChanges(const QDir &A, const QDir &B);
 };
 
 } // namespace

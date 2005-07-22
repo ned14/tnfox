@@ -36,8 +36,8 @@
 #include <sys/time.h>
 #endif
 #include "FXException.h"
-#include "FXThread.h"
-#include "FXTrans.h"
+#include "QThread.h"
+#include "QTrans.h"
 #include "FXPtrHold.h"
 #include "FXRollback.h"
 #include "FXACL.h"
@@ -129,7 +129,7 @@ err:
 
 namespace FX {
 
-class FXDLLLOCAL FXFilePrivate : public FXMutex
+class FXDLLLOCAL FXFilePrivate : public QMutex
 {
 public:
 	FXString filename;
@@ -163,19 +163,19 @@ int FXFile::int_fileDescriptor() const
 	return p->handle;
 }
 
-FXFile::FXFile() : p(0), FXIODevice()
+FXFile::FXFile() : p(0), QIODevice()
 {
 	FXERRHM(p=new FXFilePrivate(false, true));
 }
 
-FXFile::FXFile(WantStdioType) : p(0), FXIODevice()
+FXFile::FXFile(WantStdioType) : p(0), QIODevice()
 {	// Special FXFile talking to stdin/stdout
 	FXERRHM(p=new FXFilePrivate(true, true));
 	p->handle=fileno(stdout);
 	setFlags(IO_ReadWrite|IO_Append|IO_Truncate|IO_Open);
 }
 
-FXFile::FXFile(const FXString &name, WantLightFXFile) : p(0), FXIODevice()
+FXFile::FXFile(const FXString &name, WantLightFXFile) : p(0), QIODevice()
 {	// Special FXFile for a "light" instance. This instance is much faster to create
 	// and destroy but does not implement ACL's and so is private
 	FXRBOp unconstr=FXRBConstruct(this);
@@ -184,7 +184,7 @@ FXFile::FXFile(const FXString &name, WantLightFXFile) : p(0), FXIODevice()
 	unconstr.dismiss();
 }
 
-FXFile::FXFile(const FXString &name) : p(0), FXIODevice()
+FXFile::FXFile(const FXString &name) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new FXFilePrivate(false, true));
@@ -244,7 +244,7 @@ FXfval FXFile::reloadSize()
 	}
 }
 
-FXIODevice &FXFile::stdio(bool applyCRLFTranslation)
+QIODevice &FXFile::stdio(bool applyCRLFTranslation)
 {
 	if(!stdiofile)
 	{
@@ -262,11 +262,11 @@ bool FXFile::open(FXuint mode)
 	FXMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXFile", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("FXFile", "Device reopen has different mode"));
 	}
 	else
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		int access=0;
 		if(IO_ReadWrite==(mode & IO_ReadWrite)) access|=O_RDWR|O_CREAT;
 		else
@@ -276,7 +276,7 @@ bool FXFile::open(FXuint mode)
 		}
 		if(mode & IO_Append) access|=O_APPEND;
 		if(mode & IO_Truncate) access|=O_TRUNC;
-		if(!(access & O_CREAT) && !exists()) FXERRGNF(FXTrans::tr("FXFile", "File '%1' not found").arg(p->filename), 0);
+		if(!(access & O_CREAT) && !exists()) FXERRGNF(QTrans::tr("FXFile", "File '%1' not found").arg(p->filename), 0);
 #ifdef WIN32
 		access|=O_BINARY;
 		// Annoyingly, you must create a file handle with WRITE_DAC permission to
@@ -332,7 +332,7 @@ void FXFile::close()
 	FXMtxHold h(p);
 	if(isOpen() && !p->amStdio)
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXERRHIO(::close(p->handle));
 		p->handle=0;
 		p->size=0;
@@ -351,7 +351,7 @@ void FXFile::flush()
 	FXMtxHold h(p);
 	if(isOpen() && isWriteable())
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 #ifdef WIN32
 		FXERRHWIN(FlushFileBuffers((HANDLE) _get_osfhandle(p->handle)));
 		//FXERRHIO(::_commit(p->handle));
@@ -375,10 +375,10 @@ FXfval FXFile::size() const
 void FXFile::truncate(FXfval size)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXFile", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("FXFile", "Not open for writing"));
 	if(isOpen() && !p->amStdio)
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		if((mode() & IO_ShredTruncate) && size<p->size)
 			shredData(size);
 		if(ioIndex>size) at(size);
@@ -398,7 +398,7 @@ bool FXFile::at(FXfval newpos)
 	FXMtxHold h(p);
 	if(isOpen() && ioIndex!=newpos && !p->amStdio)
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 #ifdef WIN32
 		LARGE_INTEGER _newpos; _newpos.QuadPart=newpos;
 		FXERRHWIN(SetFilePointerEx((HANDLE) _get_osfhandle(p->handle), _newpos, NULL, FILE_BEGIN));
@@ -452,10 +452,10 @@ void FXFile::setPermissions(const FXString &path, const FXACL &perms)
 FXuval FXFile::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXFile", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("FXFile", "Not open for reading"));
 	if(isOpen() && maxlen)
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXuval readed=0;
 #ifdef USE_POSIX
 		if(FXFilePrivate::Write==p->lastop && !p->amStdio)
@@ -504,10 +504,10 @@ FXuval FXFile::readBlock(char *data, FXuval maxlen)
 FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXFile", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("FXFile", "Not open for writing"));
 	if(isOpen())
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 		FXuval written;
 #ifdef USE_POSIX
 		if(FXFilePrivate::Read==p->lastop && !p->amStdio)

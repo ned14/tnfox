@@ -19,14 +19,14 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXIODEVICES_H
-#define FXIODEVICES_H
+#ifndef QIODEVICES_H
+#define QIODEVICES_H
 
-#include "FXIODevice.h"
+#include "QIODevice.h"
 
 namespace FX {
 
-/*! \file FXIODeviceS.h
+/*! \file QIODeviceS.h
 \brief Defines classes and values used for synchronous i/o
 */
 
@@ -38,23 +38,23 @@ data between two conceptual ends. These are characterised by reads and
 writes blocking if the other end hasn't supplied/read data yet.
 */
 
-/*! \class FXIODeviceS
+/*! \class QIODeviceS
 \ingroup siodevices
 \brief The abstract base class for all synchronous i/o classes in TnFOX
 
-You'll also want to see FX::FXIODevice. All subclasses of this base class
+You'll also want to see FX::QIODevice. All subclasses of this base class
 are i/o devices which provide a synchronous functionality.
 
-You can wait for data to become available on any one of a number of FXIODeviceS's
+You can wait for data to become available on any one of a number of QIODeviceS's
 using the static method waitForData().
 
 */
-class FXAPI FXIODeviceS : public FXIODevice
+class FXAPI QIODeviceS : public QIODevice
 {
 protected:
-	FXIODeviceS(const FXIODeviceS &o) : FXIODevice(o) { }
+	QIODeviceS(const QIODeviceS &o) : QIODevice(o) { }
 public:
-	FXIODeviceS() : FXIODevice() { }
+	QIODeviceS() : QIODevice() { }
 	virtual bool isSynchronous() const { return true; }
 
 	//!	Creates the server side of the device
@@ -69,24 +69,24 @@ public:
 	virtual bool at(FXfval) { return false; }
 	//! Default implementation returning true if size() is zero
 	virtual bool atEnd() const { return size()==0; }
-	// NOTE: Next two are defined in FXIODevice.cxx
+	// NOTE: Next two are defined in QIODevice.cxx
 	//! Default implementation throws an exception
 	virtual FXuval readBlockFrom(char *data, FXuval maxlen, FXfval pos);
 	//! Default implementation throws an exception
 	virtual FXuval writeBlockTo(FXfval pos, const char *data, FXuval maxlen);
 public:
 	/*! Waits for more data to become available for reading on any one or
-	more of an array of FXIODeviceS's specified by \em list. Precisely which
+	more of an array of QIODeviceS's specified by \em list. Precisely which
 	are those left in the zero terminated array \em signalled.
 	\warning Beware race conditions caused by waiting on i/o devices which
 	can be read asynchronously by other threads
 	\note This is a thread cancellation point
 	*/
-	static bool waitForData(FXIODeviceS **signalled, FXuint no, FXIODeviceS **list, FXuint waitfor=FXINFINITE);
-	//! Returns the maximum number of FXIODeviceS's which can be waited for at once
+	static bool waitForData(QIODeviceS **signalled, FXuint no, QIODeviceS **list, FXuint waitfor=FXINFINITE);
+	//! Returns the maximum number of QIODeviceS's which can be waited for at once
 	static FXuint waitForDataMax() throw();
 private:
-	friend class FXSSLDevice;
+	friend class QSSLDevice;
 	virtual FXDLLLOCAL void *int_getOSHandle() const=0;
 };
 

@@ -31,7 +31,7 @@ namespace FX {
 */
 
 class FXString;
-class FXFileInfo;
+class QFileInfo;
 
 /*! \class FXFSMonitor
 \brief Provides portable file system monitoring for changes
@@ -83,7 +83,7 @@ of a new entry. The most which will happen then is inefficiency.
 
 You should declare your handler as follows:
 \code
-void Obj::handler(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi);
+void Obj::handler(FXFSMonitor::Change change, const QFileInfo &oldfi, const QFileInfo &newfi);
 \endcode
 This ensures optimum passing of parameters. To install:
 \code
@@ -107,7 +107,7 @@ public:
 		Change(int) : eventNo(0), modified(true), created(true), deleted(true), renamed(true), attrib(true), security(true) { }
 		operator FXuint() const throw() { return ((const FXuint &) modified); }
 	};
-	typedef Generic::TL::create<void, Change, FXFileInfo, FXFileInfo>::value ChangeHandlerPars;
+	typedef Generic::TL::create<void, Change, QFileInfo, QFileInfo>::value ChangeHandlerPars;
 	//! Defines the type of functor change handlers are
 	typedef Generic::Functor<ChangeHandlerPars> ChangeHandler;
 	//! Adds a monitor of a path on the filing system

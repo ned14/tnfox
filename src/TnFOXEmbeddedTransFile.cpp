@@ -1,4 +1,4 @@
-#include "FXTrans.h"
+#include "QTrans.h"
 
 namespace FX {
 

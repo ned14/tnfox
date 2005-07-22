@@ -30,16 +30,16 @@
 #include <assert.h>
 #include "fxver.h"
 #include "fxdefs.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXString.h"
 #include "FXProcess.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXFile.h"
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include "FXPtrHold.h"
 #include "FXRollback.h"
 #include "FXErrCodes.h"
-#include "FXGZipDevice.h"
+#include "QGZipDevice.h"
 #include "FXApp.h"
 #ifdef WIN32
 #include "WindowsGubbins.h"
@@ -54,20 +54,20 @@ namespace FX {
 // Defines the longest text literal which can be read in
 #define MAXLITERALLEN 4096
 
-struct FXTransEmbeddedFile
+struct QTransEmbeddedFile
 {
 	const FXuchar *buffer;
 	FXuint len;
 	void *staticaddr, *dllstart, *dllend;
 	FXString dllpath;
-	FXTransEmbeddedFile(const FXuchar *b, FXuint l, void *sa): buffer(b), len(l), staticaddr(sa), dllstart(0), dllend(0) { }
-	bool operator==(const FXTransEmbeddedFile &o) const { return buffer==o.buffer && len==o.len; }
-	bool operator!=(const FXTransEmbeddedFile &o) const { return buffer!=o.buffer || len!=o.len; }
+	QTransEmbeddedFile(const FXuchar *b, FXuint l, void *sa): buffer(b), len(l), staticaddr(sa), dllstart(0), dllend(0) { }
+	bool operator==(const QTransEmbeddedFile &o) const { return buffer==o.buffer && len==o.len; }
+	bool operator!=(const QTransEmbeddedFile &o) const { return buffer!=o.buffer || len!=o.len; }
 };
-static QValueList<FXTransEmbeddedFile> *embedded;
-static FXTrans *me;
+static QValueList<QTransEmbeddedFile> *embedded;
+static QTrans *me;
 
-class FXTransPrivate : public FXRWMutex
+class QTransPrivate : public QRWMutex
 {
 public:
 	bool quitNow;
@@ -126,17 +126,17 @@ public:
 		}
 	};
 	QDict<EnglishTrans> dict; // by english literal from the code
-	FXTransPrivate() : quitNow(false), noTransFiles(true), dict(257, true, true), FXRWMutex() { }
+	QTransPrivate() : quitNow(false), noTransFiles(true), dict(257, true, true), QRWMutex() { }
 	void dump() const
 	{
-		QDictIterator<FXTransPrivate::EnglishTrans> engit(dict);
-		for(FXTransPrivate::EnglishTrans *engtrans; (engtrans=engit.current()); ++engit)
+		QDictIterator<QTransPrivate::EnglishTrans> engit(dict);
+		for(QTransPrivate::EnglishTrans *engtrans; (engtrans=engit.current()); ++engit)
 		{
-			QPtrVectorIterator<FXTransPrivate::ModuleTrans> modit(*engtrans);
-			for(FXTransPrivate::ModuleTrans *modtrans; (modtrans=modit.current()); ++modit)
+			QPtrVectorIterator<QTransPrivate::ModuleTrans> modit(*engtrans);
+			for(QTransPrivate::ModuleTrans *modtrans; (modtrans=modit.current()); ++modit)
 			{
-				QDictIterator<FXTransPrivate::LangTrans> langit(modtrans->langs);
-				for(FXTransPrivate::LangTrans *langtrans; (langtrans=langit.current()); ++langit)
+				QDictIterator<QTransPrivate::LangTrans> langit(modtrans->langs);
+				for(QTransPrivate::LangTrans *langtrans; (langtrans=langit.current()); ++langit)
 				{
 					fxmessage("String '%s' module '%s' language '%s' translation '%s'\n",
 						engit.currentKey().text(), modtrans->modulepath.text(),
@@ -148,14 +148,14 @@ public:
 	}
 };
 
-static class FXTransInit : public FXProcess_StaticInitBase
+static class QTransInit : public FXProcess_StaticInitBase
 {
 public:
-	FXTransInit() : FXProcess_StaticInitBase("FXTrans")
+	QTransInit() : FXProcess_StaticInitBase("QTrans")
 	{
 		FXProcess::int_addStaticInit(this);
 	}
-	~FXTransInit()
+	~QTransInit()
 	{
 		FXDELETE(me);
 		FXProcess::int_removeStaticInit(this);
@@ -164,7 +164,7 @@ public:
 	{
 		if(!me)
 		{
-			FXERRHM(me=new FXTrans(argc, argv, txtout));
+			FXERRHM(me=new QTrans(argc, argv, txtout));
 		}
 		return me->p->quitNow;
 	}
@@ -231,31 +231,31 @@ public:
 };
 
 
-struct FXDLLLOCAL FXTransStringPrivate
+struct FXDLLLOCAL QTransStringPrivate
 {
 	const char *context, *text, *hint;
-	FXTransString::GetLangIdSpec *langidfunc;
+	QTransString::GetLangIdSpec *langidfunc;
 	const FXString *langid;
 	QPtrVector<FXTSArgBase> args;
 	FXString *translation;
-	FXTransStringPrivate(const char *_context, const char *_text, const char *_hint, const FXString *_langid)
+	QTransStringPrivate(const char *_context, const char *_text, const char *_hint, const FXString *_langid)
 		: context(_context), text(_text), hint(_hint), langidfunc(0), langid(_langid), args(true), translation(0)
 	{
 		args.reserve(8);	// Avoid reallocs
 	}
-	~FXTransStringPrivate() { FXDELETE(translation); }
+	~QTransStringPrivate() { FXDELETE(translation); }
 };
 
-FXTransString::FXTransString(const char *context, const char *text, const char *hint, const FXString *langid) : p(0)
+QTransString::QTransString(const char *context, const char *text, const char *hint, const FXString *langid) : p(0)
 {
-	FXERRHM(p=new FXTransStringPrivate(context, text, hint, langid));
+	FXERRHM(p=new QTransStringPrivate(context, text, hint, langid));
 }
 
-FXTransString FXTransString::copy() const
+QTransString QTransString::copy() const
 {
-	FXTransString ret;
+	QTransString ret;
 	if(!p) return ret;
-	FXERRHM(ret.p=new FXTransStringPrivate(p->context, p->text, p->hint, p->langid));
+	FXERRHM(ret.p=new QTransStringPrivate(p->context, p->text, p->hint, p->langid));
 	ret.p->langidfunc=p->langidfunc;
 	FXTSArgBase *a;
 	for(QPtrVectorIterator<FXTSArgBase> it(p->args); (a=it.current()); ++it)
@@ -273,40 +273,40 @@ FXTransString FXTransString::copy() const
 	return ret;
 }
 
-FXTransString::GetLangIdSpec *FXTransString::langIdFunc() const throw()
+QTransString::GetLangIdSpec *QTransString::langIdFunc() const throw()
 {
 	return p->langidfunc;
 }
 
-void FXTransString::setLangIdFunc(FXTransString::GetLangIdSpec *langidfunc) throw()
+void QTransString::setLangIdFunc(QTransString::GetLangIdSpec *langidfunc) throw()
 {
 	if(!(p->langidfunc=langidfunc)) p->langid=0;
 }
 
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
-FXTransString::FXTransString(const FXTransString &other) : p(other.p)
+QTransString::QTransString(const QTransString &other) : p(other.p)
 {
-	FXTransString &o=const_cast<FXTransString &>(other);
+	QTransString &o=const_cast<QTransString &>(other);
 #else
-FXTransString::FXTransString(FXTransString &o) : p(o.p)
+QTransString::QTransString(QTransString &o) : p(o.p)
 {
 #endif
 #else
-FXTransString::FXTransString(FXTransString &&o) : p(o.p)
+QTransString::QTransString(QTransString &&o) : p(o.p)
 {
 #endif
-	// Assume that since only FXTrans can create that it's always a destructive copy
+	// Assume that since only QTrans can create that it's always a destructive copy
 	o.p=0;
 }
 
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
-FXTransString &FXTransString::operator=(const FXTransString &other)
+QTransString &QTransString::operator=(const QTransString &other)
 {
-	FXTransString &o=const_cast<FXTransString &>(other);
+	QTransString &o=const_cast<QTransString &>(other);
 #else
-FXTransString &FXTransString::operator=(FXTransString &o)
+QTransString &QTransString::operator=(QTransString &o)
 {
 #endif
 #else
@@ -318,12 +318,12 @@ FXTransString &FXTransString::operator=(FXTransString &o)
 	return *this;
 }
 
-FXTransString::~FXTransString()
+QTransString::~QTransString()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXTransString &FXTransString::arg(const FXString &str, FXint fieldwidth)
+QTransString &QTransString::arg(const FXString &str, FXint fieldwidth)
 {
 	FXTSArgBase *arg;
 	FXERRHM(arg=new FXTSArgString(str, fieldwidth));
@@ -332,7 +332,7 @@ FXTransString &FXTransString::arg(const FXString &str, FXint fieldwidth)
 	unnew.dismiss();
 	return *this;
 }
-FXTransString &FXTransString::arg(char c, FXint fieldwidth)
+QTransString &QTransString::arg(char c, FXint fieldwidth)
 {
 	FXTSArgBase *arg;
 	FXERRHM(arg=new FXTSArgChar(c, fieldwidth));
@@ -341,7 +341,7 @@ FXTransString &FXTransString::arg(char c, FXint fieldwidth)
 	unnew.dismiss();
 	return *this;
 }
-FXTransString &FXTransString::arg(FXlong num,  FXint fieldwidth, FXint base)
+QTransString &QTransString::arg(FXlong num,  FXint fieldwidth, FXint base)
 {
 	FXTSArgBase *arg;
 	FXERRHM(arg=new FXTSArgLong(num, fieldwidth, base));
@@ -350,7 +350,7 @@ FXTransString &FXTransString::arg(FXlong num,  FXint fieldwidth, FXint base)
 	unnew.dismiss();
 	return *this;
 }
-FXTransString &FXTransString::arg(FXulong num, FXint fieldwidth, FXint base)
+QTransString &QTransString::arg(FXulong num, FXint fieldwidth, FXint base)
 {
 	FXTSArgBase *arg;
 	FXERRHM(arg=new FXTSArgUlong(num, fieldwidth, base));
@@ -359,7 +359,7 @@ FXTransString &FXTransString::arg(FXulong num, FXint fieldwidth, FXint base)
 	unnew.dismiss();
 	return *this;
 }
-FXTransString &FXTransString::arg(double num, FXint fieldwidth, FXchar fmt, int prec)
+QTransString &QTransString::arg(double num, FXint fieldwidth, FXchar fmt, int prec)
 {
 	FXTSArgBase *arg;
 	FXERRHM(arg=new FXTSArgDouble(num, fieldwidth, fmt, prec));
@@ -369,7 +369,7 @@ FXTransString &FXTransString::arg(double num, FXint fieldwidth, FXchar fmt, int 
 	return *this;
 }
 
-FXString FXTransString::translate(const FXString *langid)
+FXString QTransString::translate(const FXString *langid)
 {	// Threadsafe when using langid functor
 	assert(p);
 	if(p->translation) return *p->translation;
@@ -388,7 +388,7 @@ FXString FXTransString::translate(const FXString *langid)
 	return translation;
 }
 
-void FXTransString::contents(const char *&context, const char *&text, const char *&hint) const
+void QTransString::contents(const char *&context, const char *&text, const char *&hint) const
 {
 	if(p)
 	{
@@ -398,16 +398,16 @@ void FXTransString::contents(const char *&context, const char *&text, const char
 	}
 }
 
-void FXTransString::save(FXStream &s) const
+void QTransString::save(FXStream &s) const
 {
 	s << (FXulong)(FXuval) p->context << (FXulong)(FXuval) p->text << (FXulong)(FXuval) p->hint;
 	s << FXString(p->text);
 }
-void FXTransString::load(FXStream &s)
+void QTransString::load(FXStream &s)
 {
 	if(!p)
 	{
-		FXERRHM(p=new FXTransStringPrivate(0,0,0,0));
+		FXERRHM(p=new QTransStringPrivate(0,0,0,0));
 	}
 	FXulong context, text, hint;
 	s >> context >> text >> hint;
@@ -424,8 +424,8 @@ void FXTransString::load(FXStream &s)
 
 struct DataInfo
 {
-	FXIODevice *dev;
-	FXGZipDevice *gzipdev;
+	QIODevice *dev;
+	QGZipDevice *gzipdev;
 	bool amBuffer;
 	const FXuchar *buffer;
 	FXuint len;
@@ -451,14 +451,14 @@ public:
 	{
 		if(amBuffer)
 		{
-			FXBuffer *b=(FXBuffer *) dev;
+			QBuffer *b=(QBuffer *) dev;
 			b->buffer().resetRawData(buffer, len);
 		}
 		FXDELETE(gzipdev);
 		FXDELETE(dev);
 	}
 };
-static DataInfo getData(FXTransEmbeddedFile &data)
+static DataInfo getData(QTransEmbeddedFile &data)
 {
 	DataInfo di;
 	if(data.dllpath.empty()) data.dllpath=FXProcess::dllPath(data.staticaddr, &data.dllstart, &data.dllend);
@@ -473,8 +473,8 @@ static DataInfo getData(FXTransEmbeddedFile &data)
 	}
 	else
 	{
-		FXBuffer *b;
-		FXERRHM(di.dev=b=new FXBuffer);
+		QBuffer *b;
+		FXERRHM(di.dev=b=new QBuffer);
 		di.buffer=data.buffer; di.len=data.len;
 		b->buffer().setRawData(data.buffer, data.len);
 		di.amBuffer=true;
@@ -483,14 +483,14 @@ static DataInfo getData(FXTransEmbeddedFile &data)
 }
 
 
-FXTrans::FXTrans(int &argc, char *argv[], FXStream &txtout) : p(0)
+QTrans::QTrans(int &argc, char *argv[], FXStream &txtout) : p(0)
 {
-	FXERRHM(p=new FXTransPrivate);
+	FXERRHM(p=new QTransPrivate);
 	me=this; // Done already, but to be sure
 
 	if(embedded)
 	{	// Ok load anything statically initialised
-		for(QValueList<FXTransEmbeddedFile>::iterator it=embedded->begin(); it!=embedded->end(); ++it)
+		for(QValueList<QTransEmbeddedFile>::iterator it=embedded->begin(); it!=embedded->end(); ++it)
 		{
 			addData(*it);
 		}
@@ -501,23 +501,23 @@ FXTrans::FXTrans(int &argc, char *argv[], FXStream &txtout) : p(0)
 	{
 		if(0==strcmp(argv[argi], "-sysinfo"))
 		{
-			FXString temp=FXTrans::tr("FXTrans", "The current language is '%1' and the current region is '%2'\n").arg(FXTrans::language()).arg(FXTrans::country());
+			FXString temp=QTrans::tr("QTrans", "The current language is '%1' and the current region is '%2'\n").arg(QTrans::language()).arg(QTrans::country());
 			txtout << temp.text();
-			temp=FXTrans::tr("FXTrans", "The following language translations are provided:\n");
+			temp=QTrans::tr("QTrans", "The following language translations are provided:\n");
 			txtout << temp.text();
 			ProvidedInfoList provd=provided();
 			for(ProvidedInfoList::iterator it=provd.begin(); it!=provd.end(); ++it)
 			{
-				temp=FXTrans::tr("FXTrans", "Module: %1 Language: %2 Country: %3\n")
+				temp=QTrans::tr("QTrans", "Module: %1 Language: %2 Country: %3\n")
 					.arg((*it).module).arg((*it).language).arg((*it).country.text());
 				txtout << temp.text();
 			}
 			float full, slotsspread, avrgkeysperslot, spread;
 			p->dict.spread(&full, &slotsspread, &avrgkeysperslot, &spread);
-			temp=FXTrans::tr("FXTrans", "Translation dictionary contains %1 items (%2% full with %3 keys per slot)\n")
+			temp=QTrans::tr("QTrans", "Translation dictionary contains %1 items (%2% full with %3 keys per slot)\n")
 				.arg(p->dict.count()).arg(full).arg(avrgkeysperslot);
 			txtout << temp.text();
-			temp=FXTrans::tr("FXTrans", "    Hashing efficiency is %1% and overall efficiency is %2%\n")
+			temp=QTrans::tr("QTrans", "    Hashing efficiency is %1% and overall efficiency is %2%\n")
 				.arg(slotsspread).arg(spread);
 			txtout << temp.text();
 		}
@@ -537,7 +537,7 @@ FXTrans::FXTrans(int &argc, char *argv[], FXStream &txtout) : p(0)
 			di.dev->open(IO_ReadOnly|IO_Translate);
 			if(gzip)
 			{
-				FXGZipDevice gzipdev(txtout.device());
+				QGZipDevice gzipdev(txtout.device());
 				gzipdev.open(txtout.device()->mode());
 				FXStream sgzipdev(&gzipdev);
 				sgzipdev << *di.dev;
@@ -551,13 +551,13 @@ FXTrans::FXTrans(int &argc, char *argv[], FXStream &txtout) : p(0)
 		else if(0==strcmp(argv[argi], "-help"))
 		{
 			FXString temp;
-			temp=FXTrans::tr("FXTrans", "  -fxtrans-language=<ll> : Overrides the language to be used by\n                           the application to an ISO639 code\n");
+			temp=QTrans::tr("QTrans", "  -fxtrans-language=<ll> : Overrides the language to be used by\n                           the application to an ISO639 code\n");
 			txtout << temp.text();
-			temp=FXTrans::tr("FXTrans", "  -fxtrans-country=<cc>  : Overrides the country to be used by\n                           the application to an ISO3166 code\n");
+			temp=QTrans::tr("QTrans", "  -fxtrans-country=<cc>  : Overrides the country to be used by\n                           the application to an ISO3166 code\n");
 			txtout << temp.text();
-			temp=FXTrans::tr("FXTrans", "  -fxtrans-dump<n>       : Writes the library's embedded\n                           translation file no <n> to stdout\n");
+			temp=QTrans::tr("QTrans", "  -fxtrans-dump<n>       : Writes the library's embedded\n                           translation file no <n> to stdout\n");
 			txtout << temp.text();
-			temp=FXTrans::tr("FXTrans", "  -fxtrans-dumpgzip<n>   : Writes the library's embedded\n                           translation file no <n> to stdout in gzip\n");
+			temp=QTrans::tr("QTrans", "  -fxtrans-dumpgzip<n>   : Writes the library's embedded\n                           translation file no <n> to stdout in gzip\n");
 			txtout << temp.text();
 		}
 	}
@@ -669,16 +669,16 @@ static FXuchar *findColon(const FXuchar *buffer)
 	return colon;
 }
 
-void FXTrans::addData(FXTransEmbeddedFile &data)
+void QTrans::addData(QTransEmbeddedFile &data)
 {
 	DataInfo di=getData(data);
-	FXERRHM(di.gzipdev=new FXGZipDevice(di.dev));
+	FXERRHM(di.gzipdev=new QGZipDevice(di.dev));
 	di.gzipdev->open(IO_ReadOnly|IO_Translate);
-	FXIODevice *fh=di.gzipdev;
+	QIODevice *fh=di.gzipdev;
 	FXMtxHold h(p, true);
-	QDict<FXTransPrivate::EnglishTrans> &dict=p->dict;
+	QDict<QTransPrivate::EnglishTrans> &dict=p->dict;
 	FXuint lineno=0;
-	FXTransPrivate::ModuleTrans *ctrans=0;
+	QTransPrivate::ModuleTrans *ctrans=0;
 	int indent=0;
 	ParserState state;
 	p->noTransFiles=false;
@@ -692,18 +692,18 @@ void FXTrans::addData(FXTransEmbeddedFile &data)
 			while(10==*end || 13==*end || 32==*end) *end--=0;
 			if('"'==buffer[0])
 			{	// Got English literal
-				FXTransPrivate::EnglishTrans *engtrans;
+				QTransPrivate::EnglishTrans *engtrans;
 				FXString key; literalise(key, buffer, lineno);
 				if(!(engtrans=dict.find(key)))
 				{
-					FXERRHM(engtrans=new FXTransPrivate::EnglishTrans);
+					FXERRHM(engtrans=new QTransPrivate::EnglishTrans);
 					FXRBOp del=FXRBNew(engtrans);
 					dict.insert(key, engtrans);
 					del.dismiss();
 				}
 				if(!(ctrans=engtrans->find(data.staticaddr)))
 				{
-					FXERRHM(ctrans=new FXTransPrivate::ModuleTrans(data.staticaddr, data.dllstart, data.dllend, data.dllpath));
+					FXERRHM(ctrans=new QTransPrivate::ModuleTrans(data.staticaddr, data.dllstart, data.dllend, data.dllpath));
 					FXRBOp del=FXRBNew(ctrans);
 					engtrans->append(ctrans);
 					del.dismiss();
@@ -782,16 +782,16 @@ void FXTrans::addData(FXTransEmbeddedFile &data)
 						}
 						FXERRH(langid.length(), FXString("Language id cannot be null at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 
-						FXTransPrivate::LangTrans *langtrans;
+						QTransPrivate::LangTrans *langtrans;
 						if(!(langtrans=ctrans->langs.find(langid)))
 						{
-							FXERRHM(langtrans=new FXTransPrivate::LangTrans);
+							FXERRHM(langtrans=new QTransPrivate::LangTrans);
 							FXRBOp del=FXRBNew(langtrans);
 							ctrans->langs.insert(langid, langtrans);
 							del.dismiss();
 						}
 						// Ok convert state.topState() into ctrans held strings
-						FXTransPrivate::LangTransItem lti;
+						QTransPrivate::LangTransItem lti;
 						lti.srcfile    =ctrans->getLiteral(ctrans->srcfiles,   state.srcfile());
 						lti.classname  =ctrans->getLiteral(ctrans->classnames, state.classname());
 						lti.hint       =ctrans->getLiteral(ctrans->hints,      state.hint());
@@ -821,14 +821,14 @@ void FXTrans::addData(FXTransEmbeddedFile &data)
 	}
 }
 
-void FXTrans::removeData(const FXTransEmbeddedFile &data)
+void QTrans::removeData(const QTransEmbeddedFile &data)
 {
 	FXMtxHold h(p, true);
-	QDict<FXTransPrivate::EnglishTrans> &dict=p->dict;
-	FXTransPrivate::EnglishTrans *engtrans;
-	for(QDictIterator<FXTransPrivate::EnglishTrans> it(dict); (engtrans=it.current()); ++it)
+	QDict<QTransPrivate::EnglishTrans> &dict=p->dict;
+	QTransPrivate::EnglishTrans *engtrans;
+	for(QDictIterator<QTransPrivate::EnglishTrans> it(dict); (engtrans=it.current()); ++it)
 	{
-		FXTransPrivate::ModuleTrans *modtrans=engtrans->find(data.staticaddr);
+		QTransPrivate::ModuleTrans *modtrans=engtrans->find(data.staticaddr);
 		if(modtrans)
 		{
 			engtrans->removeRef(modtrans);
@@ -840,28 +840,28 @@ void FXTrans::removeData(const FXTransEmbeddedFile &data)
 	}
 }
 
-void FXTrans::int_translateString(FXString &dest, FXTransString &src, const FXString *langid)
+void QTrans::int_translateString(FXString &dest, QTransString &src, const FXString *langid)
 {
 	FXMtxHold h(p, false);
 	bool gotIt=false;
 	if(!p->noTransFiles)
 	{
-		const FXTransPrivate::EnglishTrans *engtrans=p->dict.find(FXString(src.p->text));
+		const QTransPrivate::EnglishTrans *engtrans=p->dict.find(FXString(src.p->text));
 		if(engtrans)
 		{
 			assert(!engtrans->isEmpty());
-			const FXTransPrivate::ModuleTrans *modtrans=engtrans->find(src.p->text);
+			const QTransPrivate::ModuleTrans *modtrans=engtrans->find(src.p->text);
 			if(!modtrans) modtrans=engtrans->getFirst();
 			if(modtrans)
 			{
 				FXString _langid;
-				if(!langid) { _langid=FXTrans::language()+"_"+FXTrans::country(); langid=&_langid; }
-				const FXTransPrivate::LangTrans *langtrans=modtrans->langs.find(*langid);
-				if(!langtrans) langtrans=modtrans->langs.find(FXTrans::language());
+				if(!langid) { _langid=QTrans::language()+"_"+QTrans::country(); langid=&_langid; }
+				const QTransPrivate::LangTrans *langtrans=modtrans->langs.find(*langid);
+				if(!langtrans) langtrans=modtrans->langs.find(QTrans::language());
 				if(langtrans)
 				{
-					QValueList<FXTransPrivate::LangTransItem>::const_iterator it=langtrans->begin();
-					const FXTransPrivate::LangTransItem *best=&(*it);
+					QValueList<QTransPrivate::LangTransItem>::const_iterator it=langtrans->begin();
+					const QTransPrivate::LangTransItem *best=&(*it);
 					int bestscore=0;
 					for(++it; it!=langtrans->end(); ++it)
 					{
@@ -900,18 +900,18 @@ void FXTrans::int_translateString(FXString &dest, FXTransString &src, const FXSt
 			if(FXApp::instance() && FXApp::instance()->isInitialized())
 #endif
 			if(language()!="EN")
-				fxwarning("FXTrans: Translation for literal '%s' not found\n", src.p->text);
+				fxwarning("QTrans: Translation for literal '%s' not found\n", src.p->text);
 			dest=src.p->text;
 		}
 	}
 	else dest=src.p->text;
 }
 
-FXTrans::~FXTrans()
+QTrans::~QTrans()
 { FXEXCEPTIONDESTRUCT1 {
 	if(embedded)
 	{
-		for(QValueList<FXTransEmbeddedFile>::iterator it=embedded->end(); it!=embedded->begin();)
+		for(QValueList<QTransEmbeddedFile>::iterator it=embedded->end(); it!=embedded->begin();)
 		{
 			--it;
 			removeData(*it);
@@ -922,12 +922,12 @@ FXTrans::~FXTrans()
 	me=0; // Done already, but to be sure
 } FXEXCEPTIONDESTRUCT2; }
 
-FXTransString FXTrans::tr(const char *context, const char *text, const char *hint)
+QTransString QTrans::tr(const char *context, const char *text, const char *hint)
 {
-	return FXTransString(context, text, hint);
+	return QTransString(context, text, hint);
 }
 
-const FXString &FXTrans::language(LanguageType t)
+const FXString &QTrans::language(LanguageType t)
 {
 	if(!me->p->overrides.language.empty())
 		return me->p->overrides.language;
@@ -935,7 +935,7 @@ const FXString &FXTrans::language(LanguageType t)
 		return me->p->language[(int) t];
 }
 
-const FXString &FXTrans::country(CountryType i)
+const FXString &QTrans::country(CountryType i)
 {
 	if(!me->p->overrides.country.empty())
 		return me->p->overrides.country;
@@ -943,7 +943,7 @@ const FXString &FXTrans::country(CountryType i)
 		return me->p->country[(int) i];
 }
 
-void FXTrans::refresh()
+void QTrans::refresh()
 {
 	FXMtxHold h(me->p);
 	FXString iso639, iso3166;
@@ -1000,12 +1000,12 @@ void FXTrans::refresh()
 #endif
 	if(iso639.length()!=2)
 	{
-		fxwarning("FXTrans: setlocale() did not return ISO639 language id - setting to 'en' instead of '%s'\n", iso639.text());
+		fxwarning("QTrans: setlocale() did not return ISO639 language id - setting to 'en' instead of '%s'\n", iso639.text());
 		iso639="en";
 	}
 	if(iso3166.length()!=2)
 	{
-		fxwarning("FXTrans: setlocale() did not return ISO3166 country id - setting to 'eu' instead of '%s'\n", iso3166.text());
+		fxwarning("QTrans: setlocale() did not return ISO3166 country id - setting to 'eu' instead of '%s'\n", iso3166.text());
 		iso3166="eu";
 	}
 	me->p->language[0]=iso639.upper();
@@ -1013,7 +1013,7 @@ void FXTrans::refresh()
 	// TODO: Generate English and local full names of language and country
 }
 
-void FXTrans::overrideLanguage(const FXString &iso639)
+void QTrans::overrideLanguage(const FXString &iso639)
 {
 	FXMtxHold h(me->p);
 	me->p->overrides.language=iso639;
@@ -1022,7 +1022,7 @@ void FXTrans::overrideLanguage(const FXString &iso639)
 	else me->p->overrides.language.upper();
 }
 
-void FXTrans::overrideCountry(const FXString &iso3166)
+void QTrans::overrideCountry(const FXString &iso3166)
 {
 	FXMtxHold h(me->p);
 	me->p->overrides.country=iso3166;
@@ -1031,40 +1031,40 @@ void FXTrans::overrideCountry(const FXString &iso3166)
 	else me->p->overrides.country.upper();
 }
 
-static bool operator<(const FXTrans::ProvidedInfo &a, const FXTrans::ProvidedInfo &b)
+static bool operator<(const QTrans::ProvidedInfo &a, const QTrans::ProvidedInfo &b)
 {
 	if(a.module<b.module) return true;
 	else if(a.language<b.language) return true;
 	else if(a.country<b.country) return true;
 	return false;
 }
-static void addProvidedInfo(QValueList<FXTrans::ProvidedInfo> &ret, FXTrans::ProvidedInfo &newpi)
+static void addProvidedInfo(QValueList<QTrans::ProvidedInfo> &ret, QTrans::ProvidedInfo &newpi)
 {
-	QValueList<FXTrans::ProvidedInfo>::const_iterator it=ret.begin();
+	QValueList<QTrans::ProvidedInfo>::const_iterator it=ret.begin();
 	for(; it!=ret.end(); ++it)
 	{
-		const FXTrans::ProvidedInfo &pi=*it;
+		const QTrans::ProvidedInfo &pi=*it;
 		if(pi.module==newpi.module && pi.language==newpi.language && pi.country==newpi.country)
 			break;
 	}
 	if(it==ret.end()) ret.append(newpi);
 }
-QValueList<FXTrans::ProvidedInfo> FXTrans::provided()
+QValueList<QTrans::ProvidedInfo> QTrans::provided()
 {
 	QValueList<ProvidedInfo> ret;
 	FXMtxHold h(me->p, false);
 	if(!me->p->noTransFiles)
 	{
-		QDictIterator<FXTransPrivate::EnglishTrans> engit(me->p->dict);
-		for(FXTransPrivate::EnglishTrans *engtrans; (engtrans=engit.current()); ++engit)
+		QDictIterator<QTransPrivate::EnglishTrans> engit(me->p->dict);
+		for(QTransPrivate::EnglishTrans *engtrans; (engtrans=engit.current()); ++engit)
 		{
-			QPtrVectorIterator<FXTransPrivate::ModuleTrans> modit(*engtrans);
-			for(FXTransPrivate::ModuleTrans *modtrans; (modtrans=modit.current()); ++modit)
+			QPtrVectorIterator<QTransPrivate::ModuleTrans> modit(*engtrans);
+			for(QTransPrivate::ModuleTrans *modtrans; (modtrans=modit.current()); ++modit)
 			{
 				ProvidedInfo english(modtrans->modulepath, "EN", "");
 				addProvidedInfo(ret, english);
-				QDictIterator<FXTransPrivate::LangTrans> langit(modtrans->langs);
-				for(FXTransPrivate::LangTrans *langtrans; (langtrans=langit.current()); ++langit)
+				QDictIterator<QTransPrivate::LangTrans> langit(modtrans->langs);
+				for(QTransPrivate::LangTrans *langtrans; (langtrans=langit.current()); ++langit)
 				{
 					ProvidedInfo newpi(modtrans->modulepath, langit.currentKey().left(2), langit.currentKey().mid(3,2));
 					addProvidedInfo(ret, newpi);
@@ -1076,20 +1076,20 @@ QValueList<FXTrans::ProvidedInfo> FXTrans::provided()
 	return ret;
 }
 
-void FXTrans::int_registerEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr)
+void QTrans::int_registerEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr)
 {
 	if(!embedded)
 	{
-		FXERRHM(embedded=new QValueList<FXTransEmbeddedFile>);
+		FXERRHM(embedded=new QValueList<QTransEmbeddedFile>);
 	}
-	FXTransEmbeddedFile ef((const FXuchar *) buffer, len, staticaddr);
+	QTransEmbeddedFile ef((const FXuchar *) buffer, len, staticaddr);
 	embedded->append(ef);
 	if(me) me->addData(ef);
 }
 
-void FXTrans::int_deregisterEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr)
+void QTrans::int_deregisterEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr)
 {
-	FXTransEmbeddedFile ef((const FXuchar *) buffer, len, staticaddr);
+	QTransEmbeddedFile ef((const FXuchar *) buffer, len, staticaddr);
 	if(me) me->removeData(ef);
 	embedded->remove(ef);
 	if(embedded->empty())

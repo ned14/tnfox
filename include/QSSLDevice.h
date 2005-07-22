@@ -19,28 +19,28 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXSSLDEVICE_H
-#define FXSSLDEVICE_H
+#ifndef QSSLDEVICE_H
+#define QSSLDEVICE_H
 
-#include "FXIODeviceS.h"
+#include "QIODeviceS.h"
 #include "FXString.h"
 #include "FXSecure.h"
 
 namespace FX {
 
-/*! \file FXSSLDevice.h
+/*! \file QSSLDevice.h
 \brief Defines things used in providing secure data transport
 */
 
 class FXStream;
-class FXSSLDevice;
+class QSSLDevice;
 
 /*! \class FXSSLPKey
 \ingroup security
 \brief A container holding a variable length asymmetric encryption key
 
 This is a generic container of an asymmetric encryption key used
-with FX::FXSSLDevice and FX::FXSSLKey which can be dumped to and from
+with FX::QSSLDevice and FX::FXSSLKey which can be dumped to and from
 storage. Its internal state resides within the FX::Secure namespace
 and thus is automatically zeroed on deletion.
 
@@ -62,7 +62,7 @@ private part alone, hatch it off using publicKey() and privateKey() and
 save just that part.
 
 \note To prevent accidental sending of the private part in an IPC msg,
-FXSSLDevice will not permit encryption using a FXSSLKey containing a
+QSSLDevice will not permit encryption using a FXSSLKey containing a
 private part. This should help you catch accidental programming errors
 which would severely impact security.
 
@@ -81,7 +81,7 @@ a third party before use.
 class FXSSLPKeyPrivate;
 class FXAPI FXSSLPKey
 {
-	friend class FXSSLDevice;
+	friend class QSSLDevice;
 	FXSSLPKeyPrivate *p;
 public:
 	//! Types of asymmetric key
@@ -134,9 +134,9 @@ public:
 	//! Returns true if the public and private parts of the asymmetric key correspond
 	bool verify() const;
 	//! Reads a public or private key in from PEM format data
-	void readFromPEM(FXIODevice *dev);
+	void readFromPEM(QIODevice *dev);
 	//! Writes the public or private key out in PEM format
-	void writeAsPEM(FXIODevice *dev) const;
+	void writeAsPEM(QIODevice *dev) const;
 
 	//! Creates a public key from a previously created string by FX::FXSSLPKey::publicKeyAsString()
 	static FXSSLPKey publicKeyFromString(const FXString &s, KeyType type);
@@ -151,12 +151,12 @@ FXAPI FXStream &operator>>(FXStream &s, FXSSLPKey &i);
 /*! \class FXSSLKey
 \brief A container holding a variable length symmetric encryption key
 
-This is a generic container of a symmetric encryption key used with FX::FXSSLDevice
+This is a generic container of a symmetric encryption key used with FX::QSSLDevice
 which can be dumped to and from storage. Its internal state resides
 within the secure heap and thus is automatically zeroed on deletion.
 
 Furthermore you can optionally choose to encrypt your symmetric key with
-asymmetric encryption. This means that data written out by FX::FXSSLDevice
+asymmetric encryption. This means that data written out by FX::QSSLDevice
 actually contains the very key also needed to decrypt it but obviously,
 in order to decrypt the decryption key you need the private key part of
 the asymmetric pair. Asymmetric keys are stored in a FX::FXSSLPKey.
@@ -217,7 +217,7 @@ If key is not encrypted:
 class FXSSLKeyPrivate;
 class FXAPI FXSSLKey
 {
-	friend class FXSSLDevice;
+	friend class QSSLDevice;
 	FXSSLKeyPrivate *p;
 public:
 	//! Types of symmetric key
@@ -281,7 +281,7 @@ FXAPI FXStream &operator<<(FXStream &s, const FXSSLKey &i);
 //! Reads a symmetric key from stream \em s. Does not alter any existing asymmetric key.
 FXAPI FXStream &operator>>(FXStream &s, FXSSLKey &i);
 
-/*! \class FXSSLDevice
+/*! \class QSSLDevice
 \ingroup security
 \ingroup fiodevices
 \ingroup siodevices
@@ -289,13 +289,13 @@ FXAPI FXStream &operator>>(FXStream &s, FXSSLKey &i);
 
 Thanks to the wonderful flexibility of the OpenSSL encryption library,
 TnFOX can offer completely integrated encryption facilities which can
-work with any FX::FXIODevice. While the most common use will be with
-FX::FXBlkSocket, you could just as easily apply it to file data or
+work with any FX::QIODevice. While the most common use will be with
+FX::QBlkSocket, you could just as easily apply it to file data or
 indeed anything else. Synchronous devices work the full SSL/TLS
 negotiation protocol whereas file devices simply apply symmetric
 or asymmetric encryption based on the FX::FXSSLKey you provide.
 
-FXSSLDevice offers SSL v2/v3 & TLS v1 protocols with RC2, RC4, DES, Blowfish,
+QSSLDevice offers SSL v2/v3 & TLS v1 protocols with RC2, RC4, DES, Blowfish,
 IDEA, 3DES & AES symmetric encryption and RSA asymmetric encryption
 (ie; public-key) to any bit length. Furthermore RSA, Diffie-Hellman and
 DSS authentication methods are available. Within these, you have the
@@ -315,11 +315,11 @@ US say, there they can put you in prison for a very long time.
 for YOU breaking the law in your country or any other country. TnFOX
 merely provides the facilities, it is YOU who chooses how to use them.
 If you do not accept that you take full responsibility for how you
-use this facility, then you cannot use FXSSLDevice
+use this facility, then you cannot use QSSLDevice
 nor compile in OpenSSL support!</b>
 
 More fun again is that various encryption algorithms offered by
-FXSSLDevice are patented in some countries but not in others. The
+QSSLDevice are patented in some countries but not in others. The
 following is a \b non-definitive list and no responsibility is
 taken for the list being remotely accurate:
 <table>
@@ -344,12 +344,12 @@ http://home.ecn.ab.ca/~jsavard/crypto/intro.htm
 or the book "Applied Cryptography" by Bruce Schneier.
 
 <h3>Usage:</h3>
-The first FXSSLDevice created in the process will take the longest
+The first QSSLDevice created in the process will take the longest
 as required data structures are cached in-memory and the random
 number generator seeded with 4096 bits of randomness. Like most
-FX::FXIODevice's, FXSSLDevice is thread-safe[1] though FX::FXSSLKey is not.
+FX::QIODevice's, QSSLDevice is thread-safe[1] though FX::FXSSLKey is not.
 If the OpenSSL library was not available at compile-time, the first
-FXSSLDevice created throws an exception of code FXSSLDEVICE_NOTENABLED.
+QSSLDevice created throws an exception of code QSSLDEVICE_NOTENABLED.
 
 At the time of writing (August 2003), the minimum symmetric
 encryption key length should be 128 bits and the minimum asymmetric
@@ -395,14 +395,14 @@ All encryption methods are weaker if the data they are encrypting has
 something known about it eg; it is HTML or ASCII text. Another source
 of weakness is verbosity - the more data there is to analyse, the easier
 to crack. The simple solution to this is to apply Lempel-Ziv compression
-on the data before encrypting using something like FX::FXGZipDevice.
+on the data before encrypting using something like FX::QGZipDevice.
 See the examples below.
 
 <h4>Randomness:</h4>
 FX::Secure::Randomness is a high quality source of randomness and thus
 can take a very long time to generate 4096 bits. If less than 4096 bits
 is available then to prevent applications just sitting around waiting
-for it, FXSSLDevice uses a
+for it, QSSLDevice uses a
 number of sources of instantaneous entropy to seed the cryptographically
 secure Pseudo-Random Number Generator (PNRG):
 \li On Linux, \c /dev/urandom (FX::Secure::Randomness uses \c /dev/random)
@@ -411,7 +411,7 @@ processes, threads and DLL's currently running; the current foreground
 window handle; the global memory state; the current process id; the
 CryptoAPI's PRNG and the Intel processor's PRNG.
 
-Thereafter with every new FXSSLDevice created, up to 4096 bits of
+Thereafter with every new QSSLDevice created, up to 4096 bits of
 entropy is added from FX::Secure::Randomness to keep the PRNG fresh.
 Every new FXSSLKey or FXSSLPKey also adds up to its bitsize of entropy
 to the PRNG.
@@ -426,7 +426,7 @@ procedure is followed at the start of the connection to agree the best
 available protocol.
 
 If you don't bother with certificates, the default settings of
-FXSSLDevice use anonymous Diffie-Hellman for key exchange using an
+QSSLDevice use anonymous Diffie-Hellman for key exchange using an
 internal list of primes for generation of unique keys.
 A new key is generated per new connection. Obviously this mechanism
 is liable to man-in-the-middle attack (ie; you can't be sure who you're
@@ -446,7 +446,7 @@ for small packet transfers (smaller than 1024 bytes) so bear this in mind.
 [1]: OpenSSL itself is only partially threadsafe - in particular, it is not
 threadsafe when multiple threads use a SSL connection at the same time (which
 unfortunately TnFOX requires as this is what the synchronous i/o model requires).
-FXSSLDevice sets some conservative options in OpenSSL to prevent packet
+QSSLDevice sets some conservative options in OpenSSL to prevent packet
 fragmentation (which would cause reads during writes or writes during reads) and
 also serialises all reads and writes ie; only one read and write may happen
 at once - but both a read and a write concurrently. This appears to be safe
@@ -455,7 +455,7 @@ from testing, but internal changes to OpenSSL may cause future breakage.
 <h4>File-based usage:</h4>
 Most of the focus so far in this documentation has been for encrypting
 communications. However, if you have some data to which you want to
-restrict access, FXSSLDevice can also apply straight off symmetric
+restrict access, QSSLDevice can also apply straight off symmetric
 or asymmetric encryption to raw data.
 
 Asymmetric encryption has been implemented as symmetric encryption
@@ -475,7 +475,7 @@ and both scale well with key bit size (AES is 40% slower with 256 bit
 keys than 128 bit). The other ciphers have been left out as they have
 known weaknesses or are patented.
 
-Strongly consider setting the FX::FXIODeviceFlags::IO_ShredTruncate
+Strongly consider setting the FX::QIODeviceFlags::IO_ShredTruncate
 bit when opening any secure file.
 
 \note Due to limitations within the OpenSSL library, on 32 bit systems data
@@ -514,12 +514,12 @@ Usage is as with all things in TnFOX, ridiculously easy:
 
 Communication-type use (synchronous):
 \code
-FXBlkSocket myserversocket;
+QBlkSocket myserversocket;
 ...
-FXBlkSocket newsocketraw=myserversocket.waitForConnection();
+QBlkSocket newsocketraw=myserversocket.waitForConnection();
 // Perhaps spin off a new thread, or authenticate using FX::FXSRP first
 // You will need a try...catch() block as negotiation may fail
-FXSSLDevice newsocket(&newsocketraw);
+QSSLDevice newsocket(&newsocketraw);
 newsocket.create(newsocketraw.mode());
 newsocket.read(NULL, 0);	// Just negotiate, don't read
 if(newsocket.peerHostNameByCertificate()!=FXNetwork::dnsReverseLookup(newsocketraw.peerAddress())) reject;
@@ -528,8 +528,8 @@ if(newsocket.peerHostNameByCertificate()!=FXNetwork::dnsReverseLookup(newsocketr
 
 File-type use:
 \code
-FXMemMap myfileraw("myencryptedfile.txt");
-FXSSLDevice myfile(&myfileraw);
+QMemMap myfileraw("myencryptedfile.txt");
+QSSLDevice myfile(&myfileraw);
 // Get password from user into FXString mypassword
 myfile.setKey(FXSSLKey(352, FXSSLKey::Blowfish, mypassword));
 myfile.open(IO_ReadOnly);
@@ -537,11 +537,11 @@ myfile.open(IO_ReadOnly);
 \endcode
 
 \code
-FXMemMap myencryptedfile("myencryptedfile.bin");
-FXSSLDevice myfileencryptor(&myencryptedfile);
+QMemMap myencryptedfile("myencryptedfile.bin");
+QSSLDevice myfileencryptor(&myencryptedfile);
 myfileencryptor.setKey(thekey);
-FXGZipDevice myfilecompressor(&myfileencryptor);
-FXIODevice *myfile=&myfilecompressor;
+QGZipDevice myfilecompressor(&myfileencryptor);
+QIODevice *myfile=&myfilecompressor;
 FXStream s(myfile);
 myfile->open(IO_WriteOnly);
 s << "Some text to compress, then encrypt, then write to a memory mapped file";
@@ -553,13 +553,13 @@ asymmetric encryption, here's how you do it:
 \code
 FXSSLPKey &thekey;
 FXSSLPKey pthekey(thekey.publicKey());
-FXMemMap myencryptedfile("myencryptedfile.bin");
-FXSSLDevice myfileencryptor(&myencryptedfile);
+QMemMap myencryptedfile("myencryptedfile.bin");
+QSSLDevice myfileencryptor(&myencryptedfile);
 FXSSLKey tempkey(128, FXSSLKey::AES);
 tempkey.setAsymmetricKey(&pthekey);
 myfileencryptor.setKey(tempkey);
-FXGZipDevice myfilecompressor(&myfileencryptor);
-FXIODevice *myfile=&myfilecompressor;
+QGZipDevice myfilecompressor(&myfileencryptor);
+QIODevice *myfile=&myfilecompressor;
 FXStream s(myfile);
 myfile->open(IO_WriteOnly);
 s << "Some text to compress, then encrypt, then write to a memory mapped file";
@@ -568,13 +568,13 @@ myfile->close();
 To decrypt using asymmetric encryption, indirect via a temporary symmetric key like so:
 \code
 FXSSLPKey &thekey;
-FXSSLDevice &myfileencryptor;
+QSSLDevice &myfileencryptor;
 myfileencryptor.setKey(FXSSLKey().setAsymmetricKey(&thekey));
 ...
 \endcode
 
 <h4>File formats:</h4>
-FXSSLDevice uses a proprietary file format for its secure files.
+QSSLDevice uses a proprietary file format for its secure files.
 Sorry about this, I did look at the OpenPGP file format and
 concluded it was too much hassle. I just wanted a basic secure
 file format with no bells or whistles.
@@ -663,14 +663,14 @@ for use in the OpenSSL Toolkit. (http://www.openssl.org/)
 ... but if OpenSSL support is present in the build of the library you
 use in your end product, then \b you must place the above notice
 in all advertising of your product as per the OpenSSL license. <i>This
-is irrespective of whether you use FXSSLDevice or not!</i>
+is irrespective of whether you use QSSLDevice or not!</i>
 */
-struct FXSSLDevicePrivate;
-class FXAPIR FXSSLDevice : public FXIODeviceS
+struct QSSLDevicePrivate;
+class FXAPIR QSSLDevice : public QIODeviceS
 {
-	FXSSLDevicePrivate *p;
-	FXSSLDevice(const FXSSLDevice &);
-	FXSSLDevice &operator=(const FXSSLDevice &);
+	QSSLDevicePrivate *p;
+	QSSLDevice(const QSSLDevice &);
+	QSSLDevice &operator=(const QSSLDevice &);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 	inline FXDLLLOCAL void int_genEBuffer() const;
 	FXDLLLOCAL void int_xorInEBuffer(char *dest, const char *src, FXuval amount);
@@ -678,13 +678,13 @@ public:
 	/*! Constructs an instance working with encrypted data device \em encrypteddev.
 	Setting enablev2 to false permanently disables the SSL v2 protocol for this
 	device (the default) */
-	FXSSLDevice(FXIODevice *encrypteddev=0, bool enablev2=false);
-	~FXSSLDevice();
+	QSSLDevice(QIODevice *encrypteddev=0, bool enablev2=false);
+	~QSSLDevice();
 
 	//! Returns the encrypted data device being used
-	FXIODevice *encryptedDev() const throw();
+	QIODevice *encryptedDev() const throw();
 	//! Sets the encrypted data device being used. Closes any previously set device
-	void setEncryptedDev(FXIODevice *dev);
+	void setEncryptedDev(QIODevice *dev);
 	//! Returns the key being used to encrypt & decrypt the data (file type devices only)
 	const FXSSLKey &key() const;
 	//! Sets the key being used to encrypt & decrypt the data (file type devices only)
@@ -708,7 +708,7 @@ public:
 	bool usingSSLv3() const;
 	//! True if TLS v1 is currently in use
 	bool usingTLSv1() const;
-	/*! FXSSLDevice retrieves the X509 authentication certificate of the other
+	/*! QSSLDevice retrieves the X509 authentication certificate of the other
 	end of the connection and returns the host name here which you should
 	case-insensitively compare to FX::FXNetwork::dnsReverseLookup() on the IP
 	address of the other end. Note that with non-authenticated protocols, this
@@ -735,7 +735,7 @@ public:
 	virtual void close();
 	virtual void flush();
 	virtual FXfval size() const;
-	//! Note that unlike most FX::FXIODevice's, extending the file sets random data rather than zeros
+	//! Note that unlike most FX::QIODevice's, extending the file sets random data rather than zeros
 	virtual void truncate(FXfval size);
 	virtual FXfval at() const;
 	virtual bool at(FXfval newpos);
@@ -748,14 +748,14 @@ public:
 	virtual FXuval writeBlockTo(FXfval pos, const char *data, FXuval maxlen);
 	virtual int ungetch(int c);
 public:
-	/*! Sets the certificate file to be used for all new FXSSLDevice connections.
+	/*! Sets the certificate file to be used for all new QSSLDevice connections.
 	Will throw an error if the private key does not match the certificate key.
 	*/
 	static void setCertificateFile(const FXString &path);
-	/*! Sets the private key to be used for all new FXSSLDevice connections from
+	/*! Sets the private key to be used for all new QSSLDevice connections from
 	a PEM format file which is optionally encrypted with \em password. You
 	should set this before the certificate file so that it can be checked against it.
-	\note Normally FXSSLDevice generates a random private key, so you don't need
+	\note Normally QSSLDevice generates a random private key, so you don't need
 	to set this before use
 	*/
 	static void setPrivateKeyFile(const FXString &path, const FXString &password);

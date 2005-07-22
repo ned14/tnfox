@@ -22,7 +22,7 @@
 #include <qptrlist.h>
 #include "FXRollback.h"
 #include "FXException.h"
-#include "FXThread.h"
+#include "QThread.h"
 
 namespace FX {
 

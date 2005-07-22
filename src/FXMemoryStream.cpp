@@ -25,7 +25,7 @@
 #include "fxdefs.h"
 #include "FXMemoryStream.h"
 #include "FXException.h"
-#include "FXBuffer.h"
+#include "QBuffer.h"
 #include "qcstring.h"
 
 
@@ -43,7 +43,7 @@ FXMemoryStream::FXMemoryStream(const FXObject* cont) : buffer(0), owns(FALSE), F
 // Open a stream, possibly with an initial data array
 FXbool FXMemoryStream::open(FXStreamDirection save_or_load, FXuchar* data)
 {
-	FXERRHM(buffer=new FXBuffer);
+	FXERRHM(buffer=new QBuffer);
 	setDevice(buffer);
 	if(data)
 	{
@@ -70,7 +70,7 @@ FXbool FXMemoryStream::open(FXStreamDirection save_or_load, FXuchar* data)
 // Open a stream, possibly with initial data array of certain size
 FXbool FXMemoryStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar* data)
 {
-	FXERRHM(buffer=new FXBuffer);
+	FXERRHM(buffer=new QBuffer);
 	setDevice(buffer);
 	if(data)
 	{

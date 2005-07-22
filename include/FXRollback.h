@@ -26,7 +26,7 @@
 
 namespace FX {
 
-class FXMutex;
+class QMutex;
 
 /*! \file FXRollback.h
 \brief Defines classes used in rolling back operations when an error occurs
@@ -160,7 +160,7 @@ protected:
 	mutable bool dismissed;
 	typedef void (FXRollbackBase::*calladdrtype)();
 	calladdrtype calladdr;
-	mutable FXMutex *mutex;
+	mutable QMutex *mutex;
 	virtual FXRollbackBase *copy() const=0;
 public:
 	FXRollbackBase(calladdrtype addr) : dismissed(false), calladdr(addr), mutex(0) { }
@@ -169,9 +169,9 @@ public:
 	//! Dismisses the rollback of the operation (ie; you have finished your operation)
 	void dismiss() const throw() { dismissed=true; }
 	//! Sets a mutex to be locked before an operation is rolled back
-	void setMutex(FXMutex *m) const throw() { mutex=m; }
+	void setMutex(QMutex *m) const throw() { mutex=m; }
 	//! \overload
-	void setMutex(FXMutex &m) const throw() { mutex=&m; }
+	void setMutex(QMutex &m) const throw() { mutex=&m; }
 private:
 	void makeCall();
 

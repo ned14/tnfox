@@ -1,6 +1,6 @@
 /********************************************************************************
 *                                                                               *
-*                  FXAtomicInt and FXMutex implementations                      *
+*                  FXAtomicInt and QMutex implementations                      *
 *                                                                               *
 *********************************************************************************
 *        Copyright (C) 2002-2005 by Niall Douglas.   All Rights Reserved.       *
@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXBEING_INCLUDED_BY_FXTHREAD
+#ifndef FXBEING_INCLUDED_BY_QTHREAD
 #error This file is not supposed to be included by public code
 #endif
 
@@ -81,7 +81,7 @@ extern "C"
 #endif
 
 #ifndef USE_OURMUTEX
-#error Unsupported architecture, please add atomic int support to FXThread.cxx
+#error Unsupported architecture, please add atomic int support to QThread.cxx
 #endif
 
 namespace FX {
@@ -301,7 +301,7 @@ FXMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 }
 FXMUTEX_INLINEP int FXAtomicInt::cmpX(int compare, int newval) throw() { return cmpXI(compare, newval); }
 #if 0
-/* Optimised spin just for FXMutex. This implementation avoids
+/* Optimised spin just for QMutex. This implementation avoids
 costly xchg instructions which are very expensive on the x86 memory
 bus as they effectively hang multiprocessing */
 FXMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
@@ -333,7 +333,7 @@ FXMUTEX_INLINEP void FXShrdMemMutex::lock()
 	FXuint start=(FXINFINITE==timeout) ? 0 : FXProcess::getMsCount();
 	while(lockvar.swapI(1) && (FXINFINITE==timeout || FXProcess::getMsCount()-start<timeout))
 #ifndef FX_SMPBUILD
-		FXThread::yield()
+		QThread::yield()
 #endif
 		;
 }
@@ -345,7 +345,7 @@ FXMUTEX_INLINEP bool FXShrdMemMutex::tryLock()
 
 /**************************************************************************************************************/
 
-namespace FXMutexImpl {
+namespace QMutexImpl {
 
 /* On POSIX, a more efficient mutex is one which avoids calling the kernel.
 If MUTEX_USESEMA is defined, it uses a POSIX semaphore like an OS/2 event to
@@ -358,7 +358,7 @@ save on recursion overheads and get spin counts.
 #define MUTEX_USESEMA
 #endif
 
-/* 23rd June 2004 ned: Testing shows that a lot of the cost of using FXMutex is
+/* 23rd June 2004 ned: Testing shows that a lot of the cost of using QMutex is
 creating and deleting the kernel wait object. Therefore cache instances here.
 */
 class FXDLLLOCAL KernelWaitObjectCache
@@ -440,40 +440,40 @@ extern FXMUTEX_GLOBALS_FXAPI KernelWaitObjectCache waitObjectCache;
 extern FXMUTEX_GLOBALS_FXAPI bool yieldAfterLock;
 extern FXMUTEX_GLOBALS_FXAPI FXuint systemProcessors;
 
-} // namespace FXMutexImpl
+} // namespace QMutexImpl
 
-struct FXDLLLOCAL FXMutexPrivate
+struct FXDLLLOCAL QMutexPrivate
 {
 #ifdef USE_OURMUTEX
 	FXAtomicInt lockCount, wakeSema;
 	FXulong threadId;
 	FXuint recurseCount, spinCount;
 #ifdef USE_WINAPI
-	FXMutexImpl::KernelWaitObjectCache::Entry *wc;
+	QMutexImpl::KernelWaitObjectCache::Entry *wc;
 #endif
 #ifdef USE_POSIX
-	FXMutexImpl::KernelWaitObjectCache::Entry *sema;
+	QMutexImpl::KernelWaitObjectCache::Entry *sema;
 #endif
 #elif defined(USE_POSIX)
-	FXMutexImpl::KernelWaitObjectCache::Entry *m;
+	QMutexImpl::KernelWaitObjectCache::Entry *m;
 #endif
 };
 
-FXMUTEX_INLINEP FXMutex::FXMutex(FXuint spinc) : p(0)
+FXMUTEX_INLINEP QMutex::QMutex(FXuint spinc) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXMutexPrivate);
+	FXERRHM(p=new QMutexPrivate);
 #ifdef USE_OURMUTEX
 	p->lockCount.set(-1);
 	p->wakeSema.set(0);
 	p->threadId=p->recurseCount=0;
-	if(!FXMutexImpl::systemProcessors)
-		FXMutexImpl::systemProcessors=FXProcess::noOfProcessors();
+	if(!QMutexImpl::systemProcessors)
+		QMutexImpl::systemProcessors=FXProcess::noOfProcessors();
 	p->spinCount=spinc; //(systemProcessors>1) ? spinc : 0;
 #ifdef USE_WINAPI
-	if(!(p->wc=FXMutexImpl::waitObjectCache.fetch()))
+	if(!(p->wc=QMutexImpl::waitObjectCache.fetch()))
 	{
-		FXERRHM(p->wc=new FXMutexImpl::KernelWaitObjectCache::Entry);
+		FXERRHM(p->wc=new QMutexImpl::KernelWaitObjectCache::Entry);
 		FXRBOp unwc=FXRBNew(p->wc);
 		FXERRHWIN(p->wc->wo=CreateEvent(NULL, FALSE, FALSE, NULL));
 		unwc.dismiss();
@@ -481,17 +481,17 @@ FXMUTEX_INLINEP FXMutex::FXMutex(FXuint spinc) : p(0)
 #endif
 #ifdef USE_POSIX
 #ifdef MUTEX_USESEMA
-	if(!(p->sema=FXMutexImpl::waitObjectCache.fetch()))
+	if(!(p->sema=QMutexImpl::waitObjectCache.fetch()))
 	{
-		FXERRHM(p->sema=new FXMutexImpl::KernelWaitObjectCache::Entry);
+		FXERRHM(p->sema=new QMutexImpl::KernelWaitObjectCache::Entry);
 		FXRBOp unsema=FXRBNew(p->sema);
 		FXERRHOS(sem_init(&p->sema->wo, 0, 0));
 		unsema.dismiss();
 	}
 #else
-	if(!(p->sema=FXMutexImpl::waitObjectCache.fetch()))
+	if(!(p->sema=QMutexImpl::waitObjectCache.fetch()))
 	{
-		FXERRHM(p->sema=new FXMutexImpl::KernelWaitObjectCache::Entry);
+		FXERRHM(p->sema=new QMutexImpl::KernelWaitObjectCache::Entry);
 		FXRBOp unsema=FXRBNew(p->sema);
 		FXERRHOS(pthread_mutex_init(&p->sema->wo, NULL));
 		unsema.dismiss();
@@ -514,32 +514,32 @@ FXMUTEX_INLINEP FXMutex::FXMutex(FXuint spinc) : p(0)
 	unconstr.dismiss();
 }
 
-FXMUTEX_INLINEP FXMutex::~FXMutex()
+FXMUTEX_INLINEP QMutex::~QMutex()
 { FXEXCEPTIONDESTRUCT1 {
 	if(p)
 	{	// Force exception if something else uses us after now
-		FXMutexPrivate *_p=p;
+		QMutexPrivate *_p=p;
 		p=0;
 #ifdef USE_OURMUTEX
 #ifdef USE_WINAPI
 		if(_p->wc && _p->wc->wo)
 		{
 			FXERRHWIN(ResetEvent(_p->wc->wo));
-			FXMutexImpl::waitObjectCache.addFreed(_p->wc);
+			QMutexImpl::waitObjectCache.addFreed(_p->wc);
 			_p->wc=0;
 		}
 #endif
 #ifdef USE_POSIX
 		if(_p->sema)
 		{
-			FXMutexImpl::waitObjectCache.addFreed(_p->sema);
+			QMutexImpl::waitObjectCache.addFreed(_p->sema);
 			_p->sema=0;
 		}
 #endif
 #elif defined(USE_POSIX)
 		if(_p->m)
 		{
-			FXMutexImpl::waitObjectCache.addFreed(_p->m);
+			QMutexImpl::waitObjectCache.addFreed(_p->m);
 			p->m=0;
 		}
 #endif
@@ -547,28 +547,28 @@ FXMUTEX_INLINEP FXMutex::~FXMutex()
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
-FXMUTEX_INLINEP bool FXMutex::isLocked() const
+FXMUTEX_INLINEP bool QMutex::isLocked() const
 {
 	return p->lockCount>=0;
 }
 
-FXMUTEX_INLINEP FXuint FXMutex::spinCount() const
+FXMUTEX_INLINEP FXuint QMutex::spinCount() const
 {
 	return p->spinCount;
 }
 
-FXMUTEX_INLINEP void FXMutex::setSpinCount(FXuint c)
+FXMUTEX_INLINEP void QMutex::setSpinCount(FXuint c)
 {
 	p->spinCount=c;
 }
 
-FXMUTEX_INLINEI void FXMutex::int_lock()
+FXMUTEX_INLINEI void QMutex::int_lock()
 {
 	assert(this);
 	assert(p);
 	if(!p) return;
 #ifdef USE_OURMUTEX
-	FXulong myid=FXThread::id();
+	FXulong myid=QThread::id();
 	if(!p->lockCount.finc())
 	{	// Nothing owns me
 		assert(p->threadId==0);
@@ -597,7 +597,7 @@ FXMUTEX_INLINEI void FXMutex::int_lock()
 			{
 				for(FXuint n=0; n<p->spinCount; n++)
 				{
-					if(1==FXMutexImpl::systemProcessors)
+					if(1==QMutexImpl::systemProcessors)
 					{	// Always give up remaining time slice on uniprocessor machines
 #ifdef USE_WINAPI
 						Sleep(0);
@@ -620,7 +620,7 @@ FXMUTEX_INLINEI void FXMutex::int_lock()
 					WaitForSingleObject(p->wc->wo, INFINITE);
 #endif
 #if defined(USE_POSIX) && defined(MUTEX_USESEMA)
-					FXThread *c=FXThread::current();
+					QThread *c=QThread::current();
 					if(c) c->disableTermination();
 					sem_wait(&p->sema->wo);
 					if(c) c->enableTermination();
@@ -630,7 +630,7 @@ FXMUTEX_INLINEI void FXMutex::int_lock()
 #if defined(USE_POSIX) && !defined(MUTEX_USESEMA)
 			pthread_mutex_lock(&p->sema->wo);
 #endif
-			//fxmessage(FXString("%1 %6 lock lc=%2, rc=%3, kc=%4, ti=%5\n").arg(FXThread::id(),0, 16).arg(p->lockCount).arg(p->recurseCount).arg(p->kernelCount).arg(p->threadId, 0, 16).arg((FXuint)this,0,16).text());
+			//fxmessage(FXString("%1 %6 lock lc=%2, rc=%3, kc=%4, ti=%5\n").arg(QThread::id(),0, 16).arg(p->lockCount).arg(p->recurseCount).arg(p->kernelCount).arg(p->threadId, 0, 16).arg((FXuint)this,0,16).text());
 			{	// Nothing owns me
 				assert(p->threadId==0);
 				p->threadId=myid;
@@ -642,11 +642,11 @@ FXMUTEX_INLINEI void FXMutex::int_lock()
 #elif defined(USE_POSIX)
 	FXERRHOS(pthread_mutex_lock(&p->m->wo));
 #endif
-	if(FXMutexImpl::yieldAfterLock) FXThread::yield();
+	if(QMutexImpl::yieldAfterLock) QThread::yield();
 }
-FXMUTEX_INLINEP void FXMutex::lock() { int_lock(); }
+FXMUTEX_INLINEP void QMutex::lock() { int_lock(); }
 
-FXMUTEX_INLINEI void FXMutex::int_unlock()
+FXMUTEX_INLINEI void QMutex::int_unlock()
 {
 	assert(this);
 	assert(p);
@@ -660,12 +660,12 @@ FXMUTEX_INLINEI void FXMutex::int_unlock()
 	else
 	{
 #ifdef DEBUG
-		FXulong myid=FXThread::id();	// For debug knowledge only
+		FXulong myid=QThread::id();	// For debug knowledge only
 		if(myid && p->threadId)
-			FXERRH(FXThread::id()==p->threadId, "FXMutex::unlock() performed by thread which did not own mutex", FXMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
+			FXERRH(QThread::id()==p->threadId, "QMutex::unlock() performed by thread which did not own mutex", FXMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 		p->threadId=0;
-		//fxmessage(FXString("%1 %6 unlock lc=%2, rc=%3, kc=%4, ti=%5\n").arg(FXThread::id(),0, 16).arg(p->lockCount).arg(p->recurseCount).arg(p->kernelCount).arg(p->threadId, 0, 16).arg((FXuint)this,0,16).text());
+		//fxmessage(FXString("%1 %6 unlock lc=%2, rc=%3, kc=%4, ti=%5\n").arg(QThread::id(),0, 16).arg(p->lockCount).arg(p->recurseCount).arg(p->kernelCount).arg(p->threadId, 0, 16).arg((FXuint)this,0,16).text());
 		if(p->lockCount.fdec()>=0)
 		{	// Others waiting
 			p->wakeSema.set(1);	// Wake either a spinner or sleeper
@@ -684,12 +684,12 @@ FXMUTEX_INLINEI void FXMutex::int_unlock()
 	FXERRHOS(pthread_mutex_unlock(&p->m->wo));
 #endif
 }
-FXMUTEX_INLINEP void FXMutex::unlock() { int_unlock(); }
+FXMUTEX_INLINEP void QMutex::unlock() { int_unlock(); }
 
-FXMUTEX_INLINEP bool FXMutex::tryLock()
+FXMUTEX_INLINEP bool QMutex::tryLock()
 {
 #ifdef USE_OURMUTEX
-	FXulong myid=FXThread::id();
+	FXulong myid=QThread::id();
 	if(!p->lockCount.finc())
 	{	// Nothing owns me
 		assert(p->threadId==0);
@@ -717,10 +717,10 @@ FXMUTEX_INLINEP bool FXMutex::tryLock()
 #endif
 }
 
-FXMUTEX_INLINEP bool FXMutex::setMutexDebugYield(bool v)
+FXMUTEX_INLINEP bool QMutex::setMutexDebugYield(bool v)
 {
-	bool old=FXMutexImpl::yieldAfterLock;
-	FXMutexImpl::yieldAfterLock=v;
+	bool old=QMutexImpl::yieldAfterLock;
+	QMutexImpl::yieldAfterLock=v;
 	return old;
 }
 

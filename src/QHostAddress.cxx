@@ -20,7 +20,7 @@
 ********************************************************************************/
 
 #include "fxdefs.h"
-#include "FXHostAddress.h"
+#include "QHostAddress.h"
 #include "FXString.h"
 #include "FXException.h"
 #include "FXStream.h"
@@ -30,55 +30,55 @@
 
 namespace FX {
 
-struct FXDLLLOCAL FXHostAddressPrivate
+struct FXDLLLOCAL QHostAddressPrivate
 {
 	bool isIPv6, isLoopback, isNull;
 	FXuint IPv4;
 	FXuchar IPv6[16];
-	FXHostAddressPrivate() : isIPv6(false), isLoopback(false), isNull(true), IPv4(0)
+	QHostAddressPrivate() : isIPv6(false), isLoopback(false), isNull(true), IPv4(0)
 	{
 		memset(IPv6, 0, sizeof(IPv6));
 	}
 };
 
-FXHostAddress::FXHostAddress() : p(0)
+QHostAddress::QHostAddress() : p(0)
 {
-	FXERRHM(p=new FXHostAddressPrivate);
+	FXERRHM(p=new QHostAddressPrivate);
 }
 
-FXHostAddress::FXHostAddress(FXuint ip4addr) : p(0)
+QHostAddress::QHostAddress(FXuint ip4addr) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXHostAddressPrivate);
+	FXERRHM(p=new QHostAddressPrivate);
 	setAddress(ip4addr);
 	unconstr.dismiss();
 }
 
-FXHostAddress::FXHostAddress(const FXuchar *ip6addr) : p(0)
+QHostAddress::QHostAddress(const FXuchar *ip6addr) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXHostAddressPrivate);
+	FXERRHM(p=new QHostAddressPrivate);
 	setAddress(ip6addr);
 	unconstr.dismiss();
 }
 
-FXHostAddress::FXHostAddress(const FXHostAddress &o) : p(0)
+QHostAddress::QHostAddress(const QHostAddress &o) : p(0)
 {
-	FXERRHM(p=new FXHostAddressPrivate(*o.p));
+	FXERRHM(p=new QHostAddressPrivate(*o.p));
 }
 
-FXHostAddress &FXHostAddress::operator=(const FXHostAddress &o)
+QHostAddress &QHostAddress::operator=(const QHostAddress &o)
 {
 	*p=*o.p;
 	return *this;
 }
 
-FXHostAddress::~FXHostAddress()
+QHostAddress::~QHostAddress()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-bool FXHostAddress::operator==(const FXHostAddress &o) const
+bool QHostAddress::operator==(const QHostAddress &o) const
 {
 	if((p->isLoopback || p->isNull) && (o.p->isLoopback || o.p->isNull)) return true;
 	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4==o.p->IPv4);
@@ -86,7 +86,7 @@ bool FXHostAddress::operator==(const FXHostAddress &o) const
 	return (0==memcmp(p->IPv6, o.p->IPv6, sizeof(p->IPv6)));
 }
 
-void FXHostAddress::setAddress(FXuint ip4addr)
+void QHostAddress::setAddress(FXuint ip4addr)
 {
 	p->isIPv6=false;
 	p->isLoopback=(0x7f000001==ip4addr);
@@ -105,7 +105,7 @@ void FXHostAddress::setAddress(FXuint ip4addr)
 	}
 }
 
-void FXHostAddress::setAddress(const FXuchar *ip6addr)
+void QHostAddress::setAddress(const FXuchar *ip6addr)
 {
 	p->isIPv6=true;
 	p->isLoopback=true;
@@ -132,7 +132,7 @@ void FXHostAddress::setAddress(const FXuchar *ip6addr)
 	else p->IPv4=0;
 }
 
-bool FXHostAddress::setAddress(const FXString &str)
+bool QHostAddress::setAddress(const FXString &str)
 {
 	if(3==str.count('.'))
 	{	// IPv4
@@ -180,32 +180,32 @@ bool FXHostAddress::setAddress(const FXString &str)
 	return true;
 }
 
-bool FXHostAddress::isNull() const
+bool QHostAddress::isNull() const
 {
 	return p->isNull;
 }
 
-bool FXHostAddress::isIp4Addr() const
+bool QHostAddress::isIp4Addr() const
 {
 	return !p->isIPv6;
 }
 
-FXuint FXHostAddress::ip4Addr() const
+FXuint QHostAddress::ip4Addr() const
 {
 	return p->IPv4;
 }
 
-bool FXHostAddress::isIp6Addr() const
+bool QHostAddress::isIp6Addr() const
 {
 	return p->isIPv6;
 }
 
-const FXuchar *FXHostAddress::ip6Addr() const
+const FXuchar *QHostAddress::ip6Addr() const
 {
 	return p->IPv6;
 }
 
-FXString FXHostAddress::toString() const
+FXString QHostAddress::toString() const
 {
 	FXString ret;
 	if(p->isIPv6)
@@ -238,12 +238,12 @@ FXString FXHostAddress::toString() const
 	return ret;
 }
 
-bool FXHostAddress::isLocalMachine() const
+bool QHostAddress::isLocalMachine() const
 {
 	return p->isLoopback || p->isNull;
 }
 
-FXStream &operator<<(FXStream &s, const FXHostAddress &i)
+FXStream &operator<<(FXStream &s, const QHostAddress &i)
 {
 	FXuchar v6=i.p->isIPv6;
 	s << v6;
@@ -254,7 +254,7 @@ FXStream &operator<<(FXStream &s, const FXHostAddress &i)
 	return s;
 }
 
-FXStream &operator>>(FXStream &s, FXHostAddress &i)
+FXStream &operator>>(FXStream &s, QHostAddress &i)
 {
 	FXuchar v6;
 	s >> v6;

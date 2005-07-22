@@ -183,7 +183,7 @@ namespace Secure
 	\note This module requires support for the OpenSSL library to be compiled in
 	*/
 	class FXAPI PRandomness
-	{	// Defined in FXSSLDevice
+	{	// Defined in QSSLDevice
 		PRandomness();
 		PRandomness(const PRandomness &);
 		PRandomness &operator=(const PRandomness &);

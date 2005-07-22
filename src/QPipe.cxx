@@ -20,11 +20,11 @@
 ********************************************************************************/
 
 #include "xincs.h"
-#include "FXPipe.h"
+#include "QPipe.h"
 #include "FXString.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXException.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXProcess.h"
 #include "FXFile.h"
 #include "FXRollback.h"
@@ -54,7 +54,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-struct FXDLLLOCAL FXPipePrivate : public FXMutex
+struct FXDLLLOCAL QPipePrivate : public QMutex
 {
 	FXString pipename;
 	FXACL acl;
@@ -64,18 +64,18 @@ struct FXDLLLOCAL FXPipePrivate : public FXMutex
 	int inprogress;			// =0 not in progress, =1 connecting =2 reading =3 just opened
 	HANDLE readh, writeh;
 	OVERLAPPED ol;
-	FXPipePrivate(bool deepPipe) : acl(FXACL::Pipe), bufferLength(deepPipe ? WINDEEPPIPELEN : WINMAXATOMICLEN), readh(0), writeh(0), FXMutex() { memset(&ol, 0, sizeof(ol)); }
+	QPipePrivate(bool deepPipe) : acl(FXACL::Pipe), bufferLength(deepPipe ? WINDEEPPIPELEN : WINMAXATOMICLEN), readh(0), writeh(0), QMutex() { memset(&ol, 0, sizeof(ol)); }
 #endif
 #ifdef USE_POSIX
 	int readh, writeh;
-	FXPipePrivate(bool deepPipe) : acl(FXACL::Pipe),
+	QPipePrivate(bool deepPipe) : acl(FXACL::Pipe),
 #ifdef __FreeBSD__
 		// PIPE_BUF lies on FreeBSD :(
 		bufferLength(16384),	// =PIPE_SIZE from sys/pipe.h, could even go to 64Kb (BIG_PIPE_SIZE)
 #else
 		bufferLength(PIPE_BUF),
 #endif
-		readh(0), writeh(0), FXMutex() { }
+		readh(0), writeh(0), QMutex() { }
 #endif
 	void makePerms()
 	{
@@ -83,7 +83,7 @@ struct FXDLLLOCAL FXPipePrivate : public FXMutex
 	}
 };
 
-void *FXPipe::int_getOSHandle() const
+void *QPipe::int_getOSHandle() const
 {
 #ifdef USE_WINAPI
 	return (void *) p->ol.hEvent;
@@ -93,7 +93,7 @@ void *FXPipe::int_getOSHandle() const
 #endif
 }
 
-void FXPipe::int_hack_makeWriteNonblocking() const
+void QPipe::int_hack_makeWriteNonblocking() const
 {
 #ifdef USE_POSIX
 	if(p->writeh)
@@ -103,18 +103,18 @@ void FXPipe::int_hack_makeWriteNonblocking() const
 #endif
 }
 
-FXPipe::FXPipe() : p(0), creator(false), FXIODeviceS()
+QPipe::QPipe() : p(0), creator(false), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXPipePrivate(false));
+	FXERRHM(p=new QPipePrivate(false));
 	p->makePerms();
 	unconstr.dismiss();
 }
 
-FXPipe::FXPipe(const FXString &name, bool isDeepPipe) : p(0), creator(false), FXIODeviceS()
+QPipe::QPipe(const FXString &name, bool isDeepPipe) : p(0), creator(false), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXPipePrivate(isDeepPipe));
+	FXERRHM(p=new QPipePrivate(isDeepPipe));
 	p->makePerms();
 	if(name.empty())
 		setUnique(true);
@@ -123,18 +123,18 @@ FXPipe::FXPipe(const FXString &name, bool isDeepPipe) : p(0), creator(false), FX
 	unconstr.dismiss();
 }
 
-FXPipe::~FXPipe()
+QPipe::~QPipe()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-const FXString &FXPipe::name() const
+const FXString &QPipe::name() const
 {
 	return p->pipename;
 }
 
-void FXPipe::setName(const FXString &name)
+void QPipe::setName(const FXString &name)
 {
 	close();
 	p->pipename=name;
@@ -162,7 +162,7 @@ duplex pipe into two seperate ones, each dedicated to one direction. And yes, th
 
 It appears duplex pipes are broken on Windows NT all versions :(
 */
-bool FXPipe::create(FXuint mode)
+bool QPipe::create(FXuint mode)
 {
 	FXMtxHold h(p);
 	close();
@@ -247,12 +247,12 @@ bool FXPipe::create(FXuint mode)
 	return true;
 }
 
-bool FXPipe::open(FXuint mode)
+bool QPipe::open(FXuint mode)
 {
 	FXMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXPipe", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QPipe", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -295,7 +295,7 @@ bool FXPipe::open(FXuint mode)
 		if(mode & IO_ReadOnly)
 		{
 			FXString readname(fullname+'w');
-			if(!FXFile::exists(readname)) FXERRGNF(FXTrans::tr("FXPipe", "Pipe not found"), 0);
+			if(!FXFile::exists(readname)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
 			p->acl=FXACL(readname, FXACL::Pipe); doneACL=true;
 #ifdef HAVE_WIDEUNISTD
 			FXERRHOSFN(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0), readname);
@@ -306,7 +306,7 @@ bool FXPipe::open(FXuint mode)
 		if(mode & IO_WriteOnly)
 		{
 			FXString writename(fullname+'r');
-			if(!FXFile::exists(writename)) FXERRGNF(FXTrans::tr("FXPipe", "Pipe not found"), 0);
+			if(!FXFile::exists(writename)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
 			if(!doneACL) p->acl=FXACL(writename, FXACL::Pipe);
 		}
 #endif
@@ -325,12 +325,12 @@ doesn't help because a thread can only cancel what it itself started.
 
 Thanks to Microsoft for a completely wank system! :(
 */
-void FXPipe::close()
+void QPipe::close()
 {
 	if(p)
 	{
 		FXMtxHold h(p);
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 #ifdef USE_WINAPI
 		if(p->connected)
 		{
@@ -397,12 +397,12 @@ void FXPipe::close()
 	}
 }
 
-void FXPipe::flush()
+void QPipe::flush()
 {
 	FXMtxHold h(p);
 	if(isOpen() && isWriteable())
 	{
-		FXThread_DTHold dth;
+		QThread_DTHold dth;
 #ifdef USE_WINAPI
 		if(p->connected)
 			FXERRHWIN(FlushFileBuffers(p->writeh));
@@ -415,7 +415,7 @@ void FXPipe::flush()
 	}
 }
 
-bool FXPipe::reset()
+bool QPipe::reset()
 {
 	FXuint flgs=flags();
 	close();
@@ -444,7 +444,7 @@ bool FXPipe::reset()
 	return (creator) ? create(flgs) : open(flgs);
 }
 
-FXfval FXPipe::size() const
+FXfval QPipe::size() const
 {
 	FXMtxHold h(p);
 	FXfval waiting=0;
@@ -456,7 +456,7 @@ FXfval FXPipe::size() const
 	waiting=(FXfval) dwaiting;
 #endif
 #ifdef USE_POSIX
-	FXThread_DTHold dth;
+	QThread_DTHold dth;
 	struct pollfd pfd={0};
 	pfd.fd=p->readh;
 	pfd.events=POLLIN;
@@ -466,33 +466,33 @@ FXfval FXPipe::size() const
 	return waiting;
 }
 
-void FXPipe::truncate(FXfval) { }
-FXfval FXPipe::at() const { return 0; }
-bool FXPipe::at(FXfval) { return false; }
-bool FXPipe::atEnd() const { return size()==0; }
+void QPipe::truncate(FXfval) { }
+FXfval QPipe::at() const { return 0; }
+bool QPipe::at(FXfval) { return false; }
+bool QPipe::atEnd() const { return size()==0; }
 
-const FXACL &FXPipe::permissions() const
+const FXACL &QPipe::permissions() const
 {
 	return p->acl;
 }
-void FXPipe::setPermissions(const FXACL &perms)
+void QPipe::setPermissions(const FXACL &perms)
 {
 	if(isOpen()) { perms.writeTo(p->readh); perms.writeTo(p->writeh); }
 	p->acl=perms;
 }
-FXACL FXPipe::permissions(const FXString &name)
+FXACL QPipe::permissions(const FXString &name)
 {
 	return FXACL(makeFullPath(name), FXACL::Pipe);
 }
-void FXPipe::setPermissions(const FXString &name, const FXACL &perms)
+void QPipe::setPermissions(const FXString &name, const FXACL &perms)
 {
 	perms.writeTo(makeFullPath(name));
 }
 
-FXuval FXPipe::readBlock(char *data, FXuval maxlen)
+FXuval QPipe::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!FXIODevice::isReadable()) FXERRGIO(FXTrans::tr("FXPipe", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QPipe", "Not open for reading"));
 	if(isOpen())
 	{
 		FXuval readed=0;
@@ -549,7 +549,7 @@ doread:
 		{
 			//u32 before=Support_GetMsCount();
 			h.unlock();
-			HANDLE hs[2]; hs[0]=p->ol.hEvent; hs[1]=FXThread::int_cancelWaiterHandle();
+			HANDLE hs[2]; hs[0]=p->ol.hEvent; hs[1]=QThread::int_cancelWaiterHandle();
 			ret=WaitForMultipleObjects(2, hs, FALSE, INFINITE);
 			h.relock();
 			//QString temp("Thread 0x%1 WaitForSingleObject returned after %2 ms with data=%3\n");
@@ -558,7 +558,7 @@ doread:
 			{
 				FXERRHWIN(CancelIo(p->readh));
 				h.unlock();
-				FXThread::current()->checkForTerminate();
+				QThread::current()->checkForTerminate();
 			}
 			else if(WAIT_OBJECT_0!=ret) errhandle=true;
 			else if(!(ret=GetOverlappedResult(p->readh, &p->ol, &bread, FALSE)))
@@ -622,10 +622,10 @@ doread:
 	return 0;
 }
 
-FXuval FXPipe::writeBlock(const char *data, FXuval maxlen)
+FXuval QPipe::writeBlock(const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXPipe", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QPipe", "Not open for writing"));
 	if(isOpen())
 	{
 		FXuval written;
@@ -634,7 +634,7 @@ FXuval FXPipe::writeBlock(const char *data, FXuval maxlen)
 		h.unlock();
 		BOOL ret=WriteFile(p->writeh, data, (DWORD) maxlen, &bwritten, NULL);
 		DWORD getlasterror=GetLastError();
-		FXThread::current()->checkForTerminate();
+		QThread::current()->checkForTerminate();
 		h.relock();
 		FXERRHWIN2(ret, getlasterror);
 		written=(FXuval) bwritten;
@@ -652,12 +652,12 @@ FXuval FXPipe::writeBlock(const char *data, FXuval maxlen)
 			h.relock();
 			FXERRHOSFN(p->writeh, writename);
 		}
-		FXIODeviceS_SignalHandler::lockWrite();
+		QIODeviceS_SignalHandler::lockWrite();
 		h.unlock();
 		written=::write(p->writeh, data, maxlen);
 		h.relock();
 		FXERRHIO(written);
-		if(FXIODeviceS_SignalHandler::unlockWrite())		// Nasty this
+		if(QIODeviceS_SignalHandler::unlockWrite())		// Nasty this
 			FXERRGCONLOST("Broken pipe", 0);
 #endif
 		if(isRaw()) flush();
@@ -666,12 +666,12 @@ FXuval FXPipe::writeBlock(const char *data, FXuval maxlen)
 	return 0;
 }
 
-int FXPipe::ungetch(int c)
+int QPipe::ungetch(int c)
 {
 	return -1;
 }
 
-FXuval FXPipe::maxAtomicLength()
+FXuval QPipe::maxAtomicLength()
 {
 	return p->bufferLength;
 }

@@ -19,22 +19,22 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXFILEINFO_H
-#define FXFILEINFO_H
+#ifndef QFILEINFO_H
+#define QFILEINFO_H
 
 #include "FXString.h"
-#include "FXDir.h"
+#include "QDir.h"
 #include "FXACL.h"
 
 namespace FX {
 
-/*! \file FXFileInfo.h
+/*! \file QFileInfo.h
 \brief Defines classes used to detail a file entry
 */
 
 class FXFile;
 
-/*! \class FXFileInfo
+/*! \class QFileInfo
 \brief Provides detailed information about an entry in the file system (Qt compatible)
 
 While most of what is offered by this class can be done manually via the static methods
@@ -48,43 +48,43 @@ maintained - however, the old system of permissions has been replaced with an AC
 one so that NT file permissions are available. On Linux or BSD, suitable entries are
 created to reflect the much simpler POSIX security model though it could be easily
 extended to reflect the ACL security implemented by SE-Linux. For these reasons, I
-recommend you use FXFileInfo over FXFile directly (it's just as efficient at worst as
+recommend you use QFileInfo over FXFile directly (it's just as efficient at worst as
 the original FOX code does a \c stat() even where on Win32 there's a separate faster
 call - except for \c isFile() and \c isDirectory()). Note that if FX::FXACL throws an
 exception when reading the file entry's security info (this could happen if the file
-entry does not give you permission to read its ACL), FXFileInfo will simply create an
+entry does not give you permission to read its ACL), QFileInfo will simply create an
 empty ACL belonging to FX::FXACLEntity::root() for that file entry.
 
-If you wish to enumerate the contents of a directory, please see FX::FXDir. The
+If you wish to enumerate the contents of a directory, please see FX::QDir. The
 default operators <, > and == compare by case insensitive name.
 */
-struct FXFileInfoPrivate;
-class FXAPIR FXFileInfo
+struct QFileInfoPrivate;
+class FXAPIR QFileInfo
 {
-	FXFileInfoPrivate *p;
+	QFileInfoPrivate *p;
 public:
 	//! Constructs a new instance
-	FXFileInfo();
+	QFileInfo();
 	//! Constructs a new instance detailing \em path
-	FXFileInfo(const FXString &path);
+	QFileInfo(const FXString &path);
 	//! Constructs a new instance detailing the file used by the FXFile
-	FXFileInfo(const FXFile &file);
+	QFileInfo(const FXFile &file);
 	//! Constructs a new instance detailing the file \em leafname within directory \em dir
-	FXFileInfo(const FXDir &dir, const FXString &leafname);
-	FXFileInfo(const FXFileInfo &o);
-	FXFileInfo &operator=(const FXFileInfo &o);
-	~FXFileInfo();
-	bool operator<(const FXFileInfo &o) const;
-	bool operator==(const FXFileInfo &o) const;
-	bool operator!=(const FXFileInfo &o) const { return !(*this==o); }
-	bool operator>(const FXFileInfo &o) const;
+	QFileInfo(const QDir &dir, const FXString &leafname);
+	QFileInfo(const QFileInfo &o);
+	QFileInfo &operator=(const QFileInfo &o);
+	~QFileInfo();
+	bool operator<(const QFileInfo &o) const;
+	bool operator==(const QFileInfo &o) const;
+	bool operator!=(const QFileInfo &o) const { return !(*this==o); }
+	bool operator>(const QFileInfo &o) const;
 
 	//! Sets the detail to use \em path
 	void setFile(const FXString &path);
 	//! Sets the detail to use \em file
 	void setFile(const FXFile &file);
 	//! Sets the detail to use \em leafname in \em dir
-	void setFile(const FXDir &dir, const FXString &leafname);
+	void setFile(const QDir &dir, const FXString &leafname);
 	//! Returns true if the filing system entry exists
 	bool exists() const;
 	//! Refreshes the information if caching is on
@@ -109,8 +109,8 @@ public:
 	FXString extension(bool complete=true) const;
 	//! Returns the entry's path, an absolute path if \em absPath is true
 	FXString dirPath(bool absPath=false) const;
-	//! Returns the entry's path as a FX::FXDir
-	FXDir dir(bool absPath=false) const { return FXDir(absPath ? absFilePath() : fileName()); }
+	//! Returns the entry's path as a FX::QDir
+	QDir dir(bool absPath=false) const { return QDir(absPath ? absFilePath() : fileName()); }
 	//! Returns true if the entry is readable
 	bool isReadable() const;
 	//! Returns true if the entry is writeable

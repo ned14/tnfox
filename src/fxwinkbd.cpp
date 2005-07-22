@@ -29,7 +29,7 @@
 #include "fxkeys.h"
 #include "fxpriv.h"
 #include "FXHash.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXStream.h"
 #include "FXObject.h"
 #include "FXDict.h"

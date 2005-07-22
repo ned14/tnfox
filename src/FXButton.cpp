@@ -26,7 +26,7 @@
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -109,9 +109,9 @@ FXButton::FXButton(FXComposite* p,const FXString& text,FXIcon* ic,FXObject* tgt,
     setDefault(TRUE);
     }
   if(options&BUTTON_DANGEROUS)
-    setHelpTag(FXTrans::tr("FXButton", "Pressing this button performs a dangerous action. Hold Ctrl + Shift when clicking to activate"));
+    setHelpTag(QTrans::tr("FXButton", "Pressing this button performs a dangerous action. Hold Ctrl + Shift when clicking to activate"));
   else
-    setHelpTag(FXTrans::tr("FXButton", "Pressing this button performs an action"));
+    setHelpTag(QTrans::tr("FXButton", "Pressing this button performs an action"));
   }
 
 

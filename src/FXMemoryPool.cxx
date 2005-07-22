@@ -35,7 +35,7 @@
 #endif
 
 #include "FXProcess.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXRollback.h"
 #include "FXPtrHold.h"
 #include <stdlib.h>
@@ -154,9 +154,9 @@ struct FXMemoryPoolPrivate;
 static struct MemPoolsList
 {
 	volatile bool enabled;
-	FXMutex lock;
+	QMutex lock;
 	QPtrDict<FXMemoryPoolPrivate> pools;
-	FXThreadLocalStorage<FXMemoryPoolPrivate> current;
+	QThreadLocalStorage<FXMemoryPoolPrivate> current;
 	MemPoolsList() : enabled(true), pools(1) { }
 	~MemPoolsList() { enabled=false; }
 } mempools;
@@ -168,13 +168,13 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	FXuval maxsize;
 	bool deleted, lazydeleted;
 	const char *identifier;
-	FXThread *owner;
+	QThread *owner;
 	FXulong threadId;
 	Generic::BoundFunctorV *cleanupcall;
 #ifdef FXDISABLE_SEPARATE_POOLS
 	FXAtomicInt allocated;
 #endif
-	FXMemoryPoolPrivate(FXMemoryPool *_parent, FXuval _maxsize, const char *_identifier, FXThread *_owner, bool _lazydeleted)
+	FXMemoryPoolPrivate(FXMemoryPool *_parent, FXuval _maxsize, const char *_identifier, QThread *_owner, bool _lazydeleted)
 		: parent(_parent), heap(0), maxsize(_maxsize), deleted(false), lazydeleted(_lazydeleted), identifier(_identifier), owner(_owner), threadId(_owner ? _owner->myId() : 0), cleanupcall(0)
 	{	// NOTE TO SELF: Must be safe to be called during static init/deinit!!!
 		if(mempools.enabled)
@@ -282,7 +282,7 @@ static void callfree(FXMemoryPoolPrivate *p)
 	p->cleanupcall=0;
 	FXDELETE(p->parent);
 }
-FXMemoryPool::FXMemoryPool(FXuval maxsize, const char *identifier, FXThread *owner, bool lazydeleted) : p(0)
+FXMemoryPool::FXMemoryPool(FXuval maxsize, const char *identifier, QThread *owner, bool lazydeleted) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new FXMemoryPoolPrivate(this, maxsize, identifier, owner, lazydeleted));
@@ -291,7 +291,7 @@ FXMemoryPool::FXMemoryPool(FXuval maxsize, const char *identifier, FXThread *own
 	p->heap->data=p;
 	if(owner)
 	{
-		if(mempools.enabled && FXThread::current()==owner)
+		if(mempools.enabled && QThread::current()==owner)
 			mempools.current=p;
 		p->cleanupcall=owner->addCleanupCall(Generic::BindFuncN(&callfree, p));
 	}
@@ -441,7 +441,7 @@ static struct FailOnFreeEntry
 	FXMemoryPool *heap;
 	FailOnFreeEntry() : blk(0), heap(0) { }
 } failOnFrees[FXFAILONFREESLOTS];
-static FXMutex failOnFreesLock;
+static QMutex failOnFreesLock;
 #endif
 
 void *malloc(size_t size, FXMemoryPool *heap) throw()

@@ -29,7 +29,7 @@
 #include "FXObject.h"
 #include "FXException.h"
 #include "FXString.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 
 
 /*
@@ -312,9 +312,9 @@ long FXObject::handle(FXObject* sender,FXSelector sel,void* ptr){
   return onDefault(sender,sel,ptr);
   }
 
-FXTransString FXObject::tr(const char *text, const char *hint)
+QTransString FXObject::tr(const char *text, const char *hint)
 {
-	return FXTrans::tr(getMetaClass()->getClassName(), text, hint);
+	return QTrans::tr(getMetaClass()->getClassName(), text, hint);
 }
 
 

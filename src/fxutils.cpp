@@ -28,10 +28,10 @@
 #include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXException.h"
 #include "FXRollback.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include <qdict.h>
 #if defined(__GNUC__) &&  __GNUC__>=3
 #include <cxxabi.h>
@@ -194,23 +194,23 @@ FXString fxdump32(FXuint *buffer, FXuval len) throw()
 FXString fxstrfval(FXfval mysize, FXint fw, char fmt, int prec)
 {
 	//if(mysize>=1024LL*1024*1024*1024*1024*1024*1024*1024)	// Yottabyte
-	//	return FXTrans::tr("FXFileInfo", "%1Yb").arg((float)mysize/(1024LL*1024*1024*1024*1024*1024*1024*1024), fw, fmt, prec);
+	//	return QTrans::tr("QFileInfo", "%1Yb").arg((float)mysize/(1024LL*1024*1024*1024*1024*1024*1024*1024), fw, fmt, prec);
 	//else if(mysize>=1024LL*1024*1024*1024*1024*1024*1024)	// Zettabyte
-	//	return FXTrans::tr("FXFileInfo", "%1Zb").arg((float)mysize/(1024LL*1024*1024*1024*1024*1024*1024), fw, fmt, prec);
+	//	return QTrans::tr("QFileInfo", "%1Zb").arg((float)mysize/(1024LL*1024*1024*1024*1024*1024*1024), fw, fmt, prec);
 	if(mysize>=1024LL*1024*1024*1024*1024*1024)				// Exabyte
-		return FXTrans::tr("FXFileInfo", "%1Eb").arg((float)mysize/(1024LL*1024*1024*1024*1024*1024), fw, fmt, prec);
+		return QTrans::tr("QFileInfo", "%1Eb").arg((float)mysize/(1024LL*1024*1024*1024*1024*1024), fw, fmt, prec);
 	else if(mysize>=1024LL*1024*1024*1024*1024)				// Petabyte
-		return FXTrans::tr("FXFileInfo", "%1Pb").arg((float)mysize/(1024LL*1024*1024*1024*1024), fw, fmt, prec);
+		return QTrans::tr("QFileInfo", "%1Pb").arg((float)mysize/(1024LL*1024*1024*1024*1024), fw, fmt, prec);
 	else if(mysize>=1024LL*1024*1024*1024)					// Terabyte
-		return FXTrans::tr("FXFileInfo", "%1Tb").arg((float)mysize/(1024LL*1024*1024*1024), fw, fmt, prec);
+		return QTrans::tr("QFileInfo", "%1Tb").arg((float)mysize/(1024LL*1024*1024*1024), fw, fmt, prec);
 	else if(mysize>=1024*1024*1024)							// Gigabyte
-		return FXTrans::tr("FXFileInfo", "%1Gb").arg((float)mysize/(1024*1024*1024), fw, fmt, prec);
+		return QTrans::tr("QFileInfo", "%1Gb").arg((float)mysize/(1024*1024*1024), fw, fmt, prec);
 	else if(mysize>=1024*1024)								// Megabyte
-		return FXTrans::tr("FXFileInfo", "%1Mb").arg((float)mysize/(1024*1024), fw, fmt, prec);
+		return QTrans::tr("QFileInfo", "%1Mb").arg((float)mysize/(1024*1024), fw, fmt, prec);
 	else if(mysize>=1024)									// Kilobyte
-		return FXTrans::tr("FXFileInfo", "%1Kb").arg((float)mysize/(1024), fw, fmt, prec);
+		return QTrans::tr("QFileInfo", "%1Kb").arg((float)mysize/(1024), fw, fmt, prec);
 	else
-		return FXTrans::tr("FXFileInfo", "%1 bytes").arg(mysize);
+		return QTrans::tr("QFileInfo", "%1 bytes").arg(mysize);
 }
 
 /// A decreasing array of two's powered prime numbers (useful for adjust hash tables based on memory load)
@@ -967,7 +967,7 @@ FXlong fxgetticks(){
 // GNU symbol demangler
 const FXString &fxdemanglesymbol(const FXString &rawsymbol)
 {
-	static FXMutex lock;
+	static QMutex lock;
 	static QDict<FXString> cache(13, true);
 	FXMtxHold h(lock);
 	FXString *ret=cache.find(rawsymbol);

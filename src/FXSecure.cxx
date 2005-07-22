@@ -26,9 +26,9 @@
 #include "FXSecure.h"
 #include "FXProcess.h"
 #include "FXFile.h"
-#include "FXMemMap.h"
-#include "FXThread.h"
-#include "FXTrans.h"
+#include "QMemMap.h"
+#include "QThread.h"
+#include "QTrans.h"
 #include "FXRollback.h"
 #include "FXMemoryPool.h"
 #include "FXPtrHold.h"
@@ -78,7 +78,7 @@ namespace FX { namespace Secure {
 
 static const FXuval SECUREHEAPMAXLEN=1024*1024;
 static FXMemoryPool *secureheap;
-static struct SecureHeapInit : public FXMutex
+static struct SecureHeapInit : public QMutex
 {
 	static FXProcess_MemLock mlock;
 	FXuint pageSizeM1;
@@ -171,12 +171,12 @@ void free(void *p) throw()
 
 class RandomnessPrivate;
 static RandomnessPrivate *myrandomness;
-class RandomnessPrivate : public FXThread, public FXMutex
+class RandomnessPrivate : public QThread, public QMutex
 {
 #ifdef USE_POSIX
 	FXFile random;
 #else
-	FXMemMap shrdmem;
+	QMemMap shrdmem;
 	struct SharedMemLayout
 	{
 		FXuint magic;			// "FXRN"
@@ -249,7 +249,7 @@ public:
 #else
 		shrdmem("TnFOX_Randomness1", sizeof(SharedMemLayout)), data(0), offset(0), query(0), randomness(0), randomnesslen(0),
 #endif
-		FXThread("Randomness monitor"), FXMutex()
+		QThread("Randomness monitor"), QMutex()
 	{
 #ifndef USE_POSIX
 		shrdmem.open(IO_ReadWrite|IO_DontUnlink);
@@ -310,13 +310,13 @@ public:
 #ifdef USE_POSIX
 		random.open(IO_ReadOnly);
 		FXRBOp unopen=FXRBObj(random, &FXFile::close);
-		FXERRH(length==random.readBlock((char *) buffer, length), FXTrans::tr("FX::Secure::Randomness", "Failed to read /dev/urandom"), FXSECURE_RANDOMNESS_READFAILURE, 0);
+		FXERRH(length==random.readBlock((char *) buffer, length), QTrans::tr("FX::Secure::Randomness", "Failed to read /dev/urandom"), FXSECURE_RANDOMNESS_READFAILURE, 0);
 #else
-		FXERRH(length<=RANDOMNESS_SIZE, FXTrans::tr("FX::Secure::Randomness", "Too much random data requested"), FXSECURE_RANDOMNESS_TOOBIG, 0);
+		FXERRH(length<=RANDOMNESS_SIZE, QTrans::tr("FX::Secure::Randomness", "Too much random data requested"), FXSECURE_RANDOMNESS_TOOBIG, 0);
 		if(!data) return;
 		while(length>data->size)
 		{
-			FXThread::msleep(RANDOMNESS_TICK);
+			QThread::msleep(RANDOMNESS_TICK);
 		}
 		while(length)
 		{
@@ -411,10 +411,10 @@ public:
 					diff^=(p.y-cursorpos.y)<<12;	// 4096
 					if(diff) addRandomness(diff);
 					cursorpos=p;
-					FXThread::msleep(RANDOMNESS_TICK/10);
+					QThread::msleep(RANDOMNESS_TICK/10);
 				}
 			}
-			else FXThread::msleep(RANDOMNESS_TICK);
+			else QThread::msleep(RANDOMNESS_TICK);
 		}
 #endif
 	}

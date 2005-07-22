@@ -45,7 +45,7 @@ typedef struct timeval
 	long tv_usec;
 } timeval;
 
-class FXThreadPool;
+class QThreadPool;
 class FXACL;
 
 /*! \class FXProcess
@@ -102,7 +102,7 @@ last five seconds of data from which meaningful values can be constructed.
 
 <h4>Process-wide thread pool</h4>
 A process-wide thread pool consisting of four threads is available at FXProcess::threadPool()
-and is created on first use. FX::FXThreadPool offers timed callback facilities
+and is created on first use. FX::QThreadPool offers timed callback facilities
 which are used by other code such as FX::FXFSMonitor. Once created, the thread pool
 lasts until the process terminates.
 
@@ -329,7 +329,7 @@ public:
 	static FXuval virtualAddrSpaceLeft(FXuval chunk=1);
 
 	//! Returns the process-wide thread pool
-	static FXThreadPool &threadPool();
+	static QThreadPool &threadPool();
 	//! Indicates which hand the user is
 	enum UserHandedness
 	{

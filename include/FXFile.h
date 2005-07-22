@@ -24,7 +24,7 @@
 #ifndef FXFILE_H
 #define FXFILE_H
 
-#include "FXIODevice.h"
+#include "QIODevice.h"
 #include "FXString.h"
 
 /*! \file FXFile.h
@@ -58,7 +58,7 @@ Not much to say about this - it works as you'd expect. It's also thread-safe
 so multiple threads can read and write from it (though the current file pointer
 is the same for both, so it probably doesn't help you much).
 
-Most likely you'll prefer to use FX::FXMemMap all the time as it offers
+Most likely you'll prefer to use FX::QMemMap all the time as it offers
 superior performance and facilities in most cases. Indeed, FXFile does no
 internal buffering as it is expected it will only be used rarely.
 
@@ -82,8 +82,8 @@ it works by reading a byte which if successful means not EOF and a ungetch()
 or moving the file pointer back!
 */
 class FXFilePrivate;
-class FXMemMap;
-class FXAPIR FXFile : public FXIODevice
+class QMemMap;
+class FXAPIR FXFile : public QIODevice
 {
 	FXFilePrivate *p;
 	FXFile(const FXFile &);
@@ -95,7 +95,7 @@ class FXAPIR FXFile : public FXIODevice
 	struct WantLightFXFile { };
 	FXFile(WantStdioType);
 	FXFile(const FXString &name, WantLightFXFile);
-	friend class FXMemMap;
+	friend class QMemMap;
 	friend class FXProcess;
 	FXDLLLOCAL int int_fileDescriptor() const;
 public:
@@ -113,13 +113,13 @@ public:
 	bool remove();
 	//! Reloads the size of the file. See description above
 	FXfval reloadSize();
-	/*! Returns an FXIODevice referring to stdin/stdout. This is somewhat of a special device
+	/*! Returns an QIODevice referring to stdin/stdout. This is somewhat of a special device
 	in that it can't be closed, doesn't have a size and reads from it can block.
-	\sa FXPipe
+	\sa QPipe
 	*/
-	static FXIODevice &stdio(bool applyCRLFTranslation=false);
+	static QIODevice &stdio(bool applyCRLFTranslation=false);
 
-	using FXIODevice::mode;
+	using QIODevice::mode;
 	virtual bool open(FXuint mode);
 	virtual void close();
 	virtual void flush();

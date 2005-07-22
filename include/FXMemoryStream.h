@@ -33,9 +33,9 @@ namespace FX {
 /*! \class FXMemoryStream
 \deprecated For compatibility with FOX code only
 */
-class FXBuffer;
+class QBuffer;
 class FXAPI FXMemoryStream : public FXStream {
-  FXBuffer *buffer;
+  QBuffer *buffer;
   FXbool    owns;       // Owns the data array
 public:
 

@@ -29,8 +29,8 @@
 #include "Dbghelp.h"
 #endif
 #endif
-#include "FXTrans.h"
-#include "FXThread.h"
+#include "QTrans.h"
+#include "QThread.h"
 #include "FXStream.h"
 #include "FXRollback.h"
 #include "FXMemoryPool.h"
@@ -69,7 +69,7 @@ struct FXException_TIB
 	FXException_TIB() : stack(true) { }
 };
 static bool mytibenabled;
-static FXThreadLocalStorage<FXException_TIB> mytib;
+static QThreadLocalStorage<FXException_TIB> mytib;
 static bool GlobalPause;
 
 static void DestroyTIB()
@@ -79,7 +79,7 @@ static void DestroyTIB()
 }
 static inline bool CheckTIB()
 {
-	FXThread *c=FXThread::current();
+	QThread *c=QThread::current();
 	if(!mytibenabled || !c) return false;
 	if(!mytib)
 	{
@@ -160,7 +160,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	_flags=__flags;
 	srcfilename=_filename;
 	srclineno=_lineno;
-	_threadId=FXThread::id();
+	_threadId=QThread::id();
 	reporttxt=0;
 	uniqueId=GetCreationCnt();
 #if defined(DEBUG) || defined(BUILDING_TCOMMON)
@@ -169,7 +169,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 #if defined(WIN32) && defined(_MSC_VER)
 	memset(stack, 0, sizeof(stack));
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
-	static FXMutex symlock;
+	static QMutex symlock;
 	if(!(_flags & FXERRH_ISINFORMATIONAL))
 	{
 		FXMtxHold lockh(symlock);
@@ -267,7 +267,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 
 FXException::FXException(const FXException &o)
 	: uniqueId(o.uniqueId), _message(o._message), _code(o._code), _flags(o._flags),
-	srcfilename(o.srcfilename), srclineno(o.srclineno), _threadId(FXThread::id()), reporttxt(0), nestedlist(0),
+	srcfilename(o.srcfilename), srclineno(o.srclineno), _threadId(QThread::id()), reporttxt(0), nestedlist(0),
 	stacklevel(o.stacklevel)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
@@ -291,7 +291,7 @@ FXException::FXException(const FXException &o)
 		FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 		if(stacklevel>=0 && le->uniqueId==uniqueId)
 		{
-			//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel);
+			//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", (FXuint) QThread::id(), this, uniqueId, stacklevel);
 			le->currentExceptions.append(this);
 		}
 	}
@@ -303,7 +303,7 @@ FXException &FXException::operator=(const FXException &o)
 	FXException_TIB *tib=mytib;
 	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
 	{
-		//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel, tib->stack.at(stacklevel)->currentExceptions.count()-1);
+		//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", (FXuint) QThread::id(), this, uniqueId, stacklevel, tib->stack.at(stacklevel)->currentExceptions.count()-1);
 		tib->stack.at(stacklevel)->currentExceptions.removeRef(this);
 	}
 	uniqueId=o.uniqueId; _message=o._message; _code=o._code; _flags=o._flags;
@@ -327,7 +327,7 @@ FXException &FXException::operator=(const FXException &o)
 	stacklevel=o.stacklevel;
 	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
 	{
-		//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel);
+		//fxmessage("Thread %u creation of copy of primary exception=%p, id=%d from stack level %d\n", (FXuint) QThread::id(), this, uniqueId, stacklevel);
 		tib->stack.at(stacklevel)->currentExceptions.append(this);
 	}
 	return *this;
@@ -344,7 +344,7 @@ FXException::~FXException()
 			FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 			if(le && le->uniqueId==uniqueId)
 			{
-				//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", (FXuint) FXThread::id(), this, uniqueId, stacklevel, le->currentExceptions.count()-1);
+				//fxmessage("Thread %u destruction of copy of primary exception=%p, id=%d from stack level %d (%d remaining)\n", (FXuint) QThread::id(), this, uniqueId, stacklevel, le->currentExceptions.count()-1);
 				le->currentExceptions.removeRef(this);
 				if(le->currentExceptions.isEmpty()) le->uniqueId=0;
 			}
@@ -381,28 +381,28 @@ const FXString &FXException::report() const
 			if(!srcfilename || (_flags & FXERRH_ISINFORMATIONAL)!=0)
 			{
 				if(_flags & FXERRH_ISFATAL)
-					reporttxt=new FXString(FXTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2)").arg(_message).arg(_code,0,16));
+					reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2)").arg(_message).arg(_code,0,16));
 				else if(_flags & FXERRH_ISFROMOTHER)
-					reporttxt=new FXString(FXTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2)").arg(_message).arg(_code,0,16));
+					reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2)").arg(_message).arg(_code,0,16));
 				else
-					reporttxt=new FXString(FXTrans::tr("FXException", "%1 (code 0x%2)").arg(_message).arg(_code,0,16));
+					reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2)").arg(_message).arg(_code,0,16));
 			}
 			else
 			{
 				if(_flags & FXERRH_ISFATAL)
-					reporttxt=new FXString(FXTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
+					reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
 				else if(_flags & FXERRH_ISFROMOTHER)
-					reporttxt=new FXString(FXTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
+					reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
 				else
-					reporttxt=new FXString(FXTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
+					reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
 			}
 #if defined(WIN32) && defined(_MSC_VER)
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 			if(!(_flags & FXERRH_ISINFORMATIONAL))
 			{
 				int i;
-				reporttxt->append(FXTrans::tr("FXException", "\nStack backtrace:\n"));
-				FXString templ(FXTrans::tr("FXException", "0x%1:%2%3\n                                 (file %4 line no %5)\n"));
+				reporttxt->append(QTrans::tr("FXException", "\nStack backtrace:\n"));
+				FXString templ(QTrans::tr("FXException", "0x%1:%2%3\n                                 (file %4 line no %5)\n"));
 				for(i=0; i<FXEXCEPTION_STACKBACKTRACEDEPTH; i++)
 				{
 					if(!stack[i].pc) break;
@@ -414,15 +414,15 @@ const FXString &FXException::report() const
 					}
 				}
 				if(FXEXCEPTION_STACKBACKTRACEDEPTH==i)
-					reporttxt->append(FXTrans::tr("FXException", "<backtrace may continue ...>"));
+					reporttxt->append(QTrans::tr("FXException", "<backtrace may continue ...>"));
 				else
-					reporttxt->append(FXTrans::tr("FXException", "<backtrace ends>"));
+					reporttxt->append(QTrans::tr("FXException", "<backtrace ends>"));
 			}
 #endif
 #endif
 			if(nestedLen())
 			{
-				reporttxt->append(FXTrans::tr("FXException", "\nFurthermore, %1 errors occurred during the handling of the above exception:\n").arg(nestedLen()));
+				reporttxt->append(QTrans::tr("FXException", "\nFurthermore, %1 errors occurred during the handling of the above exception:\n").arg(nestedLen()));
 				for(int n=0; n<nestedLen(); n++)
 				{
 					reporttxt->append(FXString::number(n+1)+": "+nested(n).report()+"\n");
@@ -482,13 +482,13 @@ void FXException::int_setThrownException(FXException &e)
 				if(!le->uniqueId)
 				{
 					assert(le->currentExceptions.isEmpty());
-					//fxmessage("Thread %u setting primary exception=%p, id=%u in stack level %d\n", (FXuint) FXThread::id(), &e, e.uniqueId, e.stacklevel);
+					//fxmessage("Thread %u setting primary exception=%p, id=%u in stack level %d\n", (FXuint) QThread::id(), &e, e.uniqueId, e.stacklevel);
 					le->currentExceptions.append(&e);
 					le->uniqueId=e.uniqueId;
 				}
 				else if(le->uniqueId==e.uniqueId)
 				{	// Same exception rethrown
-					//fxmessage("Thread %u rethrowing primary exception=%p, id=%u in stack level %d\n", (FXuint) FXThread::id(), &e, e.uniqueId, e.stacklevel);
+					//fxmessage("Thread %u rethrowing primary exception=%p, id=%u in stack level %d\n", (FXuint) QThread::id(), &e, e.uniqueId, e.stacklevel);
 					le->currentExceptions.append(&e);
 				}
 				else
@@ -506,7 +506,7 @@ void FXException::int_setThrownException(FXException &e)
 						assert(!e.nestedlist);
 					}
 					//fxmessage("Thread %u throwing nested exception=%p, id=%d into primary exception id=%d in stack level %d, nestingCount=%d\n",
-					//	(FXuint) FXThread::id(), &e, e.uniqueId, le->uniqueId, e.stacklevel, le->nestingCount);
+					//	(FXuint) QThread::id(), &e, e.uniqueId, le->uniqueId, e.stacklevel, le->nestingCount);
 					assert(le->nestingCount>0);
 				}
 			}
@@ -530,7 +530,7 @@ void FXException::int_enterTryHandler(const char *srcfile, int lineno)
 		tib->stack.append(le);
 		unle.dismiss();
 		//fxmessage("Thread %u entering try handler stack level %d (file %s line %d)\n",
-		//	(FXuint) FXThread::id(), tib->stack.count()-1, srcfile, lineno);
+		//	(FXuint) QThread::id(), tib->stack.count()-1, srcfile, lineno);
 	}
 }
 
@@ -562,18 +562,18 @@ void FXException::int_exitTryHandler() throw()
 						ee->setFatal(true);
 						ee->nestedlist->push_back(*currenterror);
 					}
-					//fxmessage("Thread %u reentering exception %d as nested into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, (FXuint) FXThread::id(), stackcount-1);
+					//fxmessage("Thread %u reentering exception %d as nested into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, (FXuint) QThread::id(), stackcount-1);
 				}
 				else
 				{	// Enter as primary
 					ple->currentExceptions=le->currentExceptions;
 					ple->uniqueId=currenterror->uniqueId;
-					//fxmessage("Thread %u reentering exception %d as primary into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, (FXuint) FXThread::id(), stackcount-1);
+					//fxmessage("Thread %u reentering exception %d as primary into stack level %d\n", le->currentExceptions.getFirst()->uniqueId, (FXuint) QThread::id(), stackcount-1);
 				}
 				currenterror->stacklevel=stackcount-2;
 			}
 		}
-		//fxmessage("Thread %u exiting try handler stack level %d\n", (FXuint) FXThread::id(), stackcount-1);
+		//fxmessage("Thread %u exiting try handler stack level %d\n", (FXuint) QThread::id(), stackcount-1);
 		tib->stack.removeLast();
 	}
 }
@@ -597,7 +597,7 @@ bool FXException::int_nestedException(FXException &e)
 		assert(mytib);
 		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		//fxmessage("Thread %u destructor caught exception %d in stack level %d, throwing already=%d, nestingCount=%d\n",
-		//	(FXuint) FXThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
+		//	(FXuint) QThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
 		if(!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED))
 		{	// If just one exception being thrown, always throw upwards
 			return true;
@@ -666,13 +666,13 @@ void FXException::int_throwOSError(const char *file, int lineno, int code, FXuin
 	errstr.append(" ("+FXString::number(code)+")");
 	if(ENOENT==code || ENOTDIR==code)
 	{
-		errstr=FXTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
+		errstr=QTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNotFoundException e(file, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(EACCES==code)
 	{
-		errstr=FXTrans::tr("FXException", "Access to '%1' denied [Host OS Error: %2]").arg(filename).arg(errstr);
+		errstr=QTrans::tr("FXException", "Access to '%1' denied [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNoPermissionException e(errstr, flags);
 		FXERRH_THROW(e);
 	}
@@ -710,13 +710,13 @@ void FXException::int_throwWinError(const char *file, int lineno, FXuint code, F
 	errstr.append(" ("+FXString::number(code)+")");
 	if(ERROR_FILE_NOT_FOUND==code || ERROR_PATH_NOT_FOUND==code)
 	{
-		errstr=FXTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
+		errstr=QTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNotFoundException e(file, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(ERROR_ACCESS_DENIED==code || ERROR_EA_ACCESS_DENIED==code)
 	{
-		errstr=FXTrans::tr("FXException", "Access to '%1' denied [Host OS Error: %2]").arg(filename).arg(errstr);
+		errstr=QTrans::tr("FXException", "Access to '%1' denied [Host OS Error: %2]").arg(filename).arg(errstr);
 		FXNoPermissionException e(errstr, flags);
 		FXERRH_THROW(e);
 	}

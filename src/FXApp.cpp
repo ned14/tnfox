@@ -34,7 +34,7 @@
 #include "fxkeys.h"
 #include "fxpriv.h"
 #include "FXHash.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -1038,7 +1038,7 @@ static int xerrorhandler(Display* dpy,XErrorEvent* eev){
   XGetErrorText(dpy,eev->error_code,buf,sizeof(buf));
 
   // Print out meaningful warning
-  fxwarning("X Error thread %d: code %d major %d minor %d: %s.\n",(FXint)FXThread::id(),eev->error_code,eev->request_code,eev->minor_code,buf);
+  fxwarning("X Error thread %d: code %d major %d minor %d: %s.\n",(FXint)QThread::id(),eev->error_code,eev->request_code,eev->minor_code,buf);
   return 1;
   }
 

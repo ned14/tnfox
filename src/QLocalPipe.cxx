@@ -20,10 +20,10 @@
 ********************************************************************************/
 
 #include <qptrlist.h>
-#include "FXLocalPipe.h"
-#include "FXThread.h"
+#include "QLocalPipe.h"
+#include "QThread.h"
 #include "FXException.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXRollback.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
@@ -41,7 +41,7 @@ struct Buffer
 	int datachunks;
 	QPtrList<FXuchar> data;
 	FXAtomicInt newdatawaiters;
-	FXWaitCondition newdata, empty;
+	QWaitCondition newdata, empty;
 	Buffer() : rptr(0), wptr(0), datachunks(0), newdata(true)
 	{
 		newChunk(CHUNKSIZE);
@@ -69,42 +69,42 @@ struct Buffer
 	}
 };
 #define MAGIC (*(FXuint *)"LCPI")
-struct FXDLLLOCAL FXLocalPipePrivate : public FXMutex
+struct FXDLLLOCAL QLocalPipePrivate : public QMutex
 {
 	FXuint magic;
 	FXAtomicInt clients;
 	Buffer A, B;
 	FXuval granularity;
-	FXLocalPipePrivate() : magic(MAGIC), granularity(CHUNKSIZE), FXMutex() { }
-	~FXLocalPipePrivate() { magic=0; }
-	Buffer &readBuffer(FXLocalPipe *t) { return (t->creator) ? B : A; }
-	Buffer &writeBuffer(FXLocalPipe *t) { return (t->creator) ? A : B; }
+	QLocalPipePrivate() : magic(MAGIC), granularity(CHUNKSIZE), QMutex() { }
+	~QLocalPipePrivate() { magic=0; }
+	Buffer &readBuffer(QLocalPipe *t) { return (t->creator) ? B : A; }
+	Buffer &writeBuffer(QLocalPipe *t) { return (t->creator) ? A : B; }
 };
 
-void *FXLocalPipe::int_getOSHandle() const
+void *QLocalPipe::int_getOSHandle() const
 {
 	return 0;
 }
 
-FXLocalPipe::FXLocalPipe() : p(0), creator(true), FXIODeviceS()
+QLocalPipe::QLocalPipe() : p(0), creator(true), QIODeviceS()
 {
-	FXERRHM(p=new FXLocalPipePrivate);
+	FXERRHM(p=new QLocalPipePrivate);
 }
 
 // Creates the client end
-FXLocalPipe::FXLocalPipe(const FXLocalPipe &o) : p(o.p), creator(false), FXIODeviceS(o)
+QLocalPipe::QLocalPipe(const QLocalPipe &o) : p(o.p), creator(false), QIODeviceS(o)
 {
 	setFlags(0);
 }
 
-FXLocalPipe::~FXLocalPipe()
+QLocalPipe::~QLocalPipe()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	if(creator) { FXDELETE(p); }
 	else p=0;
 } FXEXCEPTIONDESTRUCT2; }
 
-FXuval FXLocalPipe::granularity() const
+FXuval QLocalPipe::granularity() const
 {
 	if(p && MAGIC==p->magic)
 	{
@@ -114,7 +114,7 @@ FXuval FXLocalPipe::granularity() const
 	return 0;
 }
 
-void FXLocalPipe::setGranularity(FXuval newval)
+void QLocalPipe::setGranularity(FXuval newval)
 {
 	if(p && MAGIC==p->magic && isClosed())
 	{
@@ -127,12 +127,12 @@ void FXLocalPipe::setGranularity(FXuval newval)
 	}
 }
 
-bool FXLocalPipe::open(FXuint mode)
+bool QLocalPipe::open(FXuint mode)
 {
 	FXMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("FXLocalPipe", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QLocalPipe", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -142,7 +142,7 @@ bool FXLocalPipe::open(FXuint mode)
 	return true;
 }
 
-void FXLocalPipe::close()
+void QLocalPipe::close()
 {
 	if(p && MAGIC==p->magic && isOpen())
 	{
@@ -155,7 +155,7 @@ void FXLocalPipe::close()
 	setFlags(0);
 }
 
-void FXLocalPipe::flush()
+void QLocalPipe::flush()
 {
 	if(isOpen() && isWriteable())
 	{
@@ -164,13 +164,13 @@ void FXLocalPipe::flush()
 	}
 }
 
-FXfval FXLocalPipe::size() const
+FXfval QLocalPipe::size() const
 {
 	if(isOpen())
 	{
 		if(!p || MAGIC!=p->magic) return 0;
 		FXMtxHold h(p);
-		Buffer &b=p->readBuffer(const_cast<FXLocalPipe *>(this));
+		Buffer &b=p->readBuffer(const_cast<QLocalPipe *>(this));
 		FXfval waiting=(b.datachunks-1)*p->granularity;
 		waiting+=b.wptr-b.rptr;
 		return waiting;
@@ -178,15 +178,15 @@ FXfval FXLocalPipe::size() const
 	return 0;
 }
 
-void FXLocalPipe::truncate(FXfval) { }
-FXfval FXLocalPipe::at() const { return 0; }
-bool FXLocalPipe::at(FXfval) { return false; }
-bool FXLocalPipe::atEnd() const { return size()==0; }
+void QLocalPipe::truncate(FXfval) { }
+FXfval QLocalPipe::at() const { return 0; }
+bool QLocalPipe::at(FXfval) { return false; }
+bool QLocalPipe::atEnd() const { return size()==0; }
 
-FXuval FXLocalPipe::readBlock(char *data, FXuval maxlen)
+FXuval QLocalPipe::readBlock(char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isReadable()) FXERRGIO(FXTrans::tr("FXLocalPipe", "Not open for reading"));
+	if(!isReadable()) FXERRGIO(QTrans::tr("QLocalPipe", "Not open for reading"));
 	if(isOpen() && maxlen)
 	{
 		if(!p || MAGIC!=p->magic || p->clients<=1) FXERRGCONLOST("Connection Lost", 0);
@@ -230,10 +230,10 @@ FXuval FXLocalPipe::readBlock(char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXLocalPipe::writeBlock(const char *data, FXuval maxlen)
+FXuval QLocalPipe::writeBlock(const char *data, FXuval maxlen)
 {
 	FXMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("FXLocalPipe", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QLocalPipe", "Not open for writing"));
 	if(isOpen() && maxlen)
 	{
 		if(!p || MAGIC!=p->magic) FXERRGCONLOST("Connection Lost", 0);
@@ -257,7 +257,7 @@ FXuval FXLocalPipe::writeBlock(const char *data, FXuval maxlen)
 	return 0;
 }
 
-int FXLocalPipe::ungetch(int c)
+int QLocalPipe::ungetch(int c)
 {
 	return -1;
 }

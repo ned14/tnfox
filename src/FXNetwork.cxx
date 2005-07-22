@@ -23,5 +23,5 @@
 #include "FXNetwork.h"
 #include "FXString.h"
 
-/* hostname(), dnsLookup() and dnsReverseLookup() are implemented in FXBlkSocket.cxx
+/* hostname(), dnsLookup() and dnsReverseLookup() are implemented in QBlkSocket.cxx
 */

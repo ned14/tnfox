@@ -28,8 +28,8 @@
 #include "FXText.h"
 #include "FXPrimaryButton.h"
 #include "FXProcess.h"
-#include "FXTrans.h"
-#include "FXIODevice.h"
+#include "QTrans.h"
+#include "QIODevice.h"
 #include "FXRollback.h"
 #include <stdlib.h>
 #include <string.h>

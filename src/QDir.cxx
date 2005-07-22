@@ -22,11 +22,11 @@
 #include "xincs.h"
 #include "FXDir.h"
 #include "FXString.h"
-#include "FXFileInfo.h"
+#include "QFileInfo.h"
 #include "FXException.h"
 #include "FXRollback.h"
 #include "FXFile.h"
-#include "FXTrans.h"
+#include "QTrans.h"
 #include "FXErrCodes.h"
 #include "qmemarray.h"
 #ifndef USE_POSIX
@@ -46,7 +46,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 #define TESTABS(path) \
-	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, FXTrans::tr("FXDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
+	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, QTrans::tr("FXDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
 
 struct FXDLLLOCAL FXDirPrivate
 {
@@ -142,7 +142,7 @@ struct FXDLLLOCAL FXDirPrivate
 		template<class L, class I> bool compare(L &list, I &A, I &B) const
 		{
 			ExpensiveSortRef &a=*A, &b=*B;
-			const FXFileInfo &fa=*a.fit, &fb=*b.fit;
+			const QFileInfo &fa=*a.fit, &fb=*b.fit;
 			return (fa.isDir() && !fb.isDir());
 		}
 	};
@@ -155,7 +155,7 @@ void FXDirPrivate::doLeafInfos()
 		FXERRHM(leafinfos=new QFileInfoList);
 		for(QStringList::iterator it=leafs.begin(); it!=leafs.end(); ++it)
 		{
-			leafinfos->append(FXFileInfo(FXFile::join(path, *it)));
+			leafinfos->append(QFileInfo(FXFile::join(path, *it)));
 		}
 	}
 }
@@ -191,7 +191,7 @@ void FXDirPrivate::read()
 			QFileInfoList::iterator fit=leafinfos->begin();
 			for(; sit!=leafs.end(); ++sit, ++fit)
 			{
-				FXFileInfo &fi=*fit;
+				QFileInfo &fi=*fit;
 				if(allDirs && fi.isDir()) continue;
 				if(a)
 				{
@@ -571,12 +571,12 @@ QStringList FXDir::extractChanges(const FXDir &A, const FXDir &B)
 	FXuint idxA=0;
 	for(QFileInfoList::const_iterator itA=A.p->leafinfos->begin(); itA!=A.p->leafinfos->end(); ++idxA, ++itA)
 	{
-		const FXFileInfo &a=*itA;
+		const QFileInfo &a=*itA;
 		FXuint idxB=0;
 		for(QFileInfoList::const_iterator itB=B.p->leafinfos->begin(); itB!=B.p->leafinfos->end(); ++idxB, ++itB)
 		{
 			if(sameB[idxB]) continue;
-			const FXFileInfo &b=*itB;
+			const QFileInfo &b=*itB;
 			if(a==b)
 			{
 				sameA[idxA]=1; sameB[idxB]=1;

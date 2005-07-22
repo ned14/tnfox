@@ -34,7 +34,7 @@ namespace FX {
 
 class FXFile;
 
-//! \deprecated Use FX::FXGZipDevice instead
+//! \deprecated Use FX::QGZipDevice instead
 class FXAPI FXGZFileStream : public FXStream {
 	FXFile *myfile;
 public:

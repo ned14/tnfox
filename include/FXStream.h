@@ -67,7 +67,7 @@ enum FXWhence {
 
 class FXHash;
 class FXString;
-class FXIODevice;
+class QIODevice;
 
 /************************  Persistent Store Definition  *************************/
 
@@ -81,7 +81,7 @@ Both share the purpose of serialising and deserialising data to and from a
 stored format and indeed via loadObject() and saveObject() can transfer entire
 window trees to and from storage.
 
-Most use is simple - set which FXIODevice it should use, and then use the << and
+Most use is simple - set which QIODevice it should use, and then use the << and
 >> operators to store and load respectively. position() lets you set or read
 the current offset into the file. Most classes in TnFOX (as well as FOX) provide
 overloads for these operators, so your << and >> overloads merely need to call
@@ -114,10 +114,10 @@ Lastly, QDataStream's printable data format is unsupported. You don't need
 it with a decent debugger anyway (and it's ridiculously slow).
 
 <h3>Useful tip:</h3>
-Look into FXBuffer's ability to dump itself onto a stream. This lets you
+Look into QBuffer's ability to dump itself onto a stream. This lets you
 very conveniently prepare parts of an overall image into separate sections.
 I've personally found that if you keep your end file image in a set of
-ordered nested QPtrList's & FXBuffer's, writing it out is as simple as:
+ordered nested QPtrList's & QBuffer's, writing it out is as simple as:
 \code
 FXStream s;
 QValueList<QPtrListOrBufferHolder> filedata;
@@ -143,16 +143,16 @@ protected:
   FXbool             swap;      // Swap bytes on readin
 
 protected: // TnFOX stuff
-  FXIODevice        *dev;       // i/o device
+  QIODevice        *dev;       // i/o device
 public:
 
   //! Constructs an instance using device \em dev. \em cont is for FOX FXStream emulation only.
-  FXStream(FXIODevice *dev=0, const FXObject* cont=NULL);
+  FXStream(QIODevice *dev=0, const FXObject* cont=NULL);
 
   //! Returns the i/o device this stream is using
-  FXIODevice *device() const { return dev; }
+  QIODevice *device() const { return dev; }
   //! Sets the i/o device this stream is using
-  void setDevice(FXIODevice *dev);
+  void setDevice(QIODevice *dev);
   //! \deprecated For Qt compatibility only
   FXDEPRECATEDEXT void unsetDevice() { setDevice(0); }
   //! Returns true if there is no more data to be read

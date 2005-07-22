@@ -25,7 +25,7 @@
 #include "fxdefs.h"
 #include "FXFile.h"
 #include "FXGZStream.h"
-#include "FXGZipDevice.h"
+#include "QGZipDevice.h"
 #include "FXException.h"
 
 /*******************************************************************************/
@@ -43,8 +43,8 @@ FXGZFileStream::FXGZFileStream(const FXObject* cont): myfile(0), FXStream(0, con
 FXbool FXGZFileStream::open(const FXString& filename,FXStreamDirection save_or_load,unsigned long size)
 {
 	FXERRHM(myfile=new FXFile(filename));
-	FXGZipDevice *d;
-	FXERRHM(d=new FXGZipDevice(myfile));
+	QGZipDevice *d;
+	FXERRHM(d=new QGZipDevice(myfile));
 	setDevice(d);
 	if(save_or_load==FXStreamLoad)
 	{   // Open for read

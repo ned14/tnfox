@@ -26,7 +26,7 @@
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "FXThread.h"
+#include "QThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXObject.h"
