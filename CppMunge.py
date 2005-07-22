@@ -60,7 +60,7 @@ parser.add_option("-f", "--flags", type="int", default=0,
 parser.add_option("-v", "--verbose", action="store_true", default=False,
                   help="Enable verbose mode")
 args=sys.argv;
-#args=['D:\\Tornado\\TClient\\TnFOX\\CppMunge.py', '-v', '-m', '-f', '4', '-c', 'include\\FXErrCodes.h', '-t', 'TnFOXTrans.txt', '-s', 'src\\FXBlkSocket.cxx']
+#args=['D:\\Tornado\\TClient\\TnFOX\\CppMunge.py', '-v', '-m', '-f', '4', '-c', 'include\\FXErrCodes.h', '-t', 'TnFOXTrans.txt', '-s', 'src\\QBlkSocket.cxx']
 #print args
 (options, args)=parser.parse_args(args)
 
@@ -450,9 +450,9 @@ class TextLiterals:
         sidx=string.find(sline, "tr(")
         if sidx==-1: return
         if sline[sidx-1] not in " :,(=": return
-        withclass=sline[sidx-9:sidx]=="FXTrans::"
-        # Except don't process the FXTrans::tr() code in FXTrans.cpp!
-        if sline[:25]=="FXTransString FXTrans::tr": return
+        withclass=sline[sidx-9:sidx]=="QTrans::"
+        # Except don't process the QTrans::tr() code in QTrans.cpp!
+        if sline[:25]=="QTransString QTrans::tr": return
         parts=[]
         s=myfind(line, ["tr("], 0, True)+3; e=myfind(line, [",", ")"], s)
         if e==-1: raise AssertionError, "tr() currently must be on one line"

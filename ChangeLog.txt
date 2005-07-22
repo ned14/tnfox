@@ -96,6 +96,8 @@ FXRWMutex
 * Marked loads of extra stuff as FXDEPRECATEDEXT ie; deprecated for external use
 * Made FXRefedObject more efficient by avoiding a lock when referrers are unknown
 + Added FXRefedObject_DisableCount
+* Replaced all Qt-compatible FX things with Q in order to make way for
+integrating future versions of FOX
 
 
 
