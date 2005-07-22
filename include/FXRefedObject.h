@@ -121,7 +121,7 @@ namespace FXRefedObjectImpl
 	{	/* This specialisation for FXAtomicInt features a serialised checking and
 		setting of dying so we can know when you can't create a new reference safely
 		in a threadsafe fashion. */
-		FXShrdMemMutex myrefcountlock;
+		QShrdMemMutex myrefcountlock;
 		int myrefcount;
 		bool mydying;
 	protected:
@@ -194,12 +194,12 @@ namespace Pol {
 		knowReferrers() { }
 		void int_addReferrer(FXRefingObjectBase *r, QMutex *lock)
 		{
-			FXMtxHold h(lock, FXMtxHold::AcceptNullMutex);
+			QMtxHold h(lock, QMtxHold::AcceptNullMutex);
 			referrers.push_back(ReferrerEntry(r));
 		}
 		void int_removeReferrer(FXRefingObjectBase *r, QMutex *lock)
 		{
-			FXMtxHold h(lock, FXMtxHold::AcceptNullMutex);
+			QMtxHold h(lock, QMtxHold::AcceptNullMutex);
 			referrers.remove(ReferrerEntry(r));
 		}
 		const QValueList<ReferrerEntry> *int_referrers() const { return &referrers; }

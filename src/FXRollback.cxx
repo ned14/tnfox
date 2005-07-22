@@ -33,7 +33,7 @@ void FXRollbackBase::makeCall()
 		FXRollbackBase &me=*this;
 		if(mutex)
 		{
-			FXMtxHold h(mutex);
+			QMtxHold h(mutex);
 			(me.*calladdr)();
 		}
 		else

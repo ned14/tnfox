@@ -585,7 +585,7 @@ const FXACLEntity &FXACLEntity::currentUser()
 {
 	static FXACLEntity ret;
 	if(ret.p) return ret;
-	FXMtxHold lh(staticmethodlock);
+	QMtxHold lh(staticmethodlock);
 	if(ret.p) return ret;
 	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
@@ -626,7 +626,7 @@ const FXACLEntity &FXACLEntity::everything()
 {
 	static FXACLEntity ret;
 	if(ret.p) return ret;
-	FXMtxHold lh(staticmethodlock);
+	QMtxHold lh(staticmethodlock);
 	if(ret.p) return ret;
 	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
@@ -658,7 +658,7 @@ const FXACLEntity &FXACLEntity::root()
 {
 	static FXACLEntity ret;
 	if(ret.p) return ret;
-	FXMtxHold lh(staticmethodlock);
+	QMtxHold lh(staticmethodlock);
 	if(ret.p) return ret;
 	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
@@ -701,7 +701,7 @@ const FXACLEntity &FXACLEntity::owner()
 {
 	static FXACLEntity ret;
 	if(ret.p) return ret;
-	FXMtxHold lh(staticmethodlock);
+	QMtxHold lh(staticmethodlock);
 	if(ret.p) return ret;
 	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI

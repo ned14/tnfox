@@ -86,12 +86,12 @@ extern "C"
 
 namespace FX {
 
-FXMUTEX_INLINEI int FXAtomicInt::get() const throw()
+QMUTEX_INLINEI int FXAtomicInt::get() const throw()
 {
 	return value;
 }
-FXMUTEX_INLINEP FXAtomicInt::operator int() const throw() { return get(); }
-FXMUTEX_INLINEI int FXAtomicInt::set(int i) throw()
+QMUTEX_INLINEP FXAtomicInt::operator int() const throw() { return get(); }
+QMUTEX_INLINEI int FXAtomicInt::set(int i) throw()
 {	// value=i; is write-buffered out and we need it immediate
 #ifdef USE_X86
 #ifdef __GNUC__
@@ -104,8 +104,8 @@ FXMUTEX_INLINEI int FXAtomicInt::set(int i) throw()
 #endif
 	return i;
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator=(int i) throw() { return set(i); }
-FXMUTEX_INLINEI int FXAtomicInt::incp() throw()
+QMUTEX_INLINEP int FXAtomicInt::operator=(int i) throw() { return set(i); }
+QMUTEX_INLINEI int FXAtomicInt::incp() throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -123,8 +123,8 @@ FXMUTEX_INLINEI int FXAtomicInt::incp() throw()
 	return _InterlockedExchangeAdd((PLONG) &value, 1);
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator++(int) throw() { return incp(); }
-FXMUTEX_INLINEI int FXAtomicInt::pinc() throw()
+QMUTEX_INLINEP int FXAtomicInt::operator++(int) throw() { return incp(); }
+QMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -142,8 +142,8 @@ FXMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 	return _InterlockedIncrement((PLONG) &value);
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator++() throw() { return pinc(); }
-FXMUTEX_INLINEI int FXAtomicInt::finc() throw()
+QMUTEX_INLINEP int FXAtomicInt::operator++() throw() { return pinc(); }
+QMUTEX_INLINEI int FXAtomicInt::finc() throw()
 {	// Returns -1, 0, +1 on value AFTER inc
 #if defined(USE_X86)
 	int myret;
@@ -166,8 +166,8 @@ FXMUTEX_INLINEI int FXAtomicInt::finc() throw()
 	return pinc();
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::fastinc() throw() { return finc(); }
-FXMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
+QMUTEX_INLINEP int FXAtomicInt::fastinc() throw() { return finc(); }
+QMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -185,8 +185,8 @@ FXMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 	return _InterlockedExchangeAdd((PLONG) &value, i)+i;
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator+=(int i) throw() { return inc(i); }
-FXMUTEX_INLINEI int FXAtomicInt::decp() throw()
+QMUTEX_INLINEP int FXAtomicInt::operator+=(int i) throw() { return inc(i); }
+QMUTEX_INLINEI int FXAtomicInt::decp() throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -204,8 +204,8 @@ FXMUTEX_INLINEI int FXAtomicInt::decp() throw()
 	return _InterlockedExchangeAdd((PLONG) &value, -1);
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator--(int) throw() { return decp(); }
-FXMUTEX_INLINEI int FXAtomicInt::pdec() throw()
+QMUTEX_INLINEP int FXAtomicInt::operator--(int) throw() { return decp(); }
+QMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -223,8 +223,8 @@ FXMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 	return _InterlockedDecrement((PLONG) &value);
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator--() throw() { return pdec(); }
-FXMUTEX_INLINEI int FXAtomicInt::fdec() throw()
+QMUTEX_INLINEP int FXAtomicInt::operator--() throw() { return pdec(); }
+QMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 {	// Returns -1, 0, +1 on value AFTER inc
 #if defined(USE_X86)
 	int myret;
@@ -247,8 +247,8 @@ FXMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 	return pdec();
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::fastdec() throw() { return fdec(); }
-FXMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
+QMUTEX_INLINEP int FXAtomicInt::fastdec() throw() { return fdec(); }
+QMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -267,8 +267,8 @@ FXMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 	return _InterlockedExchangeAdd((PLONG) &value, -i)-i;
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::operator-=(int i) throw() { return dec(i); }
-FXMUTEX_INLINEI int FXAtomicInt::swapI(int i) throw()
+QMUTEX_INLINEP int FXAtomicInt::operator-=(int i) throw() { return dec(i); }
+QMUTEX_INLINEI int FXAtomicInt::swapI(int i) throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -280,8 +280,8 @@ FXMUTEX_INLINEI int FXAtomicInt::swapI(int i) throw()
 	return _InterlockedExchange((PLONG) &value, i);
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::swap(int i) throw() { return swapI(i); }
-FXMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
+QMUTEX_INLINEP int FXAtomicInt::swap(int i) throw() { return swapI(i); }
+QMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 {
 #ifdef USE_X86
 	int myret;
@@ -299,12 +299,12 @@ FXMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 	return _InterlockedCompareExchange((PLONG) &value, newval, compare);
 #endif
 }
-FXMUTEX_INLINEP int FXAtomicInt::cmpX(int compare, int newval) throw() { return cmpXI(compare, newval); }
+QMUTEX_INLINEP int FXAtomicInt::cmpX(int compare, int newval) throw() { return cmpXI(compare, newval); }
 #if 0
 /* Optimised spin just for QMutex. This implementation avoids
 costly xchg instructions which are very expensive on the x86 memory
 bus as they effectively hang multiprocessing */
-FXMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
+QMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
 {
 	int myret;
 #ifdef USE_X86
@@ -328,7 +328,7 @@ FXMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
 
 /**************************************************************************************************************/
 
-FXMUTEX_INLINEP void FXShrdMemMutex::lock()
+QMUTEX_INLINEP void QShrdMemMutex::lock()
 {
 	FXuint start=(FXINFINITE==timeout) ? 0 : FXProcess::getMsCount();
 	while(lockvar.swapI(1) && (FXINFINITE==timeout || FXProcess::getMsCount()-start<timeout))
@@ -338,7 +338,7 @@ FXMUTEX_INLINEP void FXShrdMemMutex::lock()
 		;
 }
 
-FXMUTEX_INLINEP bool FXShrdMemMutex::tryLock()
+QMUTEX_INLINEP bool QShrdMemMutex::tryLock()
 {
 	return !lockvar.swapI(1);
 }
@@ -363,7 +363,7 @@ creating and deleting the kernel wait object. Therefore cache instances here.
 */
 class FXDLLLOCAL KernelWaitObjectCache
 {
-	FXShrdMemMutex lockvar;
+	QShrdMemMutex lockvar;
 public:
 #ifdef USE_WINAPI
 	typedef HANDLE WaitObjectType;
@@ -382,8 +382,8 @@ public:
 	};
 private:
 	Entry *entries;
-	FXMUTEX_INLINEI void lock() throw() { lockvar.lock(); }
-	FXMUTEX_INLINEI void unlock() throw() { lockvar.unlock(); }
+	QMUTEX_INLINEI void lock() throw() { lockvar.lock(); }
+	QMUTEX_INLINEI void unlock() throw() { lockvar.unlock(); }
 public:
 	bool dead;
 	KernelWaitObjectCache() : lockvar(FXINFINITE) { }
@@ -436,9 +436,9 @@ public:
 		}
 	}
 };
-extern FXMUTEX_GLOBALS_FXAPI KernelWaitObjectCache waitObjectCache;
-extern FXMUTEX_GLOBALS_FXAPI bool yieldAfterLock;
-extern FXMUTEX_GLOBALS_FXAPI FXuint systemProcessors;
+extern QMUTEX_GLOBALS_FXAPI KernelWaitObjectCache waitObjectCache;
+extern QMUTEX_GLOBALS_FXAPI bool yieldAfterLock;
+extern QMUTEX_GLOBALS_FXAPI FXuint systemProcessors;
 
 } // namespace QMutexImpl
 
@@ -459,7 +459,7 @@ struct FXDLLLOCAL QMutexPrivate
 #endif
 };
 
-FXMUTEX_INLINEP QMutex::QMutex(FXuint spinc) : p(0)
+QMUTEX_INLINEP QMutex::QMutex(FXuint spinc) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QMutexPrivate);
@@ -514,7 +514,7 @@ FXMUTEX_INLINEP QMutex::QMutex(FXuint spinc) : p(0)
 	unconstr.dismiss();
 }
 
-FXMUTEX_INLINEP QMutex::~QMutex()
+QMUTEX_INLINEP QMutex::~QMutex()
 { FXEXCEPTIONDESTRUCT1 {
 	if(p)
 	{	// Force exception if something else uses us after now
@@ -547,22 +547,22 @@ FXMUTEX_INLINEP QMutex::~QMutex()
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
-FXMUTEX_INLINEP bool QMutex::isLocked() const
+QMUTEX_INLINEP bool QMutex::isLocked() const
 {
 	return p->lockCount>=0;
 }
 
-FXMUTEX_INLINEP FXuint QMutex::spinCount() const
+QMUTEX_INLINEP FXuint QMutex::spinCount() const
 {
 	return p->spinCount;
 }
 
-FXMUTEX_INLINEP void QMutex::setSpinCount(FXuint c)
+QMUTEX_INLINEP void QMutex::setSpinCount(FXuint c)
 {
 	p->spinCount=c;
 }
 
-FXMUTEX_INLINEI void QMutex::int_lock()
+QMUTEX_INLINEI void QMutex::int_lock()
 {
 	assert(this);
 	assert(p);
@@ -644,9 +644,9 @@ FXMUTEX_INLINEI void QMutex::int_lock()
 #endif
 	if(QMutexImpl::yieldAfterLock) QThread::yield();
 }
-FXMUTEX_INLINEP void QMutex::lock() { int_lock(); }
+QMUTEX_INLINEP void QMutex::lock() { int_lock(); }
 
-FXMUTEX_INLINEI void QMutex::int_unlock()
+QMUTEX_INLINEI void QMutex::int_unlock()
 {
 	assert(this);
 	assert(p);
@@ -662,7 +662,7 @@ FXMUTEX_INLINEI void QMutex::int_unlock()
 #ifdef DEBUG
 		FXulong myid=QThread::id();	// For debug knowledge only
 		if(myid && p->threadId)
-			FXERRH(QThread::id()==p->threadId, "QMutex::unlock() performed by thread which did not own mutex", FXMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
+			FXERRH(QThread::id()==p->threadId, "QMutex::unlock() performed by thread which did not own mutex", QMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 		p->threadId=0;
 		//fxmessage(FXString("%1 %6 unlock lc=%2, rc=%3, kc=%4, ti=%5\n").arg(QThread::id(),0, 16).arg(p->lockCount).arg(p->recurseCount).arg(p->kernelCount).arg(p->threadId, 0, 16).arg((FXuint)this,0,16).text());
@@ -684,9 +684,9 @@ FXMUTEX_INLINEI void QMutex::int_unlock()
 	FXERRHOS(pthread_mutex_unlock(&p->m->wo));
 #endif
 }
-FXMUTEX_INLINEP void QMutex::unlock() { int_unlock(); }
+QMUTEX_INLINEP void QMutex::unlock() { int_unlock(); }
 
-FXMUTEX_INLINEP bool QMutex::tryLock()
+QMUTEX_INLINEP bool QMutex::tryLock()
 {
 #ifdef USE_OURMUTEX
 	FXulong myid=QThread::id();
@@ -717,7 +717,7 @@ FXMUTEX_INLINEP bool QMutex::tryLock()
 #endif
 }
 
-FXMUTEX_INLINEP bool QMutex::setMutexDebugYield(bool v)
+QMUTEX_INLINEP bool QMutex::setMutexDebugYield(bool v)
 {
 	bool old=QMutexImpl::yieldAfterLock;
 	QMutexImpl::yieldAfterLock=v;

@@ -60,7 +60,7 @@ const FXACL &QIODevice::permissions() const
 {
 	static QMutex lock;
 	static FXACL perms;
-	FXMtxHold lh(lock);
+	QMtxHold lh(lock);
 	if(perms.count()) return perms;
 	// Fake a default
 	perms.append(FXACL::Entry(FXACLEntity::owner(), 0, FXACL::Permissions().setAll()));

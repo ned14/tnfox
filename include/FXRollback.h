@@ -70,7 +70,7 @@ Usage is ridiculously easy. For example:
 {
 	QPtrList<Item> *mylist;
 	// I need to atomically append "item" to three lists
-	FXMtxHold h(mylist);
+	QMtxHold h(mylist);
 	mylist->append(item);
 	FXRBOp undomylist=FXRBObj(*mylist, &QPtrList<Item>::removeRef, item);
 	myotherlist->append(item);

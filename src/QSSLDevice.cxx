@@ -234,7 +234,7 @@ public:
 	void setup()
 	{
 #ifdef HAVE_OPENSSL
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		if(!ctx) 
 		{
 			if(Secure::Randomness::size()<SEED_SIZE)
@@ -275,7 +275,7 @@ public:
 	~QSSLDevice_Init()
 	{
 #ifdef HAVE_OPENSSL
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		if(ctx)
 		{
 			SSL_CTX_free(ctx);
@@ -1335,10 +1335,10 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 	void negotiate()
 	{	// Negotiation is not threadsafe, even at the device level :(
 		bool oldConnected=connected;
-		FXMtxHold h2(negotiationlock);
+		QMtxHold h2(negotiationlock);
 		if(!oldConnected && connected) return;
 
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		if(connected)
 		{
 			if(amServer)
@@ -1491,52 +1491,52 @@ QSSLDevice::~QSSLDevice()
 
 QIODevice *QSSLDevice::encryptedDev() const throw()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->dev;
 }
 
 void QSSLDevice::setEncryptedDev(QIODevice *dev)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	close();
 	p->dev=dev;
 }
 
 const FXSSLKey &QSSLDevice::key() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->key;
 }
 
 void QSSLDevice::setKey(const FXSSLKey &key)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->key=key;
 }
 
 bool QSSLDevice::SSLv2Available() const throw()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->enabled.v2;
 }
 void QSSLDevice::setSSLv2Available(bool a)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->enabled.v2=a;
 }
 bool QSSLDevice::SSLv3Available() const throw()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->enabled.v3;
 }
 void QSSLDevice::setSSLv3Available(bool a)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->enabled.v3=a;
 }
 FXString QSSLDevice::ciphers() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXString ret;
 #ifdef HAVE_OPENSSL
 	if(isOpen())
@@ -1557,7 +1557,7 @@ FXString QSSLDevice::ciphers() const
 }
 void QSSLDevice::setCiphers(const FXString &list)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->ciphers=list;
 }
 
@@ -1565,7 +1565,7 @@ void QSSLDevice::setCiphers(const FXString &list)
 
 bool QSSLDevice::usingSSLv2() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	return 0==strcmp("SSLv2", SSL_get_cipher_version(p->handle));
 #else
@@ -1574,7 +1574,7 @@ bool QSSLDevice::usingSSLv2() const
 }
 bool QSSLDevice::usingSSLv3() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	return 0==strcmp("SSLv3", SSL_get_cipher_version(p->handle));
 #else
@@ -1583,7 +1583,7 @@ bool QSSLDevice::usingSSLv3() const
 }
 bool QSSLDevice::usingTLSv1() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	return 0==strcmp("TLSv1", SSL_get_cipher_version(p->handle));
 #else
@@ -1592,7 +1592,7 @@ bool QSSLDevice::usingTLSv1() const
 }
 FXString QSSLDevice::peerHostNameByCertificate() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	if(p->peercert)
 	{
@@ -1606,7 +1606,7 @@ FXString QSSLDevice::peerHostNameByCertificate() const
 }
 FXString QSSLDevice::cipherName() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	if(p->dev->isSynchronous())
 		return FXString(SSL_get_cipher_name(p->handle));
@@ -1618,7 +1618,7 @@ FXString QSSLDevice::cipherName() const
 }
 FXuint QSSLDevice::cipherBits() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	if(p->dev->isSynchronous())
 		return SSL_get_cipher_bits(p->handle, 0);
@@ -1630,7 +1630,7 @@ FXuint QSSLDevice::cipherBits() const
 }
 FXString QSSLDevice::cipherDescription() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 #ifdef HAVE_OPENSSL
 	if(p->dev->isSynchronous())
 	{
@@ -1665,7 +1665,7 @@ bool QSSLDevice::create(FXuint mode)
 {
 #ifdef HAVE_OPENSSL
 	FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), QSSLDEVICE_FILENOTSUPP, 0);
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	close();
 	QIODeviceS *sdev=(QIODeviceS *) p->dev;
 	if(sdev->isClosed()) sdev->create(IO_ReadWrite);
@@ -1691,7 +1691,7 @@ bool QSSLDevice::open(FXuint mode)
 	else
 	{
 		FXERRH(mode & IO_ReadWrite, "You must specify at least one of IO_ReadOnly or IO_WriteOnly!", 0, FXERRH_ISDEBUG);
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->dev->isSynchronous())
 		{
 			p->dev->open(IO_ReadWrite);
@@ -1937,7 +1937,7 @@ void QSSLDevice::close()
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(!p->dev->isSynchronous())
 		{
 			int bufflen=0;
@@ -1980,7 +1980,7 @@ void QSSLDevice::flush()
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->dev->isSynchronous())
 			BIO_flush(p->bio);	// Probably a null op but do it anyway
 		else
@@ -1996,7 +1996,7 @@ FXfval QSSLDevice::size() const
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->dev->isSynchronous())
             return SSL_pending(p->handle);
 		else
@@ -2011,7 +2011,7 @@ void QSSLDevice::truncate(FXfval size)
 #ifdef HAVE_OPENSSL
 	if(isOpen() && !p->dev->isSynchronous())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		p->dev->truncate(size+p->headerdiff);
 		ioIndex=p->dev->at()-p->headerdiff;
 	}
@@ -2028,7 +2028,7 @@ bool QSSLDevice::at(FXfval newpos)
 #ifdef HAVE_OPENSSL
 	if(isOpen() && newpos!=ioIndex && !p->dev->isSynchronous())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		p->dev->at(newpos+p->headerdiff);
 		ioIndex=newpos;
 		return true;
@@ -2066,7 +2066,7 @@ FXuval QSSLDevice::readBlock(char *data, FXuval maxlen)
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->dev->isSynchronous())
 		{
 			int ret=0;
@@ -2074,7 +2074,7 @@ FXuval QSSLDevice::readBlock(char *data, FXuval maxlen)
 			if(!p->connected) p->negotiate();
 			if(maxlen)
 			{
-				FXMtxHold h2(p->readlock);
+				QMtxHold h2(p->readlock);
 				ret=SSL_read(p->handle, (void *) data, (int) maxlen);
 				if(ret<0)
 					FXERRHSSL(ret);
@@ -2107,7 +2107,7 @@ FXuval QSSLDevice::writeBlock(const char *data, FXuval maxlen)
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->dev->isSynchronous())
 		{
 			int ret=0;
@@ -2115,7 +2115,7 @@ FXuval QSSLDevice::writeBlock(const char *data, FXuval maxlen)
 			if(!p->connected) p->negotiate();
 			if(maxlen)
 			{
-				FXMtxHold h2(p->writelock);
+				QMtxHold h2(p->writelock);
 				ret=SSL_write(p->handle, (const void *) data, (int) maxlen);
 				if(ret<0)
 					FXERRHSSL(ret);
@@ -2151,7 +2151,7 @@ FXuval QSSLDevice::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(ioIndex!=newpos)
 			QSSLDevice::at(newpos);
 		return readBlock(data, maxlen);
@@ -2162,7 +2162,7 @@ FXuval QSSLDevice::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(ioIndex!=newpos)
 			QSSLDevice::at(newpos);
 		return writeBlock(data, maxlen);

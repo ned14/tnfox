@@ -75,7 +75,7 @@ FXIPCMsgRegistry::~FXIPCMsgRegistry()
 
 void FXIPCMsgRegistry::int_register(FXuint code, FXIPCMsgRegistry::deendianiseSpec deendianise, FXIPCMsgRegistry::makeMsgSpec makeMsg, FXIPCMsgRegistry::delMsgSpec delMsg, Generic::typeInfoBase &ti)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXERRH(p->msgs.find(code)==0, QTrans::tr("FXIPCMsgRegistry", "Message already registered in this registry"), FXIPCMSGREGISTRY_MSGALREADYREGED, 0);
 	FXIPCMsgRegistryPrivate::Entry *e;
 	FXERRHM(e=new FXIPCMsgRegistryPrivate::Entry(code, deendianise, makeMsg, delMsg, ti));
@@ -89,20 +89,20 @@ void FXIPCMsgRegistry::int_register(FXuint code, FXIPCMsgRegistry::deendianiseSp
 void FXIPCMsgRegistry::int_deregister(FXuint code)
 {
 	assert(isValid());
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	assert(p->msgs.find(code));
 	p->msgs.remove(code);
 }
 
 bool FXIPCMsgRegistry::lookup(FXuint code) const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->msgs.find(code)!=0;
 }
 
 bool FXIPCMsgRegistry::lookup(FXIPCMsgRegistry::deendianiseSpec &deendianise, FXIPCMsgRegistry::makeMsgSpec &makeMsg, FXIPCMsgRegistry::delMsgSpec &delMsg, FXuint code) const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXIPCMsgRegistryPrivate::Entry *e=p->msgs.find(code);
 	if(!e)
 	{
@@ -117,7 +117,7 @@ bool FXIPCMsgRegistry::lookup(FXIPCMsgRegistry::deendianiseSpec &deendianise, FX
 
 const FXString &FXIPCMsgRegistry::decodeType(FXuint code) const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXIPCMsgRegistryPrivate::Entry *e=p->msgs.find(code);
 	if(e)
 		return e->ti.name();
@@ -183,7 +183,7 @@ FXIPCChannel::~FXIPCChannel()
 		requestTermination();
 		wait();
 	}
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	Generic::BoundFunctorV *callv;
 	for(QPtrListIterator<Generic::BoundFunctorV> it(p->msgHandlings); (callv=it.current());)
 	{
@@ -203,73 +203,73 @@ FXIPCChannel::~FXIPCChannel()
 } FXEXCEPTIONDESTRUCT2; }
 FXIPCMsgRegistry &FXIPCChannel::registry() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return *p->registry;
 }
 void FXIPCChannel::setRegistry(FXIPCMsgRegistry &registry)
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	p->registry=&registry;
 }
 QIODeviceS *FXIPCChannel::device() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return p->dev;
 }
 void FXIPCChannel::setDevice(QIODeviceS *dev)
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	p->dev=dev;
 }
 QThreadPool *FXIPCChannel::threadPool() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return p->threadPool;
 }
 void FXIPCChannel::setThreadPool(QThreadPool *threadPool)
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	p->threadPool=threadPool;
 }
 bool FXIPCChannel::unreliable() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return p->unreliable;
 }
 void FXIPCChannel::setUnreliable(bool v)
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	p->unreliable=v;
 }
 bool FXIPCChannel::compression() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return p->compressed;
 }
 void FXIPCChannel::setCompression(bool v)
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	p->compressed=v;
 }
 bool FXIPCChannel::active() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return !p->quit;
 }
 void FXIPCChannel::reset()
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->quit=false; p->noquitmsg=false;
 	p->monitorThreadId=0;
 }
 FXIPCChannel::EndianConversionKinds FXIPCChannel::endianConversion() const
 {
-	// FXMtxHold h(this); can do without
+	// QMtxHold h(this); can do without
 	return p->endianConversion;
 }
 void FXIPCChannel::setEndianConversion(FXIPCChannel::EndianConversionKinds kind)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->endianConversion=kind;
 	if(AlwaysLittleEndian==kind)
 		p->endianiser.setByteOrder(FXStream::LittleEndian);
@@ -278,47 +278,47 @@ void FXIPCChannel::setEndianConversion(FXIPCChannel::EndianConversionKinds kind)
 }
 bool FXIPCChannel::errorTranslation() const
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return p->errorTrans;
 }
 void FXIPCChannel::setErrorTranslation(bool v)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->errorTrans=v;
 }
 bool FXIPCChannel::peerUntrusted() const
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return p->peerUntrusted;
 }
 void FXIPCChannel::setPeerUntrusted(bool v)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->peerUntrusted=v;
 }
 FXuint FXIPCChannel::maxMsgSize() const
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return p->maxMsgSize;
 }
 void FXIPCChannel::setMaxMsgSize(FXuint newsize)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->maxMsgSize=newsize;
 }
 FXuint FXIPCChannel::garbageMessageCount() const
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return p->garbageMessageCount;
 }
 void FXIPCChannel::setGarbageMessageCount(FXuint newsize)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->garbageMessageCount=newsize;
 }
 void FXIPCChannel::setPrintStatistics(bool v)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->printstats=v;
 }
 void FXIPCChannel::requestClose()
@@ -356,7 +356,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 		{
 			QThread_DTHold dthold;
 			FXIPCMsg tmsg(0);
-			FXMtxHold h(this);
+			QMtxHold h(this);
 			if(!p->monitorThreadId) p->monitorThreadId=QThread::id();
 			while(!p->quit)
 			{
@@ -600,7 +600,7 @@ FXIPCChannel::HandledCode FXIPCChannel::invokeMsgReceived(FXIPCChannel::MsgFilte
 QPtrVector<FXIPCMsgHolder> FXIPCChannel::ackedMsgs() const
 {
 	QPtrVector<FXIPCMsgHolder> ret;
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXIPCChannelPrivate::AckEntry *ae;
 	for(QIntDictIterator<FXIPCChannelPrivate::AckEntry> it(p->msgs); (ae=it.current()); ++it)
 	{
@@ -610,7 +610,7 @@ QPtrVector<FXIPCMsgHolder> FXIPCChannel::ackedMsgs() const
 }
 void FXIPCChannel::installPreMsgReceivedFilter(FXIPCChannel::MsgFilterSpec filter)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	MsgFilterSpec *mf;
 	FXERRHM(mf=new MsgFilterSpec(filter));
 	FXRBOp unnew=FXRBNew(mf);
@@ -619,7 +619,7 @@ void FXIPCChannel::installPreMsgReceivedFilter(FXIPCChannel::MsgFilterSpec filte
 }
 bool FXIPCChannel::removePreMsgReceivedFilter(FXIPCChannel::MsgFilterSpec filter)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	MsgFilterSpec *mf;
 	for(QPtrVectorIterator<MsgFilterSpec> it(p->premsgfilters); (mf=it.current()); ++it)
 	{
@@ -657,7 +657,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 	assert(!endianise || p->registry->lookup(msg->msgType()));
 	{
 		QThread_DTHold dthold;
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		FXIPCChannelPrivate::AckEntry *ae=0;
 		if(msg->hasAck())
 		{
@@ -782,7 +782,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 }
 bool FXIPCChannel::getMsgAck(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXIPCChannelPrivate::AckEntry *ae=p->msgs.find(msg->msgId());
 	FXERRH(ae, "Message not found in awaiting ack list", 0, FXERRH_ISDEBUG);
 	if(p->monitorThreadId==QThread::id())
@@ -810,7 +810,7 @@ bool FXIPCChannel::getMsgAck(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor)
 
 FXuint FXIPCChannel::makeUniqueMsgId()
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return int_makeUniqueMsgId();
 }
 bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
@@ -822,7 +822,7 @@ bool FXIPCChannel::restampMsgAndSend(FXuchar *rawmsg, FXIPCMsg *msgheader)
 	QBuffer buffer(data);
 	QThread_DTHold dthold;
 	buffer.open(IO_ReadWrite);
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	p->endianiser.setDevice(&buffer);
 	// Use endian of original message
 	if(msgheader->inBigEndian())
@@ -897,7 +897,7 @@ void FXIPCChannel::forceClose()
 
 void *FXIPCChannel::cleanup()
 {	// Tell all things waiting on an ack that no more connection
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXIPCChannelPrivate::AckEntry *ae;
 	for(QIntDictIterator<FXIPCChannelPrivate::AckEntry> it(p->msgs); (ae=it.current()); ++it)
 	{
@@ -944,7 +944,7 @@ void *FXIPCChannel::cleanup()
 
 Generic::BoundFunctorV *FXIPCChannel::int_addMsgHandler(FXAutoPtr<Generic::BoundFunctorV> v)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	assert(p->threadPool);
 	p->threadPool->dispatch(PtrPtr(v));
 	p->msgHandlings.append(PtrPtr(v));
@@ -952,7 +952,7 @@ Generic::BoundFunctorV *FXIPCChannel::int_addMsgHandler(FXAutoPtr<Generic::Bound
 }
 bool FXIPCChannel::int_removeMsgHandler(Generic::BoundFunctorV *v)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return p->msgHandlings.takeRef(v);
 }
 

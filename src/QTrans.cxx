@@ -675,7 +675,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 	FXERRHM(di.gzipdev=new QGZipDevice(di.dev));
 	di.gzipdev->open(IO_ReadOnly|IO_Translate);
 	QIODevice *fh=di.gzipdev;
-	FXMtxHold h(p, true);
+	QMtxHold h(p, true);
 	QDict<QTransPrivate::EnglishTrans> &dict=p->dict;
 	FXuint lineno=0;
 	QTransPrivate::ModuleTrans *ctrans=0;
@@ -823,7 +823,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 
 void QTrans::removeData(const QTransEmbeddedFile &data)
 {
-	FXMtxHold h(p, true);
+	QMtxHold h(p, true);
 	QDict<QTransPrivate::EnglishTrans> &dict=p->dict;
 	QTransPrivate::EnglishTrans *engtrans;
 	for(QDictIterator<QTransPrivate::EnglishTrans> it(dict); (engtrans=it.current()); ++it)
@@ -842,7 +842,7 @@ void QTrans::removeData(const QTransEmbeddedFile &data)
 
 void QTrans::int_translateString(FXString &dest, QTransString &src, const FXString *langid)
 {
-	FXMtxHold h(p, false);
+	QMtxHold h(p, false);
 	bool gotIt=false;
 	if(!p->noTransFiles)
 	{
@@ -945,7 +945,7 @@ const FXString &QTrans::country(CountryType i)
 
 void QTrans::refresh()
 {
-	FXMtxHold h(me->p);
+	QMtxHold h(me->p);
 	FXString iso639, iso3166;
 #ifdef WIN32
 #ifndef LOCALE_SENGCURRNAME
@@ -1015,7 +1015,7 @@ void QTrans::refresh()
 
 void QTrans::overrideLanguage(const FXString &iso639)
 {
-	FXMtxHold h(me->p);
+	QMtxHold h(me->p);
 	me->p->overrides.language=iso639;
 	if(me->p->overrides.language.empty())
 		refresh();
@@ -1024,7 +1024,7 @@ void QTrans::overrideLanguage(const FXString &iso639)
 
 void QTrans::overrideCountry(const FXString &iso3166)
 {
-	FXMtxHold h(me->p);
+	QMtxHold h(me->p);
 	me->p->overrides.country=iso3166;
 	if(me->p->overrides.country.empty())
 		refresh();
@@ -1052,7 +1052,7 @@ static void addProvidedInfo(QValueList<QTrans::ProvidedInfo> &ret, QTrans::Provi
 QValueList<QTrans::ProvidedInfo> QTrans::provided()
 {
 	QValueList<ProvidedInfo> ret;
-	FXMtxHold h(me->p, false);
+	QMtxHold h(me->p, false);
 	if(!me->p->noTransFiles)
 	{
 		QDictIterator<QTransPrivate::EnglishTrans> engit(me->p->dict);

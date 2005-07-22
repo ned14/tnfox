@@ -200,13 +200,13 @@ FXFile::~FXFile()
 
 const FXString &FXFile::name() const
 {
-	// FXMtxHold h(p);	can do without
+	// QMtxHold h(p);	can do without
 	return p->filename;
 }
 
 void FXFile::setName(const FXString &name)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!p->amStdio)
 	{
 		if(isOpen()) close();
@@ -216,14 +216,14 @@ void FXFile::setName(const FXString &name)
 
 bool FXFile::exists() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(p->amStdio) return true;
 	return exists(p->filename)!=0;
 }
 
 bool FXFile::remove()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(p->amStdio) return false;
 	close();
 	return remove(p->filename)!=0;
@@ -231,7 +231,7 @@ bool FXFile::remove()
 
 FXfval FXFile::reloadSize()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 #ifdef WIN32
@@ -259,7 +259,7 @@ QIODevice &FXFile::stdio(bool applyCRLFTranslation)
 
 bool FXFile::open(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
 		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("FXFile", "Device reopen has different mode"));
@@ -329,7 +329,7 @@ bool FXFile::open(FXuint mode)
 
 void FXFile::close()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen() && !p->amStdio)
 	{
 		QThread_DTHold dth;
@@ -348,7 +348,7 @@ void FXFile::close()
 
 void FXFile::flush()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen() && isWriteable())
 	{
 		QThread_DTHold dth;
@@ -365,7 +365,7 @@ void FXFile::flush()
 
 FXfval FXFile::size() const
 {
-	// FXMtxHold h(p); can do without
+	// QMtxHold h(p); can do without
 	if(isOpen() && !p->amStdio)
 		return p->size;
 	else
@@ -374,7 +374,7 @@ FXfval FXFile::size() const
 
 void FXFile::truncate(FXfval size)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("FXFile", "Not open for writing"));
 	if(isOpen() && !p->amStdio)
 	{
@@ -389,13 +389,13 @@ void FXFile::truncate(FXfval size)
 
 FXfval FXFile::at() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->amStdio ? 0 : ioIndex;
 }
 
 bool FXFile::at(FXfval newpos)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen() && ioIndex!=newpos && !p->amStdio)
 	{
 		QThread_DTHold dth;
@@ -415,7 +415,7 @@ bool FXFile::at(FXfval newpos)
 
 bool FXFile::atEnd() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isOpen()) return true;
 	// Unfortunately GNU/Linux doesn't have eof() and MSVC6's _eof() doesn't like file pointers > 4Gb!
 	// You also need to stay compatible with when the input is stdin
@@ -451,7 +451,7 @@ void FXFile::setPermissions(const FXString &path, const FXACL &perms)
 
 FXuval FXFile::readBlock(char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("FXFile", "Not open for reading"));
 	if(isOpen() && maxlen)
 	{
@@ -503,7 +503,7 @@ FXuval FXFile::readBlock(char *data, FXuval maxlen)
 
 FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("FXFile", "Not open for writing"));
 	if(isOpen())
 	{
@@ -553,20 +553,20 @@ FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 
 FXuval FXFile::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	at(pos);
 	return readBlock(data, maxlen);
 }
 FXuval FXFile::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	at(pos);
 	return writeBlock(data, maxlen);
 }
 
 int FXFile::ungetch(int c)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		uint size=p->ungetchbuffer.size();

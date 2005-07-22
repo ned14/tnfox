@@ -74,7 +74,7 @@ QByteArray &QBuffer::buffer() const
 {
 	if(!p->buffer)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(!p->buffer)
 		{
 			FXERRHM(p->buffer=new QByteArray);
@@ -86,7 +86,7 @@ QByteArray &QBuffer::buffer() const
 
 void QBuffer::setBuffer(QByteArray &buffer)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(p->mine) FXDELETE(p->buffer);
 	p->mine=false;
 	p->buffer=&buffer;
@@ -94,7 +94,7 @@ void QBuffer::setBuffer(QByteArray &buffer)
 
 bool QBuffer::open(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	mode&=~IO_Translate;
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
@@ -120,7 +120,7 @@ bool QBuffer::open(FXuint mode)
 
 void QBuffer::close()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		ioIndex=0;
@@ -134,13 +134,13 @@ void QBuffer::flush()
 
 FXfval QBuffer::size() const
 {
-	// FXMtxHold h(p);	can do without
+	// QMtxHold h(p);	can do without
 	return p->buffer->size();
 }
 
 void QBuffer::truncate(FXfval size)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for writing"));
 	if(isOpen())
 	{
@@ -153,7 +153,7 @@ void QBuffer::truncate(FXfval size)
 
 FXuval QBuffer::readBlock(char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isReadable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for reading"));
 	if(isOpen() && ioIndex<p->buffer->size())
 	{
@@ -168,7 +168,7 @@ FXuval QBuffer::readBlock(char *data, FXuval maxlen)
 
 FXuval QBuffer::writeBlock(const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for writing"));
 	if(isOpen())
 	{
@@ -185,13 +185,13 @@ FXuval QBuffer::writeBlock(const char *data, FXuval maxlen)
 
 FXuval QBuffer::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	ioIndex=pos;
 	return readBlock(data, maxlen);
 }
 FXuval QBuffer::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	ioIndex=pos;
 	return writeBlock(data, maxlen);
 }
@@ -199,7 +199,7 @@ FXuval QBuffer::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 
 int QBuffer::getch()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isReadable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for reading"));
 	if(isOpen() && ioIndex<p->buffer->size())
 	{
@@ -212,7 +212,7 @@ int QBuffer::getch()
 
 int QBuffer::putch(int c)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QBuffer", "Not open for writing"));
 	if(isOpen())
 	{
@@ -228,7 +228,7 @@ int QBuffer::putch(int c)
 
 int QBuffer::ungetch(int c)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		if(0==ioIndex)
@@ -243,13 +243,13 @@ int QBuffer::ungetch(int c)
 
 FXStream &operator<<(FXStream &s, const QBuffer &i)
 {
-	FXMtxHold h(i.p);
+	QMtxHold h(i.p);
 	return s.writeRawBytes(i.buffer().data(), (FXuval) i.size());
 }
 
 FXStream &operator>>(FXStream &s, QBuffer &i)
 {
-	FXMtxHold h(i.p);
+	QMtxHold h(i.p);
 	FXuval len=(FXuval) s.device()->size();
 	FXERRH(len<((FXuint)-1), "Cannot read a file larger than a FXuint", QBUFFER_FILETOOBIG, FXERRH_ISDEBUG);
 	i.buffer().resize((FXuint) len);

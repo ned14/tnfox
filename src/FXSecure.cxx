@@ -95,7 +95,7 @@ static struct SecureHeapInit : public QMutex
 	}
 	inline void lock(void *ptr, FXuval size)
 	{
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		void *cendptr=FXOFFSETPTR(ptr, size), *endptr=mlock.length() ? FXOFFSETPTR(mlock.location(), mlock.length()) : 0;
 		if(ptr<mlock.location() || cendptr>endptr)
 		{
@@ -180,7 +180,7 @@ class RandomnessPrivate : public QThread, public QMutex
 	struct SharedMemLayout
 	{
 		FXuint magic;			// "FXRN"
-		FXShrdMemMutex lock;	// update lock
+		QShrdMemMutex lock;	// update lock
 		FXAtomicInt usercount;	// count of client processes
 		FXuint usercountlatch;	// count last update
 		FXuint lastupdate;		// Timestamp last update
@@ -268,7 +268,7 @@ public:
 			}
 			if(*(FXuint *)"FXRN"!=data->magic)
 			{	// Init
-				new(&data->lock) FXShrdMemMutex;
+				new(&data->lock) QShrdMemMutex;
 				new(&data->usercount) FXAtomicInt;
 				data->usercountlatch=1;
 				data->lastupdate=0;
@@ -290,13 +290,13 @@ public:
 		{
 			requestTermination();
 			wait();
-			FXMtxHold h(this);
+			QMtxHold h(this);
 			data->lock.lock();
 			if(0==--data->usercountlatch)
 			{	// Destroy
 				data->magic=0;
 				data->usercount.~FXAtomicInt();
-				data->lock.~FXShrdMemMutex();
+				data->lock.~QShrdMemMutex();
 			}
 			else data->lock.unlock();
 			data=0;
@@ -306,7 +306,7 @@ public:
 	}
 	void readBlock(FXuchar *buffer, FXuval length)
 	{
-		FXMtxHold h(this);
+		QMtxHold h(this);
 #ifdef USE_POSIX
 		random.open(IO_ReadOnly);
 		FXRBOp unopen=FXRBObj(random, &FXFile::close);
@@ -330,7 +330,7 @@ public:
 	}
 	FXuval size()
 	{
-		FXMtxHold h(this);
+		QMtxHold h(this);
 #ifdef USE_POSIX
 		// Can't stat() /dev/random, so must open and seek
 		random.open(IO_ReadOnly);

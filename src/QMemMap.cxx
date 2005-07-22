@@ -249,13 +249,13 @@ QMemMap::~QMemMap()
 
 const FXString &QMemMap::name() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->name;
 }
 
 void QMemMap::setName(const FXString &name)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	close();
 	p->name=name;
 	if(p->file) p->file->setName(name);
@@ -264,31 +264,31 @@ void QMemMap::setName(const FXString &name)
 
 bool QMemMap::isUnique() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->unique;
 }
 
 void QMemMap::setUnique(bool v)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->unique=v;
 }
 
 QMemMap::Type QMemMap::type() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->type;
 }
 
 void QMemMap::setType(QMemMap::Type type)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->type=type;
 }
 
 bool QMemMap::exists() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(File==p->type)
 		return p->file->exists();
 	return isOpen();
@@ -296,7 +296,7 @@ bool QMemMap::exists() const
 
 bool QMemMap::remove()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	close();
 	if(File==p->type)
 		return p->file->remove();
@@ -305,7 +305,7 @@ bool QMemMap::remove()
 
 FXfval QMemMap::reloadSize()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen() && File==p->type)
 		return p->file->reloadSize();
 	return 0;
@@ -313,7 +313,7 @@ FXfval QMemMap::reloadSize()
 
 FXfval QMemMap::mappableSize() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->size;
 }
 
@@ -322,7 +322,7 @@ void QMemMap::maximiseMappableSize()
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for writing"));
 	if(isOpen() && File==p->type)
 	{	// NOTE TO SELF: Keep consistent with truncate()
-		FXMtxHold h(p);
+		QMtxHold h(p);
 #ifdef USE_WINAPI
 		{	// Ok, close mapping and reopen
 			if(p->mappingh)
@@ -349,7 +349,7 @@ void QMemMap::maximiseMappableSize()
 
 void *QMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	Mapping *m;
 	if((FXfval) -1==amount) amount=p->size;
 	if(!amount) return 0;	// Can't have null maps
@@ -371,7 +371,7 @@ void *QMemMap::mapIn(FXfval offset, FXfval amount, bool copyOnWrite)
 
 void QMemMap::mapOut(FXfval offset, FXfval amount)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if((FXfval) -1==amount) amount=p->size;
 	p->unmap(offset, amount);
 	if(p->mappingsFailed) p->map();
@@ -379,7 +379,7 @@ void QMemMap::mapOut(FXfval offset, FXfval amount)
 
 void QMemMap::mapOut(void *area)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	QSortedListIterator<Mapping> it(p->mappings);
 	for(Mapping *m; (m=it.current()); ++it)
 	{
@@ -395,7 +395,7 @@ void QMemMap::mapOut(void *area)
 bool QMemMap::mappedRegion(QMemMap::MappedRegion *current, QMemMap::MappedRegion *next, FXfval offset) const
 {
 	bool ret=false;
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if((FXfval) -1==offset)
 		offset=ioIndex;
 	QSortedListIterator<Mapping> it=p->mappings.findClosestIter(&Mapping(offset));
@@ -431,7 +431,7 @@ bool QMemMap::mappedRegion(QMemMap::MappedRegion *current, QMemMap::MappedRegion
 }
 void *QMemMap::mapOffset(FXfval offset) const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if((FXfval) -1==offset)
 	{
 		if(p->cmapping)
@@ -518,7 +518,7 @@ inline void QMemMap::setIoIndex(FXfval newpos)
 
 bool QMemMap::open(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
 		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QMemMap", "Device reopen has different mode"));
@@ -564,7 +564,7 @@ bool QMemMap::open(FXuint mode)
 		{
 			FXString name;
 			static QMutex locallock;	// Lock to prevent race between determining name doesn't exist and creating it
-			FXMtxHold h(locallock);
+			QMtxHold h(locallock);
 			do
 			{
 				if(p->unique)
@@ -601,7 +601,7 @@ void QMemMap::close()
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		mapOut();	// maps out everything
 #ifdef USE_WINAPI
 		if(p->mappingh)
@@ -640,7 +640,7 @@ void QMemMap::flush()
 {
 	if(isOpen() && isWriteable())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		QSortedListIterator<Mapping> it(p->mappings);
 		for(Mapping *m; (m=it.current()); ++it)
 		{
@@ -663,7 +663,7 @@ FXfval QMemMap::size() const
 {
 	if(isOpen())
 	{
-		// FXMtxHold h(p); can do without
+		// QMtxHold h(p); can do without
 		return (File==p->type) ? p->file->size() : p->size;
 	}
 	return 0;
@@ -674,7 +674,7 @@ void QMemMap::truncate(FXfval newsize)
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for writing"));
 	if(isOpen())
 	{	// NOTE TO SELF: Keep consistent with maximiseMappableSize()
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(newsize<p->size)
 		{
 			if(mode() & IO_ShredTruncate)
@@ -717,7 +717,7 @@ bool QMemMap::at(FXfval newpos)
 {
 	if(isOpen() && ioIndex!=newpos)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		setIoIndex(newpos);
 		p->ungetchbuffer.resize(0);
 		return true;
@@ -785,7 +785,7 @@ void QMemMap::setPermissions(const FXString &name, const FXACL &perms)
 
 FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for reading"));
 	FXfval mysize=(File==p->type) ? p->file->size() : p->size;
 	if(isOpen() && ioIndex<mysize && maxlen)
@@ -846,7 +846,7 @@ FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 
 FXuval QMemMap::writeBlock(const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QMemMap", "Not open for writing"));
 	if(isOpen() && maxlen)
 	{
@@ -904,7 +904,7 @@ FXuval QMemMap::readBlockFrom(char *data, FXuval maxlen, FXfval newpos)
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(ioIndex!=newpos)
 		{
 			setIoIndex(newpos);
@@ -918,7 +918,7 @@ FXuval QMemMap::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(ioIndex!=newpos)
 		{
 			setIoIndex(newpos);
@@ -931,7 +931,7 @@ FXuval QMemMap::writeBlockTo(FXfval newpos, const char *data, FXuval maxlen)
 
 int QMemMap::getch()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		FXuchar ret;
@@ -964,7 +964,7 @@ int QMemMap::getch()
 
 int QMemMap::putch(int c)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		FXuchar val=(FXuchar) c;
@@ -1001,7 +1001,7 @@ int QMemMap::putch(int c)
 
 int QMemMap::ungetch(int c)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		uint size=p->ungetchbuffer.size();

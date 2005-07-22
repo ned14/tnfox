@@ -108,7 +108,7 @@ FXuval QLocalPipe::granularity() const
 {
 	if(p && MAGIC==p->magic)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		return p->granularity;
 	}
 	return 0;
@@ -118,7 +118,7 @@ void QLocalPipe::setGranularity(FXuval newval)
 {
 	if(p && MAGIC==p->magic && isClosed())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		p->granularity=newval;
 		p->A.delChunk();
 		p->B.delChunk();
@@ -129,7 +129,7 @@ void QLocalPipe::setGranularity(FXuval newval)
 
 bool QLocalPipe::open(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
 		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QLocalPipe", "Device reopen has different mode"));
@@ -146,7 +146,7 @@ void QLocalPipe::close()
 {
 	if(p && MAGIC==p->magic && isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		Buffer &b=p->writeBuffer(this);
 		b.data.clear();
 		b.rptr=b.wptr=0;
@@ -169,7 +169,7 @@ FXfval QLocalPipe::size() const
 	if(isOpen())
 	{
 		if(!p || MAGIC!=p->magic) return 0;
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		Buffer &b=p->readBuffer(const_cast<QLocalPipe *>(this));
 		FXfval waiting=(b.datachunks-1)*p->granularity;
 		waiting+=b.wptr-b.rptr;
@@ -185,7 +185,7 @@ bool QLocalPipe::atEnd() const { return size()==0; }
 
 FXuval QLocalPipe::readBlock(char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isReadable()) FXERRGIO(QTrans::tr("QLocalPipe", "Not open for reading"));
 	if(isOpen() && maxlen)
 	{
@@ -232,7 +232,7 @@ FXuval QLocalPipe::readBlock(char *data, FXuval maxlen)
 
 FXuval QLocalPipe::writeBlock(const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QLocalPipe", "Not open for writing"));
 	if(isOpen() && maxlen)
 	{

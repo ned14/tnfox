@@ -969,7 +969,7 @@ const FXString &fxdemanglesymbol(const FXString &rawsymbol)
 {
 	static QMutex lock;
 	static QDict<FXString> cache(13, true);
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	FXString *ret=cache.find(rawsymbol);
 	if(ret) return *ret;
 	FXERRHM(ret=new FXString);

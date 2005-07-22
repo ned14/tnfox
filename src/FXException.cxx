@@ -172,7 +172,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	static QMutex symlock;
 	if(!(_flags & FXERRH_ISINFORMATIONAL))
 	{
-		FXMtxHold lockh(symlock);
+		QMtxHold lockh(symlock);
 		int i,i2;
 		HANDLE myprocess;
 		HANDLE mythread=(HANDLE) GetCurrentThread();

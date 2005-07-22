@@ -164,7 +164,7 @@ It appears duplex pipes are broken on Windows NT all versions :(
 */
 bool QPipe::create(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	close();
 	FXString fullname;
 	for(;;)
@@ -249,7 +249,7 @@ bool QPipe::create(FXuint mode)
 
 bool QPipe::open(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
 		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QPipe", "Device reopen has different mode"));
@@ -329,7 +329,7 @@ void QPipe::close()
 {
 	if(p)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		QThread_DTHold dth;
 #ifdef USE_WINAPI
 		if(p->connected)
@@ -399,7 +399,7 @@ void QPipe::close()
 
 void QPipe::flush()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen() && isWriteable())
 	{
 		QThread_DTHold dth;
@@ -446,7 +446,7 @@ bool QPipe::reset()
 
 FXfval QPipe::size() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXfval waiting=0;
 	if(!isReadable()) return 0;
 #ifdef USE_WINAPI
@@ -491,7 +491,7 @@ void QPipe::setPermissions(const FXString &name, const FXACL &perms)
 
 FXuval QPipe::readBlock(char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QPipe", "Not open for reading"));
 	if(isOpen())
 	{
@@ -624,7 +624,7 @@ doread:
 
 FXuval QPipe::writeBlock(const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QPipe", "Not open for writing"));
 	if(isOpen())
 	{

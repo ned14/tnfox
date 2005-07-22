@@ -179,7 +179,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	{	// NOTE TO SELF: Must be safe to be called during static init/deinit!!!
 		if(mempools.enabled)
 		{
-			FXMtxHold h(mempools.lock);
+			QMtxHold h(mempools.lock);
 			mempools.pools.insert(this, this);
 			QDICTDYNRESIZE(mempools.pools);
 		}
@@ -199,7 +199,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 		}
 		if(mempools.enabled)
 		{
-			FXMtxHold h(mempools.lock);
+			QMtxHold h(mempools.lock);
 			mempools.pools.remove(this);
 			QDICTDYNRESIZE(mempools.pools);
 		}
@@ -396,7 +396,7 @@ QMemArray<FXMemoryPool::MemoryPoolInfo> FXMemoryPool::statistics()
 {
 	if(mempools.enabled)
 	{
-		FXMtxHold h(mempools.lock);
+		QMtxHold h(mempools.lock);
 		FXuint len=mempools.pools.count();
 		QMemArray<MemoryPoolInfo> ret(len+1);
 		FXuint n=0;
@@ -737,7 +737,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 void failonfree(void *p, FXMemoryPool *heap) throw()
 {
 #if FXFAILONFREESLOTS>0
-	FXMtxHold h(failOnFreesLock);
+	QMtxHold h(failOnFreesLock);
 	for(int n=0; n<FXFAILONFREESLOTS; n++)
 	{
 		if(!failOnFrees[n].blk)
@@ -752,7 +752,7 @@ void failonfree(void *p, FXMemoryPool *heap) throw()
 void unfailonfree(void *p, FXMemoryPool *heap) throw()
 {
 #if FXFAILONFREESLOTS>0
-	FXMtxHold h(failOnFreesLock);
+	QMtxHold h(failOnFreesLock);
 	for(int n=0; n<FXFAILONFREESLOTS; n++)
 	{
 		if(failOnFrees[n].blk==p)

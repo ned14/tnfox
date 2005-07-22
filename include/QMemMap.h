@@ -50,7 +50,7 @@ the mapped section nor off the start. Use as shared memory between processes
 is also ridiculously easy - you simply name the device the same in both processes
 and voilá, you're now working with the same patch of memory! Remember to
 synchronise multiple process access - the most portable is via msgs using a pipe,
-however if there is low contention in access it can be done via FX::FXShrdMemMutex.
+however if there is low contention in access it can be done via FX::QShrdMemMutex.
 
 You can map in an existing FX::FXFile device and indeed internally QMemMap creates
 one if you don't specify a FX::FXFile but do a filename. You should note that as a

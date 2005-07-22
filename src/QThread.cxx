@@ -119,7 +119,7 @@ bool QWaitCondition::wait(FXuint time)
 	if(p)
 	{
 		DECLARERET;
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(isSignalled)
 		{
 			if(isAutoReset) isSignalled=false;
@@ -187,7 +187,7 @@ void QWaitCondition::wakeOne()
 	if(p)
 	{
 		DECLARERET;
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->waitcnt)
 		{
 #ifdef USE_WINAPI
@@ -210,7 +210,7 @@ void QWaitCondition::wakeAll()
 	if(p)
 	{
 		DECLARERET;
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->waitcnt)
 		{
 #ifdef USE_WINAPI
@@ -240,7 +240,7 @@ void QWaitCondition::reset()
 #ifndef FXDISABLE_THREADS
 	if(p)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		isSignalled=false;
 	}
 #endif
@@ -297,7 +297,7 @@ QRWMutex::~QRWMutex()
 	if(p)
 	{
 		lock(true);
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		QRWMutexPrivate *_p=p;
 		p=0;
 		h.unlock();
@@ -325,7 +325,7 @@ of stuff was reading and that was causing poor performance. This new algorithm u
 thread local storage to replace the old array so I've also removed the limit on max
 threads.
 */
-inline bool QRWMutex::_lock(FXMtxHold &h, bool write)
+inline bool QRWMutex::_lock(QMtxHold &h, bool write)
 {
 	bool lockLost=false;
 #ifndef FXDISABLE_THREADS
@@ -404,7 +404,7 @@ void QRWMutex::unlock(bool write)
 #ifndef FXDISABLE_THREADS
 	if(p)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(write)
 		{
 #ifdef DEBUG
@@ -447,7 +447,7 @@ bool QRWMutex::lock(bool write)
 #ifndef FXDISABLE_THREADS
 	if(p)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		return _lock(h, write);
 	}
 #endif
@@ -462,7 +462,7 @@ bool QRWMutex::trylock(bool write)
 	bool ret=false;
 	if(p)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(!p->write.count)
 		{
 			_lock(h, write);
@@ -792,7 +792,7 @@ void QThreadPrivate::run(QThread *t)
 #endif
 #endif
 	}
-	FXMtxHold h(t->p);
+	QMtxHold h(t->p);
 #ifdef DEBUG
 	fxmessage("Thread %u (%s) started\n", (FXuint) QThread::id(), t->name());
 #endif
@@ -812,7 +812,7 @@ void QThreadPrivate::run(QThread *t)
 	t->isRunning=true;
 	t->isFinished=false;
 	{	// Do creation upcalls
-		FXMtxHold h(creationupcallslock);
+		QMtxHold h(creationupcallslock);
 		CreationUpcall *cu;
 		for(QPtrListIterator<CreationUpcall> it(creationupcalls); (cu=it.current()); ++it)
 		{
@@ -840,7 +840,7 @@ void QThreadPrivate::cleanup(QThread *t)
 	QWaitCondition *stoppedwc=0;
 	{
 		QThread_DTHold dth;
-		FXMtxHold h(t->p);
+		QMtxHold h(t->p);
 		FXERRH(t->p, "Possibly a 'delete this' was called during thread cleanup?", QTHREAD_DELETETHIS, FXERRH_ISFATAL);
 		FXERRH(!t->isInCleanup, "Exception occured during thread cleanup", QTHREAD_CLEANUPEXCEPTION, FXERRH_ISFATAL);
 		t->isInCleanup=true;
@@ -908,7 +908,7 @@ QThread::~QThread()
 { FXEXCEPTIONDESTRUCT1 {
 	if(isFinished || !isRunning)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		QThreadPrivate::CleanupCall *cc;
 		for(QPtrListIterator<QThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
 		{
@@ -925,31 +925,31 @@ QThread::~QThread()
 
 FXuval QThread::stackSize() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->stackSize;
 }
 
 void QThread::setStackSize(FXuval newsize)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->stackSize=newsize;
 }
 
 QThread::ThreadScheduler QThread::threadLocation() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->threadLocation;
 }
 
 void QThread::setThreadLocation(QThread::ThreadScheduler threadloc)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->threadLocation=threadloc;
 }
 
 bool QThread::wait(FXuint time)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if (isFinished || !isRunning) return true;
 #ifdef USE_WINAPI
 	h.unlock();
@@ -984,7 +984,7 @@ bool QThread::wait(FXuint time)
 void QThread::start(bool waitTillStarted)
 {
 	static FXuint noOfProcessors=FXProcess::noOfProcessors();
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(waitTillStarted && !p->startedwc)
 	{
 		FXERRHM(p->startedwc=new QWaitCondition(false, false));
@@ -1044,7 +1044,7 @@ void QThread::start(bool waitTillStarted)
 	FXERRHOS(pthread_attr_destroy(&attr));
 #endif
 	{	// Do creation upcalls
-		FXMtxHold h(creationupcallslock);
+		QMtxHold h(creationupcallslock);
 		CreationUpcall *cu;
 		for(QPtrListIterator<CreationUpcall> it(creationupcalls); (cu=it.current()); ++it)
 		{
@@ -1066,7 +1066,7 @@ bool QThread::isValid() const throw()
 
 bool QThread::setAutoDelete(bool doso) throw()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	bool ret=p->autodelete;
 	p->autodelete=doso;
 	return ret;
@@ -1078,7 +1078,7 @@ void QThread::requestTermination()
 	{
 		p->plsCancel=true;
 #ifdef USE_WINAPI
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(!p->plsCancelDisabled) FXERRHWIN(SetEvent(p->plsCancelWaiter)); 
 #endif
 #ifdef USE_POSIX
@@ -1259,7 +1259,7 @@ void QThread::disableTermination()
 		if(!termdisablecnt++)
 		{
 #ifdef USE_WINAPI
-			FXMtxHold h(p);
+			QMtxHold h(p);
 			p->plsCancelDisabled=true;
 			FXERRHWIN(ResetEvent(p->plsCancelWaiter)); 
 #endif
@@ -1273,7 +1273,7 @@ void QThread::disableTermination()
 bool QThread::checkForTerminate()
 {
 #ifdef USE_WINAPI
-	// FXMtxHold h(p); I think we can get away with not having this?
+	// QMtxHold h(p); I think we can get away with not having this?
 	if(!p->plsCancelDisabled && p->plsCancel)
 	{
 		//h.unlock();
@@ -1299,7 +1299,7 @@ void QThread::enableTermination()
 		if(!--termdisablecnt)
 		{
 #ifdef USE_WINAPI
-			FXMtxHold h(p);
+			QMtxHold h(p);
 			p->plsCancelDisabled=false;
 			if(p->plsCancel) FXERRHWIN(SetEvent(p->plsCancelWaiter)); 
 #endif
@@ -1323,7 +1323,7 @@ void *QThread::int_cancelWaiterHandle()
 
 void QThread::addCreationUpcall(QThread::CreationUpcallSpec upcallv, bool inThread)
 {
-	FXMtxHold h(creationupcallslock);
+	QMtxHold h(creationupcallslock);
 	CreationUpcall *cu;
 	FXERRHM(cu=new CreationUpcall(upcallv, inThread));
 	FXRBOp unnew=FXRBNew(cu);
@@ -1333,7 +1333,7 @@ void QThread::addCreationUpcall(QThread::CreationUpcallSpec upcallv, bool inThre
 
 bool QThread::removeCreationUpcall(QThread::CreationUpcallSpec upcallv)
 {
-	FXMtxHold h(creationupcallslock);
+	QMtxHold h(creationupcallslock);
 	CreationUpcall *cu;
 	for(QPtrListIterator<CreationUpcall> it(creationupcalls); (cu=it.current()); ++it)
 	{
@@ -1349,7 +1349,7 @@ bool QThread::removeCreationUpcall(QThread::CreationUpcallSpec upcallv)
 Generic::BoundFunctorV *QThread::addCleanupCall(FXAutoPtr<Generic::BoundFunctorV> handler, bool inThread)
 {
 	assert(this);	// Static init check
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXERRHM(PtrPtr(handler));
 	FXPtrHold<QThreadPrivate::CleanupCall> cc=new QThreadPrivate::CleanupCall(PtrPtr(handler), inThread);
 	p->cleanupcalls.append(cc);
@@ -1359,7 +1359,7 @@ Generic::BoundFunctorV *QThread::addCleanupCall(FXAutoPtr<Generic::BoundFunctorV
 
 bool QThread::removeCleanupCall(Generic::BoundFunctorV *handler)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	QThreadPrivate::CleanupCall *cc;
 	for(QPtrListIterator<QThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
 	{
@@ -1418,7 +1418,7 @@ struct FXDLLLOCAL QThreadPoolPrivate : public QMutex
 		void selfDestruct()
 		{
 			{
-				FXMtxHold h(parent);
+				QMtxHold h(parent);
 				parent->threads.takeRef(this);
 			}
 			delete this;
@@ -1432,7 +1432,7 @@ struct FXDLLLOCAL QThreadPoolPrivate : public QMutex
 	QThreadPoolPrivate(bool _dynamic) : total(0), maximum(0), free(0), dynamic(_dynamic), threads(true), timed(true), waiting(true), waitingwcs(7, true), QMutex() { }
 	~QThreadPoolPrivate()
 	{
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		Thread *t;
 		for(QPtrListIterator<Thread> it(threads); (t=it.current()); ++it)
 			t->requestTermination();
@@ -1459,7 +1459,7 @@ void QThreadPoolPrivate::Thread::run()
 				bool goFree=true;
 				if(!parent->waiting.isEmpty())
 				{
-					FXMtxHold h(parent);
+					QMtxHold h(parent);
 					if(!parent->waiting.isEmpty())
 					{
 						code=parent->waiting.getFirst();
@@ -1475,7 +1475,7 @@ void QThreadPoolPrivate::Thread::run()
 					assert(!code);
 					if(++parent->free>(int) parent->total)
 					{
-						FXMtxHold h(parent);
+						QMtxHold h(parent);
 						if(parent->free>(int) parent->total) 
 						{
 							free=false;
@@ -1500,7 +1500,7 @@ void QThreadPoolPrivate::Thread::run()
 				unlock();
 				//if(!parent->waitingwcs.isEmpty())
 				{
-					FXMtxHold h(parent);
+					QMtxHold h(parent);
 					QWaitCondition *codewc=parent->waitingwcs.find(_code);
 					if(codewc)
 					{
@@ -1549,7 +1549,7 @@ public:
 		for(;;)
 		{
 			bool callFunct=!wc.wait(untilNext);
-			FXMtxHold h(mastertimekeeperlock);
+			QMtxHold h(mastertimekeeperlock);
 			do
 			{
 				Entry *entry=entries.isEmpty() ? 0 : entries.getFirst();
@@ -1585,7 +1585,7 @@ public:
 	}
 	void *cleanup()
 	{
-		FXMtxHold h(mastertimekeeperlock);
+		QMtxHold h(mastertimekeeperlock);
 		Entry *entry;
 		assert(entries.isEmpty());	// Otherwise it's probably a memory leak
 		while((entry=entries.getFirst()))
@@ -1615,7 +1615,7 @@ QThreadPool::~QThreadPool()
 { FXEXCEPTIONDESTRUCT1 {
 	if(mastertimekeeper)
 	{
-		FXMtxHold h(mastertimekeeperlock);
+		QMtxHold h(mastertimekeeperlock);
 		QThreadPoolTimeKeeper::Entry *entry;
 		for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current());)
 		{
@@ -1667,7 +1667,7 @@ void QThreadPool::startThreads(FXuint newno)
 
 void QThreadPool::setTotal(FXuint newno)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->maximum=newno;
 	if(!p->dynamic) startThreads(newno);
 }
@@ -1689,7 +1689,7 @@ QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code
 	assert(code);
 	if(delay)
 	{
-		FXMtxHold h(mastertimekeeperlock);
+		QMtxHold h(mastertimekeeperlock);
 		if(!mastertimekeeper)
 		{
 			FXERRHM(mastertimekeeper=new QThreadPoolTimeKeeper);
@@ -1708,7 +1708,7 @@ QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code
 	}
 	else
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		if(p->free)
 		{
 			QThreadPoolPrivate::Thread *t;
@@ -1743,12 +1743,12 @@ QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool 
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	if(!code) return NotFound;
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	//fxmessage("Thread pool cancel %p\n", code);
 	if(!p->waiting.takeRef(code))
 	{
 		h.unlock();
-		FXMtxHold h2(mastertimekeeperlock);
+		QMtxHold h2(mastertimekeeperlock);
 		h.relock();
 		if(!p->waiting.takeRef(code))
 		{
@@ -1776,7 +1776,7 @@ QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool 
 						}
 						//fxmessage("Thread pool cancel %p waiting for completion\n", code);
 						h.unlock();
-						if(wait) { FXMtxHold h3(t); }
+						if(wait) { QMtxHold h3(t); }
 						// Should be deleted if we waited
 						return WasRunning;
 					}
@@ -1792,7 +1792,7 @@ QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool 
 bool QThreadPool::reset(QThreadPool::handle _code, FXuint delay)
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
-	FXMtxHold h(mastertimekeeperlock);
+	QMtxHold h(mastertimekeeperlock);
 	if(!mastertimekeeper) return false;
 	QThreadPoolTimeKeeper::Entry *entry;
 	QSortedListIterator<QThreadPoolTimeKeeper::Entry> it=mastertimekeeper->entries;
@@ -1817,7 +1817,7 @@ bool QThreadPool::reset(QThreadPool::handle _code, FXuint delay)
 bool QThreadPool::wait(QThreadPool::handle _code, FXuint period)
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(-1==p->waiting.findRef(code))
 	{
 		QThreadPoolPrivate::Thread *t;

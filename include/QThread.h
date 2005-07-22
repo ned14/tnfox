@@ -43,17 +43,17 @@ increases code bloat.
 */
 
 #ifdef FXINLINE_MUTEX_IMPLEMENTATION
- #define FXMUTEX_FXAPI
- #define FXMUTEX_GLOBALS_FXAPI FXAPI
+ #define QMUTEX_FXAPI
+ #define QMUTEX_GLOBALS_FXAPI FXAPI
  // Testing has found that force inlining public declarations makes
  // the code go slower so we leave it up to the compiler
- #define FXMUTEX_INLINEI FXFORCEINLINE
- #define FXMUTEX_INLINEP inline
+ #define QMUTEX_INLINEI FXFORCEINLINE
+ #define QMUTEX_INLINEP inline
 #else
- #define FXMUTEX_FXAPI FXAPI
- #define FXMUTEX_GLOBALS_FXAPI
- #define FXMUTEX_INLINEI FXFORCEINLINE	// internally inlined inside QThread.cxx
- #define FXMUTEX_INLINEP				// publicly inlined
+ #define QMUTEX_FXAPI FXAPI
+ #define QMUTEX_GLOBALS_FXAPI
+ #define QMUTEX_INLINEI FXFORCEINLINE	// internally inlined inside QThread.cxx
+ #define QMUTEX_INLINEP				// publicly inlined
 #endif
 
 //! For compatibility with FOX
@@ -89,61 +89,61 @@ As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
 to all code including QThread.h. This can cause substantial performance
 improvement at the cost of code size.
 */
-class FXMUTEX_FXAPI FXAtomicInt
+class QMUTEX_FXAPI FXAtomicInt
 {
 	volatile int lock;		// Unused on systems with atomic increment/decrement/exchange-compare
 	volatile int value;
 	friend class QMutex;
-	friend class FXShrdMemMutex;
-	FXMUTEX_INLINEI FXDLLLOCAL int get() const throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int set(int i) throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int incp() throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int pinc() throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int finc() throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int inc(int i) throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int decp() throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int pdec() throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int fdec() throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int dec(int i) throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int swapI(int newval) throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int cmpXI(int compare, int newval) throw();
-	FXMUTEX_INLINEI FXDLLLOCAL int spinI(int count) throw();
+	friend class QShrdMemMutex;
+	QMUTEX_INLINEI FXDLLLOCAL int get() const throw();
+	QMUTEX_INLINEI FXDLLLOCAL int set(int i) throw();
+	QMUTEX_INLINEI FXDLLLOCAL int incp() throw();
+	QMUTEX_INLINEI FXDLLLOCAL int pinc() throw();
+	QMUTEX_INLINEI FXDLLLOCAL int finc() throw();
+	QMUTEX_INLINEI FXDLLLOCAL int inc(int i) throw();
+	QMUTEX_INLINEI FXDLLLOCAL int decp() throw();
+	QMUTEX_INLINEI FXDLLLOCAL int pdec() throw();
+	QMUTEX_INLINEI FXDLLLOCAL int fdec() throw();
+	QMUTEX_INLINEI FXDLLLOCAL int dec(int i) throw();
+	QMUTEX_INLINEI FXDLLLOCAL int swapI(int newval) throw();
+	QMUTEX_INLINEI FXDLLLOCAL int cmpXI(int compare, int newval) throw();
+	QMUTEX_INLINEI FXDLLLOCAL int spinI(int count) throw();
 public:
 	//! Constructs an atomic int with the specified initial value
-	FXMUTEX_INLINEP FXAtomicInt(int i=0) throw() : lock(0), value(i) { }
-	FXMUTEX_INLINEP FXAtomicInt(const FXAtomicInt &o) throw() : lock(0), value(o.value) { }
-	FXMUTEX_INLINEP FXAtomicInt &operator=(const FXAtomicInt &o) throw() { lock=0; value=o.value; return *this; }
+	QMUTEX_INLINEP FXAtomicInt(int i=0) throw() : lock(0), value(i) { }
+	QMUTEX_INLINEP FXAtomicInt(const FXAtomicInt &o) throw() : lock(0), value(o.value) { }
+	QMUTEX_INLINEP FXAtomicInt &operator=(const FXAtomicInt &o) throw() { lock=0; value=o.value; return *this; }
 	//! Returns the current value
-	FXMUTEX_INLINEP operator int() const throw();
+	QMUTEX_INLINEP operator int() const throw();
 	//! Atomically sets the value, bypassing caches and write buffers
-	FXMUTEX_INLINEP int operator=(int i) throw();
+	QMUTEX_INLINEP int operator=(int i) throw();
 	//! Atomically post-increments the value
-	FXMUTEX_INLINEP int operator++(int) throw();
+	QMUTEX_INLINEP int operator++(int) throw();
 	//! Atomically pre-increments the value
-	FXMUTEX_INLINEP int operator++() throw();
+	QMUTEX_INLINEP int operator++() throw();
 	/*! Atomically fast pre-increments the value, returning a negative number if
 	result is negative, zero if result is zero and a positive number of result is
 	positive */
-	FXMUTEX_INLINEP int fastinc() throw();
+	QMUTEX_INLINEP int fastinc() throw();
 	//! Atomically adds an amount to the value
-	FXMUTEX_INLINEP int operator+=(int i) throw();
+	QMUTEX_INLINEP int operator+=(int i) throw();
 	//! Atomically post-decrements the value
-	FXMUTEX_INLINEP int operator--(int) throw();
+	QMUTEX_INLINEP int operator--(int) throw();
 	//! Atomically pre-decrements the value
-	FXMUTEX_INLINEP int operator--() throw();
+	QMUTEX_INLINEP int operator--() throw();
 	/*! Atomically fast pre-decrements the value, returning a negative number if
 	result is negative, zero if result is zero and a positive number of result is
 	positive */
-	FXMUTEX_INLINEP int fastdec() throw();
+	QMUTEX_INLINEP int fastdec() throw();
 	//! Atomically subtracts an amount from the value
-	FXMUTEX_INLINEP int operator-=(int i) throw();
+	QMUTEX_INLINEP int operator-=(int i) throw();
 	//! Atomically swaps \em newval for the int, returning the previous value
-	FXMUTEX_INLINEP int swap(int newval) throw();
+	QMUTEX_INLINEP int swap(int newval) throw();
 	//! Atomically compares the int to \em compare which if the same, stores \em newval. Returns the previous value.
-	FXMUTEX_INLINEP int cmpX(int compare, int newval) throw();
+	QMUTEX_INLINEP int cmpX(int compare, int newval) throw();
 };
 
-/*! \class FXShrdMemMutex
+/*! \class QShrdMemMutex
 \brief A very lightweight mutex object to synchronise access to shared memory regions
 
 What goes for FX::QMutex goes for this. However, there are further restrictions: because
@@ -168,23 +168,23 @@ As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
 to all code including QThread.h. This can cause substantial performance
 improvement at the cost of code size.
 */
-class FXMUTEX_FXAPI FXShrdMemMutex
+class QMUTEX_FXAPI QShrdMemMutex
 {
 	FXAtomicInt lockvar;
 	FXuint timeout;
 public:
 	//! Constructs an instance. Using FXINFINITE means infinite waits
-	FXMUTEX_INLINEP FXShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout) { }
+	QMUTEX_INLINEP QShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout) { }
 	//! Returns the time after which a lock succeeds anyway
-	FXMUTEX_INLINEP FXuint timeOut() const throw() { return timeout; }
+	QMUTEX_INLINEP FXuint timeOut() const throw() { return timeout; }
 	//! Sets the time after which a lock succeeds anyway
-	FXMUTEX_INLINEP void setTimeOut(FXuint to) throw() { timeout=to; }
+	QMUTEX_INLINEP void setTimeOut(FXuint to) throw() { timeout=to; }
 	//! Locks the shared memory mutex
-	FXMUTEX_INLINEP void lock();
+	QMUTEX_INLINEP void lock();
 	//! Unlocks the shared memory mutex
-	FXMUTEX_INLINEP void unlock() throw() { lockvar=0; }
+	QMUTEX_INLINEP void unlock() throw() { lockvar=0; }
 	//! Tries the shared memory mutex
-	FXMUTEX_INLINEP bool tryLock();
+	QMUTEX_INLINEP bool tryLock();
 };
 
 /*! \class QMutex
@@ -294,47 +294,47 @@ improvement at the cost of code size.
 \sa QRWMutex
 */
 struct QMutexPrivate;
-class FXMUTEX_FXAPI QMutex
+class QMUTEX_FXAPI QMutex
 {
 	QMutexPrivate *p;
 	QMutex(const QMutex &);
 	QMutex &operator=(const QMutex &);
 	friend class QRWMutex;
-	FXMUTEX_INLINEI FXDLLLOCAL void int_lock();
-	FXMUTEX_INLINEI FXDLLLOCAL void int_unlock();
+	QMUTEX_INLINEI FXDLLLOCAL void int_lock();
+	QMUTEX_INLINEI FXDLLLOCAL void int_unlock();
 public:
 	//! Constructs a mutex with the given spin count
-	FXMUTEX_INLINEP QMutex(FXuint spinCount=4000);
-	FXMUTEX_INLINEP ~QMutex();
+	QMUTEX_INLINEP QMutex(FXuint spinCount=4000);
+	QMUTEX_INLINEP ~QMutex();
 	//! Returns if the mutex is locked
-	FXMUTEX_INLINEP bool isLocked() const;
+	QMUTEX_INLINEP bool isLocked() const;
 	/*! \overload For FOX compatibility
 	*/
-	FXMUTEX_INLINEP FXbool locked() const { return (FXbool) isLocked(); }
+	QMUTEX_INLINEP FXbool locked() const { return (FXbool) isLocked(); }
 	//! Returns the current spin count
-	FXMUTEX_INLINEP FXuint spinCount() const;
+	QMUTEX_INLINEP FXuint spinCount() const;
 	//! Sets the spin count
-	FXMUTEX_INLINEP void setSpinCount(FXuint c);
+	QMUTEX_INLINEP void setSpinCount(FXuint c);
 	/*! If free, claims the mutex and returns immediately. If not, waits until
 	the current holder releases it and then claims it before returning
-	\warning Do not use this directly unless \b absolutely necessary. Use FXMtxHold instead.
+	\warning Do not use this directly unless \b absolutely necessary. Use QMtxHold instead.
 	*/
-	FXMUTEX_INLINEP void lock();
+	QMUTEX_INLINEP void lock();
 	/*! Releases the mutex for other to claim. Must be called as many times
 	as lock() is called
-	\warning Do not use this directly unless \b absolutely necessary. Use FXMtxHold instead.
+	\warning Do not use this directly unless \b absolutely necessary. Use QMtxHold instead.
 	*/
-	FXMUTEX_INLINEP void unlock();
+	QMUTEX_INLINEP void unlock();
 	/*! Claims the mutex if free and returns true. If already taken, immediately
 	returns false without waiting
 	*/
-	FXMUTEX_INLINEP bool tryLock();
+	QMUTEX_INLINEP bool tryLock();
 	/*! \overload For FOX compatibility
 	*/
-	FXMUTEX_INLINEP FXbool trylock() { return (FXbool) tryLock(); }
+	QMUTEX_INLINEP FXbool trylock() { return (FXbool) tryLock(); }
 	/*! Sets the debugging flag for mutexs in this process. See the main description
 	above */
-	FXMUTEX_INLINEP static bool setMutexDebugYield(bool v);
+	QMUTEX_INLINEP static bool setMutexDebugYield(bool v);
 };
 
 
@@ -421,7 +421,7 @@ our implementation instead serialises each thread through the write locked secti
 this means across the claiming of the write lock when a read lock is already held,
 <u>the data may change</u> - and if you do not take care, pointers held from the read
 lock period may become dangling or otherwise pre-write lock references become invalid. lock()
-returns true when this happens (and the FX::FXMtxHold::lockLost() method returns true)
+returns true when this happens (and the FX::QMtxHold::lockLost() method returns true)
 so you can detect when you need to reestablish your data state.
 
 Because this creates hard to detect bugs, let me emphasise here from my own bitter
@@ -430,7 +430,7 @@ lock that you have effectively unlocked completely</b> ie; retest entries have n
 been since added to a list, or assume pointers or references remain valid etc.
 */
 class QRWMutexPrivate;
-class FXMtxHold;
+class QMtxHold;
 class FXAPI QRWMutex
 {
 	QRWMutexPrivate *p;
@@ -468,12 +468,12 @@ public:
 	unlock(false);
 	\endcode
 	This facility to lock for read, then if necessary a write is quite useful.
-	\warning Do not use this directly unless \b absolutely necessary. Use FXMtxHold instead.
+	\warning Do not use this directly unless \b absolutely necessary. Use QMtxHold instead.
 	*/
 	bool lock(bool write=true);
 	/*! Release the mutex from its previous lock(). You must use the same parameter
 	as in the most recent lock().
-	\warning Do not use this directly unless \b absolutely necessary. Use FXMtxHold instead.
+	\warning Do not use this directly unless \b absolutely necessary. Use QMtxHold instead.
     */
 	void unlock(bool write=true);
 	//! Returns the current state of the read/write mutex.
@@ -487,30 +487,30 @@ private:
 	bool prefersReaders() const;
 	//! For future expansion
 	void setReaderPreference(bool);
-	inline FXDLLLOCAL bool _lock(FXMtxHold &h, bool write);
+	inline FXDLLLOCAL bool _lock(QMtxHold &h, bool write);
 };
 
-/*! \class FXMtxHold
+/*! \class QMtxHold
 \brief Helper class for using mutexes
 
-FXMtxHold simply takes a FX::QMutex or FX::QRWMutex (or pointers to the same) as an argument
-to its constructor and locks the mutex for you. Hence then when FXMtxHold is destructed,
+QMtxHold simply takes a FX::QMutex or FX::QRWMutex (or pointers to the same) as an argument
+to its constructor and locks the mutex for you. Hence then when QMtxHold is destructed,
 the mutex is guaranteed to be freed.
 
 A QMutex or QRWMutex can also be specified via passing a FX::FXPol_lockable policy.
 
-A rarely used other possibility is to pass FXMtxHold::UnlockAndRelock as the second argument to the
+A rarely used other possibility is to pass QMtxHold::UnlockAndRelock as the second argument to the
 constructor - this unlocks the mutex and relocks it on destruction.
 */
-class FXMtxHold
+class QMtxHold
 {
 	FXuint flags;
 	bool locklost;
 	QMutex *mutex;
 	QRWMutex *rwmutex;
 
-	FXMtxHold(const FXMtxHold &);
-	FXMtxHold &operator=(const FXMtxHold &);
+	QMtxHold(const QMtxHold &);
+	QMtxHold &operator=(const QMtxHold &);
 public:
 	//! Enumerates kinds of lock hold
 	enum Flags
@@ -524,7 +524,7 @@ public:
 		IsRWMutexWrite=(1<<29)
 	};
 	//! Constructs an instance holding the lock to mutex \em m
-	FXFORCEINLINE FXMtxHold(const QMutex *m, FXuint _flags=LockAndUnlock)
+	FXFORCEINLINE QMtxHold(const QMutex *m, FXuint _flags=LockAndUnlock)
 		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(m))
 	{
 		if((flags & AcceptNullMutex) && !mutex) return;
@@ -532,21 +532,21 @@ public:
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(const QMutex &m, FXuint _flags=LockAndUnlock)
+	FXFORCEINLINE QMtxHold(const QMutex &m, FXuint _flags=LockAndUnlock)
 		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(&m))
 	{
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 		flags|=IsLocked;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXFORCEINLINE FXMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(m))
+	FXFORCEINLINE QMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(m))
 	{
 		if((flags & AcceptNullMutex) && !rwmutex) return;
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE FXMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(&m))
+	FXFORCEINLINE QMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(&m))
 	{
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
@@ -586,12 +586,12 @@ public:
 	FXFORCEINLINE FXDEPRECATEDEXT void lock() { relock(); }
 	//! Returns true if when during a read-to-write lock transition the lock was lost
 	FXFORCEINLINE bool lockLost() const { return locklost; }
-	FXFORCEINLINE ~FXMtxHold() { unlock(); }
+	FXFORCEINLINE ~QMtxHold() { unlock(); }
 };
 //! For FOX compatibility only
-typedef FXMtxHold QMutexLock;
+typedef QMtxHold QMutexLock;
 
-// Needs to go here as FXMtxHold needs to be defined
+// Needs to go here as QMtxHold needs to be defined
 namespace Generic {
 
 /*! \struct lockedAccessor
@@ -602,7 +602,7 @@ between efficiency and thread-safety when writing member functions of a lockable
 \code
 QStringList Class::foo() const
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	return p->mystrings();
 }
 \endcode
@@ -628,17 +628,17 @@ use the return directly then you can lose the lock inadvertently.
 template<class type> struct lockedAccessor
 {
 private:
-	FXMtxHold *h;
+	QMtxHold *h;
 	type &val;
 public:
 	//! Constructs an instance reflecting \em _val while locking \em m
-	lockedAccessor(type &_val, const QMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
+	lockedAccessor(type &_val, const QMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new QMtxHold(m)); } }
 	//! \overload
-	lockedAccessor(type &_val, const QMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	lockedAccessor(type &_val, const QMutex &m) : val(_val), h(0) { FXERRHM(h=new QMtxHold(m)); }
 	//! \overload
-	lockedAccessor(type &_val, const QRWMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new FXMtxHold(m)); } }
+	lockedAccessor(type &_val, const QRWMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new QMtxHold(m)); } }
 	//! \overload
-	lockedAccessor(type &_val, const QRWMutex &m) : val(_val), h(0) { FXERRHM(h=new FXMtxHold(m)); }
+	lockedAccessor(type &_val, const QRWMutex &m) : val(_val), h(0) { FXERRHM(h=new QMtxHold(m)); }
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
 	lockedAccessor(const lockedAccessor &_o) : h(_o.h), val(_o.val)
@@ -974,7 +974,7 @@ public:
 	Call this to start the separate parallel execution of this thread object from its run(). Remember
 	never to access any data in the QThread object after calling this method without first synchronising
 	access. Our suggestion is to also subclass QMutex so then you can simply use lock() and unlock()
-	(preferably via FXMtxHold) around every access.
+	(preferably via QMtxHold) around every access.
 	*/
 	void start(bool waitTillStarted=false) ;
 	//! Returns true if the thread has run and finished
@@ -1108,7 +1108,7 @@ private:
 /*! \class QThread_DTHold
 \brief Wraps thread termination disables in an exception-proof fashion
 
-This little helper class works similarly to FX::FXMtxHold in disabling
+This little helper class works similarly to FX::QMtxHold in disabling
 thread termination on construction and disabling it on destruction.
 Since FX::QThread::disableTermination() works by a reference count
 this works nicely. You can use undo() and redo() if needed.
@@ -1124,7 +1124,7 @@ public:
 /*! \class QThread_DisableSignals
 \brief Disables signals in an exception-proof fashion
 
-This little helper class works similarly to FX::FXMtxHold in disabling
+This little helper class works similarly to FX::QMtxHold in disabling
 POSIX signals for the calling thread on construction and reenabling them
 on destruction.
 */
@@ -1242,9 +1242,9 @@ public:
   #undef __CLEANUP_C
   #undef MUTEX_USESEMA
  #endif
- #undef FXMUTEX_FXAPI
- #undef FXMUTEX_INLINE
- #undef FXMUTEX_GLOBALS_FXAPI
+ #undef QMUTEX_FXAPI
+ #undef QMUTEX_INLINE
+ #undef QMUTEX_GLOBALS_FXAPI
 #endif
 
 #endif

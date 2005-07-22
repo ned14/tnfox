@@ -30,7 +30,7 @@ namespace FX {
 \brief Defines a number of policy classes used elsewhere in TnFOX
 */
 
-class FXMtxHold;
+class QMtxHold;
 
 namespace Pol {
 

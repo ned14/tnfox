@@ -212,7 +212,7 @@ void FXFSMon::Watcher::run()
 	hlist[1]=latch;
 	for(;;)
 	{
-		FXMtxHold h(fxfsmon);
+		QMtxHold h(fxfsmon);
 		Path *p;
 		int idx=2;
 		for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
@@ -252,7 +252,7 @@ void FXFSMon::Watcher::run()
 				FXERRHFAM(ret);
 				if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
 					|| FAMAcknowledge==fe.code) continue;
-				FXMtxHold h(fxfsmon);
+				QMtxHold h(fxfsmon);
 				Path *p;
 				for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
 				{
@@ -299,7 +299,7 @@ FXFSMon::Watcher::Path::~Path()
 
 FXFSMon::Watcher::Path::Handler::~Handler()
 {
-	FXMtxHold h(fxfsmon);
+	QMtxHold h(fxfsmon);
 	while(!callvs.isEmpty())
 	{
 		QThreadPool::CancelledState state;
@@ -311,7 +311,7 @@ FXFSMon::Watcher::Path::Handler::~Handler()
 void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, QThreadPool::handle callv)
 {
 	//fxmessage("FXFSMonitor dispatch %p\n", callv);
-	FXMtxHold h(fxfsmon);
+	QMtxHold h(fxfsmon);
 	for(QValueList<Change>::const_iterator it=changes.begin(); it!=changes.end(); ++it)
 	{
 		const Change &ch=*it;
@@ -464,7 +464,7 @@ void FXFSMon::Watcher::Path::callHandlers()
 
 void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 {
-	FXMtxHold lh(fxfsmon);
+	QMtxHold lh(fxfsmon);
 	Watcher *w;
 	for(QPtrListIterator<Watcher> it(watchers); (w=it.current()); ++it)
 	{
@@ -514,7 +514,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 
 bool FXFSMon::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
 {
-	FXMtxHold hl(fxfsmon);
+	QMtxHold hl(fxfsmon);
 	Watcher *w;
 	for(QPtrListIterator<Watcher> it(watchers); (w=it.current()); ++it)
 	{

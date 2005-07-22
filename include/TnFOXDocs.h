@@ -225,7 +225,7 @@ transaction rollbacks
 support for MSVC's CRT debug library's memory leak checking.
 
 <li><b>Multithreading</b><br>
-FX::FXAtomicInt, FX::QWaitCondition, FX::QMutex, FX::FXShrdMemMutex, FX::QRWMutex, FX::FXMtxHold and
+FX::FXAtomicInt, FX::QWaitCondition, FX::QMutex, FX::QShrdMemMutex, FX::QRWMutex, FX::QMtxHold and
 FX::FXZeroedWait all are written for the optimum in efficiency and features.
 FX::QThreadLocalStorage provides a portable and C++ friendly interface to host OS TLS
 facilities. Even on platforms without POSIX threads support, they can
@@ -2613,7 +2613,7 @@ for connecting many things to and you can change all their connections with one 
 
 <li>FX::QThread, a thread of execution
 <li>FX::QMutex, a mutual exclusion object
-<li>FX::FXMtxHold, a holder of a FX::QMutex
+<li>FX::QMtxHold, a holder of a FX::QMutex
 <li>FX::QWaitCondition, an OS/2 style event object
 <li>FX::FXZeroedWait, an event which signals when its count becomes zero
 <li>FX::QThreadPool, a pool of worker threads

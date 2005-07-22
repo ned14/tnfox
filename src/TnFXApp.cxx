@@ -178,13 +178,13 @@ FXbool EventLoopP::dispatchEvent(FXRawEvent& ev)
 #ifndef MANUAL_DISPATCH
 		return FXEventLoop::dispatchEvent(ev);
 #else
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		EventLoopC *el;
 		//fxmessage("Primary dispatching msg %d, repaints=%p, refresher=%p\n", ev.xany.type, repaints, refresher);
 		for(QPtrListIterator<EventLoopC> it(eventLoops); (el=it.current()); ++it)
 		{
 			h.unlock();
-			FXMtxHold h2(el);
+			QMtxHold h2(el);
 			if(el->hash.find((void *) ev.xany.window))
 			{
 				//fxmessage("Event belongs to loop 0x%p: %s\n", el, fxdump32((FXuint*)&ev, sizeof(FXRawEvent)/4).text());
@@ -216,14 +216,14 @@ void EventLoopP::clientNew(EventLoopC *loop)
 #ifdef DEBUG
 		fxmessage("Received notification of creation of loop 0x%p\n", loop);
 #endif
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		eventLoops.append(loop);
 	} FXEXCEPTION_FOXCALLING2;
 }
 void EventLoopP::clientDie(EventLoopC *loop)
 {
 	FXEXCEPTION_FOXCALLING1 {
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		eventLoops.removeRef(loop);
 #ifdef DEBUG
 		fxmessage("Received notification of death of loop 0x%p, %d to go\n", loop, eventLoops.count());
@@ -262,7 +262,7 @@ FXbool EventLoopC::getNextEventI(FXRawEvent& ev,FXbool blocking)
 		// Very easy on Win32 which implements per-thread event queues for us
 		return FXEventLoop::getNextEventI(ev, blocking);
 #else
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		if(events.isEmpty())
 		{
 			FXuint wait=FXINFINITE;
@@ -301,7 +301,7 @@ FXbool EventLoopC::peekEventI()
 #ifndef MANUAL_DISPATCH
 		return FXEventLoop::peekEventI();
 #else
-		FXMtxHold h(this);
+		QMtxHold h(this);
 		return !events.isEmpty();
 #endif
 	} FXEXCEPTION_FOXCALLING2;
@@ -378,25 +378,25 @@ long TnFXApp::onCmdQuit(FXObject*,FXSelector,void*)
 
 void TnFXApp::create()
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXApp::create();
 }
 
 void TnFXApp::destroy()
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXApp::destroy();
 }
 
 void TnFXApp::detach()
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXApp::detach();
 }
 
 void TnFXApp::init(int &argc, char **argv, FXbool connect)
 {
-	FXMtxHold h(this);
+	QMtxHold h(this);
 	FXApp::init(argc, argv, connect);
 }
 
@@ -411,7 +411,7 @@ void TnFXApp::exit(FXint code)
 	if(!p->inExit)
 	{
 		p->inExit=true;
-		FXMtxHold h(p->primaryLoop);
+		QMtxHold h(p->primaryLoop);
 		EventLoopC *el;
 		for(QPtrListIterator<EventLoopC> it(p->primaryLoop->eventLoops); (el=it.current()); ++it)
 		{
@@ -424,7 +424,7 @@ void TnFXApp::exit(FXint code)
 			p->primaryLoop->noEventLoops.wait();
 		// All event loops have now exited
 		{
-			FXMtxHold h(this);
+			QMtxHold h(this);
 			FXApp::exit(code);
 			p->inExit=false;
 		}

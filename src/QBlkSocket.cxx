@@ -306,56 +306,56 @@ QBlkSocket::~QBlkSocket()
 
 QBlkSocket::Type QBlkSocket::type() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->type;
 }
 
 void QBlkSocket::setType(Type type)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->type=type;
 }
 
 const QHostAddress &QBlkSocket::address() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->mine.addr;
 }
 
 FXushort QBlkSocket::port() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->mine.port;
 }
 
 const QHostAddress &QBlkSocket::peerAddress() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->peer.addr;
 }
 
 FXushort QBlkSocket::peerPort() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->peer.port;
 }
 
 bool QBlkSocket::isUnique() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->unique;
 }
 
 void QBlkSocket::setUnique(bool a)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->unique=a;
 	p->mine.port=0;
 }
 
 FXuval QBlkSocket::receiveBufferSize() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=0;
@@ -368,7 +368,7 @@ FXuval QBlkSocket::receiveBufferSize() const
 
 void QBlkSocket::setReceiveBufferSize(FXuval newsize)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=(int) newsize;
@@ -378,7 +378,7 @@ void QBlkSocket::setReceiveBufferSize(FXuval newsize)
 
 FXuval QBlkSocket::sendBufferSize() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=0;
@@ -391,7 +391,7 @@ FXuval QBlkSocket::sendBufferSize() const
 
 void QBlkSocket::setSendBufferSize(FXuval newsize)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=(int) newsize;
@@ -401,13 +401,13 @@ void QBlkSocket::setSendBufferSize(FXuval newsize)
 
 FXint QBlkSocket::maxPending() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->maxPending;
 }
 
 void QBlkSocket::setMaxPending(FXint newp)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->maxPending=newp;
 	if(isOpen())
 	{
@@ -417,7 +417,7 @@ void QBlkSocket::setMaxPending(FXint newp)
 
 bool QBlkSocket::addressReusable() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=0;
@@ -430,7 +430,7 @@ bool QBlkSocket::addressReusable() const
 
 void QBlkSocket::setAddressReusable(bool newar)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=(int) newar;
@@ -440,7 +440,7 @@ void QBlkSocket::setAddressReusable(bool newar)
 
 bool QBlkSocket::keepAlive() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=0;
@@ -453,7 +453,7 @@ bool QBlkSocket::keepAlive() const
 
 void QBlkSocket::setKeepAlive(bool newar)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=(int) newar;
@@ -463,7 +463,7 @@ void QBlkSocket::setKeepAlive(bool newar)
 
 FXint QBlkSocket::lingerPeriod() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		struct linger l;
@@ -477,7 +477,7 @@ FXint QBlkSocket::lingerPeriod() const
 
 void QBlkSocket::setLingerPeriod(FXint period)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		struct linger l;
@@ -490,7 +490,7 @@ void QBlkSocket::setLingerPeriod(FXint period)
 
 bool QBlkSocket::usingNagles() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=0;
@@ -506,7 +506,7 @@ bool QBlkSocket::usingNagles() const
 
 void QBlkSocket::setUsingNagles(bool newar)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{
 		int val=(int) newar;
@@ -519,7 +519,7 @@ void QBlkSocket::setUsingNagles(bool newar)
 
 bool QBlkSocket::connected() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->connected;
 }
 
@@ -595,7 +595,7 @@ void QBlkSocket::setupSocket()
 
 bool QBlkSocket::create(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	QThread_DTHold dth;
 	close();
 	FXERRH(p->mine.addr.isLocalMachine() || p->mine.addr.isNull(), "Server sockets must be local", QBLKSOCKET_NONLOCALCREATE, FXERRH_ISDEBUG);
@@ -631,7 +631,7 @@ bool QBlkSocket::create(FXuint mode)
 
 bool QBlkSocket::open(FXuint mode)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
 		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QBlkSocket", "Device reopen has different mode"));
@@ -685,7 +685,7 @@ void QBlkSocket::close()
 {
 	if(p)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		QThread_DTHold dth;
 		if(p->connected)
 		{	// Ignore any errors
@@ -750,7 +750,7 @@ bool QBlkSocket::reset()
 
 FXfval QBlkSocket::size() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	u_long waiting=0;
 	if(isOpen())
 	{
@@ -769,7 +769,7 @@ const FXACL &QBlkSocket::permissions() const
 {
 	static QMutex lock;
 	static FXACL perms;
-	FXMtxHold lh(lock);
+	QMtxHold lh(lock);
 	if(perms.count()) return perms;
 	perms.append(FXACL::Entry(FXACLEntity::everything(), 0, FXACL::Permissions().setAll()));
 	return perms;
@@ -777,7 +777,7 @@ const FXACL &QBlkSocket::permissions() const
 
 FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for reading"));
 	if(isOpen())
 	{
@@ -840,7 +840,7 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 
 FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for writing"));
 	if(isOpen())
 	{
@@ -934,7 +934,7 @@ int QBlkSocket::ungetch(int c)
 
 QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	FXERRH(isOpen(), "Server socket isn't open", QBLKSOCKET_NOTOPEN, 0);
 	FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 	sockaddr_in6 sa6={0}, *sa6addr; sa6addr=&sa6;
@@ -1019,7 +1019,7 @@ QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 
 FXuval QBlkSocket::waitForMore(int msecs, bool *timeout)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for reading"));
 	if(isOpen())
 	{

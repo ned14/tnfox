@@ -133,7 +133,7 @@ static void RunFatalExitCalls(bool fatal)
 {
 	if(exitupcalls)
 	{
-		FXMtxHold h(exitupcalls->lock);
+		QMtxHold h(exitupcalls->lock);
 		for(QPtrListIterator<FXProcess::FatalExitUpcallSpec> it(exitupcalls->upcalls); it.current(); ++it)
 		{
 			try
@@ -1293,7 +1293,7 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 	static QMutex lock;
 	static FXuint lastcheck;
 	static FXfloat lastret;
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	FXuint now=FXProcess::getMsCount();
 	if((now-lastcheck)<60*1000/* one min */) return lastret;
 #ifdef USE_WINAPI
@@ -1400,7 +1400,7 @@ FXfloat FXProcess::hostOSDiscIOLoad(const FXString &path)
 
 void FXProcess::overrideFreeResources(FXfloat memory, FXfloat processor, FXfloat discio)
 {
-	FXMtxHold h(myprocess->p);
+	QMtxHold h(myprocess->p);
     myprocess->p->overrides.memory=memory;
     myprocess->p->overrides.processor=processor;
     myprocess->p->overrides.discio=discio;
@@ -1472,7 +1472,7 @@ QThreadPool &FXProcess::threadPool()
 {
 	if(!myprocess->p->threadpool)
 	{
-		FXMtxHold h(myprocess->p);
+		QMtxHold h(myprocess->p);
 		if(!myprocess->p->threadpool)
 		{
 			FXERRHM(myprocess->p->threadpool=new QThreadPool(FXPROCESS_POOLTHREADS));
@@ -1483,7 +1483,7 @@ QThreadPool &FXProcess::threadPool()
 
 FXProcess::UserHandedness FXProcess::userHandedness()
 {
-	FXMtxHold h(myprocess->p);
+	QMtxHold h(myprocess->p);
 	if(UNKNOWN_HANDED==myprocess->p->handedness)
 	{
 #ifdef USE_WINAPI
@@ -1532,13 +1532,13 @@ void FXProcess::addFatalExitUpcall(FXProcess::FatalExitUpcallSpec upcallv)
 	{
 		FXERRHM(exitupcalls=new ExitUpcalls);
 	}
-	FXMtxHold h(exitupcalls->lock);
+	QMtxHold h(exitupcalls->lock);
 	exitupcalls->upcalls.append(cu);
 	unnew.dismiss();
 }
 bool FXProcess::removeFatalExitUpcall(FXProcess::FatalExitUpcallSpec upcallv)
 {
-	FXMtxHold h(exitupcalls->lock);
+	QMtxHold h(exitupcalls->lock);
 	FatalExitUpcallSpec *cu;
 	for(QPtrListIterator<FatalExitUpcallSpec> it(exitupcalls->upcalls); (cu=it.current()); ++it)
 	{
@@ -1573,7 +1573,7 @@ QMemArray<void *> FXProcess::lockedPages()
 {
 	QMemArray<void *> ret;
 	if(!lockedMem) return ret;
-	FXMtxHold h(lockedMem);
+	QMtxHold h(lockedMem);
 	void *page;
 	for(QSortedListIterator<void> it(lockedMem->lockedPages); (page=it.current()); ++it)
 	{
@@ -1618,7 +1618,7 @@ void *FXProcess::int_lockMem(void *addr, FXuval len)
 		FXERRHM(lockedMem=new LockedMem);
 	}
 	LockedMem *p=lockedMem;
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	for(QValueList<LockedMem::MemLockEntry>::iterator it=p->lockedRegions.begin(); ; ++it)
 	{
 		LockedMem::MemLockEntry &mle=*it;
@@ -1662,7 +1662,7 @@ void *FXProcess::int_lockMem(void *addr, FXuval len)
 void FXProcess::int_unlockMem(void *handle)
 {
 	LockedMem *p=lockedMem;
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	void *prevend=0;
 	for(QValueList<LockedMem::MemLockEntry>::iterator it=p->lockedRegions.begin(); it!=p->lockedRegions.end(); ++it)
 	{
