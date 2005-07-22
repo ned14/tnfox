@@ -68,7 +68,7 @@ const FXACL &QIODevice::permissions() const
 }
 void QIODevice::setPermissions(const FXACL &perms)
 {
-	FXERRG(QTrans::tr("QIODevice", "You cannot set the permissions on this device"), FXIODEVICE_BADPERMISSIONS, 0);
+	FXERRG(QTrans::tr("QIODevice", "You cannot set the permissions on this device"), QIODEVICE_BADPERMISSIONS, 0);
 }
 
 FXuval QIODevice::readLine(char *data, FXuval maxlen)

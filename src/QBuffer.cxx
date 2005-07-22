@@ -251,7 +251,7 @@ FXStream &operator>>(FXStream &s, QBuffer &i)
 {
 	FXMtxHold h(i.p);
 	FXuval len=(FXuval) s.device()->size();
-	FXERRH(len<((FXuint)-1), "Cannot read a file larger than a FXuint", FXBUFFER_FILETOOBIG, FXERRH_ISDEBUG);
+	FXERRH(len<((FXuint)-1), "Cannot read a file larger than a FXuint", QBUFFER_FILETOOBIG, FXERRH_ISDEBUG);
 	i.buffer().resize((FXuint) len);
 	i.at(0);
 	return s.readRawBytes(i.buffer().data(), len);

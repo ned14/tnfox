@@ -72,7 +72,7 @@ QFileInfo::QFileInfo(const FXFile &file) : p(0)
 	refresh();
 	unconstr.dismiss();
 }
-QFileInfo::QFileInfo(const FXDir &dir, const FXString &leafname) : p(0)
+QFileInfo::QFileInfo(const QDir &dir, const FXString &leafname) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QFileInfoPrivate(dir.filePath(leafname)));
@@ -140,9 +140,9 @@ void QFileInfo::setFile(const FXFile &file)
 	p->pathname=file.name();
 	refresh();
 }
-void QFileInfo::setFile(const FXDir &dir, const FXString &leafname)
+void QFileInfo::setFile(const QDir &dir, const FXString &leafname)
 {
-	p->pathname=dir.path()+FXDir::separator()+leafname;
+	p->pathname=dir.path()+QDir::separator()+leafname;
 	refresh();
 }
 bool QFileInfo::exists() const

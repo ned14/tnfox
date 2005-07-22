@@ -474,10 +474,10 @@ bool QGZipDevice::open(FXuint mode)
 	else
 	{
 #ifndef HAVE_ZLIB_H
-		FXERRG("This TnFOX was built without zlib support", FXGZIPDEVICE_NOZLIB, FXERRH_ISDEBUG);
+		FXERRG("This TnFOX was built without zlib support", QGZIPDEVICE_NOZLIB, FXERRH_ISDEBUG);
 #else
 		//if(mode & IO_Truncate) FXERRG("Cannot truncate with this device", FXGZIPDEVICE_CANTTRUNCATE, FXERRH_ISDEBUG);
-		FXERRH(p->src, "Need to set a source device before opening", FXGZIPDEVICE_MISSINGSOURCE, FXERRH_ISDEBUG);
+		FXERRH(p->src, "Need to set a source device before opening", QGZIPDEVICE_MISSINGSOURCE, FXERRH_ISDEBUG);
 		if(p->src->isClosed()) p->src->open(mode & ~IO_Translate);
 		p->uncomp.open(IO_ReadWrite);
 		if(mode & IO_ReadOnly)

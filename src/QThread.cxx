@@ -19,12 +19,12 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#define FXBEING_INCLUDED_BY_FXTHREAD 1
+#define FXBEING_INCLUDED_BY_QTHREAD 1
 #include "QThread.h"
 // Include the FXAtomicInt and QMutex implementations as they
-// are disabled by FXBEING_INCLUDED_BY_FXTHREAD
+// are disabled by FXBEING_INCLUDED_BY_QTHREAD
 #include "int_QMutexImpl.h"
-#undef FXBEING_INCLUDED_BY_FXTHREAD
+#undef FXBEING_INCLUDED_BY_QTHREAD
 
 namespace FX { namespace QMutexImpl {
 
@@ -497,7 +497,7 @@ QThreadLocalStorageBase::QThreadLocalStorageBase(void *initval) : p(0)
 #endif
 #ifdef USE_WINAPI
 	p->key=TlsAlloc();
-	FXERRH(p->key!=(DWORD) -1, QTrans::tr("QThreadLocalStorage", "Exceeded Windows TLS hard key number limit"), FXTHREADLOCALSTORAGE_NOMORETLS, FXERRH_ISDEBUG);
+	FXERRH(p->key!=(DWORD) -1, QTrans::tr("QThreadLocalStorage", "Exceeded Windows TLS hard key number limit"), QTHREADLOCALSTORAGE_NOMORETLS, FXERRH_ISDEBUG);
 	FXERRHWIN(TlsSetValue(p->key, initval));
 #endif
 #ifdef USE_POSIX
@@ -841,8 +841,8 @@ void QThreadPrivate::cleanup(QThread *t)
 	{
 		QThread_DTHold dth;
 		FXMtxHold h(t->p);
-		FXERRH(t->p, "Possibly a 'delete this' was called during thread cleanup?", FXTHREAD_DELETETHIS, FXERRH_ISFATAL);
-		FXERRH(!t->isInCleanup, "Exception occured during thread cleanup", FXTHREAD_CLEANUPEXCEPTION, FXERRH_ISFATAL);
+		FXERRH(t->p, "Possibly a 'delete this' was called during thread cleanup?", QTHREAD_DELETETHIS, FXERRH_ISFATAL);
+		FXERRH(!t->isInCleanup, "Exception occured during thread cleanup", QTHREAD_CLEANUPEXCEPTION, FXERRH_ISFATAL);
 		t->isInCleanup=true;
 		h.unlock();
 		*t->p->result=t->cleanup();
@@ -900,7 +900,7 @@ QThread::QThread(const char *name, bool autodelete, FXuval stackSize, QThread::T
 	isRunning=isFinished=isInCleanup=false;
 	termdisablecnt=0;
 #ifdef FXDISABLE_THREADS
-	FXERRG("This build of FOX has threads disabled", FXTHREAD_NOTHREADS, FXERRH_ISDEBUG);
+	FXERRG("This build of FOX has threads disabled", QTHREAD_NOTHREADS, FXERRH_ISDEBUG);
 #endif
 }
 
@@ -919,7 +919,7 @@ QThread::~QThread()
 		h.unlock();
 		FXDELETE(p);
 	}
-	else FXERRG(QTrans::tr("QThread", "You cannot destruct a running thread"), FXTHREAD_STILLRUNNING, FXERRH_ISDEBUG);
+	else FXERRG(QTrans::tr("QThread", "You cannot destruct a running thread"), QTHREAD_STILLRUNNING, FXERRH_ISDEBUG);
 	magic=0;
 } FXEXCEPTIONDESTRUCT2; }
 
@@ -1054,7 +1054,7 @@ void QThread::start(bool waitTillStarted)
 	h.unlock();
 	if(waitTillStarted)
 	{
-		FXERRH(p->startedwc->wait(10000), QTrans::tr("QThread", "Failed to start thread"), FXTHREAD_STARTFAILED, 0);
+		FXERRH(p->startedwc->wait(10000), QTrans::tr("QThread", "Failed to start thread"), QTHREAD_STARTFAILED, 0);
 		FXDELETE(p->startedwc);
 	}
 }

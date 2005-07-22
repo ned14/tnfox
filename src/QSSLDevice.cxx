@@ -64,7 +64,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #define FXERRHSSL(exp) { int __res=(int)(FXuval)(exp); if(__res<=0) { int __errorcode=ERR_get_error(); \
 	char __buffer[1024]; ERR_error_string_n(__errorcode, __buffer, sizeof(__buffer)); \
 	ERR_clear_error(); \
-	if(SSL_R_NO_SHARED_CIPHER==__errorcode) { FXERRG(__buffer, FXSSLDEVICE_NOSHAREDCIPHER, 0); } \
+	if(SSL_R_NO_SHARED_CIPHER==__errorcode) { FXERRG(__buffer, QSSLDEVICE_NOSHAREDCIPHER, 0); } \
 	else FXERRGIO(__buffer); } }
 
 namespace FX {
@@ -1374,7 +1374,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 				h.relock();
 				if(!ret)	// negotiation failed
 				{
-					FXERRG(getSSLError(), FXSSLDEVICE_NEGOTIATIONFAILED, 0);
+					FXERRG(getSSLError(), QSSLDEVICE_NEGOTIATIONFAILED, 0);
 				}
 				FXERRHSSL(ret);
 			}
@@ -1385,7 +1385,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 				h.relock();
 				if(!ret)	// negotiation failed
 				{
-					FXERRG(getSSLError(), FXSSLDEVICE_NEGOTIATIONFAILED, 0);
+					FXERRG(getSSLError(), QSSLDEVICE_NEGOTIATIONFAILED, 0);
 				}
 				FXERRHSSL(ret);
 			}
@@ -1473,7 +1473,7 @@ end:
 QSSLDevice::QSSLDevice(QIODevice *encrypteddev, bool enablev2) : p(0), QIODeviceS()
 {
 #ifndef HAVE_OPENSSL
-	FXERRH(false, QTrans::tr("QSSLDevice", "OpenSSL support not enabled"), FXSSLDEVICE_NOTENABLED, 0);
+	FXERRH(false, QTrans::tr("QSSLDevice", "OpenSSL support not enabled"), QSSLDEVICE_NOTENABLED, 0);
 #endif
 	FXRBOp unconstruct=FXRBConstruct(this);
 	FXERRHM(p=new QSSLDevicePrivate(encrypteddev));
@@ -1541,7 +1541,7 @@ FXString QSSLDevice::ciphers() const
 #ifdef HAVE_OPENSSL
 	if(isOpen())
 	{
-		FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), FXSSLDEVICE_FILENOTSUPP, 0);
+		FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), QSSLDEVICE_FILENOTSUPP, 0);
 		const char *cipherlist=0;
 		int n=0;
 		do
@@ -1664,7 +1664,7 @@ bool QSSLDevice::isSynchronous() const
 bool QSSLDevice::create(FXuint mode)
 {
 #ifdef HAVE_OPENSSL
-	FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), FXSSLDEVICE_FILENOTSUPP, 0);
+	FXERRH(p->dev->isSynchronous(), QTrans::tr("QSSLDevice", "File type devices not supported"), QSSLDEVICE_FILENOTSUPP, 0);
 	FXMtxHold h(p);
 	close();
 	QIODeviceS *sdev=(QIODeviceS *) p->dev;
@@ -1705,11 +1705,11 @@ bool QSSLDevice::open(FXuint mode)
 			{
 				if(mode & IO_ReadOnly)
 				{
-					FXERRH(pkey->hasPrivateKey(), QTrans::tr("QSSLDevice", "Need private key to decrypt"), FXSSLDEVICE_NEEDPRIVATEKEY, 0);
+					FXERRH(pkey->hasPrivateKey(), QTrans::tr("QSSLDevice", "Need private key to decrypt"), QSSLDEVICE_NEEDPRIVATEKEY, 0);
 				}
 				if(mode & IO_WriteOnly)
 				{
-					FXERRH(pkey->hasPublicKey(), QTrans::tr("QSSLDevice", "Need public key to encrypt"), FXSSLDEVICE_NEEDPUBLICKEY, 0);
+					FXERRH(pkey->hasPublicKey(), QTrans::tr("QSSLDevice", "Need public key to encrypt"), QSSLDEVICE_NEEDPUBLICKEY, 0);
 					FXERRH((mode & IO_ReadOnly) || !(pkey->hasPublicKey() && pkey->hasPrivateKey()), "Security check: asymmetric encryption with both public & private keys", 0, FXERRH_ISDEBUG);
 				}
 			}
@@ -1720,14 +1720,14 @@ bool QSSLDevice::open(FXuint mode)
 			{	// Read the header
 				FXulong header;
 				s.readRawBytes((char *) &header, 8); s >> version;
-				FXERRH(header==*((FXulong *)"TNFXSECD"), QTrans::tr("QSSLDevice", "Not a TnFOX secure data file"), FXSSLDEVICE_BADFORMAT, 0);
-				FXERRH(2==version, QTrans::tr("QSSLDevice", "Secure file format too new"), FXSSLDEVICE_BADFORMAT, 0);
+				FXERRH(header==*((FXulong *)"TNFXSECD"), QTrans::tr("QSSLDevice", "Not a TnFOX secure data file"), QSSLDEVICE_BADFORMAT, 0);
+				FXERRH(2==version, QTrans::tr("QSSLDevice", "Secure file format too new"), QSSLDEVICE_BADFORMAT, 0);
 				if(pkey)
 				{	// Read header for key
 					int ret;
 					FXuint keytag=0;
 					s.readRawBytes((char *) &keytag, 4);
-					FXERRH(keytag==*((FXuint *)"SKEY"), QTrans::tr("QSSLDevice", "Secure file missing symmetric key"), FXSSLDEVICE_MISSINGKEY, 0);
+					FXERRH(keytag==*((FXuint *)"SKEY"), QTrans::tr("QSSLDevice", "Secure file missing symmetric key"), QSSLDEVICE_MISSINGKEY, 0);
 					s >> key;
 					FXuchar *buffer;
 					FXERRHM(buffer=Secure::malloc<FXuchar>(SEED_SIZE));
@@ -1736,7 +1736,7 @@ bool QSSLDevice::open(FXuint mode)
 					if(-1==(ret=RSA_private_decrypt(key.bytesLen(), (FXuchar *) key.p->key, buffer,
 						pkey->p->key.rsa, RSA_PKCS1_PADDING)))
 					{
-						FXERRG(QTrans::tr("QSSLDevice", "Incorrect key"), FXSSLDEVICE_INCORRECTKEY, 0);
+						FXERRG(QTrans::tr("QSSLDevice", "Incorrect key"), QSSLDEVICE_INCORRECTKEY, 0);
 					}
 					ret-=2*sizeof(FXuint)+sizeof(FXushort);
 					FXuint bitsize=0, saltlen=0; FXushort type=0;
@@ -1751,7 +1751,7 @@ bool QSSLDevice::open(FXuint mode)
 				}
 				FXuint testtag;
 				s.readRawBytes((char *) &testtag, 4);
-				FXERRH(testtag==*((FXuint *)"TEST"), QTrans::tr("QSSLDevice", "Missing key test hash"), FXSSLDEVICE_BADFORMAT, 0);
+				FXERRH(testtag==*((FXuint *)"TEST"), QTrans::tr("QSSLDevice", "Missing key test hash"), QSSLDEVICE_BADFORMAT, 0);
 				Secure::TigerHashValue testkeyhash;
 				s.readRawBytes(testkeyhash.data.bytes, sizeof(testkeyhash));
 				FXulong keysalt=0, keysaltlen=(1<<key.saltLen())-1; bool gotIt=false;
@@ -1795,7 +1795,7 @@ bool QSSLDevice::open(FXuint mode)
 						hashbuffer[n/8]^=(FXuchar)((keysalt>>n) & 0xff);
 					}
 				} while(keysalt++<=keysaltlen);
-				FXERRH(gotIt, QTrans::tr("QSSLDevice", "Incorrect key"), FXSSLDEVICE_INCORRECTKEY, 0);
+				FXERRH(gotIt, QTrans::tr("QSSLDevice", "Incorrect key"), QSSLDEVICE_INCORRECTKEY, 0);
 				keysalt=0;
 				memcpy(key.p->key, hashbuffer, keylen);
 			}
@@ -1891,7 +1891,7 @@ bool QSSLDevice::open(FXuint mode)
 					break;
 				}
 			default:
-				FXERRG(QTrans::tr("QSSLDevice", "Key of unknown encryption type"), FXSSLDEVICE_UNKNOWNENCRYPTION, 0);
+				FXERRG(QTrans::tr("QSSLDevice", "Key of unknown encryption type"), QSSLDEVICE_UNKNOWNENCRYPTION, 0);
 			}
 			// Initialise the cipher
 			EVP_CIPHER_CTX_init(&p->estream);

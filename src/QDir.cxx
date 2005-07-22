@@ -20,7 +20,7 @@
 ********************************************************************************/
 
 #include "xincs.h"
-#include "FXDir.h"
+#include "QDir.h"
 #include "FXString.h"
 #include "QFileInfo.h"
 #include "FXException.h"
@@ -46,7 +46,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 #define TESTABS(path) \
-	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, QTrans::tr("FXDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
+	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, QTrans::tr("QDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
 
 struct FXDLLLOCAL FXDirPrivate
 {
@@ -80,14 +80,14 @@ struct FXDLLLOCAL FXDirPrivate
 		ExpensiveSortRef(int _idx, FXDirPrivate *p, const QStringList::iterator &_sit, const QFileInfoList::iterator &_fit) : idx(_idx), parent(p), sit(_sit), fit(_fit) { }
 		bool operator<(const ExpensiveSortRef &o) const
 		{
-			if((parent->sortBy & FXDir::SortByMask)==FXDir::Time) return (*fit).lastModified()<(*o.fit).lastModified();
-			if((parent->sortBy & FXDir::SortByMask)==FXDir::Size) return (*fit).size()<(*o.fit).size();
+			if((parent->sortBy & QDir::SortByMask)==QDir::Time) return (*fit).lastModified()<(*o.fit).lastModified();
+			if((parent->sortBy & QDir::SortByMask)==QDir::Size) return (*fit).size()<(*o.fit).size();
 			return false;
 		}
 		bool operator==(const ExpensiveSortRef &o) const
 		{
-			if((parent->sortBy & FXDir::SortByMask)==FXDir::Time) return (*fit).lastModified()==(*o.fit).lastModified();
-			if((parent->sortBy & FXDir::SortByMask)==FXDir::Size) return (*fit).size()==(*o.fit).size();
+			if((parent->sortBy & QDir::SortByMask)==QDir::Time) return (*fit).lastModified()==(*o.fit).lastModified();
+			if((parent->sortBy & QDir::SortByMask)==QDir::Size) return (*fit).size()==(*o.fit).size();
 			return false;
 		}
 	};
@@ -131,7 +131,7 @@ struct FXDLLLOCAL FXDirPrivate
 		FXDirPrivate *parent;
 		template<class L, class I> bool compare(L &list, I &a, I &b) const
 		{
-			if(parent->sortBy & FXDir::IgnoreCase)
+			if(parent->sortBy & QDir::IgnoreCase)
 				return comparecase(*a, *b)<0;
 			else
 				return *a<*b;
@@ -168,9 +168,9 @@ void FXDirPrivate::read()
 		{
 			FXString *list=0;
 			FXuint findflags=LIST_CASEFOLD|LIST_NO_PARENT;
-			if(!(filter & FXDir::Dirs) && !allDirs) findflags|=LIST_NO_DIRS;
-			if(!(filter & FXDir::Files)) findflags|=LIST_NO_FILES;
-			if(filter & FXDir::Hidden) findflags|=LIST_HIDDEN_FILES|LIST_HIDDEN_DIRS;
+			if(!(filter & QDir::Dirs) && !allDirs) findflags|=LIST_NO_DIRS;
+			if(!(filter & QDir::Files)) findflags|=LIST_NO_FILES;
+			if(filter & QDir::Hidden) findflags|=LIST_HIDDEN_FILES|LIST_HIDDEN_DIRS;
 			if(allDirs) findflags|=LIST_ALL_DIRS;
 			if(regex.empty()) findflags|=LIST_ALL_FILES|LIST_ALL_DIRS;
 			FXint listcnt=FXFile::listFiles(list, path, regex, findflags);
@@ -180,11 +180,11 @@ void FXDirPrivate::read()
 				leafs.append(list[n]);
 			}
 		}
-		if(!(filter & (FXDir::Readable|FXDir::Writeable|FXDir::Executable)))
-			filter|=(FXDir::Readable|FXDir::Writeable|FXDir::Executable);
+		if(!(filter & (QDir::Readable|QDir::Writeable|QDir::Executable)))
+			filter|=(QDir::Readable|QDir::Writeable|QDir::Executable);
 		bool a,b=false;
-		if((a=(filter & FXDir::NoSymLinks)!=0)
-			|| (b=(filter & (FXDir::Readable|FXDir::Writeable|FXDir::Executable))!=(FXDir::Readable|FXDir::Writeable|FXDir::Executable)))
+		if((a=(filter & QDir::NoSymLinks)!=0)
+			|| (b=(filter & (QDir::Readable|QDir::Writeable|QDir::Executable))!=(QDir::Readable|QDir::Writeable|QDir::Executable)))
 		{	// Got to generate the file infos
 			doLeafInfos();
 			QStringList::iterator sit=leafs.begin();
@@ -195,13 +195,13 @@ void FXDirPrivate::read()
 				if(allDirs && fi.isDir()) continue;
 				if(a)
 				{
-					if((filter & FXDir::NoSymLinks) && fi.isSymLink()) goto remove;
+					if((filter & QDir::NoSymLinks) && fi.isSymLink()) goto remove;
 				}
 				if(b)
 				{
-					if((filter & FXDir::Readable) && !fi.isReadable()) goto remove;
-					if((filter & FXDir::Writeable) && !fi.isWriteable()) goto remove;
-					if((filter & FXDir::Executable) && !fi.isExecutable()) goto remove;
+					if((filter & QDir::Readable) && !fi.isReadable()) goto remove;
+					if((filter & QDir::Writeable) && !fi.isWriteable()) goto remove;
+					if((filter & QDir::Executable) && !fi.isExecutable()) goto remove;
 				}
 				continue;
 remove:
@@ -212,19 +212,19 @@ remove:
 				leafinfos->remove(fit);
 			}
 		}
-		if((sortBy & FXDir::SortByMask)!=FXDir::Unsorted || (sortBy & FXDir::DirsFirst))
+		if((sortBy & QDir::SortByMask)!=QDir::Unsorted || (sortBy & QDir::DirsFirst))
 		{
-			switch(sortBy & FXDir::SortByMask)
+			switch(sortBy & QDir::SortByMask)
 			{
-			case FXDir::Name:
+			case QDir::Name:
 				{	// Name sort
 					QValueListQSort<FXString, Pol::itMove, Pol::itSwap, NameCompare> sorter(leafs);
 					sorter.parent=this;
 					sorter.run();
 					break;
 				}
-			case FXDir::Time:
-			case FXDir::Size:
+			case QDir::Time:
+			case QDir::Size:
 				{	// Expensive sort
 					doLeafInfos();
 					QValueList<ExpensiveSortRef> list;
@@ -238,11 +238,11 @@ remove:
 					sorter.run();
 					break;
 				}
-			case FXDir::Unsorted:
+			case QDir::Unsorted:
 				break;
 			}
 			//fxmessage("Hello!\n");
-			if(sortBy & FXDir::DirsFirst)
+			if(sortBy & QDir::DirsFirst)
 			{
 				doLeafInfos();
 				QValueList<ExpensiveSortRef> list;
@@ -255,7 +255,7 @@ remove:
 				QValueListQSort<ExpensiveSortRef, ExpensiveMover, ExpensiveSwap, ExpensiveDirsFirst> sorter(list);
 				sorter.run(QVLQSortStable);
 			}
-			if(sortBy & FXDir::Reversed)
+			if(sortBy & QDir::Reversed)
 			{
 				leafs.reverse();
 				if(leafinfos) leafinfos->reverse();
@@ -266,25 +266,25 @@ remove:
 }
 
 
-FXDir::FXDir() : p(0)
+QDir::QDir() : p(0)
 {
 	FXERRHM(p=new FXDirPrivate(FXString::nullStr(), FXString::nullStr(), Name|IgnoreCase, All));
 }
-FXDir::FXDir(const FXString &path, const FXString &regex, int sortBy, int filter) : p(0)
+QDir::QDir(const FXString &path, const FXString &regex, int sortBy, int filter) : p(0)
 {
 	FXERRHM(p=new FXDirPrivate(path, regex, sortBy, filter));
 }
-FXDir::FXDir(const FXDir &o) : p(0)
+QDir::QDir(const QDir &o) : p(0)
 {
 	FXERRHM(p=new FXDirPrivate(*o.p));
 }
-FXDir &FXDir::operator=(const FXDir &o)
+QDir &QDir::operator=(const QDir &o)
 {
 	FXDELETE(p);
 	FXERRHM(p=new FXDirPrivate(*o.p));
 	return *this;
 }
-FXDir &FXDir::operator=(const FXString &path)
+QDir &QDir::operator=(const FXString &path)
 {
 	if(p->path!=path)
 	{
@@ -293,11 +293,11 @@ FXDir &FXDir::operator=(const FXString &path)
 	}
 	return *this;
 }
-FXDir::~FXDir()
+QDir::~QDir()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
-bool FXDir::operator==(const FXDir &o) const
+bool QDir::operator==(const QDir &o) const
 {
 	if(comparecase(p->path, o.p->path)!=0) return false;
 	if(p->leafinfos && o.p->leafinfos)
@@ -306,7 +306,7 @@ bool FXDir::operator==(const FXDir &o) const
 	}
 	return p->leafs==o.p->leafs;
 }
-bool FXDir::operator!=(const FXDir &o) const
+bool QDir::operator!=(const QDir &o) const
 {
 	if(comparecase(p->path, o.p->path)==0) return false;
 	if(p->leafinfos && o.p->leafinfos)
@@ -315,7 +315,7 @@ bool FXDir::operator!=(const FXDir &o) const
 	}
 	return p->leafs!=o.p->leafs;
 }
-void FXDir::setPath(const FXString &path)
+void QDir::setPath(const FXString &path)
 {
 	if(p->path!=path)
 	{
@@ -323,34 +323,34 @@ void FXDir::setPath(const FXString &path)
 		p->dirty=true;
 	}
 }
-const FXString &FXDir::path() const
+const FXString &QDir::path() const
 {
 	return p->path;
 }
-FXString FXDir::absPath() const
+FXString QDir::absPath() const
 {
 	return FXFile::absolute(p->path);
 }
-FXString FXDir::canonicalPath() const
+FXString QDir::canonicalPath() const
 {
 	FXString ret_=cleanDirPath(p->path);
 	FXString ret=FXFile::symlink(ret_);
 	return ret.empty() ? ret_ : ret;
 }
-FXString FXDir::dirName() const
+FXString QDir::dirName() const
 {
 	return FXFile::name(p->path);
 }
-FXString FXDir::filePath(const FXString &file, bool acceptAbs) const
+FXString QDir::filePath(const FXString &file, bool acceptAbs) const
 {
 	if(acceptAbs && FXFile::isAbsolute(file)) return file;
-	return p->path+FXDir::separator()+file;
+	return p->path+QDir::separator()+file;
 }
-FXString FXDir::absFilePath(const FXString &file, bool acceptAbs) const
+FXString QDir::absFilePath(const FXString &file, bool acceptAbs) const
 {
 	return FXFile::absolute(filePath(file, acceptAbs));
 }
-FXString FXDir::convertSeparators(const FXString &path)
+FXString QDir::convertSeparators(const FXString &path)
 {
 	FXString ret=path;
 #if PATHSEP!='/'
@@ -360,21 +360,21 @@ FXString FXDir::convertSeparators(const FXString &path)
 #endif
 	return ret;
 }
-bool FXDir::cd(const FXString &name, bool acceptAbs)
+bool QDir::cd(const FXString &name, bool acceptAbs)
 {
 	setPath(filePath(name, acceptAbs));
 	return exists();
 }
-bool FXDir::cdUp()
+bool QDir::cdUp()
 {
 	setPath(FXFile::upLevel(p->path));
 	return exists();
 }
-const FXString &FXDir::nameFilter() const
+const FXString &QDir::nameFilter() const
 {
 	return p->regex;
 }
-void FXDir::setNameFilter(const FXString &regex)
+void QDir::setNameFilter(const FXString &regex)
 {
 	if(p->regex!=regex)
 	{
@@ -382,11 +382,11 @@ void FXDir::setNameFilter(const FXString &regex)
 		p->dirty=true;
 	}
 }
-FXDir::FilterSpec FXDir::filter() const
+QDir::FilterSpec QDir::filter() const
 {
 	return (FilterSpec) p->filter;
 }
-void FXDir::setFilter(int filter)
+void QDir::setFilter(int filter)
 {
 	if(p->filter!=filter)
 	{
@@ -394,11 +394,11 @@ void FXDir::setFilter(int filter)
 		p->dirty=true;
 	}
 }
-FXDir::SortSpec FXDir::sorting() const
+QDir::SortSpec QDir::sorting() const
 {
 	return (SortSpec) p->sortBy;
 }
-void FXDir::setSorting(int sorting)
+void QDir::setSorting(int sorting)
 {
 	if(p->sortBy!=sorting)
 	{
@@ -406,11 +406,11 @@ void FXDir::setSorting(int sorting)
 		p->dirty=true;
 	}
 }
-bool FXDir::matchAllDirs() const
+bool QDir::matchAllDirs() const
 {
 	return p->allDirs;
 }
-void FXDir::setMatchAllDirs(bool matchAll)
+void QDir::setMatchAllDirs(bool matchAll)
 {
 	if(p->allDirs!=matchAll)
 	{
@@ -419,24 +419,24 @@ void FXDir::setMatchAllDirs(bool matchAll)
 	}
 }
 
-FXuint FXDir::count() const
+FXuint QDir::count() const
 {
 	p->read();
 	return (FXuint) p->leafs.count();
 }
-const FXString &FXDir::operator[](int idx) const
+const FXString &QDir::operator[](int idx) const
 {
 	p->read();
 	return p->leafs[idx];
 }
-QStringList FXDir::entryList(const FXString &regex, int filter, int sorting)
+QStringList QDir::entryList(const FXString &regex, int filter, int sorting)
 {
 	if(DefaultFilter!=filter) setFilter(filter);
 	if(DefaultSort!=sorting) setSorting(sorting);
 	p->read();
 	return p->leafs;
 }
-const QFileInfoList *FXDir::entryInfoList(const FXString &regex, int filter, int sorting)
+const QFileInfoList *QDir::entryInfoList(const FXString &regex, int filter, int sorting)
 {
 	if(DefaultFilter!=filter) setFilter(filter);
 	if(DefaultSort!=sorting) setSorting(sorting);
@@ -444,7 +444,7 @@ const QFileInfoList *FXDir::entryInfoList(const FXString &regex, int filter, int
 	p->doLeafInfos();
 	return p->leafinfos;
 }
-QStringList FXDir::drives()
+QStringList QDir::drives()
 {
 	QStringList drvs;
 #ifdef USE_WINAPI
@@ -466,83 +466,83 @@ QStringList FXDir::drives()
 #endif
 	return drvs;
 }
-void FXDir::refresh()
+void QDir::refresh()
 {
 	p->dirty=true;
 }
 
-bool FXDir::mkdir(const FXString &leaf, bool acceptAbs)
+bool QDir::mkdir(const FXString &leaf, bool acceptAbs)
 {
 	if(!FXFile::createDirectory(filePath(leaf, acceptAbs), S_IREAD|S_IWRITE))
 		THROWPOSTFOX;
 	return true;
 }
-bool FXDir::rmdir(const FXString &leaf, bool acceptAbs)
+bool QDir::rmdir(const FXString &leaf, bool acceptAbs)
 {
 	if(!FXFile::remove(filePath(leaf, acceptAbs)))
 		THROWPOSTFOX;
 	return true;
 }
-bool FXDir::remove(const FXString &leaf, bool acceptAbs)
+bool QDir::remove(const FXString &leaf, bool acceptAbs)
 {
 	if(!FXFile::remove(filePath(leaf, acceptAbs)))
 		THROWPOSTFOX;
 	return true;
 }
-bool FXDir::rename(const FXString &src, const FXString &dest, bool acceptAbs)
+bool QDir::rename(const FXString &src, const FXString &dest, bool acceptAbs)
 {
 	if(!FXFile::move(filePath(src, acceptAbs), filePath(dest, acceptAbs)))
 		THROWPOSTFOX;
 	return true;
 }
-bool FXDir::exists(const FXString &leaf, bool acceptAbs)
+bool QDir::exists(const FXString &leaf, bool acceptAbs)
 {
 	return FXFile::exists(filePath(leaf, acceptAbs))!=0;
 }
 
-bool FXDir::isReadable() const
+bool QDir::isReadable() const
 {
 	return FXFile::isReadable(p->path)!=0;
 }
-bool FXDir::exists() const
+bool QDir::exists() const
 {
 	return FXFile::exists(p->path)!=0;
 }
-bool FXDir::isRoot() const
+bool QDir::isRoot() const
 {
 	return FXFile::root(p->path)==p->path;
 }
-bool FXDir::isRelative() const
+bool QDir::isRelative() const
 {
 	return !FXFile::isAbsolute(p->path);
 }
-void FXDir::convertToAbs()
+void QDir::convertToAbs()
 {
 	p->path=FXFile::absolute(p->path);
 }
 
-FXString FXDir::separator() { return PATHSEPSTRING; }
-FXDir FXDir::current()
+FXString QDir::separator() { return PATHSEPSTRING; }
+QDir QDir::current()
 {
-	return FXDir(currentDirPath());
+	return QDir(currentDirPath());
 }
-FXDir FXDir::home()
+QDir QDir::home()
 {
-	return FXDir(homeDirPath());
+	return QDir(homeDirPath());
 }
-FXDir FXDir::root()
+QDir QDir::root()
 {
-	return FXDir(rootDirPath());
+	return QDir(rootDirPath());
 }
-FXString FXDir::currentDirPath()
+FXString QDir::currentDirPath()
 {
 	return FXFile::getCurrentDirectory();
 }
-FXString FXDir::homeDirPath()
+FXString QDir::homeDirPath()
 {
 	return FXFile::getHomeDirectory();
 }
-FXString FXDir::rootDirPath()
+FXString QDir::rootDirPath()
 {
 #ifdef USE_WINAPI
 	return FXFile::root(FXFile::getEnvironment("SystemRoot"));
@@ -551,19 +551,19 @@ FXString FXDir::rootDirPath()
 	return "/";
 #endif
 }
-bool FXDir::match(const FXString &filter, const FXString &filename)
+bool QDir::match(const FXString &filter, const FXString &filename)
 {
 	return FXFile::match(filter, filename, FILEMATCH_FILE_NAME|FILEMATCH_NOESCAPE|FILEMATCH_CASEFOLD)!=0;
 }
-FXString FXDir::cleanDirPath(const FXString &path)
+FXString QDir::cleanDirPath(const FXString &path)
 {
 	return FXFile::simplify(path);
 }
-bool FXDir::isRelativePath(const FXString &path)
+bool QDir::isRelativePath(const FXString &path)
 {
 	return !FXFile::isAbsolute(path);
 }
-QStringList FXDir::extractChanges(const FXDir &A, const FXDir &B)
+QStringList QDir::extractChanges(const QDir &A, const QDir &B)
 {
 	A.p->doLeafInfos(); B.p->doLeafInfos();
 	// Could do with a better algorithm here making use of any sorting

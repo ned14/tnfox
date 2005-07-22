@@ -712,7 +712,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 			else if(0==strncmp((char *) buffer, "version=", 8))
 			{	// Check trans file version
 				int v=atoi((char *) buffer+8);
-				FXERRH(1==v, "Incompatible translation file version", FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+				FXERRH(1==v, "Incompatible translation file version", QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 			}
 			else if(9==buffer[0])
 			{	// Add a translation to the current literal (ctrans)
@@ -726,7 +726,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 					{
 						idx+=8;
 						FXuchar *colon=findColon(&buffer[idx]);
-						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						*colon=0;
 						FXString temp=FXString((FXchar *) &buffer[idx]);
 						state.topState().srcfile=loseQuotes(temp);
@@ -736,7 +736,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 					{
 						idx+=6;
 						FXuchar *colon=findColon(&buffer[idx]);
-						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						*colon=0;
 						FXString temp=FXString((FXchar *) &buffer[idx]);
 						state.topState().classname=loseQuotes(temp);
@@ -746,7 +746,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 					{
 						idx+=5;
 						FXuchar *colon=findColon(&buffer[idx]);
-						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						*colon=0;
 						FXString temp=FXString((FXchar *) &buffer[idx]);
 						state.topState().hint=loseQuotes(temp);
@@ -755,10 +755,10 @@ void QTrans::addData(QTransEmbeddedFile &data)
 					else if('%'==buffer[idx])
 					{	// A parameter insert
 						FXuchar *colon=findColon(&buffer[idx]);
-						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						*colon=0;
 						char *equals=strchr((char *) &buffer[idx], '=');
-						FXERRH(equals, FXString("Missing equals at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(equals, FXString("Missing equals at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						*equals=0;
 						FXuint parno=atoi((char *) &buffer[idx+1]);
 						QMemArray<FXString> &pars=state.topState().pars;
@@ -772,7 +772,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 					else
 					{	// Probably a translation
 						FXuchar *colon=findColon(&buffer[idx]);
-						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(colon, FXString("Missing colon at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						*colon=0;
 						FXString langid((FXchar *) &buffer[idx]); langid.trim(); langid.upper();
 						FXString trans; literalise(trans, colon+1, lineno);
@@ -780,7 +780,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 						{
 							int a=1;
 						}
-						FXERRH(langid.length(), FXString("Language id cannot be null at line %1").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(langid.length(), FXString("Language id cannot be null at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 
 						QTransPrivate::LangTrans *langtrans;
 						if(!(langtrans=ctrans->langs.find(langid)))
@@ -801,7 +801,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 							lti.translation=langtrans->at(0)->translation;
 						else
 							lti.translation=ctrans->getLiteral(ctrans->transstrs, trans);
-						FXERRH(lti.translation, FXString("'up' at line %1 must refer to a previously declared higher order literal").arg(lineno), FXTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
+						FXERRH(lti.translation, FXString("'up' at line %1 must refer to a previously declared higher order literal").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 						langtrans->append(lti);
 						// Consume rest of line
 						idx=(FXuval)colon-(FXuval)buffer;

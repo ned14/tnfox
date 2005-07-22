@@ -814,7 +814,7 @@ FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 				if(readed==maxlen) break;
 			}
 			if(readed==maxlen) break;
-			FXERRH(p->file, QTrans::tr("QMemMap", "Unable to read unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
+			FXERRH(p->file, QTrans::tr("QMemMap", "Unable to read unmapped shared memory"), QMEMMAP_NOTMAPPED, 0);
 			// Ok do file read
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
 			FXfval tillnextsection=((nextm && nextm->addr) ? nextm->offset : mysize)-ioIndex;
@@ -885,7 +885,7 @@ FXuval QMemMap::writeBlock(const char *data, FXuval maxlen)
 				if(written==maxlen) break;
 			}
 			if(written==maxlen) break;
-			FXERRH(p->file, QTrans::tr("QMemMap", "Unable to write unmapped shared memory"), FXMEMMAP_NOTMAPPED, 0);
+			FXERRH(p->file, QTrans::tr("QMemMap", "Unable to write unmapped shared memory"), QMEMMAP_NOTMAPPED, 0);
 			// Ok do file write
 			Mapping *nextm=p->cmappingit.current(); // Next mapping still held by iterator
 			FXfval tillnextsection=((nextm && nextm->addr) ? nextm->offset-ioIndex : (FXfval)-1);

@@ -34,7 +34,7 @@
 #include "FXProcess.h"
 #include "FXRollback.h"
 #include "FXFile.h"
-#include "FXDir.h"
+#include "QDir.h"
 #include "QFileInfo.h"
 #include "QTrans.h"
 #include "FXErrCodes.h"
@@ -56,7 +56,7 @@ struct FXFSMon : public QMutex
 		struct Path
 		{
 			Watcher *parent;
-			FXAutoPtr<FXDir> pathdir;
+			FXAutoPtr<QDir> pathdir;
 #ifdef USE_WINAPI
 			HANDLE h;
 #endif
@@ -114,7 +114,7 @@ struct FXFSMon : public QMutex
 				, h(0)
 #endif
 			{
-				FXERRHM(pathdir=new FXDir(_path, "*", FXDir::Unsorted, FXDir::All|FXDir::Hidden));
+				FXERRHM(pathdir=new QDir(_path, "*", QDir::Unsorted, QDir::All|QDir::Hidden));
 				pathdir->entryInfoList();
 			}
 			~Path();
@@ -347,10 +347,10 @@ static const QFileInfo *findFIByName(const QFileInfoList *list, const FXString &
 }
 void FXFSMon::Watcher::Path::callHandlers()
 {	// Lock is held on entry
-	FXAutoPtr<FXDir> newpathdir;
-	FXERRHM(newpathdir=new FXDir(pathdir->path(), "*", FXDir::Unsorted, FXDir::All|FXDir::Hidden));
+	FXAutoPtr<QDir> newpathdir;
+	FXERRHM(newpathdir=new QDir(pathdir->path(), "*", QDir::Unsorted, QDir::All|QDir::Hidden));
 	newpathdir->entryInfoList();
-	QStringList rawchanges=FXDir::extractChanges(*pathdir, *newpathdir);
+	QStringList rawchanges=QDir::extractChanges(*pathdir, *newpathdir);
 	QValueList<Change> changes;
 	for(QStringList::iterator it=rawchanges.begin(); it!=rawchanges.end(); ++it)
 	{

@@ -173,7 +173,7 @@ public:
 	{
 #ifdef USE_WINAPI
 		WSADATA wd;
-		FXERRH(0==WSAStartup(MAKEWORD(2,2), &wd), "Failed to initialise Winsock library", FXBLKSOCKET_NOWINSOCK, 0);
+		FXERRH(0==WSAStartup(MAKEWORD(2,2), &wd), "Failed to initialise Winsock library", QBLKSOCKET_NOWINSOCK, 0);
 		if(HIBYTE(wd.wVersion)>2 || (2==HIBYTE(wd.wVersion) && LOBYTE(wd.wVersion)>=2))
 			socketsEnabled=IPv6;
 		else
@@ -250,7 +250,7 @@ void *QBlkSocket::int_getOSHandle() const
 QBlkSocket::QBlkSocket(QBlkSocket::Type type, FXushort port) : p(0), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
+	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), QBLKSOCKET_NOSOCKETS, 0);
 	FXERRHM(p=new QBlkSocketPrivate(type, port));
 	unconstr.dismiss();
 }
@@ -258,8 +258,8 @@ QBlkSocket::QBlkSocket(QBlkSocket::Type type, FXushort port) : p(0), QIODeviceS(
 QBlkSocket::QBlkSocket(const QHostAddress &addr, FXushort port, QBlkSocket::Type type) : p(0), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
-	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), QTrans::tr("QBlkSocket", "This machine cannot perform IPv6"), FXBLKSOCKET_NOIPV6, 0);
+	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), QBLKSOCKET_NOSOCKETS, 0);
+	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), QTrans::tr("QBlkSocket", "This machine cannot perform IPv6"), QBLKSOCKET_NOIPV6, 0);
 	FXERRHM(p=new QBlkSocketPrivate(type, port));
 	p->req.addr=addr;
 	unconstr.dismiss();
@@ -268,9 +268,9 @@ QBlkSocket::QBlkSocket(const QHostAddress &addr, FXushort port, QBlkSocket::Type
 QBlkSocket::QBlkSocket(const FXString &addrname, FXushort port, QBlkSocket::Type type) : p(0), QIODeviceS()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), FXBLKSOCKET_NOSOCKETS, 0);
+	FXERRH(NoIP!=socketsEnabled, QTrans::tr("QBlkSocket", "Sockets are not enabled on this machine"), QBLKSOCKET_NOSOCKETS, 0);
 	QHostAddress addr=FXNetwork::dnsLookup(addrname);
-	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), QTrans::tr("QBlkSocket", "This machine cannot perform IPv6"), FXBLKSOCKET_NOIPV6, 0);
+	FXERRH(!(IPv6!=socketsEnabled && addr.isIp6Addr()), QTrans::tr("QBlkSocket", "This machine cannot perform IPv6"), QBLKSOCKET_NOIPV6, 0);
 	FXERRHM(p=new QBlkSocketPrivate(type, port));
 	p->req.addr=addr;
 	unconstr.dismiss();
@@ -468,7 +468,7 @@ FXint QBlkSocket::lingerPeriod() const
 	{
 		struct linger l;
 		socklen_t valsize=sizeof(l);
-		FXERRH(Stream==p->type, "Only available for stream sockets", FXBLKSOCKET_NOTSTREAM, 0);
+		FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 		FXERRHSKT(::getsockopt(p->handle, SOL_SOCKET, SO_LINGER, (char *) &l, &valsize));
 		return l.l_onoff ? l.l_linger : -1;
 	}
@@ -483,7 +483,7 @@ void QBlkSocket::setLingerPeriod(FXint period)
 		struct linger l;
 		l.l_onoff=period>=0;
 		l.l_linger=(u_short) period;
-		FXERRH(Stream==p->type, "Only available for stream sockets", FXBLKSOCKET_NOTSTREAM, 0);
+		FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 		FXERRHSKT(::setsockopt(p->handle, SOL_SOCKET, SO_LINGER, (char *) &l, sizeof(l)));
 	}
 }
@@ -495,7 +495,7 @@ bool QBlkSocket::usingNagles() const
 	{
 		int val=0;
 		socklen_t valsize=sizeof(val);
-		FXERRH(Stream==p->type, "Only available for stream sockets", FXBLKSOCKET_NOTSTREAM, 0);
+		FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 		struct protoent *pe=getprotobyname("ip");
 		if(!pe) FXERRHSKT(-1);
 		FXERRHSKT(::getsockopt(p->handle, pe->p_proto, TCP_NODELAY, (char *) &val, &valsize));
@@ -510,7 +510,7 @@ void QBlkSocket::setUsingNagles(bool newar)
 	if(isOpen())
 	{
 		int val=(int) newar;
-		FXERRH(Stream==p->type, "Only available for stream sockets", FXBLKSOCKET_NOTSTREAM, 0);
+		FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 		struct protoent *pe=getprotobyname("ip");
 		if(!pe) FXERRHSKT(-1);
 		FXERRHSKT(::setsockopt(p->handle, pe->p_proto, TCP_NODELAY, (char *) &val, sizeof(val)));
@@ -598,7 +598,7 @@ bool QBlkSocket::create(FXuint mode)
 	FXMtxHold h(p);
 	QThread_DTHold dth;
 	close();
-	FXERRH(p->mine.addr.isLocalMachine() || p->mine.addr.isNull(), "Server sockets must be local", FXBLKSOCKET_NONLOCALCREATE, FXERRH_ISDEBUG);
+	FXERRH(p->mine.addr.isLocalMachine() || p->mine.addr.isNull(), "Server sockets must be local", QBLKSOCKET_NONLOCALCREATE, FXERRH_ISDEBUG);
 	FXERRHSKT(p->handle=::socket(p->mine.addr.isIp6Addr() ? PF_INET6 : PF_INET, (p->type==Datagram) ? SOCK_DGRAM : SOCK_STREAM, 0));
 #ifdef USE_WINAPI
 	if(mode & IO_ReadOnly)
@@ -935,8 +935,8 @@ int QBlkSocket::ungetch(int c)
 QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 {
 	FXMtxHold h(p);
-	FXERRH(isOpen(), "Server socket isn't open", FXBLKSOCKET_NOTOPEN, 0);
-	FXERRH(Stream==p->type, "Only available for stream sockets", FXBLKSOCKET_NOTSTREAM, 0);
+	FXERRH(isOpen(), "Server socket isn't open", QBLKSOCKET_NOTOPEN, 0);
+	FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 	sockaddr_in6 sa6={0}, *sa6addr; sa6addr=&sa6;
 	socklen_t salen=sizeof(sa6);
 #ifdef USE_WINAPI

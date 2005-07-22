@@ -311,6 +311,6 @@ const unsigned char TnFOXTrans_txt[]={
 
 
 // Load from disc
-FXTRANS_SETTRANSFILE(TnFOXTrans_txt, sizeof(TnFOXTrans_txt));
+QTRANS_SETTRANSFILE(TnFOXTrans_txt, sizeof(TnFOXTrans_txt));
 
 } // namespace
