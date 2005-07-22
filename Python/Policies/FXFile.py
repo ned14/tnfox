@@ -17,15 +17,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
 def baseFXFile():
-    return "FXIODevice"
+    return "QIODevice"
 
 def applyFXFile(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)
     set_policy(cclass.stdio,                return_internal_reference())
     set_policy(cclass.name,                 return_value_policy(return_by_value))
     exclude(cclass.info)

@@ -80,7 +80,7 @@ boost::python::handle<> FXPython::globals()
 
 boost::python::handle<> FXPython::execute(const FXString &code, boost::python::handle<> context)
 {
-	FXThread_DTHold dthold;
+	QThread_DTHold dthold;
 	PyObject *ret;
 	FXERRHPY(ret=PyRun_String((char *) code.text(), Py_file_input, context.get(), context.get()));
 	return boost::python::handle<>(ret);
@@ -88,7 +88,7 @@ boost::python::handle<> FXPython::execute(const FXString &code, boost::python::h
 
 boost::python::handle<> FXPython::evaluate(const FXString &code, boost::python::handle<> context)
 {
-	FXThread_DTHold dthold;
+	QThread_DTHold dthold;
 	PyObject *ret;
 	FXERRHPY(ret=PyRun_String((char *) code.text(), Py_eval_input, context.get(), context.get()));
 	return boost::python::handle<>(ret);
@@ -105,9 +105,9 @@ struct ThreadData
 	QValueList<PyThreadState *> tsstack;
 	ThreadData() : threadcleanupH(0) { }
 };
-static FXRWMutex indexlock;
+static QRWMutex indexlock;
 static QPtrDict<ThreadData> index(13, true);
-static FXMutex interplistlock;
+static QMutex interplistlock;
 static QPtrList<FXPythonInterp> interplist;
 static bool amEmbeddedInPython=true;
 
@@ -119,14 +119,14 @@ struct FXPythonInterpPrivate
 	FXPythonInterpPrivate(const char *_name, PyThreadState *_ts=0)
 		: name(_name), ts(_ts), amMaster(false), myinterpreter(false), myts(false) { }
 	static void informPython();
-	static void cleanupThread(FXThread *cthread);
-	static ThreadData *addThread(FXThread *cthread, PyThreadState *ts, FXPythonInterp *parentinterp=0);
+	static void cleanupThread(QThread *cthread);
+	static ThreadData *addThread(QThread *cthread, PyThreadState *ts, FXPythonInterp *parentinterp=0);
 };
 
-void FXPythonInterpPrivate::cleanupThread(FXThread *cthread)
+void FXPythonInterpPrivate::cleanupThread(QThread *cthread)
 {	// Ensure you don't add anything here which also needs to go into the destructor
-	FXMtxHold h(indexlock, true);
-	FXMtxHold h2(interplistlock);
+	QMtxHold h(indexlock, true);
+	QMtxHold h2(interplistlock);
 	ThreadData *td=index.find(cthread);
 	if(td)
 	{
@@ -138,14 +138,14 @@ void FXPythonInterpPrivate::cleanupThread(FXThread *cthread)
 		}
 		FXPythonInterp *myinterp=td->callstack.getLast();
 		assert(myinterp);
-		td->threadcleanupH=0;	// Prevent deletion as breaks FXThread's iterator
+		td->threadcleanupH=0;	// Prevent deletion as breaks QThread's iterator
 		delete myinterp;
 		index.remove(cthread);
 	}
 }
-ThreadData *FXPythonInterpPrivate::addThread(FXThread *cthread, PyThreadState *ts, FXPythonInterp *parentinterp)
+ThreadData *FXPythonInterpPrivate::addThread(QThread *cthread, PyThreadState *ts, FXPythonInterp *parentinterp)
 {
-	FXERRH(cthread, "FXThread uninitialised - did you use FXThread to create your thread?", 0, FXERRH_ISDEBUG);
+	FXERRH(cthread, "QThread uninitialised - did you use QThread to create your thread?", 0, FXERRH_ISDEBUG);
 	FXPythonInterp *interp;
 	if(!ts)
 	{	// Derive a thread state from the primary interpreter
@@ -156,7 +156,7 @@ ThreadData *FXPythonInterpPrivate::addThread(FXThread *cthread, PyThreadState *t
 		interp->p->myts=true;
 		FXRBOp uni=FXRBNew(interp);
 		unts.dismiss();
-		FXMtxHold h(interplistlock);
+		QMtxHold h(interplistlock);
 		interplist.append(interp);
 		uni.dismiss();
 	}
@@ -168,7 +168,7 @@ ThreadData *FXPythonInterpPrivate::addThread(FXThread *cthread, PyThreadState *t
 		}
 		if(!interp)
 		{
-			FXMtxHold h2(interplistlock);
+			QMtxHold h2(interplistlock);
 			FXERRHM(interp=new FXPythonInterp(ts));
 			FXRBOp uninterp=FXRBNew(interp);
 			interplist.append(interp);
@@ -187,7 +187,7 @@ ThreadData *FXPythonInterpPrivate::addThread(FXThread *cthread, PyThreadState *t
 	}
 	return td;
 }
-static void onThreadCreation(FXThread *t)
+static void onThreadCreation(QThread *t)
 {	// ie; set the new thread's interpreter to what it was when started
 	if(interplist.isEmpty()) return;
 	FXPythonInterp *cinterp=FXPythonInterp::current();
@@ -201,11 +201,11 @@ class FXPythonInit
 public:
 	FXPythonInit()
 	{
-		FXThread::addCreationUpcall(FXThread::CreationUpcallSpec(onThreadCreation));
+		QThread::addCreationUpcall(QThread::CreationUpcallSpec(onThreadCreation));
 	}
 	~FXPythonInit()
 	{
-		FXThread::removeCreationUpcall(FXThread::CreationUpcallSpec(onThreadCreation));
+		QThread::removeCreationUpcall(QThread::CreationUpcallSpec(onThreadCreation));
 	}
 };
 static FXProcess_StaticInit<FXPythonInit> myinit("FXPython");
@@ -217,10 +217,10 @@ FXPythonInterp::FXPythonInterp(void *ts) : p(0)
 
 FXPythonInterp::FXPythonInterp(int argc, char **argv, const char *name) : p(0)
 {
-	FXThread *cthread=FXThread::current();
+	QThread *cthread=QThread::current();
 	PyThreadState *oldts=0;
-	FXMtxHold h(indexlock, true);
-	FXMtxHold h2(interplistlock);
+	QMtxHold h(indexlock, true);
+	QMtxHold h2(interplistlock);
 	bool addTnFOX=false;
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new FXPythonInterpPrivate(name));
@@ -296,9 +296,9 @@ static struct TestWhere
 
 FXPythonInterp::~FXPythonInterp()
 {
-	FXThread *cthread=FXThread::current();
-	FXMtxHold h(indexlock, true);
-	FXMtxHold h2(interplistlock);
+	QThread *cthread=QThread::current();
+	QMtxHold h(indexlock, true);
+	QMtxHold h2(interplistlock);
 	ThreadData *td=index.find(cthread);
 	if(td)
 	{
@@ -342,8 +342,8 @@ const char *FXPythonInterp::name() const throw()
 
 FXPythonInterp *FXPythonInterp::current()
 {
-	FXMtxHold h(indexlock, false);
-	ThreadData *td=index.find(FXThread::current());
+	QMtxHold h(indexlock, false);
+	ThreadData *td=index.find(QThread::current());
 	if(!td) return 0;
 	if(td->callstack.isEmpty()) return 0;
 	return td->callstack.getFirst();
@@ -352,12 +352,12 @@ FXPythonInterp *FXPythonInterp::current()
 void FXPythonInterp::setContext()
 {
 	assert(this);
-	FXThread *cthread=FXThread::current();
-	FXMtxHold h(indexlock, false);
+	QThread *cthread=QThread::current();
+	QMtxHold h(indexlock, false);
 	ThreadData *td=index.find(cthread);
 	if(!td)
 	{
-		FXMtxHold h(indexlock, true);
+		QMtxHold h(indexlock, true);
 		td=FXPythonInterpPrivate::addThread(cthread, p->ts, this);
 	}
 	h.unlock();
@@ -373,8 +373,8 @@ void FXPythonInterp::setContext()
 
 void FXPythonInterp::unsetContext()
 {
-	FXThread *cthread=FXThread::current();
-	FXMtxHold h(indexlock, false);
+	QThread *cthread=QThread::current();
+	QMtxHold h(indexlock, false);
 	ThreadData *td=index.find(cthread);
 	assert(td);
 	h.unlock();
@@ -393,16 +393,16 @@ void FXPythonInterp::unsetContext()
 // Called whenever python crosses into C++ land
 void FXPythonInterp::int_enterCPP()
 {
-	FXThread *cthread=FXThread::current();
+	QThread *cthread=QThread::current();
 	if(!cthread && !FXProcess::instance())
 	{	// Seems we're just about to exit - leave the lock alone
 		return;
 	}
-	FXMtxHold h(indexlock, false);
+	QMtxHold h(indexlock, false);
 	ThreadData *td=index.find(cthread);
 	if(!td)
 	{
-		FXMtxHold h(indexlock, true);
+		QMtxHold h(indexlock, true);
 		td=FXPythonInterpPrivate::addThread(cthread, PyThreadState_Get());
 	}
 	h.unlock();
@@ -417,16 +417,16 @@ void FXPythonInterp::int_enterCPP()
 // Called whenever C++ crosses into Python land
 void FXPythonInterp::int_exitCPP()
 {
-	FXThread *cthread=FXThread::current();
+	QThread *cthread=QThread::current();
 	if(!cthread && !FXProcess::instance())
 	{	// Seems we're just about to exit - the lock will be in the right state
 		return;
 	}
-	FXMtxHold h(indexlock, false);
+	QMtxHold h(indexlock, false);
 	ThreadData *td=index.find(cthread);
 	if(!td)
 	{
-		FXMtxHold h(indexlock, true);
+		QMtxHold h(indexlock, true);
 		td=FXPythonInterpPrivate::addThread(cthread, 0);
 	}
 	h.unlock();
@@ -525,7 +525,7 @@ void FXPython::int_throwPythonException()
 		throw FXPythonException();
 	}
 
-	FXTransString msg=FXTrans::tr("FXPython", "%3,%4 at line %1 in %2");
+	QTransString msg=QTrans::tr("FXPython", "%3,%4 at line %1 in %2");
 	{
 		PyObject *_type, *_pvalue, *_ptraceback;
 		PyErr_Fetch(&_type, &_pvalue, &_ptraceback);
@@ -572,12 +572,12 @@ void *testfunc()
 
 void FXPython::int_initEmbeddedEnv()
 {
-	FXThread *cthread=FXThread::current();
-	FXMtxHold h(indexlock, false);
+	QThread *cthread=QThread::current();
+	QMtxHold h(indexlock, false);
 	ThreadData *td=index.find(cthread);
 	if(!td)
 	{
-		FXMtxHold h(indexlock, true);
+		QMtxHold h(indexlock, true);
 		td=FXPythonInterpPrivate::addThread(cthread, PyThreadState_Get());
 		FXPythonInterp *myinterp=td->callstack.getLast();
 		myinterp->p->amMaster=true;
@@ -588,7 +588,7 @@ void FXPython::int_initEmbeddedEnv()
 	}
 }
 
-void FXPython::int_runPythonThread(PyObject *self, FXThread *cthread)
+void FXPython::int_runPythonThread(PyObject *self, QThread *cthread)
 {
 	FXPython_DoPython ctxhold;
 	handle<> ret(allow_null(PyEval_CallMethod(self, "run", "()")));

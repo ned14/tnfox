@@ -17,13 +17,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
-def baseFXIODeviceS():
-    return "FXIODevice"
+def baseQIODeviceS():
+    return "QIODevice"
 
-def applyFXIODeviceS(g, cclass):
+def applyQIODeviceS(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)
     

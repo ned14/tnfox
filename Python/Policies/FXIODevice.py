@@ -17,10 +17,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXIODevice():
+def baseQIODevice():
     return None
 
-def applyFXIODevice(g, cclass):
+def applyQIODevice(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.permissions,         return_internal_reference())

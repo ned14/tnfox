@@ -23,7 +23,7 @@ class ImageWindow(FXMainWindow):
     def loadIcon(self, filename):
         filename = os.path.join('icons', filename)
         fh=FXFile(filename)
-        fh.open(FXIODeviceFlags.IO_ReadOnly)
+        fh.open(QIODeviceFlags.IO_ReadOnly)
         stream=FXStream(fh);
         icon=FXPNGIcon(self.getApp())
         icon.loadPixels(stream)
@@ -248,7 +248,7 @@ class ImageWindow(FXMainWindow):
             return 0
 
         fh = FXFile(file)
-        fh.open(FXIODeviceFlags.IO_ReadOnly)
+        fh.open(QIODeviceFlags.IO_ReadOnly)
         stream = FXStream(fh)
         self.getApp().beginWaitCursor()
         img.loadPixels(stream)
@@ -261,7 +261,7 @@ class ImageWindow(FXMainWindow):
 
     def saveImage(self, file):
         fh = FXFile(file)
-        fh.open(FXIODeviceFlags.IO_WriteOnly)
+        fh.open(QIODeviceFlags.IO_WriteOnly)
         stream = FXStream(fh)
         self.getApp().beginWaitCursor()
         img = self.imageview.getImage()     # We may want to save in another format...

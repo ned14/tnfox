@@ -17,10 +17,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXTrans():
+def baseQTrans():
     return None
 
-def applyFXTransString(g, cclass):
+def applyQTransString(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.arg,           return_self())
@@ -29,11 +29,11 @@ def customise(g):
     for key,value in g.items():
         globals()[key]=value
     declaration_code("""namespace boost { namespace python { namespace indexing {
-    template<> struct value_traits<FX::FXTrans::ProvidedInfo> : public value_traits<int>
+    template<> struct value_traits<FX::QTrans::ProvidedInfo> : public value_traits<int>
     {
         BOOST_STATIC_CONSTANT (bool, equality_comparable = false);
         BOOST_STATIC_CONSTANT (bool, less_than_comparable = false);
     };
 } } }""")
-    module_code("    RegisterConvQValueList<FX::FXTrans::ProvidedInfo>();\n")
+    module_code("    RegisterConvQValueList<FX::QTrans::ProvidedInfo>();\n")
     

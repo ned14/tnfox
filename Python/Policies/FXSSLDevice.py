@@ -17,10 +17,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
-def baseFXSSLDevice():
-    return "FXIODevice"
+def baseQSSLDevice():
+    return "QIODevice"
 
 def applyFXSSLKey(g, cclass):
     for key,value in g.items():
@@ -28,8 +28,8 @@ def applyFXSSLKey(g, cclass):
     set_policy(cclass.asymmetricKey,          return_internal_reference())
     set_policy(cclass.setAsymmetricKey,       return_self())
 
-def applyFXSSLDevice(g, cclass):
+def applyQSSLDevice(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)
     set_policy(cclass.encryptedDev,           return_internal_reference())

@@ -17,13 +17,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
-def baseFXBuffer():
-    return "FXIODevice"
+def baseQBuffer():
+    return "QIODevice"
 
-def applyFXBuffer(g, cclass):
+def applyQBuffer(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)
     set_policy(cclass.buffer,     return_internal_reference())

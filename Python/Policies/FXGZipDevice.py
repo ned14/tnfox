@@ -17,13 +17,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
-def baseFXGZipDevice():
-    return "FXIODevice"
+def baseQGZipDevice():
+    return "QIODevice"
 
-def applyFXGZipDevice(g, cclass):
+def applyQGZipDevice(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)
     set_policy(cclass.GZData,       return_value_policy(reference_existing_object))

@@ -47,7 +47,7 @@ depreclist=["FXFileStream.h", "FXMemoryStream.h"]
 # List of files with special includes
 includelist={"FXApp.h"          : [ "CArrays.h" ],
              "FXBitmap.h"       : [ "CArrays.h" ],
-             "FXBuffer.h"       : [ "qcstring.h" ],
+             "QBuffer.h"       : [ "qcstring.h" ],
              "FXException.h"    : [ "CArrays.h" ],
              "FXGLCanvas.h"     : [ "FXGLVisual.h" ],
              "FXGLContext.h"    : [ "FXGLVisual.h" ],
@@ -66,7 +66,7 @@ includelist={"FXApp.h"          : [ "CArrays.h" ],
              "FXRangef.h"       : [ "FXSpheref.h", "FXVec3f.h", "FXVec4d.h", "FXVec4f.h" ],
              "FXSphered.h"      : [ "FXSpheref.h", "FXVec4d.h" ],
              "FXSpheref.h"      : [ "FXRangef.h", "FXVec4d.h", "FXVec4f.h" ],
-             "FXTrans.h"        : [ "CArrays.h", "qvaluelist.h" ]
+             "QTrans.h"        : [ "CArrays.h", "qvaluelist.h" ]
              }
 
 # List of files with special additions

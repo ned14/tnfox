@@ -17,12 +17,12 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
-def baseFXLocalPipe():
-    return "FXIODevice"
+def baseQLocalPipe():
+    return "QIODevice"
 
-def applyFXLocalPipe(g, cclass):
+def applyQLocalPipe(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)

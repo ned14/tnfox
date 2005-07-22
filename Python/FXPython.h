@@ -64,7 +64,7 @@ namespace FX {
 \brief Defines things used in embedding python and providing support
 */
 
-class FXThread;
+class QThread;
 class FXFoldingList;
 class FXGLViewer;
 class FXIconList;
@@ -149,7 +149,7 @@ public:
 
 	static void int_throwPythonException();
 	static void int_initEmbeddedEnv();
-	static void int_runPythonThread(PyObject *self, FXThread *cthread);
+	static void int_runPythonThread(PyObject *self, QThread *cthread);
 	static void int_pythonObjectCreated(Generic::BoundFunctorV *detach);
 	static void int_pythonObjectDeleted(Generic::BoundFunctorV *detach);
 	static bool int_FXObjectHandle(long *ret, FXObject *self, FXObject *sender, FXSelector sel, void *ptr);
@@ -227,15 +227,15 @@ and so deadlock is extremely likely.
 
 You must not create threads using python's threading module or any other
 method - or if you do, these threads must \b never call TnFOX code. TnFOX
-relies on FXThread creating all the threads as associated
+relies on QThread creating all the threads as associated
 state is created with each thread which would be unset otherwise. Besides,
 currently python's threads behave a bit oddly. v0.5 now permits any
-FXThread calling python for the first time to automatically set up a
+QThread calling python for the first time to automatically set up a
 python thread state so you no longer need worry about it. Note that
 any threads started before the python DLL is loaded will assume they
 reference code in the primary interpreter - this contrasts against
 threads normally inheriting the interpreter in force when the start()
-method was called for that FXThread.
+method was called for that QThread.
 
 <h3>The Boost.Python Library:</h3>
 You will almost certainly make great use of Boost.Python's "python like"
@@ -311,7 +311,7 @@ public:
 \ingroup python
 \brief Wraps context sets in an exception-proof fashion
 
-This little helper class works similarly to FX::FXMtxHold in setting
+This little helper class works similarly to FX::QMtxHold in setting
 a context on construction and unsetting it on destruction.
 You can use undo() and redo() if needed.
 */

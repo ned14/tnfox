@@ -17,15 +17,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODevice
+import QIODevice
 
-def baseFXMemMap():
-    return "FXIODevice"
+def baseQMemMap():
+    return "QIODevice"
 
-def applyFXMemMap(g, cclass):
+def applyQMemMap(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODevice.applyFXIODevice(g, cclass)
+    QIODevice.applyQIODevice(g, cclass)
     set_policy(cclass.mapIn,         return_internal_reference())
     exclude(cclass.mapOffset)
     

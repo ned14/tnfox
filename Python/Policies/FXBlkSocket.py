@@ -17,13 +17,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXIODeviceS
+import QIODeviceS
 
-def baseFXBlkSocket():
-    return "FXIODeviceS"
+def baseQBlkSocket():
+    return "QIODeviceS"
 
-def applyFXBlkSocket(g, cclass):
+def applyQBlkSocket(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXIODeviceS.applyFXIODeviceS(g, cclass)
+    QIODeviceS.applyQIODeviceS(g, cclass)
     set_policy(cclass.waitForConnection,     return_value_policy(manage_new_object))

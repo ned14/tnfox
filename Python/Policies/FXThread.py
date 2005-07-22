@@ -17,10 +17,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXThread():
+def baseQThread():
     return None
 
-def applyFXThread(g, cclass):
+def applyQThread(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.current,          return_value_policy(reference_existing_object))
@@ -31,7 +31,7 @@ def applyFXThread(g, cclass):
     exclude(cclass.removeCleanupCall)
     exclude(cclass.int_cancelWaiterHandle)
     
-def applyFXThreadPool(g, cclass):
+def applyQThreadPool(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.dispatch,         return_internal_reference())

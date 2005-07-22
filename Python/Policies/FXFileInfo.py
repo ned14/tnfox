@@ -17,9 +17,9 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXFileInfo():
+def baseQFileInfo():
     return None
 
-def applyFXFileInfo(g, cclass):
+def applyQFileInfo(g, cclass):
     for key,value in g.items():
         globals()[key]=value

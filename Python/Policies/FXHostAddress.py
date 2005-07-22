@@ -17,10 +17,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXHostAddress():
+def baseQHostAddress():
     return None
 
-def applyFXHostAddress(g, cclass):
+def applyQHostAddress(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     exclude(cclass.ip6Addr)
