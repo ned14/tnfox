@@ -34,7 +34,7 @@
 static FXuint seed;
 static FXAtomicInt allocs;
 
-class Thread : public FXThread
+class Thread : public QThread
 {
 public:
 	int number;
@@ -54,7 +54,7 @@ public:
 #else
 		alloclist.append((ptr=FXMemoryPool::glmalloc((size=fxrandom(seed)>>23))));
 #endif
-		//fxmessage("Thread %d allocated %d at 0x%p\n", FXThread::id(), size, ptr);
+		//fxmessage("Thread %d allocated %d at 0x%p\n", QThread::id(), size, ptr);
 		allocs++;
 		//_ASSERTE( _CrtCheckMemory( ) );
 	}
@@ -62,7 +62,7 @@ public:
 	{
 		void *ptr=alloclist.getLast();
 		alloclist.removeLast();
-		//fxmessage("Thread %d freed 0x%p\n", FXThread::id(), ptr);
+		//fxmessage("Thread %d freed 0x%p\n", QThread::id(), ptr);
 #ifdef USE_LOCALMALLOC
 #ifdef USE_WIN32DIRECT
 		HeapFree(GetProcessHeap(), 0, ptr);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	}
 	while(allocs<totalallocs)
 	{
-		FXThread::sleep(1);
+		QThread::sleep(1);
 		fxmessage("*** Stats: %s\n", FXMemoryPool::glstatsAsString().text());
 	}
 	fxmessage("*** Deallocating\n");

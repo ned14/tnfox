@@ -27,28 +27,28 @@ struct DevInfo
 {
 	bool isSynch, amSocket;
 	FXString name;
-	FXIODevice *rdev, *wdev;
-	DevInfo(const FXString &n, FXIODevice *_rdev, FXIODevice *_wdev=0) : isSynch(_wdev!=0), amSocket(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev) { }
+	QIODevice *rdev, *wdev;
+	DevInfo(const FXString &n, QIODevice *_rdev, QIODevice *_wdev=0) : isSynch(_wdev!=0), amSocket(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev) { }
 };
 
-class IOThread : public FXThread
+class IOThread : public QThread
 {
 public:
 	DevInfo *reader;
 	FXuint crc;
 	FXZeroedWait byteCount;
-	IOThread(DevInfo *r, int bc) : reader(r), crc(0), byteCount(bc), FXThread() { }
+	IOThread(DevInfo *r, int bc) : reader(r), crc(0), byteCount(bc), QThread() { }
 	virtual void run()
 	{
 		char buffer[65536];
 		if(reader->amSocket)
 		{
-			FXBlkSocket *rdev=(FXBlkSocket *) reader->rdev;
+			QBlkSocket *rdev=(QBlkSocket *) reader->rdev;
 			rdev=rdev->waitForConnection();
 			delete reader->rdev;
 			reader->rdev=rdev;
 		}
-		FXIODevice *rdev=reader->rdev;
+		QIODevice *rdev=reader->rdev;
 		rdev->open(IO_ReadOnly);
 		for(;;)
 		{
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 			fxmessage("\nGeneral purpose i/o test:\n"
 						"-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 			FXFile fh("../ReadMe.txt");
-			FXBuffer bufferh;
+			QBuffer bufferh;
 			fh.open(IO_ReadOnly);
 			bufferh.open(IO_ReadWrite);
 			FXStream sbufferh(&bufferh);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
 			fxmessage("\nEndian conversion & mixed read-writes test:\n"
 					  "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
-			FXBuffer buffer2h;
+			QBuffer buffer2h;
 			buffer2h.open(IO_ReadWrite);
 			FXStream sbuffer2h(&buffer2h);
 			sbuffer2h.swapBytes(true);
@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 			fxmessage("\nGZip device test:\n"
 					  "-=-=-=-=-=-=-=-=-=-\n");
 			FXFile zipped("IOTestOutput.gz");
-			FXGZipDevice gzipdev(&zipped);
+			QGZipDevice gzipdev(&zipped);
 			gzipdev.open(IO_WriteOnly);
 			bufferh.at(0);
 			buffer2h.at(0);
@@ -149,39 +149,39 @@ int main(int argc, char *argv[])
 				devs.append(new DevInfo("FXFile", new FXFile("BigFile3.txt")));
 			}
 			if(1) {
-				FXMemMap *dev=new FXMemMap("BigFile2.txt");
+				QMemMap *dev=new QMemMap("BigFile2.txt");
 				dev->open(IO_WriteOnly);
 				dev->truncate(testsize);
 				dev->mapIn();
-				devs.append(new DevInfo("FXMemMap", dev));
+				devs.append(new DevInfo("QMemMap", dev));
 			}
 			if(1) {
-				FXBuffer *buff=new FXBuffer;
+				QBuffer *buff=new QBuffer;
 				buff->open(IO_WriteOnly);
 				buff->truncate(testsize);
-				devs.append(new DevInfo("FXBuffer", buff));
+				devs.append(new DevInfo("QBuffer", buff));
 			}
 			if(1) {
-				FXLocalPipe *p=new FXLocalPipe;
+				QLocalPipe *p=new QLocalPipe;
 				p->setGranularity(1024*1024);
-				devs.append(new DevInfo("FXLocalPipe", new FXLocalPipe(p->clientEnd()), p));
+				devs.append(new DevInfo("QLocalPipe", new QLocalPipe(p->clientEnd()), p));
 				p->open(IO_WriteOnly);
 			}
 			if(1) {
-				FXPipe *r=new FXPipe("TestPipe", true), *w=new FXPipe("TestPipe", true);
+				QPipe *r=new QPipe("TestPipe", true), *w=new QPipe("TestPipe", true);
 				w->create(IO_WriteOnly);
-				devs.append(new DevInfo("FXPipe", r, w));
+				devs.append(new DevInfo("QPipe", r, w));
 			}
 			if(1) {
-				FXBlkSocket *server=new FXBlkSocket,*w;
+				QBlkSocket *server=new QBlkSocket,*w;
 				server->create(IO_ReadOnly);
-				w=new FXBlkSocket(FXHOSTADDRESS_LOCALHOST, server->port());
+				w=new QBlkSocket(QHOSTADDRESS_LOCALHOST, server->port());
 				w->open(IO_WriteOnly);
 				DevInfo *di=new DevInfo("FXSocket", server, w);
 				di->amSocket=true;
 				devs.append(di);
 			}
-			FXBuffer largefile;
+			QBuffer largefile;
 			FXStream s(&largefile);
 			fxmessage("Writing out test file ...\n");
 			largefile.open(IO_WriteOnly);
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 				largefile.at(0);
 				if(devi->isSynch)
 				{
-					FXIODevice *dev=devi->wdev;
+					QIODevice *dev=devi->wdev;
 					IOThread *t=new IOThread(devi, testsize);
 					t->start(true);
 					fxmessage("Writing lots of data to a %s ...\n", devi->name.text());
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					FXIODevice *dev=devi->rdev;
+					QIODevice *dev=devi->rdev;
 					dev->open(IO_WriteOnly);
 					fxmessage("Reading test file and writing into a %s ...\n", devi->name.text());
 					FXuint time=FXProcess::getMsCount();
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 		{
 			fxmessage("\nStippled i/o test:\n"
 						"-=-=-=-=-=-=-=-=-=\n");
-			FXMemMap src("../ReadMe.txt"), dest("BigFile.txt");
+			QMemMap src("../ReadMe.txt"), dest("BigFile.txt");
 			src.open(IO_ReadOnly);
 			dest.open(IO_WriteOnly);
 			dest.truncate(src.size());

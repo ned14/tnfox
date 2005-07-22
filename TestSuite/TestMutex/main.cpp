@@ -46,9 +46,9 @@ With xchg instead of cmpxchg SMP Build mutex got 5337603
 #define MAX_MUTEX 50000000
 
 static FXAtomicInt count;
-static FXMutex lock;
+static QMutex lock;
 
-class TestAtomicInt : public FXThread
+class TestAtomicInt : public QThread
 {
 public:
 	FXuint taken;
@@ -66,7 +66,7 @@ public:
 		return 0;
 	}
 };
-class TestMutex : public FXThread
+class TestMutex : public QThread
 {
 public:
 	FXuint taken;

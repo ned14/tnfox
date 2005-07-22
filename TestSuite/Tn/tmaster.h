@@ -15,8 +15,8 @@ prior written permission */
 
 #include "FXRollback.h"
 #include "FXStream.h"
-#include "FXTrans.h"
-#include "FXThread.h"
+#include "QTrans.h"
+#include "QThread.h"
 #include <assert.h>
 
 /*! \namespace Tn
@@ -41,8 +41,8 @@ a stock set of TnFOX and Tn header files:
 \li FXRollback.h
 \li FXProcess.h
 \li FXStream.h
-\li FXTrans.h
-\li FXThread.h
+\li QTrans.h
+\li QThread.h
 \li \c <assert.h>
 
 \li TKernelPath.h

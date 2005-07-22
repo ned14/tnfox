@@ -37,7 +37,7 @@ namespace Tn {
 #define HOTSPOT_X 9
 #define HOTSPOT_Y 12
 
-static FXMutex lock;
+static QMutex lock;
 static QPtrVector<FXImage> templates(true);
 struct WindowInfo
 {
@@ -48,7 +48,7 @@ struct WindowInfo
 #ifdef WIN32
 	DWORD wndthreadid;
 #endif
-	Generic::BoundFunctorV *threadpoolH;
+	QThreadPool::handle threadpoolH;
 	FXCursor *before;
 	struct Frame
 	{
@@ -281,7 +281,7 @@ void WindowInfo::defineCursor()
 
 static void animateCursor(FXWindow *w)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(!wi) return;
 	if(wi->frames.isEmpty()) wi->defineCursor();
@@ -292,7 +292,7 @@ static void animateCursor(FXWindow *w)
 
 u32 THourglass::count(FXWindow *w)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(wi) return wi->count;
 	return 0;
@@ -300,7 +300,7 @@ u32 THourglass::count(FXWindow *w)
 
 void THourglass::on(FXWindow *w, u32 wait)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(!wi)
 	{
@@ -316,7 +316,7 @@ void THourglass::on(FXWindow *w, u32 wait)
 
 void THourglass::off(FXWindow *w)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(wi)
 	{
@@ -334,7 +334,7 @@ void THourglass::off(FXWindow *w)
 
 void THourglass::smash(FXWindow *w)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(wi)
 	{
@@ -345,7 +345,7 @@ void THourglass::smash(FXWindow *w)
 
 int THourglass::percent(FXWindow *w)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(wi) return wi->percent;
 	return 0;
@@ -353,7 +353,7 @@ int THourglass::percent(FXWindow *w)
 
 void THourglass::setPercent(FXWindow *w, int percent)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(percent<-1) percent=-1;
 	if(percent>100) percent=100;
@@ -367,7 +367,7 @@ void THourglass::setPercent(FXWindow *w, int percent)
 
 void THourglass::setLED(FXWindow *w, u32 no, FXColor colour)
 {
-	FXMtxHold h(lock);
+	QMtxHold h(lock);
 	WindowInfo *wi=windowlist.find(w);
 	if(wi)
 	{

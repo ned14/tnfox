@@ -40,7 +40,7 @@ static const char mytransfile[]="# TnFOX human language string literal translati
 "\tEN: \"Translation worked!\"\n"
 "\tES: \"El traducido functiona!\"\n"
 "\n";
-FXTRANS_SETTRANSFILE(mytransfile, sizeof(mytransfile));
+QTRANS_SETTRANSFILE(mytransfile, sizeof(mytransfile));
 
 namespace Test {
 

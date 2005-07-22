@@ -27,15 +27,15 @@ using namespace boost::python;
 static void doThreads1(FXPythonInterp *interp, int ino)
 {
 	FXPython_CtxHold ctxhold(interp);
-	py( "class TestThread(FXThread):\n"
+	py( "class TestThread(QThread):\n"
 		"    def __init__(self, interpno, threadno):\n"
-		"        FXThread.__init__(self)\n"
+		"        QThread.__init__(self)\n"
 		"        self.interpno=interpno\n"
 		"        self.threadno=threadno\n"
 		"    def run(self):\n"
 		"        while not self.checkForTerminate():\n"
 		"            print 'I am TestThread no',self.threadno,'in interpreter',self.interpno\n"
-		"            #FXThread.msleep(1)\n"
+		"            #QThread.msleep(1)\n"
 		"    def cleanup(self):\n"
 		"        return 0\n");
 	py(FXString("a=TestThread(%1, 1); b=TestThread(%2, 2)\n").arg(ino).arg(ino));;

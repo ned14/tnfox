@@ -53,7 +53,7 @@ public:
 	{
 	    mainwnd=new FXMainWindow(app, "Foo");
 		FXString txt;
-		txt.format("I am event loop 0x%p running in thread %d!", app->getEventLoop(), FXThread::id());
+		txt.format("I am event loop 0x%p running in thread %d!", app->getEventLoop(), QThread::id());
 		FXVerticalFrame *vf=new FXVerticalFrame(mainwnd, LAYOUT_FILL);
 		FXLabel *label=new FXLabel(vf, txt.text());
 		FXHorizontalFrame *hf1=new FXHorizontalFrame(vf, LAYOUT_FILL_X);

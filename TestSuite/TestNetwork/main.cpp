@@ -31,9 +31,9 @@ int main(int argc, char *argv[])
 		printf("\nPlease enter a fully qualified name:\n");
 		gets(buffer);
 		if(!buffer[0]) break;
-		FXHostAddress addr=FXNetwork::dnsLookup(FXString(buffer));
+		QHostAddress addr=FXNetwork::dnsLookup(FXString(buffer));
 		printf("\nIn IP that is: %s\n", addr.toString().text());
-		FXHostAddress addr6(addr.ip6Addr());
+		QHostAddress addr6(addr.ip6Addr());
 		printf("In IPv6 that is: %s\n", addr6.toString().text());
 		FXString name=FXNetwork::dnsReverseLookup(addr);
 		printf("Reverse lookup says: %s\n", name.text());

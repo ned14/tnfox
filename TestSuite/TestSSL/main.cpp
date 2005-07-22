@@ -27,9 +27,9 @@ struct DevInfo
 {
 	bool isSynch, amSocket;
 	FXString name;
-	FXIODevice *rdev, *wdev;
-	FXSSLDevice rssl, wssl;
-	DevInfo(const FXString &n, FXIODevice *_rdev, FXIODevice *_wdev=0)
+	QIODevice *rdev, *wdev;
+	QSSLDevice rssl, wssl;
+	DevInfo(const FXString &n, QIODevice *_rdev, QIODevice *_wdev=0)
 		: isSynch(_wdev!=0), amSocket(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev)
 	{
 		rssl.setEncryptedDev(rdev);
@@ -37,25 +37,25 @@ struct DevInfo
 	}
 };
 
-class IOThread : public FXThread
+class IOThread : public QThread
 {
 public:
 	DevInfo *reader;
 	FXuint crc;
 	FXZeroedWait byteCount;
-	IOThread(DevInfo *r, int bc) : reader(r), crc(0), byteCount(bc), FXThread() { }
+	IOThread(DevInfo *r, int bc) : reader(r), crc(0), byteCount(bc), QThread() { }
 	virtual void run()
 	{
 		char buffer[65536];
 		if(reader->amSocket)
 		{
-			FXBlkSocket *rdev=(FXBlkSocket *) reader->rdev;
+			QBlkSocket *rdev=(QBlkSocket *) reader->rdev;
 			rdev=rdev->waitForConnection();
 			delete reader->rdev;
 			reader->rdev=rdev;
 			reader->rssl.setEncryptedDev(reader->rdev);
 		}
-		FXIODeviceS *rdev=&reader->rssl;
+		QIODeviceS *rdev=&reader->rssl;
 		rdev->create(IO_ReadWrite);
 		for(;;)
 		{
@@ -71,14 +71,14 @@ public:
 	}
 };
 
-static void dumpSSLStats(FXSSLDevice &d)
+static void dumpSSLStats(QSSLDevice &d)
 {
 	FXString msg("SSL used %1 at %2 bits (%3)\n");
 	msg.arg(d.cipherName()).arg(d.cipherBits()).arg(d.cipherDescription());
 	fxmessage("%s", msg.text());
 }
 
-static void stippledTransfer(FXIODevice *dest, FXIODevice *src)
+static void stippledTransfer(QIODevice *dest, QIODevice *src)
 {
 	FXuval r=0;
 	FXfval oldpos;
@@ -111,8 +111,8 @@ int main(int argc, char *argv[])
 					    "-=-=-=-=-=-=-=-=-=\n");
 			FXSSLKey key(128, FXSSLKey::Blowfish);
 			FXSSLPKey pkey(1024, FXSSLPKey::RSA);
-			FXMemMap src("../ReadMe.txt"), dest("BigFile.txt"), dest2("BigFile2.txt");
-			FXSSLDevice dev(&dest);
+			QMemMap src("../ReadMe.txt"), dest("BigFile.txt"), dest2("BigFile2.txt");
+			QSSLDevice dev(&dest);
 
 			// Encrypt
 			key.setAsymmetricKey(&pkey.publicKey());
@@ -165,38 +165,38 @@ int main(int argc, char *argv[])
 				devs.append(new DevInfo("FXFile", dev));
 			}
 			if(1) {
-				FXMemMap *dev=new FXMemMap("BigFile2.bin");
+				QMemMap *dev=new QMemMap("BigFile2.bin");
 				dev->open(IO_WriteOnly|IO_ShredTruncate);
 				dev->truncate(testsize);
 				dev->mapIn();
-				devs.append(new DevInfo("FXMemMap", dev));
+				devs.append(new DevInfo("QMemMap", dev));
 			}
 			if(1) {
-				FXBuffer *buff=new FXBuffer;
+				QBuffer *buff=new QBuffer;
 				buff->open(IO_WriteOnly|IO_ShredTruncate);
 				buff->truncate(testsize);
-				devs.append(new DevInfo("FXBuffer", buff));
+				devs.append(new DevInfo("QBuffer", buff));
 			}
 			if(0) {
-				FXLocalPipe *p=new FXLocalPipe;
+				QLocalPipe *p=new QLocalPipe;
 				p->setGranularity(1024*1024);
 				p->create(IO_ReadWrite);
-				devs.append(new DevInfo("FXLocalPipe", new FXLocalPipe(p->clientEnd()), p));
+				devs.append(new DevInfo("QLocalPipe", new QLocalPipe(p->clientEnd()), p));
 			}
 			if(1) {
-				FXPipe *r=new FXPipe("TestPipe", true), *w=new FXPipe("TestPipe", true);
+				QPipe *r=new QPipe("TestPipe", true), *w=new QPipe("TestPipe", true);
 				r->create(IO_ReadWrite);
-				devs.append(new DevInfo("FXPipe", r, w));
+				devs.append(new DevInfo("QPipe", r, w));
 			}
 			if(1) {
-				FXBlkSocket *server=new FXBlkSocket,*w;
+				QBlkSocket *server=new QBlkSocket,*w;
 				server->create(IO_ReadWrite);
-				w=new FXBlkSocket(FXHOSTADDRESS_LOCALHOST, server->port());
+				w=new QBlkSocket(QHOSTADDRESS_LOCALHOST, server->port());
 				DevInfo *di=new DevInfo("FXSocket", server, w);
 				di->amSocket=true;
 				devs.append(di);
 			}
-			FXBuffer largefile;
+			QBuffer largefile;
 			FXStream s(&largefile);
 			fxmessage("Writing out test file ...\n");
 			largefile.open(IO_WriteOnly);
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 				largefile.at(0);
 				if(devi->isSynch)
 				{
-					FXIODeviceS *dev=&devi->wssl;
+					QIODeviceS *dev=&devi->wssl;
 					dev->open(IO_ReadWrite);
 					IOThread *t=new IOThread(devi, testsize);
 					t->start(true);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					FXIODevice *dev=&devi->rssl;
+					QIODevice *dev=&devi->rssl;
 					FXSSLKey ekey=key;
 					if(ekey.asymmetricKey()) ekey.setAsymmetricKey(&ekey.asymmetricKey()->publicKey());
 					devi->rssl.setKey(ekey);
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 					//key.generateFromText("Niall");
 					//key.asymmetricKey()->generate();
 					devi->rssl.setKey(key);
-					FXBuffer temp;
+					QBuffer temp;
 					FXStream ts(&temp);
 					temp.open(IO_ReadWrite);
 					time=FXProcess::getMsCount();

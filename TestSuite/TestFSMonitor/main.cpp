@@ -21,7 +21,7 @@
 
 #include "fx.h"
 
-static void print(const FXFileInfo &fi)
+static void print(const QFileInfo &fi)
 {
 	FXString temp("%1 (size %2, modified %3) %4");
 	temp.arg(fi.fileName()).arg(fi.sizeAsString()).arg(fi.lastModifiedAsString())
@@ -35,7 +35,7 @@ static void printDir(const QFileInfoList *list)
 		print(*it);
 	}
 }
-static void handler(FXFSMonitor::Change change, const FXFileInfo &oldfi, const FXFileInfo &newfi)
+static void handler(FXFSMonitor::Change change, const QFileInfo &oldfi, const QFileInfo &newfi)
 {
 	fxmessage("Item changed to:\n");
 	print(newfi);
@@ -70,9 +70,9 @@ int main(int argc, char *argv[])
 	FXProcess myprocess(argc, argv);
 	fxmessage("TnFOX Filing system Monitor test:\n"
 		      "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
-	fxmessage("List of drives on this system: %s\n", FXDir::drives().join(" ").text());
+	fxmessage("List of drives on this system: %s\n", QDir::drives().join(" ").text());
 	fxmessage("List of this directory:\n");
-	FXDir dir(".", "*", FXDir::Time|FXDir::DirsFirst|FXDir::Reversed);
+	QDir dir(".", "*", QDir::Time|QDir::DirsFirst|QDir::Reversed);
 	FXuint before=FXProcess::getMsCount();
 	dir.entryList();
 	FXuint after1=FXProcess::getMsCount();
@@ -82,19 +82,19 @@ int main(int argc, char *argv[])
 	printDir(list);
 	fxmessage("\nMonitoring for changes ...\n");
 	FXFSMonitor::add(".", FXFSMonitor::ChangeHandler(handler));
-	FXThread::sleep(1);
+	QThread::sleep(1);
 	fxmessage("Making changes ...\n");
 	FXFile file("MyTestFile.txt");
 	file.open(IO_ReadWrite);
 	file.truncate(1024);
-	FXThread::sleep(1);
+	QThread::sleep(1);
 	file.truncate(4096);
 	file.close();
-	FXThread::sleep(1);
+	QThread::sleep(1);
 	FXFile::move("MyTestFile.txt", "MyTestFile2.txt");
-	FXThread::sleep(1);
+	QThread::sleep(1);
 	FXFile::setPermissions("MyTestFile2.txt", FXACL(FXACL::File));
-	FXThread::sleep(1);
+	QThread::sleep(1);
 	FXFile::remove("MyTestFile.txt");
 	FXFile::remove("MyTestFile2.txt");
 	fxmessage("\nAll Done!\n");

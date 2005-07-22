@@ -1,5 +1,5 @@
 /* TFileBySyncDev.h
-Permits a file type FXIODevice to be accessed through a FXIODeviceS
+Permits a file type QIODevice to be accessed through a QIODeviceS
 (C) 2002, 2004 Niall Douglas
 Original version created: July 2002
 This version created: 13th Jan 2004
@@ -13,7 +13,7 @@ prior written permission */
 #define _TFileBySyncDev_h_
 
 #include "tmaster.h"
-#include "FXIODeviceS.h"
+#include "QIODeviceS.h"
 
 /*! \file TFileBySyncDev.h
 */
@@ -22,7 +22,7 @@ namespace FX { class FXIPCChannel; }
 namespace Tn {
 
 /*! \class TFileBySyncDev
-\brief Proxies FX::FXIODevice operations over a FX::FXIPCChannel
+\brief Proxies FX::QIODevice operations over a FX::FXIPCChannel
 
 By default maintains eight buffers of \c pageSize-msgheader blocks. Transfers
 over the IPC channel are done a block at a time - therefore \c pageSize-msgheader
@@ -51,7 +51,7 @@ any effect (this done with all other metainfo by the data stream code). Also
 you can't open(IO_Append).
 */
 struct TFileBySyncDevPrivate;
-class TFileBySyncDev : public FXIODevice
+class TFileBySyncDev : public QIODevice
 {
 	friend struct TFileBySyncDevPrivate;
 	TFileBySyncDevPrivate *p;
@@ -64,7 +64,7 @@ class TFileBySyncDev : public FXIODevice
 public:
 	/*! Constructs a server or client instance depending on \em server.
 	If a server, you can specifiy a source via \em source */
-	TFileBySyncDev(bool server, FXIPCChannel &ctrl, FXIODevice *source=0);
+	TFileBySyncDev(bool server, FXIPCChannel &ctrl, QIODevice *source=0);
 	~TFileBySyncDev();
 	//! Returns the IPC channel used as control
 	FXIPCChannel &channel() const;
@@ -87,9 +87,9 @@ public:
 	void invokeConnectionLost();
 
 	//! (Server instance only) Returns the source i/o device
-	FXIODevice *source() const;
+	QIODevice *source() const;
 	//! (Server instance only) Sets the source i/o device
-	void setSource(FXIODevice *source);
+	void setSource(QIODevice *source);
 protected:
 	//! (Server instance only) Called to retrieve data served by this class
 	virtual FXuval fetchData(FXuchar *data, FXuval amount, FXfval offset);

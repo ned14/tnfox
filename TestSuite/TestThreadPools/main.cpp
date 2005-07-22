@@ -27,7 +27,7 @@ static void testcode(const char *msg, int a)
 {
 	for(int n=0; n<a; n++)
 	{
-		//FXThread::sleep(1);
+		//QThread::sleep(1);
 		fxmessage("%s counts to %d/%d\n", msg, n, a);
 	}
 }
@@ -39,9 +39,9 @@ int main(int argc, char *argv[])
 	fxmessage("TnFOX Thread Pools test:\n"
 		      "-=-=-=-=-=-=-=-=-=-=-=-=\n");
 	fxmessage("Starting thread pool ...\n");
-	FXThreadPool &tp=FXProcess::threadPool();
+	QThreadPool &tp=FXProcess::threadPool();
 	FXString txts[TOTAL];
-	Generic::BoundFunctorV *handles[TOTAL];
+	QThreadPool::handle handles[TOTAL];
 	for(int n=0; n<TOTAL; n++)
 	{
 		txts[n]="No %1";

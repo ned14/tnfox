@@ -1,5 +1,5 @@
 /* TFileBySyncDev.cxx
-Permits a file type FXIODevice to be accessed through a FXIODeviceS
+Permits a file type QIODevice to be accessed through a QIODeviceS
 (C) 2002, 2003 Niall Douglas
 Original version created: July 2002
 This version created: 13th Jan 2003
@@ -82,12 +82,12 @@ typedef FXIPCMsgChunk<Generic::TL::create<
 
 
 
-struct TFileBySyncDevPrivate : public FXMutex
+struct TFileBySyncDevPrivate : public QMutex
 {
 	TFileBySyncDev *parent;
 	FXIPCChannel *ctrl;
 	bool amServer, printstats;
-	FXIODevice *source;
+	QIODevice *source;
 	TFBSDMsgChunk *chunk;
 
 	// Client only
@@ -101,15 +101,15 @@ struct TFileBySyncDevPrivate : public FXMutex
 		Buffer() : offset(0), len(0), empty(true), pending(false), modified(false) { }
 	};
 	QValueList<Buffer> buffers;
-	FXWaitCondition buffersReady;
+	QWaitCondition buffersReady;
 
 	// Server only
 	FXfval lastSuccessfulOffset;
 
 	// Both client and server
 	u32 maxBuffers, blockSize;
-	TFileBySyncDevPrivate(TFileBySyncDev *i, bool server, FXIPCChannel &_ctrl, FXIODevice *_source)
-		: FXMutex(), parent(i), ctrl(&_ctrl), amServer(server), printstats(false), source(_source), chunk(0), errors(true),
+	TFileBySyncDevPrivate(TFileBySyncDev *i, bool server, FXIPCChannel &_ctrl, QIODevice *_source)
+		: QMutex(), parent(i), ctrl(&_ctrl), amServer(server), printstats(false), source(_source), chunk(0), errors(true),
 		lastSuccessfulOffset(0),
 		maxBuffers(0), blockSize(0) {
 #ifdef DEBUG
@@ -174,7 +174,7 @@ struct TFileBySyncDevPrivate : public FXMutex
 		if(b.modified)
 		{
 			TFBSD_Data i(b.offset, b.data.data(), FXMIN(blockSize, (u32)b.len));
-			FXMtxHold h(this, FXMtxHold::UnlockAndRelock);
+			QMtxHold h(this, QMtxHold::UnlockAndRelock);
 			if(printstats)
 				fxmessage("Sending modified buffer offset=%d with %d bytes\n", (u32) i.offset, i.amount);
 			ctrl->sendMsg(i);
@@ -204,7 +204,7 @@ FXIPCChannel::HandledCode TFileBySyncDevPrivate::msgReceived(FXIPCMsg *msg)
 		case TFBSD_Error::id::code:
 			{	// Received by the client only
 				TFBSD_Error *m=(TFBSD_Error *) msg;
-				FXMtxHold h(this);
+				QMtxHold h(this);
 				if(amServer)
 					return FXIPCChannel::Handled;
 				else
@@ -216,7 +216,7 @@ FXIPCChannel::HandledCode TFileBySyncDevPrivate::msgReceived(FXIPCMsg *msg)
 		case TFBSD_Read::id::code:
 			{	// Received by the server only
 				TFBSD_Read *m=(TFBSD_Read *) msg;
-				FXMtxHold h(this);
+				QMtxHold h(this);
 				blockSize=m->blockSize;
 				maxBuffers=m->buffers;
 				h.unlock();
@@ -245,7 +245,7 @@ FXIPCChannel::HandledCode TFileBySyncDevPrivate::msgReceived(FXIPCMsg *msg)
 					parent->putData(m->offset, m->data, m->amount);
 				else
 				{
-					FXMtxHold h(this);
+					QMtxHold h(this);
 					QValueList<Buffer>::iterator it=buffers.begin();
 					for(; it!=buffers.end(); ++it)
 					{
@@ -283,7 +283,7 @@ FXIPCChannel::HandledCode TFileBySyncDevPrivate::msgReceived(FXIPCMsg *msg)
 	return FXIPCChannel::NotHandled;
 }
 
-TFileBySyncDev::TFileBySyncDev(bool server, FXIPCChannel &ctrl, FXIODevice *source) : p(0)
+TFileBySyncDev::TFileBySyncDev(bool server, FXIPCChannel &ctrl, QIODevice *source) : p(0)
 {	// Server
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new TFileBySyncDevPrivate(this, server, ctrl, source));
@@ -316,7 +316,7 @@ inline void TFileBySyncDev::requestData()
 {	// Do NOT hold lock when calling this
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		FXfval offset=(FXfval)-1, amount=0;
 		p->dynchkBuffers();
 		QValueList<TFileBySyncDevPrivate::Buffer>::iterator it=--p->buffers.end();
@@ -354,12 +354,12 @@ inline void TFileBySyncDev::checkErrors()
 }
 FXIPCChannel &TFileBySyncDev::channel() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return *p->ctrl;
 }
 void TFileBySyncDev::setChannel(FXIPCChannel &ch)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(&ch!=p->ctrl)
 	{
 		channelUninstall();
@@ -373,17 +373,17 @@ void TFileBySyncDev::setPrintStatistics(bool v)
 }
 u32 TFileBySyncDev::blockSize() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->blockSize;
 }
 u32 TFileBySyncDev::buffers() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->maxBuffers;
 }
 void TFileBySyncDev::setTransferParams(u32 no, u32 size)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	if(!p->source)
 	{
 		p->resizeBuffers(no, size);
@@ -394,7 +394,7 @@ void TFileBySyncDev::setTransferParams(u32 no, u32 size)
 bool TFileBySyncDev::invalidateBuffers(FXfval offset, FXfval length)
 {
 	bool ret=false;
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	checkErrors();
 	FXfval start=offset, end=offset+length;
 	for(QValueList<TFileBySyncDevPrivate::Buffer>::iterator it=p->buffers.begin(); it!=p->buffers.end(); ++it)
@@ -413,7 +413,7 @@ bool TFileBySyncDev::invalidateBuffers(FXfval offset, FXfval length)
 }
 void TFileBySyncDev::invokeConnectionLost()
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	TFBSD_Error *e;
 	FXERRHM(e=new TFBSD_Error);
 	FXRBOp une=FXRBNew(e);
@@ -424,14 +424,14 @@ void TFileBySyncDev::invokeConnectionLost()
 	p->buffersReady.wakeAll();
 }
 
-FXIODevice *TFileBySyncDev::source() const
+QIODevice *TFileBySyncDev::source() const
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	return p->source;
 }
-void TFileBySyncDev::setSource(FXIODevice *source)
+void TFileBySyncDev::setSource(QIODevice *source)
 {
-	FXMtxHold h(p);
+	QMtxHold h(p);
 	p->source=source;
 }
 
@@ -451,12 +451,12 @@ bool TFileBySyncDev::open(FXuint mode)
 {
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(FXIODevice::mode()!=mode) FXERRGIO(FXTrans::tr("TFileBySyncDev", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("TFileBySyncDev", "Device reopen has different mode"));
 	}
 	else
 	{
 		FXERRH(!(mode & IO_Append), "You cannot use IO_Append with TFileBySyncDev::open()", 0, FXERRH_ISDEBUG);
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		setFlags((mode & IO_ModeMask)|IO_Open);
 		ioIndex=0;
 		h.unlock();
@@ -469,7 +469,7 @@ void TFileBySyncDev::close()
 	if(isOpen())
 	{
 		flush();
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		setFlags(0);
 		invalidateBuffers(0, (FXfval)-1);
 		ioIndex=0;
@@ -479,7 +479,7 @@ void TFileBySyncDev::flush()
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		checkErrors();
 		TFileBySyncDevPrivate::Buffer &b=p->buffers.front();
 		if(b.modified)
@@ -508,7 +508,7 @@ bool TFileBySyncDev::at(FXfval newpos)
 {
 	if(isOpen() && ioIndex!=newpos)
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		checkErrors();
 		TFileBySyncDevPrivate::Buffer &b=p->buffers.front();
 		if(b.modified && (newpos<b.offset || newpos>=b.offset+p->blockSize))
@@ -542,10 +542,10 @@ bool TFileBySyncDev::at(FXfval newpos)
 }
 FXuval TFileBySyncDev::readBlock(char *data, FXuval maxlen)
 {
-	if(!isReadable()) FXERRGIO(FXTrans::tr("TFileBySyncDev", "Not open for reading"));
+	if(!isReadable()) FXERRGIO(QTrans::tr("TFileBySyncDev", "Not open for reading"));
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		checkErrors();
 		FXuval read=0;
 		while(maxlen)
@@ -582,10 +582,10 @@ FXuval TFileBySyncDev::readBlock(char *data, FXuval maxlen)
 }
 FXuval TFileBySyncDev::writeBlock(const char *data, FXuval maxlen)
 {
-	if(!isWriteable()) FXERRGIO(FXTrans::tr("TFileBySyncDev", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("TFileBySyncDev", "Not open for writing"));
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		checkErrors();
 		FXuval written=0;
 		while(maxlen)
@@ -645,7 +645,7 @@ int TFileBySyncDev::ungetch(int c)
 {
 	if(isOpen())
 	{
-		FXMtxHold h(p);
+		QMtxHold h(p);
 		TFileBySyncDevPrivate::Buffer &b=p->buffers.front();
 		FXuval boffset=(FXuval)(ioIndex-b.offset);
 		if(!boffset) return -1;	// FIXME

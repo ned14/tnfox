@@ -25,7 +25,7 @@ class TestChannel : public FXIPCChannel
 {
 	FXIPCMsgRegistry myregistry;
 public:
-	TestChannel(FXIODeviceS *dev) : FXIPCChannel(myregistry, dev) { }
+	TestChannel(QIODeviceS *dev) : FXIPCChannel(myregistry, dev) { }
 protected:
 	HandledCode msgReceived(FXIPCMsg *rawmsg)
 	{
@@ -55,27 +55,27 @@ int main(int argc, char *argv[])
 		else if('p'==devtype[0] || 'P'==devtype[0]) choice=2;
 		else if('e'==devtype[0] || 'E'==devtype[0]) choice=3;
 	} while(!choice);
-	FXPtrHold<FXIODeviceS> realtransport;
-	FXPtrHold<FXIODeviceS> transport;
+	FXPtrHold<QIODeviceS> realtransport;
+	FXPtrHold<QIODeviceS> transport;
 	if(1==choice || 3==choice)
 	{
 		if(1==choice) fxmessage("Socket\n");
 		if(amServer)
 		{
-			FXBlkSocket server(FXBlkSocket::Stream, (FXushort) 12345);
+			QBlkSocket server(QBlkSocket::Stream, (FXushort) 12345);
 			server.create(IO_ReadWrite);
 			transport=server.waitForConnection();
 		}
 		else
 		{
-			FXERRHM(transport=new FXBlkSocket(FXHOSTADDRESS_LOCALHOST, 12345));
+			FXERRHM(transport=new QBlkSocket(QHOSTADDRESS_LOCALHOST, 12345));
 			transport->open(IO_ReadWrite);
 		}
 	}
 	if(2==choice)
 	{
 		fxmessage("Pipe\n");
-		FXERRHM(transport=new FXPipe("TestIPC", true));
+		FXERRHM(transport=new QPipe("TestIPC", true));
 		if(amServer)
 			transport->create(IO_ReadWrite);
 		else
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		fxmessage("Encrypted socket\n");
 		realtransport=transport;
 		transport=0;
-		FXERRHM(transport=new FXSSLDevice(realtransport));
+		FXERRHM(transport=new QSSLDevice(realtransport));
 		if(amServer)
 			transport->create(IO_ReadWrite);
 		else
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 		const int round=4096; // 4066 for roundness test
 		if(amServer)
 		{
-			FXMemMap testfile("BigFile2.txt");
+			QMemMap testfile("BigFile2.txt");
 			testfile.open(IO_ReadWrite);
 			testfile.truncate(4*4096*round);	// 4Mb
 			char *data=(char *) testfile.mapIn();

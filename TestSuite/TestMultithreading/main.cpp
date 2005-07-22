@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-/* FXRWMutex is the one stress-tested because it utilises all other parts of
+/* QRWMutex is the one stress-tested because it utilises all other parts of
 the threading classes. Any failures in anything show up here readily, though
 it's no use for finding the problem!
 
@@ -44,18 +44,18 @@ static int rnd(int max)
 
 static struct SharedData
 {
-	FXRWMutex lock;
+	QRWMutex lock;
 	FXString data;
 	FXAtomicInt nest;
 } shareddata;
-static FXThreadLocalStorage<SharedData> dataptr;
+static QThreadLocalStorage<SharedData> dataptr;
 
-class TestThread : public FXThread
+class TestThread : public QThread
 {
 	int myidx, mycount;
 	SharedData *data;
 public:
-	TestThread(SharedData *_data, int _myidx) : data(_data), myidx(_myidx), mycount(0), FXThread() {}
+	TestThread(SharedData *_data, int _myidx) : data(_data), myidx(_myidx), mycount(0), QThread() {}
 	void run()
 	{
 		if(!dataptr) dataptr=data;
@@ -69,8 +69,8 @@ public:
 			checkForTerminate();
 			bool write=rnd(MAX_THREADS/2)==myidx/2;
 			{
-				FXThread_DTHold dthold;
-				FXMtxHold h(sd->lock, write);
+				QThread_DTHold dthold;
+				QMtxHold h(sd->lock, write);
 				if(write && ++sd->nest>1)
 				{
 					FXERRG("FAILURE: Permitting multiple writes", 0, FXERRH_ISDEBUG);
@@ -84,7 +84,7 @@ public:
 				}
 				if(write) --sd->nest;
 			}
-			//FXThread::msleep(100+rnd(50));
+			//QThread::msleep(100+rnd(50));
 		}
 	}
 	void *cleanup()

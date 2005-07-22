@@ -42,26 +42,26 @@ static const char mytransfile[]="# TnFOX human language string literal translati
 "\t\tEN: \"There is %1 pretty round teapot\"\n"
 "\t\tES: \"Hay %1 tetera redonda bonita\"\n"
 "\n";
-FXTRANS_SETTRANSFILE(mytransfile, sizeof(mytransfile));
+QTRANS_SETTRANSFILE(mytransfile, sizeof(mytransfile));
 
 int main(int argc, char *argv[])
 {
 	FXProcess myprocess(argc, argv);
 	int n;
 	const char txt[]="There are %1 pretty round teapots";
-	fxmessage("The current language is '%s' in region '%s'\n", FXTrans::language().text(), FXTrans::country().text());
-	FXTrans::overrideLanguage("en");
+	fxmessage("The current language is '%s' in region '%s'\n", QTrans::language().text(), QTrans::country().text());
+	QTrans::overrideLanguage("en");
 	fxmessage("Translating '%s' as language 'en' ...\n", txt);
 	for(n=0; n<5; n++)
 	{
-		FXString transed=FXTrans::tr("main", txt).arg(n);
+		FXString transed=QTrans::tr("main", txt).arg(n);
 		fxmessage("%s\n",transed.text());
 	}
-	FXTrans::overrideLanguage("es");
+	QTrans::overrideLanguage("es");
 	fxmessage("Translating '%s' as language 'es' ...\n", txt);
 	for(n=0; n<5; n++)
 	{
-		FXString transed=FXTrans::tr("main", txt).arg(n);
+		FXString transed=QTrans::tr("main", txt).arg(n);
 		fxmessage("%s\n",transed.text());
 	}
 

@@ -27,11 +27,11 @@ static void runTest(const char *prefix)
 {
 	const char *teststring="This is a test teapot";
 	fxmessage("%s: The translation of '%s' is '%s'\n", prefix, teststring,
-		FXString(FXTrans::tr("main", teststring)).text());
+		FXString(QTrans::tr("main", teststring)).text());
 	// Test providers code
-	FXTrans::ProvidedInfoList provided=FXTrans::provided();
-	fxmessage("FXTrans::provided reports:\n");
-	for(FXTrans::ProvidedInfoList::iterator it=provided.begin(); it!=provided.end(); ++it)
+	QTrans::ProvidedInfoList provided=QTrans::provided();
+	fxmessage("QTrans::provided reports:\n");
+	for(QTrans::ProvidedInfoList::iterator it=provided.begin(); it!=provided.end(); ++it)
 	{
 		fxmessage("Module: %s Language: %s Country: %s\n",
 			(*it).module.text(), (*it).language.text(), (*it).country.text());
