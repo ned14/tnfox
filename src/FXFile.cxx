@@ -238,8 +238,10 @@ FXfval FXFile::reloadSize()
 		DWORD high;
 		return (p->size=(GetFileSize((HANDLE) _get_osfhandle(p->handle), &high)|(((FXfval) high)<<32)));
 #else
-		return (p->size=filelength(p->handle));
-		check for 64 bit compat;
+		// I can't see any alternative to a full stat
+		struct ::stat s={0};
+		::fstat(p->handle, &s);
+		return (p->size=(FXfval) s.st_size);
 #endif
 	}
 }

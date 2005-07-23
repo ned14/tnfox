@@ -105,7 +105,11 @@ public:
 		FXuint security	: 1;		//!< When the security of an entry is changed
 		Change() : eventNo(0), modified(false), created(false), deleted(false), renamed(false), attrib(false), security(false) { }
 		Change(int) : eventNo(0), modified(true), created(true), deleted(true), renamed(true), attrib(true), security(true) { }
-		operator FXuint() const throw() { return ((const FXuint &) modified); }
+		operator FXuint() const throw()
+		{
+			struct Change_ { FXulong eventNo; FXuint flags; } *me=(Change_ *) this;
+			return me->flags;
+		}
 	};
 	typedef Generic::TL::create<void, Change, QFileInfo, QFileInfo>::value ChangeHandlerPars;
 	//! Defines the type of functor change handlers are
