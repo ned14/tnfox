@@ -210,8 +210,13 @@ class RandomnessPrivate : public QThread, public QMutex
 		FXString total='\\'+object+'\\'+counter;
 		TCHAR buffer[65536];
 		DWORD len=sizeof(buffer)/sizeof(TCHAR);
-		FXERRHPDH(PdhExpandCounterPath(total.text(), buffer, &len));
-		for(TCHAR *str=buffer; *str; (str=strchr(str,0)+1))
+		FXERRHPDH(PdhExpandCounterPath(FXUnicodify<>(total).buffer(), buffer, &len));
+		for(TCHAR *str=buffer; *str;
+#ifdef UNICODE
+			(str=wcschr(str,0)+1))
+#else
+			(str=strchr(str,0)+1))
+#endif
 		{
 			PDH_HCOUNTER ch;
 			PDH_STATUS ret=PdhValidatePath(str);

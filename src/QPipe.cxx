@@ -184,7 +184,7 @@ bool QPipe::create(FXuint mode)
 			/* BTW the +24 on the buffer length is an undocumented "feature" of NT pipes
 			where the actual buffer size used is -24 because the internal header size
 			isn't included! */
-			ret=(p->writeh=CreateNamedPipe(writename.text(),
+			ret=(p->writeh=CreateNamedPipe(FXUnicodify<>(writename).buffer(),
 				PIPE_ACCESS_OUTBOUND|WRITE_DAC|WRITE_OWNER,
 				PIPE_TYPE_BYTE, 1, p->bufferLength+24, 0, 
 				INFINITE, &sa));
@@ -198,7 +198,7 @@ bool QPipe::create(FXuint mode)
 		if(mode & IO_ReadOnly)
 		{
 			FXString readname(fullname+'r');
-			ret=(p->readh=CreateNamedPipe(readname.text(),
+			ret=(p->readh=CreateNamedPipe(FXUnicodify<>(readname).buffer(),
 				PIPE_ACCESS_INBOUND|WRITE_DAC|WRITE_OWNER|FILE_FLAG_OVERLAPPED,
 				PIPE_TYPE_BYTE, 1, 0, p->bufferLength+24, 
 				INFINITE, &sa));
@@ -217,26 +217,14 @@ bool QPipe::create(FXuint mode)
 		if(mode & IO_ReadOnly)
 		{
 			FXString readname(fullname+'r');
-#ifdef HAVE_WIDEUNISTD
-			if(-1==mkfifo(readname.utext(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, readname); }
-#else
 			if(-1==mkfifo(readname.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, readname); }
-#endif
 			p->acl.writeTo(readname);
-#ifdef HAVE_WIDEUNISTD
-			FXERRHOSFN(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0), readname);
-#else
 			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
-#endif
 		}
 		if(mode & IO_WriteOnly)
 		{
 			FXString writename(fullname+'w');
-#ifdef HAVE_WIDEUNISTD
-			if(-1==mkfifo(writename.utext(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, writename); }
-#else
 			if(-1==mkfifo(writename.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, writename); }
-#endif
 			p->acl.writeTo(writename);
 		}
 #endif
@@ -263,9 +251,10 @@ bool QPipe::open(FXuint mode)
 		{
 			FXString readname(fullname+'w');
 			h.unlock();
-			FXERRHWINFN(WaitNamedPipe(readname.text(), NMPWAIT_USE_DEFAULT_WAIT), readname);
+			FXUnicodify<> temp(readname);
+			FXERRHWINFN(WaitNamedPipe(temp.buffer(), NMPWAIT_USE_DEFAULT_WAIT), readname);
 			h.relock();
-			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->readh=CreateFile(readname.text(),
+			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->readh=CreateFile(temp.buffer(),
 				GENERIC_READ,
 				FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, NULL)), readname);
 			p->acl=FXACL(p->readh, FXACL::Pipe); doneACL=true;
@@ -274,9 +263,10 @@ bool QPipe::open(FXuint mode)
 		{
 			FXString writename(fullname+'r');
 			h.unlock();
-			FXERRHWINFN(WaitNamedPipe(writename.text(), NMPWAIT_USE_DEFAULT_WAIT), writename);
+			FXUnicodify<> temp(writename);
+			FXERRHWINFN(WaitNamedPipe(temp.buffer(), NMPWAIT_USE_DEFAULT_WAIT), writename);
 			h.relock();
-			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->writeh=CreateFile(writename.text(),
+			FXERRHWINFN(INVALID_HANDLE_VALUE!=(p->writeh=CreateFile(temp.buffer(),
 				GENERIC_WRITE,
 				FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)), writename);
 			if(!doneACL) p->acl=FXACL(p->writeh, FXACL::Pipe);
@@ -297,11 +287,7 @@ bool QPipe::open(FXuint mode)
 			FXString readname(fullname+'w');
 			if(!FXFile::exists(readname)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
 			p->acl=FXACL(readname, FXACL::Pipe); doneACL=true;
-#ifdef HAVE_WIDEUNISTD
-			FXERRHOSFN(p->readh=::wopen(readname.utext(), O_RDONLY|O_NONBLOCK, 0), readname);
-#else
 			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
-#endif
 		}
 		if(mode & IO_WriteOnly)
 		{
@@ -382,13 +368,8 @@ void QPipe::close()
 		if(creator && !(flags() & IO_DontUnlink))
 		{
 			FXString fullname=makeFullPath(p->pipename);
-#ifdef HAVE_WIDEUNISTD
-			if(flags() & IO_ReadOnly) ::wunlink(fullname.utext()+'r');
-			if(flags() & IO_WriteOnly) ::wunlink(fullname.utext()+'w');
-#else
 			if(flags() & IO_ReadOnly) ::unlink(fullname.text()+'r');
 			if(flags() & IO_WriteOnly) ::unlink(fullname.text()+'w');
-#endif
 		}
 #endif
 		p->acl=FXACL(FXACL::Pipe);
@@ -430,10 +411,10 @@ bool QPipe::reset()
 		{
 			BOOL ret;
 			DWORD readcode, writecode;
-			ret=WaitNamedPipe(readname.text(), 100);
+			ret=WaitNamedPipe(FXUnicodify<>(readname).buffer(), 100);
 			assert(ret==0);
 			readcode=GetLastError();
-			ret=WaitNamedPipe(writename.text(), 100);
+			ret=WaitNamedPipe(FXUnicodify<>(writename).buffer(), 100);
 			assert(ret==0);
 			writecode=GetLastError();
 			if(ERROR_FILE_NOT_FOUND==readcode && ERROR_FILE_NOT_FOUND==writecode) break;
@@ -644,11 +625,7 @@ FXuval QPipe::writeBlock(const char *data, FXuval maxlen)
 		{
 			FXString writename(makeFullPath(p->pipename)+((creator) ? 'w' : 'r'));
 			h.unlock();
-#ifdef HAVE_WIDEUNISTD
-			p->writeh=::wopen(writename.utext(), O_WRONLY, 0);
-#else
 			p->writeh=::open(writename.text(), O_WRONLY, 0);
-#endif
 			h.relock();
 			FXERRHOSFN(p->writeh, writename);
 		}

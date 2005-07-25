@@ -490,7 +490,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 		FXRBOp unnew=FXRBNew(p);
 #ifdef USE_WINAPI
 		HANDLE h;
-		FXERRHWIN(INVALID_HANDLE_VALUE!=(h=FindFirstChangeNotification(path.text(), FALSE, FILE_NOTIFY_CHANGE_FILE_NAME
+		FXERRHWIN(INVALID_HANDLE_VALUE!=(h=FindFirstChangeNotification(FXUnicodify<>(path, true).buffer(), FALSE, FILE_NOTIFY_CHANGE_FILE_NAME
 			|FILE_NOTIFY_CHANGE_DIR_NAME|FILE_NOTIFY_CHANGE_ATTRIBUTES|FILE_NOTIFY_CHANGE_SIZE
 			/*|FILE_NOTIFY_CHANGE_LAST_WRITE*/|FILE_NOTIFY_CHANGE_SECURITY)));
 		p->h=h;

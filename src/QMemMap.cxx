@@ -477,7 +477,7 @@ void QMemMap::winopen(int mode)
 				SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
 				sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
 				p->mappingh=CreateFileMapping(fileh, &sa, access,
-					(DWORD)(mappingsize>>32), (DWORD) mappingsize, name.text());
+					(DWORD)(mappingsize>>32), (DWORD) mappingsize, FXUnicodify<>(name).buffer());
 				if(p->unique && ERROR_ALREADY_EXISTS==GetLastError())
 				{
 					CloseHandle(p->mappingh);
@@ -485,7 +485,7 @@ void QMemMap::winopen(int mode)
 				}
 			}
 			else
-				p->mappingh=OpenFileMapping(access, FALSE, name.text());
+				p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer());
 		} while(false);
 		FXERRHWINFN(p->mappingh, name);
 		p->acl=FXACL(p->mappingh, FXACL::MemMap);

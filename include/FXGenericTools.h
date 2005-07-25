@@ -2171,7 +2171,80 @@ type *foo(FXAutoPtr<type> ptr);
 type *handle=foo(new type);
 \endcode
 */
-#define FXAutoPtr Generic::ptr	// TODO: FIXME when templated typedefs get implemented
+#define FXAutoPtr FX::Generic::ptr	// TODO: FIXME when templated typedefs get implemented
+
+/*! \class FXUnicodify
+\brief Converts a UTF-8 format FX::FXString into a unicode string suitable for the
+host operating system
+
+\parameter fastlen How much stack space to use before resorting to the allocator
+
+On POSIX, it is assumed that the host OS also uses UTF-8 and thus returns the FXString
+as-is. On Windows, if \c UNICODE is defined, then it converts to UTF-16 otherwise it
+returns the FXString as-is. In all cases the terminating null of the source FXString
+is preserved.
+
+If you are converting a path which can utilise the \\\\?\\ escape sequence to enable
+32,768 character long paths, pass true for the \em isPath parameter to the constructor.
+
+Example:
+\code
+CreateFile(FXUnicodify<>(path, true).buffer(), ...
+\endcode
+*/
+#if defined(WIN32) && defined(UNICODE)
+template<size_t fastlen=2048> class FXUnicodify
+{
+	bool myIsPath;
+	FXnchar stkbuff[fastlen], *mybuffer;
+	FXAutoPtr<FXnchar> membuff;
+	FXint bufflen;
+	void doConv(const FXString &str)
+	{
+		FXint strlen=str.length()+1;
+		if(myIsPath) strlen+=4;
+		if(strlen>sizeof(stkbuff))
+			FXERRHM(membuff=mybuffer=new FXnchar[strlen]);
+		else mybuffer=stkbuff;
+		FXnchar *p=mybuffer;
+		if(myIsPath)
+		{	// First four chars are \\?\ to bypass 260 char limit
+			*p++='\\';
+			*p++='\\';
+			*p++='?';
+			*p++='\\';
+			strlen-=4;
+		}
+		bufflen=utf2ncs(p, str.text(), strlen)-sizeof(FXnchar);
+	}
+public:
+	//! Constructs an instance
+	FXUnicodify(bool isPath=false) : myIsPath(isPath), mybuffer(0), bufflen(0) { }
+	//! Constructs an instance converting \em str, prepending \c \\\\?\\ to enable 32,768 character paths if \em isPath is set
+	FXUnicodify(const FXString &str, bool isPath=false) : myIsPath(isPath), mybuffer(0), bufflen(0) { doConv(str); }
+	//! Returns the converted string
+	const FXnchar *buffer() const throw() { return mybuffer; }
+	//! Returns the converted string
+	const FXnchar *buffer(const FXString &str) { if(!mybuffer) doConv(str); return mybuffer; }
+	//! Returns the length of the converted string
+	FXint length() const throw() { return bufflen; }
+	//! Returns the length of the converted string
+	FXint length(const FXString &str) { if(!mybuffer) doConv(str); return bufflen; }
+};
+#else
+template<size_t fastlen=2048> class FXUnicodify
+{
+	const FXchar *mybuffer;
+	FXint bufflen;
+public:
+	FXUnicodify(bool isPath=false) : mybuffer(0) { }
+	FXUnicodify(const FXString &str, bool isPath=false) : mybuffer(str.text()), bufflen(str.length()) { }
+	const FXchar *buffer() const throw() { return mybuffer; }
+	const FXchar *buffer(const FXString &str) const throw() { return str.text(); }
+	FXint length() const throw() { return bufflen; }
+	FXint length(const FXString &str) const throw() { return str.length(); }
+};
+#endif
 
 } // namespace
 

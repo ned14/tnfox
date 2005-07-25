@@ -329,7 +329,7 @@ FXString QFileInfo::lastChangedAsString(const FXString &format) const
 bool QFileInfo::isHidden(const FXString &path)
 {
 #ifdef USE_WINAPI
-	return (GetFileAttributes(path.text()) & FILE_ATTRIBUTE_HIDDEN)==FILE_ATTRIBUTE_HIDDEN;
+	return (GetFileAttributes(FXUnicodify<>(path, true).buffer()) & FILE_ATTRIBUTE_HIDDEN)==FILE_ATTRIBUTE_HIDDEN;
 #endif
 #ifdef USE_POSIX
 	// Easy - is the first character a '.'?

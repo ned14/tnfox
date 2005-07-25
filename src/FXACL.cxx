@@ -160,7 +160,6 @@ struct FXDLLLOCAL FXACLEntityPrivate
 	FXACLEntityPrivate(uid_t _userId, gid_t _groupId, bool _amGroup, const FXString &_machine)
 		: userId(_userId), groupId(_groupId), amGroup(_amGroup), amOwner(false), amPublic(false), machine(_machine) { }
 #endif
-	const char *computer() const { return machine.empty() ? 0 : machine.text(); }
 private:
 	FXACLEntityPrivate &operator=(const FXACLEntityPrivate &);
 };
@@ -232,9 +231,10 @@ bool FXACLEntity::isGroup() const
 	if(!p) return false;
 #ifdef USE_WINAPI
 	SID_NAME_USE use;
-	char b1[512], b2[512];
-	DWORD accsize=sizeof(b1), compsize=sizeof(b2);
-	FXERRHWIN(LookupAccountSid(p->computer(), p->sid, b1, &accsize, b2, &compsize, &use));
+	TCHAR b1[512], b2[512];
+	DWORD accsize=sizeof(b1)/sizeof(TCHAR), compsize=sizeof(b2)/sizeof(TCHAR);
+	FXUnicodify<> computer(p->machine);
+	FXERRHWIN(LookupAccountSid(p->machine.empty() ? 0 : computer.buffer(), p->sid, b1, &accsize, b2, &compsize, &use));
 	return SidTypeGroup==use || SidTypeWellKnownGroup==use;
 #endif
 #ifdef USE_POSIX
@@ -258,9 +258,10 @@ FXString FXACLEntity::asString(bool full) const
 	if(!p) return FXString();
 #ifdef USE_WINAPI
 	TCHAR account[1024], computer[1024];
-	DWORD accsize=sizeof(account), compsize=sizeof(computer);
+	DWORD accsize=sizeof(account)/sizeof(TCHAR), compsize=sizeof(computer)/sizeof(TCHAR);
 	SID_NAME_USE use;
-	FXERRHWIN(LookupAccountSid(p->computer(), p->sid, account, &accsize, computer, &compsize, &use));
+	FXUnicodify<> machine2(p->machine);
+	FXERRHWIN(LookupAccountSid(p->machine.empty() ? 0 : machine2.buffer(), p->sid, account, &accsize, computer, &compsize, &use));
 	FXString ret=(computer[0]) ? "%1/%2" : "%1%2";
 	if(full)
 	{
@@ -320,9 +321,10 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	if(!p) return false;
 #ifdef USE_WINAPI
 	TCHAR account[1024], computer[1024];
-	DWORD accsize=sizeof(account), compsize=sizeof(computer);
+	DWORD accsize=sizeof(account)/sizeof(TCHAR), compsize=sizeof(computer)/sizeof(TCHAR);
 	SID_NAME_USE use;
-	FXERRHWIN(LookupAccountSid(p->computer(), p->sid, account, &accsize, computer, &compsize, &use));
+	FXUnicodify<> machine2(p->machine);
+	FXERRHWIN(LookupAccountSid(p->machine.empty() ? 0 : machine2.buffer(), p->sid, account, &accsize, computer, &compsize, &use));
 	if(p->token)
 	{
 		FXERRHWIN(CloseHandle(p->token));
@@ -345,17 +347,24 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	Why the fuck is it so fucking hard just to check if a password is right? :(
 	*/
 	SEC_WINNT_AUTH_IDENTITY_EX swai={ SEC_WINNT_AUTH_IDENTITY_VERSION, sizeof(swai) };
+#ifdef UNICODE
+	swai.User    =(short *) account;  swai.UserLength=accsize;
+	swai.Domain  =(short *) computer; swai.DomainLength=compsize;
+	swai.Password=(short *) password; swai.PasswordLength=(int) wcslen(password);
+#else
 	swai.User    =(FXuchar *) account;  swai.UserLength=accsize;
 	swai.Domain  =(FXuchar *) computer; swai.DomainLength=compsize;
 	swai.Password=(FXuchar *) password; swai.PasswordLength=(int) strlen(password);
+#endif
 	swai.Flags=SEC_WINNT_AUTH_IDENTITY_ANSI;
 	// Setup client & server
 	CredHandle clientcred, servercred; TimeStamp expiry;
-	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, "NTLM",
+	FXUnicodify<> ntlm(FXString("NTLM"));
+	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, (SEC_CHAR *) ntlm.buffer(),
 		SECPKG_CRED_OUTBOUND, NULL, &swai, NULL, NULL,
 		&clientcred, &expiry));
 	FXRBOp unclient=FXRBFunc(FreeCredentialsHandle, &clientcred);
-	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, "NTLM",
+	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, (SEC_CHAR *) ntlm.buffer(),
 		SECPKG_CRED_INBOUND, NULL, NULL, NULL, NULL,
 		&servercred, &expiry));
 	FXRBOp unserver=FXRBFunc(FreeCredentialsHandle, &servercred);
@@ -532,9 +541,10 @@ FXString FXACLEntity::homeDirectory(bool filesdir) const
 
 		// Get the username and computer
 		TCHAR account[1024], computer[1024];
-		DWORD accsize=sizeof(account), compsize=sizeof(computer);
+		DWORD accsize=sizeof(account)/sizeof(TCHAR), compsize=sizeof(computer)/sizeof(TCHAR);
 		SID_NAME_USE use;
-		FXERRHWIN(LookupAccountSid(p->computer(), p->sid, account, &accsize, computer, &compsize, &use));
+		FXUnicodify<> computer(p->machine);
+		FXERRHWIN(LookupAccountSid(p->machine.empty() ? 0 : computer.buffer(), p->sid, account, &accsize, computer, &compsize, &use));
 
 #ifdef UNICODE
 #error Fixme for unicode!
@@ -738,7 +748,7 @@ FXACLEntity FXACLEntity::lookupUser(const FXString &username, const FXString &ma
 	SID *sid=(SID *) sidbuff, *group=_root.p->group;
 	DWORD sidlen=sizeof(sidbuff), complen=sizeof(compbuff);
 	SID_NAME_USE use;
-	FXERRHWIN(LookupAccountName(machine.empty() ? 0 : machine.text(), username.text(),
+	FXERRHWIN(LookupAccountName(machine.empty() ? 0 : FXUnicodify<>(machine).buffer(), username.text(),
 		sidbuff, &sidlen, compbuff, &complen, &use));
 	FXERRHM(ret.p=new FXACLEntityPrivate(sid, group, machine));
 #endif
@@ -1190,7 +1200,6 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 	FXRBOp unconstr=FXRBConstruct(this);
 #ifdef USE_WINAPI
 	SECURITY_DESCRIPTOR *sd;
-	LPSTR _path=(LPSTR) path.text();
 #if 0
 	// This code seems to require administrator access :(
 	if(':'==path[1] && 3==path.length())
@@ -1218,7 +1227,7 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 #endif
 #endif
 	DWORD errcode;
-	FXERRHWIN2FN(ERROR_SUCCESS==(errcode=GetNamedSecurityInfo(_path, mapType(type),
+	FXERRHWIN2FN(ERROR_SUCCESS==(errcode=GetNamedSecurityInfo((LPSTR) FXUnicodify<>(path).buffer(), mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
 		0, 0, 0, NULL, (PSID *) &sd)), errcode, path);
 	init(sd, type);
@@ -1458,7 +1467,6 @@ void FXACL::writeTo(const FXString &path) const
 {
 #ifdef USE_WINAPI
 	int_toWin32SecurityDescriptor();
-	LPSTR _path=(LPSTR) path.text();
 	SECURITY_INFORMATION si=DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION;
 	if(p->hasInherited)
 		si|=UNPROTECTED_DACL_SECURITY_INFORMATION;
@@ -1472,7 +1480,7 @@ void FXACL::writeTo(const FXString &path) const
 		FXERRH(p->owner.p->token, QTrans::tr("FXACL", "You must authenticate an entity before you can set it as owner"), FXACL_OWNERNEEDSAUTH, 0);
 		FXERRHWIN(SetThreadToken(NULL, p->owner.p->token));
 	}
-	DWORD ret=SetNamedSecurityInfo(_path, mapType(p->type), si, (PSID) p->owner.p->sid,
+	DWORD ret=SetNamedSecurityInfo((LPSTR) FXUnicodify<>(path).buffer(), mapType(p->type), si, (PSID) p->owner.p->sid,
 		(PSID) p->owner.p->group, p->acl, NULL);
 	if(doImpers)
 	{

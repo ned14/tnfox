@@ -46,12 +46,6 @@
 static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
-#if 0
-#ifdef WIN32
-#define HAVE_WIDEUNISTD
-#define wopen _wopen
-#endif
-#endif
 
 /*
   Notes:
@@ -244,6 +238,7 @@ FXfval FXFile::reloadSize()
 		return (p->size=(FXfval) s.st_size);
 #endif
 	}
+	return 0;
 }
 
 QIODevice &FXFile::stdio(bool applyCRLFTranslation)
@@ -305,16 +300,12 @@ bool FXFile::open(FXuint mode)
 		default:
 			creation|=OPEN_EXISTING; break;
 		}
-		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(p->filename.text(), accessw, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, psa,
+		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(FXUnicodify<>(p->filename, true).buffer(), accessw, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, psa,
 			creation, FILE_ATTRIBUTE_NORMAL, NULL)), p->filename);
 		FXERRHIO(p->handle=_open_osfhandle((intptr_t) h, access));
 #endif
 #ifdef USE_POSIX
-#ifdef HAVE_WIDEUNISTD
-		FXERRHOSFN(p->handle=::wopen(p->filename.utext(), access, S_IREAD|S_IWRITE), p->filename);
-#else
 		FXERRHOSFN(p->handle=::open(p->filename.text(), access, S_IREAD|S_IWRITE), p->filename);
-#endif
 #endif
 		if(access & O_CREAT)
 		{	// Set the perms
@@ -610,7 +601,7 @@ void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FX
 	if(created && lastModified && lastAccessed)
 	{	// Need to open with special semantics if it's a directory
 		HANDLE h;
-		FXERRHWINFN(h=CreateFile(path.text(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
+		FXERRHWINFN(h=CreateFile(FXUnicodify<>(path, true).buffer(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
 			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL), path);
 		FXRBOp unh=FXRBFunc(&CloseHandle, h);
 		FILETIME _cre, _mod, _acc;

@@ -1032,15 +1032,15 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	/* Rather annoyingly, LoadLibraryEx() won't try file extensions for us like LoadLibrary()
 	so we must do this ourselves */
 	FXString path_=path;
-	if(!(h.h=(void *) LoadLibraryEx(path_.text(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
+	if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
 	{
 		if(ERROR_MOD_NOT_FOUND!=GetLastError()) { FXERRHWIN(0); }
 		path_=path+".dll";
-		if(!(h.h=(void *) LoadLibraryEx(path_.text(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
+		if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
 		{
 			if(ERROR_MOD_NOT_FOUND!=GetLastError()) { FXERRHWIN(0); }
 			path_=path+".exe";
-			if(!(h.h=(void *) LoadLibraryEx(path_.text(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
+			if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
 			{
 				FXERRHWIN(0);
 			}
@@ -1488,12 +1488,12 @@ FXProcess::UserHandedness FXProcess::userHandedness()
 	{
 #ifdef USE_WINAPI
 		HKEY regkey;
-		FXERRHWIN(ERROR_SUCCESS==RegOpenKeyEx(HKEY_CURRENT_USER, "Control Panel\\Mouse",
+		FXERRHWIN(ERROR_SUCCESS==RegOpenKeyEx(HKEY_CURRENT_USER, FXUnicodify<>(FXString("Control Panel\\Mouse")).buffer(),
 			0, KEY_READ, &regkey));
 		FXRBOp unregkey=FXRBFunc(RegCloseKey, regkey);
 		DWORD type, len=16;
 		char buffer[16];
-		FXERRHWIN(ERROR_SUCCESS==RegQueryValueEx(regkey, "SwapMouseButtons", NULL,
+		FXERRHWIN(ERROR_SUCCESS==RegQueryValueEx(regkey, FXUnicodify<>(FXString("SwapMouseButtons")).buffer(), NULL,
 			&type, (LPBYTE) buffer, &len));
 		myprocess->p->handedness='1'==buffer[0] ? LEFT_HANDED : RIGHT_HANDED;
 #endif

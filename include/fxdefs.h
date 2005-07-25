@@ -393,14 +393,22 @@ typedef char                   FXchar;
 typedef unsigned char          FXuchar;
 typedef FXuchar                FXbool;
 typedef unsigned short         FXushort;
-typedef unsigned short         FXhwchar;
 typedef short                  FXshort;
 typedef unsigned int           FXuint;
-typedef unsigned int           FXwchar;
 typedef int                    FXint;
 typedef float                  FXfloat;
 typedef double                 FXdouble;
 typedef FXObject              *FXObjectPtr;
+#ifdef _MSC_VER
+#ifndef _NATIVE_WCHAR_T_DEFINED
+#error MSVC compiler option /Zc:wchar_t must be specified
+#endif
+typedef unsigned int           FXwchar;
+typedef wchar_t                FXnchar;
+#else
+typedef wchar_t                FXwchar;
+typedef unsigned short         FXnchar;
+#endif
 #if defined(__LP64__) || defined(_LP64) || (_MIPS_SZLONG == 64) || (__WORDSIZE == 64)
 typedef unsigned long          FXulong;
 typedef long                   FXlong;
