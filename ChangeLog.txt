@@ -31,6 +31,10 @@ B FXFSMonitor was failing to invoke change handler if handler invocation
 was already in progress
 B FXMemMap was extending zero size files to one byte
 B FXACL was losing the error code on win32
+B FXProcess::getNsCount() was misrepresenting microseconds as nanoseconds
+on POSIX
+B FXACLEntity::group() of owner() and everything() wasn't correct on POSIX
+R *** Issued snapshot 3
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -97,8 +101,16 @@ FXRWMutex
 * Made FXRefedObject more efficient by avoiding a lock when referrers are unknown
 + Added FXRefedObject_DisableCount
 * Replaced all Qt-compatible FX things with Q in order to make way for
-integrating future versions of FOX
-
+integrating future versions of FOX (this is REVISION 457 onwards in SVN)
+* Removed wide character POSIX code from FXFile and FXPipe. It was never used.
+* Removed pseudo-unicode support from FXString and fxdefs.h
++ Added insert pos cache to FXString so arg() inserts are much quicker
++ Added FXUnicodify and applied it to all TnFOX extension classes. This makes
+all extension classes ready for Unicode support when FOX v1.6 is merged.
+* Added new class FXTime for more accurate times
++ Added FXFile::readMetadata() and reimplemented all other FXFile metadata
+functions to use it. Reimplemented QFileInfo to use it.
+R *** Issued snapshot 3
 
 
 v0.85 13th Feb 2005:
