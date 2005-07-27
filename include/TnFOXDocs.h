@@ -3,7 +3,7 @@
 *                          Differences documentation                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2005 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -163,6 +163,13 @@ FX::QLocalPipe provides an intra-process pipe. FX::QBlkSocket and
 FX::QHostAddress provide Qt-compatible network access including full IPv4 and IPv6 support.
 FX::QGZipDevice provides a transparent gzip format compressor and decompressor which uses LZW
 compression to substantially decrease data size.
+
+<li><b>Improved Time facilities</b><br>
+FX::FXTime provides an enhanced portable, microsecond granularity date & time system from the
+1st January year 0 until the 20th February, year 584,556 with knowledge of local time zones.
+This support extends throughout the file system support on operating systems with better than
+one second granularity (Windows, FreeBSD). FX::FXProcess provides portable millisecond and
+nanosecond counters for extremely accurate timing.
 
 <li><b>Improved User Interface facilities</b><br>
 TnFOX understands the user's handedness (reported via FX::FXProcess::userHandedness()) as
@@ -2014,6 +2021,8 @@ However, for various reasons, some semantic changes did need to happen:
 \li Anything using the FOX i/o classes may break. An emulation thunking to
 TnFOX's much superior replacements is good enough that FOX code itself
 doesn't know any better and so neither should your code.
+\li FX::FXTime is a class in TnFOX, representing a much finer time quantity
+than FOX's which is only per-second granularity.
 \li FOX's threading support was added substantially after TnFOX's and so uses some
 of the same API names for different things. I've done what I can to ease your
 journey here, but you'll just have to modify your code as the classes do not have
@@ -2037,7 +2046,8 @@ are actually trappable.
 after your \c main() but before creating your FXApp.
 \li Try to use FX::FXHandedDialog and FX::FXHandedPopup, they are so much
 more user friendly. Similarly have your buttons and such observe
-FX::FXWindow::userHandednessLayout()
+FX::FXWindow::userHandednessLayout(). FX::FXHandedMsgBox has replaced
+FX::FXMessageBox which is marked as deprecated.
 \li \c DEFAULT_PAD and \c DEFAULT_SPACING no longer exist. Their replacement
 is either FX::FXWindow::defaultPadding() or FX::FXWindow::defaultSpacing().
 This has been done to support small displays. You shouldn't notice the change
@@ -2083,9 +2093,9 @@ Summary of what is not supported from FOX:
 useful anyway)
 \li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
 FX::QWaitCondition. Also consider FX::FXZeroedWait)
-\li QMemMap (rewrite your code to use TnFOX's FX::QMemMap, it's also superior
+\li FXMemMap (rewrite your code to use TnFOX's FX::QMemMap, it's also superior
 anyway)
-\li There are some API thunks for FX::QMutex, FX::QMutexLock and FX::QThread.
+\li There are some API thunks for FXMutex, FXMutexLock and FXThread.
 But you'll have to try and see for yourself
 */
 
