@@ -43,6 +43,14 @@ may need to query a remote machine.
 Someday the functionality to obtain a list of all entities on a local
 or remote machine may be added.
 
+\warning I've made this mistake myself, so I'll warn of it here - when
+browsing FXACL's, you \b must check each to see if it is owner() and if
+it is then \b you must indirect to the item's owner. Failing to do this
+causes different (usually breaking) behaviour on Windows and POSIX, but
+also is subtly broken on Windows where owner() appears if it's in the ACL
+instead of the owner id itself (this is rare post-NT4 as inheritability
+causes the dereferencing long before you usually see it).
+
 \note User accounts on NT can belong to many groups and there is no primary
 one. However, NTFS does maintain a primary group as well as user and so
 where possible, FXACLEntity's static methods try to find a suitable primary
@@ -115,7 +123,7 @@ This class permits portable control of system ACL's and on
 systems without them (POSIX), it provides a reasonable emulation.
 
 Unfortunately, Win32 code rarely bothers with NT security and so if
-you do try to use it extensively, quite a lot of code just falls over.
+you do try to use it extensively, quite a lot of other code just falls over.
 This is almost certainly resulting from the amazingly obtuse, overly
 low-level Win32 security API which because it's so hard to understand
 really is badly designed. There should at least have been an extra
@@ -140,7 +148,9 @@ of the entries within the ACL.
 For POSIX systems, they provide a minimal user, group & public (other)
 read, write & execute bits per thing plus the concept of an owner.
 This is represented by FXACL as those three things in that particular
-order if they have something enabled - there are never any deny entries.
+order using the special entities FX::FXACLEntity::owner() and
+FX::FXACLEntity::everything() if they have something enabled -
+there are never any deny entries.
 FXACL will complain if you try setting permissions on anything
 other than the ACL's owner or group. You can set permissions for public
 (FX::FXACLEntity::everything()) on all systems.

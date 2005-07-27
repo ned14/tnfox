@@ -158,7 +158,7 @@ struct FXDLLLOCAL FXACLEntityPrivate
 	gid_t groupId;	// 0=root, -1=public, -2=owner
 	bool amGroup, amOwner, amPublic;
 	FXACLEntityPrivate(uid_t _userId, gid_t _groupId, bool _amGroup, const FXString &_machine)
-		: userId(_userId), groupId(_groupId), amGroup(_amGroup), amOwner(false), amPublic(false), machine(_machine) { }
+		: userId(_userId), groupId(_groupId), amGroup(_amGroup), amOwner(-2==_userId), amPublic(-1==_userId), machine(_machine) { }
 #endif
 private:
 	FXACLEntityPrivate &operator=(const FXACLEntityPrivate &);
@@ -359,7 +359,8 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	swai.Flags=SEC_WINNT_AUTH_IDENTITY_ANSI;
 	// Setup client & server
 	CredHandle clientcred, servercred; TimeStamp expiry;
-	FXUnicodify<> ntlm(FXString("NTLM"));
+	FXString ntlmstr("NTLM");
+	FXUnicodify<> ntlm(ntlmstr);
 	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, (SEC_CHAR *) ntlm.buffer(),
 		SECPKG_CRED_OUTBOUND, NULL, &swai, NULL, NULL,
 		&clientcred, &expiry));
@@ -471,7 +472,7 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 		struct pam_conv conv={ PamCode::convfunc, (void *) password };
 		/* Ensure we're root or can act like root. PAM does appear to work without
 		being root but only for uid!=0 which is annoying. Best be consistent */
-		FXERRH(!getuid() /*|| !geteuid()*/, QTrans::tr("FXACLEntity", "Must have root privileges for this operation"), FXACLENTITY_NEEDROOTPRIVS, 0);
+		FXERRH(p->userId || !getuid() /*|| !geteuid()*/, QTrans::tr("FXACLEntity", "Must have root privileges for this operation"), FXACLENTITY_NEEDROOTPRIVS, 0);
 		if(PAM_SUCCESS==(ret=pam_start("passwd", userinfo.pw_name, &conv, &pamh)))
 		{
 			FXRBOp unpam=FXRBFunc(pam_end, pamh, ret);
