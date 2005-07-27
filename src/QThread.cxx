@@ -409,7 +409,7 @@ void QRWMutex::unlock(bool write)
 		{
 #ifdef DEBUG
 			FXulong myid=QThread::id();
-			FXERRH(p->write.threadid==myid, "QRWMutex::unlock(true) called by thread which did not have write lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
+			FXERRH(p->write.threadid==myid, "QRWMutex::unlock(true) called by thread which did not have write lock", QRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 			// Release writers before readers (makes no difference on POSIX though)
 			if(!--p->write.count)
@@ -429,7 +429,7 @@ void QRWMutex::unlock(bool write)
 		else
 		{
 #ifdef DEBUG
-			FXERRH(p->readCnt(), "QRWMutex::unlock(false) called by thread which did not have read lock", FXRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
+			FXERRH(p->readCnt(), "QRWMutex::unlock(false) called by thread which did not have read lock", QRWMUTEX_BADUNLOCK, FXERRH_ISDEBUG);
 #endif
 			p->decReadCnt();
 			if(!--p->read.count)

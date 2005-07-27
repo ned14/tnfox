@@ -46,7 +46,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 #define TESTABS(path) \
-	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, QTrans::tr("QDir", "This is an absolute path"), FXDIR_ISABSOLUTEPATH, 0)
+	FXERRH(acceptAbs || FXFile::isAbsolute(path)==0, QTrans::tr("QDir", "This is an absolute path"), QDIR_ISABSOLUTEPATH, 0)
 
 struct FXDLLLOCAL FXDirPrivate
 {
