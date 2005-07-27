@@ -4,7 +4,7 @@
 *                                                                               *
 *********************************************************************************
 * Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
-* TnFOX extensions (C) 2003 Niall Douglas                                       *
+* TnFOX extensions (C) 2003-2005 Niall Douglas                                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -41,17 +41,12 @@ namespace FX {
 This is as FOX but with failure to allocate memory causing the usual TnFOX
 memory full exception plus many methods have been marked \c throw() to
 enable better optimisation. Furthermore some Qt-compatible APIs have been
-added.
-
-While in the future this class will be entirely in 32 bit Unicode and translate
-down to 16 bit Unicode and ASCII on demand, for now it remains entirely ASCII
-internally.
+added and extra storage used to speed up operations such as inserts.
 */
 class FXAPI FXString {
 private:
   FXchar *str;
-  void *translations;
-  void freeTrans();
+  FXint *inserts;
 public:
   static const FXchar null[];
   static const FXchar hex[17];
@@ -82,21 +77,8 @@ public:
   /// Length of text
   FXint length() const throw() { return *(((FXint*)str)-1); }
 
-  /*! Get text contents in ASCII form (converts down from unicode)
-  \warning Buffer returned is per-string static so subsequent uses of text()
-  or utext() will overwrite it
-  */
-  const FXchar *text() const;
-
-  /*! Get text contents in two-byte unicode form (converts down from full unicode)
-  \warning Buffer returned is per-string static so subsequent uses of text()
-  or utext() will overwrite it
-  */
-  const FXhwchar *utext() const;
-
-  /*! Get text contents in full unicode form
-  */
-  const FXwchar *wtext() const;
+  /// Get text contents
+  const FXchar* text() const throw() { return (const FXchar*)str; }
 
   /// See if string is empty
   FXbool empty() const throw() { return (((FXint*)str)[-1]==0); }
@@ -433,7 +415,10 @@ public:
   static const FXString &nullStr() throw();
 
 private:
-  FXDLLLOCAL void findLowestInsert(int &pos, int &len) throw();
+  inline FXDLLLOCAL void getLowestInsert(FXint &pos, FXint &len);
+  inline FXDLLLOCAL void shiftInserts(FXint pos, FXint diff);
+  inline FXDLLLOCAL void doneInsert();
+  FXDLLLOCAL void calcInserts();
   FXDLLLOCAL FXString numToText(FXulong num, FXint fw, FXint base);
   FXDLLLOCAL FXulong textToNum(const FXchar *str, bool *ok, FXint base) const throw();
 public:
@@ -558,6 +543,9 @@ public:
  ~FXString();
   };
 
+
+//! For Qt emulation
+typedef FXString QString;
 
 }
 

@@ -29,6 +29,7 @@
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXException.h"
+#include <assert.h>
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
 static const char *_fxmemdbg_current_file_ = __FILE__;
@@ -78,7 +79,6 @@ const FXchar FXString::HEX[17]={'0','1','2','3','4','5','6','7','8','9','A','B',
 
 // Change the length of the string to len
 void FXString::length(FXint len){
-  freeTrans();
   if(*(((FXint*)str)-1)!=len){
     if(0<len){
       FXchar *newstr;
@@ -109,12 +109,12 @@ void FXString::length(FXint len){
 
 
 // Simple construct
-FXString::FXString() throw() :str(EMPTY), translations(0) {
+FXString::FXString() throw() :str(EMPTY), inserts(0) {
   }
 
 
 // Copy construct
-FXString::FXString(const FXString& s):str(EMPTY), translations(0) {
+FXString::FXString(const FXString& s):str(EMPTY), inserts(0) {
   register FXint len=s.length();
   if(0<len){
     length(len);
@@ -124,7 +124,7 @@ FXString::FXString(const FXString& s):str(EMPTY), translations(0) {
 
 
 // Construct and init
-FXString::FXString(const FXchar* s):str(EMPTY), translations(0) {
+FXString::FXString(const FXchar* s):str(EMPTY), inserts(0) {
   if(s && s[0]){
     register FXint len=strlen(s);
     length(len);
@@ -134,7 +134,7 @@ FXString::FXString(const FXchar* s):str(EMPTY), translations(0) {
 
 
 // Construct and init with substring
-FXString::FXString(const FXchar* s,FXint n):str(EMPTY), translations(0) {
+FXString::FXString(const FXchar* s,FXint n):str(EMPTY), inserts(0) {
   if(s && 0<n){
     length(n);
     memcpy(str,s,n);
@@ -143,7 +143,7 @@ FXString::FXString(const FXchar* s,FXint n):str(EMPTY), translations(0) {
 
 
 // Construct and fill with constant
-FXString::FXString(FXchar c,FXint n):str(EMPTY), translations(0) {
+FXString::FXString(FXchar c,FXint n):str(EMPTY), inserts(0) {
   if(0<n){
     length(n);
     memset(str,c,n);
@@ -152,7 +152,7 @@ FXString::FXString(FXchar c,FXint n):str(EMPTY), translations(0) {
 
 
 // Construct string from two parts
-FXString::FXString(const FXchar* s1,const FXchar* s2):str(EMPTY), translations(0) {
+FXString::FXString(const FXchar* s1,const FXchar* s2):str(EMPTY), inserts(0) {
   register FXint len1=0,len2=0,len;
   if(s1 && s1[0]){ len1=strlen(s1); }
   if(s2 && s2[0]){ len2=strlen(s2); }
@@ -238,7 +238,7 @@ FXString FXString::section(const FXString& delim,FXint start,FXint num) const {
 FXString& FXString::operator=(const FXString& s){
   if(str!=s.str){
     register FXint len=s.length();
-	freeTrans();
+    FXDELETE(inserts);
     if(0<len){
       length(len);
       memmove(str,s.str,len);
@@ -254,7 +254,7 @@ FXString& FXString::operator=(const FXString& s){
 // Assign a string
 FXString& FXString::operator=(const FXchar* s){
   if(str!=s){
-	freeTrans();
+    FXDELETE(inserts);
     if(s && s[0]){
       register FXint len=strlen(s);
       length(len);
@@ -307,6 +307,7 @@ FXString operator+(FXchar c,const FXString& s){
 // Fill with a constant
 FXString& FXString::fill(FXchar c,FXint n){
   length(n);
+  FXDELETE(inserts);
   memset(str,c,n);
   return *this;
   }
@@ -322,6 +323,7 @@ FXString& FXString::fill(FXchar c) throw() {
 // Assign input character to this string
 FXString& FXString::assign(FXchar c){
   length(1);
+  FXDELETE(inserts);
   str[0]=c;
   return *this;
   }
@@ -330,6 +332,7 @@ FXString& FXString::assign(FXchar c){
 // Assign input n characters c to this string
 FXString& FXString::assign(FXchar c,FXint n){
   length(n);
+  FXDELETE(inserts);
   memset(str,c,n);
   return *this;
   }
@@ -344,6 +347,7 @@ FXString& FXString::assign(const FXchar* s,FXint n){
   else{
     length(0);
     }
+  FXDELETE(inserts);
   return *this;
   }
 
@@ -365,6 +369,7 @@ FXString& FXString::assign(const FXchar* s){
   else{
     length(0);
     }
+  FXDELETE(inserts);
   return *this;
   }
 
@@ -384,6 +389,7 @@ FXString& FXString::insert(FXint pos,FXchar c){
     memmove(&str[pos+1],&str[pos],len-pos);
     str[pos]=c;
     }
+  shiftInserts(pos, 1);
   return *this;
   }
 
@@ -404,6 +410,7 @@ FXString& FXString::insert(FXint pos,FXchar c,FXint n){
       memmove(&str[pos+n],&str[pos],len-pos);
       memset(&str[pos],c,n);
       }
+    shiftInserts(pos, n);
     }
   return *this;
   }
@@ -426,6 +433,7 @@ FXString& FXString::insert(FXint pos,const FXchar* s,FXint n){
       memmove(&str[pos+n],&str[pos],len-pos);
       memcpy(&str[pos],s,n);
       }
+    shiftInserts(pos, n);
     }
   return *this;
   }
@@ -455,6 +463,7 @@ FXString& FXString::insert(FXint pos,const FXchar* s){
       memmove(&str[pos+n],&str[pos],len-pos);
       memcpy(&str[pos],s,n);
       }
+    shiftInserts(pos, n);
     }
   return *this;
   }
@@ -465,6 +474,7 @@ FXString& FXString::append(FXchar c){
   register FXint len=length();
   length(len+1);
   str[len]=c;
+  shiftInserts(len, 0);
   return *this;
   }
 
@@ -475,6 +485,7 @@ FXString& FXString::append(FXchar c,FXint n){
     register FXint len=length();
     length(len+n);
     memset(&str[len],c,n);
+    shiftInserts(len, 0);
     }
   return *this;
   }
@@ -486,6 +497,7 @@ FXString& FXString::append(const FXchar* s,FXint n){
     register FXint len=length();
     length(len+n);
     memcpy(&str[len],s,n);
+    shiftInserts(len, 0);
     }
   return *this;
   }
@@ -505,6 +517,7 @@ FXString& FXString::append(const FXchar* s){
     register FXint n=strlen(s);
     length(len+n);
     memcpy(&str[len],s,n);
+    shiftInserts(len, 0);
     }
   return *this;
   }
@@ -537,6 +550,7 @@ FXString& FXString::prepend(FXchar c){
   length(len+1);
   memmove(&str[1],str,len);
   str[0]=c;
+  shiftInserts(0, 1);
   return *this;
   }
 
@@ -548,6 +562,7 @@ FXString& FXString::prepend(const FXchar* s,FXint n){
     length(len+n);
     memmove(&str[n],str,len);
     memcpy(str,s,n);
+    shiftInserts(0, n);
     }
   return *this;
   }
@@ -560,6 +575,7 @@ FXString& FXString::prepend(FXchar c,FXint n){
     length(len+n);
     memmove(&str[n],str,len);
     memset(str,c,n);
+    shiftInserts(0, n);
     }
   return *this;
   }
@@ -580,6 +596,7 @@ FXString& FXString::prepend(const FXchar* s){
     length(len+n);
     memmove(&str[n],str,len);
     memcpy(str,s,n);
+    shiftInserts(0, n);
     }
   return *this;
   }
@@ -592,6 +609,7 @@ FXString& FXString::replace(FXint pos,FXchar c){
     length(len+1);
     memmove(&str[1],str,len);
     str[0]=c;
+    shiftInserts(0, 1);
     }
   else if(pos>=len){
     length(len+1);
@@ -612,6 +630,7 @@ FXString& FXString::replace(FXint pos,FXint m,FXchar c,FXint n){
       length(len+n);
       memmove(&str[pos+n],str,len);
       memset(str,c,n);
+      shiftInserts(0, n);
       }
     }
   else if(len<=pos){
@@ -633,6 +652,7 @@ FXString& FXString::replace(FXint pos,FXint m,FXchar c,FXint n){
       }
     if(0<n){
       memset(&str[pos],c,n);
+      shiftInserts(pos, n-m);
       }
     }
   return *this;
@@ -647,6 +667,7 @@ FXString& FXString::replace(FXint pos,FXint m,const FXchar* s,FXint n){
       length(len+n);
       memmove(&str[pos+n],str,len);
       memcpy(str,s,n);
+      shiftInserts(0, n);
       }
     }
   else if(len<=pos){
@@ -668,6 +689,7 @@ FXString& FXString::replace(FXint pos,FXint m,const FXchar* s,FXint n){
       }
     if(0<n){
       memcpy(&str[pos],s,n);
+      shiftInserts(pos, n-m);
       }
     }
   return *this;
@@ -697,6 +719,7 @@ FXString& FXString::remove(FXint pos,FXint n){
       if(pos+n>len){n=len-pos;}
       memmove(&str[pos],&str[pos+n],len-n-pos);
       length(len-n);
+      shiftInserts(pos, -n);
       }
     }
   return *this;
@@ -807,6 +830,7 @@ FXString& FXString::simplify(){
       str[d++]=' ';
       }
     length(d);
+	FXDELETE(inserts);
     }
   return *this;
   }
@@ -821,6 +845,7 @@ FXString& FXString::trim(){
     while(s<e && isspace((FXuchar)str[s])) s++;
     memmove(str,&str[s],e-s);
     length(e-s);
+	FXDELETE(inserts);
     }
   return *this;
   }
@@ -834,6 +859,7 @@ FXString& FXString::trimBegin(){
     while(s<e && isspace((FXuchar)str[s])) s++;
     memmove(str,&str[s],e-s);
     length(e-s);
+	shiftInserts(0, -(e-s));
     }
   return *this;
   }
@@ -845,6 +871,7 @@ FXString& FXString::trimEnd(){
     register FXint e=length();
     while(0<e && isspace((FXuchar)str[e-1])) e--;
     length(e);
+	FXDELETE(inserts);
     }
   return *this;
   }
@@ -1799,55 +1826,84 @@ FXString unescape(const FXString& s){
 x:return result;
   }
 
+
+
 // Additions by ned 1st June 2003
-// For now these are all temporary and awaiting full FXWString implementation
-void FXString::freeTrans()
+inline void FXString::getLowestInsert(FXint &pos, FXint &len)
 {
-	QByteArray *b=(QByteArray *) translations;
-	delete b;
-	translations=0;
+	if(!inserts) calcInserts();
+	if(-1==inserts[0])
+	{
+		pos=-1; len=-1;
+	}
+	else
+	{
+		pos=inserts[2*inserts[0]+1];
+		len=inserts[2*inserts[0]+2];
+		if('%'!=str[pos])
+		{
+			int a=1;
+		}
+		assert('%'==str[pos]);
+	}
 }
-const FXchar *FXString::text() const
+inline void FXString::shiftInserts(FXint pos, FXint diff)
+{	// Adjust all subsequent inserts by diff
+	if(!inserts) return;
+	FXchar *percent=strchr(str+pos, '%');
+	FXint len=length(), ppos=!percent ? -1 : percent-str;
+	if(-1!=inserts[0])
+	{
+		for(FXint n=inserts[0]; -1!=inserts[2*n+1]; n++)
+		{
+			if(inserts[2*n+2])
+			{
+				if(inserts[2*n+1]>=len)
+				{	// Chop off any past end
+					inserts[2*n+1]=inserts[2*n+2]=-1;
+					break;
+				}
+				else if(inserts[2*n+1]>=pos)
+				{
+					inserts[2*n+1]+=diff;
+					if(ppos==inserts[2*n+1])
+						ppos=-1;
+				}
+			}
+		}
+	}
+	// If ppos!=-1, we have a new insert
+	if(-1!=ppos)
+	{
+		FXDELETE(inserts);
+	}
+}
+inline void FXString::doneInsert()
 {
-	return str;
-}
-const FXushort *FXString::utext() const
-{	// For now, very simple unicode conversion
-	QByteArray *b=(QByteArray *) translations;
-	if(!translations)
+	if(-1==inserts[0]) return;
+	FXint next=-1;
+	for(FXint n=inserts[0]+1; -1!=inserts[2*n+1]; n++)
 	{
-		FXERRHM(b=new QByteArray);
-		const_cast<FXString *>(this)->translations=b;
+		if(inserts[2*n+2])
+		{
+			next=n;
+			break;
+		}
 	}
-	b->resize((length()+1)*sizeof(FXushort));
-	FXushort *buffer=(FXushort *) b->data();
-	int n;
-	for(n=0; n<length(); n++)
-		buffer[n]=str[n];
-	buffer[n]=0;
-	return buffer;
-}
-const FXwchar *FXString::wtext() const
-{	// For now, very simple unicode conversion
-	QByteArray *b=(QByteArray *) translations;
-	if(!translations)
-	{
-		FXERRHM(b=new QByteArray);
-		const_cast<FXString *>(this)->translations=b;
-	}
-	b->resize((length()+1)*sizeof(FXwchar));
-	FXwchar *buffer=(FXwchar *) b->data();
-	int n;
-	for(n=0; n<length(); n++)
-		buffer[n]=str[n];
-	buffer[n]=0;
-	return buffer;
+	// Mark current as gone & set next
+	inserts[2*inserts[0]+1]=0;
+	inserts[2*inserts[0]+2]=0;
+	inserts[0]=next;
 }
 
-void FXString::findLowestInsert(int &pos, int &len) throw()
+void FXString::calcInserts()
 {
-	int lowcnt=-1;
-	pos=-1; len=-1;
+	if(inserts) return;
+	FXint insertscnt=1+6*2, lowest=-1, highest=0;
+	FXERRHM(inserts=new FXint[insertscnt]);
+	memset(inserts, 0, sizeof(FXint)*insertscnt);
+	// inserts[0] is idx to lowest insert. Then insert[2*n+1], insert[2*n+2]
+	// Pairs go stridx, len with a zero len meaning not present
 	char *p=str;
 	while((p=strchr(p, '%')))
 	{
@@ -1863,14 +1919,25 @@ void FXString::findLowestInsert(int &pos, int &len) throw()
 		if(1==i) { p++; continue; }
 		buff[i]=0;
 		int v=atoi(buff+1);
-		if(v<lowcnt || -1==lowcnt)
+		if(v>=(insertscnt-3)/2)
 		{
-			pos=p-str;
-			len=i;
-			lowcnt=v;
+			FXint *inserts2;
+			FXERRHM(inserts2=new FXint[insertscnt+5*2]);
+			memcpy(inserts2, inserts, sizeof(FXint)*insertscnt);
+			memset(inserts2+insertscnt, 0, sizeof(FXint)*5*2);
+			FXDELETE(inserts);
+			inserts=inserts2;
+			insertscnt+=5*2;
 		}
+		inserts[2*v+1]=p-str;		// position
+		inserts[2*v+2]=i;			// length
+		if(-1==lowest || v<lowest) lowest=v;
+		if(v+1>highest) highest=v+1;
 		p+=i;
 	}
+	inserts[2*highest+1]=-1;		// set high waterpoint
+	inserts[2*highest+2]=-1;
+	inserts[0]=lowest;
 }
 
 FXString FXString::numToText(FXulong num, FXint fw, FXint base)
@@ -1901,12 +1968,14 @@ FXString FXString::numToText(FXulong num, FXint fw, FXint base)
 
 FXString &FXString::arg(const FXString &str, FXint fw)
 {
-	int pos, len;
-	findLowestInsert(pos, len);
+	FXint pos, len;
+	getLowestInsert(pos, len);
 	if(-1==pos)
 		fxwarning("FXString::arg() called on string without %%n identifier");
 	else if(0==fw)
+	{
 		replace(pos, len, str);
+	}
 	else if(fw>0)
 	{
 		FXString buff=str;
@@ -1921,6 +1990,7 @@ FXString &FXString::arg(const FXString &str, FXint fw)
 			buff.append(' ');
 		replace(pos, len, buff);
 	}
+	doneInsert();
 	return *this;
 }
 
@@ -1932,8 +2002,8 @@ FXString &FXString::arg(char c, FXint fw)
 FXString &FXString::arg(FXlong num, FXint fw, FXint base)
 {
 	if(base!=10 && num<0) return arg((FXulong) num, fw, base);
-	int pos, len;
-	findLowestInsert(pos, len);
+	FXint pos, len;
+	getLowestInsert(pos, len);
 	if(-1==pos)
 		fxwarning("FXString::arg() called on string without %%n identifier");
 	else
@@ -1962,28 +2032,30 @@ FXString &FXString::arg(FXlong num, FXint fw, FXint base)
 			}
 		}
 		replace(pos, len, ins);
+		doneInsert();
 	}
 	return *this;
 }
 
 FXString &FXString::arg(FXulong num, FXint fw, FXint base)
 {
-	int pos, len;
-	findLowestInsert(pos, len);
+	FXint pos, len;
+	getLowestInsert(pos, len);
 	if(-1==pos)
 		fxwarning("FXString::arg() called on string without %%n identifier");
 	else
 	{
 		FXString ins=numToText(num, fw, base);
 		replace(pos, len, ins);
+		doneInsert();
 	}
 	return *this;
 }
 
 FXString &FXString::arg(double num, FXint fw, FXchar fmt, FXint prec)
 {
-	int pos, len;
-	findLowestInsert(pos, len);
+	FXint pos, len;
+	getLowestInsert(pos, len);
 	if(-1==pos)
 		fxwarning("FXString::arg() called on string without %%n identifier");
 	else
@@ -1994,6 +2066,7 @@ FXString &FXString::arg(double num, FXint fw, FXchar fmt, FXint prec)
 		else
 			ins.format("%%%d%c", fw, fmt);
 		replace(pos, len, FXString().format(ins.text(), num));
+		doneInsert();
 	}
 	return *this;
 }
@@ -2062,6 +2135,7 @@ const FXString &FXString::nullStr() throw()
 // Delete
 FXString::~FXString(){
   length(0);
+  FXDELETE(inserts);
   }
 
 }
