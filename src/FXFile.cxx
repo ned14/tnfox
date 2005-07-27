@@ -90,10 +90,6 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 */
 
 
-#ifndef TIMEFORMAT
-#define TIMEFORMAT "%Y/%m/%d %H:%M:%S"
-#endif
-
 
 
 #ifdef WIN32
@@ -571,60 +567,199 @@ int FXFile::ungetch(int c)
 	return -1;
 }
 
+void FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize, FXuint *hardLinks)
+{
+	if(!path.empty() && (flags || size || created || lastModified || lastAccessed || compressedSize || hardLinks))
+	{
+#ifndef WIN32
+		struct ::stat st;
+		FXERRHOS(::stat(path.text(), &st));
+		if(flags)
+		{
+			*flags=0;
+			if(S_ISREG(st.st_mode))
+				*flags|=IsFile;
+			if(S_ISDIR(st.st_mode))
+				*flags|=IsDirectory;
+			if(S_ISLNK(st.st_mode))
+				*flags|=IsLink;
+			if('.'==path[0])
+				*flags|=IsHidden;
+		}
+		if(size)
+			*size=st.st_size;
+		if(created || lastModified || lastAccessed)
+		{
+			if(created)
+			{
+#if defined(__linux__)
+				// Unsupported at present
+				created->value=0;
+#elif defined(__FreeBSD__)
+				created->set_time_t(st.st_birthtimespec.tv_sec);
+				created->value+=st.st_birthtimespec.tv_nsec/1000;
+#else
+#error Unknown POSIX architecture
+#endif
+			}
+			if(lastModified)
+			{
+#if defined(__linux__)
+				lastModified->set_time_t(st.st_mtim.tv_sec);
+				lastModified->value+=st.st_mtim.tv_nsec/1000;
+#elif defined(__FreeBSD__)
+				lastModified->set_time_t(st.st_mtimespec.tv_sec);
+				lastModified->value+=st.st_mtimespec.tv_nsec/1000;
+#else
+#error Unknown POSIX architecture
+#endif
+			}
+			if(lastAccessed)
+			{
+#if defined(__linux__)
+				lastAccessed->set_time_t(st.st_atim.tv_sec);
+				lastAccessed->value+=st.st_atim.tv_nsec/1000;
+#elif defined(__FreeBSD__)
+				lastAccessed->set_time_t(st.st_atimespec.tv_sec);
+				lastAccessed->value+=st.st_atimespec.tv_nsec/1000;
+#else
+#error Unknown POSIX architecture
+#endif
+			}
+		}
+		if(compressedSize)
+			*compressedSize=st.st_size;
+		if(hardLinks)
+			*hardLinks=st.st_nlink;
+#else
+		// Need to open with special semantics if it's a directory
+		HANDLE h;
+		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(FXUnicodify<>(path, true).buffer(), GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, NULL)), path);
+		FXRBOp unh=FXRBFunc(&CloseHandle, h);
+		BY_HANDLE_FILE_INFORMATION bhfi;
+		FXERRHWIN(GetFileInformationByHandle(h, &bhfi));
+		if(flags)
+		{
+			*flags=0;
+			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				*flags|=IsDirectory;
+			else
+				*flags|=IsFile;
+			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
+				*flags|=IsLink;
+			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED)
+				*flags|=IsCompressed;
+			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
+				*flags|=IsHidden;
+		}
+		if(size)
+			*size=((FXulong) bhfi.nFileSizeHigh<<32)|bhfi.nFileSizeLow;
+		if(created || lastModified || lastAccessed)
+		{
+			if(created)
+				FXTIMEFROMFILETIME(*created, bhfi.ftCreationTime);
+			if(lastModified)
+				FXTIMEFROMFILETIME(*lastModified, bhfi.ftLastWriteTime);
+			if(lastAccessed)
+				FXTIMEFROMFILETIME(*lastAccessed, bhfi.ftLastAccessTime);
+		}
+		if(compressedSize)
+		{
+			DWORD high;
+			*compressedSize=GetCompressedFileSize(FXUnicodify<>(path, true).buffer(), &high);
+			*compressedSize|=(FXulong)high<<32;
+		}
+		if(hardLinks)
+			*hardLinks=bhfi.nNumberOfLinks;
+#endif
+	}
+}
+
 void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed)
 {
 #ifndef WIN32
 	struct ::timeval times[2]; // [0] is accessed, [1] is modified
+#if defined(__FreeBSD__)
 	if(created)
 	{	// Uses non-standard extension to set created time, but if this isn't supported
 		// then set lastModified and lastAccessed after
 		// NOTE: If modification is older than access time, sets creation time to modification
-		times[1].tv_sec =*created;
-		times[1].tv_usec=0;
+		times[1].tv_sec =created->as_time_t();
+		times[1].tv_usec=created->value % FXTime::micsPerSecond;
 		times[0].tv_sec =times[1].tv_sec+1;
 		times[0].tv_usec=times[1].tv_usec;
 		FXERRHOSFN(::utimes(path.text(), times), path);
 	}
+#endif
 	if(lastModified || lastAccessed)
 	{
-		struct ::stat orig;
-		FXERRHOSFN(::stat(path.text(), &orig), path);
-		times[0].tv_sec=orig.st_atime;
-		times[0].tv_usec=0;
-		times[1].tv_sec=orig.st_mtime;
-		times[1].tv_usec=0;
-		if(lastAccessed) times[0].tv_sec=*lastAccessed;
-		if(lastModified) times[1].tv_sec=*lastModified;
+		if(!lastModified || !lastAccessed)
+		{
+			struct ::stat orig;
+			FXERRHOSFN(::stat(path.text(), &orig), path);
+#if defined(__linux__)
+			times[0].tv_sec =orig.st_atim.tv_sec;
+			times[0].tv_usec=orig.st_atim.tv_nsec/1000;
+			times[1].tv_sec =orig.st_mtim.tv_sec;
+			times[1].tv_usec=orig.st_mtim.tv_nsec/1000;
+#elif defined(__FreeBSD__)
+			times[0].tv_sec =orig.st_atimespec.tv_sec;
+			times[0].tv_usec=orig.st_atimespec.tv_nsec/1000;
+			times[1].tv_sec =orig.st_mtimespec.tv_sec;
+			times[1].tv_usec=orig.st_mtimespec.tv_nsec/1000;
+#else
+#error Unknown POSIX architecture
+#endif
+		}
+		if(lastAccessed)
+		{
+			times[0].tv_sec =lastAccessed->as_time_t();
+			times[0].tv_usec=lastAccessed->value % FXTime::micsPerSecond;
+		}
+		if(lastModified)
+		{
+			times[1].tv_sec =lastModified->as_time_t();
+			times[1].tv_usec=lastModified->value % FXTime::micsPerSecond;
+		}
 		FXERRHOSFN(::utimes(path.text(), times), path);
 	}
 #else
-	if(created && lastModified && lastAccessed)
+	if(created || lastModified || lastAccessed)
 	{	// Need to open with special semantics if it's a directory
 		HANDLE h;
-		FXERRHWINFN(h=CreateFile(FXUnicodify<>(path, true).buffer(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL), path);
+		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(FXUnicodify<>(path, true).buffer(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, NULL)), path);
 		FXRBOp unh=FXRBFunc(&CloseHandle, h);
 		FILETIME _cre, _mod, _acc;
 		FILETIME *cre=0, *mod=0, *acc=0;
 		if(created)
 		{
 			cre=&_cre;
-			*(FXulong *)(cre)=((FXulong) *created*10000000)+116444736000000000ULL;
+			FXTIMETOFILETIME(_cre, *created);
 		}
 		if(lastModified)
 		{
 			mod=&_mod;
-			*(FXulong *)(mod)=((FXulong) *lastModified*10000000)+116444736000000000ULL;
+			FXTIMETOFILETIME(_mod, *lastModified);
 		}
 		if(lastAccessed)
 		{
 			acc=&_acc;
-			*(FXulong *)(acc)=((FXulong) *lastAccessed*10000000)+116444736000000000ULL;
+			FXTIMETOFILETIME(_acc, *lastAccessed);
 		}
 		FXERRHWIN(SetFileTime(h, cre, acc, mod));
 	}
 #endif
 }
+
+FXuint FXFile::metaFlags(const FXString &path)
+{
+	FXuint flags;
+	readMetadata(path, &flags, 0, 0, 0, 0);
+	return flags;
+}
+
 
 //*****************************************************************************
 
@@ -1313,26 +1448,16 @@ FXbool FXFile::isTopDirectory(const FXString& file){
 
 
 // Check if file represents a file
-FXbool FXFile::isFile(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) && S_ISREG(status.st_mode);
-#else
-  DWORD atts;
-  return !file.empty() && ((atts=GetFileAttributes(file.text()))!=0xFFFFFFFF) && !(atts&FILE_ATTRIBUTE_DIRECTORY);
-#endif
-  }
-
+FXbool FXFile::isFile(const FXString& file)
+{
+	return metaFlags(file) & IsFile;
+}
 
 // Check if file represents a link
-FXbool FXFile::isLink(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::lstat(file.text(),&status)==0) && S_ISLNK(status.st_mode);
-#else
-  return FALSE;
-#endif
-  }
+FXbool FXFile::isLink(const FXString& file)
+{
+	return metaFlags(file) & IsLink;
+}
 
 
 // Check if file represents a file share
@@ -1379,15 +1504,10 @@ FXbool FXFile::isShare(const FXString& file){
 
 
 // Check if file represents a directory
-FXbool FXFile::isDirectory(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) && S_ISDIR(status.st_mode);
-#else
-  DWORD atts;
-  return !file.empty() && ((atts=GetFileAttributes(file.text()))!=0xFFFFFFFF) && (atts&FILE_ATTRIBUTE_DIRECTORY);
-#endif
-  }
+FXbool FXFile::isDirectory(const FXString& file)
+{
+	return metaFlags(file) & IsDirectory;
+}
 
 
 // Return true if file is readable (thanks to gehriger@linkcad.com)
@@ -1710,50 +1830,31 @@ static time_t fxfiletime(const FILETIME& ft){
 //       filetime=fxfiletime(ftLastWriteTime);
 
 // Return time file was last modified
-FXTime FXFile::modified(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)status.st_mtime : 0L;
-#else
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)status.st_mtime : 0L;
-#endif
-  }
+FXTime FXFile::modified(const FXString& file)
+{
+	FXTime ret;
+	readMetadata(file, 0, 0, 0, &ret, 0);
+	return ret;
+}
 
 
 // Return time file was last accessed
-FXTime FXFile::accessed(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)status.st_atime : 0L;
-#else
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)status.st_atime : 0L;
-#endif
-  }
+FXTime FXFile::accessed(const FXString& file)
+{
+	FXTime ret;
+	readMetadata(file, 0, 0, 0, 0, &ret);
+	return ret;
+}
 
 
 // Return time when created
-FXTime FXFile::created(const FXString& file){
-#ifndef WIN32
-  return 0L;
-#else
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)status.st_ctime : 0L;
-#endif
-  }
+FXTime FXFile::created(const FXString& file)
+{
+	FXTime ret;
+	readMetadata(file, 0, 0, &ret, 0, 0);
+	return ret;
+}
 
-
-// Return time when "touched"
-FXTime FXFile::touched(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)FXMAX(status.st_ctime,status.st_mtime) : 0L;
-#else
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXTime)FXMAX(status.st_ctime,status.st_mtime) : 0L;
-#endif
-  }
 
 
 
@@ -1966,43 +2067,6 @@ FXint FXFile::listFiles(FXString*& filelist,const FXString& path,const FXString&
 #endif
 
 
-// Convert file time to string as per strftime format
-FXString FXFile::time(const FXchar *format,FXTime filetime){
-#ifndef WIN32
-#ifdef FOX_THREAD_SAFE
-  time_t tmp=(time_t)FXMAX(filetime,0);
-  struct tm tmresult;
-  FXchar buffer[512];
-  FXint len=strftime(buffer,sizeof(buffer),format,localtime_r(&tmp,&tmresult));
-  return FXString(buffer,len);
-#else
-  time_t tmp=(time_t)FXMAX(filetime,0);
-  FXchar buffer[512];
-  FXint len=strftime(buffer,sizeof(buffer),format,localtime(&tmp));
-  return FXString(buffer,len);
-#endif
-#else
-  time_t tmp=(time_t)FXMAX(filetime,0);
-  FXchar buffer[512];
-  FXint len=(FXint) strftime(buffer,sizeof(buffer),format,localtime(&tmp));
-  return FXString(buffer,len);
-#endif
-  }
-
-
-
-// Convert file time to string
-FXString FXFile::time(FXTime filetime){
-  return FXFile::time(TIMEFORMAT,filetime);
-  }
-
-
-// Return current time
-FXTime FXFile::now(){
-  return (FXTime)::time(NULL);
-  }
-
-
 // Get file info
 FXbool FXFile::info(const FXString& file,struct stat& inf){
 #ifndef WIN32
@@ -2025,15 +2089,12 @@ FXbool FXFile::linkinfo(const FXString& file,struct stat& inf){
 
 
 // Get file size
-FXfval FXFile::size(const FXString& file){
-#ifndef WIN32
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXfval) status.st_size : 0L;
-#else
-  struct stat status;
-  return !file.empty() && (::stat(file.text(),&status)==0) ? (FXfval) status.st_size : 0L;
-#endif
-  }
+FXfval FXFile::size(const FXString& file)
+{
+	FXfval ret;
+	readMetadata(file, 0, &ret, 0, 0, 0);
+	return ret;
+}
 
 
 FXbool FXFile::exists(const FXString& file){

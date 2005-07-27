@@ -25,7 +25,7 @@
 #define FXFILE_H
 
 #include "QIODevice.h"
-#include "FXString.h"
+#include "FXTime.h"
 
 /*! \file FXFile.h
 \brief Defines items and classes used for accessing files
@@ -152,10 +152,24 @@ public:
 	static FXString join(const FXString &a, const FXString &b, const FXString &c) { return join(join(a,b), c); }
 	//! \overload
 	static FXString join(const FXString &a, const FXString &b, const FXString &c, const FXString &d) { return join(join(join(a,b), c), d); }
-	/*! Stamps the path entry with metadata consistent with the entry having been
-	created at \em creationdate. Needed to work around the Windows "file tunnelling"
-	misfeature. */
+	//! Holds meta information about data
+	enum MetaFileFlags
+	{
+		IsFile=1,				//!< Is a file
+		IsDirectory=2,			//!< Is a directory
+		IsLink=4,				//!< Is a symbolic link
+
+		IsCompressed=64,		//!< Is compressed
+		IsHidden=128			//!< Is hidden
+	};
+	/*! Returns metadata for \em path. This is the fastest way to read this kind
+	of information as it can be all performed at once, or avoiding bits not required */
+	static void readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize=0, FXuint *hardLinks=0);
+	/*! Stamps the path entry with the specified metadata. Needed to
+	work around the Windows "file tunnelling" misfeature. */
 	static void writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed);
+	//! Returns the flags part of readMetadata()
+	static FXuint metaFlags(const FXString &path);
 
 
 	// These are directly copied from FOX
@@ -273,13 +287,13 @@ public:
 	/// Return true if input directory is a top-level directory
 	static FXbool  isTopDirectory(const FXString& file);
 
-	/// Return true if input path is a file name
+	/// Return true if input path is a file name. Implemented as readMetadata()
 	static FXbool  isFile(const FXString& file);
 
-	/// Return true if input path is a link
+	/// Return true if input path is a link. Implemented as readMetadata()
 	static FXbool  isLink(const FXString& file);
 
-	/// Return true if input path is a directory
+	/// Return true if input path is a directory. Implemented as readMetadata()
 	static FXbool  isDirectory(const FXString& file);
 
 	/// Return true if input path is a file share
@@ -295,78 +309,78 @@ public:
 	static FXbool  isExecutable(const FXString& file);
 
 	/// Return true if owner has read-write-execute permissions
-	static FXbool  isOwnerReadWriteExecute(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOwnerReadWriteExecute(const FXString& file);
 
 	/// Return true if owner has read permissions
-	static FXbool  isOwnerReadable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOwnerReadable(const FXString& file);
 
 	/// Return true if owner has write permissions
-	static FXbool  isOwnerWritable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOwnerWritable(const FXString& file);
 
 	/// Return true if owner has execute permissions
-	static FXbool  isOwnerExecutable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOwnerExecutable(const FXString& file);
 
 	/// Return true if group has read-write-execute permissions
-	static FXbool  isGroupReadWriteExecute(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isGroupReadWriteExecute(const FXString& file);
 
 	/// Return true if group has read permissions
-	static FXbool  isGroupReadable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isGroupReadable(const FXString& file);
 
 	/// Return true if group has write permissions
-	static FXbool  isGroupWritable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isGroupWritable(const FXString& file);
 
 	/// Return true if group has execute permissions
-	static FXbool  isGroupExecutable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isGroupExecutable(const FXString& file);
 
 	/// Return true if others have read-write-execute permissions
-	static FXbool  isOtherReadWriteExecute(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOtherReadWriteExecute(const FXString& file);
 
 	/// Return true if others have read permissions
-	static FXbool  isOtherReadable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOtherReadable(const FXString& file);
 
 	/// Return true if others have write permissions
-	static FXbool  isOtherWritable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOtherWritable(const FXString& file);
 
 	/// Return true if others have execute permissions
-	static FXbool  isOtherExecutable(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isOtherExecutable(const FXString& file);
 
 	/// Return true if the file sets the user id on execution
-	static FXbool  isSetUid(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isSetUid(const FXString& file);
 
 	/// Return true if the file sets the group id on execution
-	static FXbool  isSetGid(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isSetGid(const FXString& file);
 
 	/// Return true if the file has the sticky bit set
-	static FXbool  isSetSticky(const FXString& file);
+	static FXDEPRECATEDEXT FXbool  isSetSticky(const FXString& file);
 
-	/// Return owner name from uid if available
-	static FXString  owner(FXuint uid);
+	/// \deprecated Use permissions() instead
+	static FXDEPRECATEDEXT FXString  owner(FXuint uid);
 
-	/// Return owner name of file if available
-	static FXString  owner(const FXString& file);
+	/// \deprecated Use permissions() instead
+	static FXDEPRECATEDEXT FXString  owner(const FXString& file);
 
-	/// Return group name from gid if available
-	static FXString  group(FXuint gid);
+	/// \deprecated Use permissions() instead
+	static FXDEPRECATEDEXT FXString  group(FXuint gid);
 
-	/// Return group name of file if available
-	static FXString  group(const FXString& file);
+	/// \deprecated Use permissions() instead
+	static FXDEPRECATEDEXT FXString  group(const FXString& file);
 
-	/// Return permissions string
-	static FXString  permissions(FXuint mode);
+	/// \deprecated Use permissions() instead
+	static FXDEPRECATEDEXT FXString  permissions(FXuint mode);
 
-	/// Return file size in bytes
+	/// Return file size in bytes. Implemented as readMetadata()
 	static FXfval  size(const FXString& file);
 
 /**
 * Return last modified time for this file, on filesystems
 * where this is supported.  This is the time when any data
-* in the file was last modified.
+* in the file was last modified. Implemented as readMetadata()
 */
 	static FXTime  modified(const FXString& file);
 
 /**
 * Return last accessed time for this file, on filesystems
-* where this is supported.
+* where this is supported. Implemented as readMetadata()
 */
 	static FXTime  accessed(const FXString& file);
 
@@ -374,17 +388,10 @@ public:
 * Return created time for this file, on filesystems
 * where this is supported.  This is also the time when
 * ownership, permissions, links, and other meta-data may
-* have changed.
+* have changed. Implemented as readMetadata()
 */
 	static FXTime  created(const FXString& file);
 
-/**
-* Return touched time for this file, on filesystems
-* where this is supported.  This is the time when anything
-* at all, either contents or meta-data, about the file was
-* changed.
-*/
-	static FXTime  touched(const FXString& file);
 
 	/// Match filenames using *, ?, [^a-z], and so on
 	static FXbool  match(const FXString& pattern,const FXString& file,FXuint flags=(FILEMATCH_NOESCAPE|FILEMATCH_FILE_NAME));
@@ -397,10 +404,10 @@ public:
 	static FXint  listFiles(FXString*& filelist,const FXString& path,const FXString& pattern="*",FXuint flags=LIST_MATCH_ALL);
 
 	/// Return current time
-	static FXTime  now();
+	static FXDEPRECATEDEXT FXTime  now() { return FXTime::now(); }
 
 	/// Convert file time to date-string
-	static FXString  time(FXTime filetime);
+	static FXDEPRECATEDEXT FXString  time(FXTime filetime) { return filetime.toLocalTime().asString("%m/%d/%Y %H:%M:%S"); }
 
 	/**
 	* Convert file time to date-string as per strftime.
@@ -410,7 +417,7 @@ public:
 	*
 	* Some systems support additional conversions.
 	*/
-	static FXString  time(const FXchar *format,FXTime filetime);
+	static FXDEPRECATEDEXT FXString  time(const FXchar *format,FXTime filetime) { return filetime.toLocalTime().asString(format); }
 
 	/// Return file info as reported by system stat() function
 	static FXbool  info(const FXString& file,struct stat& inf);
@@ -462,6 +469,9 @@ public:
 	static FXString  symlink(const FXString& file);
 
 };
+
+//! For Qt emulation
+typedef FXFile QFile;
 
 }
 

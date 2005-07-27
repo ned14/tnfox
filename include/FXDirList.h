@@ -58,7 +58,7 @@ protected:
   FXlong        size;                 // File size (if a file)
   FXTime        date;                 // Time of item
 protected:
-  FXDirItem():assoc(NULL),link(NULL),list(NULL),size(0L),date(0){}
+  FXDirItem():assoc(NULL),link(NULL),list(NULL),size(0L) {}
 public:
   enum {
     FOLDER      = 512,          /// Directory item
@@ -72,7 +72,7 @@ public:
 public:
 
   /// Constructor
-  FXDirItem(const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL):FXTreeItem(text,oi,ci,ptr),assoc(NULL),link(NULL),list(NULL),size(0),date(0){state=HASITEMS;}
+  FXDirItem(const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL):FXTreeItem(text,oi,ci,ptr),assoc(NULL),link(NULL),list(NULL),size(0){state=HASITEMS;}
 
   /// Return true if this is a file item
   FXbool isFile() const { return (state&(FOLDER|BLOCKDEV|CHARDEV|FIFO|SOCK))==0; }

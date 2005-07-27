@@ -119,6 +119,137 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
+/* FXTime implementation, see FXTime.h */
+#ifdef WIN32
+static QMutex gmtimelock;
+#endif
+struct tm *FXTime::as_tm(struct tm *buf, bool inLocalTime) const
+{
+	time_t tmp=as_time_t();
+	if(inLocalTime==isLocalTime) {}
+	else if(inLocalTime && !isLocalTime)
+		tmp+=(time_t)(localTimeDiff()/micsPerSecond);
+	else if(!inLocalTime && isLocalTime)
+		tmp-=(time_t)(localTimeDiff()/micsPerSecond);
+#if defined(USE_POSIX) && defined(FOX_THREAD_SAFE)
+	return inLocalTime ? localtime_r(&tmp, buf) : gmtime_r(&tmp, buf);
+#else
+#ifdef WIN32
+	QMtxHold h(gmtimelock);
+#endif
+	*buf=inLocalTime ? *localtime(&tmp) : *gmtime(&tmp);
+	return buf;
+#endif
+}
+FXTime &FXTime::set_tm(struct tm *buf, bool isInLocalTime)
+{
+	set_time_t(mktime(buf));
+	if(isInLocalTime==isLocalTime) {}
+	else if(isInLocalTime && !isLocalTime)
+		value-=localTimeDiff();
+	else if(!isInLocalTime && isLocalTime)
+		value+=localTimeDiff();
+	return *this;
+}
+
+FXString FXTime::asString(const FXString &fmt) const
+{
+	FXString ret(fmt);
+	FXint insertcnt=0;
+	while(-1!=ret.find("%F"))
+		ret.substitute("%F", "%%"+FXString::number(++insertcnt), FALSE);
+	if(!isLocalTime)
+		ret.substitute("%Z", "UTC");
+
+	FXchar buffer[512];
+	struct tm tmresult;
+	FXint len=(FXint) strftime(buffer, sizeof(buffer), ret.text(), as_tm(&tmresult, isLocalTime));
+	ret.assign(buffer, len);
+
+	while(insertcnt--)
+		ret.arg(value % micsPerSecond, -6);
+	return ret;
+}
+
+FXTime FXTime::now(bool inLocalTime)
+{
+#ifdef WIN32
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	if(inLocalTime)
+	{
+		FILETIME t=ft;
+		FileTimeToLocalFileTime(&t, &ft);
+	}
+	FXTime ret(0, inLocalTime);
+	FXTIMEFROMFILETIME(ret, ft);
+	return ret;
+#else
+	struct timeval tv;
+	FXERRHOS(gettimeofday((::timeval *) &tv, 0));
+	FXTime ret((time_t)tv.tv_sec);
+	ret.value+=tv.tv_usec;
+	if(inLocalTime) ret.toLocalTime();
+	return ret;
+#endif
+}
+FXlong FXTime::localTimeDiff()
+{
+#ifdef WIN32
+	FILETIME i, o;
+	i.dwHighDateTime=1000;
+	i.dwLowDateTime=0;
+	FileTimeToLocalFileTime(&i, &o);
+	FXulong _i=((FXulong)i.dwHighDateTime<<32)|(FXulong)i.dwLowDateTime, _o=((FXulong)o.dwHighDateTime<<32)|(FXulong)o.dwLowDateTime;
+	return (FXlong)(_o-_i);
+#else
+	time_t tmp=1<<28;
+	struct tm buf1, buf2;
+#ifdef FOX_THREAD_SAFE
+	localtime_r(&tmp, &buf1);
+	gmtime_r(&tmp, &buf2);
+#else
+	buf1=*localtime(&tmp);
+	buf2=*gmtime(&tmp);
+#endif
+	// buf1 has local time, buf2 UTC
+	// mktime undoes localtime, so buf2 becomes minus local diff
+	return mktime(&buf1)-mktime(&buf2);
+#endif
+}
+
+FXStream &operator<<(FXStream &s, const FXTime &i)
+{
+	if(i.isLocalTime)
+	{
+		s << (FXuchar) 1;
+		FXTime tmp(i.value-FXTime::localTimeDiff());
+		s << i.value;
+	}
+	else
+		s << (FXuchar) 0 << i.value;
+	return s;
+}
+FXStream &operator>>(FXStream &s, FXTime &i)
+{
+	FXuchar l; s >> l;
+	if(l)
+	{
+		i.isLocalTime=true;
+		s >> i.value;
+		i.value+=FXTime::localTimeDiff();
+	}
+	else
+	{
+		i.isLocalTime=false;
+		s >> i.value;
+	}
+	return s;
+}
+
+
+
+
 static FXProcess *myprocess;
 static QList<FXProcess_StaticInitBase> *SIlist;
 static QList<FXProcess_StaticDepend> *SIdepend;
@@ -749,10 +880,11 @@ FXuint FXProcess::getMsCount()
 void FXProcess::getTimeOfDay(struct timeval *tv)
 {
 #ifdef USE_WINAPI
-	struct _timeb currSysTime;
-	_ftime(&currSysTime);
-	tv->tv_sec = currSysTime.time;
-	tv->tv_usec = 1000*currSysTime.millitm;
+	FILETIME ft;
+	GetSystemTimeAsFileTime(&ft);
+	FXulong time=((FXulong)ft.dwHighDateTime<<32)|(FXulong)ft.dwLowDateTime;
+	tv->tv_sec=(long)(time/(100*1000000));
+	tv->tv_usec=(long)((time % (100*1000000))/10);
 #endif
 #ifdef USE_POSIX
 	FXERRHOS(gettimeofday((::timeval *) tv, 0));
@@ -783,7 +915,7 @@ FXulong FXProcess::getNsCount()
 	// x86 based platforms which have a RTDSC
 	struct timeval tv;
 	FXERRHOS(gettimeofday((::timeval *) &tv, 0));
-	return ((FXulong) tv.tv_sec*1000000000LL)+tv.tv_usec;
+	return ((FXulong) tv.tv_sec*1000000000LL)+tv.tv_usec*1000;
 #endif
 }
 

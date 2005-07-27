@@ -22,7 +22,7 @@
 #ifndef QFILEINFO_H
 #define QFILEINFO_H
 
-#include "FXString.h"
+#include "FXTime.h"
 #include "QDir.h"
 #include "FXACL.h"
 
@@ -119,6 +119,8 @@ public:
 	bool isWritable() const { return isWriteable(); }
 	//! Returns true if the entry is an executable
     bool isExecutable() const;
+	//! Returns the flags for this entry in the format FX::FXFile::MetaFileFlags
+	FXuint metaFlags() const;
 	//! Returns true if the entry is hidden
 	bool isHidden() const;
 	//! Returns true if the entry's path is relative
@@ -147,27 +149,16 @@ public:
 	FXString sizeAsString() const;
 	//! Returns the datestamp of when the entry was created (Windows only).
 	FXTime created() const;
-	//! Returns the datestamp formatted as a string (uses a \c strftime format)
-	FXString createdAsString(const FXString &format="%Y/%b/%d %H:%M:%S") const;
+	//! Returns the datestamp formatted as a string (see FX::FXTime)
+	FXString createdAsString(const FXString &format="%Y/%b/%d %H:%M:%S.%F %Z", bool inLocalTime=true) const;
 	//! Returns the datestamp of when the entry's data was last modified
     FXTime lastModified() const;
-	//! Returns the datestamp formatted as a string (uses a \c strftime format)
-	FXString lastModifiedAsString(const FXString &format="%Y/%b/%d %H:%M:%S") const;
+	//! Returns the datestamp formatted as a string (see FX::FXTime)
+	FXString lastModifiedAsString(const FXString &format="%Y/%b/%d %H:%M:%S.%F %Z", bool inLocalTime=true) const;
 	//! Returns the datestamp of when the entry was last accessed
 	FXTime lastRead() const;
-	//! Returns the datestamp formatted as a string (uses a \c strftime format)
-	FXString lastReadAsString(const FXString &format="%Y/%b/%d %H:%M:%S") const;
-	/*! Returns the datestamp of when the entry was last changed (POSIX only).
-	In case you're wondering what the difference from lastModified() is,
-	last changed is updated when anything is changed. lastModified() is
-	updated only when the data is modified and lastRead() when the data
-	was last opened for access.
-	*/
-	FXTime lastChanged() const;
-	//! Returns the datestamp formatted as a string (uses a \c strftime format)
-	FXString lastChangedAsString(const FXString &format="%Y/%b/%d %H:%M:%S") const;
-	//! Returns true if the path is hidden
-	static bool isHidden(const FXString &path);
+	//! Returns the datestamp formatted as a string (see FX::FXTime)
+	FXString lastReadAsString(const FXString &format="%Y/%b/%d %H:%M:%S.%F %Z", bool inLocalTime=true) const;
 };
 
 } // namespace

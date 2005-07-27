@@ -61,7 +61,7 @@ protected:
   FXlong        size;                   // File size
   FXTime        date;                   // File time
 protected:
-  FXFileItem():assoc(NULL),link(NULL),size(0),date(0){}
+  FXFileItem():assoc(NULL),link(NULL),size(0){}
 protected:
   enum{
     FOLDER     = 64,                    // Directory item
@@ -75,7 +75,7 @@ protected:
     };
 public:
   /// Constructor
-  FXFileItem(const FXString& text,FXIcon* bi=NULL,FXIcon* mi=NULL,void* ptr=NULL):FXIconItem(text,bi,mi,ptr),assoc(NULL),link(NULL),size(0L),date(0){}
+  FXFileItem(const FXString& text,FXIcon* bi=NULL,FXIcon* mi=NULL,void* ptr=NULL):FXIconItem(text,bi,mi,ptr),assoc(NULL),link(NULL),size(0L){}
 
   /// Return true if this is a file item
   FXbool isFile() const { return (state&(FOLDER|BLOCKDEV|CHARDEV|FIFO|SOCK|SHARE))==0; }

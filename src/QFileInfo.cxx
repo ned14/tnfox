@@ -47,11 +47,13 @@ struct FXDLLLOCAL QFileInfoPrivate
 	bool cached, exists;
 	bool readable, writeable, executable;
 	FXString pathname, linkedto;
-	struct stat pathstat;
+	FXuint flags, hardLinks;
+	FXfval size, compressedSize;
+	FXTime created, lastModified, lastAccessed;
 	FXACL permissions;
 	QFileInfoPrivate(const FXString &path) : cached(true), exists(false), 
 		readable(false), writeable(false), executable(false),
-		pathname(path), permissions() { memset(&pathstat, 0, sizeof(struct stat)); }
+		pathname(path), flags(0), hardLinks(0), size(0), compressedSize(0), permissions() { }
 };
 
 QFileInfo::QFileInfo() : p(0)
@@ -97,23 +99,23 @@ bool QFileInfo::operator<(const QFileInfo &o) const
 	FXint ret;
 	if((ret=comparecase(p->pathname, o.p->pathname))==0)
 	{
-		if(p->pathstat.st_size <o.p->pathstat.st_size)  return true;
-		if(p->pathstat.st_mtime<o.p->pathstat.st_mtime) return true;
-		if(p->pathstat.st_atime<o.p->pathstat.st_atime) return true;
-		if(p->pathstat.st_ctime<o.p->pathstat.st_ctime) return true;
-		if(p->pathstat.st_nlink<o.p->pathstat.st_nlink) return true;
+		if(p->size        <o.p->size)  return true;
+		if(p->lastModified<o.p->lastModified) return true;
+		if(p->lastAccessed<o.p->lastAccessed) return true;
+		if(p->created     <o.p->created) return true;
+		if(p->hardLinks   <o.p->hardLinks) return true;
 	}
 	return ret<0;
 }
 bool QFileInfo::operator==(const QFileInfo &o) const
 {
 	if(comparecase(p->pathname, o.p->pathname)!=0) return false;
-	if(p->pathstat.st_size !=o.p->pathstat.st_size)  return false;
-	if(p->pathstat.st_mtime!=o.p->pathstat.st_mtime) return false;
-	if(p->pathstat.st_atime!=o.p->pathstat.st_atime) return false;
-	if(p->pathstat.st_ctime!=o.p->pathstat.st_ctime) return false;
-	if(p->pathstat.st_nlink!=o.p->pathstat.st_nlink) return false;
-	if(p->permissions!=o.p->permissions) return false;
+	if(p->size        !=o.p->size)  return false;
+	if(p->lastModified!=o.p->lastModified) return false;
+	if(p->lastAccessed!=o.p->lastAccessed) return false;
+	if(p->created     !=o.p->created) return false;
+	if(p->hardLinks   !=o.p->hardLinks) return false;
+	if(p->permissions !=o.p->permissions) return false;
 	return true;
 }
 bool QFileInfo::operator>(const QFileInfo &o) const
@@ -121,11 +123,11 @@ bool QFileInfo::operator>(const QFileInfo &o) const
 	FXint ret;
 	if((ret=comparecase(p->pathname, o.p->pathname))==0)
 	{
-		if(p->pathstat.st_size <o.p->pathstat.st_size)  return true;
-		if(p->pathstat.st_mtime<o.p->pathstat.st_mtime) return true;
-		if(p->pathstat.st_atime<o.p->pathstat.st_atime) return true;
-		if(p->pathstat.st_ctime<o.p->pathstat.st_ctime) return true;
-		if(p->pathstat.st_nlink<o.p->pathstat.st_nlink) return true;
+		if(p->size        >o.p->size)  return true;
+		if(p->lastModified>o.p->lastModified) return true;
+		if(p->lastAccessed>o.p->lastAccessed) return true;
+		if(p->created     >o.p->created) return true;
+		if(p->hardLinks   >o.p->hardLinks) return true;
 	}
 	return ret>0;
 }
@@ -154,12 +156,13 @@ void QFileInfo::refresh()
 {
 	if(p->cached)
 	{
-		if((p->exists=FXFile::info(p->pathname, p->pathstat)!=0))
+		if((p->exists=FXFile::exists(p->pathname)!=0))
 		{
 			p->readable=FXFile::isReadable(p->pathname)!=0;
 			p->writeable=FXFile::isWritable(p->pathname)!=0;
 			p->executable=FXFile::isExecutable(p->pathname)!=0;
 			p->linkedto=FXFile::symlink(p->pathname);
+			FXFile::readMetadata(p->pathname, &p->flags, &p->size, &p->created, &p->lastModified, &p->lastAccessed, &p->compressedSize, &p->hardLinks);
 			// We may not be allowed to read the permissions, so
 			// handle failure gracefully
 			try
@@ -225,9 +228,13 @@ bool QFileInfo::isExecutable() const
 {
 	return p->cached ? p->executable : FXFile::isExecutable(p->pathname)!=0;
 }
+FXuint QFileInfo::metaFlags() const
+{
+	return p->cached ? p->flags : FXFile::metaFlags(p->pathname);
+}
 bool QFileInfo::isHidden() const
 {
-	return isHidden(p->pathname);
+	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsHidden);
 }
 bool QFileInfo::isRelative() const
 {
@@ -244,15 +251,15 @@ bool QFileInfo::convertToAbs()
 }
 bool QFileInfo::isFile() const
 {
-	return p->cached ? S_ISREG(p->pathstat.st_mode) : FXFile::isFile(p->pathname)!=0;
+	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsFile);
 }
 bool QFileInfo::isDir() const
 {
-	return p->cached ? S_ISDIR(p->pathstat.st_mode) : FXFile::isDirectory(p->pathname)!=0;
+	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsDirectory);
 }
 bool QFileInfo::isSymLink() const
 {
-	return p->cached ? S_ISLNK(p->pathstat.st_mode) : FXFile::isLink(p->pathname)!=0;
+	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsLink);
 }
 FXString QFileInfo::readLink() const
 {
@@ -278,7 +285,7 @@ FXString QFileInfo::permissionsAsString() const
 }
 FXfval QFileInfo::size() const
 {
-	return p->cached ? p->pathstat.st_size : FXFile::size(p->pathname);
+	return p->cached ? p->size : FXFile::size(p->pathname);
 }
 FXString QFileInfo::sizeAsString() const
 {
@@ -286,55 +293,33 @@ FXString QFileInfo::sizeAsString() const
 }
 FXTime QFileInfo::created() const
 {
-#ifdef USE_WINAPI
-	return p->cached ? p->pathstat.st_ctime : FXFile::created(p->pathname);
-#endif
-#ifdef USE_POSIX
-	return 0L;
-#endif
+	return p->cached ? p->created : FXFile::created(p->pathname);
 }
-FXString QFileInfo::createdAsString(const FXString &format) const
+FXString QFileInfo::createdAsString(const FXString &format, bool inLocalTime) const
 {
-	return FXFile::time(format.text(), created());
+	FXTime t(created());
+	if(inLocalTime) t.toLocalTime();
+	return t.asString(format);
 }
 FXTime QFileInfo::lastModified() const
 {
-	return p->cached ? p->pathstat.st_mtime : FXFile::modified(p->pathname);
+	return p->cached ? p->lastModified : FXFile::modified(p->pathname);
 }
-FXString QFileInfo::lastModifiedAsString(const FXString &format) const
+FXString QFileInfo::lastModifiedAsString(const FXString &format, bool inLocalTime) const
 {
-	return FXFile::time(format.text(), lastModified());
+	FXTime t(lastModified());
+	if(inLocalTime) t.toLocalTime();
+	return t.asString(format);
 }
 FXTime QFileInfo::lastRead() const
 {
-	return p->cached ? p->pathstat.st_atime : FXFile::accessed(p->pathname);
+	return p->cached ? p->lastAccessed : FXFile::accessed(p->pathname);
 }
-FXString QFileInfo::lastReadAsString(const FXString &format) const
+FXString QFileInfo::lastReadAsString(const FXString &format, bool inLocalTime) const
 {
-	return FXFile::time(format.text(), lastRead());
-}
-FXTime QFileInfo::lastChanged() const
-{
-#ifdef USE_WINAPI
-	return 0L;
-#endif
-#ifdef USE_POSIX
-	return p->cached ? p->pathstat.st_ctime : FXFile::created(p->pathname);
-#endif
-}
-FXString QFileInfo::lastChangedAsString(const FXString &format) const
-{
-	return FXFile::time(format.text(), lastChanged());
-}
-bool QFileInfo::isHidden(const FXString &path)
-{
-#ifdef USE_WINAPI
-	return (GetFileAttributes(FXUnicodify<>(path, true).buffer()) & FILE_ATTRIBUTE_HIDDEN)==FILE_ATTRIBUTE_HIDDEN;
-#endif
-#ifdef USE_POSIX
-	// Easy - is the first character a '.'?
-	return FXFile::name(path)[0]=='.';
-#endif
+	FXTime t(lastRead());
+	if(inLocalTime) t.toLocalTime();
+	return t.asString(format);
 }
 
 } // namespace
