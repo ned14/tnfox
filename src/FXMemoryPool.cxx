@@ -766,3 +766,16 @@ void unfailonfree(void *p, FXMemoryPool *heap) throw()
 }
 
 } // namespace
+
+/* Declare some C API functions reflecting our allocator so C code
+bound into the library can find them */
+extern "C" void *tnfxmalloc(size_t size) { return FX::malloc(size); }
+/*! \ingroup fxmemoryops
+Allocates memory */
+extern "C" void *tnfxcalloc(size_t no, size_t size) { return FX::calloc(no, size); }
+/*! \ingroup fxmemoryops
+Resizes memory */
+extern "C" void *tnfxrealloc(void *p, size_t size) { return FX::realloc(p, size); }
+/*! \ingroup fxmemoryops
+Frees memory */
+extern "C" void tnfxfree(void *p) { return FX::free(p); }

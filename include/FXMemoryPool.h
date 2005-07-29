@@ -3,7 +3,7 @@
 *                              Custom Memory Pool                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2005 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -291,6 +291,19 @@ public:
 };
 
 } // namespace
+
+/*! \ingroup fxmemoryops
+Allocates memory */
+extern "C" FXAPI FXMALLOCATTR void *tnfxmalloc(size_t size);
+/*! \ingroup fxmemoryops
+Allocates memory */
+extern "C" FXAPI FXMALLOCATTR void *tnfxcalloc(size_t no, size_t size);
+/*! \ingroup fxmemoryops
+Resizes memory */
+extern "C" FXAPI FXMALLOCATTR void *tnfxrealloc(void *p, size_t size);
+/*! \ingroup fxmemoryops
+Frees memory */
+extern "C" FXAPI void tnfxfree(void *p);
 
 #endif
 #endif
