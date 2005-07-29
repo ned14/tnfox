@@ -111,6 +111,10 @@ all extension classes ready for Unicode support when FOX v1.6 is merged.
 + Added FXFile::readMetadata() and reimplemented all other FXFile metadata
 functions to use it. Reimplemented QFileInfo to use it.
 R *** Issued snapshot 3
++ Added a copy of sqlite (http://www.sqlite.org/)
++ Added C API functions tnfxmalloc() etc. to FXMemoryPool
++ Added fxbitscan() and fxbitscanrev() with x86/x64 optimised versions
++ Added fxassemblerops.h and fxbitscan(), fxendianswap() etc to it
 
 
 v0.85 13th Feb 2005:
