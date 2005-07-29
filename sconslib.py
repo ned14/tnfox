@@ -215,6 +215,32 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if onWindows:
         # Seems to need this on some installations
         env['ENV']['TMP']=os.environ['TMP']
+
+    if os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
+        env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
+        env['CPPPATH']+=[prefixpath+"src/sqlite"]
+        # Generate a static library of SQLite and add to ourselves
+        filelist=os.listdir(prefixpath+"src/sqlite/src")
+        idx=0
+        while idx<len(filelist):
+            if filelist[idx][-2:]!=".c" or filelist[idx][:3]=="os_":
+                del filelist[idx]
+            else: idx+=1
+        del idx
+        if onWindows:
+            filelist.append("os_win.c")
+        else:
+            filelist.append("os_unix.c")
+        # Compile SQLite threadsafe with UTF16 support removed
+        objects=[env.SharedObject(builddir+"/sqlite/"+getBase(x), prefixpath+"src/sqlite/src/"+x,
+            CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)]) for x in filelist]
+        del filelist
+        libsqlite=StaticLibrary(builddir+"/sqlite", objects)
+        del objects
+    else:
+        print "SQLite not found in TnFOX sources, disabling support!\n"
+        libsqlite=None
+
     for key,value in locals().items():
         cglobals[key]=value
 

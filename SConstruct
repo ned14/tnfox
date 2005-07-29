@@ -3,7 +3,7 @@
 #                                 TnFOX make file                               *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#        Copyright (C) 2003-2005 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -29,6 +29,7 @@ doConfTests(env)
 updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
 objects=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", False)]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", True)]
+if libsqlite: objects.append(libsqlite)
 for object in objects:
     env.Depends(object, updmunged)
 if onWindows:
