@@ -108,6 +108,17 @@ public:
 	}
 	//! Appends the item \em d onto the list
 	void append(const type *d) { FXEXCEPTION_STL1 { push_back(const_cast<type *>(d)); } FXEXCEPTION_STL2; }
+	//! Extends the list to \em no items if not that already
+	bool extend(uint no)
+	{
+		uint cs=std::vector<type *>::size();
+		if(cs<no)
+		{
+			std::vector<type *>::resize(no);
+			return true;
+		}
+		return false;
+	}
 	//! Removes the item at index \em i
 	bool remove(uint i)
 	{
@@ -267,17 +278,19 @@ public:
 		return count;
 	}
 	//! Replaces item at index \em i with \em d
-	bool replace(uint i, const type *d)
+	bool replace(uint i, const type *d, bool callDeleteItem=true)
 	{
 		if(isEmpty()) return false;
 		typename std::vector<type *>::iterator it=std::vector<type *>::begin()+i;
-		*it=d;
+		if(callDeleteItem)
+			deleteItem(*it);
+		*it=const_cast<type *>(d);
 		//list<type *>::erase(list<type *>::begin()+i);
 		//list<type *>::insert(list<type *>::begin()+i, d);
 		return true;
 	}
 	//! Replaces item at iterator with \em d
-	bool replaceAtIter(QPtrVectorIterator<type> &it, const type *d);
+	bool replaceAtIter(QPtrVectorIterator<type> &it, const type *d, bool callDeleteItem=true);
 	//! Returns the item at index \em i
 	type *at(uint i) const { return std::vector<type *>::empty() ? 0 : *(std::vector<type *>::begin()+i); }
 	//! \overload
@@ -436,8 +449,10 @@ template<class type> inline bool QPtrVector<type>::takeByIter(QPtrVectorIterator
 	return true;
 }
 
-template<class type> inline bool QPtrVector<type>::replaceAtIter(QPtrVectorIterator<type> &it, const type *d)
+template<class type> inline bool QPtrVector<type>::replaceAtIter(QPtrVectorIterator<type> &it, const type *d, bool callDeleteItem)
 {
+	if(callDeleteItem)
+		deleteItem(*it);
 	*it.int_getIterator()=const_cast<type *>(d);
 	return true;
 }
