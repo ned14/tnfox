@@ -24,8 +24,8 @@ MSVCVersion=710
 if conf.CheckMSVC80():
     MSVCVersion=800
 env=conf.Finish()
-# Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping
-cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope')
+# Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping, wchar_t native
+cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t')
 assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                        # Only functions may alias
