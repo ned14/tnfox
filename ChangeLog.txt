@@ -35,6 +35,7 @@ B FXProcess::getNsCount() was misrepresenting microseconds as nanoseconds
 on POSIX
 B FXACLEntity::group() of owner() and everything() wasn't correct on POSIX
 R *** Issued snapshot 3
+B malloc_dbg on MSVC wasn't detecting failure to allocate memory (segfault)
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -115,6 +116,14 @@ R *** Issued snapshot 3
 + Added C API functions tnfxmalloc() etc. to FXMemoryPool
 + Added fxbitscan() and fxbitscanrev() with x86/x64 optimised versions
 + Added fxassemblerops.h and fxbitscan(), fxendianswap() etc to it
++ Added magic disable idx to Generic::dynamicAt
++ Added noDeleteExtArray to QMemArray
++ Added Generic::BiggestValue
++ Added FXSQLDB and FXSQLDBRegistry
++ Added FXSQLDB_sqlite3 driver
++ Added QPtrVector::extend()
++ Added Generic::hasSerialise and hasDeserialise
+* Made all FXStream integral operators inline
 
 
 v0.85 13th Feb 2005:
