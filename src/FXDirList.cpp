@@ -918,22 +918,6 @@ fnd:  *pn=item;
 #else
 
 
-// Convert FILETIME (# 100ns since 01/01/1601) to time_t (# s since 01/01/1970)
-static time_t fxfiletime(const FILETIME& ft){
-  FXlong ll=(((FXlong)ft.dwHighDateTime)<<32)+((FXlong)ft.dwLowDateTime);
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-  ll=ll-116444736000000000LL;
-#elif defined(__WATCOM_INT64__)
-  ll=ll-116444736000000000i64;
-#else
-  ll=ll-116444736000000000L;
-#endif
-  ll=ll/10000000;
-  if(ll<0) ll=0;
-  return (time_t)ll;
-  }
-
-
 // List root directories
 void FXDirList::listRootItems(){
   FXDirItem      *oldlist,*newlist,**po,**pp,**pn,*item,*link;
@@ -1028,7 +1012,7 @@ fnd:*pn=item;
     item->closedIcon=closedicon;
     item->size=0L;
     item->assoc=fileassoc;
-    item->date=0;
+    item->date=FXTime(0ULL);
 
     // Create item
     if(id()) item->create();
@@ -1159,7 +1143,7 @@ fnd:  *pn=item;
       item->closedIcon=closedicon;
       item->size=(((FXlong)ffData.nFileSizeHigh)<<32)+((FXlong)ffData.nFileSizeLow);
       item->assoc=fileassoc;
-      item->date=fxfiletime(ffData.ftLastWriteTime);
+	  FXTIMEFROMFILETIME(item->date, ffData.ftLastWriteTime);
 
       // Create item
       if(id()) item->create();

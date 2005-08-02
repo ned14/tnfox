@@ -1807,27 +1807,7 @@ FXString FXFile::permissions(FXuint mode){
   return result;
   }
 
-/*
-// Convert FILETIME (# 100ns since 01/01/1601) to time_t (# s since 01/01/1970)
-static time_t fxfiletime(const FILETIME& ft){
-  FXlong ll=(((FXlong)ft.dwHighDateTime)<<32) | (FXlong)ft.dwLowDateTime;
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-  ll=ll-116444736000000000LL;
-#else
-  ll=ll-116444736000000000L;    // 0x19DB1DED53E8000
-#endif
-  ll=ll/10000000;
-  if(ll<0) ll=0;
-  return (time_t)ll;
-  }
-*/
 
-//    hFile=CreateFile(pathname,GENERIC_READ,0,NULL,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS,NULL);
-//    if(hFile!=INVALID_HANDLE_VALUE){
-//      GetFileTime(hFile,NULL,NULL,&ftLastWriteTime);
-//      CloseHandle(hFile);
-
-//       filetime=fxfiletime(ftLastWriteTime);
 
 // Return time file was last modified
 FXTime FXFile::modified(const FXString& file)

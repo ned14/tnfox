@@ -163,7 +163,6 @@ FXFileList::FXFileList(){
   associations=NULL;
   list=NULL;
   dropaction=DRAG_MOVE;
-  timestamp=0;
   imagesize=32;
   counter=0;
   };
@@ -200,7 +199,6 @@ FXFileList::FXFileList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,F
   if(!(options&FILELIST_NO_OWN_ASSOC)) associations=new FXFileDict(getApp());
   list=NULL;
   dropaction=DRAG_MOVE;
-  timestamp=0;
   imagesize=32;
   counter=0;
   }
@@ -1346,19 +1344,6 @@ fnd:  *pn=item;
 #else
 
 
-// Convert FILETIME (# 100ns since 01/01/1601) to time_t (# s since 01/01/1970)
-static time_t fxfiletime(const FILETIME& ft){
-  FXlong ll=(((FXlong)ft.dwHighDateTime)<<32)+((FXlong)ft.dwLowDateTime);
-#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(__SC__)
-  ll=ll-116444736000000000LL;
-#else
-  ll=ll-116444736000000000L;
-#endif
-  ll=ll/10000000;
-  return (time_t)ll;
-  }
-
-
 // List directory
 void FXFileList::listItems(FXbool force){
   FXFileItem *oldlist=list;     // Old insert-order list
@@ -1378,7 +1363,7 @@ void FXFileList::listItems(FXbool force){
   FXString mod;
   FXlong filesize;
   FXint istop;
-  time_t filetime;
+  FXTime filetime;
   WIN32_FIND_DATA ffData;
   SHFILEINFO sfi;
   HANDLE hFindFile;
@@ -1432,7 +1417,7 @@ void FXFileList::listItems(FXbool force){
       pathname+=name;
 
       // Convert it
-      filetime=fxfiletime(ffData.ftLastWriteTime);
+	  FXTIMEFROMFILETIME(filetime, ffData.ftLastWriteTime);
       filesize=(((FXlong)ffData.nFileSizeHigh)<<32)+((FXlong)ffData.nFileSizeLow);
 
       // Find it, and take it out from the old list if found
