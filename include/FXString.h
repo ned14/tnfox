@@ -383,9 +383,9 @@ public:
   FXString &arg(char c, FXint fieldwidth=0);
   FXString &arg(FXlong num,   FXint fieldwidth=0, FXint base=10);
   FXString &arg(FXulong num,  FXint fieldwidth=0, FXint base=10);
-  FXString &arg(FXint num,    FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXuint) num) : (FXlong) num, fieldwidth, base); }
+  FXString &arg(FXint num,    FXint fieldwidth=0, FXint base=10) { return (base!=10) ? arg((FXulong)(FXuint) num, fieldwidth, base) : arg((FXlong) num, fieldwidth, base); }
   FXString &arg(FXuint num,   FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
-  FXString &arg(FXshort num,  FXint fieldwidth=0, FXint base=10) { return arg((base!=10) ? (FXulong)((FXushort) num) : (FXlong) num, fieldwidth, base); }
+  FXString &arg(FXshort num,  FXint fieldwidth=0, FXint base=10) { return (base!=10) ? arg((FXulong)(FXushort) num, fieldwidth, base) : arg((FXlong) num, fieldwidth, base); }
   FXString &arg(FXushort num, FXint fieldwidth=0, FXint base=10) { return arg((FXulong) num, fieldwidth, base); }
 #if !(defined(__LP64__) || defined(_LP64) || (_MIPS_SZLONG == 64) || (__WORDSIZE == 64))
   // Must declare overloads for long when long!=FXlong
@@ -398,9 +398,9 @@ public:
   /// Generates statically a textual representation of a number
   static FXString number(FXlong num,   FXint base=10);
   static FXString number(FXulong num,  FXint base=10);
-  static FXString number(FXint num,    FXint base=10) { return number((base!=10) ? (FXulong)((FXuint) num) : (FXlong) num, base); }
+  static FXString number(FXint num,    FXint base=10) { return (base!=10) ? number((FXulong)(FXuint) num, base) : number((FXlong) num, base); }
   static FXString number(FXuint num,   FXint base=10) { return number((FXulong) num, base); }
-  static FXString number(FXshort num,  FXint base=10) { return number((base!=10) ? (FXulong)((FXushort) num) : (FXlong) num, base); }
+  static FXString number(FXshort num,  FXint base=10) { return (base!=10) ? number((FXulong)(FXushort) num, base) : number((FXlong) num, base); }
   static FXString number(FXushort num, FXint base=10) { return number((FXulong) num, base); }
   static FXString number(double num, FXchar fmt='g', int prec=-1);
   static FXString number(void *ptr) { return number((FXulong)(FXuval) ptr, 16); }
