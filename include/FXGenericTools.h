@@ -117,11 +117,11 @@ template<typename A, typename B> struct select<false, A, B>
 */
 template<typename A, typename B> struct sameType
 {
-	enum { value=false };
+	static const bool value=false;
 };
 template<typename T> struct sameType<T, T>
 {
-	enum { value=true };
+	static const bool value=true;
 };
 /*! \struct addRef
 \ingroup generic
@@ -165,11 +165,11 @@ private:
 	typedef typename addConstRef<from>::value refFrom;
 	typedef convertiblePrivate::impl<refTo, refFrom> impl;
 public:
-	enum { value=sizeof(impl::test(impl::makeFrom()))==sizeof(char) };
+	static const bool value=sizeof(impl::test(impl::makeFrom()))==sizeof(char);
 };
-template<typename T> struct convertible<void, T> { enum { value=false }; };
-template<typename T> struct convertible<T, void> { enum { value=false }; };
-template<> struct convertible<void, void> { enum { value=true }; };
+template<typename T> struct convertible<void, T> { static const bool value=false; };
+template<typename T> struct convertible<T, void> { static const bool value=false; };
+template<> struct convertible<void, void> { static const bool value=true; };
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -185,61 +185,61 @@ Example:
 template<typename ptr> struct lessIndir
 {
 	typedef ptr value;
-	enum { failed=true };
+	static const bool failed=true;
 };
 template<typename ptr> struct lessIndir<ptr *>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<const ptr *>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<volatile ptr *>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<const volatile ptr *>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<ptr &>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<const ptr &>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<volatile ptr &>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 template<typename ptr> struct lessIndir<const volatile ptr &>
 {
 	typedef ptr value;
-	enum { failed=false };
+	static const bool failed=false;
 };
 /*! \struct indirs
 \ingroup generic
 \brief Returns how many levels of indirection this type has eg; int ** is two.
 */
-template<typename type> struct indirs { enum { value=0 }; };
-template<typename type> struct indirs<type &> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<const type &> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<volatile type &> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<const volatile type &> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<type *> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<const type *> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<volatile type *> { enum { value=1+indirs<type>::value }; };
-template<typename type> struct indirs<const volatile type *> { enum { value=1+indirs<type>::value }; };
+template<typename type> struct indirs { static const int value=0; };
+template<typename type> struct indirs<type &> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<const type &> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<volatile type &> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<const volatile type &> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<type *> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<const type *> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<volatile type *> { static const int value=1+indirs<type>::value; };
+template<typename type> struct indirs<const volatile type *> { static const int value=1+indirs<type>::value; };
 /*! \struct leastIndir
 \ingroup generic
 \brief Removes all levels of indirection from a pointer or reference type
@@ -447,7 +447,7 @@ Example:
 typedef TL::create<char, short, int>::value Ints;
 template<typename type> Handler
 {
-	enum { typeIsInt=typename TL::find<Ints, type>::value>=0 };
+	static const bool typeIsInt=TL::find<Ints, type>::value>=0 };
 };
 \endcode
 A \b very powerful tool is FX::Generic::TL::instantiateH which couples with
@@ -500,10 +500,10 @@ namespace TL
 	{
 		StaticError<typelist> ERROR_Not_A_TypeList;
 	};
-	template<> struct length<NullType> { enum { value=0 }; };
+	template<> struct length<NullType> { static const int value=0; };
 	template<class A, class B> struct length< item<A, B> >
 	{
-		enum { value=1+length<B>::value };
+		static const int value=1+length<B>::value;
 	};
 	/*! \struct at
 	\ingroup TL
@@ -536,14 +536,14 @@ namespace TL
 	{
 		StaticError<typelist> ERROR_Not_A_TypeList;
 	};
-	template<typename type> struct find<NullType, type> { enum { value=-1 }; };
-	template<typename type, class next> struct find<item<type, next>, type> { enum { value=0 }; };
+	template<typename type> struct find<NullType, type> { static const int value=-1; };
+	template<typename type, class next> struct find<item<type, next>, type> { static const int value=0; };
 	template<typename A, class next, typename type> struct find<item<A, next>, type>
 	{
 	private:
-		enum { temp=find<next, type>::value };
+		static const int temp=find<next, type>::value;
 	public:
-		enum { value=(temp==-1 ? -1 : 1+temp) };
+		static const int value=(temp==-1 ? -1 : 1+temp);
 	};
 	/*! \struct findC
 	\ingroup TL
@@ -551,7 +551,7 @@ namespace TL
 	*/
 	template<class typelist, typename type> struct findC
 	{
-		enum { value=find<typelist, type>::value };
+		static const int value=find<typelist, type>::value;
 	private:
 		typename Generic::select<value==-1, StaticError<typelist>, NullType>::value ERROR_Type_Not_Found;
 	};
@@ -563,15 +563,15 @@ namespace TL
 	{
 		StaticError<typelist> ERROR_Not_A_TypeList;
 	};
-	template<typename type> struct findParent<NullType, type> { enum { value=-1 }; };
-	template<typename type, class next> struct findParent<item<type, next>, type> { enum { value=0 }; };
+	template<typename type> struct findParent<NullType, type> { static const int value=-1; };
+	template<typename type, class next> struct findParent<item<type, next>, type> { static const int value=0; };
 	template<typename A, class next, typename type> struct findParent<item<A, next>, type>
 	{
 	private:
-		enum { isSubclass=convertible<A, type>::value };
-		enum { temp=isSubclass ? 0 : findParent<next, type>::value };
+		static const bool isSubclass=convertible<A, type>::value;
+		static const int temp=isSubclass ? 0 : findParent<next, type>::value;
 	public:
-		enum { value=(temp==-1 ? -1 : 1+temp-isSubclass) };
+		static const int value=(temp==-1 ? -1 : 1+temp-isSubclass);
 	};
 	/*! \struct findParentC
 	\ingroup TL
@@ -579,7 +579,7 @@ namespace TL
 	*/
 	template<class typelist, typename type> struct findParentC
 	{
-		enum { value=findParent<typelist, type>::value };
+		static const int value=findParent<typelist, type>::value;
 	private:
 		typename Generic::select<value==-1, StaticError<typelist>, NullType>::value ERROR_Type_Not_Found;
 	};
@@ -663,7 +663,7 @@ namespace TL
 	This example outputs a typelist of all those members of a typelist which can be
 	converted to an int:
 	\code
-	template<typename type> struct predicate { enum { value=Generic::convertible<int, type>::value }; };
+	template<typename type> struct predicate { static const bool value=Generic::convertible<int, type>::value; };
 	typedef Generic::TL::filter<typelist, predicate>::value TypesConvertibleToInt;
 	\endcode
 	*/
@@ -885,32 +885,32 @@ template<typename fn> struct FnInfo
 {
 	typedef fn resultType;
 	typedef NullType objectType;
-	enum { isConst=false };
-	enum { arity=-1 };
+	static const bool isConst=false;
+	static const int arity=-1;
 	typedef typename TL::create<resultType>::value asList;
 };
 template<typename R, typename O> struct FnInfo<R (O::*)()>
 {
 	typedef R resultType;
 	typedef O objectType;
-	enum { isConst=false };
-	enum { arity=0 };
+	static const bool isConst=false;
+	static const int arity=0;
 	typedef typename TL::create<resultType>::value asList;
 };
 template<typename R, typename O> struct FnInfo<R (O::*)() const>
 {
 	typedef R resultType;
 	typedef O objectType;
-	enum { isConst=true };
-	enum { arity=0 };
+	static const bool isConst=true;
+	static const int arity=0;
 	typedef typename TL::create<resultType>::value asList;
 };
 template<typename R> struct FnInfo<R (*)(void)>
 {
 	typedef R resultType;
 	typedef NullType objectType;
-	enum { isConst=false };
-	enum { arity=0 };
+	static const bool isConst=false;
+	static const int arity=0;
 	typedef typename TL::create<resultType>::value asList;
 };
 template<typename R, typename O, typename P1> struct FnInfo<R (O::*)(P1)>
@@ -918,8 +918,8 @@ template<typename R, typename O, typename P1> struct FnInfo<R (O::*)(P1)>
 	typedef R resultType;
 	typedef O objectType;
 	typedef P1 par1Type;
-	enum { isConst=false };
-	enum { arity=1 };
+	static const bool isConst=false;
+	static const int arity=1;
 	typedef typename TL::create<resultType, par1Type>::value asList;
 };
 template<typename R, typename O, typename P1> struct FnInfo<R (O::*)(P1) const>
@@ -927,8 +927,8 @@ template<typename R, typename O, typename P1> struct FnInfo<R (O::*)(P1) const>
 	typedef R resultType;
 	typedef O objectType;
 	typedef P1 par1Type;
-	enum { isConst=true };
-	enum { arity=1 };
+	static const bool isConst=true;
+	static const int arity=1;
 	typedef typename TL::create<resultType, par1Type>::value asList;
 };
 template<typename R, typename P1> struct FnInfo<R (*)(P1)>
@@ -936,8 +936,8 @@ template<typename R, typename P1> struct FnInfo<R (*)(P1)>
 	typedef R resultType;
 	typedef NullType objectType;
 	typedef P1 par1Type;
-	enum { isConst=false };
-	enum { arity=1 };
+	static const bool isConst=false;
+	static const int arity=1;
 	typedef typename TL::create<resultType, par1Type>::value asList;
 };
 template<typename R, typename O, typename P1, typename P2> struct FnInfo<R (O::*)(P1, P2)>
@@ -946,8 +946,8 @@ template<typename R, typename O, typename P1, typename P2> struct FnInfo<R (O::*
 	typedef O objectType;
 	typedef P1 par1Type;
 	typedef P2 par2Type;
-	enum { isConst=false };
-	enum { arity=2 };
+	static const bool isConst=false;
+	static const int arity=2;
 	typedef typename TL::create<resultType, par1Type, par2Type>::value asList;
 };
 template<typename R, typename O, typename P1, typename P2> struct FnInfo<R (O::*)(P1, P2) const>
@@ -956,8 +956,8 @@ template<typename R, typename O, typename P1, typename P2> struct FnInfo<R (O::*
 	typedef O objectType;
 	typedef P1 par1Type;
 	typedef P2 par2Type;
-	enum { isConst=true };
-	enum { arity=2 };
+	static const bool isConst=true;
+	static const int arity=2;
 	typedef typename TL::create<resultType, par1Type, par2Type>::value asList;
 };
 template<typename R, typename P1, typename P2> struct FnInfo<R (*)(P1, P2)>
@@ -966,8 +966,8 @@ template<typename R, typename P1, typename P2> struct FnInfo<R (*)(P1, P2)>
 	typedef NullType objectType;
 	typedef P1 par1Type;
 	typedef P2 par2Type;
-	enum { isConst=false };
-	enum { arity=2 };
+	static const bool isConst=false;
+	static const int arity=2;
 	typedef typename TL::create<resultType, par1Type, par2Type>::value asList;
 };
 template<typename R, typename O, typename P1, typename P2, typename P3> struct FnInfo<R (O::*)(P1, P2, P3)>
@@ -977,8 +977,8 @@ template<typename R, typename O, typename P1, typename P2, typename P3> struct F
 	typedef P1 par1Type;
 	typedef P2 par2Type;
 	typedef P3 par3Type;
-	enum { isConst=false };
-	enum { arity=3 };
+	static const bool isConst=false;
+	static const int arity=3;
 	typedef typename TL::create<resultType, par1Type, par2Type, par3Type>::value asList;
 };
 template<typename R, typename O, typename P1, typename P2, typename P3> struct FnInfo<R (O::*)(P1, P2, P3) const>
@@ -988,8 +988,8 @@ template<typename R, typename O, typename P1, typename P2, typename P3> struct F
 	typedef P1 par1Type;
 	typedef P2 par2Type;
 	typedef P3 par3Type;
-	enum { isConst=true };
-	enum { arity=3 };
+	static const bool isConst=true;
+	static const int arity=3;
 	typedef typename TL::create<resultType, par1Type, par2Type, par3Type>::value asList;
 };
 template<typename R, typename P1, typename P2, typename P3> struct FnInfo<R (*)(P1, P2, P3)>
@@ -999,8 +999,8 @@ template<typename R, typename P1, typename P2, typename P3> struct FnInfo<R (*)(
 	typedef P1 par1Type;
 	typedef P2 par2Type;
 	typedef P3 par3Type;
-	enum { isConst=false };
-	enum { arity=3 };
+	static const bool isConst=false;
+	static const int arity=3;
 	typedef typename TL::create<resultType, par1Type, par2Type, par3Type>::value asList;
 };
 template<typename R, typename O, typename P1, typename P2, typename P3, typename P4> struct FnInfo<R (O::*)(P1, P2, P3, P4)>
@@ -1011,8 +1011,8 @@ template<typename R, typename O, typename P1, typename P2, typename P3, typename
 	typedef P2 par2Type;
 	typedef P3 par3Type;
 	typedef P4 par4Type;
-	enum { isConst=false };
-	enum { arity=4 };
+	static const bool isConst=false;
+	static const int arity=4;
 	typedef typename TL::create<resultType, par1Type, par2Type, par3Type, par4Type>::value asList;
 };
 template<typename R, typename O, typename P1, typename P2, typename P3, typename P4> struct FnInfo<R (O::*)(P1, P2, P3, P4) const>
@@ -1023,8 +1023,8 @@ template<typename R, typename O, typename P1, typename P2, typename P3, typename
 	typedef P2 par2Type;
 	typedef P3 par3Type;
 	typedef P4 par4Type;
-	enum { isConst=true };
-	enum { arity=4 };
+	static const bool isConst=true;
+	static const int arity=4;
 	typedef typename TL::create<resultType, par1Type, par2Type, par3Type, par4Type>::value asList;
 };
 template<typename R, typename P1, typename P2, typename P3, typename P4> struct FnInfo<R (*)(P1, P2, P3, P4)>
@@ -1035,8 +1035,8 @@ template<typename R, typename P1, typename P2, typename P3, typename P4> struct 
 	typedef P2 par2Type;
 	typedef P3 par3Type;
 	typedef P4 par4Type;
-	enum { isConst=false };
-	enum { arity=4 };
+	static const bool isConst=false;
+	static const int arity=4;
 	typedef typename TL::create<resultType, par1Type, par2Type, par3Type, par4Type>::value asList;
 };
 namespace FnFromListPrivate {
@@ -1064,19 +1064,73 @@ public:
 	typedef typename FnFromListPrivate::impl<list, TL::length<list>::value-1>::value value;
 };
 
-class IntegralLists
+/*! \struct IntegralLists
+\ingroup generic
+\brief A series of typelists of kinds of integral type
+*/
+struct IntegralLists
 {
-public:
+	//! All unsigned integer types
 	typedef TL::create<unsigned char, FXushort, FXuint, unsigned long, FXulong>::value unsignedInts;
+	//! All signed integer types
 	typedef TL::create<signed char, FXshort, FXint, signed long, FXlong>::value signedInts;
+	//! Other kinds of integer
 	typedef TL::create<bool, char>::value otherInts;
+	//! Floating point types
 	typedef TL::create<FXfloat, FXdouble>::value floats;
 
+	//! All integer types
 	typedef TL::append<TL::append<unsignedInts, signedInts>::value, otherInts>::value Ints;
+	//! All arithmetical types
 	typedef TL::append<TL::append<unsignedInts, signedInts>::value, floats>::value Arithmetical;
+	//! All types which are signed
 	typedef TL::append<signedInts, floats>::value Signeds;
+	//! All integral types
 	typedef TL::append<Ints, floats>::value All;
 };
+
+/*! \struct BiggestValue
+\ingroup generic
+\brief Returns the biggest positive or negative value which can be stored in an integral type
+*/
+template<typename type, bool minus=false> struct BiggestValue
+{
+private:
+	static const int UnsignedIntIdx=TL::find<IntegralLists::unsignedInts, type>::value;
+	static const int SignedIntIdx  =TL::find<IntegralLists::signedInts, type>::value;
+	static const int intIdx=(-1==UnsignedIntIdx) ? SignedIntIdx : UnsignedIntIdx;
+	typedef typename TL::atC<IntegralLists::unsignedInts, intIdx>::value typeAsUnsigned;
+	static const typeAsUnsigned maxUnsignedValue=(typeAsUnsigned)-1;
+	static const typeAsUnsigned maxUnsignedValueL1=(typeAsUnsigned)((-1==UnsignedIntIdx) ? maxUnsignedValue<<1 : maxUnsignedValue);
+	static const typeAsUnsigned maxSignedValue=(typeAsUnsigned)((-1==UnsignedIntIdx) ? maxUnsignedValueL1>>1 : maxUnsignedValue);
+public:
+	static const type value=(type)(minus ? ~maxSignedValue : maxSignedValue);
+};
+#if defined(_MSC_VER) && _MSC_VER<=1310
+template<bool minus> struct BiggestValue<float, minus>
+{	// Not supported on <MSVC71
+};
+template<bool minus> struct BiggestValue<double, minus>
+{	// Not supported on <MSVC71
+};
+#else
+template<> struct BiggestValue<float, false>
+{
+	static const float value=3.402823466e+38F;
+};
+template<> struct BiggestValue<float, true>
+{
+	static const float value=1.175494351e-38F;
+};
+template<> struct BiggestValue<double, false>
+{
+	static const double value=1.7976931348623158e+308;
+};
+template<> struct BiggestValue<double, true>
+{
+	static const double value=2.2250738585072014e-308;
+};
+#endif
 
 /*! \defgroup ClassTraits Class Traits
 \ingroup generic
@@ -1097,7 +1151,7 @@ namespace ClassTraits
 	template<class T1=NullType> struct combine
 	{
 		typedef typename TL::create<T1>::value pars;
-		enum { PODness=TL::find<pars, POD>::value>=0 };
+		static const bool PODness=TL::find<pars, POD>::value>=0;
 	};
 	/*! \struct has
 	\ingroup ClassTraits
@@ -1180,8 +1234,8 @@ manually specify PODness using FX::Generic::ClassTraits.
 */
 namespace TraitsHelper
 {
-	template<typename par> struct isVoidI { enum { value=false }; };
-	template<> struct isVoidI<void> { enum { value=true }; };
+	template<typename par> struct isVoidI { static const bool value=false; };
+	template<> struct isVoidI<void> { static const bool value=true; };
 	template<typename par> struct polyA : public par
 	{
 		char foo[64];
@@ -1191,56 +1245,56 @@ namespace TraitsHelper
 		char foo[64];
 		virtual ~polyB() { }
 	};
-	template<bool isComplex, typename par> struct isPolymorphicI { enum { value=false }; };
+	template<bool isComplex, typename par> struct isPolymorphicI { static const bool value=false; };
 	template<typename par> struct isPolymorphicI<true, par>
 	{
-		enum { value=sizeof(polyA<par>)==sizeof(polyB<par>) };
+		static const bool value=sizeof(polyA<par>)==sizeof(polyB<par>);
 	};
 }
 template<typename type> class TraitsBasic
 {
 protected:
-	template<typename par> struct isVoidI { enum { value=TraitsHelper::isVoidI<par>::value }; };
-	template<typename par> struct isPtrI { enum { value=false }; };
-	template<typename par> struct isPtrI<par *> { enum { value=true }; };
-	template<typename par> struct isRefI { enum { value=false }; };
-	template<typename par> struct isRefI<par &> { enum { value=true }; };
-	template<typename par> struct isArrayI { enum { value=false }; };
-	template<typename T, unsigned int len> struct isArrayI<T[len]> { enum { value=true }; };
-	template<typename T, unsigned int len> struct isArrayI<T const[len]> { enum { value=true }; };
-	template<typename T, unsigned int len> struct isArrayI<T volatile[len]> { enum { value=true }; };
-	template<typename T, unsigned int len> struct isArrayI<T const volatile[len]> { enum { value=true }; };
-	template<typename par> struct isConstI { enum { value=false }; };
-	template<typename par> struct isConstI<const par> { enum { value=true }; };
-	template<typename par> struct isVolatileI { enum { value=false }; };
-	template<typename par> struct isVolatileI<volatile par> { enum { value=true }; };
+	template<typename par> struct isVoidI { static const bool value=TraitsHelper::isVoidI<par>::value; };
+	template<typename par> struct isPtrI { static const bool value=false; };
+	template<typename par> struct isPtrI<par *> { static const bool value=true; };
+	template<typename par> struct isRefI { static const bool value=false; };
+	template<typename par> struct isRefI<par &> { static const bool value=true; };
+	template<typename par> struct isArrayI { static const bool value=false; };
+	template<typename T, unsigned int len> struct isArrayI<T[len]> { static const bool value=true; };
+	template<typename T, unsigned int len> struct isArrayI<T const[len]> { static const bool value=true; };
+	template<typename T, unsigned int len> struct isArrayI<T volatile[len]> { static const bool value=true; };
+	template<typename T, unsigned int len> struct isArrayI<T const volatile[len]> { static const bool value=true; };
+	template<typename par> struct isConstI { static const bool value=false; };
+	template<typename par> struct isConstI<const par> { static const bool value=true; };
+	template<typename par> struct isVolatileI { static const bool value=false; };
+	template<typename par> struct isVolatileI<volatile par> { static const bool value=true; };
 	typedef FnInfo<type> fnInfo;
 	template<bool wantConst, typename par> struct addConstI { typedef par value; };
 	template<typename par> struct addConstI<true, par> { typedef const par value; };
 public:
-	enum { isVoid=isVoidI<type>::value };
-	enum { isPtr=isPtrI<type>::value };
-	enum { isRef=isRefI<type>::value };
-	enum { isPtrToCode=fnInfo::arity>=0 };
-	enum { isMemberPtr=isPtrToCode && !sameType<typename fnInfo::objectType, NullType>::value };
-	enum { isFunctionPtr=isPtrToCode && sameType<typename fnInfo::objectType, NullType>::value };
-	enum { isValue=!isPtr && !isRef && !isPtrToCode };
-	enum { isIndirect=!isValue };
-	enum { isConst=isConstI<type>::value };
-	enum { isVolatile=isVolatileI<type>::value };
+	static const bool isVoid=isVoidI<type>::value;
+	static const bool isPtr=isPtrI<type>::value;
+	static const bool isRef=isRefI<type>::value;
+	static const bool isPtrToCode=fnInfo::arity>=0;
+	static const bool isMemberPtr=isPtrToCode && !sameType<typename fnInfo::objectType, NullType>::value;
+	static const bool isFunctionPtr=isPtrToCode && sameType<typename fnInfo::objectType, NullType>::value;
+	static const bool isValue=!isPtr && !isRef && !isPtrToCode;
+	static const bool isIndirect=!isValue;
+	static const bool isConst=isConstI<type>::value;
+	static const bool isVolatile=isVolatileI<type>::value;
 
 	typedef typename leastIndir<type>::value baseType;
-	enum { isArray=isArrayI<baseType>::value };
-	enum { isFloat=TL::find<IntegralLists::floats, baseType>::value>=0 };
-	enum { isInt=TL::find<IntegralLists::Ints, baseType>::value>=0 };
-	enum { isSigned=TL::find<IntegralLists::Signeds, baseType>::value>=0 };
-	enum { isUnsigned=TL::find<IntegralLists::unsignedInts, baseType>::value>=0 };
-	enum { isArithmetical=TL::find<IntegralLists::Arithmetical, baseType>::value>=0 };
-	enum { isIntegral=TL::find<IntegralLists::All, baseType>::value>=0 };
-	enum { isBasic=isIntegral };
-	enum { holdsData=!isIntegral && !isPtrToCode };
+	static const bool isArray=isArrayI<baseType>::value;
+	static const bool isFloat=TL::find<IntegralLists::floats, baseType>::value>=0;
+	static const bool isInt=TL::find<IntegralLists::Ints, baseType>::value>=0;
+	static const bool isSigned=TL::find<IntegralLists::Signeds, baseType>::value>=0;
+	static const bool isUnsigned=TL::find<IntegralLists::unsignedInts, baseType>::value>=0;
+	static const bool isArithmetical=TL::find<IntegralLists::Arithmetical, baseType>::value>=0;
+	static const bool isIntegral=TL::find<IntegralLists::All, baseType>::value>=0;
+	static const bool isBasic=isIntegral;
+	static const bool holdsData=!isIntegral && !isPtrToCode;
 
-	enum { isPOD=isBasic || ClassTraits::has<type>::PODness };
+	static const bool isPOD=isBasic || ClassTraits::has<type>::PODness;
 
 	typedef typename select<isIntegral || isIndirect, type, typename addRef<type>::value >::value asRWParam;
 	typedef typename addConstI<!isIntegral && !isRef, type>::value asConstParam;
@@ -1252,15 +1306,15 @@ public:
 template<typename type> class Traits : public TraitsBasic<type>
 {
 	enum TestEnum {};
-	template<bool isCodePtr, typename par> struct isEnumSizeI { enum { value=false }; };
-	template<typename par> struct isEnumSizeI<false, par> { enum { value=sizeof(TestEnum)==sizeof(par) }; };
+	template<bool isCodePtr, typename par> struct isEnumSizeI { static const bool value=false; };
+	template<typename par> struct isEnumSizeI<false, par> { static const bool value=sizeof(TestEnum)==sizeof(par); };
 private:
-	enum { int_baseTypeIsVoid=TraitsHelper::isVoidI<typename TraitsBasic<type>::baseType>::value };
-	enum { int_isEnumSize=isEnumSizeI<TraitsBasic<type>::isPtrToCode || int_baseTypeIsVoid, typename TraitsBasic<type>::baseType>::value };
-	enum { int_isConvertibleToInt=!TraitsBasic<type>::isPtrToCode && convertible<int, typename TraitsBasic<type>::baseType>::value };
+	static const bool int_baseTypeIsVoid=TraitsHelper::isVoidI<typename TraitsBasic<type>::baseType>::value;
+	static const bool int_isEnumSize=isEnumSizeI<TraitsBasic<type>::isPtrToCode || int_baseTypeIsVoid, typename TraitsBasic<type>::baseType>::value;
+	static const bool int_isConvertibleToInt=!TraitsBasic<type>::isPtrToCode && convertible<int, typename TraitsBasic<type>::baseType>::value;
 public:
-	enum { isEnum=TraitsBasic<type>::holdsData && !TraitsBasic<type>::isArray && int_isEnumSize && int_isConvertibleToInt };
-	enum { isPolymorphic=TraitsHelper::isPolymorphicI<TraitsBasic<type>::holdsData && !TraitsBasic<type>::isArray && !isEnum && !int_baseTypeIsVoid, typename TraitsBasic<type>::baseType>::value };
+	static const bool isEnum=TraitsBasic<type>::holdsData && !TraitsBasic<type>::isArray && int_isEnumSize && int_isConvertibleToInt;
+	static const bool isPolymorphic=TraitsHelper::isPolymorphicI<TraitsBasic<type>::holdsData && !TraitsBasic<type>::isArray && !isEnum && !int_baseTypeIsVoid, typename TraitsBasic<type>::baseType>::value;
 };
 
 
@@ -1968,36 +2022,50 @@ namespace TL
 	template<typename type> struct Impl { static void Do(<pars>); }
 	Generic::TL::dynamicAt<typelist, Impl>(typeIdx, <pars>);
 	\endcode
-	\note There is a maximum of 16 entries per jump table as I couldn't figure out how
+	Note that there is a maximum of 16 entries per jump table as I couldn't figure out how
 	to make it dynamically generated at compile time to any length. If anyone can advise,
-	I'd be most grateful.
+	I'd be most grateful. In the meantime, you can handle > 16 entries by inheriting as many
+	dynamicAt's as you require into a helper class and at construction, invoking those you
+	don't need using the magic idx number which disables execution.
 	*/
 	template<typename typelist, template<class> class instance> struct dynamicAt
 	{
+		static const FXuint MaxEntries=16;			//!< Currently the maximum members permitted in a typelist
+		static const FXuint DisableMagicIdx=1<<28;	//!< The magic idx value to disable dispatch
+		//! Invoke \em instance with the type \em idx in the typelist
 		dynamicAt(FXuint idx)
 		{
 			typedef typename create<void>::value parslist;
-			dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)();
+			if(DisableMagicIdx!=idx)
+				dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)();
 		}
+		//! Invoke \em instance with the type \em idx in the typelist with parameters
 		template<typename P1> dynamicAt(FXuint idx, P1 p1)
 		{
 			typedef typename create<void, P1>::value parslist;
-			dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1);
+			if(DisableMagicIdx!=idx)
+				dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1);
 		}
+		//! \overload
 		template<typename P1, typename P2> dynamicAt(FXuint idx, P1 p1, P2 p2)
 		{
 			typedef typename create<void, P1, P2>::value parslist;
-			dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1,p2);
+			if(DisableMagicIdx!=idx)
+				dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1,p2);
 		}
+		//! \overload
 		template<typename P1, typename P2, typename P3> dynamicAt(FXuint idx, P1 p1, P2 p2, P3 p3)
 		{
 			typedef typename create<void, P1, P2, P3>::value parslist;
-			dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1,p2,p3);
+			if(DisableMagicIdx!=idx)
+				dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1,p2,p3);
 		}
+		//! \overload
 		template<typename P1, typename P2, typename P3, typename P4> dynamicAt(FXuint idx, P1 p1, P2 p2, P3 p3, P4 p4)
 		{
 			typedef typename create<void, P1, P2, P3, P4>::value parslist;
-			dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1,p2,p3,p4);
+			if(DisableMagicIdx!=idx)
+				dynamicAtHelper::Impl<parslist, typelist, instance>::getArray(idx)(p1,p2,p3,p4);
 		}
 
 	};
