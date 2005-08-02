@@ -19,11 +19,12 @@
 
 import os
 import sys
-execfile("../../sconslib.py")
-init(globals(), "../../", "../")
 dir,name=os.path.split(os.getcwd())
-if "hgfs/D" in os.getcwd() or "kate/D" in os.getcwd():
-    raise IOError, "You don't want to run me on the Windows share!"
+if "windows" in dir:
+    # Replace with Unix equiv
+    dir="/home/ned/"+dir[dir.find("Tn"):]+"/"
+execfile(dir+"../sconslib.py")
+init(globals(), dir+"../", dir)
 targetname=dir+"/../lib/"+name
 
 env['CPPDEFINES']+=[ "FOXDLL" ]
