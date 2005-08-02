@@ -22,9 +22,9 @@ import sys
 dir,name=os.path.split(os.getcwd())
 if "windows" in dir:
     # Replace with Unix equiv
-    dir="/home/ned/"+dir[dir.find("Tn"):]+"/"
-execfile(dir+"../sconslib.py")
-init(globals(), dir+"../", dir)
+    dir="/home/ned/"+dir[dir.find("Tn"):]
+execfile(dir+"/../sconslib.py")
+init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+name
 
 env['CPPDEFINES']+=[ "FOXDLL" ]
