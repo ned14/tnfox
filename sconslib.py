@@ -168,6 +168,9 @@ def getBase(file):
     return leaf
     
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
+    prefixpath=os.path.abspath(prefixpath)+"/"
+    platprefix=os.path.abspath(platprefix)+"/"
+    #print prefixpath, platprefix
     execfile(prefixpath+"config.py")    # Sets debugmode, version, libtnfoxname
     for key,value in locals().items():
         globals()[key]=value
@@ -235,7 +238,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         objects=[env.SharedObject(builddir+"/sqlite/"+getBase(x), prefixpath+"src/sqlite/src/"+x,
             CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)]) for x in filelist]
         del filelist
-        libsqlite=StaticLibrary(builddir+"/sqlite", objects)
+        libsqlite=objects # StaticLibrary(builddir+"/sqlite", objects)
         del objects
     else:
         print "SQLite not found in TnFOX sources, disabling support!\n"
