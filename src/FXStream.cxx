@@ -29,7 +29,6 @@
 #include "FXString.h"
 #include "FXHash.h"
 #include "FXObject.h"
-#include "QIODevice.h"
 #include "FXException.h"
 #include "QTrans.h"
 #include "FXFile.h"
@@ -225,9 +224,14 @@ bool FXStream::atEnd() const
 	return dev->atEnd();
 }
 
+// Little helper function to work around operator>> hiding
+static inline void readIntegral(FXStream &s, FXuint &v)
+{
+	s >> v;
+}
 FXStream &FXStream::readBytes(char *&s, FXuint &l)
 {
-	*this >> l;
+	readIntegral(*this, l);
 	FXERRHM(s=new char[l]);
 	return readRawBytes(s, l);
 }
@@ -257,66 +261,11 @@ FXfval FXStream::rewind(FXint amount)
 	return c;
 }
 
-
-/******************************  Save Basic Types  *****************************/
-
-FXStream& FXStream::operator<<(const FXuchar &v)
+void FXStream::int_throwPrematureEOF()
 {
-  dev->putch(v);
-  return *this;
+	FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
 }
 
-FXStream& FXStream::operator<<(const FXushort &_v)
-{
-	FXushort v=_v;
-	if(swap){fxendianswap2(&v);}
-	dev->writeBlock((char *) &v,2);
-	return *this;
-}
-
-FXStream& FXStream::operator<<(const FXuint &_v)
-{
-	FXuint v=_v;
-	if(swap){fxendianswap4(&v);}
-	dev->writeBlock((char *) &v,4);
-	return *this;
-}
-
-FXStream& FXStream::operator<<(const FXfloat &_v)
-{
-	FXfloat v=_v;
-	if(swap){fxendianswap4(&v);}
-	dev->writeBlock((char *) &v,4);
-	return *this;
-}
-
-FXStream& FXStream::operator<<(const FXdouble &_v)
-{
-	FXdouble v=_v;
-	if(swap){fxendianswap8(&v);}
-	dev->writeBlock((char *) &v,8);
-	return *this;
-}
-
-FXStream& FXStream::operator<<(const FXulong &_v)
-{
-	FXulong v=_v;
-	if(swap){fxendianswap8(&v);}
-	dev->writeBlock((char *) &v,8);
-	return *this;
-}
-
-FXStream& FXStream::operator<<(const char *str)
-{
-	dev->writeBlock(str,strlen(str));
-	return *this;
-}
-
-FXStream& FXStream::operator<<(const bool &_v)
-{
-	dev->putch(_v);
-	return *this;
-}
 
 
 /************************  Save Blocks of Basic Types  *************************/
@@ -387,52 +336,6 @@ FXStream& FXStream::save(const FXulong* p,unsigned long n){
   return *this;
   }
 
-
-/*****************************  Load Basic Types  ******************************/
-
-FXStream& FXStream::operator>>(FXuchar& v){
-  int _v=dev->getch();
-  v=(FXuchar) _v;
-  if(-1==_v) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  return *this;
-  }
-
-FXStream& FXStream::operator>>(FXushort& v){
-  if(2!=dev->readBlock((char *) &v,2)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap){fxendianswap2(&v);}
-  return *this;
-  }
-
-FXStream& FXStream::operator>>(FXuint& v){
-  if(4!=dev->readBlock((char *) &v,4)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap){fxendianswap4(&v);}
-  return *this;
-  }
-
-FXStream& FXStream::operator>>(FXfloat& v){
-  if(4!=dev->readBlock((char *) &v,4)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap){fxendianswap4(&v);}
-  return *this;
-  }
-
-FXStream& FXStream::operator>>(FXdouble& v){
-  if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap){fxendianswap8(&v);}
-  return *this;
-  }
-
-FXStream& FXStream::operator>>(FXulong& v){
-  if(8!=dev->readBlock((char *) &v,8)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap){fxendianswap8(&v);}
-  return *this;
-  }
-
-FXStream& FXStream::operator>>(bool& v){
-  int _v=dev->getch();
-  v=(_v!=0);
-  if(-1==_v) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  return *this;
-  }
 
 
 /************************  Load Blocks of Basic Types  *************************/
@@ -539,7 +442,7 @@ FXStream& FXStream::loadObject(FXObject*& v){
   FXuint tag,esc;
   if(dir!=FXStreamLoad){ fxerror("FXStream::loadObject: wrong stream direction.\n"); }
   if(code==FXStreamOK){
-    *this >> tag;
+    readIntegral(*this, tag);
     if(tag==0){                                 // Was a NULL
       v=NULL;
       return *this;
@@ -555,7 +458,7 @@ FXStream& FXStream::loadObject(FXObject*& v){
       code=FXStreamFormat;                      // Bad format in stream
       return *this;
       }
-    *this >> esc;                               // Read escape code
+    readIntegral(*this, esc);                   // Read escape code
     if(esc!=0){                                 // Escape code is wrong
       code=FXStreamFormat;                      // Bad format in stream
       return *this;
