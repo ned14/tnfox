@@ -31,8 +31,8 @@ if not os.path.exists(builddir):
     os.mkdir(builddir)
 
 # Warnings, synchronous exceptions, enable RTTI, pool strings, ANSI for scoping,
-# types defined before pointers to members used
-cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /vmb /vmm')
+# wchar_t native, types defined before pointers to members used
+cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t /vmb /vmm')
 assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                        # Only functions may alias
