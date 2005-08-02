@@ -652,8 +652,8 @@ FXString& FXString::replace(FXint pos,FXint m,FXchar c,FXint n){
       }
     if(0<n){
       memset(&str[pos],c,n);
-      shiftInserts(pos, n-m);
       }
+    shiftInserts(pos, n-m);
     }
   return *this;
   }
@@ -689,8 +689,8 @@ FXString& FXString::replace(FXint pos,FXint m,const FXchar* s,FXint n){
       }
     if(0<n){
       memcpy(&str[pos],s,n);
-      shiftInserts(pos, n-m);
       }
+    shiftInserts(pos, n-m);
     }
   return *this;
   }
@@ -1880,7 +1880,7 @@ inline void FXString::shiftInserts(FXint pos, FXint diff)
 }
 inline void FXString::doneInsert()
 {
-	if(-1==inserts[0]) return;
+	if(!inserts || -1==inserts[0]) return;
 	FXint next=-1;
 	for(FXint n=inserts[0]+1; -1!=inserts[2*n+1]; n++)
 	{
@@ -1919,18 +1919,23 @@ void FXString::calcInserts()
 		if(1==i) { p++; continue; }
 		buff[i]=0;
 		int v=atoi(buff+1);
-		if(v>=(insertscnt-3)/2)
+		FXint aboveEnd=v-(insertscnt-3)/2;
+		if(v>=0)
 		{
 			FXint *inserts2;
-			FXERRHM(inserts2=new FXint[insertscnt+5*2]);
+			++aboveEnd;
+			if(aboveEnd<5) aboveEnd=5;
+			FXERRHM(inserts2=new FXint[insertscnt+aboveEnd*2]);
 			memcpy(inserts2, inserts, sizeof(FXint)*insertscnt);
-			memset(inserts2+insertscnt, 0, sizeof(FXint)*5*2);
+			memset(inserts2+insertscnt, 0, sizeof(FXint)*aboveEnd*2);
 			FXDELETE(inserts);
 			inserts=inserts2;
-			insertscnt+=5*2;
+			insertscnt+=aboveEnd*2;
+			assert(v-(insertscnt-3)/2<0);
 		}
 		inserts[2*v+1]=p-str;		// position
 		inserts[2*v+2]=i;			// length
+		//FXMEMDBG_TESTHEAP;
 		if(-1==lowest || v<lowest) lowest=v;
 		if(v+1>highest) highest=v+1;
 		p+=i;
