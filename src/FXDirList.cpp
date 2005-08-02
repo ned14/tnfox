@@ -749,7 +749,7 @@ void FXDirList::listRootItems(){
   item->closedIcon=closedicon;
   item->size=0L;
   item->assoc=fileassoc;
-  item->date=0;
+  item->date=FXTime((FXulong) 0);
 
   // Create item
   if(id()) item->create();
@@ -882,7 +882,7 @@ fnd:  *pn=item;
       item->closedIcon=closedicon;
       item->size=info.st_size;
       item->assoc=fileassoc;
-      item->date=info.st_mtime;
+      item->date=FXTime(info.st_mtime);
 
       // Create item
       if(id()) item->create();

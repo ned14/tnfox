@@ -918,9 +918,9 @@ FXint FXFileList::descendingGroup(const FXIconItem* pa,const FXIconItem* pb){
 
 
 //HANDLE FindFirstChangeNotification(
-//  LPCTSTR lpPathName,    // directory name
-//  BOOL bWatchSubtree,    // monitoring option
-//  DWORD dwNotifyFilter   // filter conditions
+// LPCTSTR lpPathName,  // directory name
+// BOOL bWatchSubtree,  // monitoring option
+// DWORD dwNotifyFilter  // filter conditions
 //);
 //
 //The HANDLE can be passed to FXApp::addInput(), and you'll be notified
@@ -1235,7 +1235,7 @@ fnd:  *pn=item;
       items.append(item);
 
       // Update only if something changed
-      if(force || item->label.empty() || item->date!=info.st_mtime || item->size!=info.st_size){
+      if(force || item->label.empty() || item->date.as_time_t()!=info.st_mtime || item->size!=info.st_size){
 
         // Obtain user name
         usrid=FXFile::owner(info.st_uid);
@@ -1247,7 +1247,7 @@ fnd:  *pn=item;
         atts=FXFile::permissions(info.st_mode);
 
         // Mod time
-        mod=FXFile::time(info.st_mtime);
+        mod=FXFile::time(FXTime(info.st_mtime));
 
         // Link
         if(islink) linkname=FXFile::symlink(pathname); else linkname=FXString::null;
@@ -1268,7 +1268,7 @@ fnd:  *pn=item;
         item->size=info.st_size;
 
         // File access time
-        item->date=info.st_mtime;
+        item->date=FXTime(info.st_mtime);
 
         // No associations
         item->assoc=NULL;
