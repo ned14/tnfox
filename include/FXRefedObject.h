@@ -22,6 +22,7 @@
 #ifndef FXREFEDOBJECT_H
 #define FXREFEDOBJECT_H
 
+#include "QThread.h"
 #include "FXException.h"
 #include "FXPolicies.h"
 #include "qvaluelist.h"
@@ -257,7 +258,7 @@ template<typename intType,
 	template<bool mutexed, class type> friend struct FXRefingObjectImpl::dataHolderI;
 	template<class type> friend class FXRefedObject_DisableCount;
 	typedef FXRefedObject MyFXRefedObjectSpec;
-	FXAtomicInt disableCount;
+	intType disableCount;
 public:
 	FXRefedObject() : disableCount(0) { }
 	virtual ~FXRefedObject() { }
