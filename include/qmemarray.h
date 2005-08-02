@@ -139,11 +139,17 @@ public:
 	FXDEPRECATEDEXT QMemArray<type> &duplicate(const type *a, uint n) { return setRawData(a, n); }
 	/*! Sets QMemArray<> to use an external array. Note that not all methods are implemented for this
 	(see the header file). Note also that like Qt's version, you must not resize or reassign the array
-	when in this state. Failure to call resetRawData() before destruction causes \c delete on the data.
+	when in this state. Failure to call resetRawData() before destruction causes \c delete on the data
+	unless you set \em _noDeleteExtArray.
 	*/
-	QMemArray<type> &setRawData(const type *a, uint n) { extArray=const_cast<type *>(a); extArrayLen=n; return *this; }
+	QMemArray<type> &setRawData(const type *a, uint n, bool _noDeleteExtArray=false)
+	{
+		extArray=const_cast<type *>(a); extArrayLen=n;
+		noDeleteExtArray=_noDeleteExtArray;
+		return *this;
+	}
 	//! Resets QMemArray<> to use its internally managed data.
-	void resetRawData(const type *a, uint n) { extArray=0; extArrayLen=0; }
+	void resetRawData(const type *a, uint n) { extArray=0; extArrayLen=0; noDeleteExtArray=false; }
 	//! Returns the index of \em val starting the search from \em i, returning -1 if not found
 	int find(const type &val, uint i=0) const
 	{
