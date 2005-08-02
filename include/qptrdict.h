@@ -44,6 +44,7 @@ template<class type> class QPtrDict : public QDictBase<FXuval, type>
 public:
 	//! Creates a hash table indexed by void pointers. Choose a prime for \em size
 	QPtrDict(int size=13, bool wantAutoDel=false) : QDictBase<FXuval, type>(size, wantAutoDel) { }
+	~QPtrDict() { QDictBase<FXuval, type>::clear(); }
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(void *k, const type *d)
 	{
@@ -76,7 +77,22 @@ public:
 	}
 	//! \overload
 	type *operator[](void *k) const { return find(k); }
+protected:
+	virtual void deleteItem(type *d);
 };
+
+template<class type> inline void QPtrDict<type>::deleteItem(type *d)
+{
+	if(QDictBase<FXuval, type>::autoDelete())
+	{
+		//fxmessage("QDB delete %p\n", d);
+		delete d;
+	}
+}
+// Don't delete void *
+template<> inline void QPtrDict<void>::deleteItem(void *)
+{
+}
 
 /*! \class QPtrDictIterator
 \brief An iterator for a QPtrDict

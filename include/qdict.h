@@ -89,6 +89,7 @@ public:
 	{
 	}
 	QDict(const QDict<type> &o) : checkcase(o.checkcase), QDictBase<FXString, type>(o) { }
+	~QDict() { QDictBase<FXString, type>::clear(); }
 	//! Returns if case sensitive key comparisons is enabled
 	bool caseSensitive() const throw() { return checkcase; }
 	//! Sets if case sensitive key comparisons is enabled
@@ -155,7 +156,22 @@ public:
 	}
 	//! \overload
 	type *operator[](const FXString &k) const { return find(k); }
+protected:
+	virtual void deleteItem(type *d);
 };
+
+template<class type> inline void QDict<type>::deleteItem(type *d)
+{
+	if(QDictBase<FXString, type>::autoDelete())
+	{
+		//fxmessage("QDB delete %p\n", d);
+		delete d;
+	}
+}
+// Don't delete void *
+template<> inline void QDict<void>::deleteItem(void *)
+{
+}
 
 /*! \class QDictIterator
 \ingroup QTL

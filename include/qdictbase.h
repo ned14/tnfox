@@ -278,21 +278,9 @@ public:
 	than lookups and positive for the opposite. */
 	FXint dictionaryBias() const throw() { return (FXint)(lookups-inserts); }
 protected:
-	virtual void deleteItem(type *d);
+	virtual void deleteItem(type *d)=0;
 };
 
-// Don't delete void *
-/*template<class keytype> inline void QDictBase<keytype, void>::deleteItem(void *)
-{
-}*/
-template<class keytype, class type> inline void QDictBase<keytype, type>::deleteItem(type *d)
-{
-    if(autodel)
-	{
-		//fxmessage("QDB delete %p\n", d);
-		delete d;
-	}
-}
 
 /*! \class QDictBaseIterator
 \brief An iterator for a FX::QDictBase
@@ -428,7 +416,7 @@ public:
 
 template<class keytype, class type> inline QDictBase<keytype, type>::~QDictBase()
 {
-	clear();
+	clear();	// Should trigger a terminate() if not cleared
 	for(typename iteratorlist::iterator it=iterators.begin(); it!=iterators.end(); ++it)
 	{
 		(*it)->mydict=0;

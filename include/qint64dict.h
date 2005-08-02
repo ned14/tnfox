@@ -42,6 +42,7 @@ template<class type> class QInt64Dict : public QDictBase<FXlong, type>
 public:
 	//! Creates a hash table indexed by FXlong's. Choose a prime for \em size
 	QInt64Dict(int size=13, bool wantAutoDel=false) : QDictBase<FXlong, type>(size, wantAutoDel) { }
+	~QInt64Dict() { QDictBase<FXlong, type>::clear(); }
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(FXlong k, const type *d)
 	{
@@ -69,7 +70,22 @@ public:
 	}
 	//! \overload
 	type *operator[](FXlong k) const { return find(k); }
+protected:
+	virtual void deleteItem(type *d);
 };
+
+template<class type> inline void QInt64Dict<type>::deleteItem(type *d)
+{
+	if(QDictBase<FXlong, type>::autoDelete())
+	{
+		//fxmessage("QDB delete %p\n", d);
+		delete d;
+	}
+}
+// Don't delete void *
+template<> inline void QInt64Dict<void>::deleteItem(void *)
+{
+}
 
 /*! \class QInt64DictIterator
 \ingroup QTL
