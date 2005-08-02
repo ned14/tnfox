@@ -153,12 +153,10 @@
  #define FXFORCEINLINE inline
  #define FXDEPRECATED
 #endif
-#ifdef FOXDLL
- #ifdef FOXDLL_EXPORTS
-  #define FXDEPRECATEDEXT
- #else
-  #define FXDEPRECATEDEXT FXDEPRECATED
- #endif
+#ifdef FOXDLL_EXPORTS
+ #define FXDEPRECATEDEXT
+#else
+ #define FXDEPRECATEDEXT FXDEPRECATED
 #endif
 
 // Callback
