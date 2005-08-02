@@ -722,7 +722,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 #else
 	size+=sizeof(FXuval)*3;
 	if(mp && mp->allocated+size>mp->maxsize) return 0;
-	ret=::_malloc_dbg(size, blockuse, file, lineno);
+	if(!(ret=::_malloc_dbg(size, blockuse, file, lineno))) return 0;
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
 	_ret[0]=*(FXuval *) "FXMPFXMP";
