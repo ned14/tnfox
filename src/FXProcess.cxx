@@ -167,7 +167,7 @@ FXString FXTime::asString(const FXString &fmt) const
 	ret.assign(buffer, len);
 
 	while(insertcnt--)
-		ret.arg(value % micsPerSecond, -6);
+		ret.arg((value % micsPerSecond)/(double) micsPerSecond, 0, 'f', 6);
 	return ret;
 }
 

@@ -60,7 +60,7 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 	FXulong value;
 
 	//! Constructs an instance
-	FXTime(FXulong _value=0, bool _isLocalTime=false) : isLocalTime(_isLocalTime), value(_value) { }
+	explicit FXTime(FXulong _value=0, bool _isLocalTime=false) : isLocalTime(_isLocalTime), value(_value) { }
 	//! Constructs an instance from a \c time_t
 	explicit FXTime(time_t ctime) : value(0) { set_time_t(ctime); }
 	bool operator!() const throw() { return !value; }
@@ -87,7 +87,8 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 
 	/*! Returns the time as a string of format \em fmt.
 	The formatting inserts are as for strftime in the C library except that
-	%F means microsecond fraction of the form 999999 or 000001 */
+	%F means microsecond fraction of the form 999999 or 000001 which would
+	mean 0.999999 or 0.000001 of a second */
 	FXString asString(const FXString &fmt="%Y/%m/%d %H:%M:%S.%F %Z") const;
 	//! Converts time to local time if it isn't already
 	FXTime &toLocalTime() { if(!isLocalTime) { value+=localTimeDiff(); isLocalTime=true; } return *this; }
