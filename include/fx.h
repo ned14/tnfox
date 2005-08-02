@@ -240,8 +240,10 @@
 #include "FXRefedObject.h"
 #include "FXRollback.h"
 #include "FXSecure.h"
+#include "FXSQLDB.h"
 #include "QSSLDevice.h"
 #include "QThread.h"
+#include "FXTime.h"
 #include "QTrans.h"
 #include "TnFXApp.h"
 
