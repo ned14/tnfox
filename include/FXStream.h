@@ -27,12 +27,24 @@
 
 #include "fxdefs.h"
 #include "fxver.h"
+#include "QIODevice.h"
+#include "FXGenericTools.h"
 
 namespace FX {
 
 /*! \file FXStream.h
 \brief Defines classes used in formatting data for i/o
 */
+
+namespace Generic
+{
+	template<typename type> struct hasSerialise;
+	template<typename type> struct hasDeserialise;
+	namespace hasSerialiseImpl
+	{
+		struct FakeStreamTypeBase { };
+	}
+}
 
 
 /// Stream data flow direction
@@ -127,7 +139,15 @@ QValueList invokes the << operator on each of its members and so it recurses
 down calling each in turn. All QTL thunks provided in TnFOX provide default
 stream operators which require a null constructor in the type to compile.
 */
-class FXAPI FXStream {
+class FXStreamBase
+{
+  friend FXStreamBase &operator<<(FXStreamBase &, const Generic::hasSerialiseImpl::FakeStreamTypeBase &);
+  friend FXStreamBase &operator>>(FXStreamBase &, const Generic::hasSerialiseImpl::FakeStreamTypeBase &);
+};
+class FXAPI FXStream : private FXStreamBase
+{
+  template<typename type> friend struct Generic::hasSerialise;
+  template<typename type> friend struct Generic::hasDeserialise;
 protected:
   FXHash            *hash;      // Hash table
   const FXObject    *parent;    // Parent object
@@ -143,7 +163,7 @@ protected:
   FXbool             swap;      // Swap bytes on readin
 
 protected: // TnFOX stuff
-  QIODevice        *dev;       // i/o device
+  QIODevice         *dev;       // i/o device
 public:
 
   //! Constructs an instance using device \em dev. \em cont is for FOX FXStream emulation only.
@@ -278,19 +298,63 @@ public:
   */
   FXbool isBigEndian() const { return (swap^FOX_BIGENDIAN); }
 
+  static void int_throwPrematureEOF();
+
   /// Save single items to stream
-  FXStream& operator<<(const FXuchar& v);
-  FXStream& operator<<(const FXchar& v){ return *this << reinterpret_cast<const FXuchar&>(v); }
-  FXStream& operator<<(const FXushort& v);
-  FXStream& operator<<(const FXshort& v){ return *this << reinterpret_cast<const FXushort&>(v); }
-  FXStream& operator<<(const FXuint& v);
-  FXStream& operator<<(const FXint& v){ return *this << reinterpret_cast<const FXuint&>(v); }
-  FXStream& operator<<(const FXfloat& v);
-  FXStream& operator<<(const FXdouble& v);
-  FXStream& operator<<(const FXlong& v){ return *this << reinterpret_cast<const FXulong&>(v); }
-  FXStream& operator<<(const FXulong& v);
-  FXStream& operator<<(const char *v);
-  FXStream& operator<<(const bool& v);
+  friend inline FXStream& operator<<(FXStream& s, const FXuchar& v)
+  {
+    s.dev->putch(v);
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const FXchar& v){ return s << reinterpret_cast<const FXuchar&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXushort& _v)
+  {
+    FXushort v=_v;
+    if(s.swap){fxendianswap2(&v);}
+    s.dev->writeBlock((char *) &v,2);
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const FXshort& v){ return s << reinterpret_cast<const FXushort&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXuint& _v)
+  {
+    FXuint v=_v;
+    if(s.swap){fxendianswap4(&v);}
+    s.dev->writeBlock((char *) &v,4);
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const FXint& v){ return s << reinterpret_cast<const FXuint&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXfloat& _v)
+  {
+    FXfloat v=_v;
+    if(s.swap){fxendianswap4(&v);}
+    s.dev->writeBlock((char *) &v,4);
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const FXdouble& _v)
+  {
+    FXdouble v=_v;
+    if(s.swap){fxendianswap8(&v);}
+    s.dev->writeBlock((char *) &v,8);
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const FXlong& v){ return s << reinterpret_cast<const FXulong&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXulong& _v)
+  {
+    FXulong v=_v;
+    if(s.swap){fxendianswap8(&v);}
+    s.dev->writeBlock((char *) &v,8);
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const char *v)
+  {
+    s.dev->writeBlock(v, strlen(v));
+    return s;
+  }
+  friend inline FXStream& operator<<(FXStream& s, const bool& _v)
+  {
+    s.dev->putch(_v);
+    return s;
+  }
 
   /// Save arrays of items to stream
   FXStream& save(const FXuchar* p,unsigned long n);
@@ -305,17 +369,55 @@ public:
   FXStream& save(const FXulong* p,unsigned long n);
 
   /// Load single items from stream
-  FXStream& operator>>(FXuchar& v);
-  FXStream& operator>>(FXchar& v){ return *this >> reinterpret_cast<FXuchar&>(v); }
-  FXStream& operator>>(FXushort& v);
-  FXStream& operator>>(FXshort& v){ return *this >> reinterpret_cast<FXushort&>(v); }
-  FXStream& operator>>(FXuint& v);
-  FXStream& operator>>(FXint& v){ return *this >> reinterpret_cast<FXuint&>(v); }
-  FXStream& operator>>(FXfloat& v);
-  FXStream& operator>>(FXdouble& v);
-  FXStream& operator>>(FXlong& v){ return *this >> reinterpret_cast<FXulong&>(v); }
-  FXStream& operator>>(FXulong& v);
-  FXStream& operator>>(bool& v);
+  friend inline FXStream& operator>>(FXStream& s, FXuchar& v)
+  {
+    int _v=s.dev->getch();
+    v=(FXuchar) _v;
+    if(-1==_v) FXStream::int_throwPrematureEOF();
+    return s;
+  }
+  friend inline FXStream& operator>>(FXStream& s, FXchar& v){ return s >> reinterpret_cast<FXuchar&>(v); }
+  friend inline FXStream& operator>>(FXStream& s, FXushort& v)
+  {
+    if(2!=s.dev->readBlock((char *) &v,2)) FXStream::int_throwPrematureEOF();
+    if(s.swap){fxendianswap2(&v);}
+    return s;
+  }
+  friend inline FXStream& operator>>(FXStream& s, FXshort& v){ return s >> reinterpret_cast<FXushort&>(v); }
+  friend inline FXStream& operator>>(FXStream& s, FXuint& v)
+  {
+    if(4!=s.dev->readBlock((char *) &v,4)) FXStream::int_throwPrematureEOF();
+    if(s.swap){fxendianswap4(&v);}
+    return s;
+  }
+  friend inline FXStream& operator>>(FXStream& s, FXint& v){ return s >> reinterpret_cast<FXuint&>(v); }
+  friend inline FXStream& operator>>(FXStream& s, FXfloat& v)
+  {
+    if(4!=s.dev->readBlock((char *) &v,4)) FXStream::int_throwPrematureEOF();
+    if(s.swap){fxendianswap4(&v);}
+    return s;
+  }
+  friend inline FXStream& operator>>(FXStream& s, FXdouble& v)
+  {
+    if(8!=s.dev->readBlock((char *) &v,8)) FXStream::int_throwPrematureEOF();
+    if(s.swap){fxendianswap8(&v);}
+    return s;
+  }
+  friend inline FXStream& operator>>(FXStream& s, FXlong& v){ return s >> reinterpret_cast<FXulong&>(v); }
+  friend inline FXStream& operator>>(FXStream& s, FXulong& v)
+  {
+    if(8!=s.dev->readBlock((char *) &v,8)) FXStream::int_throwPrematureEOF();
+    if(s.swap){fxendianswap8(&v);}
+    return s;
+  }
+  friend inline FXStream& operator>>(FXStream& s, bool& v)
+  {
+    int _v=s.dev->getch();
+    v=(_v!=0);
+    if(-1==_v) FXStream::int_throwPrematureEOF();
+    return s;
+  }
+
 
   /// Load arrays of items from stream
   FXStream& load(FXuchar* p,unsigned long n);
@@ -341,6 +443,50 @@ public:
   /// Destructor
   virtual ~FXStream();
   };
+
+//! \deprecated For Qt compatibility only
+typedef FXStream QDataStream;
+
+
+namespace Generic
+{
+	namespace hasSerialiseImpl
+	{
+		template<bool isIntegralOrPtr, typename type> struct FakeStreamType : type
+		{	// This being for user defined struct types
+			operator hasSerialiseImpl::FakeStreamTypeBase &();
+		};
+		template<typename type> struct FakeStreamType<true, type>
+		{	// This being for pointers, references and integrals
+			operator type &();
+			operator hasSerialiseImpl::FakeStreamTypeBase &();
+		};
+	}
+	/*! \struct hasSerialise
+	\ingroup generic
+	\brief Determines if a FXStream \c operator<< exists for the specified type
+	*/
+	template<typename type> struct hasSerialise
+	{
+	private:
+		static FXStream &makeStream();
+		static hasSerialiseImpl::FakeStreamType<0!=indirs<type>::value || -1!=TL::find<IntegralLists::All, typename leastIndir<type>::value>::value, type> &makeType();
+	public:
+		static const int value=(sizeof(FXStream)==sizeof(makeStream() << makeType()));
+	};
+	/*! \struct hasDeserialise
+	\ingroup generic
+	\brief Determines if a FXStream \c operator>> exists for the specified type
+	*/
+	template<typename type> struct hasDeserialise
+	{
+	private:
+		static FXStream &makeStream();
+		static hasSerialiseImpl::FakeStreamType<0!=indirs<type>::value || -1!=TL::find<IntegralLists::All, typename leastIndir<type>::value>::value, type> &makeType();
+	public:
+		static const int value=(sizeof(FXStream)==sizeof(makeStream() >> makeType()));
+	};
+}
 
 }
 
