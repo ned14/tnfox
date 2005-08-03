@@ -1483,25 +1483,6 @@ FXuint FXString::hash() const throw() {
   }
 
 
-// Save
-FXStream& operator<<(FXStream& store,const FXString& s){        // Note stream format incompatible with FOX 1.0
-  FXint len=s.length();
-  store << len;
-  store.save(s.str,len);
-  return store;
-  }
-
-
-// Load
-FXStream& operator>>(FXStream& store,FXString& s){              // Note stream format incompatible with FOX 1.0
-  FXint len;
-  store >> len;
-  s.length(len);
-  store.load(s.str,len);
-  return store;
-  }
-
-
 // Print formatted string a-la vprintf
 FXString& FXString::vformat(const char* fmt,va_list args){
   register FXint len=0;

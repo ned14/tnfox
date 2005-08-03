@@ -487,10 +487,21 @@ public:
   friend FXAPI FXString operator+(FXchar c,const FXString& s);
 
   /// Saving to a stream
-  friend FXAPI FXStream& operator<<(FXStream& store,const FXString& s);
+  friend inline FXStream& operator<<(FXStream& store,const FXString& s){        // Note stream format incompatible with FOX 1.0
+    FXint len=s.length();
+    store << len;
+    store.save(s.str,len);
+    return store;
+  }
 
   /// Load from a stream
-  friend FXAPI FXStream& operator>>(FXStream& store,FXString& s);
+  friend inline FXStream& operator>>(FXStream& store,FXString& s){              // Note stream format incompatible with FOX 1.0
+    FXint len;
+    store >> len;
+    s.length(len);
+    store.load(s.str,len);
+    return store;
+  }
 
   /// Format a string a-la printf
   friend FXAPI FXString FXStringFormat(const FXchar* fmt,...) FX_PRINTF(1,2) ;
