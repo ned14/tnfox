@@ -74,7 +74,8 @@ void FXSQLDB_sqlite3::int_throwSQLite3Error(int errcode, const char *file, int l
 }
 void FXSQLDB_sqlite3::int_waitOnSQLite3File()
 {	// Wait on the lock on the SQLite3 database file to get released
-	//todo;
+	// TODO: Fix to wait directly on file
+	QThread::msleep(1);
 }
 #define FXERRHSQLITE3IMPL(prefix) \
 	if(SQLITE_OK==retcode) \
@@ -347,11 +348,13 @@ namespace FXSQLDB_sqlite3Impl
 							c->mytype=FXSQLDB::Timestamp;
 							sscanf(t, "%u-%u-%u %u:%u:%u.%lf", &tmbuf.tm_year, &tmbuf.tm_mon, &tmbuf.tm_mday,
 								&tmbuf.tm_hour, &tmbuf.tm_min, &tmbuf.tm_sec, &fraction);
+							tmbuf.tm_year-=1900;
 						}
 						else if(isDate)
 						{
 							c->mytype=FXSQLDB::Date;
 							sscanf(t, "%u-%u-%u", &tmbuf.tm_year, &tmbuf.tm_mon, &tmbuf.tm_mday);
+							tmbuf.tm_year-=1900;
 						}
 						else
 						{
@@ -471,7 +474,7 @@ namespace FXSQLDB_sqlite3Impl
 			FXERRH(idx>=0, QTrans::tr("FXSQLDB_sqlite3", "Index is invalid"), 0, 0);
 			return FXString(sqlite3_bind_parameter_name(stmths[mainstmth].h, idx+1));
 		}
-		virtual void bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data)
+		virtual FXSQLDBStatement &bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data)
 		{	// Do some sanity checks
 			FXERRH(idx>=0, QTrans::tr("FXSQLDB_sqlite3", "Index is invalid"), 0, 0);
 			// Most drivers would also assert that datatype is correct for column type,
@@ -554,9 +557,10 @@ namespace FXSQLDB_sqlite3Impl
 				{
 					QByteArray *ba=(QByteArray *) data;
 					while(!FXERRHSQLITE3(sqlite3_bind_blob(stmths[mainstmth].h, idx+1, ba->data(), ba->size(), SQLITE_STATIC)));
+					break;
 				}
 			}
-			FXSQLDBStatement::bind(idx, datatype, data);
+			return FXSQLDBStatement::bind(idx, datatype, data);
 		}
 
 		virtual FXSQLDBCursorRef execute(FXuint flags, QWaitCondition *latch)

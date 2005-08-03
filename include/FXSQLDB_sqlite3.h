@@ -44,9 +44,17 @@ always dynamic and forward-only. Furthermore, you cannot know how many
 rows are in result set except by iterating through all of them.
 
 SQLite3 provides a much reduced set of SQL datatypes: namely, \c NULL,
-\c VARCHAR, \c INTEGER, \c DOUBLE and \c BLOB. It does not enforce
+\c VARCHAR, \c INTEGER, \c DOUBLE and \c BLOB. If you try to bind any
+other type or specify any other type as the column type, silently one of
+these types is chosen appropriately. Similarly, when retrieving data
+only one of these types will be presented - though note that the
+metaprogramming is aware of type convertibility, and will silently
+invoke appropriate conversions if needed. FX::FXTime is treated like
+all dates & times as text by SQLite3.
+
+Some interesting properties of SQLite3 include that it does not enforce
 type constraints ie; you can store any data in any column - though you
-do suffer a slight performance penalty if you do. It also ignores type size
+may suffer a slight performance penalty if you do. It also ignores type size
 constraints eg; you can store any length of text irrespective of the
 column type size.
 
@@ -64,7 +72,8 @@ SQLite3 can read concurrently with other processes, but must modify
 the entire database exclusively. This can make it unsuitable for certain
 kinds of application. If FXSQLDB_sqlite3 is told that the database file
 is locked, it waits on that file until the lock clears. This implies
-that operations may block for a while.
+that operations may block for a while. This driver knows to wait on the
+underlying file rather spin, wasting processor time.
 */
 struct FXSQLDB_sqlite3Private;
 class FXAPI FXSQLDB_sqlite3 : public FXSQLDB

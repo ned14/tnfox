@@ -192,10 +192,11 @@ const FXString &FXSQLDBStatement::text() const throw()
 	return p->text;
 }
 
-void FXSQLDBStatement::bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data)
+FXSQLDBStatement &FXSQLDBStatement::bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data)
 {
 	if((FXuint) idx<p->unknownBLOBs.count())
 		p->unknownBLOBs.replace(idx, 0);
+	return *this;
 }
 void FXSQLDBStatement::int_bindUnknownBLOB(FXint idx, FXAutoPtr<QBuffer> buff)
 {

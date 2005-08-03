@@ -51,8 +51,8 @@ part you can forget about binding.
 
 <h3>The Drivers:</h3>
 The core of the TnFOX SQL Database Support is FX::FXSQLDB which
-is the abstract base class of SQL Database drivers. To use it, simply
-instantiate an implementation via FX::FXSQLDBRegistry which is
+is the abstract base class of SQL Database drivers in TnFOX. To use it,
+simply instantiate an implementation via FX::FXSQLDBRegistry which is
 the future-proof method (which in the future may load in a driver DLL).
 
 The drivers currently provided are:
@@ -93,42 +93,40 @@ SQL92 compatible way which isn't required if you simply bind in the values.
 
 TODO:
 \li SQLITE_BUSY handler
-\li Full BLOB support - test
-\li Test compile on Linux
-\li Check optimised code - glowcode
 \li FXSQLDB_ipc
 */
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable: 4251)
-#pragma warning(disable: 4275)
+#pragma warning(disable: 4251) // class 1 needs to have dll-interface to be used by clients of class 2
+#pragma warning(disable: 4244) // Conversion from bigger to smaller, possible loss of data
+#pragma warning(disable: 4275) // non DLL-interface used as base for DLL-interface class
 #endif
 
 class QStringList;
 
 namespace FXSQLDBImpl
 {	// We can't partially specialise member functions (which is stupid of the C++ spec)
-	template<bool, typename type, typename signedIntEquiv> struct checkForOverflow
+	template<bool isUnsignedInt, typename type, typename signedIntEquiv> struct checkForOverflow
 	{
-		static int Do(int idx, const type *v) throw()
+		static bool Do(const type *v) throw()
 		{
-			return idx;
+			return false;
 		}
 	};
 	template<typename type, typename signedIntEquiv> struct checkForOverflow<true, type, signedIntEquiv>
 	{	// Called when type is an unsigned int
-		static int Do(int idx, const type *v) throw()
+		static bool Do(const type *v) throw()
 		{
 			if(v && *v>Generic::BiggestValue<signedIntEquiv>::value)
 			{	// Unsigned is overflowing its container so bump it
-				return idx+1;
+				return true;
 			}
-			return idx;
+			return false;
 		}
 	};
 	template<> struct checkForOverflow<true, FXulong, FXlong>
 	{	// Called when type is as big as it can be
-		static int Do(int idx, const FXulong *v) throw()
+		static bool Do(const FXulong *v) throw()
 		{
 			if(v && *v>Generic::BiggestValue<FXlong>::value)
 			{	// Best we can do is print a message
@@ -136,10 +134,10 @@ namespace FXSQLDBImpl
 				fxmessage("WARNING: Unsigned 64 bit value overflows signed 64 bit database type!\n");
 #endif
 			}
-			return idx;
+			return false;
 		}
 	};
-	template<bool unknownType, typename type> struct BindImpl;
+	template<bool unknownType, typename type> struct DoSerialise;
 }
 
 class FXSQLDBStatement;
@@ -174,13 +172,21 @@ settable cursors but does support forwards and backwards cursors, at()
 will iterate those until the desired row is achieved. However, in general,
 most of the translation logic is done entirely by metaprogramming.
 
-BLOB types are especially well supported, and are always used by
-reference.
-
 Note that if you store unsigned values, they are stored as their signed
 equivalent unless they are too big to fit. If this happens, they move
 up a container size which may cause your database driver to throw an
-exception if type constraints are exceeded.
+exception if type constraints are exceeded. If you don't want this,
+cast your unsigned to signed before passing it to FX::FXSQLDBStatement::bind().
+
+<h3>BLOB support</h3>
+Probably the biggest & best distinction of this SQL Database interface
+from others is the BLOB support. Basically, if there is an \c operator<<
+and \c operator>> overload for FX::FXStream for the type or a parent
+class of that type, FXSQLDB will automatically see them and use them to both
+store and load transparently the type instance as a BLOB.
+
+And that's basically it. It just works.
+
 */
 struct FXSQLDBPrivate;
 class FXAPI FXSQLDB
@@ -281,7 +287,7 @@ public:
 		FXSTATIC_ASSERT(LastSQLDataTypeEntry==Generic::TL::length<CPPDataTypes>::value, Mismatched_SQLDataTypes_And_CPPDataTypes);
 		typedef CPPToSQL92Type<type> sql92type;
 
-		return (SQLDataType) FXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(sql92type::value, v);
+		return (SQLDataType)(sql92type::value+FXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(v));
 	}
 	//! Invokes \em instance with the C++ type the specified SQL data type best matches via FX::Generic::TL::dynamicAt
 	template<template<typename type> class instance> struct toCPPType
@@ -336,7 +342,8 @@ public:
 struct FXSQLDBCursorPrivate;
 /*! \class FXSQLDBCursor
 \ingroup sqldb
-\brief A cursor which can iterate through the results of a statement
+\brief Abstract base class for a cursor which can iterate through the results of
+executing a statement
 
 You should iterate like this:
 \code
@@ -346,6 +353,8 @@ for(FXSQLDBCursorRef cursor=statement->execute(); !cursor->atEnd(); cursor->next
   ...
 }
 \endcode
+
+\sa FX::FXSQLDB, FX::FXSQLDBStatement
 */
 class FXAPI FXSQLDBCursor : public FXRefedObject<int>
 {
@@ -411,11 +420,30 @@ public:
 	virtual FXSQLDBColumnRef data(FXuint no)=0;
 };
 
-struct FXSQLDBStatementPrivate;
 /*! \class FXSQLDBStatement
 \ingroup sqldb
-\brief The abstract base class of a SQL statement
+\brief The abstract base class of a prepared SQL statement
+
+You can freely keep these around and simply rebind the parameters for
+efficiency. You can use one of three forms of parameter:
+\code
+INSERT INTO foo VALUES(?, ?);
+INSERT INTO foo VALUES(?2, ?1);
+INSERT INTO foo VALUES(:niall, :douglas);
+\endcode
+The first form is simply where the first is 0, the second 1 etc. The second
+form puts the lowest insert at 0, the next lowest at 1 etc. And the third
+form is probably the most flexible but also the slowest - you literally
+specify ":niall".
+
+You should note that binding a BLOB directly via FX::QByteArray uses the
+data directly by reference - therefore, the data must continue to exist
+until after the statement has been executed. With every other type, bind()
+takes a copy.
+
+\sa FX::FXSQL
 */
+struct FXSQLDBStatementPrivate;
 class FXAPI FXSQLDBStatement : public FXRefedObject<int>
 {
 	FXSQLDBStatementPrivate *p;
@@ -443,31 +471,35 @@ public:
 	have their data copied except for anything which becomes a BLOB
 	which is used by reference and must exist until the statement is
 	destroyed or the parameter rebound */
-	virtual void bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data);
+	virtual FXSQLDBStatement &bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data);
 private:
 #if defined(_MSC_VER) && _MSC_VER<=1400 && !defined(__INTEL_COMPILER)
 #if _MSC_VER<=1310 
 	// MSVC7.1 and earlier just won't friend templates with specialisations :(
-	friend struct FXSQLDBImpl::BindImpl;
+	friend struct FXSQLDBImpl::DoSerialise;
 #else
 	// MSVC8.0 is even worse :(. Just give up and call it public
 public:
 #endif
 #else
 	// This being the proper ISO C++ form
-	template<bool unknownType, typename type> friend struct FXSQLDBImpl::BindImpl;
+	template<bool unknownType, typename type> friend struct FXSQLDBImpl::DoSerialise;
 #endif
 	void int_bindUnknownBLOB(FXint idx, FXAutoPtr<QBuffer> buff);
 public:
 	//! Binds a value to a parameter by zero-based position
-	template<typename type> void bind(FXint idx, const type &v)
+	template<typename type> FXSQLDBStatement &bind(FXint idx, const type &v)
 	{
-		FXSQLDBImpl::BindImpl<-1==FXSQLDB::CPPToSQL92Type<type>::value, type>(this, idx, v);
+		typedef FXSQLDB::CPPToSQL92Type<type> sql92type;
+		FXSQLDBImpl::BindImpl<sql92type::value, -1!=sql92type::unsignedIntIdx, type>(this, idx,
+			FXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(&v), v);
+		return *this;
 	}
 	//! Binds null to a parameter
-	void bind(FXint idx)
+	FXSQLDBStatement &bind(FXint idx)
 	{
 		bind(idx, FXSQLDB::Null, 0);
+		return *this;
 	}
 	/*! Binds a value to a named parameter, returning the parameter index.
 	Parameter insert locations can be specified using either the ?&lt;name&gt;
@@ -500,7 +532,7 @@ namespace FXSQLDBImpl
 	{
 		SerialiseUnknownBLOB(FXStream &s, const type &v)
 		{	// Simply dump
-			s << v;
+			s << const_cast<type &>(v);
 		}
 	};
 	template<bool override, typename type> struct DeserialiseUnknownBLOB
@@ -513,13 +545,29 @@ namespace FXSQLDBImpl
 
 
 
-	template<bool unknownType, typename type> struct BindImpl
-	{	// It's known, so simply pass as a void *
-		BindImpl(FXSQLDBStatement *s, FXint idx, const type &v)
+	template<int sql92type, bool isUnsignedInt, typename type> struct BindImpl
+	{	// It's known and not an unsigned int, so simply pass as a void *
+		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
 			FXSQLDB *d=0;
 			FXSQLDB::SQLDataType datatype=d->toSQL92Type<type>(&v);
 			s->bind(idx, datatype, (void *) &v);
+		}
+	};
+	template<int sql92type, typename type> struct BindImpl<sql92type, true, type>
+	{	// It's known and is an unsigned int, so simply pass as a void *
+		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
+		{
+			FXSQLDB *d=0;
+			FXSQLDB::SQLDataType datatype=d->toSQL92Type<type>(&v);
+			if(upgrade)
+			{	// Need to copy to higher container to stay endian safe
+				typedef typename Generic::TL::at<FXSQLDB::CPPDataTypes, sql92type+1>::value biggerContainer;
+				biggerContainer bv=v;
+				s->bind(idx, datatype, (void *) &bv);
+			}
+			else
+				s->bind(idx, datatype, (void *) &v);
 		}
 	};
 	template<bool canSerialise, typename type> struct DoSerialise
@@ -541,9 +589,9 @@ namespace FXSQLDBImpl
 			s->int_bindUnknownBLOB(idx, buff);
 		}
 	};
-	template<typename type> struct BindImpl<true, type>
+	template<bool isUnsignedInt, typename type> struct BindImpl<-1, isUnsignedInt, type>
 	{	// It's some unknown type. Try serialising it
-		BindImpl(FXSQLDBStatement *s, FXint idx, const type &v)
+		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
 			DoSerialise<Generic::hasSerialise<type>::value, type>(s, idx, v);
 		}
@@ -645,13 +693,16 @@ namespace FXSQLDBImpl
 \ingroup sqldb
 \brief Represents information about a column in a row
 
-Via specialisations of the metaprogramming underlying get() and set(), <tt>const
-char *</tt> and BLOB's (FX::QByteArray) return and set the data <b>by reference</b>,
+Via specialisations of the metaprogramming underlying get(), <tt>const
+char *</tt> and BLOB's (FX::QByteArray) return the data <b>by reference</b>,
 thus avoiding copying.
 
 FX::FXString's always copy both in and out. Note that except for BLOB's and
-strings (including headers), the value is stored in the scratch space inside
-Column and thus their value persists after the cursor they came from is moved. 
+strings (including headers which really are just a string), the value is stored
+in the scratch space inside FXSQLDBColumn and thus their value persists after the
+cursor they came from is moved. 
+
+\sa FX::FXSQLDB, FX::FXSQLCursor
 */
 class FXAPI FXSQLDBColumn : public FXRefedObject<int>
 {
