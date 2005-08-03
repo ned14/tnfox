@@ -60,9 +60,9 @@ class FXAPIR QBuffer : public QIODevice
 	QBuffer &operator=(const QBuffer &);
 public:
 	//! Constructs a new instance using an internal QByteArray of length \em len
-	QBuffer(FXuval len=0);
+	explicit QBuffer(FXuval len=0);
 	//! Constructs a new instance using \em buffer as the memory array
-	QBuffer(QByteArray &buffer);
+	explicit QBuffer(QByteArray &buffer);
 	~QBuffer();
 	//! Returns the byte array being addressed by this device.
 	QByteArray &buffer() const;
