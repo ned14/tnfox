@@ -219,11 +219,6 @@ void FXStream::setDevice(QIODevice *_dev)
 	dev=_dev;
 }
 
-bool FXStream::atEnd() const
-{
-	return dev->atEnd();
-}
-
 // Little helper function to work around operator>> hiding
 static inline void readIntegral(FXStream &s, FXuint &v)
 {
@@ -236,21 +231,10 @@ FXStream &FXStream::readBytes(char *&s, FXuint &l)
 	return readRawBytes(s, l);
 }
 
-FXStream &FXStream::readRawBytes(char *buffer, FXuval len)
-{
-	if(len!=dev->readBlock(buffer, len)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-	return *this;
-}
-
 FXStream &FXStream::writeBytes(const char *s, FXuint l)
 {
+	*this << l;
 	return writeRawBytes(s, l);
-}
-
-FXStream &FXStream::writeRawBytes(const char *buffer, FXuval len)
-{
-	dev->writeBlock(buffer, len);
-	return *this;
 }
 
 FXfval FXStream::rewind(FXint amount)
@@ -269,12 +253,6 @@ void FXStream::int_throwPrematureEOF()
 
 
 /************************  Save Blocks of Basic Types  *************************/
-
-FXStream& FXStream::save(const FXuchar* p,unsigned long n){
-  FXASSERT(n==0 || (n>0 && p!=NULL));
-  dev->writeBlock((char *) p,n);
-  return *this;
-  }
 
 FXStream& FXStream::save(const FXushort* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
@@ -339,12 +317,6 @@ FXStream& FXStream::save(const FXulong* p,unsigned long n){
 
 
 /************************  Load Blocks of Basic Types  *************************/
-
-FXStream& FXStream::load(FXuchar* p,unsigned long n){
-  FXASSERT(n==0 || (n>0 && p!=NULL));
-  if(n!=dev->readBlock((char *) p,n)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  return *this;
-  }
 
 FXStream& FXStream::load(FXushort* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));

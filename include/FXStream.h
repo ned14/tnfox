@@ -176,7 +176,8 @@ public:
   //! \deprecated For Qt compatibility only
   FXDEPRECATEDEXT void unsetDevice() { setDevice(0); }
   //! Returns true if there is no more data to be read
-  bool atEnd() const;
+  bool atEnd() const { return dev->atEnd(); }
+
   enum ByteOrder
   {
 	  BigEndian=0,
@@ -190,13 +191,22 @@ public:
   //! \deprecated For Qt compatibility only
   FXDEPRECATEDEXT FXStream &readBytes(char *&s, FXuint &l);
   //! Reads preformatted byte data into the specified buffer
-  FXStream &readRawBytes(char *buffer, FXuval len);
+  FXStream &readRawBytes(char *buffer, FXuval len)
+  {
+	if(len!=dev->readBlock(buffer, len)) FXStream::int_throwPrematureEOF();
+	return *this;
+  }
+
   //! \overload
   FXStream &readRawBytes(FXuchar *buffer, FXuval len) { return readRawBytes((char *) buffer, len); }
   //! \deprecated For Qt compatibility only
   FXDEPRECATEDEXT FXStream &writeBytes(const char *s, FXuint l);
   //! Writes preformatted byte data from the specified buffer
-  FXStream &writeRawBytes(const char *buffer, FXuval len);
+  FXStream &writeRawBytes(const char *buffer, FXuval len)
+  {
+	dev->writeBlock(buffer, len);
+	return *this;
+  }
   //! \overload
   FXStream &writeRawBytes(const FXuchar *buffer, FXuval len) { return writeRawBytes((char *) buffer, len); }
 
@@ -357,7 +367,11 @@ public:
   }
 
   /// Save arrays of items to stream
-  FXStream& save(const FXuchar* p,unsigned long n);
+  inline FXStream& save(const FXuchar* p,unsigned long n){	// inlined as FXString uses it
+    FXASSERT(n==0 || (n>0 && p!=NULL));
+    dev->writeBlock((char *) p,n);
+    return *this;
+  }
   FXStream& save(const FXchar* p,unsigned long n){ return save(reinterpret_cast<const FXuchar*>(p),n); }
   FXStream& save(const FXushort* p,unsigned long n);
   FXStream& save(const FXshort* p,unsigned long n){ return save(reinterpret_cast<const FXushort*>(p),n); }
@@ -420,7 +434,11 @@ public:
 
 
   /// Load arrays of items from stream
-  FXStream& load(FXuchar* p,unsigned long n);
+  FXStream& load(FXuchar* p,unsigned long n){	// inlined as FXString uses it
+    FXASSERT(n==0 || (n>0 && p!=NULL));
+    if(n!=dev->readBlock((char *) p,n)) FXStream::int_throwPrematureEOF();
+    return *this;
+  }
   FXStream& load(FXchar* p,unsigned long n){ return load(reinterpret_cast<FXuchar*>(p),n); }
   FXStream& load(FXushort* p,unsigned long n);
   FXStream& load(FXshort* p,unsigned long n){ return load(reinterpret_cast<FXushort*>(p),n); }
