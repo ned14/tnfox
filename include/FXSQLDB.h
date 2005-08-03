@@ -170,7 +170,11 @@ In general, this is a very thin wrapper around the database itself for
 speed. Some emulation is provided eg; if the driver doesn't support
 settable cursors but does support forwards and backwards cursors, at()
 will iterate those until the desired row is achieved. However, in general,
-most of the translation logic is done entirely by metaprogramming.
+most of the translation logic is done entirely by metaprogramming. A lot
+of the structure has been determined by requirements for FX::FXSQLDB_ipc
+as the \c Node.Query capability is mostly implemented using that and
+achieving maximum efficiency was important (imagine working through a
+5,000 record dataset).
 
 Note that if you store unsigned values, they are stored as their signed
 equivalent unless they are too big to fit. If this happens, they move
@@ -178,7 +182,7 @@ up a container size which may cause your database driver to throw an
 exception if type constraints are exceeded. If you don't want this,
 cast your unsigned to signed before passing it to FX::FXSQLDBStatement::bind().
 
-<h3>BLOB support</h3>
+<h3>BLOB support:</h3>
 Probably the biggest & best distinction of this SQL Database interface
 from others is the BLOB support. Basically, if there is an \c operator<<
 and \c operator>> overload for FX::FXStream for the type or a parent
@@ -187,6 +191,18 @@ store and load transparently the type instance as a BLOB.
 
 And that's basically it. It just works.
 
+<h3>Asynchronous connections:</h3>
+FXSQLDB also supports the notion of asynchronous connections whereby if
+say you bind a parameter to a prepared statement, it begins the process of
+binding that parameter but returns from the call before the bind has
+completed. This means two things: (i) the process of working with a remote
+database goes much faster but (ii) errors do not get returned immediately,
+but rather at some later stage, usually by calling some other code which
+would never normally return such an error.
+
+Normally, if you have written your code to be exception aware, this is
+not a problem. If however you need to know that everything you have done
+up till now has been processed and is fine, call synchronise().
 */
 struct FXSQLDBPrivate;
 class FXAPI FXSQLDB
@@ -204,6 +220,7 @@ public:
 		FXuint HasBackwardsCursor : 1;	//!< Whether this driver supports cursors moving backwards
 		FXuint HasSettableCursor : 1;	//!< Whether this driver supports cursors being set to an arbitrary row
 		FXuint HasStaticCursor : 1;		//!< Whether this driver supports static cursors
+		FXuint Asynchronous : 1;		//!< Whether this driver works asynchronously
 		Capabilities() { *((FXuint *) this)=0; }
 		//! Sets Transactions
 		Capabilities &setTransactions(bool v=true) { Transactions=v; return *this; }
@@ -217,6 +234,8 @@ public:
 		Capabilities &setHasSettableCursor(bool v=true) { HasSettableCursor=v; return *this; }
 		//! Sets HasStaticCursor
 		Capabilities &setHasStaticCursor(bool v=true) { HasStaticCursor=v; return *this; }
+		//! Sets Asynchronous
+		Capabilities &setAsynchronous(bool v=true) { Asynchronous=v; return *this; }
 	};
 protected:
 	FXSQLDB(Capabilities caps, const FXString &driverName, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
@@ -337,6 +356,9 @@ public:
 	virtual FXSQLDBCursorRef execute(const FXString &text);
 	//! Executes a statement immediately
 	virtual void immediate(const FXString &text);
+
+	//! Synchronises the connection if the driver is asynchronous
+	virtual void synchronise();
 };
 
 struct FXSQLDBCursorPrivate;
@@ -518,9 +540,9 @@ public:
 		return idx;
 	}
 	/*! Executes a statement returning results. \em flags are a combination
-	of FX::FXSQLDB::Statement::Cursor::Flags. If set and asynchronous results
+	of FX::FXSQLDBCursor::Flags. If set and asynchronous results
 	set in the flags, \em latch will be signalled for you when results become available */
-	virtual FXSQLDBCursorRef execute(FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0)=0;
+	virtual FXSQLDBCursorRef execute(FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly|FXSQLDBCursor::Async, QWaitCondition *latch=0)=0;
 	//! Executes a statement returning no results
 	virtual void immediate()=0;
 };

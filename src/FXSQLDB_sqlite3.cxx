@@ -138,7 +138,7 @@ namespace FXSQLDB_sqlite3Impl
 		}
 		virtual FXSQLDBCursorRef copy() const
 		{
-			FXERRG(QTrans::tr("FXSQLDB_sqlite3", "SQLite3 cursors cannot be copied"), 0, 0);
+			FXERRGNOTSUPP(QTrans::tr("FXSQLDB_sqlite3", "SQLite3 cursors cannot be copied"));
 		}
 		virtual FXint forwards()
 		{

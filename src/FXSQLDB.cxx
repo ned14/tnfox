@@ -159,6 +159,11 @@ void FXSQLDB::immediate(const FXString &text)
 	ret->immediate();
 }
 
+void FXSQLDB::synchronise()
+{
+}
+
+
 //*******************************************************************************
 
 struct FXSQLDBStatementPrivate
@@ -302,7 +307,7 @@ FXint FXSQLDBCursor::backwards()
 {
 	if(!statement()->driver()->capabilities().HasBackwardsCursor)
 	{
-		FXERRG(QTrans::tr("FXSQLDB::Statement::Cursor", "This driver does not support moving cursors backwards"), 0, 0);
+		FXERRGNOTSUPP(QTrans::tr("FXSQLDB::Statement::Cursor", "This driver does not support moving cursors backwards"));
 	}
 	if(p->crow<=-1) return p->crow;
 	return --p->crow;

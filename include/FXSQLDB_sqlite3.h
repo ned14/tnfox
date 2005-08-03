@@ -41,7 +41,9 @@ of SQL92.
 
 SQLite3 provides the basic functionality of a database, so cursors are
 always dynamic and forward-only. Furthermore, you cannot know how many
-rows are in result set except by iterating through all of them.
+rows are in result set except by iterating through all of them. Lastly,
+you cannot copy cursors except by executing again and iterating to where
+you want (which FX::FXSQLDBCursor::at() will do).
 
 SQLite3 provides a much reduced set of SQL datatypes: namely, \c NULL,
 \c VARCHAR, \c INTEGER, \c DOUBLE and \c BLOB. If you try to bind any
