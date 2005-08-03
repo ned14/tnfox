@@ -137,13 +137,19 @@ struct tm *FXTime::as_tm(struct tm *buf, bool inLocalTime) const
 #ifdef WIN32
 	QMtxHold h(gmtimelock);
 #endif
-	*buf=inLocalTime ? *localtime(&tmp) : *gmtime(&tmp);
+	struct tm *src=inLocalTime ? localtime(&tmp) : gmtime(&tmp);
+	assert(src);
+	FXERRH(src, "Failed to convert to struct tm", 0, FXERRH_ISDEBUG);
+	*buf=*src;
 	return buf;
 #endif
 }
 FXTime &FXTime::set_tm(struct tm *buf, bool isInLocalTime)
 {
-	set_time_t(mktime(buf));
+	time_t temp=mktime(buf);
+	assert(temp>=0);
+	FXERRH(temp>=0, "Supplied struct tm structure is bad", 0, FXERRH_ISDEBUG);
+	set_time_t(temp);
 	if(isInLocalTime==isLocalTime) {}
 	else if(isInLocalTime && !isLocalTime)
 		value-=localTimeDiff();
@@ -166,8 +172,12 @@ FXString FXTime::asString(const FXString &fmt) const
 	FXint len=(FXint) strftime(buffer, sizeof(buffer), ret.text(), as_tm(&tmresult, isLocalTime));
 	ret.assign(buffer, len);
 
-	while(insertcnt--)
-		ret.arg((value % micsPerSecond)/(double) micsPerSecond, 0, 'f', 6);
+	if(insertcnt)
+	{
+		FXString fractstr(FXString::number((value % micsPerSecond)/(double) micsPerSecond, 'f', 6).mid(2));
+		while(insertcnt--)
+			ret.arg(fractstr);
+	}
 	return ret;
 }
 
