@@ -4,7 +4,7 @@
 *                                                                               *
 *********************************************************************************
 * Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
-* TnFOX extensions (C) 2003-2005 Niall Douglas                                       *
+* TnFOX extensions (C) 2003-2005 Niall Douglas                                  *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -487,21 +487,10 @@ public:
   friend FXAPI FXString operator+(FXchar c,const FXString& s);
 
   /// Saving to a stream
-  friend inline FXStream& operator<<(FXStream& store,const FXString& s){        // Note stream format incompatible with FOX 1.0
-    FXint len=s.length();
-    store << len;
-    store.save(s.str,len);
-    return store;
-  }
+  friend inline FXStream& operator<<(FXStream& store,const FXString& s);
 
   /// Load from a stream
-  friend inline FXStream& operator>>(FXStream& store,FXString& s){              // Note stream format incompatible with FOX 1.0
-    FXint len;
-    store >> len;
-    s.length(len);
-    store.load(s.str,len);
-    return store;
-  }
+  friend inline FXStream& operator>>(FXStream& store,FXString& s);
 
   /// Format a string a-la printf
   friend FXAPI FXString FXStringFormat(const FXchar* fmt,...) FX_PRINTF(1,2) ;

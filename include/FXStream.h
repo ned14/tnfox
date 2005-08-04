@@ -465,6 +465,23 @@ public:
 //! \deprecated For Qt compatibility only
 typedef FXStream QDataStream;
 
+// FXString serialisation (can't be defined in FXString.h as FXStream needs FXString)
+inline FXStream &operator<<(FXStream &store, const FXString &s)
+{
+	FXint len=s.length();
+	store << len;
+	store.save(s.str,len);
+	return store;
+}
+inline FXStream &operator>>(FXStream &store, FXString &s)
+{
+	FXint len;
+	store >> len;
+	s.length(len);
+	store.load(s.str,len);
+	return store;
+}
+
 
 namespace Generic
 {
