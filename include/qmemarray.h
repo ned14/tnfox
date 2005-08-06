@@ -231,23 +231,60 @@ public:
 	using std::vector<type>::pop_back;
 };
 
+namespace QMemArrayImpl
+{
+	template<bool isPOD, typename type> struct Serialise
+	{
+		Serialise(FXStream &s, const QMemArray<type> &a)
+		{
+			FXuint mysize=a.size();
+			s << mysize;
+			for(FXuint i=0; i<mysize; i++)
+				s << a.at(i);
+		}
+	};
+	template<typename type> struct Serialise<true, type>
+	{
+		Serialise(FXStream &s, const QMemArray<type> &a)
+		{
+			FXuint mysize=a.size();
+			s << mysize;
+			s.save(a.data(), s);
+		}
+	};
+	template<bool isPOD, typename type> struct Deserialise
+	{
+		Deserialise(FXStream &s, QMemArray<type> &a)
+		{
+			FXuint mysize;
+			s >> mysize;
+			a.resize(mysize);
+			for(FXuint i=0; i<mysize; i++)
+				s >> a.at(i);
+		}
+	};
+	template<typename type> struct Deserialise<true, type>
+	{
+		Deserialise(FXStream &s, QMemArray<type> &a)
+		{
+			FXuint mysize;
+			s >> mysize;
+			a.resize(mysize);
+			s.load(a.data(), s);
+		}
+	};
+}
+
 //! Writes the contents of the array to stream \em s
 template<typename type> FXStream &operator<<(FXStream &s, const QMemArray<type> &a)
 {
-	FXuint mysize=a.size();
-	s << mysize;
-	for(FXuint i=0; i<mysize; i++)
-		s << a.at(i);
+	QMemArrayImpl::Serialise<Generic::TraitsBasic<type>::isPOD, type>(s, a);
 	return s;
 }
 //! Reads an array from stream \em s
 template<typename type> FXStream &operator>>(FXStream &s, QMemArray<type> &a)
 {
-	FXuint mysize;
-	s >> mysize;
-	a.resize(mysize);
-	for(FXuint i=0; i<mysize; i++)
-		s >> a.at(i);
+	QMemArrayImpl::Deserialise<Generic::TraitsBasic<type>::isPOD, type>(s, a);
 	return s;
 }
 
