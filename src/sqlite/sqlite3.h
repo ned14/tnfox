@@ -31,7 +31,7 @@ extern "C" {
 #ifdef SQLITE_VERSION
 # undef SQLITE_VERSION
 #endif
-#define SQLITE_VERSION         "3.2.2"
+#define SQLITE_VERSION         "3.2.2tnfox"
 
 /*
 ** The format of the version string is "X.Y.Z<trailing string>", where

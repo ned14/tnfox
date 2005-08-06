@@ -4,6 +4,7 @@
 *                                                                               *
 *********************************************************************************
 * Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* TnFOX extensions (C) 2003-2005 Niall Douglas                                  *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -26,9 +27,8 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "FXStream.h"
 #include "FXString.h"
-#include "FXException.h"
+#include "FXStream.h"
 #include <assert.h>
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
