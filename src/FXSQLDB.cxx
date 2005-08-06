@@ -148,10 +148,10 @@ void FXSQLDB::setPort(FXushort port)
 	p->port=port;
 }
 
-FXSQLDBCursorRef FXSQLDB::execute(const FXString &text)
+FXSQLDBCursorRef FXSQLDB::execute(const FXString &text, FXuint flags, QWaitCondition *latch)
 {
 	FXSQLDBStatementRef ret=prepare(text);
-	return ret->execute();
+	return ret->execute(flags, latch);
 }
 void FXSQLDB::immediate(const FXString &text)
 {
@@ -161,6 +161,7 @@ void FXSQLDB::immediate(const FXString &text)
 
 void FXSQLDB::synchronise()
 {
+
 }
 
 

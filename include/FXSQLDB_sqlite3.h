@@ -90,6 +90,8 @@ public:
 	FXSQLDB_sqlite3(const FXString &dbpath, const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
 	~FXSQLDB_sqlite3();
 
+	virtual const FXString &versionInfo() const;
+
 	virtual void open(const FXString &password=FXString::nullStr());
 	virtual void close();
 	virtual FXSQLDBStatementRef prepare(const FXString &text);

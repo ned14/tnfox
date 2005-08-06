@@ -105,6 +105,12 @@ FXSQLDB_sqlite3::~FXSQLDB_sqlite3()
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
+const FXString &FXSQLDB_sqlite3::versionInfo() const
+{
+	static FXString s(sqlite3_libversion());
+	return s;
+}
+
 namespace FXSQLDB_sqlite3Impl
 {
 	class Cursor : public FXSQLDBCursor

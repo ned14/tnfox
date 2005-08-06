@@ -138,6 +138,7 @@ namespace FXSQLDBImpl
 		}
 	};
 	template<bool unknownType, typename type> struct DoSerialise;
+	template<int sql92type, bool isUnsignedInt, typename type> struct BindImpl;
 }
 
 class FXSQLDBStatement;
@@ -328,6 +329,8 @@ public:
 	const FXString &driverName() const throw();
 	//! Returns the capabilities of this driver
 	Capabilities capabilities() const throw();
+	//! Returns version information about the database this driver accesses
+	virtual const FXString &versionInfo() const=0;
 	//! The name of the database this driver is accessing
 	const FXString &dbName() const throw();
 	//! Sets the name of the database this driver is accessing
@@ -353,7 +356,7 @@ public:
 	virtual FXSQLDBStatementRef prepare(const FXString &text)=0;
 
 	//! Executes a statement with results
-	virtual FXSQLDBCursorRef execute(const FXString &text);
+	virtual FXSQLDBCursorRef execute(const FXString &text, FXuint flags=2/*FXSQLDBCursor::IsDynamic*/|4/*FXSQLDBCursor::ForwardOnly*/|256/*FXSQLDBCursor::Async*/, QWaitCondition *latch=0);
 	//! Executes a statement immediately
 	virtual void immediate(const FXString &text);
 
@@ -361,7 +364,6 @@ public:
 	virtual void synchronise();
 };
 
-struct FXSQLDBCursorPrivate;
 /*! \class FXSQLDBCursor
 \ingroup sqldb
 \brief Abstract base class for a cursor which can iterate through the results of
@@ -378,6 +380,7 @@ for(FXSQLDBCursorRef cursor=statement->execute(); !cursor->atEnd(); cursor->next
 
 \sa FX::FXSQLDB, FX::FXSQLDBStatement
 */
+struct FXSQLDBCursorPrivate;
 class FXAPI FXSQLDBCursor : public FXRefedObject<int>
 {
 	FXSQLDBCursorPrivate *p;
@@ -395,7 +398,7 @@ public:
 
 	//! Cursor flags
 	enum Flags
-	{
+	{	// If you change these remember to adjust FXSQLDB above
 		IsStatic=1,			//!< The results returned by this cursor never change
 		IsDynamic=2,		//!< The results returned by this cursor can change
 		ForwardOnly=4,		//!< This cursor can only move forwards
@@ -616,6 +619,16 @@ namespace FXSQLDBImpl
 		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
 			DoSerialise<Generic::hasSerialise<type>::value, type>(s, idx, v);
+		}
+	};
+	template<bool isUnsignedInt> struct BindImpl<-1, isUnsignedInt, const char *>
+	{	// A string literal. Convert to FXString and pass
+		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const char *&v)
+		{
+			FXString l(v);
+			FXSQLDB *d=0;
+			FXSQLDB::SQLDataType datatype=d->toSQL92Type<FXString>();
+			s->bind(idx, datatype, (void *) &l);
 		}
 	};
 
