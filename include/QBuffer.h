@@ -64,6 +64,8 @@ public:
 	//! Constructs a new instance using \em buffer as the memory array
 	explicit QBuffer(QByteArray &buffer);
 	~QBuffer();
+	//! Returns true if the device has never been used
+	bool isNull() const;
 	//! Returns the byte array being addressed by this device.
 	QByteArray &buffer() const;
 	//! Sets the byte array being addressed by this device. Closes the old buffer first.
