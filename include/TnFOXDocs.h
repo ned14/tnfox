@@ -44,30 +44,28 @@ so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the
 \c LICENCE-ADDENDUM.txt file and you can find out more about mine in the \c LICENCE-ADDENDUM2.txt
 
-\note There is not <b>one single line</b> of source from the Qt library in TnFOX. The Qt-compatible
-API's TnFOX offers furthermore are based on Qt, but are not equivalent to Qt. See the page \link qtdiffs
-"Structural differences between TnFOX and Qt"
-\endlink
-for more information.
-
 To get you started, here are a list of common start points:
 <ol>
 
-<li> <a class="el" target="_self" href="classes.html">All classes in TnFOX</a> and <a class="el" target="_self" href="modules.html">Non-class entities</a>
-<ul>
-<li> \ref guiclasses
-<li> \ref layoutclasses
-<li> \ref resourceclasses
-<li> \ref operationalclasses
+<li> <a class="el" target="_self" href="classes.html">All classes in TnFOX</a> and <a class="el" target="_self" href="modules.html">Non-class entities</a>. By category:
+<table border="0">
+ <tr>
+  <td> \ref guiclasses
+  <td> \ref layoutclasses
+  <td> \ref resourceclasses
+  <td> \ref operationalclasses
+ <tr>
+  <td> \ref convenclasses
+  <td> \ref containclasses
+  <td> \ref QTL
+  <td> \ref openglclasses
+ <tr>
+  <td>
+  <td> \ref fiodevices
+  <td> \ref siodevices
+  <td>
+</table>
 
-<li> \ref convenclasses
-<li> \ref containclasses
-<li> \ref QTL
-<li> \ref openglclasses
-
-<li> \ref fiodevices
-<li> \ref siodevices
-</ul>
 <li> <a class="el" target="_self" href="files.html">A list of files in TnFOX</a>. The ones with
 descriptions are entirely written by me.
 <li> <a class="el" target="_self" href="functions.html">All class methods individually in TnFOX</a> (long) and <a class="el" target="_self" href="globals.html">All non-class items individually</a> (long)
@@ -112,33 +110,57 @@ All extensions to FOX are fully documented under doxygen (http://www.doxygen.net
 find a test framework of the extensions (which also serve as code examples) in the TestSuite
 directory.
 
+\section whonotuse Who should NOT use TnFOX?
+\li TnFOX is a \b very modern C++ library. When I say "modern", I mean that it uses many of the very most
+cutting edge techniques in C++ known and this does make a lot of programmers uncomfortable. Probably
+the hardest thing for most typical programmers to adjust to is writing fully exception aware code
+and unfortunately due to how extensively TnFOX uses exceptions, there isn't any choice in the matter.
+Summary: If you don't like exceptions, don't use TnFOX.
+
+\li Ancillory to the above, TnFOX needs a modern compiler. While written almost entirely in ISO C++,
+many compilers don't fully support all the constructs TnFOX uses - hence TnFOX supports two primary compilers:
+(i) MSVC v7.1 or later on Windows and (ii) GCC v3.2 or later on POSIX (note that other compilers do work and
+have build system support eg; Intel's). If you don't use those compilers
+on those platforms, expect to do some minor porting work (noting that I will never support using GCC for
+building Windows binaries until it becomes properly compatible with the PE binary format - hence, there is
+no mingw or cygwin support). Furthermore, due to a lack of access to alternatives to x86 and x64, only those two
+architectures are supported (though it is very, very easy to add others - simply fix the assembler in
+FX::FXAtomicInt - and I'll gladly add alternative architecture support).
+
+\li Also ancillory to the above, TnFOX is not as "lightweight" as FOX - but then TnFOX is a solution
+framework (primarily it's Tn's portability layer) whereas FOX still remains mostly a GUI toolkit. All
+the metaprogramming adds a fair bit of extra bulk to generated binaries though far more so on GCC than
+MSVC as GCC's optimiser is nowhere near as good with a lot of templates (though it's made leaps & bounds recently).
+TnFOX is designed to be used as a shared library, accepting a large shareable binary reused by many
+processes rather than portions of it being statically bound to each. If the extra bloat in binary size
+is not acceptable to you, don't use TnFOX (note that the bloat has no effect on speed with a good
+optimiser - TnFOX pounds a lot of competitors into dust on the benchmarks).
+
 \section whouse Who should use TnFOX?
-\li Programmers coming from a Qt (http://www.trolltech.com/) background will find TnFOX of particular
-interest because TnFOX was written to port a substantial Qt project. Hence you will find most
-of the extensions share a common API with Qt classes and there are thunks to the STL for the QTL.
-\note Anything QObject based (eg; QWidget) has no API translation. In other words, <b>if your Qt
-application is mostly GUI based, then TnFOX will not help you</b>. We have stuff like QThread, QString
-etc. replacements but nothing GUI-like!
+\li Heavy multithreaded applications. TnFOX's multithreading support is second to none and is heavily
+optimised for speed, probably more so than any other C++ toolkit out there.
 
-Nevertheless, your Qt skills are eminently reusable within TnFOX which follows a very similar
-structure and logic.
+\li Mission-critical applications. TnFOX works around or patches unhelpful features of C++ to ensure
+that no matter what goes wrong in your application, your code can respond (eg; deleting all secret data).
+Using TnFOX's facilities, your C++ application can be as robust as any C++ application can be as all
+host OS errors are detected and thrown as an exception.
 
-\li Those programmers interested in writing state-of-the-art heavy-duty secure robust applications will
-find TnFOX of great interest, particularly for mission-critical and heavily multithreaded
-applications. I know of no competitor to TnFOX's nested exception handling framework and its threading
-classes are as efficient and feature-rich as it's possible to make them (ie; directly written
-in assembler on x86/x64 machines). Portable support for host OS ACL based security as well as
-integrated strong encryption and data shredding facilities are unusual in a GUI toolkit but we have them!
-Facilities such as transaction rollback support, smart pointers and
-use of containers for all memory use ensure that resource leakage never happens. Extensive
-compile-time and run-time support for stress-proofing your code ease the testing phase
-considerably.
-\li Those programmers who want a modern library for writing C++ generically, or with strong
-encryption/security support, or as a project using python. See below.
-\li Those programmers seeking extensive facilities for Inter Process Communication (IPC)
-especially across a distributed multiprocessing environment and/or NUMA architectures. TnFOX
-provides some of the functionality of CORBA, but is much more efficient as it leverages
-C++ to describe itself.
+\li Very secure applications. There is strong encryption support, Secure Sockets Layer (SSL), data
+shredding and full host OS security support to Access Control List (ACL) level.
+
+\li Anyone interested in compile-time programming (metaprogramming) the C++ compiler will find good
+facilities in TnFOX. Unlike the Boost library (http://www.boost.org/), we don't have to work around
+compiler limitations which means we can greatly simplify implementation and avoid most usage of macros.
+
+\li Anyone wishing to have one or more processes communicate with one another, including over a
+network will find TnFOX's lightweight inter-process communication system extremely interesting as it
+happily outperforms CORBA and is very flexible and easy to use whilst remaining endian-safe.
+
+\li Anyone interested in performance. Both device i/o and SQL Database support are far faster than their
+comprehensive API's would suggest and the whole of TnFOX is regularly profiled and tuned after every
+major addition of new code. A lot of the code uses dynamically adjusted O(1) hash containers for
+excellent scaling and compile-time optimised sort algorithms.
+
 
 \section diffs Detailed list of enhancements
 <ol>
@@ -265,6 +287,16 @@ seamlessly. FX::FXIPCChannel is a base class implementing almost everything you 
 get started immediately. For more information, see \link IPC
 the page about Inter Process Communication
 \endlink
+
+<li><b>\link sqldb
+SQL Database support
+\endlink
+</b><br>
+FX::FXSQLDB is the primary class for accessing SQL databases but unlike other implementations,
+it has transparent BLOB support for storing & retrieving arbitrary C++ object instances
+via metaprogramming. It is easy to write your own driver, and prewritten drivers come for
+SQLite3 (of which there is a customised copy built into TnFOX) and using an IPC connection
+to remotely work with another database via FX::FXSQLDBServer.
 
 <li><b>Threads can now run their own event loops</b><br>
 Through a small implementational change to FX::FXApp, threads can now run their own
