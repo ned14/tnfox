@@ -69,6 +69,8 @@ public:
 	QHostAddress(const QHostAddress &o);
 	QHostAddress &operator=(const QHostAddress &o);
 	~QHostAddress();
+	//! Returns true if the contents is a null address
+	bool operator!() const { return isNull(); }
 	//! Returns true if both addresses are the same by ruleset
 	bool operator==(const QHostAddress &o) const;
 	//! Returns true if both addresses are not the same
