@@ -70,6 +70,11 @@ QBuffer::~QBuffer()
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
+bool QBuffer::isNull() const
+{
+	return !p->buffer;
+}
+
 QByteArray &QBuffer::buffer() const
 {
 	if(!p->buffer)
