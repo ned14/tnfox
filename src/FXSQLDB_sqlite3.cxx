@@ -154,7 +154,7 @@ namespace FXSQLDB_sqlite3Impl
 				if(first)
 				{
 					int rows=atEnd() ? 0 : -1;
-					int_setRows(rows);
+					int_setInternals(&rows);
 					int_setRowsReady(0, rows);
 					first=false;
 				}
@@ -300,7 +300,7 @@ namespace FXSQLDB_sqlite3Impl
 		{
 			Column *c=0;
 			FXSQLDBColumnRef ret;
-			FXERRHM(ret=c=new Column(FXSQLDBColumn::IsHeader, this, no, at()));
+			FXERRHM(ret=c=new Column(FXSQLDBColumn::IsHeader, this, no, -1));
 			c->mytype=FXSQLDB::VarChar;
 			c->mydata=sqlite3_column_name(stmth, no);
 			FXERRH(c->mydata, QTrans::tr("FXSQLDB_sqlite3", "Failed to retrive column header"), 0, 0);

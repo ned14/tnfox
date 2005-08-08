@@ -388,7 +388,7 @@ class FXAPI FXSQLDBCursor : public FXRefedObject<int>
 protected:
 	FXSQLDBCursor(FXuint flags, FXSQLDBStatement *parent, QWaitCondition *latch, FXuint columns);
 	FXSQLDBCursor(const FXSQLDBCursor &o);
-	void int_setRows(FXint rows);
+	void int_setInternals(FXint *rows, FXuint *flags=0, FXuint *columns=0, QWaitCondition *latch=0);
 	void int_setRowsReady(FXint start, FXint end);
 	void int_setAtEnd(bool atend);
 public:

@@ -241,10 +241,16 @@ FXSQLDBCursor::~FXSQLDBCursor()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
-void FXSQLDBCursor::int_setRows(FXint rows)
+void FXSQLDBCursor::int_setInternals(FXint *rows, FXuint *flags, FXuint *columns, QWaitCondition *latch)
 {
-	p->rows=rows;
-	if(!rows) p->atEnd=true;
+	if(rows)
+	{
+		p->rows=*rows;
+		if(!p->rows) p->atEnd=true;
+	}
+	if(flags) p->flags=*flags;
+	if(columns) p->columns=*columns;
+	if(latch) p->latch=latch;
 }
 void FXSQLDBCursor::int_setRowsReady(FXint start, FXint end)
 {
