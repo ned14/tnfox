@@ -131,6 +131,8 @@ R *** Issued snapshot 3
 + Added FXSQLDB_ipc and FXSQLDBServer
 * Made QMemArray serialisation routines optimise for POD contents
 + Added QBuffer::isNull()
+* Made FXIPCChannel::sendMsg() allocate send buffers based on previous send
+message size
 
 
 v0.85 13th Feb 2005:
