@@ -2118,6 +2118,16 @@ const FXString &FXString::nullStr() throw()
 	return n;
 }
 
+FXString &FXString::move(FXString &src)
+{
+	length(0);
+	FXDELETE(inserts);
+	str=src.str;
+	src.str=0;
+	return *this;
+}
+
+
 // Delete
 FXString::~FXString(){
   length(0);

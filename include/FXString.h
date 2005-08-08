@@ -412,7 +412,11 @@ public:
   FXuint toUInt(bool *ok=0, FXint base=10) const throw() { return (FXuint) toULong(ok, base); }
   double toDouble(bool *ok=0) const throw();
 
+  /// Returns a null string
   static const FXString &nullStr() throw();
+
+  /// Moves the contents of one string into another (deleting the original)
+  FXString &move(FXString &src);
 
 private:
   inline FXDLLLOCAL void getLowestInsert(FXint &pos, FXint &len);
