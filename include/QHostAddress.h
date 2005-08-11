@@ -106,14 +106,13 @@ public:
 	FXString toString() const;
 	//! Returns true if the address is the local machine
 	bool isLocalMachine() const;
-	friend FXStream &operator<<(FXStream &s, const QHostAddress &i);
-	friend FXStream &operator>>(FXStream &s, QHostAddress &i);
+
+	//! Writes the contents of the IP address to stream \em s
+	friend FXAPIR FXStream &operator<<(FXStream &s, const QHostAddress &i);
+	//! Reads an IP address from stream \em s
+	friend FXAPIR FXStream &operator>>(FXStream &s, QHostAddress &i);
 };
 
-//! Writes the contents of the IP address to stream \em s
-FXStream &operator<<(FXStream &s, const QHostAddress &i);
-//! Reads an IP address from stream \em s
-FXStream &operator>>(FXStream &s, QHostAddress &i);
 
 } // namespace
 
