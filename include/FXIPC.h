@@ -133,6 +133,23 @@ typedef FXIPCMsgChunk<Generic::TL::create<
 \endcode
 While it's a bit of a mouthful, copy & paste makes it easy enough. Trust me,
 it's better than an enum of all type codes as the list breaks one hundred long!
+
+<h2>More advanced usage:</h2>
+The IPC framework can also tunnel messages across an IPC channel bridge ie;
+you send a message, the remote end receives it and resends it down another
+IPC channel all whilst ensuring that message acks route themselves backwards.
+If you want to do this, please ask on the mailing list for advice as it seemed
+too complex to document in detail for most users. On the other hand, it is
+quite straightforward if you think about it for a while. Tn's kernel implements
+precisely this mechanism to link together components running in disparate
+processes.
+
+Using the IPC framework asynchronously is demonstrated by FX::FXSQLDB_ipc
+and the example code in the Tn directory inside the test suite.
+
+<h3>Example code:</h3>
+If you want some examples of usage, see the source for FX::FXSQLDBServer and
+FX::FXSQLDB_ipc. Also see \c TestIPC and \c TestSQLDB in the test suite.
 */
 
 /*! \struct FXIPCMsg
@@ -829,6 +846,15 @@ class FXIPCChannelIndirector
 	FXuint myMsgChunk, myrouting;
 	bool (FXIPCChannel::*sendMsgI)(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endianiseSpec endianise, FXuint waitfor);
 	bool (FXIPCChannel::*getMsgAckI)(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor);
+	/*void resetChunkAdd(FXIPCMsg *msg) const throw()
+	{
+		msg->type-=myMsgChunk;
+	}*/
+	inline void configMsg(FXIPCMsg *msg) const throw()
+	{
+		msg->type+=myMsgChunk;
+		msg->setRouting(myrouting);
+	}
 protected:
 	FXIPCChannelIndirector() : mychannel(0), myMsgChunk(0), myrouting(0), sendMsgI(0), getMsgAckI(0) { }
 	//! Returns the channel this is using
@@ -845,39 +871,39 @@ protected:
 		myMsgChunk=addToMsgType;
 		myrouting=_routing;
 		sendMsgI=&channel::sendMsgI;
-		getMsgAckI=&channel::getMsgAckI;
+		getMsgAckI=&channel::getMsgAck;
 	}
 	/*! Sends a message via the previously set channel, applying the previously specified routing
 	and adding the previously specified message chunk. See FX::FXIPCChannel::sendMsg() */
 	template<class msgacktype, class msgtype> bool sendMsg(msgacktype *msgack, msgtype *msg, FXuint waitfor=FXINFINITE)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck || msgtype::id::code+1==msgacktype::id::code, AckMsg_Not_Ack_Of_Msg);
-		msg->type+=myMsgChunk;
-		msg->setRouting(myrouting);
+		configMsg(msg);
+		//FXRBOp unconfig=FXRBObj(*this, &FXIPCChannelIndirector::resetChunkAdd, msg);
 		return ((*mychannel).*sendMsgI)(msgack, msg, &msgtype::regtype::endianise, waitfor);
 	}
 	//! \overload
 	template<class msgacktype, class msgtype> bool sendMsg(msgacktype &msgack, msgtype &msg, FXuint waitfor=FXINFINITE)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck || msgtype::id::code+1==msgacktype::id::code, AckMsg_Not_Ack_Of_Msg);
-		msg.type+=myMsgChunk;
-		msg.setRouting(myrouting);
+		configMsg(&msg);
+		//FXRBOp unconfig=FXRBObj(*this, &FXIPCChannelIndirector::resetChunkAdd, &msg);
 		return ((*mychannel).*sendMsgI)(&msgack, &msg, &msgtype::regtype::endianise, waitfor);
 	}
 	//! \overload
 	template<class msgtype> bool sendMsg(msgtype *msg)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck, Cannot_Send_Msgs_With_Ack);
-		msg->type+=myMsgChunk;
-		msg->setRouting(myrouting);
+		configMsg(msg);
+		//FXRBOp unconfig=FXRBObj(*this, &FXIPCChannelIndirector::resetChunkAdd, msg);
 		return ((*mychannel).*sendMsgI)(0, msg, &msgtype::regtype::endianise, 0);
 	}
 	//! \overload
 	template<class msgtype> bool sendMsg(msgtype &msg)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck, Cannot_Send_Msgs_With_Ack);
-		msg.type+=myMsgChunk;
-		msg.setRouting(myrouting);
+		configMsg(&msg);
+		//FXRBOp unconfig=FXRBObj(*this, &FXIPCChannelIndirector::resetChunkAdd, &msg);
 		return ((*mychannel).*sendMsgI)(0, &msg, &msgtype::regtype::endianise, 0);
 	}
 	//! Gets the ack for a message previously sent using sendMsg(). See FX::FXIPCChannel::getMsgAck().
