@@ -401,9 +401,7 @@ public:
 	{	// If you change these remember to adjust FXSQLDB above
 		IsStatic=1,			//!< The results returned by this cursor never change
 		IsDynamic=2,		//!< The results returned by this cursor can change
-		ForwardOnly=4,		//!< This cursor can only move forwards
-
-		Async=256			//!< If supported by the driver, return immediately and receive results asynchronously
+		ForwardOnly=4		//!< This cursor can only move forwards
 	};
 
 	//! Returns flags
@@ -545,7 +543,7 @@ public:
 	/*! Executes a statement returning results. \em flags are a combination
 	of FX::FXSQLDBCursor::Flags. If set and asynchronous results
 	set in the flags, \em latch will be signalled for you when results become available */
-	virtual FXSQLDBCursorRef execute(FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly|FXSQLDBCursor::Async, QWaitCondition *latch=0)=0;
+	virtual FXSQLDBCursorRef execute(FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0)=0;
 	//! Executes a statement returning no results
 	virtual void immediate()=0;
 };
