@@ -62,7 +62,7 @@ try:
 except: pass
 assert os.path.exists("../../include/fxdefs.h")
 
-objects=[env.StaticObject(builddir+"/main", "main.cpp")]
+objects=[env.StaticObject(builddir+"/main", "main.cpp")] #+ [env.StaticObject(builddir+"/gcLink", "../gcLink.cc")]
 Clean(targetname, objects)
 EXE=env.Program(targetname, objects)
 env.Precious(EXE)

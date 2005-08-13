@@ -21,6 +21,7 @@
 
 
 #include "fx.h"
+#include "FXSQLDB_ipc.h"
 #include <stdio.h>
 #include <assert.h>
 #include "FXMemDbg.h"
@@ -35,6 +36,30 @@ extern void pullSQLite3IntoEXE()
 	FXSQLDB_sqlite3 foo("Hello");
 }
 #endif
+
+#ifdef _MSC_VER
+#include "../../windows/WindowsGubbins.h"
+extern "C" void _cexit(void);
+static void ForceDLLDeinit(const char *module)
+{
+	try
+	{
+		typedef BOOL (WINAPI *dllMainSpec)(HINSTANCE, DWORD, LPVOID);
+		HMODULE moduleaddr=GetModuleHandle(module);
+		FXERRHWIN(moduleaddr);
+		PIMAGE_DOS_HEADER dosHeader=(PIMAGE_DOS_HEADER) moduleaddr;
+		PIMAGE_NT_HEADERS ntHeader=(PIMAGE_NT_HEADERS) FXOFFSETPTR(dosHeader, dosHeader->e_lfanew);
+		dllMainSpec dllMain=(dllMainSpec) FXOFFSETPTR(moduleaddr, ntHeader->OptionalHeader.AddressOfEntryPoint);
+		// Fake call of DLL_PROCESS_DETACH
+		dllMain(moduleaddr, DLL_PROCESS_DETACH, (LPVOID) 1);
+	}
+	catch(FXException &e)
+	{
+		fxwarning("Exception %s\n", e.report().text());
+	}
+}
+#endif
+
 
 static const char dbname[]="TestSQLDB.sqlite3";
 
@@ -93,6 +118,55 @@ static FXString NumDescr(FXuint no)
 	return ret;
 }
 
+typedef FXSQLDBIPCMsgs<100>::Chunk MyMsgChunk;
+static class MyRegistry : public FXIPCMsgRegistry
+{
+	MyMsgChunk mychunk;
+public:
+	MyRegistry() : mychunk(this)
+	{
+	}
+} myregistry;
+class MyChannel : public FXIPCChannel
+{
+public:
+	MyChannel(QIODeviceS *dev, const char *name="TestSQLDB client") : FXIPCChannel(myregistry, dev, false, 0, name)
+	{
+		//setPrintStatistics(true);
+		setUnreliable(true);
+	}
+	~MyChannel()
+	{
+		if(running())
+		{
+			requestTermination();
+			wait();
+		}
+	}
+	virtual HandledCode msgReceived(FXIPCMsg *msg)
+	{
+		return NotHandled;
+	}
+};
+class MyServer : public MyChannel
+{
+public:
+	FXSQLDBServer server;
+	MyServer(QIODeviceS *dev) : MyChannel(dev, "TestSQLDB server")
+	{
+		setPrintStatistics(false);
+	}
+	~MyServer()
+	{
+		requestTermination();
+		wait();
+	}
+	virtual HandledCode msgReceived(FXIPCMsg *msg)
+	{
+		return server.handleMsg(msg);
+	}
+};
+
 static void printdbsize()
 {
 	QFileInfo mydbinfo(dbname);
@@ -124,7 +198,7 @@ class FooString : public FXString
 };
 
 int main( int argc, char** argv)
-{
+{ {
 	FXProcess myprocess(argc, argv);
 	FXulong maxulong=Generic::BiggestValue<FXulong>::value;
 	FXlong   maxlong=Generic::BiggestValue<FXlong>::value;
@@ -194,8 +268,29 @@ int main( int argc, char** argv)
 		fxmessage("\nSQL Database test:\n"
 					"-=-=-=-=-=-=-=-=-=\n");
 		FXFile::remove(dbname);
-		FXAutoPtr<FXSQLDB> mydb=FXSQLDBRegistry::make("SQLite3", dbname);
-		FXERRH(mydb, "Couldn't make a SQLite3 driver!!", 0, FXERRH_ISDEBUG);
+		QPipe mypipeS("TestSQLDBPipe"), mypipeC("TestSQLDBPipe");
+		MyServer myserver(&mypipeS);
+		MyChannel mychannel(&mypipeC);
+		FXAutoPtr<FXSQLDB> mydb;
+		if(0)	// Testing IPC tests SQLite!
+		{
+			mydb=FXSQLDBRegistry::make("SQLite3", dbname);
+			FXERRH(mydb, "Couldn't make a SQLite3 driver!!", 0, FXERRH_ISDEBUG);
+		}
+		else
+		{
+			mypipeS.create();
+			mypipeC.open();
+			myserver.start();
+			mychannel.start();
+			mydb=FXSQLDBRegistry::make("IPC", FXString("SQLite3:")+dbname);
+			FXERRH(mydb, "Couldn't make an IPC driver!!", 0, FXERRH_ISDEBUG);
+			FXSQLDB_ipc *db=dynamic_cast<FXSQLDB_ipc *>(PtrPtr(mydb));
+			db->setIPCChannel<MyMsgChunk>(&mychannel);
+			//db->setIsAsynchronous();
+			myserver.server.setIPCChannel<MyMsgChunk>(&myserver);
+			myserver.server.addDatabase("SQLite3", dbname);
+		}
 		mydb->open();
 		mydb->immediate("PRAGMA auto_vacuum=1; PRAGMA synchronous=OFF;");	// Enable auto-vacuuming and disable sync
 		mydb->immediate("CREATE TABLE test(id INTEGER PRIMARY KEY, 'value' INTEGER, 'text' VARCHAR(256), 'when' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);");
@@ -207,6 +302,7 @@ int main( int argc, char** argv)
 		fxmessage("\nInserting 1000 records without a transaction ...\n");
 		begin=FXProcess::getNsCount();
 		insert(PtrPtr(mydb), 1000);
+		mydb->synchronise();
 		end=FXProcess::getNsCount();
 		printdbsize();
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 1000/((end-begin)/1000000000.0));
@@ -216,6 +312,7 @@ int main( int argc, char** argv)
 		mydb->immediate("BEGIN TRANSACTION;");
 		insert(PtrPtr(mydb), 5000);
 		mydb->immediate("END TRANSACTION;");
+		mydb->synchronise();
 		end=FXProcess::getNsCount();
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 5000/((end-begin)/1000000000.0));
 		printdbsize();
@@ -223,6 +320,7 @@ int main( int argc, char** argv)
 		fxmessage("\nDeleting 5,000 records without a transaction ...\n");
 		begin=FXProcess::getNsCount();
 		mydb->immediate("DELETE FROM 'test' WHERE id<=5000;");
+		mydb->synchronise();
 		end=FXProcess::getNsCount();
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 5000/((end-begin)/1000000000.0));
 		printdbsize();
@@ -242,6 +340,7 @@ int main( int argc, char** argv)
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, n/((end-begin)/1000000000.0));
 		printdbsize();
 
+		FXMEMDBG_TESTHEAP;
 		fxmessage("\nInserting ReadMe.txt ...\n");
 		FXFile fh("../ReadMe.txt");
 		fh.open(IO_ReadOnly);
@@ -250,10 +349,12 @@ int main( int argc, char** argv)
 		stmt->bind(1, 0xdeadbeef);		// Test a top bit set value to test overflow upcasting
 		stmt->bind(0, fh);
 		stmt->immediate();
+		mydb->synchronise();
 		end=FXProcess::getNsCount();
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 5000/((end-begin)/1000000000.0));
 		printdbsize();
 
+		FXMEMDBG_TESTHEAP;
 		fxmessage("\nReading and comparing to ReadMe.txt (size=%u bytes)...\n", (FXuint) fh.size());
 		fh.at(0);
 		{
@@ -299,15 +400,23 @@ int main( int argc, char** argv)
 				}
 			}
 		}
+		//mychannel.setPrintStatistics(true);
+		FXMEMDBG_TESTHEAP;
 	}
 	FXERRH_CATCH(FXException &e)
 	{
 		fxerror("%s\n", e.report().text());
 	}
-	FXERRH_ENDTRY
+	FXERRH_ENDTRY }
 
 	fxmessage("\nAll Done!\n");
 	getchar();
 	fxmessage("Exiting!\n");
+#if defined(_MSC_VER) && 0
+	fxmessage("Force deiniting myself ...\n"); 
+	_cexit();
+	fxmessage("Force deiniting TnFOX ...\n");
+	ForceDLLDeinit("TnFOX-0.86d.dll");
+#endif
 	return 0;
 }
