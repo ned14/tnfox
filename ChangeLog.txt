@@ -38,6 +38,9 @@ R *** Issued snapshot 3
 B malloc_dbg on MSVC wasn't detecting failure to allocate memory (segfault)
 B Finally fixed QDictBase attempting to delete void * after all these years!
 B FXString::arg() wasn't printing negative numbers
+B QHostAddress stream operators didn't have FXAPI
+B FXIPCChannel wasn't detecting messages sent in big-endian
+B FXIPCChannel::doReception() was mis-reading messages under high load
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
