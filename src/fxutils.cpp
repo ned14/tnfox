@@ -216,7 +216,7 @@ FXString fxstrfval(FXfval mysize, FXint fw, char fmt, int prec)
 /// A decreasing array of two's powered prime numbers (useful for adjust hash tables based on memory load)
 const FXuint *fx2powerprimes(FXuint topval) throw()
 {
-	static const FXuint primes[]={ 7993, 4001, 1999, 997, 499, 251, 127, 61, 31, 13, 7, 3, 2, 1, 1, 1, 1 };
+	static const FXuint primes[]={ 4095991, 2048003, 1023991, 511997, 255989, 127997, 63997, 32003, 16001, 7993, 4001, 1999, 997, 499, 251, 127, 61, 31, 13, 7, 3, 2, 1, 1, 1, 1 };
 	const FXuint *ret=primes;
 	topval++;
 	assert(topval<=primes[0]);
