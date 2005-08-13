@@ -489,6 +489,21 @@ template<class keytype, class type> void QDictBase<keytype, type>::resizeI(uint 
 		fxmessage("WARNING: QDictBaseIterator at %p made invalid by QDictBase::resize()\n", dictit);
 #endif
 	}
+#if defined(DEBUG) && 0
+	// Ensure every element in the old list also exists in the new list
+	for(typename dictionary::iterator itdict=dict.begin(); itdict!=dict.end(); ++itdict)
+	{
+		keyitemlist &kil=*itdict;
+		for(typename keyitemlist::iterator itkil=kil.begin(); itkil!=kil.end(); ++itkil)
+		{
+			keyitem &ki=*itkil;
+			hashitemlist &hil=ki.second;
+			FXuint h=hil.first;
+			itemlist &il=hil.second;
+			assert(find(h, ki.first)==il.back());
+		}
+	}
+#endif
 }
 
 
