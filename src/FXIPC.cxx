@@ -338,10 +338,13 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 	FXERRH_TRY
 	{
 		QByteArray &data=p->buffer.buffer();
+		FXStream endianiser(&p->buffer);
+		endianiser.setByteOrder(p->endianiser.byteOrder());
 		FXuval read=0;
 #ifdef DEBUG
 		memset(data.data(), 0, data.size());
 #endif
+		// The thread cancellable portion
 		while(read<FXIPCMsg::minHeaderLength)
 		{
 			FXuval justread=0;
@@ -349,7 +352,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 			{
 				if(!QIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
 			}
-			read+=(justread=p->dev->readBlock(data.data()+read, pageSize-read));
+			read+=(justread=p->dev->readBlock(data.data()+read, data.size()-read));
 			if(!justread) return true;
 		}
 		//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) QThread::id(), read);
@@ -360,11 +363,23 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 			if(!p->monitorThreadId) p->monitorThreadId=QThread::id();
 			while(!p->quit)
 			{
+#ifdef DEBUG
+				memset(&tmsg, 0, sizeof(FXIPCMsg));
+#endif
+				while(read<FXIPCMsg::minHeaderLength)
+				{
+					FXuval justread=0;
+					if(waitfor!=FXINFINITE && p->dev->atEnd())
+					{
+						if(!QIODeviceS::waitForData(0, 1, &p->dev, waitfor)) return false;
+					}
+					read+=(justread=p->dev->readBlock(data.data()+read, data.size()-read));
+					if(!justread) return true;
+				}
 				p->buffer.at(0);
-				p->endianiser.setDevice(&p->buffer);
 				if(AutoEndian==p->endianConversion)		// Receiver translates
-					p->endianiser.setByteOrder(((FXIPCMsg *) data.data())->inBigEndian() ? FXStream::BigEndian : FXStream::LittleEndian);
-				tmsg.read(p->endianiser);
+					endianiser.setByteOrder((data.data()[17] & FXIPCMsg::FlagsIsBigEndian) ? FXStream::BigEndian : FXStream::LittleEndian);
+				tmsg.read(endianiser);
 				assert(tmsg.length()>=FXIPCMsg::minHeaderLength);
 				assert(tmsg.msgType());
 				if(p->maxMsgSize && tmsg.length()>p->maxMsgSize)
@@ -389,7 +404,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				if(tmsg.crc)
 				{
 					FXuint crc=fxadler32(1, data.data()+2*sizeof(FXuint), tmsg.length()-2*sizeof(FXuint));
-					FXERRH(crc=tmsg.crc, QTrans::tr("FXIPCChannel", "Message failed CRC check"), FXIPCCHANNEL_BADMESSAGE, 0);
+					FXERRH(crc==tmsg.crc, QTrans::tr("FXIPCChannel", "Message failed CRC check"), FXIPCCHANNEL_BADMESSAGE, 0);
 				}
 				//fxmessage("IPCRead %s", fxdump8(data.data(), tmsg.length()).text());
 				FXIPCMsgRegistry::deendianiseSpec deendianise;
@@ -406,7 +421,25 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						if(ae->msg->msgType()+1!=tmsg.msgType())
 						{
 							if(tmsg.msgType()>FXIPCMsg_ErrorOccurred::id::code)
+							{
+#ifdef DEBUG
+								fxmessage("WARNING: Thread %u received ack 0x%x (%s) with ack id %u which doesn't match msg 0x%x (%s)!\n",
+									(FXuint) QThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text(), tmsg.msgId(),
+									ae->msg->msgType(), p->registry->decodeType(ae->msg->msgType()).text());
+#if 1
+								QValueList<std::pair<FXuint, FXIPCChannelPrivate::AckEntry *> > acks;
+								FXIPCChannelPrivate::AckEntry *ae2;
+								for(QIntDictIterator<FXIPCChannelPrivate::AckEntry> it(p->msgs); (ae2=it.current()); ++it)
+									acks.push_back(std::make_pair(it.currentKey(), ae2));
+								acks.sort();
+								for(QValueList<std::pair<FXuint, FXIPCChannelPrivate::AckEntry *> >::const_iterator it=acks.begin(); it!=acks.end(); ++it)
+								{
+									fxmessage("  Ack %u (0x%x %s id %u)\n", it->first, it->second->msg->msgType(), p->registry->decodeType(it->second->msg->msgType()).text(), it->second->msg->msgId());
+								}
+#endif
+#endif
 								ae=0;
+							}
 						}
 						else msg=ae->ack;
 					}
@@ -424,7 +457,6 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 							if(msgdelpls) delMsg(msg);
 						} };
 					FXRBOp unmsg=FXRBFunc(Undo::call, msgdelpls, delMsg, msg);
-					p->endianiser.setDevice(&p->buffer);
 					if(tmsg.gzipped())
 					{
 						if(!p->compressedbuffer)
@@ -439,11 +471,8 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					}
 					else
 					{
-						deendianise(msg, p->endianiser);
+						deendianise(msg, endianiser);
 					}
-#ifdef DEBUG
-					p->endianiser.setDevice(0);
-#endif
 					if(p->printstats)
 						fxmessage("Thread %u received msg 0x%x (%s), len=%d bytes\n", (FXuint) QThread::id(), msg->msgType(), p->registry->decodeType(msg->msgType()).text(), msg->length());
 
@@ -550,6 +579,9 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				if(read)
 				{
 					memmove(data.data(), data.data()+tmsg.length(), read);
+#ifdef DEBUG
+					memset(data.data()+read, 0, tmsg.length());
+#endif
 					//fxmessage("Thread %u channel loop read=%d bytes\n", (FXuint) QThread::id(), read);
 				}
 				else break;
@@ -686,11 +718,9 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		switch(p->endianConversion)
 		{
 		case AlwaysLittleEndian:
-			p->endianiser.setByteOrder(FXStream::LittleEndian);
 			msg->myflags&=~FXIPCMsg::FlagsIsBigEndian;
 			break;
 		case AlwaysBigEndian:
-			p->endianiser.setByteOrder(FXStream::BigEndian);
 			msg->myflags|=FXIPCMsg::FlagsIsBigEndian;
 			break;
 		case AutoEndian:
@@ -764,6 +794,26 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		{
 			FXuval written=0, writ;
 			//fxmessage("IPCWrite %s", fxdump8(data.data(), len).text());
+#if defined(DEBUG) && 0
+			{	// Ensure the message is identical when deserialised
+				buffer.at(0);
+				p->endianiser.setDevice(&buffer);
+				FXIPCMsg tmsg(0);
+				tmsg.read(p->endianiser);
+				FXIPCMsgRegistry::deendianiseSpec deendianise;
+				FXIPCMsgRegistry::makeMsgSpec makeMsg;
+				FXIPCMsgRegistry::delMsgSpec delMsg;
+				if(p->registry->lookup(deendianise, makeMsg, delMsg, tmsg.msgType()))
+				{
+					FXIPCMsg *msg2=makeMsg();
+					FXRBOp unmsg2=FXRBFunc(delMsg, msg2);
+					memcpy(msg2, &tmsg, sizeof(FXIPCMsg));
+					deendianise(msg2, p->endianiser);
+					p->endianiser.setDevice(0);
+					assert(*msg2==*msg);
+				}
+			}
+#endif
 			while(written+=(writ=p->dev->writeBlock(data.data()+written, len-written)), written<len)
 			{
 				fxmessage("Partial write of %u bytes, %u to go\n", (FXuint) writ, (FXuint)(len-written));

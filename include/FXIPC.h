@@ -189,13 +189,13 @@ struct FXAPI FXIPCMsg
 	};
 private:
 	// The following are sent in this order (total: 18 bytes)
-	FXuint len;				//!< Length of the message (total, inclusive)
-	FXuint crc;				//!< Optional fxadler32() of message data after this point till end
-	FXuint type;			//!< Unique type code
-	FXuint myid;			//!< Optional unique non-zero id
-	FXuchar mymsgrev;		//!< Revision number of the message
-	FXuchar myflags;		//!< Bitwise combination of Flags
-	FXuint myrouting;		//!< Optional routing info (see FlagsHasRouting)
+	FXuint len;				//!< +0  Length of the message (total, inclusive)
+	FXuint crc;				//!< +4  Optional fxadler32() of message data after this point till end
+	FXuint type;			//!< +8  Unique type code
+	FXuint myid;			//!< +12 Optional unique non-zero id
+	FXuchar mymsgrev;		//!< +16 Revision number of the message
+	FXuchar myflags;		//!< +17 Bitwise combination of Flags (MUST be a byte)
+	FXuint myrouting;		//!< +18 Optional routing info (see FlagsHasRouting)
 private:	// The following members are not sent
 	FXuchar *myoriginaldata;
 protected:
@@ -204,6 +204,10 @@ protected:
 	FXIPCMsg(const FXIPCMsg &o, FXuint _type=0) : len(o.len), crc(o.crc), type(_type!=0 ? _type : o.type), myid(o.myid), mymsgrev(o.mymsgrev), myflags(o.myflags), myrouting(o.myrouting), myoriginaldata(o.myoriginaldata) { }
 	~FXIPCMsg() { } // stops sliced destructs
 public:
+	//! True if this message is identical to the other message
+	bool operator==(const FXIPCMsg &o) const throw() { return len==o.len && crc==o.crc && type==o.type && myid==o.myid && mymsgrev==o.mymsgrev && myflags==o.myflags && myrouting==o.myrouting; }
+	//! True if this message is not identical to the other message
+	bool operator!=(const FXIPCMsg &o) const throw() { return !(*this==o); }
 	//! The minimum possible size of a header
 	static const int minHeaderLength=18;
 	//! The maximum possible size of a header
@@ -853,7 +857,7 @@ class FXIPCChannelIndirector
 	inline void configMsg(FXIPCMsg *msg) const throw()
 	{
 		msg->type+=myMsgChunk;
-		msg->setRouting(myrouting);
+		if(myrouting) msg->setRouting(myrouting);
 	}
 protected:
 	FXIPCChannelIndirector() : mychannel(0), myMsgChunk(0), myrouting(0), sendMsgI(0), getMsgAckI(0) { }
