@@ -356,7 +356,7 @@ public:
 	virtual FXSQLDBStatementRef prepare(const FXString &text)=0;
 
 	//! Executes a statement with results
-	virtual FXSQLDBCursorRef execute(const FXString &text, FXuint flags=2/*FXSQLDBCursor::IsDynamic*/|4/*FXSQLDBCursor::ForwardOnly*/|256/*FXSQLDBCursor::Async*/, QWaitCondition *latch=0);
+	virtual FXSQLDBCursorRef execute(const FXString &text, FXuint flags=2/*FXSQLDBCursor::IsDynamic*/|4/*FXSQLDBCursor::ForwardOnly*/, QWaitCondition *latch=0);
 	//! Executes a statement immediately
 	virtual void immediate(const FXString &text);
 
