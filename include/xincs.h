@@ -34,8 +34,12 @@
 
 /************************  Platform  Dependent  Headers  ***********************/
 
-#define __USE_LARGEFILE64
-#define __USE_FILE_OFFSET64		// for GNU lib
+#ifndef __USE_LARGEFILE64
+#define __USE_LARGEFILE64 1
+#endif
+#ifndef __USE_FILE_OFFSET64
+#define __USE_FILE_OFFSET64 1		// for GNU lib
+#endif
 
 // GNU extras if we can get them
 #ifndef _GNU_SOURCE
