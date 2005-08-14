@@ -78,7 +78,7 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   ]
 if make64bit:
     # This seems to be missing
-    env['LINKFLAGS']+=["/FORCE:UNRESOLVED"]
+    env['LINKFLAGS']+=["/BASE:0x7ff06000000"] + ["/FORCE:UNRESOLVED"]
 else:
     env['LINKFLAGS']+=["/BASE:0x60000000", "/LARGEADDRESSAWARE"]
 if debugmode:
