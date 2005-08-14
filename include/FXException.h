@@ -138,6 +138,7 @@ for usual exceptions
 MSVCRT which sets errno
 */
 #define FXERRHOS(exp)				{ int __errcode=(exp); if(__errcode<0) FXERRGOS(errno, 0); }
+#define FXERRHOSFN(exp, filename)	{ int __errcode=(exp); if(__errcode<0) FXERRGOSFN(errno, 0, filename); }
 #endif
 
 //@(
