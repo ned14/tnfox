@@ -1106,12 +1106,12 @@ private:
 public:
 	static const type value=(type)(minus ? ~maxSignedValue : maxSignedValue);
 };
-#if defined(_MSC_VER) && _MSC_VER<=1310
+#if defined(_MSC_VER) && _MSC_VER<=1400
 template<bool minus> struct BiggestValue<float, minus>
-{	// Not supported on <MSVC71
+{	// Not supported on <=MSVC80
 };
 template<bool minus> struct BiggestValue<double, minus>
-{	// Not supported on <MSVC71
+{	// Not supported on <=MSVC80
 };
 #else
 template<> struct BiggestValue<float, false>
