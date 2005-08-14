@@ -894,7 +894,7 @@ FXSQLDBServer &FXSQLDBServer::addDatabase(const FXString &driverName, const FXSt
 }
 bool FXSQLDBServer::removeDatabase(const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port)
 {
-	FXuint c=p->permitted.size();
+	size_t c=p->permitted.size();
 	p->permitted.remove(FXSQLDBServerPrivate::Database(driverName, dbname, user, host, port));
 	return c!=p->permitted.size();
 }
