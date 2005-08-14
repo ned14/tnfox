@@ -38,7 +38,15 @@ Using these functions can \i seriously improve the speed of your code.
 
 #if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=600) || defined(_M_AMD64))
 // Get the intrinsic definitions
-#include "xmmintrin.h"
+#include "xmmintrin.h"	// For mm_prefetch
+#ifndef BitScanForward	// Try to avoid pulling in WinNT.h
+extern "C" unsigned char _BitScanForward(unsigned long *index, unsigned long mask);
+extern "C" unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
+#define BitScanForward _BitScanForward
+#define BitScanReverse _BitScanReverse
+#pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_BitScanReverse)
+#endif
 #include <stdlib.h>		// For byteswap
 //        unsigned short __cdecl _byteswap_ushort(unsigned short);
 //        unsigned long  __cdecl _byteswap_ulong (unsigned long);
@@ -61,7 +69,7 @@ inline FXuint fxbitscan(FXuint x) throw()
 {
 	FXuint m;
 #if defined(BitScanForward)
-	DWORD _m;
+	unsigned long _m;
 	BitScanForward(&_m, x);
 	m=(unsigned int) _m;
 #elif defined(_M_IX86)
@@ -70,6 +78,8 @@ inline FXuint fxbitscan(FXuint x) throw()
 		bsf eax, [x]
 		mov [m], eax
 	}
+#else
+#error Unknown implementation
 #endif
 	return m;
 }
@@ -77,7 +87,7 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 {
 	FXuint m;
 #if defined(BitScanReverse)
-	DWORD _m;
+	unsigned long _m;
 	BitScanReverse(&_m, x);
 	m=(unsigned int) _m;
 #elif defined(_M_IX86)
@@ -86,6 +96,8 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 		bsr eax, [x]
 		mov [m], eax
 	}
+#else
+#error Unknown implementation
 #endif
 	return m;
 }
