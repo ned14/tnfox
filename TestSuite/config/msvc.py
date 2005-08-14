@@ -39,7 +39,7 @@ if architecture=="x86":
     elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=["/Od",        # Optimisation off
-               "/ZI",        # Edit & Continue debug info
+               "/Zi",        # Program database debug info
                #"/O2", "/Oy-",
                "/Gm",        # Minimum rebuild
                "/RTC1",      # Stack and uninit run time checks
