@@ -2048,8 +2048,12 @@ static unsigned int largebin_index(unsigned int sz) {
 
   if (x >= 0x10000) return NBINS-1;
 
+#ifdef FXASSEMBLEROPS_H
+  /* When being built as part of Tn or TnFOX, use fxassemblerops.h */
+  m=fxbitscanrev(x);
+
   /* On intel, use BSRL instruction to find highest bit */
-#if defined(__GNUC__) && (defined(i386) || defined(__x86_64__))
+#elif defined(__GNUC__) && (defined(i386) || defined(__x86_64__))
 
   __asm__("bsrl %1,%0\n\t"
           : "=r" (m) 
