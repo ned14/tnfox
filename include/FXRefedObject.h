@@ -113,11 +113,11 @@ namespace FXRefedObjectImpl
 		countHolder() : myrefcount(0), mydying(false) { }
 		countHolder(const countHolder &o) : myrefcount(0), mydying(false) { }
 		//! Returns the reference count of this object
-		type &refCount() throw() { return myrefcount; }
-		//! \overload
 		const type &refCount() const throw() { return myrefcount; }
+		//! Resets the dying flags
+		void resetDying() throw() { mydying=false; }
 	};
-#ifdef FX_SMPBUILD		// Don't need it on non-SMP builds
+//#ifdef FX_SMPBUILD		// Don't need it on non-SMP builds
 	template<> class countHolder<FXAtomicInt>
 	{	/* This specialisation for FXAtomicInt features a serialised checking and
 		setting of dying so we can know when you can't create a new reference safely
@@ -155,8 +155,10 @@ namespace FXRefedObjectImpl
 		countHolder(const countHolder &o) : myrefcountlock(FXINFINITE), myrefcount(0), mydying(false) { }
 		// Deliberately prevent direct alteration
 		const int &refCount() const throw() { return myrefcount; }
+		//! Resets the dying flags
+		void resetDying() throw() { mydying=false; }
 	};
-#endif
+//#endif
 }
 
 namespace Pol {
