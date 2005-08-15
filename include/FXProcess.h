@@ -193,9 +193,9 @@ public:
 	{
 		friend class FXProcess;
 		void *h;
-		dllHandle &operator=(const dllHandle &);
-		dllHandle(void *_h=0) : h(_h) { }
+		dllHandle(void *_h) : h(_h) { }
 	public:
+		dllHandle() : h(0) { }
 #ifndef HAVE_MOVECONSTRUCTORS
 #ifdef HAVE_CONSTTEMPORARIES
 		dllHandle(const dllHandle &other) : h(other.h)
@@ -215,6 +215,19 @@ public:
 			o.h=0;
 		}
 		~dllHandle() { if(h) dllUnload(*this); }
+		dllHandle &operator=(dllHandle &o)
+		{
+			if(h)
+			{
+				dllUnload(*this);
+				h=0;
+			}
+			h=o.h;
+			o.h=0;
+			return *this;
+		}
+		//! Returns true if handle is empty
+		bool operator!() const throw() { return !h; }
 		/*! Resolves the specified symbol in the given library, returning a functor
 		representing that API. Usage might be as follows:
 		\code
