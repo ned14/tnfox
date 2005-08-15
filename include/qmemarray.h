@@ -249,7 +249,7 @@ namespace QMemArrayImpl
 		{
 			FXuint mysize=a.size();
 			s << mysize;
-			s.save(a.data(), s);
+			s.save(a.data(), mysize);
 		}
 	};
 	template<bool isPOD, typename type> struct Deserialise
@@ -270,7 +270,7 @@ namespace QMemArrayImpl
 			FXuint mysize;
 			s >> mysize;
 			a.resize(mysize);
-			s.load(a.data(), s);
+			s.load(a.data(), mysize);
 		}
 	};
 }
