@@ -272,6 +272,8 @@ public:
 #error Method of demangling RTTI unknown
 #endif
 		{ }
+	//! Returns true if empty
+	bool operator!() const throw() { return !!decorated.empty(); }
 	//! Returns true if identical to the other
 	bool operator==(const typeInfoBase &o) const { return (decorated==o.decorated)!=0; }
 	//! Returns true if not the same
