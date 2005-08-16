@@ -136,6 +136,10 @@ R *** Issued snapshot 3
 + Added QBuffer::isNull()
 * Made FXIPCChannel::sendMsg() allocate send buffers based on previous send
 message size
++ Added FXRefedObject::resetDying()
+* Made FXProcess::dllHandle easier to use
++ Added operator!() to Generic::typeInfoBase
+
 
 
 v0.85 13th Feb 2005:
