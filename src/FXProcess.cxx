@@ -301,8 +301,12 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD type)
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
 		{	// Only thing we can really do is ask FXApp to exit
+#ifndef FX_DISABLEGUI
 			FXEventLoop *pel=FXApp::getPrimaryEventLoop();
 			pel->postAsyncMessage(FXApp::instance(), FXSEL(SEL_COMMAND, FXApp::ID_QUIT));
+#else
+			FXProcess::exit(0);
+#endif
 			return TRUE;
 		}
 	}

@@ -10,12 +10,14 @@ debugmode=False
 # Set to true to create a SMP architecture compatible binary. This
 # is always safe though inefficient on uniprocessor machines.
 makeSMPBuild=True
-# Set to true to cause inlining of FXAtomicInt and FXMutex in all
+# Set to true to cause inlining of FXAtomicInt and QMutex in all
 # source files. This can slightly increase code size and also drags
 # in a lot of extra system header files.
 inlineMutex=False  # not debugmode
 GenStaticLib=(sys.platform!="win32")          # 1=generate a static library, 2=only generate a static library
 SeparateTnLibs=(sys.platform=="win32")
+# Set to disable inclusion of GUI
+disableGUI=False
 
 architecture="x86"       # Can be "x86" or "x64"
 # For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
@@ -52,6 +54,9 @@ libtnfoxname=tnfoxname
 
 print
 if debugmode:
-    print "Configured for "+architecture+" DEBUG build ..."
+    print "Configured for "+architecture+" DEBUG",
 else:
-    print "Configured for "+architecture+" RELEASE build ..."
+    print "Configured for "+architecture+" RELEASE",
+if disableGUI:
+    print "(no GUI)",
+print "build ..."

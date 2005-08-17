@@ -191,10 +191,10 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     print "Using platform configuration",platformconfig,"..."
     onWindows=(env['PLATFORM']=="win32")
     if tcommonopts:
-        libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname, tncommonversioninfo, debug=debugmode)
-        libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn", tncommonversioninfo, debug=debugmode)
+        libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
+        libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn"+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
     else:
-        libtnfox,libtnfoxsuffix=VersionedSharedLibraryName(env, tnfoxname, tnfoxversioninfo, debug=debugmode)
+        libtnfox,libtnfoxsuffix=VersionedSharedLibraryName(env, tnfoxname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, debug=debugmode)
     if debugmode:
         builddir="Debug_"+tool+"_"+architectureSpec()
     else:
@@ -212,6 +212,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
+    if disableGUI: env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
     # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
     # the python bindings. Alter it at the top of fxmemoryops.h
     if tcommonopts==2: env['CPPDEFINES']+=["BUILDING_TCOMMON"]
@@ -249,14 +250,25 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
 
 def getTnFOXSources(prefix="", getWPOfiles=False):
     filelist=os.listdir(prefix+"src")
+    # These aren't to be WPOed
+    dontWPO=["FXExceptionDialog.cxx", "FXFunctorTarget.cxx", "FXHandedInterface.cxx", "FXHandedMsgBox.cxx", "FXPrimaryButton.cxx", "TnFXApp.cxx"]
+    # These are to be WPOed
+    doWPO=["fxfilematch.cpp", "fxutils.cpp", "vsscanf.cpp"]
     idx=0
     while idx<len(filelist):
         type=filelist[idx][-4:]
-        if type!=ternary(getWPOfiles, ".cxx", ".cpp"):
-            del filelist[idx]
-        elif not onWindows and filelist[idx]=="vsscanf.cpp":
-            del filelist[idx]   # Causes issues with glibc
-        else: idx+=1
+        if getWPOfiles:
+            if (type!=".cxx" or filelist[idx] in dontWPO) and filelist[idx] not in doWPO:
+                del filelist[idx]
+            elif not onWindows and filelist[idx]=="vsscanf.cpp":
+                del filelist[idx]   # Causes issues with glibc
+            else: idx+=1
+        else:
+            if (type!=".cpp" and filelist[idx] not in dontWPO) or filelist[idx] in doWPO:
+                del filelist[idx]
+            elif not onWindows and filelist[idx]=="vsscanf.cpp":
+                del filelist[idx]   # Causes issues with glibc
+            else: idx+=1
     return filelist
 def getTnFOXIncludes(prefix=""):
     filelist=os.listdir(prefix+"include")

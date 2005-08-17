@@ -896,7 +896,7 @@ void QTrans::int_translateString(FXString &dest, QTransString &src, const FXStri
 		}
 		if(!gotIt)
 		{
-#ifndef DEBUG
+#if !defined(DEBUG) && !defined(FX_DISABLEGUI)
 			if(FXApp::instance() && FXApp::instance()->isInitialized())
 #endif
 			if(language()!="EN")

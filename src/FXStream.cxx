@@ -27,8 +27,10 @@
 #include "fxdefs.h"
 #include "FXStream.h"
 #include "FXString.h"
+#ifndef FX_DISABLEGUI
 #include "FXHash.h"
 #include "FXObject.h"
+#endif
 #include "FXException.h"
 #include "QTrans.h"
 #include "FXFile.h"
@@ -107,7 +109,9 @@ FXStream::~FXStream(){
   rdptr=(FXuchar*)-1L;
 
   // TnFOX stuff
+#ifndef FX_DISABLEGUI
   FXDELETE(hash);
+#endif
   dev=(QIODevice *)-1L;
   }
 
@@ -131,6 +135,7 @@ void FXStream::setSpace(unsigned long)
 
 // Open for save or load
 FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar* data){
+#ifndef FX_DISABLEGUI
   if(save_or_load!=FXStreamSave && save_or_load!=FXStreamLoad){fxerror("FXStream::open: illegal stream direction.\n");}
   if(!dir){
 
@@ -172,15 +177,17 @@ FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar*
 
     return TRUE;
     }
+#endif
   return FALSE;
   }
 
 
 // Close store; return TRUE if no errors have been encountered
 FXbool FXStream::close(){
+#ifndef FX_DISABLEGUI
   if(dir){
     hash->clear();
-	FXDELETE(hash);
+    FXDELETE(hash);
     dir=FXStreamDead;
     if(owns){FXFREE(&begptr);}
     begptr=NULL;
@@ -190,6 +197,7 @@ FXbool FXStream::close(){
     owns=FALSE;
     return code==FXStreamOK;
     }
+#endif
   return FALSE;
   }
 
@@ -353,18 +361,19 @@ FXStream& FXStream::load(FXulong* p,unsigned long n){
   return *this;
   }
 
-
 /*********************************  Add Object  ********************************/
 
 
 // Add object without saving or loading
 FXStream& FXStream::addObject(const FXObject* v){
+#ifndef FX_DISABLEGUI
   if(dir==FXStreamSave){
     hash->insert((void*)v,(void*)(FXuval)seq++);
     }
   else if(dir==FXStreamLoad){
     hash->insert((void*)(FXuval)seq++,(void*)v);
     }
+#endif
   return *this;
   }
 
@@ -373,6 +382,7 @@ FXStream& FXStream::addObject(const FXObject* v){
 
 // Save object
 FXStream& FXStream::saveObject(const FXObject* v){
+#ifndef FX_DISABLEGUI
   register const FXMetaClass *cls;
   register const FXchar *name;
   FXuint tag,zero=0;
@@ -401,6 +411,7 @@ FXStream& FXStream::saveObject(const FXObject* v){
     FXTRACE((100,"saveObject(%s)\n",v->getClassName()));
     v->save(*this);
     }
+#endif
   return *this;
   }
 
@@ -409,6 +420,7 @@ FXStream& FXStream::saveObject(const FXObject* v){
 
 // Load object
 FXStream& FXStream::loadObject(FXObject*& v){
+#ifndef FX_DISABLEGUI
   register const FXMetaClass *cls;
   FXchar name[MAXCLASSNAME+1];
   FXuint tag,esc;
@@ -446,7 +458,9 @@ FXStream& FXStream::loadObject(FXObject*& v){
     FXTRACE((100,"loadObject(%s)\n",v->getClassName()));
     v->load(*this);
     }
+#endif
   return *this;
   }
+
 
 }

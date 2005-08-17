@@ -727,7 +727,9 @@ static void *start_thread(void *t)
 		if(e.flags() & FXERRH_ISFATAL)
 		{
 			QThreadPrivate::forceCleanup(tt);
+#ifndef FX_DISABLEGUI
 			if(FXApp::instance()) FXApp::instance()->exit(1);
+#endif
 			FXProcess::exit(1);
 		}
 		//QThread::postEvent(TProcess::getProcess(), new TNonGUIThreadExceptionEvent(e));
@@ -746,7 +748,9 @@ static void *start_thread(void *t)
 				if(e.flags() & FXERRH_ISFATAL)
 				{
 					QThreadPrivate::forceCleanup(tt);
+#ifndef FX_DISABLEGUI
 					if(FXApp::instance()) FXApp::instance()->exit(1);
+#endif
 					FXProcess::exit(1);
 				}
 				//QThread::postEvent(TProcess::getProcess(), new TNonGUIThreadExceptionEvent(e));

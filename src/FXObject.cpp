@@ -37,85 +37,13 @@
 
   - We need a table of all metaclasses, as we should be able to create any type
     of object during deserialization.
-  - For MacOS/X support, we moved fxmalloc() and co. here; the reason is that
-    when FOX is loaded as a DLL into FXRuby, these symbols need to be resolvable
-    in order for the DLL startup code to run properly for the meta class
-    initializers; afterward everything's OK.
 */
 
 
 #define EMPTYSLOT  ((FXMetaClass*)-1L)
 
 
-
-
-/*******************************************************************************/
-
 namespace FX {
-
-// Allocate memory
-FXint fxmalloc(void** ptr,unsigned long size){
-  *ptr=NULL;
-  if(size!=0){
-    if((*ptr=malloc(size))==NULL) return FALSE;
-    }
-  return TRUE;
-  }
-
-
-// Allocate cleaned memory
-FXint fxcalloc(void** ptr,unsigned long size){
-  *ptr=NULL;
-  if(size!=0){
-    if((*ptr=calloc(size,1))==NULL) return FALSE;
-    }
-  return TRUE;
-  }
-
-
-// Resize memory
-FXint fxresize(void** ptr,unsigned long size){
-  register void *p=NULL;
-  if(size!=0){
-    if((p=realloc(*ptr,size))==NULL) return FALSE;
-    }
-  else{
-    if(*ptr) free(*ptr);
-    }
-  *ptr=p;
-  return TRUE;
-  }
-
-
-// Allocate and initialize memory
-FXint fxmemdup(void** ptr,const void* src,unsigned long size){
-  *ptr=NULL;
-  if(size!=0 && src!=NULL){
-    if((*ptr=malloc(size))==NULL) return FALSE;
-    memcpy(*ptr,src,size);
-    }
-  return TRUE;
-  }
-
-
-// String duplicate
-FXchar *fxstrdup(const FXchar* str){
-  register FXchar *copy;
-  if(str!=NULL && (copy=(FXchar*)malloc(strlen(str)+1))!=NULL){
-    strcpy(copy,str);
-    return copy;
-    }
-  return NULL;
-  }
-
-
-// Free memory, resets ptr to NULL afterward
-void fxfree(void** ptr){
-  if(*ptr){
-    free(*ptr);
-    *ptr=NULL;
-    }
-  }
 
 
 /*************************  FXMetaClass Implementation  ************************/

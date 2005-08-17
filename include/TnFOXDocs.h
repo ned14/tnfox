@@ -135,6 +135,8 @@ TnFOX is designed to be used as a shared library, accepting a large shareable bi
 processes rather than portions of it being statically bound to each. If the extra bloat in binary size
 is not acceptable to you, don't use TnFOX (note that the bloat has no effect on speed with a good
 optimiser - TnFOX pounds a lot of competitors into dust on the benchmarks).
+\note However, all of this said, as of v0.86 there is an option to build just the extensions with no
+GUI support at all!
 
 \section whouse Who should use TnFOX?
 \li Heavy multithreaded applications. TnFOX's multithreading support is second to none and is heavily
@@ -330,6 +332,7 @@ General questions:
 <ol>
 <li>\ref Tn
 <li>\ref BuildingTnDiffs
+<li>\ref BuildingNoGUIDiffs
 <li>\ref HowEfficient
 </ol>
 
@@ -417,6 +420,31 @@ FreeBSD questions:
 	\li FX::FXPrintDialog
 	\li FX::FXReplaceDialog
 	\li FX::FXSearchDialog
+
+  <li>
+	\subsection BuildingNoGUIDiffs What are the differences in a no-GUI build?
+
+	As of v0.86, a no-GUI build can be set by editing \c config.py and setting the
+	\c disableGUI variable to \c True. The no GUI build consists merely of the TnFOX
+	extensions to FOX and virtually no FOX code at all. Here's what you do get:
+
+	\li All the FX::QIODevice classes
+	\li All the QTL thunk classes and all classes starting with 'Q'
+	\li All the FX::FXSQLDB classes
+	\li All the stuff in FX::Secure
+	\li FX::FXACL, FX::FXFSMonitor, FX::FXRollback, FX::FXProcess, FX::FXNetwork
+	\li And from FOX, FX::fxfilematch(), FX::FXString and FX::FXStream (the FOX
+	compatibility API does nothing however). You also get the contents of fxutils
+	(which is all the misc functions in fxdefs.h)
+
+	You should note that there is no FX::FXObject included in this build nor anything
+	deriving from it.
+
+	At the time of writing, the no-GUI build shrinks the binary as follows:
+	\li On MSVC7.1 x86, from 3.08Mb to 1.06Mb.
+	\li On MSVC8.0 x64, from 4.59Mb to 1.7Mb.
+	\li On GCC v4.0.1 x64, from 11Mb to 1.9Mb. If you link statically, you can get
+	executables less than 1.5Mb (not bad considering the clib is in there too)
 
   <li>
     \subsection HowEfficient How efficient are TnFOX's facilities?

@@ -27,7 +27,9 @@ env['CPPDEFINES']+=[ "FOXDLL_EXPORTS" ]
 doConfTests(env)
 
 updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
-objects=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", False)]
+objects=[]
+if not disableGUI:
+    objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", False)]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", True)]
 if libsqlite: objects.append(libsqlite)
 for object in objects:
@@ -36,7 +38,7 @@ if onWindows:
     versionrc="src/version.rc"
     objects+=[env.RES(builddir+"/version.res", versionrc)]
 Clean(targetname, objects)
-DLL=VersionedSharedLibrary(env, targetname, tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib)
+DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib)
 env.Precious(DLL)
 addBind(DLL)
 

@@ -95,8 +95,10 @@ else:
                        "/DELAYLOAD:opengl32.dll",
                        "/DELAYLOAD:glu32.dll"
                        ]
-env['LIBS']+=["kernel32", "user32", "gdi32", "advapi32", "shell32",
-              "comctl32", "winspool",
+env['LIBS']+=["kernel32", "user32", "advapi32", "shell32",
+              "winspool",
               "delayimp", "wsock32", "ws2_32", "psapi", "dbghelp",
               "pdh", "netapi32", "secur32", "userenv"
               ]
+if not disableGUI:
+    env['LIBS']+=["gdi32", "comctl32"]

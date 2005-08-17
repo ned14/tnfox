@@ -111,7 +111,7 @@ public:
 	//! Extends the list to \em no items if not that already
 	bool extend(uint no)
 	{
-		uint cs=std::vector<type *>::size();
+		uint cs=(uint) std::vector<type *>::size();
 		if(cs<no)
 		{
 			std::vector<type *>::resize(no);

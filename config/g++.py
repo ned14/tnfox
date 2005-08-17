@@ -107,11 +107,31 @@ if nothreads:
     print "Disabling thread support"
 del nothreads
 
-if not conf.CheckLib("X11", "XOpenDisplay"):
-    raise AssertionError, "TnFOX requires X11"
-if not conf.CheckLib("Xext", "XShmAttach"):
-    raise AssertionError, "TnFOX requires X11"
+if not disableGUI:
+    if not conf.CheckLib("X11", "XOpenDisplay"):
+        raise AssertionError, "TnFOX requires X11"
+    if not conf.CheckLib("Xext", "XShmAttach"):
+        raise AssertionError, "TnFOX requires X11"
+
+    if conf.CheckCHeader(["X11/Xlib.h", "X11/Xcursor/Xcursor.h"]):
+        conf.env['CPPDEFINES']+=[("HAVE_XCURSOR_H",1)]
+        conf.env['LIBS']+=["Xcursor"]
+    else:
+        print "Disabling 32 bit colour cursor support"
     
+    conf.env.ParseConfig("freetype-config --cflags --libs")
+    if not make64bit:
+        # Annoyingly freetype-config adds lib64 on 64 bit platforms
+        for n in range(0, len(conf.env['LIBPATH'])):
+            if "lib64" in conf.env['LIBPATH'][n]:
+                print "   NOTE: Removing unneccessary library path", conf.env['LIBPATH'][n]
+                del conf.env['LIBPATH'][n]
+    if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
+        conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
+        conf.env['LIBS']+=["Xft"]
+    else:
+        print "Disabling anti-aliased fonts support"
+
 if not conf.CheckLib("rt", "shm_open") and not conf.CheckLib("c", "shm_open"):
     raise AssertionError, "TnFOX requires POSIX shared memory support"
 
@@ -120,25 +140,6 @@ if conf.CheckCHeader(["X11/Xlib.h", "sys/shm.h", "sys/ipc.h", "X11/extensions/XS
 else:
     print "Disabling shared memory support"
     
-if conf.CheckCHeader(["X11/Xlib.h", "X11/Xcursor/Xcursor.h"]):
-    conf.env['CPPDEFINES']+=[("HAVE_XCURSOR_H",1)]
-    conf.env['LIBS']+=["Xcursor"]
-else:
-   print "Disabling 32 bit colour cursor support"
-    
-conf.env.ParseConfig("freetype-config --cflags --libs")
-if not make64bit:
-	# Annoyingly freetype-config adds lib64 on 64 bit platforms
-	for n in range(0, len(conf.env['LIBPATH'])):
-		if "lib64" in conf.env['LIBPATH'][n]:
-			print "   NOTE: Removing unneccessary library path", conf.env['LIBPATH'][n]
-			del conf.env['LIBPATH'][n]
-if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
-   conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
-   conf.env['LIBS']+=["Xft"]
-else:
-   print "Disabling anti-aliased fonts support"
-
 if conf.CheckLib("dl", "dlopen") or conf.CheckLib("c", "dlopen"):
     conf.env['CPPDEFINES']+=[("HAVE_LIBDL",1)]
 else:
