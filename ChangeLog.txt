@@ -139,6 +139,8 @@ message size
 + Added FXRefedObject::resetDying()
 * Made FXProcess::dllHandle easier to use
 + Added operator!() to Generic::typeInfoBase
++ Added new option "disableGUI" to build system with small mods to sources
+to remove FXApp and FXObject dependencies
 
 
 
