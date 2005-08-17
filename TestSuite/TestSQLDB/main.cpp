@@ -20,8 +20,10 @@
 ********************************************************************************/
 
 
-#include "fx.h"
+#include "QFileInfo.h"
 #include "FXSQLDB_ipc.h"
+#include "FXFile.h"
+#include "QPipe.h"
 #include <stdio.h>
 #include <assert.h>
 #include "FXMemDbg.h"
@@ -29,7 +31,9 @@
 static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
-#ifdef USE_POSIX
+using namespace FX;
+
+#if defined(USE_POSIX)
 #include "FXSQLDB_sqlite3.h"
 extern void pullSQLite3IntoEXE()
 {
@@ -215,11 +219,13 @@ int main( int argc, char** argv)
 	FXshort   minshort=Generic::BiggestValue<FXshort, true>::value;
 	fxmessage("%s", FXString("16 bit ranges: %1, %3 to %2\n").arg(maxushort).arg(maxshort).arg(minshort).text());
 
+#if 0
 	printf("hasSerialise=%d, %d, %d\n", Generic::hasSerialise<const char *>::value, Generic::hasSerialise<Generic::NullType>::value, Generic::hasSerialise<FXuint>::value);
 	printf("hasSerialise=%d, %d, %d\n", Generic::hasSerialise<FXString>::value, Generic::hasSerialise<FooString>::value, Generic::hasSerialise<FXIconDict *>::value);
 
 	printf("hasDeserialise=%d, %d, %d\n", Generic::hasDeserialise<const char *>::value, Generic::hasDeserialise<Generic::NullType>::value, Generic::hasDeserialise<FXuint>::value);
 	printf("hasDeserialise=%d, %d, %d\n", Generic::hasDeserialise<FXString>::value, Generic::hasDeserialise<FooString>::value, Generic::hasDeserialise<FXIconDict *>::value);
+#endif
 
 	if(0)
 	{	// Little string test
