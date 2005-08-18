@@ -1,12 +1,12 @@
 # TnFOX human language string literal translation file
-# Last updated: Sat, 12 Mar 2005 17:52:36 +0000
+# Last updated: Thu, 11 Aug 2005 23:56:37 +0000
 
 version=1:
 
 # If the line below says =Yes, then there are still text literals in here
 # which have not been translated yet. Search for "!TODO!" to find them
 
-needsupdating=No:
+needsupdating=Yes:
 
 # Enter the list of all language ids used in the file
 
@@ -121,6 +121,8 @@ langids="ES":
 	ES: "&Reintentar"
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
+	srcfile="FXHandedMsgBox.cxx":class="FXHandedMsgBox":
+		ES: "!TODO! enter translation here"
 
 "0x%1:%2%3\n                                 (file %4 line no %5)\n":
 	ES: "0x%1:%2%3\n                                 (archivo %4 linea %5)\n"
@@ -142,10 +144,18 @@ langids="ES":
 	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
 		ES: up
 
+"Access to '%1' denied [Host OS Error: %2]":
+	srcfile="FXException.cxx":class="FXException":
+		ES: "!TODO! enter translation here"
+
 "Blowfish needs a key between 32 and 448 bits":
 	ES: "Blowfish necesita una llave entre 32 y 448 bites"
 	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
 		ES: up
+
+"Blowfish needs a key between 64 and 448 bits":
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: "!TODO! enter translation here"
 
 "Buffer does not exist":
 	ES: "No se pueda encontrar el buffer"
@@ -196,6 +206,244 @@ langids="ES":
 	srcfile="FXException.cxx":class="FXException":
 		ES: up
 
+"FX::Secure::Randomness":
+	srcfile="FXSecure.cxx":class="Failed to read /dev/urandom":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSecure.cxx":class="Too much random data requested":
+		ES: "!TODO! enter translation here"
+
+"FXACL":
+	srcfile="FXACL.cxx":class="FXACL":hint="Invalid Security Descriptor":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACL":hint="Owner: %1 (group: %2)\n  Deny          Grant         Entity\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACL":hint="Permission denied":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACL":hint="You must authenticate an entity before you can set it as owner":
+		ES: "!TODO! enter translation here"
+
+"FXACLEntity":
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="Everything":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="Must have root privileges for this operation":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="Owner group":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="Owner":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="Shadow password file unavailable":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="Unknown user":
+		ES: "!TODO! enter translation here"
+	srcfile="FXACL.cxx":class="FXACLEntity":hint="You must authenticate an entity before you can retrieve its home directory":
+		ES: "!TODO! enter translation here"
+
+"FXException":
+	srcfile="FXException.cxx":class="&FXException":hint="%1 (code 0x%2 file %3 line %4 thread %5)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="%1 (code 0x%2)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="0x%1:%2%3\n                                 (file %4 line no %5)\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="<backtrace ends>":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="<backtrace may continue ...>":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="FATAL ERROR: %1 (code 0x%2)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="From other end of IPC channel: %1 (code 0x%2)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="\nFurthermore, %1 errors occurred during the handling of the above exception:\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="&FXException":hint="\nStack backtrace:\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="FXException":hint="Access to '%1' denied [Host OS Error: %2]":
+		ES: "!TODO! enter translation here"
+	srcfile="FXException.cxx":class="FXException":hint="File '%1' not found [Host OS Error: %2]":
+		ES: "!TODO! enter translation here"
+
+"FXExceptionDetails":
+	srcfile="FXExceptionDialog.cxx":class="Full error report":
+		ES: "!TODO! enter translation here"
+
+"FXExceptionDialog":
+	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":hint="Fatal Error from %1":
+		ES: "!TODO! enter translation here"
+
+"FXFSMonitor":
+	srcfile="FXFSMonitor.cxx":class="FXFSMonitor":hint="Path not found":
+		ES: "!TODO! enter translation here"
+
+"FXFile":
+	srcfile="FXFile.cxx":class="FXFile":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="FXFile.cxx":class="FXFile":hint="File '%1' not found":
+		ES: "!TODO! enter translation here"
+	srcfile="FXFile.cxx":class="FXFile":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="FXFile.cxx":class="FXFile":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+
+"FXHandedInterface":
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterfaceI":hint="&No":
+		ES: "!TODO! enter translation here"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterfaceI":hint="&Yes":
+		ES: "!TODO! enter translation here"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterfaceI":hint="Select to apply the changes and return to the program. Alt-select to apply without closing the dialog.":
+		ES: "!TODO! enter translation here"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterfaceI":hint="Select to cancel the operation and return to the program. Alt-select to reset the contents of the dialog.":
+		ES: "!TODO! enter translation here"
+
+"FXIPCChannel":
+	srcfile="FXIPC.cxx":class="FXIPCChannel":hint="Maximum message size exceeded (%1 with limit of %2)":
+		ES: "!TODO! enter translation here"
+	srcfile="FXIPC.cxx":class="FXIPCChannel":hint="Message failed CRC check":
+		ES: "!TODO! enter translation here"
+	srcfile="FXIPC.cxx":class="FXIPCChannel":hint="Unhandled message":
+		ES: "!TODO! enter translation here"
+
+"FXIPCMsgRegistry":
+	srcfile="FXIPC.cxx":class="FXIPCMsgRegistry":hint="Message already registered in this registry":
+		ES: "!TODO! enter translation here"
+
+"FXPrimaryButton":
+	srcfile="FXPrimaryButton.cxx":class="FXPrimaryButton":hint="Select this to cancel the action. Alt-select merely resets the dialog to its initial state":
+		ES: "!TODO! enter translation here"
+	srcfile="FXPrimaryButton.cxx":class="FXPrimaryButton":hint="Select this to commit to the action. Alt-select merely applies the effects of committing but does not close the dialog":
+		ES: "!TODO! enter translation here"
+
+"FXProcess":
+	srcfile="FXProcess.cxx":class="FXProcess":hint="    who will experience a left-handed interface\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="    who will experience a right-handed interface\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="  %1 to %2 %3%4%5%6 %7\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="  -fxhanded=<left|right> : Overrides the handedness of the user\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="  -fxmemoryfull=<fpno>   : Overrides the memory full setting\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="  -fxscreenscale=<%>     : Overrides the window layout scaling factor\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="  -fxscreensize=w,h      : Constrains the screen (debug only)\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="  -sysinfo               : Show information about the system & environment\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="GUI toolkit (http://www.fox-toolkit.org/) and all rights are reserved\n\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="The host OS is: %1\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="The millisecond count is %1, process id is %2 and this machine has %3 processors\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="There are the following files mapped into this process' memory:\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="This process was created by the user %1 (group %2)\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="TnFOX (http://www.nedprod.com/TnFOX/) is heavily based upon the FOX portable\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="TnFOX system information:\n\n":
+		ES: "!TODO! enter translation here"
+	srcfile="FXProcess.cxx":class="FXProcess":hint="Unknown option '%1' passed to %2\n":
+		ES: "!TODO! enter translation here"
+
+"FXSQLDB::Statement::Cursor":
+	srcfile="FXSQLDB.cxx":class="FXSQLDB":hint="This driver does not support moving cursors backwards":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB.cxx":class="FXSQLDBCursor":hint="This driver does not support moving cursors backwards":
+		ES: "!TODO! enter translation here"
+
+"FXSQLDBServer":
+	srcfile="FXSQLDB_ipc.cxx":class="Connection handle not found":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="Cursor handle not found":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":hint="Connection handle not found":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":hint="Cursor handle not found":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":hint="Requested database '%1' via driver '%2' not permitted":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":hint="Statement handle not found":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="Requested database '%1' via driver '%2' not permitted":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="Statement handle not found":
+		ES: "!TODO! enter translation here"
+
+"FXSQLDB_ipc":
+	srcfile="FXSQLDB_ipc.cxx":class="Column does not exist":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="Database is not open":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":hint="Database is not open":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_ipc.cxx":class="Header does not exist":
+		ES: "!TODO! enter translation here"
+
+"FXSQLDB_sqlite3":
+	srcfile="FXSQLDB.cxx":class="FXSQLDB_sqlite3":hint="Database is not open":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB.cxx":class="Index is invalid":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB.cxx":class="SQLite3 cursors can only be stepped forwards":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB.cxx":class="SQLite3 cursors cannot be copied":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB.cxx":class="SQLite3 does not support static or non-forwards cursors":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB.cxx":class="Statement has expired":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":hint="Database is not open":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="Failed to retrive column header":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="Failed to retrive column type":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="Index is invalid":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="SQLite3 cursors cannot be copied":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="SQLite3 does not support static or non-forwards cursors":
+		ES: "!TODO! enter translation here"
+	srcfile="FXSQLDB_sqlite3.cxx":class="Statement has expired":
+		ES: "!TODO! enter translation here"
+
+"FXSSLKey":
+	srcfile="QSSLDevice.cxx":class="AES needs a key of either 128, 192 or 256 bits":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="Blowfish needs a key between 64 and 448 bits":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="FXSSLKey":hint="Keys no bigger than 480 bits can be generated from plaintext":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="FXSSLKey":hint="Salt length must be a multiple of eight":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="FXSSLKey":hint="Salt length must be less than or equal to 64":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="FXSSLPKey":hint="Failed to read RSA public or private key from PEM file":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="Key length must be a multiple of sixty-four":
+		ES: "!TODO! enter translation here"
+
+"FXSSLPKey":
+	srcfile="QSSLDevice.cxx":class="Unknown tag":
+		ES: "!TODO! enter translation here"
+
+"FXStream":
+	srcfile="FXStream.cxx":class="&FXStream":hint="Premature EOF encountered":
+		ES: "!TODO! enter translation here"
+	srcfile="FXStream.cxx":class="FXStream":hint="Premature EOF encountered":
+		ES: "!TODO! enter translation here"
+	srcfile="FXStream.cxx":class="Premature EOF encountered":
+		ES: "!TODO! enter translation here"
+
 "Failed to read /dev/urandom":
 	ES: "Hay fracaso para leer /dev/urandom"
 	srcfile="FXSecure.cxx":class="FX::Secure::Randomness":
@@ -214,6 +462,14 @@ langids="ES":
 "Fatal Error from %1":
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: "Error Mortal de %1"
+
+"File '%1' not found [Host OS Error: %2]":
+	srcfile="FXException.cxx":class="FXException":
+		ES: "!TODO! enter translation here"
+
+"File '%1' not found":
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: "!TODO! enter translation here"
 
 "File not found":
 	ES: "El archivo no se encontrado"
@@ -250,10 +506,18 @@ langids="ES":
 	srcfile="FXSSLDevice.cxx":class="FXSSLDevice":
 		ES: up
 
+"Invalid Security Descriptor":
+	srcfile="FXACL.cxx":class="FXACL":
+		ES: "!TODO! enter translation here"
+
 "Key length must be a multiple of eight":
 	ES: "La longitud de llave necesita estar un multiplo de ocho"
 	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
 		ES: up
+
+"Key length must be a multiple of sixty-four":
+	srcfile="FXSSLDevice.cxx":class="FXSSLKey":
+		ES: "!TODO! enter translation here"
 
 "Key of unknown encryption type":
 	ES: "El tipo de llave cryptographia no es conocido"
@@ -393,6 +657,8 @@ langids="ES":
 	ES: "Apriete para reintentar la operacion"
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
+	srcfile="FXHandedMsgBox.cxx":class="FXHandedMsgBox":
+		ES: "!TODO! enter translation here"
 
 "Press to cancel the operation and return to the program":
 	ES: "Apriete para cancelar la operacion y volver a la programa"
@@ -403,6 +669,114 @@ langids="ES":
 	ES: "Apriete para salir directo la programa"
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
+
+"QBlkSocket":
+	srcfile="QBlkSocket.cxx":class="QBlkSocket":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="QBlkSocket.cxx":class="QBlkSocket":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="QBlkSocket.cxx":class="QBlkSocket":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+	srcfile="QBlkSocket.cxx":class="QBlkSocket":hint="Sockets are not enabled on this machine":
+		ES: "!TODO! enter translation here"
+	srcfile="QBlkSocket.cxx":class="QBlkSocket":hint="This machine cannot perform IPv6":
+		ES: "!TODO! enter translation here"
+
+"QBuffer":
+	srcfile="QBuffer.cxx":class="QBuffer":hint="Buffer does not exist":
+		ES: "!TODO! enter translation here"
+	srcfile="QBuffer.cxx":class="QBuffer":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="QBuffer.cxx":class="QBuffer":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="QBuffer.cxx":class="QBuffer":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+
+"QDir":
+	srcfile="QDir.cxx":class="This is an absolute path":
+		ES: "!TODO! enter translation here"
+
+"QGZipDevice":
+	srcfile="QGZipDevice.cxx":class="QGZipDevice":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+
+"QIODevice":
+	srcfile="QIODevice.cxx":class="QIODevice":hint="You cannot set the permissions on this device":
+		ES: "!TODO! enter translation here"
+
+"QIODeviceS":
+	srcfile="QIODevice.cxx":class="QIODeviceS":hint="Either i/o device is not open or not supported":
+		ES: "!TODO! enter translation here"
+
+"QLocalPipe":
+	srcfile="QLocalPipe.cxx":class="QLocalPipe":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="QLocalPipe.cxx":class="QLocalPipe":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="QLocalPipe.cxx":class="QLocalPipe":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+
+"QMemMap":
+	srcfile="QMemMap.cxx":class="QMemMap":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="QMemMap.cxx":class="QMemMap":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="QMemMap.cxx":class="QMemMap":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+	srcfile="QMemMap.cxx":class="QMemMap":hint="Unable to read unmapped shared memory":
+		ES: "!TODO! enter translation here"
+	srcfile="QMemMap.cxx":class="QMemMap":hint="Unable to write unmapped shared memory":
+		ES: "!TODO! enter translation here"
+
+"QPipe":
+	srcfile="QPipe.cxx":class="QPipe":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="QPipe.cxx":class="QPipe":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="QPipe.cxx":class="QPipe":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+	srcfile="QPipe.cxx":class="QPipe":hint="Pipe not found":
+		ES: "!TODO! enter translation here"
+
+"QSSLDevice":
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Device reopen has different mode":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="File type devices not supported":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Incorrect key":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Key of unknown encryption type":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Key salt length must be smaller or equal to key length":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Missing key test hash":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Need private key to decrypt":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Need public key to encrypt":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Not a TnFOX secure data file":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Not open for reading":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Not open for writing":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="OpenSSL support not enabled":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Secure file format too new":
+		ES: "!TODO! enter translation here"
+	srcfile="QSSLDevice.cxx":class="QSSLDevice":hint="Secure file missing symmetric key":
+		ES: "!TODO! enter translation here"
+
+"QThread":
+	srcfile="QThread.cxx":class="QThread":hint="Failed to start thread":
+		ES: "!TODO! enter translation here"
+	srcfile="QThread.cxx":class="QThread":hint="You cannot destruct a running thread":
+		ES: "!TODO! enter translation here"
+
+"QThreadLocalStorage":
+	srcfile="QThread.cxx":class="QThreadLocalStorageBase":hint="Exceeded Windows TLS hard key number limit":
+		ES: "!TODO! enter translation here"
 
 "Salt length must be a multiple of eight":
 	ES: "La longitud de sal de llave necesita estar un multiplo de ocho"
@@ -488,6 +862,10 @@ langids="ES":
 	ES: "Este mostra el error"
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
+
+"This is a window either informing you of something or asking you a question":
+	srcfile="FXHandedMsgBox.cxx":class="FXHandedMsgBox":
+		ES: "!TODO! enter translation here"
 
 "This is an absolute path":
 	ES: "Ese es un direccion absoluta"

@@ -57,6 +57,8 @@ class FXAPI QTransString
 protected:
 	QTransString() : p(0) { }
 	QTransString(const char *context, const char *text, const char *hint, const FXString *langid=0);
+	//! Returns true if the string is empty
+	bool empty() const throw();
 	//! Returns a copy of the string
 	QTransString copy() const;
 	//! The type of functor called to determine destination translation language

@@ -141,6 +141,7 @@ message size
 + Added operator!() to Generic::typeInfoBase
 + Added new option "disableGUI" to build system with small mods to sources
 to remove FXApp and FXObject dependencies
++ Added QTransString::empty()
 
 
 

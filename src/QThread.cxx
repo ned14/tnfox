@@ -796,6 +796,7 @@ void QThreadPrivate::run(QThread *t)
 #endif
 #endif
 	}
+	FXASSERT(t->isValid());
 	QMtxHold h(t->p);
 #ifdef DEBUG
 	fxmessage("Thread %u (%s) started\n", (FXuint) QThread::id(), t->name());

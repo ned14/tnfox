@@ -251,6 +251,11 @@ QTransString::QTransString(const char *context, const char *text, const char *hi
 	FXERRHM(p=new QTransStringPrivate(context, text, hint, langid));
 }
 
+bool QTransString::empty() const throw()
+{
+	return !p || !p->text;
+}
+
 QTransString QTransString::copy() const
 {
 	QTransString ret;
