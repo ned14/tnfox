@@ -1173,22 +1173,27 @@ FXString FXProcess::dllPath(void *_addr, void **dllstart, void **dllend)
 
 FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 {
+	bool firstLoad=true;
 	dllHandle h;
 #ifdef USE_WINAPI
 	/* Rather annoyingly, LoadLibraryEx() won't try file extensions for us like LoadLibrary()
 	so we must do this ourselves */
 	FXString path_=path;
-	if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
-	{
-		if(ERROR_MOD_NOT_FOUND!=GetLastError()) { FXERRHWIN(0); }
-		path_=path+".dll";
-		if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
+	FXUnicodify<> path__(path_);
+	if((firstLoad=!GetModuleHandleEx(0, path__.buffer(), (HMODULE *) &h.h)))
+	{	// Failed to inc ref count of already loaded module
+		if(!(h.h=(void *) LoadLibraryEx(path__.buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
 		{
 			if(ERROR_MOD_NOT_FOUND!=GetLastError()) { FXERRHWIN(0); }
-			path_=path+".exe";
+			path_=path+".dll";
 			if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
 			{
-				FXERRHWIN(0);
+				if(ERROR_MOD_NOT_FOUND!=GetLastError()) { FXERRHWIN(0); }
+				path_=path+".exe";
+				if(!(h.h=(void *) LoadLibraryEx(FXUnicodify<>(path_).buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
+				{
+					FXERRHWIN(0);
+				}
 			}
 		}
 	}
@@ -1218,6 +1223,16 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
 	}
+	QValueList<MappedFileInfo> list=mappedFiles();
+	for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
+	{
+		MappedFileInfo &mfi=*it;
+		if(mfi.path==path_)
+		{
+			firstLoad=false;
+			break;
+		}
+	}
 #ifdef DEBUG
 	fxmessage("dlopening %s ...\n", path_.text());
 #endif
@@ -1240,10 +1255,13 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	}
 allgood:
 #endif
-	QBuffer txtholder;
-	txtholder.open(IO_ReadWrite);
-	FXStream stxtholder(&txtholder);
-	myprocess->runPendingStaticInits(myprocess->p->argscopy.argc, myprocess->p->argscopy.argv, stxtholder);
+	if(firstLoad)
+	{
+		QBuffer txtholder;
+		txtholder.open(IO_ReadWrite);
+		FXStream stxtholder(&txtholder);
+		myprocess->runPendingStaticInits(myprocess->p->argscopy.argc, myprocess->p->argscopy.argv, stxtholder);
+	}
 	return h;
 }
 
