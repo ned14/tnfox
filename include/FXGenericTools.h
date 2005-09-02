@@ -1089,6 +1089,19 @@ struct IntegralLists
 	typedef TL::append<signedInts, floats>::value Signeds;
 	//! All integral types
 	typedef TL::append<Ints, floats>::value All;
+
+	//! Smallest unsigned int
+	typedef TL::at<unsignedInts, 0>::value smallestUnsignedInt;
+	//! Smallest signed int
+	typedef TL::at<signedInts,   0>::value smallestSignedInt;
+	//! Smallest floating point
+	typedef TL::at<floats,       0>::value smallestFloat;
+	//! Biggest unsigned int
+	typedef TL::at<unsignedInts, TL::length<unsignedInts>::value-1>::value biggestUnsignedInt;
+	//! Biggest signed int
+	typedef TL::at<signedInts,   TL::length<signedInts>::value-1>::value biggestSignedInt;
+	//! Biggest floating point
+	typedef TL::at<floats,       TL::length<floats>::value-1>::value biggestFloat;
 };
 
 /*! \struct BiggestValue

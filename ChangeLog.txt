@@ -144,6 +144,9 @@ message size
 + Added new option "disableGUI" to build system with small mods to sources
 to remove FXApp and FXObject dependencies
 + Added QTransString::empty()
++ Added FXRectangle operators < and >
++ Added Generic::IntegralLists::biggestUnsignedInt, biggestSignedInt,
+biggestFloat and smallestUnsignedInt, smallestSignedInt, smallestFloat
 
 
 
