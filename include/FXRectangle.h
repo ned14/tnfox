@@ -48,6 +48,10 @@ public:
   friend FXAPI FXbool operator==(const FXRectangle& p,const FXRectangle& q){ return p.x==q.x && p.y==q.y && p.w==q.w && p.h==q.h; }
   friend FXAPI FXbool operator!=(const FXRectangle& p,const FXRectangle& q){ return p.x!=q.x || p.y!=q.y || p.w!=q.w || p.h!=q.h; }
 
+  /// Comparison
+  friend FXAPI FXbool operator<(const FXRectangle& p,const FXRectangle& q){ return p.w*p.h<q.w*q.h; }
+  friend FXAPI FXbool operator>(const FXRectangle& p,const FXRectangle& q){ return p.w*p.h>q.w*q.h; }
+
   /// Point in rectangle
   FXbool contains(const FXPoint& p) const { return x<=p.x && y<=p.y && p.x<x+w && p.y<y+h; }
   FXbool contains(FXshort xx,FXshort yy) const { return x<=xx && y<=yy && xx<x+w && yy<y+h; }
