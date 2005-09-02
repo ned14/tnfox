@@ -41,6 +41,8 @@ B FXString::arg() wasn't printing negative numbers
 B QHostAddress stream operators didn't have FXAPI
 B FXIPCChannel wasn't detecting messages sent in big-endian
 B FXIPCChannel::doReception() was mis-reading messages under high load
+B FXProcess::dllLoad was reiniting FXProcess static inits even when DLL was
+already loaded
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
