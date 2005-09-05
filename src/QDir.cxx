@@ -32,10 +32,10 @@
 #ifndef USE_POSIX
 #define USE_WINAPI
 #include "WindowsGubbins.h"
-#define THROWPOSTFOX FXERRHWIN(0);
+#define THROWPOSTFOX(filename) FXERRHWINFN(0, filename);
 #endif
 #ifdef USE_POSIX
-#define THROWPOSTFOX FXERRHOS(-1);
+#define THROWPOSTFOX(filename) FXERRHOSFN(-1, filename);
 #endif
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
@@ -473,26 +473,43 @@ void QDir::refresh()
 
 bool QDir::mkdir(const FXString &leaf, bool acceptAbs)
 {
-	if(!FXFile::createDirectory(filePath(leaf, acceptAbs), S_IREAD|S_IWRITE))
-		THROWPOSTFOX;
+	FXString path(filePath(leaf, acceptAbs));
+	if(!FXFile::createDirectory(path, S_IREAD|S_IWRITE))
+	{
+		THROWPOSTFOX(path);
+	}
+	else
+	{	// Set ACL so only current user has all access
+		FXERRH_TRY
+		{
+			FXFile::setPermissions(path, FXACL::default_(FXACL::Directory, 4));
+		}
+		FXERRH_CATCH(...)
+		{
+		}
+		FXERRH_ENDTRY
+	}
 	return true;
 }
 bool QDir::rmdir(const FXString &leaf, bool acceptAbs)
 {
-	if(!FXFile::remove(filePath(leaf, acceptAbs)))
-		THROWPOSTFOX;
+	FXString path(filePath(leaf, acceptAbs));
+	if(!FXFile::remove(path))
+		THROWPOSTFOX(path);
 	return true;
 }
 bool QDir::remove(const FXString &leaf, bool acceptAbs)
 {
-	if(!FXFile::remove(filePath(leaf, acceptAbs)))
-		THROWPOSTFOX;
+	FXString path(filePath(leaf, acceptAbs));
+	if(!FXFile::remove(path))
+		THROWPOSTFOX(path);
 	return true;
 }
 bool QDir::rename(const FXString &src, const FXString &dest, bool acceptAbs)
 {
-	if(!FXFile::move(filePath(src, acceptAbs), filePath(dest, acceptAbs)))
-		THROWPOSTFOX;
+	FXString path(filePath(src, acceptAbs));
+	if(!FXFile::move(path, filePath(dest, acceptAbs)))
+		THROWPOSTFOX(path);
 	return true;
 }
 bool QDir::exists(const FXString &leaf, bool acceptAbs)
