@@ -78,6 +78,13 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 // Minor hack to force use of ::timeval instead of FX::timeval
 #define timeval ::timeval
 
+#ifndef WIN32
+#ifdef XTHREADS
+#define NO_XIM 1
+#warning Disabling XIM as XTHREADS is defined - newer versions of XIM may fix this
+#endif
+#endif
+
 /*
   Notes:
 
@@ -370,7 +377,7 @@ FXApp* FXApp::app=NULL;
 
 
 // Copyright notice
-const FXuchar *FXApp::copyright=(const FXuchar *) "Copyright (C) 1997-2004 Jeroen van der Zijp and Niall Douglas. All Rights Reserved.";
+const FXuchar *FXApp::copyright=(const FXuchar *) "Copyright (C) 1997-2005 Jeroen van der Zijp and Niall Douglas. All Rights Reserved.";
 
 
 #ifndef WIN32
@@ -958,11 +965,41 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   wheelLines=10;
 
   // Make font
-#ifdef BUILDING_TCOMMON
-  normalFont=new FXFont(this,"sans serif,80,normal,normal");
-#else
-  normalFont=new FXFont(this,"sans serif,90,normal,normal");
+  {	// We want 8pt Tahoma, 8pt Arial, 8pt Luxi Sans or 8pt helvetica
+	FXString bestfont("helvetica,80,normal,normal");
+	FXFontDesc *fonts;
+	FXuint numfonts, f;
+	if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
+		FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SWISS|FONTHINT_SCALABLE))
+	{
+		for(f=0; f<numfonts; f++)
+		{
+			if(fonts[f].flags & FONTPITCH_VARIABLE)
+			{
+				//fxmessage("Candidate font: face=%s, size=%u, weight=%u, slant=%u, width=%u, encoding=%u, flags=%u\n", fonts[f].face, fonts[f].size, fonts[f].weight, fonts[f].slant, fonts[f].setwidth, fonts[f].encoding, fonts[f].flags);
+				FXString face(fonts[f].face);
+				if(!comparecase(face, "tahoma", 6))
+				{
+					bestfont="tahoma,80,normal,normal";
+					break;		// Good as it gets
+				}
+				else if(!comparecase(face, "arial", 5))
+				{
+					bestfont="arial,80,normal,normal";
+				}
+				else if(!comparecase(face, "luxi sans", 9) && !comparecase(bestfont, "helvetica", 9))
+				{
+					bestfont="luxi sans,80,normal,normal";
+				}
+			}
+		}
+		FXFREE(&fonts);
+	}
+#ifdef DEBUG
+	fxmessage("FXApp: Using font '%s' for normal font\n", bestfont.text());
 #endif
+	normalFont=new FXFont(this, bestfont);
+  }
 
   // We delete the stock font
   stockFont=normalFont;
