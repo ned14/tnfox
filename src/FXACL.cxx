@@ -429,7 +429,7 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	FXERRHWIN(SEC_E_OK==QuerySecurityContextToken(serverhout, &temp));
 	FXRBOp untemp=FXRBFunc(CloseHandle, temp);
 	// Take a copy with reduced permissions
-	FXERRHWIN(DuplicateTokenEx(temp, TOKEN_DUPLICATE|TOKEN_IMPERSONATE, NULL, SecurityImpersonation, TokenImpersonation, &p->token));
+	FXERRHWIN(DuplicateTokenEx(temp, TOKEN_DUPLICATE|TOKEN_IMPERSONATE|TOKEN_QUERY, NULL, SecurityImpersonation, TokenImpersonation, &p->token));
 	return true;
 #endif
 #ifdef USE_POSIX
@@ -522,9 +522,9 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 FXString FXACLEntity::homeDirectory(bool filesdir) const
 {
 #ifdef USE_WINAPI
+	FXERRH(p->token, QTrans::tr("FXACLEntity", "You must authenticate an entity before you can retrieve its home directory"), FXACLENTITY_HOMEDIRNEEDSAUTH, 0);
 	if(filesdir)
 	{	// Ask the shell where this user's My Documents lives
-		FXERRH(p->token, QTrans::tr("FXACLEntity", "You must authenticate an entity before you can retrieve its home directory"), FXACLENTITY_HOMEDIRNEEDSAUTH, 0);
 		TCHAR outpath[MAX_PATH];
 		HRESULT ret=SHGetFolderPath(NULL, CSIDL_PERSONAL, p->token, SHGFP_TYPE_CURRENT, outpath);
 		FXERRHWIN(ret!=S_FALSE && ret!=E_FAIL);
