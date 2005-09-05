@@ -1713,6 +1713,7 @@ bool QSSLDevice::open(FXuint mode)
 					FXERRH((mode & IO_ReadOnly) || !(pkey->hasPublicKey() && pkey->hasPrivateKey()), "Security check: asymmetric encryption with both public & private keys", 0, FXERRH_ISDEBUG);
 				}
 			}
+			FXRBOp undevopen=FXRBObj(*p->dev, p->dev->isOpen() ? 0 : &QIODevice::close);
 			p->dev->open(mode);
 			FXStream s(p->dev);
 			FXSSLKey key=p->key;
@@ -1923,6 +1924,7 @@ bool QSSLDevice::open(FXuint mode)
 #endif
 			}
 			ioIndex=0;
+			undevopen.dismiss();
 		}
 		p->amServer=false;
 		p->connected=false;
