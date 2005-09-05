@@ -1234,26 +1234,16 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 		}
 	}
 #ifdef DEBUG
-	fxmessage("dlopening %s ...\n", path_.text());
+	fxmessage("dlopening %s (firstLoad=%d) ...\n", path_.text(), firstLoad);
 #endif
-	if(!(h.h=dlopen(path_.text(), RTLD_NOW | RTLD_GLOBAL)))
+	// Ignore if it's already loaded
+	if(firstLoad)
 	{
-		bool hasLib=FXFile::name(path_).left(3)=="lib", hasSO=path_.right(3)==".so";
-		if(!hasSO)
+		if(!(h.h=dlopen(path_.text(), RTLD_NOW | RTLD_GLOBAL)))
 		{
-			dlerror();
-			path_+=".so";
-			if((h.h=dlopen(path_.text(), RTLD_NOW | RTLD_GLOBAL))) goto allgood;
+			FXERRG(FXString(dlerror()), FXPROCESS_DLERROR, 0);
 		}
-		if(!hasLib)
-		{
-			dlerror();
-			path_="lib"+path_;
-			if((h.h=dlopen(path_.text(), RTLD_NOW | RTLD_GLOBAL))) goto allgood;
-		}
-		FXERRG(FXString(dlerror()), FXPROCESS_DLERROR, 0);
 	}
-allgood:
 #endif
 	if(firstLoad)
 	{
