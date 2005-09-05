@@ -405,23 +405,31 @@ void QTransString::contents(const char *&context, const char *&text, const char 
 
 void QTransString::save(FXStream &s) const
 {
-	s << (FXulong)(FXuval) p->context << (FXulong)(FXuval) p->text << (FXulong)(FXuval) p->hint;
-	s << FXString(p->text);
+	s << (p!=0);
+	if(p)
+	{
+		s << (FXulong)(FXuval) p->context << (FXulong)(FXuval) p->text << (FXulong)(FXuval) p->hint;
+		s << FXString(p->text);
+	}
 }
 void QTransString::load(FXStream &s)
 {
-	if(!p)
+	bool v; s >> v;
+	if(v)
 	{
-		FXERRHM(p=new QTransStringPrivate(0,0,0,0));
+		if(!p)
+		{
+			FXERRHM(p=new QTransStringPrivate(0,0,0,0));
+		}
+		FXulong context, text, hint;
+		s >> context >> text >> hint;
+		p->context=(const char *)(FXuval) context; p->text=(const char *)(FXuval) text; p->hint=(const char *)(FXuval) hint;
+		p->langidfunc=0; p->langid=0;
+		p->args.clear();
+		FXDELETE(p->translation);
+		FXERRHM(p->translation=new FXString);
+		s >> *p->translation;
 	}
-	FXulong context, text, hint;
-	s >> context >> text >> hint;
-	p->context=(const char *)(FXuval) context; p->text=(const char *)(FXuval) text; p->hint=(const char *)(FXuval) hint;
-	p->langidfunc=0; p->langid=0;
-	p->args.clear();
-	FXDELETE(p->translation);
-	FXERRHM(p->translation=new FXString);
-	s >> *p->translation;
 }
 
 
