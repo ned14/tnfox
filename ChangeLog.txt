@@ -45,6 +45,7 @@ B FXProcess::dllLoad was reiniting FXProcess static inits even when DLL was
 already loaded
 B QTransString segfaulted on serialisation if empty
 B FXACLEntity::homeDirectory() was failing on win32
+B QSSLDevice wasn't closing underlying device if open() failed
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -149,6 +150,10 @@ to remove FXApp and FXObject dependencies
 + Added FXRectangle operators < and >
 + Added Generic::IntegralLists::biggestUnsignedInt, biggestSignedInt,
 biggestFloat and smallestUnsignedInt, smallestSignedInt, smallestFloat
+* Disabled XIM if XTHREADS defined. No choice really. Word is that XIM
+will never be fixed ever
+* FXApp now chooses 8pt Tahoma, 8pt Arial, 8pt Luxi Sans or 8pt Helvetica
+to better approximate Windows layouts
 
 
 
