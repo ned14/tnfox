@@ -46,6 +46,7 @@ already loaded
 B QTransString segfaulted on serialisation if empty
 B FXACLEntity::homeDirectory() was failing on win32
 B QSSLDevice wasn't closing underlying device if open() failed
+B QPipe wasn't deleting named pipes on close
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -154,6 +155,7 @@ biggestFloat and smallestUnsignedInt, smallestSignedInt, smallestFloat
 will never be fixed ever
 * FXApp now chooses 8pt Tahoma, 8pt Arial, 8pt Luxi Sans or 8pt Helvetica
 to better approximate Windows layouts
++ Added FXACL::resetPath()
 
 
 
