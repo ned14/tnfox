@@ -564,6 +564,7 @@ FXEventLoop::FXEventLoop(FXApp* a) :
   FXCALLOC(&w_fds,fd_set,1);              // Write File Descriptor set
   FXCALLOC(&e_fds,fd_set,1);              // Except File Descriptor set
 
+  latch[0]=latch[1]=0;
   pipe(latch);                            // Used to latch event loop
 
   // MS-Windows specific inits
@@ -967,7 +968,7 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   // Make font
   {	// We want 8pt Tahoma, 8pt Arial, 8pt Luxi Sans or 8pt helvetica
 	FXString bestfont("helvetica,80,normal,normal");
-	FXFontDesc *fonts;
+	FXFontDesc *fonts=0;
 	FXuint numfonts, f;
 	if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
 		FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SWISS|FONTHINT_SCALABLE))

@@ -62,7 +62,7 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 	//! Constructs an instance
 	explicit FXTime(FXulong _value=0, bool _isLocalTime=false) : isLocalTime(_isLocalTime), value(_value) { }
 	//! Constructs an instance from a \c time_t
-	explicit FXTime(time_t ctime) : value(0) { set_time_t(ctime); }
+	explicit FXTime(time_t ctime) : isLocalTime(false), value(0) { set_time_t(ctime); }
 	bool operator!() const throw() { return !value; }
 	bool operator==(const FXTime &o) const throw() { return isLocalTime==o.isLocalTime && value==o.value; }
 	bool operator!=(const FXTime &o) const throw() { return isLocalTime!=o.isLocalTime || value!=o.value; }

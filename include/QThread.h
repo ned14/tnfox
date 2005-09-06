@@ -525,7 +525,7 @@ public:
 	};
 	//! Constructs an instance holding the lock to mutex \em m
 	FXFORCEINLINE QMtxHold(const QMutex *m, FXuint _flags=LockAndUnlock)
-		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(m))
+		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(m)), rwmutex(0)
 	{
 		if((flags & AcceptNullMutex) && !mutex) return;
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
@@ -533,20 +533,20 @@ public:
 	}
 	//! \overload
 	FXFORCEINLINE QMtxHold(const QMutex &m, FXuint _flags=LockAndUnlock)
-		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(&m))
+		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(&m)), rwmutex(0)
 	{
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 		flags|=IsLocked;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXFORCEINLINE QMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(m))
+	FXFORCEINLINE QMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), mutex(0), rwmutex(const_cast<QRWMutex *>(m))
 	{
 		if((flags & AcceptNullMutex) && !rwmutex) return;
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE QMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), rwmutex(const_cast<QRWMutex *>(&m))
+	FXFORCEINLINE QMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), mutex(0), rwmutex(const_cast<QRWMutex *>(&m))
 	{
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
