@@ -22,8 +22,10 @@
 #include "FXACL.h"
 #include "FXException.h"
 #include "FXRollback.h"
+#include "QDir.h"
 #include "QThread.h"
 #include "QTrans.h"
+#include "FXFile.h"
 #include "FXProcess.h"
 #include "FXErrCodes.h"
 #include "qvaluelist.h"
@@ -1576,6 +1578,24 @@ FXACL::ACLSupport FXACL::hostOSACLSupport()
 	ret.hasInheritance=true;	// Win2k+ has this
 #endif
 	return ret;
+}
+
+void FXACL::resetPath(const FXString &path, const FXACL &dirs, const FXACL &files)
+{	// Must ensure dirs get set bottom upwards
+	ACLSupport supp=hostOSACLSupport();
+	if(!supp.hasInheritance)
+	{	// Apply deepest first
+		QDir dl(path);
+		QStringList entries=dl.entryList();
+		for(QStringList::const_iterator it=entries.begin(); it!=entries.end(); ++it)
+		{
+			if(FXFile::isDirectory(dl.filePath(*it)))
+				resetPath(dl.filePath(*it), dirs, files);
+			else
+				files.writeTo(dl.filePath(*it));
+		}
+	}
+	dirs.writeTo(path);
 }
 
 void *FXACL::int_toWin32SecurityDescriptor() const

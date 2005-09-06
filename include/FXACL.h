@@ -410,6 +410,9 @@ public:
 	};
 	//! Returns what ACL features the host OS supports
 	static ACLSupport hostOSACLSupport();
+	/*! Resets a tree on the filing system to have specific permissions, making
+	use of inheritance when available */
+	static void resetPath(const FXString &path, const FXACL &dirs, const FXACL &files);
 public:
 	FXDLLLOCAL void *int_toWin32SecurityDescriptor() const;
 };
