@@ -368,8 +368,8 @@ void QPipe::close()
 		if(creator && !(flags() & IO_DontUnlink))
 		{
 			FXString fullname=makeFullPath(p->pipename);
-			if(flags() & IO_ReadOnly) ::unlink(fullname.text()+'r');
-			if(flags() & IO_WriteOnly) ::unlink(fullname.text()+'w');
+			if(flags() & IO_ReadOnly) ::unlink(FXString(fullname+'r').text());
+			if(flags() & IO_WriteOnly) ::unlink(FXString(fullname+'w').text());
 		}
 #endif
 		p->acl=FXACL(FXACL::Pipe);
