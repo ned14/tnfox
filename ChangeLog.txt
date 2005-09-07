@@ -156,6 +156,7 @@ will never be fixed ever
 * FXApp now chooses 8pt Tahoma, 8pt Arial, 8pt Luxi Sans or 8pt Helvetica
 to better approximate Windows layouts
 + Added FXACL::resetPath()
+* Altered FXACLEntity::asString()
 
 
 
