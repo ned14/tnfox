@@ -255,7 +255,7 @@ FXACLEntity FXACLEntity::group() const
 #endif
 	return ret;
 }
-FXString FXACLEntity::asString(bool full) const
+FXString FXACLEntity::asString(bool withId, bool withMachine) const
 {
 	if(!p) return FXString();
 #ifdef USE_WINAPI
@@ -263,18 +263,27 @@ FXString FXACLEntity::asString(bool full) const
 	DWORD accsize=sizeof(account)/sizeof(TCHAR), compsize=sizeof(computer)/sizeof(TCHAR);
 	SID_NAME_USE use;
 	FXUnicodify<> machine2(p->machine);
-	FXERRHWIN(LookupAccountSid(p->machine.empty() ? 0 : machine2.buffer(), p->sid, account, &accsize, computer, &compsize, &use));
-	FXString ret=(computer[0]) ? "%1/%2" : "%1%2";
-	if(full)
+	if(!LookupAccountSid(p->machine.empty() ? 0 : machine2.buffer(), p->sid, account, &accsize, computer, &compsize, &use))
 	{
-		FXString sidstr;
+		if(ERROR_NONE_MAPPED==GetLastError())
+		{	// NT sometimes doesn't know a SID eg; if it's orphaned
+			strcpy(account, FXString(QTrans::tr("FXACLEntity", "Unknown")).text());
+			withId=true;
+		}
+		else
+			FXERRHWIN(0);
+	}
+	FXString ret=withMachine ? FXString("%1/%2").arg(computer).arg(account) : FXString(account);
+	if(withId)
+	{
+		ret.append(" {");
 		LPTSTR _sidstr;
 		FXERRHWIN(ConvertSidToStringSid(p->sid, &_sidstr));
-		sidstr=_sidstr;
+		ret.append(_sidstr);
 		FXERRHWIN(!LocalFree(_sidstr));
-		return (ret+" {%3}").arg(computer).arg(account).arg(sidstr);
+		ret.append("}");
 	}
-	else return ret.arg(computer).arg(account);
+	return ret;
 #endif
 #ifdef USE_POSIX
 	if(p->amOwner)

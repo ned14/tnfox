@@ -76,10 +76,11 @@ public:
 	//! Returns the primary group this entity belongs to
 	FXACLEntity group() const;
 	/*! Returns the entity as a string, localised to the system locale.
-	If \em full is true, returns as much information as possible. On Windows this
-	usually returns the machine where the account lives - this is separated from
+	If \em withId is true, appends the system-dependent underlying user id
+	in curly brackets. If \em withMachine is true, on supported platforms this
+	prepends the machine where the account lives - this is separated from
 	the username with a / rather than a \\ */
-	FXString asString(bool full=true) const;
+	FXString asString(bool withId=true, bool withMachine=true) const;
 	/*! Returns true if the specified password is the password to the entity's account.
 	You should allocate the password in the secure heap. Due to implementation constraints
 	on Windows, SSPI is used which requires the local machine to permit network logons.
