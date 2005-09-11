@@ -319,7 +319,7 @@ FXString FXACLEntity::asString(bool withId, bool withMachine) const
 	FXString retstr("%1");
 	if(!p->amGroup) retstr.arg(FXString(userinfo.pw_name));
 	else retstr.arg(FXString(groupinfo.gr_name));
-	if(full)
+	if(withId)
 	{
 		retstr+=" {%2}";
 		if(!p->amGroup) retstr.arg(userinfo.pw_uid); else retstr.arg(groupinfo.gr_gid);
