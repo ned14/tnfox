@@ -157,6 +157,11 @@ will never be fixed ever
 to better approximate Windows layouts
 + Added FXACL::resetPath()
 * Altered FXACLEntity::asString()
+* FXFile metadata functions now report link metadata rather than what the
+link points to
++ Added FXProcess::mountablePartitions, mountPartition and unmountPartition
++ Added FXWinShellLink and FXWinJunctionPoint
+
 
 
 

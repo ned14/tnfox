@@ -225,7 +225,9 @@ control list based security on those platforms which support it and a reasonable
 emulation for everything else. FX::QDir and FX::QFileInfo are mostly Qt compatible classes
 which permit easy enumeration and traversal of directories as well as obtaining detailed
 information about files. FX::FXFSMonitor permits portable monitoring of directories
-for changes.
+for changes. FX::FXProcess contains a wide variety of miscellaneous useful functions,
+and FX::FXWinShellLink + FX::FXWinJunctionPoint provide support for all possible
+forms of file shortcuts available on Windows (with full POSIX emulation!).
 
 <li><b>QList, QPtrList, QPtrListIterator, QValueList, QDict, QDictIterator, QIntDict, QIntDictIterator,
 QPtrDict, QPtrDictIterator, QPtrVector, QPtrVectorIterator, QMemArray, QByteArray, QStringList,
@@ -2082,7 +2084,12 @@ However, for various reasons, some semantic changes did need to happen:
 TnFOX's much superior replacements is good enough that FOX code itself
 doesn't know any better and so neither should your code.
 \li FX::FXTime is a class in TnFOX, representing a much finer time quantity
-than FOX's which is only per-second granularity.
+than FOX's which is only per-second granularity. This can cause some trivial
+compile errors which were deliberately caused as often you must slightly
+adjust your code to use FX::FXTime::as_time_t().
+\li All the file metadata functions in FX::FXFile return metadata for symbolic
+links, not for what the link points to. This can subtly break some FOX code (but
+it was necessary to add NTFS junction support).
 \li FOX's threading support was added substantially after TnFOX's and so uses some
 of the same API names for different things. I've done what I can to ease your
 journey here, but you'll just have to modify your code as the classes do not have
@@ -2146,7 +2153,7 @@ stack going through FOX code (eg; a GUI event handler) then you must surround
 that code with the FXEXCEPTION_FOXCALLING1 and FXEXCEPTION_FOXCALLING2 macros.
 These trap any exceptions thrown and show a FX::FXExceptionDialog.
 
-Summary of what is not supported from FOX:
+Summary of what is not supported from FOX v1.4.x:
 \li Some FX::FXStream methods. You'll never normally notice these
 \li The application wide mutex. It's a bad idea anyway.
 \li FXCondition (rewrite your code to use FX::QWaitCondition, it's more
@@ -2195,7 +2202,7 @@ v7.x works fine too. If your compiler is not up to scratch, I did design
 the generic tools to be redirectable to a much more comprehensive library eg;
 Boost (http://www.boost.org/).
 
-Speaking of Boost, TnFOX's compile-time metaprogramming tools are not very
+Speaking of Boost, TnFOX's compile-time metaprogramming tools are only fairly
 comprehensive. I've aimed merely to provide the most common and useful
 facilities which can do 95% of day to day stuff. If you want to do anything
 more complicated than this, I \em strongly recommend Boost which should be
@@ -2228,10 +2235,8 @@ Use valgrind instead on Linux.
 /*! \page windowsnotes Windows-specific notes
 
 This covers Windows 2000 and Windows XP, both 32 bit and 64 bit editions. Windows 95, 98
-and ME are not supported due to
-insufficient host OS facilities (it's not particularly difficult to compile out the
-offending code). Windows NT should be mostly compatible - there are one or two calls
-here and there which may not work.
+and ME are not supported due to insufficient host OS facilities. Windows NT should be mostly
+compatible - there are one or two calls here and there which may not work.
 
 \section supported Supported configuration:
 <u>Win32</u><br>
@@ -2315,8 +2320,9 @@ installer should do this).
 TnFOX is able to use >2Gb address spaces and so has the IMAGE_FILE_LARGE_ADDRESS_AWARE
 bit set in its executable header. You should set the same bit in your applications
 if you are also able to handle such addresses (ie; you don't use signed pointer comparisons).
-You can produce binaries customised for your processor by adjusting the \c config.py
-file.
+While you never see the advantage of this on most 32 bit Windows, you do when running
+in an emulated 32 bit environment on Windows x64. You can produce binaries customised
+for your processor by adjusting the \c config.py file.
 
 The only thing remaining which shall be fixed later is working set optimisation (WSO)
 which I can't do until I have a serious client application for TnFOX to profile against.
@@ -2335,8 +2341,8 @@ at least the problems will be minor.
 TnFOX was developed against:
 \li A RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
 tested, but there is no reason why it shouldn't continue to work.
-\li A RedHat Fedora Core 3 (2.6 kernel) installation with stock GCC v3.4.2
-\li A FreeBSD v5.3 installation with GCC v3.4.2 with visibility patch applied.
+\li A SuSE Linux 9.2 (2.6 kernel) installation with GCC v4.1.
+\li A FreeBSD v5.4 installation with GCC v4.1.
 
 GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
