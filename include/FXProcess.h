@@ -340,6 +340,26 @@ public:
 	avoided. You probably want to avoid calling this too frequently as it involves multiple
 	calls into kernel space. */
 	static FXuval virtualAddrSpaceLeft(FXuval chunk=1);
+	//! Information about a mountable partition
+	struct MountablePartition
+	{
+		FXString name;			//!< Mountable partition name
+		FXString location;		//!< Where the partition would be mounted (path or drive letter)
+		FXString fstype;		//!< Host OS specific string identifying filing system type
+		FXuint mounted : 1;		//!< Whether this partition is currently mounted
+		FXuint mountable : 1;	//!< Whether this partition can be mounted by the current user
+		FXuint readWrite : 1;	//!< Whether this partition is mounted for reading & writing
+		char driveLetter;		//!< Drive letter for this partition in upper case (guessed on POSIX)
+	};
+	/*! Returns a list of partitions on the host operating system. Note that this may not
+	be a definitive list eg; if \c /etc/fstab does not map all possible partitions, then
+	this list will be incomplete. Superuser permissions is required to get a definitive
+	list and it isn't usually needed by applications */
+	static QValueList<MountablePartition> mountablePartitions();
+	//! Mounts a partition
+	static void mountPartition(const FXString &partitionName, const FXString &location=FXString::nullStr(), const FXString &fstype=FXString::nullStr(), bool readWrite=true);
+	//! Unmounts a partition
+	static void unmountPartition(const FXString &location);
 
 	//! Returns the process-wide thread pool
 	static QThreadPool &threadPool();

@@ -76,10 +76,13 @@
  #include <sys/mman.h>
  #ifdef __linux__
   #include <sys/fsuid.h>
+  #include <sys/mount.h>
  #endif
  #ifdef __FreeBSD__
   #include <sys/sysctl.h>
   #include <sys/vmmeter.h>
+  #include <sys/param.h>
+  #include <sys/mount.h>
  #endif
  // GCC lets us know what it's compiling
  #if defined(__x86_64__)
@@ -1620,6 +1623,234 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 	}
 #endif
 }
+
+#ifdef USE_POSIX
+static inline bool isTerminator(const char p) throw()
+{
+	return !p || ','==p || ' '==p || '\t'==p;
+}
+static inline FXProcess::MountablePartition readfstabentry(const char *&t)
+{
+	// Form is /dev/hda6            /                    reiserfs   acl,user_xattr        1 1
+	FXProcess::MountablePartition ret;
+	if('#'!=*t)
+	{
+		char devname[64], mountpoint[260], fstype[32], opts[64];
+		sscanf(t, "%s %s %s %s", devname, mountpoint, fstype, opts);
+		if(*devname)
+			ret.name=devname;
+		if(*mountpoint)
+			ret.location=mountpoint;
+		if(*fstype)
+			ret.fstype=fstype;
+		if(*opts)
+		{
+			const char *user=strstr(opts, "user"), *ro=strstr(opts, "ro");
+			ret.mounted=false;
+			ret.mountable=(!getuid() || (user && isTerminator(user[-1]) && isTerminator(user[4])));
+			ret.readWrite=(ro && isTerminator(ro[-1]) && isTerminator(ro[2]));
+		}
+	}
+	for(; *t && 10!=*t; ++t);
+	while(10==*t) ++t;
+	return ret;
+}
+#endif
+QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
+{
+	QValueList<MountablePartition> ret;
+#ifdef USE_WINAPI
+	HANDLE fvh;
+	TCHAR volume[MAX_PATH];
+	FXERRHWIN(INVALID_HANDLE_VALUE!=(fvh=FindFirstVolume(volume, sizeof(volume)/sizeof(TCHAR))));
+	FXRBOp unfvh=FXRBFunc(&FindVolumeClose, fvh);
+	MountablePartition mp;
+	mp.mountable=(FXACLEntity::currentUser()==FXACLEntity::root());
+	do
+	{
+		DWORD volumeflags;
+		TCHAR fstype[64];
+		mp.name=volume;
+		if(!GetVolumeInformation(volume, NULL, 0, NULL, NULL, &volumeflags, fstype, sizeof(fstype)/sizeof(TCHAR)))
+		{
+			if(ERROR_NOT_READY!=GetLastError())
+				FXERRHWIN(0);
+			// Unreadable, so assume it's removable
+			volumeflags=0;
+			fstype[0]=0;
+		}
+		mp.fstype=fstype;
+		mp.readWrite=!(volumeflags & FILE_READ_ONLY_VOLUME);
+
+		HANDLE fmph;
+		TCHAR mountpoint[MAX_PATH];
+		if(INVALID_HANDLE_VALUE==(fmph=FindFirstVolumeMountPoint(volume, mountpoint, sizeof(mountpoint)/sizeof(TCHAR))))
+		{	// Not mounted on any path, or we are not administrator
+			mp.location=FXString::nullStr();
+			mp.mounted=false;
+			mp.driveLetter=0;
+			ret.push_back(mp);
+		}
+		else
+		{
+			FXRBOp unfmph=FXRBFunc(&FindVolumeMountPointClose, fmph);
+			do
+			{
+				mp.location=mountpoint;
+				mp.mounted=true;
+				if(3==mp.location.length())
+					mp.driveLetter=mp.location[0];
+				else
+					mp.driveLetter=0;
+				ret.push_back(mp);
+			} while(FindNextVolumeMountPoint(fmph, mountpoint, sizeof(mountpoint)/sizeof(TCHAR)));
+			FXERRHWIN(ERROR_NO_MORE_FILES==GetLastError());
+		}
+	} while(FindNextVolume(fvh, volume, sizeof(volume)/sizeof(TCHAR)));
+	FXERRHWIN(ERROR_NO_MORE_FILES==GetLastError());
+
+	// Now rather oddly the above code does NOT enumerate MS-DOS mount points ie; the most common type
+	DWORD drives=GetLogicalDrives();
+	TCHAR drive[4];
+	drive[0]='A'; drive[1]=':'; drive[2]='\\'; drive[3]=0;
+	for(; drives; ++drive[0], drives>>=1)
+	{
+		if(drives & 1)
+		{
+			TCHAR volname[MAX_PATH];
+			FXERRHWIN(GetVolumeNameForVolumeMountPoint(drive, volname, sizeof(volname)/sizeof(TCHAR)));
+			bool found=false;
+			for(QValueList<MountablePartition>::iterator it=ret.begin(); it!=ret.end(); ++it)
+			{
+				if(!compare(it->name, volname))
+				{
+					it->location=drive;
+					it->mounted=true;
+					it->driveLetter=(char) drive[0];
+					found=true;
+					break;
+				}
+			}
+			if(!found)
+			{
+				mp.name=volname;
+				mp.location=drive;
+				mp.fstype=FXString::nullStr();
+				mp.mounted=true;
+				mp.readWrite=true;
+				mp.driveLetter=(char) drive[0];
+				ret.push_back(mp);
+			}
+		}
+	}
+	return ret;
+#endif
+#ifdef USE_POSIX
+	FXString fstab, mtab;
+	{
+		FXFile l("/etc/fstab", FXFile::WantLightFXFile());
+		l.open(IO_ReadOnly);
+		fstab.length((FXuint) l.size());
+		l.readBlock((char *) fstab.text(), fstab.length());
+		// FreeBSD doesn't maintain /etc/mtab, and doesn't appear to have an equivalent :(
+#ifndef __FreeBSD__
+		FXFile m("/etc/mtab", FXFile::WantLightFXFile());
+		m.open(IO_ReadOnly);
+		mtab.length((FXuint) m.size());
+		m.readBlock((char *) mtab.text(), mtab.length());
+#endif
+	}
+	const char *fstabp=fstab.text(), *mtabp=mtab.text();
+	MountablePartition mp;
+	while(*fstabp)
+	{
+		mp=readfstabentry(fstabp);
+		if(!mp.name.empty())
+			ret.push_back(mp);
+	}
+#ifndef __FreeBSD__
+	while(*mtabp)
+	{
+		bool found=false;
+		mp=readfstabentry(mtabp);
+		for(QValueList<MountablePartition>::iterator it=ret.begin(); it!=ret.end(); ++it)
+		{
+			if(it->name==mp.name)
+			{
+				it->mounted=true;
+				it->readWrite=mp.readWrite;
+				found=true;
+				break;
+			}
+		}
+		if(!found)
+			ret.push_back(mp);
+	}
+#endif
+	// Attempt to guess drive letters
+	char driveLetter='C';
+	for(QValueList<MountablePartition>::iterator it=ret.begin(); it!=ret.end(); ++it)
+	{
+		MountablePartition &mp=*it;
+		mp.driveLetter=0;
+#ifdef __FreeBSD__
+		mp.mounted=true;	// Mark all as mounted on FreeBSD
+#endif
+		if(!comparecase(mp.fstype, "vfat") || !comparecase(mp.fstype, "msdosfs") || !comparecase(mp.fstype, "ntfs"))
+		{
+			FXString location(mp.location); location.upper();
+			if(-1!=location.find("WIN"))
+				mp.driveLetter=driveLetter++;
+			for(const char *t=location.text(); *t; t++)
+			{
+				if(' '==*t || '/'==*t || '('==*t)
+				{
+					if(t[1]>='C' && t[1]<='Z' && (!t[2] || '/'==t[2] || ' '==t[2] || ')'==t[2]))
+					{
+						mp.driveLetter=t[1];
+						if(t[1]>=driveLetter) driveLetter=t[1]+1;
+						break;
+					}
+				}
+			}
+		}
+	}
+	return ret;
+#endif
+}
+void FXProcess::mountPartition(const FXString &partitionName, const FXString &location, const FXString &fstype, bool readWrite)
+{
+#ifdef USE_WINAPI
+	TCHAR volname[MAX_PATH];
+	FXERRHWIN(GetVolumeNameForVolumeMountPoint(FXUnicodify<>(partitionName).buffer(), volname, sizeof(volname)/sizeof(TCHAR)));
+	FXERRHWIN(SetVolumeMountPoint(FXUnicodify<>(location).buffer(), volname));
+#endif
+#ifdef USE_POSIX
+#ifdef __linux__
+	unsigned long flags=readWrite ? 0 : MS_RDONLY;
+	FXERRHOS(mount(partitionName.text(), location.text(), fstype.text(), flags, "defaults"));
+#endif
+#ifdef __FreeBSD__
+	int flags=readWrite ? 0 : MNT_RDONLY;
+	FXERRHOS(mount(fstype.text(), location.text(), flags, (void *) "defaults"));
+#endif
+#endif
+}
+void FXProcess::unmountPartition(const FXString &location)
+{
+#ifdef USE_WINAPI
+	FXERRHWIN(DeleteVolumeMountPoint(FXUnicodify<>(location).buffer()));
+#endif
+#ifdef USE_POSIX
+#ifdef __linux__
+	FXERRHOS(umount(location.text()));
+#endif
+#ifdef __FreeBSD__
+	FXERRHOS(unmount(location.text(), 0));
+#endif
+#endif
+}
+
 
 
 QThreadPool &FXProcess::threadPool()
