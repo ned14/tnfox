@@ -573,7 +573,7 @@ void FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 	{
 #ifndef WIN32
 		struct ::stat st;
-		FXERRHOS(::stat(path.text(), &st));
+		FXERRHOS(::lstat(path.text(), &st));
 		if(flags)
 		{
 			*flags=0;
@@ -635,7 +635,7 @@ void FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 		// Need to open with special semantics if it's a directory
 		HANDLE h;
 		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(FXUnicodify<>(path, true).buffer(), GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, NULL)), path);
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT, NULL)), path);
 		FXRBOp unh=FXRBFunc(&CloseHandle, h);
 		BY_HANDLE_FILE_INFORMATION bhfi;
 		FXERRHWIN(GetFileInformationByHandle(h, &bhfi));
