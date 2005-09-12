@@ -245,6 +245,7 @@
 #include "QThread.h"
 #include "FXTime.h"
 #include "QTrans.h"
+#include "FXWinLinks.h"
 #include "TnFXApp.h"
 
 #ifndef FX_NO_GLOBAL_NAMESPACE
