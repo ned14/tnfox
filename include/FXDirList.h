@@ -26,6 +26,7 @@
 #ifndef FXDIRLIST_H
 #define FXDIRLIST_H
 
+#include "FXTime.h"
 #ifndef FXTREELIST_H
 #include "FXTreeList.h"
 #endif

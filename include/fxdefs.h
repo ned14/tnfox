@@ -147,10 +147,10 @@
 #endif
 
 // Forcing inlines and marking deprecation are non-portable extensions
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__GCCXML__)
  #define FXFORCEINLINE __forceinline
  #define FXDEPRECATED __declspec(deprecated)
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) && !defined(__GCCXML__)
  #define FXFORCEINLINE inline __attribute__ ((always_inline))
  #define FXDEPRECATED __attribute ((deprecated))
 #else
