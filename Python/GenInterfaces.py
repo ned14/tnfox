@@ -47,7 +47,7 @@ depreclist=["FXFileStream.h", "FXMemoryStream.h"]
 # List of files with special includes
 includelist={"FXApp.h"          : [ "CArrays.h" ],
              "FXBitmap.h"       : [ "CArrays.h" ],
-             "QBuffer.h"       : [ "qcstring.h" ],
+             "QBuffer.h"        : [ "qcstring.h" ],
              "FXException.h"    : [ "CArrays.h" ],
              "FXGLCanvas.h"     : [ "FXGLVisual.h" ],
              "FXGLContext.h"    : [ "FXGLVisual.h" ],
@@ -66,7 +66,7 @@ includelist={"FXApp.h"          : [ "CArrays.h" ],
              "FXRangef.h"       : [ "FXSpheref.h", "FXVec3f.h", "FXVec4d.h", "FXVec4f.h" ],
              "FXSphered.h"      : [ "FXSpheref.h", "FXVec4d.h" ],
              "FXSpheref.h"      : [ "FXRangef.h", "FXVec4d.h", "FXVec4f.h" ],
-             "QTrans.h"        : [ "CArrays.h", "qvaluelist.h" ]
+             "QTrans.h"         : [ "CArrays.h", "qvaluelist.h" ]
              }
 
 # List of files with special additions
@@ -98,7 +98,8 @@ filelist=os.listdir(os.path.join(mypath, headerspath))
 idx=0
 while idx<len(filelist):
     if filelist[idx]=="TnFOXDocs.h": module="TnFOX"
-    if filelist[idx][0:2]!="FX" or filelist[idx] in excludelist: # or filelist[idx]<"FXN" or filelist[idx]>"FXM":
+    filelistprefix=filelist[idx][0:2]
+    if (filelistprefix!="FX" and filelistprefix[0]!="Q") or filelist[idx] in excludelist: # or filelist[idx]<"FXN" or filelist[idx]>"FXM":
 	del filelist[idx]
     else: idx+=1
 if module=="TnFOX":
@@ -180,6 +181,11 @@ boostpath=os.path.abspath(boostpath)
 pystepath=os.path.abspath(boostpath+"/libs/python/pyste/src/Pyste/pyste.py")+" "
 args="--module="+module+" --multiple --no-default-include -DFX_RUNNING_PYSTE"
 args+=" --out "+herepath+" --pyste-ns "+module
+if sys.byteorder=="big":
+    args+=" -DFOX_BIGENDIAN=1"
+else:
+    args+=" -DFOX_BIGENDIAN=0"
+args+=" -D_NATIVE_WCHAR_T_DEFINED=1 -DFOXDLL_EXPORTS=1"
 args+=" -I "+herepath+" -I "+boostpath+" -I "+headerspath
 if sys.platform=="win32": args+=" -DWIN32 "
 else: pystepath="python "+pystepath

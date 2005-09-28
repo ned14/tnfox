@@ -3,7 +3,7 @@
 #                             TnFOX Pyste policies                              *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#        Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.            *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -17,10 +17,30 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXDir():
+def basefxdefs():
     return None
 
-def applyFXDir(g, cclass):
+def applyfxerror(g, cfunc):
     for key,value in g.items():
         globals()[key]=value
-    set_policy(cclass.entryInfoList,         return_internal_reference())
+    exclude(cfunc)
+
+def applyfx2powerprimes(g, cfunc):
+    for key,value in g.items():
+        globals()[key]=value
+    exclude(cfunc)
+
+def applyfxmessage(g, cfunc):
+    for key,value in g.items():
+        globals()[key]=value
+    exclude(cfunc)
+
+def applyfxwarning(g, cfunc):
+    for key,value in g.items():
+        globals()[key]=value
+    exclude(cfunc)
+
+def applyfxstrdup(g, cfunc):
+    for key,value in g.items():
+        globals()[key]=value
+    exclude(cfunc)
