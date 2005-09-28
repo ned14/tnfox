@@ -60,7 +60,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="libtiff"
+				AdditionalIncludeDirectories="libtiff,..\zlib,..\libjpeg"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -71,7 +71,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libtiff.lib"/>
+				OutputFile="$(OutDir)/libtiff32.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool

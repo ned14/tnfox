@@ -69,7 +69,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libjpeg.lib"/>
+				OutputFile="$(OutDir)/libjpeg32.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool

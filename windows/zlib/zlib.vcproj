@@ -69,7 +69,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/zlib.lib"/>
+				OutputFile="$(OutDir)/zlib32.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
