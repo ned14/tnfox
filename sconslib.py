@@ -208,10 +208,11 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     env['LINKFLAGS']=[ ]
     make64bit=(architecture=="x64")
     execfile(platformconfig)
-    if sys.byteorder=="big": env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
+    env['CPPDEFINES']+=[("FOX_BIGENDIAN",ternary(sys.byteorder=="big", 1, 0))]
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
+    if tcommonopts!=2 and not noFOXCompat: env['CPPDEFINES']+=["FX_FOXCOMPAT"]
     if disableGUI: env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
     # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
     # the python bindings. Alter it at the top of fxmemoryops.h
@@ -310,7 +311,7 @@ def doConfTests(env, prefixpath=""):
         checkLib(conf, "png", "png.h")
         checkLib(conf, "tiff", "tiff.h", "libtiff/")
 
-    if os.path.exists(prefixpath+"../openssl"):
+    if os.path.exists(prefixpath+"../openssl/inc32/openssl.h"):
         print "Found OpenSSL library"
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['CPPPATH']+=[prefixpath+"../openssl/inc32"]

@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXBZStream.h,v 1.8 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
+#ifdef FX_FOXCOMPAT
+
 #ifdef HAVE_BZ2LIB_H
 #ifndef FXBZSTREAM_H
 #define FXBZSTREAM_H
@@ -44,7 +46,7 @@ protected:
 public:
 
   /// Create BZIP2 file stream
-  FXBZFileStream(const FXObject* cont=NULL);
+  FXDEPRECATEDEXT FXBZFileStream(const FXObject* cont=NULL);
 
   /// Open file stream
   FXbool open(const FXString& filename,FXStreamDirection save_or_load,unsigned long size=8192);
@@ -121,4 +123,4 @@ public:
 
 #endif
 #endif
-
+#endif

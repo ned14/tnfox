@@ -333,6 +333,7 @@ See the file <a target="_blank" href="../Todo.txt">Todo.txt</a>.
 General questions:
 <ol>
 <li>\ref Tn
+<li>\ref BuildingNoFOXCompatDiffs
 <li>\ref BuildingTnDiffs
 <li>\ref BuildingNoGUIDiffs
 <li>\ref HowEfficient
@@ -387,6 +388,19 @@ FreeBSD questions:
 	</dl>
 
 	You can find out more about Tn at http://www.nedprod.com/Tn/
+
+  <li>
+	\subsection BuildingNoFOXCompatDiffs What are the differences in a no-FOX compatibility build?
+
+	Many of the more recent features added to FOX already have superior implementations in
+	TnFOX and for native TnFOX code, it makes no sense to include the thunking code implementing
+	the FOX feature. Disabling the FOX compatibility layer removes that code, reducing the
+	size of your binary. It is automatically disabled when \c BUILDING_TCOMMON is defined.
+
+	Not compiled:
+	\li FX::fxDllOpen etc.
+	\li FX::FXBZStream
+	\li FX::FXGZStream
 
   <li>
 	\subsection BuildingTnDiffs What are the differences when \c BUILDING_TCOMMON is defined?
@@ -2090,17 +2104,9 @@ adjust your code to use FX::FXTime::as_time_t().
 \li All the file metadata functions in FX::FXFile return metadata for symbolic
 links, not for what the link points to. This can subtly break some FOX code (but
 it was necessary to add NTFS junction support).
-\li FOX's threading support was added substantially after TnFOX's and so uses some
-of the same API names for different things. I've done what I can to ease your
-journey here, but you'll just have to modify your code as the classes do not have
-a one to one relationship (eg; FX::QWaitCondition simply does not behave like FOX's
-FX::FXCondition). Similarly, FOX has
-gone with a process-wide lock to enable concurrent GUI usage by multiple threads
-despite my pleas on foxgui-users to not repeat a mistake evident in every
-other GUI toolkit which has gone the same way. TnFOX's per-thread event loops
-enable a far simpler multithreaded GUI usage for your code - just create and
-go and post messages at event loops when wanting to alter a GUI not belonging
-to your thread.
+\li FOX's threading support was added substantially after TnFOX's and are not
+compatible. You must \b either use the Q-prefixed classes such as FX::QThread
+OR the FX-prefixed classes such as FX::FXThread (which is deprecated).
 \li The exception types FX::FXWindowException, FX::FXImageException and FX::FXFontException
 are FOR COMPATIBILITY WITH FOX ONLY. They are NOT LIKE NORMAL TNFOX EXCEPTIONS
 in that they are thrown from within FOX code which is not exception safe. While
@@ -2162,8 +2168,8 @@ useful anyway)
 FX::QWaitCondition. Also consider FX::FXZeroedWait)
 \li FXMemMap (rewrite your code to use TnFOX's FX::QMemMap, it's also superior
 anyway)
-\li There are some API thunks for FXMutex, FXMutexLock and FXThread.
-But you'll have to try and see for yourself
+
+You should also see \ref BuildingNoFOXCompatDiffs
 */
 
 /*! \defgroup generic Generic Tools in TnFOX

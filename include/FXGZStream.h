@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXGZStream.h,v 1.9 2005/01/16 16:06:06 fox Exp $                         *
 ********************************************************************************/
+#ifdef FX_FOXCOMPAT
+
 #ifdef HAVE_ZLIB_H
 #ifndef FXGZSTREAM_H
 #define FXGZSTREAM_H
@@ -55,5 +57,6 @@ public:
 }
 
 
+#endif
 #endif
 #endif

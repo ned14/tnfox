@@ -24,6 +24,10 @@
 #ifndef FXDEFS_H
 #define FXDEFS_H
 
+#ifndef FOX_BIGENDIAN
+#error FOX_BIGENDIAN should have been set by build environment!
+#endif
+
 
 /********************************  Definitions  ********************************/
 

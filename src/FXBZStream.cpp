@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXBZStream.cpp,v 1.9 2005/01/16 16:06:06 fox Exp $                       *
 ********************************************************************************/
+#ifdef FX_FOXCOMPAT
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -172,4 +174,5 @@ FXBZFileStream::~FXBZFileStream(){
 
 }
 
+#endif
 #endif

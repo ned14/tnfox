@@ -1,23 +1,41 @@
 # Simple config file, everything else is automatic
 
-debugmode=False
+debugmode=True
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
 #    debugmode=False
 
-### Global build options
-# Set to true to create a SMP architecture compatible binary. This
-# is always safe though inefficient on uniprocessor machines.
+
+######## Global build options ########
+
+# Set to true to create a SMP architecture compatible binary (GCC only).
+# This is always safe though inefficient on uniprocessor machines.
 makeSMPBuild=True
+
 # Set to true to cause inlining of FXAtomicInt and QMutex in all
 # source files. This can slightly increase code size and also drags
 # in a lot of extra system header files.
 inlineMutex=False  # not debugmode
-GenStaticLib=(sys.platform!="win32")          # 1=generate a static library, 2=only generate a static library
-SeparateTnLibs=(sys.platform=="win32")
-# Set to disable inclusion of GUI
+
+# What to generate as the library
+# 0=generate just the DLL, 1=also generate a static library, 2=only generate a static library
+GenStaticLib=(sys.platform!="win32")
+
+# Set to disable FOX compatibility layer
+noFOXCompat=False
+
+# Set to disable inclusion of GUI ie; no FXObject, no FXApp etc
 disableGUI=False
+
+SeparateTnLibs=(sys.platform=="win32")
+
+######## End Global build options ########
+
+
+
+
+######## Processor architecture ########
 
 architecture="x86"       # Can be "x86" or "x64"
 # For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
@@ -32,6 +50,7 @@ x86_3dnow=0             # =0 (disable), =1 (3dnow)
 # For x64: =0 for AMD64/EM64T
 #architecture_version=0
 
+
 toolset=None             # Let scons pick which compiler/linker to use
 #if sys.platform!="win32":
 #    architecture_version=6
@@ -40,6 +59,9 @@ toolset=None             # Let scons pick which compiler/linker to use
 #        toolset=["icl"]
 #    else:
 #        toolset=["intel"]
+
+######## End Processor architecture ########
+
 
 PYTHON_INCLUDE=None      # Sets where the python header  files can be found (=None for get from environment)
 PYTHON_LIB=None          # Sets where the python library files can be found (=None for get from environment)
