@@ -4,7 +4,7 @@
 #                         TnFOX C++ source file munger                          *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.       *
+#        Copyright (C) 2002-2005 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -33,7 +33,7 @@ from optparse import OptionParser
 from shlex import shlex
 
 parser=OptionParser(usage="""%prog [-f <flags>] [-m] [-t <file.txt>] [-c <header.h>] [-n <source.cpp>] [-s <source.cxx>
-      Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.
+      Copyright (C) 2002-2005 by Niall Douglas.   All Rights Reserved.
        NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL
 ********************************************************************************
  This code is free software; you can redistribute it and/or
@@ -450,9 +450,9 @@ class TextLiterals:
         sidx=string.find(sline, "tr(")
         if sidx==-1: return
         if sline[sidx-1] not in " :,(=": return
-        withclass=sline[sidx-9:sidx]=="QTrans::"
+        withclass=sline[sidx-8:sidx]=="QTrans::"
         # Except don't process the QTrans::tr() code in QTrans.cpp!
-        if sline[:25]=="QTransString QTrans::tr": return
+        if sline[:23]=="QTransString QTrans::tr": return
         parts=[]
         s=myfind(line, ["tr("], 0, True)+3; e=myfind(line, [",", ")"], s)
         if e==-1: raise AssertionError, "tr() currently must be on one line"
