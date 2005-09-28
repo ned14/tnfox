@@ -1403,6 +1403,7 @@ void *QSSLDevice::int_getOSHandle() const
 {
 	return p->dev->isSynchronous() ? static_cast<QIODeviceS *>(p->dev)->int_getOSHandle() : 0;
 }
+#ifdef HAVE_OPENSSL
 inline void QSSLDevice::int_genEBuffer() const
 {
 	FXfval cblock=ioIndex-(ioIndex % p->noncelen);
@@ -1469,6 +1470,7 @@ end:
 		dest+=size; src+=size; ioIndex+=size; amount-=size;
 	}
 }
+#endif
 
 QSSLDevice::QSSLDevice(QIODevice *encrypteddev, bool enablev2) : p(0), QIODeviceS()
 {
@@ -1653,7 +1655,11 @@ void QSSLDevice::renegotiate()
 
 FXuint QSSLDevice::fileHeaderLen() const throw()
 {
+#ifdef HAVE_OPENSSL
 	return (FXuint) p->headerdiff;
+#else
+	return 0;
+#endif
 }
 
 bool QSSLDevice::isSynchronous() const
