@@ -80,8 +80,8 @@ if onWindows:
 #geninterfaces=env.Command("dont exist", None, ternary(onWindows, "", "python ")+"GenInterfaces.py")
 objects=[]
 #objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="-c -Os -DGCC_HASCLASSVISIBILITY -D_DEBUG -DUSE_POSIX -fexceptions")]
-objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
-objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Od /Zi /MDd")]
+objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Zc:wchar_t /vmb /vmm /Od /Zi /MDd")]
+objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Zc:wchar_t /vmb /vmm /Od /Zi /MDd")]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), x) for x in getSources()]
 #for object in objects:
 #    env.Depends(object, geninterfaces)

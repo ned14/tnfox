@@ -31,8 +31,8 @@ if not os.path.exists(builddir):
     os.mkdir(builddir)
 
 # Warnings, Synchronous exceptions, enable RTTI, smallest inlining,
-# types defined before pointers to members used
-cppflags=Split('/c /nologo /W3 /EHsc /GR /Ob1 /Ow /vmb /vmm')
+# wchar_t native, types defined before pointers to members used
+cppflags=Split('/c /nologo /W3 /EHsc /GR /Ob1 /Ow /Zc:wchar_t /vmb /vmm')
 assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                        # Only functions may alias
@@ -59,7 +59,6 @@ env['CPPFLAGS']=cppflags
 env['LINKFLAGS']=["/version:"+targetversion,
                   "/SUBSYSTEM:WINDOWS",
                   "/DLL",
-                  "/MACHINE:X86",
                   "/OPT:NOWIN98",
                   "/STACK:524288,65536"
                   ]

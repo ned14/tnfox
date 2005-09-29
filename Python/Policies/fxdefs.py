@@ -44,3 +44,8 @@ def applyfxstrdup(g, cfunc):
     for key,value in g.items():
         globals()[key]=value
     exclude(cfunc)
+
+def applyfxnamefromcolor(g, cfunc):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cfunc, return_value_policy(return_by_value))
