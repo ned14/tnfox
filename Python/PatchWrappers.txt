@@ -1,8 +1,8 @@
 diff -aur old/_FXACL.cpp new/_FXACL.cpp
---- old/_FXACL.cpp	2005-06-12 21:41:58.000000000 +0100
-+++ new/_FXACL.cpp	2005-06-12 21:50:50.000000000 +0100
-@@ -181,7 +181,6 @@
-         .def(init< const FX::FXACL&, optional< bool > >())
+--- old/_FXACL.cpp	2005-09-28 17:20:08.000000000 +0100
++++ new/_FXACL.cpp	2005-09-29 11:08:43.000000000 +0100
+@@ -185,7 +185,6 @@
+         .def("atEnd", &FX::FXACLIterator::atEnd)
          .def( self == self )
          .def( self != self )
 -        .def( *self )
@@ -10,8 +10,8 @@ diff -aur old/_FXACL.cpp new/_FXACL.cpp
          .def( self -= other< FX::FXuint >() )
      ;
 diff -aur old/_FXApp.cpp new/_FXApp.cpp
---- old/_FXApp.cpp	2005-06-12 21:42:14.000000000 +0100
-+++ new/_FXApp.cpp	2005-06-12 21:50:50.000000000 +0100
+--- old/_FXApp.cpp	2005-09-28 17:20:12.000000000 +0100
++++ new/_FXApp.cpp	2005-09-29 11:08:43.000000000 +0100
 @@ -235,10 +235,6 @@
  
  BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(FX_FXEventLoop_flush_overloads_0_1, flush, 0, 1)
@@ -38,8 +38,8 @@ diff -aur old/_FXApp.cpp new/_FXApp.cpp
  
      class_< FX::FXEventLoop::FXMapEntry >("FXMapEntry", init< const FX::FXEventLoop::FXMapEntry& >())
 diff -aur old/_FXApp1.cpp new/_FXApp1.cpp
---- old/_FXApp1.cpp	2005-06-12 21:42:14.000000000 +0100
-+++ new/_FXApp1.cpp	2005-06-12 21:50:50.000000000 +0100
+--- old/_FXApp1.cpp	2005-09-28 17:20:12.000000000 +0100
++++ new/_FXApp1.cpp	2005-09-29 11:08:43.000000000 +0100
 @@ -123,21 +123,6 @@
          FX::FXApp::detach();
      }
@@ -83,8 +83,8 @@ diff -aur old/_FXApp1.cpp new/_FXApp1.cpp
          .def("getDefaultVisual", &FX::FXApp::getDefaultVisual, return_internal_reference< 1 >())
          .def("setDefaultVisual", &FX::FXApp::setDefaultVisual)
 diff -aur old/_FXBitmap.cpp new/_FXBitmap.cpp
---- old/_FXBitmap.cpp	2005-06-12 21:42:28.000000000 +0100
-+++ new/_FXBitmap.cpp	2005-06-12 21:50:50.000000000 +0100
+--- old/_FXBitmap.cpp	2005-09-28 17:20:21.000000000 +0100
++++ new/_FXBitmap.cpp	2005-09-29 11:08:43.000000000 +0100
 @@ -297,7 +297,7 @@
          .def("onDefault", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::onDefault), &TnFOX::FX_FXBitmap_Wrapper::default_onDefault)
          .def("tryHandle", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::tryHandle), &TnFOX::FX_FXBitmap_Wrapper::default_tryHandle)
@@ -95,18 +95,18 @@ diff -aur old/_FXBitmap.cpp new/_FXBitmap.cpp
          .def("setOptions", &FX::FXBitmap::setOptions)
          .def("getPixel", &FX::FXBitmap::getPixel)
 diff -aur old/_FXFile.cpp new/_FXFile.cpp
---- old/_FXFile.cpp	2005-06-12 21:47:22.000000000 +0100
-+++ new/_FXFile.cpp	2005-06-12 21:50:50.000000000 +0100
-@@ -273,7 +273,7 @@
-         .def("exists", (bool (FX::FXFile::*)() const)&FX::FXFile::exists)
+--- old/_FXFile.cpp	2005-09-28 17:52:07.000000000 +0100
++++ new/_FXFile.cpp	2005-09-29 11:11:35.000000000 +0100
+@@ -265,7 +265,7 @@
          .def("remove", (bool (FX::FXFile::*)() )&FX::FXFile::remove)
-         .def("stdio", (FX::FXIODevice& (*)(bool))&FX::FXFile::stdio, return_internal_reference< 1 >(), TnFOX::FX_FXFile_stdio_overloads_0_1())
+         .def("reloadSize", &FX::FXFile::reloadSize)
+         .def("stdio", (FX::QIODevice& (*)(bool))&FX::FXFile::stdio, return_internal_reference< 1 >(), TnFOX::FX_FXFile_stdio_overloads_0_1())
 -        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::FXFile::permissions, return_internal_reference< 1 >())
 +        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::FXFile::permissions)
          .def("setPermissions", (void (*)(const FX::FXString&, const FX::FXACL&))&FX::FXFile::setPermissions)
          .def("join", (FX::FXString (*)(const FX::FXString&, const FX::FXString&))&FX::FXFile::join)
          .def("join", (FX::FXString (*)(const FX::FXString&, const FX::FXString&, const FX::FXString&))&FX::FXFile::join)
-@@ -335,7 +335,7 @@
+@@ -329,7 +329,7 @@
          .def("owner", (FX::FXString (*)(const FX::FXString&))&FX::FXFile::owner)
          .def("group", (FX::FXString (*)(FX::FXuint))&FX::FXFile::group)
          .def("group", (FX::FXString (*)(const FX::FXString&))&FX::FXFile::group)
@@ -116,8 +116,8 @@ diff -aur old/_FXFile.cpp new/_FXFile.cpp
          .def("modified", (FX::FXTime (*)(const FX::FXString&))&FX::FXFile::modified)
          .def("accessed", (FX::FXTime (*)(const FX::FXString&))&FX::FXFile::accessed)
 diff -aur old/_FXFont.cpp new/_FXFont.cpp
---- old/_FXFont.cpp	2005-06-12 21:45:52.000000000 +0100
-+++ new/_FXFont.cpp	2005-06-12 21:50:50.000000000 +0100
+--- old/_FXFont.cpp	2005-09-28 17:23:31.000000000 +0100
++++ new/_FXFont.cpp	2005-09-29 11:08:44.000000000 +0100
 @@ -232,7 +232,7 @@
      delete FX_FXFont_scope;
  
@@ -128,8 +128,8 @@ diff -aur old/_FXFont.cpp new/_FXFont.cpp
          .add_property("weight", make_getter(&FX::FXFontDesc::weight, return_value_policy<return_by_value>()), make_setter(&FX::FXFontDesc::weight, return_value_policy<return_by_value>()))
          .add_property("slant", make_getter(&FX::FXFontDesc::slant, return_value_policy<return_by_value>()), make_setter(&FX::FXFontDesc::slant, return_value_policy<return_by_value>()))
 diff -aur old/_FXFunctorTarget.cpp new/_FXFunctorTarget.cpp
---- old/_FXFunctorTarget.cpp	2005-06-12 21:44:06.000000000 +0100
-+++ new/_FXFunctorTarget.cpp	2005-06-12 21:50:52.000000000 +0100
+--- old/_FXFunctorTarget.cpp	2005-09-28 17:23:50.000000000 +0100
++++ new/_FXFunctorTarget.cpp	2005-09-29 11:08:44.000000000 +0100
 @@ -124,7 +124,6 @@
  {
      scope* FX_FXFunctorTarget_scope = new scope(
@@ -139,10 +139,10 @@ diff -aur old/_FXFunctorTarget.cpp new/_FXFunctorTarget.cpp
          .def("getMetaClass", (const FX::FXMetaClass* (FX::FXFunctorTarget::*)() const)&FX::FXFunctorTarget::getMetaClass, (const FX::FXMetaClass* (TnFOX::FX_FXFunctorTarget_Wrapper::*)() const)&TnFOX::FX_FXFunctorTarget_Wrapper::default_getMetaClass, return_internal_reference< 1 >())
          .def("onDefault", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::onDefault), &TnFOX::FX_FXFunctorTarget_Wrapper::default_onDefault)
 diff -aur old/_FXGLCanvas.cpp new/_FXGLCanvas.cpp
---- old/_FXGLCanvas.cpp	2005-06-12 21:42:58.000000000 +0100
-+++ new/_FXGLCanvas.cpp	2005-06-12 21:50:52.000000000 +0100
-@@ -595,7 +595,7 @@
-         .def("tryHandle", (long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void_*) )((long int (FX::FXObject::*)(FX::FXObject*, FX::FXSelector, void*) )&FX::FXObject::tryHandle), &TnFOX::FX_FXGLCanvas_Wrapper::default_tryHandle)
+--- old/_FXGLCanvas.cpp	2005-09-28 17:24:07.000000000 +0100
++++ new/_FXGLCanvas.cpp	2005-09-29 11:08:44.000000000 +0100
+@@ -573,7 +573,7 @@
+         .def("doesSaveUnder", &FX::FXWindow::doesSaveUnder, &TnFOX::FX_FXGLCanvas_Wrapper::default_doesSaveUnder)
          .def("manufacture", (FX::FXObject* (*)())&FX::FXGLCanvas::manufacture, return_value_policy< manage_new_object >())
          .def("isShared", &FX::FXGLCanvas::isShared)
 -        .def("getCurrentContext", (void* (*)())&FX::FXGLCanvas::getCurrentContext, return_value_policy< return_opaque_pointer >())
@@ -151,8 +151,8 @@ diff -aur old/_FXGLCanvas.cpp new/_FXGLCanvas.cpp
          .staticmethod("getCurrentContext")
      );
 diff -aur old/_FXGLTriangleMesh.cpp new/_FXGLTriangleMesh.cpp
---- old/_FXGLTriangleMesh.cpp	2005-06-12 21:45:04.000000000 +0100
-+++ new/_FXGLTriangleMesh.cpp	2005-06-12 21:50:52.000000000 +0100
+--- old/_FXGLTriangleMesh.cpp	2005-09-28 17:24:58.000000000 +0100
++++ new/_FXGLTriangleMesh.cpp	2005-09-29 11:08:44.000000000 +0100
 @@ -242,13 +242,13 @@
          .def("setVertexNumber", &FX::FXGLTriangleMesh::setVertexNumber)
          .def("getVertexNumber", &FX::FXGLTriangleMesh::getVertexNumber)
@@ -172,8 +172,8 @@ diff -aur old/_FXGLTriangleMesh.cpp new/_FXGLTriangleMesh.cpp
      );
  
 diff -aur old/_FXGLViewer1.cpp new/_FXGLViewer1.cpp
---- old/_FXGLViewer1.cpp	2005-06-12 21:45:12.000000000 +0100
-+++ new/_FXGLViewer1.cpp	2005-06-12 21:50:52.000000000 +0100
+--- old/_FXGLViewer1.cpp	2005-09-28 17:25:06.000000000 +0100
++++ new/_FXGLViewer1.cpp	2005-09-29 11:08:44.000000000 +0100
 @@ -159,11 +159,6 @@
          return call_method2< FX::FXGLObject** >(py_self, "select", p0, p1, p2, p3);
      }
@@ -204,44 +204,9 @@ diff -aur old/_FXGLViewer1.cpp new/_FXGLViewer1.cpp
          .def("fitToBounds", &FX::FXGLViewer::fitToBounds)
          .def("getViewport", &FX::FXGLViewer::getViewport)
          .def("eyeToScreen", &FX::FXGLViewer::eyeToScreen)
-diff -aur old/_FXIODevice.cpp new/_FXIODevice.cpp
---- old/_FXIODevice.cpp	2005-06-12 21:45:14.000000000 +0100
-+++ new/_FXIODevice.cpp	2005-06-12 21:50:52.000000000 +0100
-@@ -120,6 +120,9 @@
-         FX::FXIODevice::setPermissions(p0);
-     }
- 
-+	FX::FXuval readBlock(char* p0, FX::FXuval p1) { return 0; }
-+	FX::FXuval readBlockFrom(char* p0, FX::FXuval p1, FX::FXfval p2) { return 0; }
-+
-     FX::FXuval writeBlock(const char* p0, FX::FXuval p1) {
-         FXPython_DoPython ctxhold;
-         return call_method2< FX::FXuval >(py_self, "writeBlock", p0, p1);
-diff -aur old/_FXIODeviceS.cpp new/_FXIODeviceS.cpp
---- old/_FXIODeviceS.cpp	2005-06-12 21:44:38.000000000 +0100
-+++ new/_FXIODeviceS.cpp	2005-06-12 21:50:52.000000000 +0100
-@@ -95,6 +95,9 @@
-         return FX::FXIODeviceS::atEnd();
-     }
- 
-+	FX::FXuval readBlock(char* p0, FX::FXuval p1) { return 0; }
-+	FX::FXuval readBlockFrom(char* p0, FX::FXuval p1, FX::FXfval p2) { return 0; }
-+
-     FX::FXuval writeBlockTo(FX::FXfval p0, const char* p1, FX::FXuval p2) {
-         FXPython_DoPython ctxhold;
-         return call_method2< FX::FXuval >(py_self, "writeBlockTo", p0, p1, p2);
-@@ -213,7 +216,7 @@
-         .def("size", pure_virtual(&FX::FXIODevice::size))
-         .def("permissions", &FX::FXIODevice::permissions, &TnFOX::FX_FXIODeviceS_Wrapper::default_permissions, return_internal_reference< 1 >())
-         .def("setPermissions", &FX::FXIODevice::setPermissions, &TnFOX::FX_FXIODeviceS_Wrapper::default_setPermissions)
--        .def("writeBlock", pure_virtual(&FX::FXIODevice::writeBlock))
-+        .def("writeBlock", pure_virtual((FX::FXuval (FX::FXIODevice::*)(const char*, FX::FXuval) )&FX::FXIODevice::writeBlock))
-         .def("getch", &FX::FXIODevice::getch, &TnFOX::FX_FXIODeviceS_Wrapper::default_getch)
-         .def("putch", &FX::FXIODevice::putch, &TnFOX::FX_FXIODeviceS_Wrapper::default_putch)
-         .def("ungetch", pure_virtual(&FX::FXIODevice::ungetch))
 diff -aur old/_FXIPC.cpp new/_FXIPC.cpp
---- old/_FXIPC.cpp	2005-06-12 21:43:34.000000000 +0100
-+++ new/_FXIPC.cpp	2005-06-12 21:50:52.000000000 +0100
+--- old/_FXIPC.cpp	2005-09-28 17:52:11.000000000 +0100
++++ new/_FXIPC.cpp	2005-09-29 11:12:51.000000000 +0100
 @@ -60,13 +60,12 @@
      }
  
@@ -258,7 +223,7 @@ diff -aur old/_FXIPC.cpp new/_FXIPC.cpp
      }
  
      void *getPythonObject() const {
-@@ -191,7 +190,6 @@
+@@ -140,7 +139,6 @@
      class_< FX::FXIPCMsgRegistry, boost::noncopyable >("FXIPCMsgRegistry", init<  >())
          .def("isValid", &FX::FXIPCMsgRegistry::isValid)
          .def("lookup", (bool (FX::FXIPCMsgRegistry::*)(FX::FXuint) const)&FX::FXIPCMsgRegistry::lookup)
@@ -267,8 +232,8 @@ diff -aur old/_FXIPC.cpp new/_FXIPC.cpp
      ;
  
 diff -aur old/_FXImage.cpp new/_FXImage.cpp
---- old/_FXImage.cpp	2005-06-12 21:45:08.000000000 +0100
-+++ new/_FXImage.cpp	2005-06-12 21:50:52.000000000 +0100
+--- old/_FXImage.cpp	2005-09-28 17:26:20.000000000 +0100
++++ new/_FXImage.cpp	2005-09-29 11:12:51.000000000 +0100
 @@ -416,7 +416,7 @@
          .def("manufacture", (FX::FXObject* (*)())&FX::FXImage::manufacture, return_value_policy< manage_new_object >())
          .def("setOptions", &FX::FXImage::setOptions)
@@ -278,21 +243,9 @@ diff -aur old/_FXImage.cpp new/_FXImage.cpp
          .def("getPixel", &FX::FXImage::getPixel)
          .def("setPixel", &FX::FXImage::setPixel)
          .def("hasAlpha", &FX::FXImage::hasAlpha)
-diff -aur old/_FXMemMap.cpp new/_FXMemMap.cpp
---- old/_FXMemMap.cpp	2005-06-12 21:42:10.000000000 +0100
-+++ new/_FXMemMap.cpp	2005-06-12 21:50:52.000000000 +0100
-@@ -267,7 +267,7 @@
-         .def("mapOut", (void (FX::FXMemMap::*)(FX::FXfval, FX::FXfval) )&FX::FXMemMap::mapOut, TnFOX::FX_FXMemMap_mapOut_overloads_0_2())
-         .def("mapOut", (void (FX::FXMemMap::*)(void_*) )((void (FX::FXMemMap::*)(void*) )&FX::FXMemMap::mapOut))
-         .def("mappedRegion", &FX::FXMemMap::mappedRegion, TnFOX::FX_FXMemMap_mappedRegion_overloads_1_3())
--        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::FXMemMap::permissions, return_internal_reference< 1 >())
-+        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::FXMemMap::permissions)
-         .def("setPermissions", (void (*)(const FX::FXString&, const FX::FXACL&))&FX::FXMemMap::setPermissions)
-         .staticmethod("setPermissions")
-         .staticmethod("permissions")
 diff -aur old/_FXObjectList.cpp new/_FXObjectList.cpp
---- old/_FXObjectList.cpp	2005-06-12 21:47:34.000000000 +0100
-+++ new/_FXObjectList.cpp	2005-06-12 21:50:52.000000000 +0100
+--- old/_FXObjectList.cpp	2005-09-28 17:28:37.000000000 +0100
++++ new/_FXObjectList.cpp	2005-09-29 11:13:52.000000000 +0100
 @@ -37,8 +37,7 @@
          .def("no", (FX::FXint (FX::FXObjectList::*)() const)&FX::FXObjectList::no)
          .def("no", (void (FX::FXObjectList::*)(FX::FXint) )&FX::FXObjectList::no)
@@ -303,31 +256,10 @@ diff -aur old/_FXObjectList.cpp new/_FXObjectList.cpp
          .def("assign", (FX::FXObjectList& (FX::FXObjectList::*)(FX::FXObject*) )&FX::FXObjectList::assign, return_self<>())
          .def("assign", (FX::FXObjectList& (FX::FXObjectList::*)(FX::FXObject**, FX::FXint) )&FX::FXObjectList::assign, return_self<>())
          .def("assign", (FX::FXObjectList& (FX::FXObjectList::*)(FX::FXObjectList&) )&FX::FXObjectList::assign, return_self<>())
-diff -aur old/_FXPipe.cpp new/_FXPipe.cpp
---- old/_FXPipe.cpp	2005-06-12 21:46:38.000000000 +0100
-+++ new/_FXPipe.cpp	2005-06-12 21:50:52.000000000 +0100
-@@ -274,7 +274,7 @@
-         .def("isUnique", &FX::FXPipe::isUnique)
-         .def("setUnique", &FX::FXPipe::setUnique)
-         .def("reset", &FX::FXPipe::reset)
--        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::FXPipe::permissions, return_internal_reference< 1 >())
-+        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::FXPipe::permissions)
-         .def("setPermissions", (void (*)(const FX::FXString&, const FX::FXACL&))&FX::FXPipe::setPermissions)
-         .def("maxAtomicLength", &FX::FXPipe::maxAtomicLength)
-         .staticmethod("setPermissions")
 diff -aur old/_FXProcess.cpp new/_FXProcess.cpp
---- old/_FXProcess.cpp	2005-06-12 21:46:52.000000000 +0100
-+++ new/_FXProcess.cpp	2005-06-12 21:50:52.000000000 +0100
-@@ -26,8 +26,6 @@
- 
- BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_exit_overloads_0_1, FX::FXProcess::exit, 0, 1)
- 
--BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_dllPath_overloads_1_3, FX::FXProcess::dllPath, 1, 3)
--
- BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_hostOSMemoryLoad_overloads_0_1, FX::FXProcess::hostOSMemoryLoad, 0, 1)
- 
- BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_overrideFreeResources_overloads_0_3, FX::FXProcess::overrideFreeResources, 0, 3)
-@@ -60,7 +58,7 @@
+--- old/_FXProcess.cpp	2005-09-28 17:29:41.000000000 +0100
++++ new/_FXProcess.cpp	2005-09-29 11:18:40.000000000 +0100
+@@ -50,7 +50,7 @@
  
      bool create(int& p0, char** p1, FX::FXStream& p2) {
          FXPython_DoPython ctxhold;
@@ -336,7 +268,16 @@ diff -aur old/_FXProcess.cpp new/_FXProcess.cpp
      }
  
      void destroy() {
-@@ -105,7 +103,6 @@
+@@ -75,8 +75,6 @@
+ 
+ BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_exit_overloads_0_1, FX::FXProcess::exit, 0, 1)
+ 
+-BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_dllPath_overloads_1_3, FX::FXProcess::dllPath, 1, 3)
+-
+ BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_hostOSMemoryLoad_overloads_0_1, FX::FXProcess::hostOSMemoryLoad, 0, 1)
+ 
+ BOOST_PYTHON_FUNCTION_OVERLOADS(FX_FXProcess_overrideFreeResources_overloads_0_3, FX::FXProcess::overrideFreeResources, 0, 3)
+@@ -118,7 +116,6 @@
          .def("pageSize", (FX::FXuint (*)())&FX::FXProcess::pageSize)
          .def("mappedFiles", (FX::QValueList<FX::FXProcess::MappedFileInfo> (*)())&FX::FXProcess::mappedFiles)
          .def("execpath", (const FX::FXString& (*)())&FX::FXProcess::execpath, return_value_policy< copy_const_reference >())
@@ -344,7 +285,7 @@ diff -aur old/_FXProcess.cpp new/_FXProcess.cpp
          .def("dllLoad", (FX::FXProcess::dllHandle (*)(const FX::FXString&))&FX::FXProcess::dllLoad)
          .def("dllUnload", (void (*)(FX::FXProcess::dllHandle&))&FX::FXProcess::dllUnload)
          .def("hostOS", (FX::FXString (*)())&FX::FXProcess::hostOS)
-@@ -134,7 +131,6 @@
+@@ -150,7 +147,6 @@
          .def("int_addStaticDepend", (void (*)(FX::FXProcess_StaticDepend*))&FX::FXProcess::int_addStaticDepend)
          .staticmethod("overrideFreeResources")
          .staticmethod("hostOSDescription")
@@ -352,9 +293,68 @@ diff -aur old/_FXProcess.cpp new/_FXProcess.cpp
          .staticmethod("int_addStaticDepend")
          .staticmethod("overrideUserHandedness")
          .staticmethod("hostOSDiskIOLoad")
-diff -aur old/_FXThread.cpp new/_FXThread.cpp
---- old/_FXThread.cpp	2005-06-12 21:43:54.000000000 +0100
-+++ new/_FXThread.cpp	2005-06-12 21:50:52.000000000 +0100
+diff -aur old/_QIODevice.cpp new/_QIODevice.cpp
+--- old/_QIODevice.cpp	2005-09-28 17:52:18.000000000 +0100
++++ new/_QIODevice.cpp	2005-09-29 11:24:59.000000000 +0100
+@@ -120,6 +120,9 @@
+         FX::QIODevice::setPermissions(p0);
+     }
+ 
++    FX::FXuval readBlock(char* p0, FX::FXuval p1) { return 0; }
++    FX::FXuval readBlockFrom(char* p0, FX::FXuval p1, FX::FXfval p2) { return 0; }
++
+     FX::FXuval writeBlock(const char* p0, FX::FXuval p1) {
+         FXPython_DoPython ctxhold;
+         return call_method2< FX::FXuval >(py_self, "writeBlock", p0, p1);
+diff -aur old/_QIODeviceS.cpp new/_QIODeviceS.cpp
+--- old/_QIODeviceS.cpp	2005-09-28 17:52:19.000000000 +0100
++++ new/_QIODeviceS.cpp	2005-09-29 11:25:46.000000000 +0100
+@@ -95,6 +95,9 @@
+         return FX::QIODeviceS::atEnd();
+     }
+ 
++    FX::FXuval readBlock(char* p0, FX::FXuval p1) { return 0; }
++    FX::FXuval readBlockFrom(char* p0, FX::FXuval p1, FX::FXfval p2) { return 0; }
++
+     FX::FXuval writeBlockTo(FX::FXfval p0, const char* p1, FX::FXuval p2) {
+         FXPython_DoPython ctxhold;
+         return call_method2< FX::FXuval >(py_self, "writeBlockTo", p0, p1, p2);
+@@ -213,7 +216,7 @@
+         .def("size", pure_virtual(&FX::QIODevice::size))
+         .def("permissions", &FX::QIODevice::permissions, &TnFOX::FX_QIODeviceS_Wrapper::default_permissions, return_internal_reference< 1 >())
+         .def("setPermissions", &FX::QIODevice::setPermissions, &TnFOX::FX_QIODeviceS_Wrapper::default_setPermissions)
+-        .def("writeBlock", pure_virtual(&FX::QIODevice::writeBlock))
++        .def("writeBlock", pure_virtual((FX::FXuval (FX::QIODevice::*)(const char*, FX::FXuval) )&FX::QIODevice::writeBlock))
+         .def("getch", &FX::QIODevice::getch, &TnFOX::FX_QIODeviceS_Wrapper::default_getch)
+         .def("putch", &FX::QIODevice::putch, &TnFOX::FX_QIODeviceS_Wrapper::default_putch)
+         .def("ungetch", pure_virtual(&FX::QIODevice::ungetch))
+diff -aur old/_QMemMap.cpp new/_QMemMap.cpp
+--- old/_QMemMap.cpp	2005-09-28 17:56:41.000000000 +0100
++++ new/_QMemMap.cpp	2005-09-29 11:13:52.000000000 +0100
+@@ -268,7 +268,7 @@
+         .def("mapOut", (void (FX::QMemMap::*)(FX::FXfval, FX::FXfval) )&FX::QMemMap::mapOut, TnFOX::FX_QMemMap_mapOut_overloads_0_2())
+         .def("mapOut", (void (FX::QMemMap::*)(void_*) )((void (FX::QMemMap::*)(void*) )&FX::QMemMap::mapOut))
+         .def("mappedRegion", &FX::QMemMap::mappedRegion, TnFOX::FX_QMemMap_mappedRegion_overloads_1_3())
+-        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::QMemMap::permissions, return_internal_reference< 1 >())
++        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::QMemMap::permissions)
+         .def("setPermissions", (void (*)(const FX::FXString&, const FX::FXACL&))&FX::QMemMap::setPermissions)
+         .staticmethod("setPermissions")
+         .staticmethod("permissions")
+diff -aur old/_QPipe.cpp new/_QPipe.cpp
+--- old/_QPipe.cpp	2005-09-28 17:56:42.000000000 +0100
++++ new/_QPipe.cpp	2005-09-29 11:18:05.000000000 +0100
+@@ -274,7 +274,7 @@
+         .def("isUnique", &FX::QPipe::isUnique)
+         .def("setUnique", &FX::QPipe::setUnique)
+         .def("reset", &FX::QPipe::reset)
+-        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::QPipe::permissions, return_internal_reference< 1 >())
++        .def("permissions", (FX::FXACL (*)(const FX::FXString&))&FX::QPipe::permissions)
+         .def("setPermissions", (void (*)(const FX::FXString&, const FX::FXACL&))&FX::QPipe::setPermissions)
+         .def("maxAtomicLength", &FX::QPipe::maxAtomicLength)
+         .staticmethod("setPermissions")
+diff -aur old/_QThread.cpp new/_QThread.cpp
+--- old/_QThread.cpp	2005-09-28 17:52:26.000000000 +0100
++++ new/_QThread.cpp	2005-09-29 11:14:13.000000000 +0100
 @@ -64,13 +64,12 @@
      }
  
