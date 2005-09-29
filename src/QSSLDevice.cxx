@@ -3,7 +3,7 @@
 *                           Data Encryption Support                             *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2005 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -33,6 +33,9 @@
 #include "QBuffer.h"
 #include "FXErrCodes.h"
 #include <qcstring.h>
+#ifdef _MSC_VER
+#include <malloc.h>			// For alloca()
+#endif
 #ifdef HAVE_OPENSSL
 #include "openssl/err.h"
 #include "openssl/bio.h"
@@ -42,6 +45,7 @@
 #include "openssl/rsa.h"
 #include "openssl/dh.h"
 #include "openssl/crypto.h"
+#include "openssl/md5.h"
 #include <stdio.h>
 #endif
 #include <assert.h>

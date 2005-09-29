@@ -2253,7 +2253,7 @@ compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ 
 v8 for Windows works fine.
 
 <u>Win64</u><br>
-Currently only AMD64 is supported, though EM64T won't be far behind. For this the only
+Currently only AMD64/EM64T is supported. For this the only
 compiler I have access to is the beta AMD64 edition of MSVC8 and unfortunately, the one that
 comes with the Windows 2003 SP1 Platform SDK is NOT suitable (as it comes with a MSVC6 STL).
 You NEED the MSVC7.1 or MSVC8 STL, the former you can get free off MS if you beg and plead
@@ -2274,8 +2274,10 @@ file manually looks in the directory in which the TnFOX directory is placed for 
 href="http://www.openssl.org/">OpenSSL library</a>. The standard system-provided libraries on Unix
 must be placed in the \c TnFOX/Windows directory - these include the ZLib library (as
 \c zlib), the graphics libraries for JPEG (as \c libjpeg), PNG (as \c libpng) and TIFF
-(as \c libtiff). In all cases any version information is not used so openssl-0.9.7
-must be renamed to simply "openssl".
+(as \c libtiff). In all cases any version information is not used so openssl-0.9.8
+must be renamed to simply "openssl". Note that all libraries are linked in \b statically
+so don't go building DLL versions! (eg; use \c nt.mak instead of \c ntdll.mak when building
+OpenSSL).
 
 If any library cannot be found, support for it is disabled automatically. You should bear
 in mind that after compiling using the enclosed project files where necessary, you should

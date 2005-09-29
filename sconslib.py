@@ -315,7 +315,7 @@ def doConfTests(env, prefixpath=""):
         print "Found OpenSSL library"
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['CPPPATH']+=[prefixpath+"../openssl/inc32"]
-        conf.env['LIBPATH']+=[prefixpath+"../openssl/out"+ternary(make64bit, "64", "32")+"dll"]
+        conf.env['LIBPATH']+=[prefixpath+"../openssl/out"+ternary(make64bit, "64", "32")]
         conf.env['LIBS']+=["libeay"+ternary(make64bit, "64", "32"), "ssleay"+ternary(make64bit, "64", "32")]
     elif conf.CheckLibWithHeader("ssl", ["openssl/ssl.h"], "c", "SSL_library_init();"):
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
