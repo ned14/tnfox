@@ -161,7 +161,8 @@ to better approximate Windows layouts
 link points to
 + Added FXProcess::mountablePartitions, mountPartition and unmountPartition
 + Added FXWinShellLink and FXWinJunctionPoint
-
+* Fixed up some mistakes in the build system
+* Fixed up the python bindings
 
 
 
