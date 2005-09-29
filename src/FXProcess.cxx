@@ -1183,7 +1183,20 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	so we must do this ourselves */
 	FXString path_=path;
 	FXUnicodify<> path__(path_);
-	if((firstLoad=!GetModuleHandleEx(0, path__.buffer(), (HMODULE *) &h.h)))
+	// Need GetModuleHandleEx (>win2k only) to avoid race condition
+	static BOOL (*pGetModuleHandleEx)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
+	if(!pGetModuleHandleEx)
+	{
+		pGetModuleHandleEx=(BOOL (*)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule))
+			GetProcAddress(GetModuleHandle("kernel32"),
+#ifdef UNICODE
+			"GetModuleHandleExW");
+#else
+			"GetModuleHandleExA");
+#endif
+	}
+	if((pGetModuleHandleEx && (firstLoad=!pGetModuleHandleEx(0, path__.buffer(), (HMODULE *) &h.h)))
+		|| (!pGetModuleHandleEx && (firstLoad=!GetModuleHandle(path__.buffer()), true)))
 	{	// Failed to inc ref count of already loaded module
 		if(!(h.h=(void *) LoadLibraryEx(path__.buffer(), NULL, LOAD_WITH_ALTERED_SEARCH_PATH)))
 		{
