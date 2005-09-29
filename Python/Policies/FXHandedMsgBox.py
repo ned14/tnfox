@@ -17,13 +17,16 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import base
+import FXHandedInterface
 
-def baseClass():
-    return "Base"
+def baseFXHandedMsgBox():
+    return "FXHandedInterface"
 
-def applyClass(g, cclass):
+def applyFXHandedMsgBox(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    Base.applyBase(g, cclass)
-    
+    FXHandedInterface.applyFXHandedDialog(g, cclass)
+    set_policy(cclass.fatalErrorIcon,       return_value_policy(reference_existing_object))
+    set_policy(cclass.errorIcon,            return_value_policy(reference_existing_object))
+    set_policy(cclass.questionIcon,         return_value_policy(reference_existing_object))
+    set_policy(cclass.informationalIcon,    return_value_policy(reference_existing_object))

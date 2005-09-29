@@ -17,13 +17,39 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import base
+def baseFXSQLDB():
+    return None
 
-def baseClass():
-    return "Base"
-
-def applyClass(g, cclass):
+def applyFXSQLDB(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    Base.applyBase(g, cclass)
-    
+    set_policy(cclass.Capabilities.setTransactions,         return_self())
+    set_policy(cclass.Capabilities.setQueryRows,            return_self())
+    set_policy(cclass.Capabilities.setNoTypeConstraints,    return_self())
+    set_policy(cclass.Capabilities.setHasBackwardsCursor,   return_self())
+    set_policy(cclass.Capabilities.setHasSettableCursor,    return_self())
+    set_policy(cclass.Capabilities.setHasStaticCursor,      return_self())
+    set_policy(cclass.Capabilities.setAsynchronous,         return_self())
+
+def applyFXSQLDBRegistry(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cclass.processRegistry,  return_value_policy(reference_existing_object))
+
+def applyFXSQLDBStatement(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cclass.bind,             return_self())
+    set_policy(cclass.driver,           return_value_policy(reference_existing_object))
+
+def applyFXSQLDBColumn(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cclass.cursor,           return_value_policy(reference_existing_object))
+    exclude(cclass.data)
+
+def applyFXSQLDBCursor(g, cclass):
+    for key,value in g.items():
+        globals()[key]=value
+    set_policy(cclass.statement,        return_value_policy(reference_existing_object))
+    set_policy(cclass.resultsLatch,     return_value_policy(reference_existing_object))

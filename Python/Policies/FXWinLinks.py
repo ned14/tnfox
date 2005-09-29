@@ -17,13 +17,6 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import base
+def baseFXWinLinks():
+    return None
 
-def baseClass():
-    return "Base"
-
-def applyClass(g, cclass):
-    for key,value in g.items():
-        globals()[key]=value
-    Base.applyBase(g, cclass)
-    

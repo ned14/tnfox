@@ -17,13 +17,14 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import base
+def baseFXTime():
+    return None
 
-def baseClass():
-    return "Base"
-
-def applyClass(g, cclass):
+def applyFXTime(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    Base.applyBase(g, cclass)
-    
+    set_policy(cclass.set_time_t,   return_self())
+    exclude(cclass.as_tm)
+    exclude(cclass.set_tm)
+    set_policy(cclass.toLocalTime,  return_self())
+    set_policy(cclass.toUTC,        return_self())
