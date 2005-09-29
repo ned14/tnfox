@@ -311,7 +311,7 @@ def doConfTests(env, prefixpath=""):
         checkLib(conf, "png", "png.h")
         checkLib(conf, "tiff", "tiff.h", "libtiff/")
 
-    if os.path.exists(prefixpath+"../openssl/inc32/openssl.h"):
+    if os.path.exists(prefixpath+"../openssl/inc32/openssl"):
         print "Found OpenSSL library"
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['CPPPATH']+=[prefixpath+"../openssl/inc32"]
