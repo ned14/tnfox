@@ -302,7 +302,7 @@ public:
 	a pointer to a value of that type, it can better tell which type is best -
 	equating signed equivalents to unsigned quantities, except when that value
 	would overflow its direct signed equivalent */
-	template<typename type> SQLDataType toSQL92Type(const type *v=0)
+	template<typename type> static SQLDataType toSQL92Type(const type *v=0)
 	{
 		FXSTATIC_ASSERT(LastSQLDataTypeEntry==Generic::TL::length<CPPDataTypes>::value, Mismatched_SQLDataTypes_And_CPPDataTypes);
 		typedef CPPToSQL92Type<type> sql92type;
@@ -496,7 +496,7 @@ public:
 	destroyed or the parameter rebound */
 	virtual FXSQLDBStatement &bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data);
 private:
-#if defined(_MSC_VER) && _MSC_VER<=1400 && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && _MSC_VER<=1400 && !defined(__INTEL_COMPILER) && !defined(FX_RUNNING_PYSTE)
 #if _MSC_VER<=1310 
 	// MSVC7.1 and earlier just won't friend templates with specialisations :(
 	friend struct FXSQLDBImpl::DoSerialise;
@@ -572,8 +572,7 @@ namespace FXSQLDBImpl
 	{	// It's known and not an unsigned int, so simply pass as a void *
 		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
-			FXSQLDB *d=0;
-			FXSQLDB::SQLDataType datatype=d->toSQL92Type<type>(&v);
+			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<type>(&v) ;
 			s->bind(idx, datatype, (void *) &v);
 		}
 	};
@@ -581,8 +580,7 @@ namespace FXSQLDBImpl
 	{	// It's known and is an unsigned int, so simply pass as a void *
 		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
-			FXSQLDB *d=0;
-			FXSQLDB::SQLDataType datatype=d->toSQL92Type<type>(&v);
+			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<type>(&v) ;
 			if(upgrade)
 			{	// Need to copy to higher container to stay endian safe
 				typedef typename Generic::TL::at<FXSQLDB::CPPDataTypes, sql92type+1>::value biggerContainer;
@@ -624,8 +622,7 @@ namespace FXSQLDBImpl
 		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const char *&v)
 		{
 			FXString l(v);
-			FXSQLDB *d=0;
-			FXSQLDB::SQLDataType datatype=d->toSQL92Type<FXString>();
+			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<type>(&v) ;
 			s->bind(idx, datatype, (void *) &l);
 		}
 	};
