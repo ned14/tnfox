@@ -32,6 +32,7 @@ namespace FX {
 \brief Defines classes used to access databases over a FX::FXIPCChannel
 */
 
+#if !defined(FX_RUNNING_PYSTE)
 namespace FXSQLDBIPCMsgsI
 {	/* We have a slight problem in that the chunk code which is normally static
 	is user-definable here. Unfortunately this means we must take a chunk parameter
@@ -671,6 +672,7 @@ template<unsigned int chunkno> struct FXSQLDBIPCMsgs
 
 	typedef typename Generic::TL::create<Chunk>::value ChunkTypeList;
 };
+#endif // !defined(FX_RUNNING_PYSTE)
 
 #ifdef _MSC_VER
 #pragma warning(push)
