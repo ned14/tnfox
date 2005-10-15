@@ -3498,6 +3498,26 @@ public_rEALLOc(Void_t* oldmem, size_t bytes)
   oldp    = mem2chunk(oldmem);
   oldsize = chunksize(oldp);
 
+  /* Little security check which won't hurt performance: the
+     allocator never wrapps around at the end of the address space.
+     Therefore we can exclude some size values which might appear
+     here by accident or by "design" from some intruder.  */
+  if (__builtin_expect ((uintptr_t) oldp > (uintptr_t) -oldsize, 0)
+      || __builtin_expect ((uintptr_t) oldp & MALLOC_ALIGN_MASK, 0))
+    {
+#ifdef _LIBC
+	    _IO_flockfile (stderr);
+	    int old_flags2 = ((_IO_FILE *) stderr)->_flags2;
+	    ((_IO_FILE *) stderr)->_flags2 |= _IO_FLAGS2_NOTCANCEL;
+#endif
+	    fprintf (stderr, "realloc(): invalid pointer %p!\n", oldmem);
+#ifdef _LIBC
+	    ((_IO_FILE *) stderr)->_flags2 |= old_flags2;
+	    _IO_funlockfile (stderr);
+#endif
+      return NULL;
+    }
+
   checked_request2size(bytes, nb);
 
 #if HAVE_MMAP
@@ -3888,8 +3908,22 @@ _int_malloc(mstate av, size_t bytes)
   */
 
   if ((INTERNAL_SIZE_T)(nb) <= (INTERNAL_SIZE_T)(av->max_fast)) {
-    fb = &(av->fastbins[(fastbin_index(nb))]);
+    long int idx = fastbin_index(nb);
+    fb = &(av->fastbins[idx]);
     if ( (victim = *fb) != 0) {
+      if (__builtin_expect (fastbin_index (chunksize (victim)) != idx, 0))
+	  {
+#ifdef _LIBC
+	    _IO_flockfile (stderr);
+	    int old_flags2 = ((_IO_FILE *) stderr)->_flags2;
+	    ((_IO_FILE *) stderr)->_flags2 |= _IO_FLAGS2_NOTCANCEL;
+#endif
+	    fprintf (stderr, "malloc(): memory corruption (fast) %p!\n", chunk2mem (victim));
+#ifdef _LIBC
+	    ((_IO_FILE *) stderr)->_flags2 |= old_flags2;
+	    _IO_funlockfile (stderr);
+#endif
+	  }
       *fb = victim->fd;
       check_remalloced_chunk(av, victim, nb);
       return chunk2mem(victim);
@@ -3959,6 +3993,20 @@ _int_malloc(mstate av, size_t bytes)
 
     while ( (victim = unsorted_chunks(av)->bk) != unsorted_chunks(av)) {
       bck = victim->bk;
+      if (__builtin_expect (victim->size <= 2 * SIZE_SZ, 0)
+	  || __builtin_expect (victim->size > av->system_mem, 0))
+	  {
+#ifdef _LIBC
+	    _IO_flockfile (stderr);
+	    int old_flags2 = ((_IO_FILE *) stderr)->_flags2;
+	    ((_IO_FILE *) stderr)->_flags2 |= _IO_FLAGS2_NOTCANCEL;
+#endif
+	    fprintf (stderr, "malloc(): memory corruption %p!\n", chunk2mem (victim));
+#ifdef _LIBC
+	    ((_IO_FILE *) stderr)->_flags2 |= old_flags2;
+	    _IO_funlockfile (stderr);
+#endif
+	  }
       size = chunksize(victim);
 
       /*
