@@ -236,7 +236,7 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	int n;
 
 	asDouble = (double)x + 0.5;
-	n = 1054 - (asInt[!FOX_BIGENDIAN] >> 20);
+	n = (asInt[!FOX_BIGENDIAN] >> 20) - 1023;
 	return n;
 #else
 	x = x | (x >> 1);

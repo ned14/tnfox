@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXDEFS_H
+#if !defined(FXDEFS_H) && !defined(DOXYGEN_SHOULD_SKIP_THIS)
 #include "fxdefs.h"
 #else
 
