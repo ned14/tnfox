@@ -584,7 +584,12 @@ FXString FXWinJunctionPoint::read(const FXString &_path)
 	}
 #endif
 #ifdef USE_POSIX
-	return FXFile::symlink(_path);
+	FXString ret=FXFile::symlink(_path);
+	if('/'!=ret[0])
+	{	// Partial path
+		ret=FXFile::absolute(FXFile::directory(_path), ret);
+	}
+	return ret;
 #endif
 }
 
