@@ -41,6 +41,7 @@
 #include "FXPtrHold.h"
 #include "FXRollback.h"
 #include "FXACL.h"
+#include "FXWinLinks.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
 static const char *_fxmemdbg_current_file_ = __FILE__;
@@ -2759,9 +2760,12 @@ FXbool FXFile::remove(const FXString& file){
     }
   return FALSE;
 #else
-  DWORD atts;
-  if((atts=GetFileAttributes(file.text()))!=0xffffffff){
-    if(atts&FILE_ATTRIBUTE_DIRECTORY){
+  FXuint atts=metaFlags(file);
+  if(atts){
+    if(atts & IsLink){
+      FXWinJunctionPoint::remove(file);
+      }
+    else if(atts & IsDirectory){
       WIN32_FIND_DATA ffData;
       HANDLE hFindFile;
       hFindFile=FindFirstFile((file+PATHSEPSTRING+"*").text(),&ffData); // FIXME we may want to formalize the "walk over directory" in a few API's here also...
