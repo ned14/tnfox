@@ -622,7 +622,7 @@ namespace FXSQLDBImpl
 		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const char *&v)
 		{
 			FXString l(v);
-			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<type>(&v) ;
+			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<FXString>(&l) ;
 			s->bind(idx, datatype, (void *) &l);
 		}
 	};
