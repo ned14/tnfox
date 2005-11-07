@@ -261,6 +261,7 @@ private:
 	static void int_deregisterEmbeddedTranslationFile(const char *buffer, FXuint len, void *staticaddr);
 };
 
+#ifndef __GCCXML__
 class QTrans_EmbeddedTranslationFile
 {
 	const char *buffer;
@@ -282,6 +283,7 @@ public:
 /*! Registers a static char buffer to be an embedded translation file for the application.
 */
 #define QTRANS_SETTRANSFILE(buffer, len) static QTrans_EmbeddedTranslationFile _tnfox_myembeddedtranslationfile_(buffer, len)
+#endif
 
 } // namespace
 

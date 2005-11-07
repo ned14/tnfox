@@ -496,7 +496,7 @@ public:
 	destroyed or the parameter rebound */
 	virtual FXSQLDBStatement &bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data);
 private:
-#if defined(_MSC_VER) && _MSC_VER<=1400 && !defined(__INTEL_COMPILER) && !defined(FX_RUNNING_PYSTE)
+#if defined(_MSC_VER) && _MSC_VER<=1400 && !defined(__INTEL_COMPILER) && !defined(__GCCXML__)
 #if _MSC_VER<=1310 
 	// MSVC7.1 and earlier just won't friend templates with specialisations :(
 	friend struct FXSQLDBImpl::DoSerialise;

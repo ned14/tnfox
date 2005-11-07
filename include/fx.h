@@ -223,6 +223,7 @@
 #include "FXGenericTools.h"
 #include "QGZipDevice.h"
 #include "FXHandedInterface.h"
+#include "FXHandedMsgBox.h"
 #include "QHostAddress.h"
 #include "QIODevice.h"
 #include "QIODeviceS.h"
@@ -247,6 +248,22 @@
 #include "QTrans.h"
 #include "FXWinLinks.h"
 #include "TnFXApp.h"
+
+#ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
+// The stuff normally not included
+#include "FXMat3d.h"
+#include "FXMat3f.h"
+#include "FXMat4d.h"
+#include "FXMat4f.h"
+#include "qdict.h"
+#include "qmemarray.h"
+#include "qptrdict.h"
+#include "qptrlist.h"
+#include "qptrvector.h"
+#include "qsortedlist.h"
+#include "qstringlist.h"
+#include "qvaluelist.h"
+#endif
 
 #ifndef FX_NO_GLOBAL_NAMESPACE
 using namespace FX;
