@@ -57,6 +57,35 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
+#ifdef USE_WINAPI
+class QMemMapInit
+{	// Cached here to speed FXACL::check()
+public:
+	BOOL haveCreateGlobalNamePriv;
+	QMemMapInit() : haveCreateGlobalNamePriv(0)
+	{
+		HANDLE myprocessh;
+		DWORD pssize;
+		PRIVILEGE_SET *ps;
+		FXERRHWIN(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY|TOKEN_DUPLICATE|TOKEN_ADJUST_PRIVILEGES, &myprocessh));
+		FXRBOp unh=FXRBFunc(&CloseHandle, myprocessh);
+		pssize=sizeof(PRIVILEGE_SET)+1*sizeof(LUID_AND_ATTRIBUTES);
+		FXERRHM(ps=(PRIVILEGE_SET *) malloc(pssize));
+		FXRBOp unps=FXRBFunc(&free, ps, (FXMemoryPool *) 0);
+		ps->PrivilegeCount=1;
+		ps->Control=0;
+		ps->Privilege[0].Attributes=0;
+		if(LookupPrivilegeValue(0, SE_CREATE_GLOBAL_NAME, &ps->Privilege[0].Luid))
+		{
+			FXERRHWIN(PrivilegeCheck(myprocessh, ps, &haveCreateGlobalNamePriv));
+		}
+		else
+			haveCreateGlobalNamePriv=1;
+	}
+};
+static FXProcess_StaticInit<QMemMapInit> qmemmapinit("QMemMapInit");
+#endif
+
 struct FXDLLLOCAL Mapping
 {
 	FXfval offset, len;
@@ -472,20 +501,44 @@ void QMemMap::winopen(int mode)
 			if(p->unique)
 				p->name=FXString("%1_%2").arg(FXProcess::id()).arg(rand(),0,16);
 			name=FXString("Global\\"+p->name);
-			if(mode & IO_WriteOnly)
+			if(qmemmapinit->haveCreateGlobalNamePriv)
 			{
-				SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
-				sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
-				p->mappingh=CreateFileMapping(fileh, &sa, access,
-					(DWORD)(mappingsize>>32), (DWORD) mappingsize, FXUnicodify<>(name).buffer());
-				if(p->unique && ERROR_ALREADY_EXISTS==GetLastError())
+				if(mode & IO_WriteOnly)
 				{
-					CloseHandle(p->mappingh);
-					continue;
+					SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
+					sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
+					p->mappingh=CreateFileMapping(fileh, &sa, access,
+						(DWORD)(mappingsize>>32), (DWORD) mappingsize, FXUnicodify<>(name).buffer());
+					if(p->unique && ERROR_ALREADY_EXISTS==GetLastError())
+					{
+						CloseHandle(p->mappingh);
+						continue;
+					}
 				}
+				else
+					p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer());
 			}
 			else
-				p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer());
+			{	// Not allowed create Global\ objects, so try opening and if not create in Local\ 
+				if(!(p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer())))
+				{
+					name.replace(0, 6, "Local");
+					if(mode & IO_WriteOnly)
+					{
+						SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
+						sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
+						p->mappingh=CreateFileMapping(fileh, &sa, access,
+							(DWORD)(mappingsize>>32), (DWORD) mappingsize, FXUnicodify<>(name).buffer());
+						if(p->unique && ERROR_ALREADY_EXISTS==GetLastError())
+						{
+							CloseHandle(p->mappingh);
+							continue;
+						}
+					}
+					else
+						p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer());
+				}
+			}
 		} while(false);
 		FXERRHWINFN(p->mappingh, name);
 		p->acl=FXACL(p->mappingh, FXACL::MemMap);
@@ -799,7 +852,7 @@ FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 			memcpy(data, ungetchdata, copylen);
 			readed+=copylen; setIoIndex(ioIndex+copylen);
 			if(copylen<ungetchlen) memmove(ungetchdata, ungetchdata+copylen, ungetchlen-copylen);
-			p->ungetchbuffer.resize(ungetchlen-copylen);
+			p->ungetchbuffer.resize((FXuint)(ungetchlen-copylen));
 		}
 		while(readed<maxlen)
 		{
@@ -862,7 +915,7 @@ FXuval QMemMap::writeBlock(const char *data, FXuval maxlen)
 				writ+=applyCRLF(midNL, tmpmem->data()+writ, (const FXuchar *) data+inptr, tmpmem->size()-inptr, inlen);
 				if(inlen+inptr<maxlen)
 				{	// Extend
-					tmpmem->resize(tmpmem->size()+4+maxlen/4);
+					tmpmem->resize((FXuint)(tmpmem->size()+4+maxlen/4));
 					inptr=inlen;
 					inlen=maxlen-inptr;
 				}

@@ -145,6 +145,14 @@ access using two or more QMemMap's, the second and thereafter will never allow
 any mapping whatsoever. Either share the one QMemMap, or accept lower
 performance. This problem does not affect multiple read access instances or a
 write with many reads - only two or more write access instances.
+
+\note Another misfeature on WinNT is, when under Terminal Services or the second
+or later non-administrator user to log on to a WinXP machine, the \c SeCreateGlobalPrivilege
+is not given - this means TnFOX can no longer create shared memory that all
+processes can see. In this situation, TnFOX tries to open the global version
+of the shared memory name which if it fails, it then creates it in the local
+namespace. This behaviour can be unexpected especially as to most users of WinXP
+one login session appears identical to a normal one.
 */
 
 struct QMemMapPrivate;
