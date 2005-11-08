@@ -242,7 +242,7 @@ class RandomnessPrivate : public QThread, public QMutex
 			randomness>>=8;
 			FXuval size=data->offset;
 			if(size>=RANDOMNESS_SIZE) data->offset=0;
-			if(size>data->size) data->size=size;
+			if(size>data->size) data->size=(FXuint) size;
 			//fxmessage("New size=%d\n",size);
 		}
 	}

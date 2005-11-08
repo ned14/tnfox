@@ -108,11 +108,13 @@ void FXException::int_enableNestedExceptionFramework(bool yes)
 
 #ifndef _M_AMD64
 static DWORD __stdcall GetModBase(HANDLE hProcess, DWORD dwAddr)
-#else
-static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
-#endif
 {
 	DWORD modulebase;
+#else
+static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
+{
+	DWORD64 modulebase;
+#endif
 	modulebase=SymGetModuleBase(hProcess, dwAddr);
     if(modulebase)
         return modulebase ;

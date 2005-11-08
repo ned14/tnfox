@@ -2242,7 +2242,7 @@ Use valgrind instead on Linux.
 
 This covers Windows 2000 and Windows XP, both 32 bit and 64 bit editions. Windows 95, 98
 and ME are not supported due to insufficient host OS facilities. Windows NT should be mostly
-compatible - there are one or two calls here and there which may not work.
+compatible - though there are quite a few unsupported calls.
 
 \section supported Supported configuration:
 <u>Win32</u><br>
@@ -2253,14 +2253,19 @@ compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ 
 v8 for Windows works fine.
 
 <u>Win64</u><br>
-Currently only AMD64/EM64T is supported. For this the only
-compiler I have access to is the beta AMD64 edition of MSVC8 and unfortunately, the one that
-comes with the Windows 2003 SP1 Platform SDK is NOT suitable (as it comes with a MSVC6 STL).
-You NEED the MSVC7.1 or MSVC8 STL, the former you can get free off MS if you beg and plead
-(obviously they prefer you to buy MSVC8). To use, kick in the MSVC IDE using the /USEENV
-switch from within a command window configured to use the AMD64 compiler. You then may need
-to hack scons to use INCLUDE, LIB and PATH instead of values from the registry (see the
-msvc.py tool inside scons).
+Currently only AMD64/EM64T (ie; x64) is supported. The only official compiler supporting x64
+is MSVC8 (Visual Studio 2005) so this is what I describe. You \em can make it work with beta compilers from the
+Platform SDK, but you NEED the MSVC7.1 STL (rather than the MSVC6 STL which comes with those
+test compilers) which is hard to get.
+
+To use, you need to ensure the environment variables point to the x64 compilers and libraries
+using the start menu shortcut in Visual Studio tools. Depending on how old your scons is,
+you may need to hack the msvc.py tool to read the values from \c os.environ rather than the
+registry (as it only can see the 32 bit tools currently). In theory, thereafter it just works.
+
+If you want to use the 64 bit tools from within the MSVC IDE, create a batch file setting up
+the environment and then launching the IDE with the \c /USEENV switch. This ensures that when
+the IDE calls scons, it passes the right environment for scons to use.
 
 As both FOX and TnFOX use very low-level and old API's in Windows, no libraries above those
 supplied by default with the system are required. It is recommended you have the latest

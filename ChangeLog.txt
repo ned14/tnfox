@@ -47,6 +47,7 @@ B QTransString segfaulted on serialisation if empty
 B FXACLEntity::homeDirectory() was failing on win32
 B QSSLDevice wasn't closing underlying device if open() failed
 B QPipe wasn't deleting named pipes on close
+B Fixed fatal error on process load when running under Terminal Services
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -166,6 +167,7 @@ link points to
 * Fixed up the python bindings
 * Added support for OpenSSL v0.9.8 and made it statically linked in
 * Merged SQLite3 v3.2.7
+* Made changes to support MSVC8.0 RTM
 
 
 

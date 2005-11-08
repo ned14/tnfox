@@ -799,7 +799,7 @@ bool FXProcess::runPendingStaticInits(int &argc, char *argv[], FXStream &txtout)
 			while(SIlist->count())
 			{
 				bool movement=false;
-				for(QListIterator<FXProcess_StaticInitBase> o(*SIlist); o.current(); ++o)
+				for(QListIterator<FXProcess_StaticInitBase> o(*SIlist); o.current(); )
 				{
 					FXProcess_StaticInitBase *var=(*o);
 					QList<FXProcess_StaticInitBase> *deplist=(QList<FXProcess_StaticInitBase> *) var->dependencies;
@@ -809,10 +809,10 @@ bool FXProcess::runPendingStaticInits(int &argc, char *argv[], FXStream &txtout)
 					{
 						if(-1==newSIlist->findRef(*d)) break;
 					}
+					++o;
 					if(!d.current())
 					{	// Found all dependencies already done, so move it
 						newSIlist->append(var);
-						--o;
 						SIlist->removeRef(var);
 						movement=true;
 					}

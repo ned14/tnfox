@@ -90,7 +90,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 		for(p2=p1+1; *p2 && '\\'!=*p2; ++p2);
 		FXfval itempos=s.device()->at();
 		s << (FXushort) 0;	// length
-		QFileInfo fi(originalPath.left(originalPathOffset-2+(p2-i.path2)));
+		QFileInfo fi(originalPath.left((FXint)(originalPathOffset-2+(p2-i.path2))));
 		assert(fi.exists());
 		if(fi.isDir())
 			s << (FXushort) 0x31;
@@ -100,7 +100,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 		s << (FXuint) 0xffffffff;	// created
 		s << (FXushort)(fi.isDir() ? 0x10 : 0x20);
 		{	// Generate short name
-			FXString shortname(i.path1+(p1+1-i.path2), p2-p1-1);
+			FXString shortname(i.path1+(p1+1-i.path2), (FXint)(p2-p1-1));
 			if(fi.isDir())
 			{
 				if(shortname.length()>12)
@@ -125,7 +125,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 		s << (FXuint) 0xffffffff;	// modified
 		s << (FXuint) 0xffffffff;	// lastRead
 		s << (FXuint) 0x14;
-		s.save(p1+1, p2-p1-1);
+		s.save(p1+1, (FXint)(p2-p1-1));
 		s << (FXushort) 0;	// terminator
 		s << (FXushort) 0;	// unknown
 

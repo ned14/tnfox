@@ -388,7 +388,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				}
 				if(p->buffer.size()<tmsg.length())
 					p->buffer.truncate(tmsg.length());
-				FXint togo=tmsg.length()-read;
+				FXint togo=(FXint)(tmsg.length()-read);
 				while(togo>0)
 				{
 					h.unlock();
@@ -399,7 +399,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 					read+=p->dev->readBlock(data.data()+read, togo);
 					//fxmessage("Thread %u channel read=%d bytes\n", (FXuint) QThread::id(), read);
 					h.relock();
-					togo=tmsg.length()-read;
+					togo=(FXint)(tmsg.length()-read);
 				}
 				if(tmsg.crc)
 				{
@@ -758,8 +758,8 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 			}
 		} else buffer.at(msg->headerLength());
 		// NOTE TO SELF: Keep consistent with restampMsgAndSend()
-		FXuval len;
-		msg->len=len=(FXuint) buffer.at();
+		FXuval len=(FXuval) buffer.at();
+		msg->len=(FXuint) len;
 		assert(msg->length()>=FXIPCMsg::minHeaderLength);
 		assert(msg->msgType());
 		if(p->maxMsgSize && msg->length()>p->maxMsgSize)

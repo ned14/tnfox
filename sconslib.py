@@ -189,7 +189,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if not os.path.isfile(platformconfig):
         raise IOError, "No platform config file for any of "+repr(env['TOOLS'])+" was found"
     print "Using platform configuration",platformconfig,"..."
-    onWindows=(env['PLATFORM']=="win32")
+    onWindows=(env['PLATFORM']=="win32" or env['PLATFORM']=="win64")
     if tcommonopts:
         libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
         libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn"+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
@@ -281,8 +281,24 @@ def getTnFOXIncludes(prefix=""):
         else: idx+=1
     return filelist
    
+def CheckCompilerPtr32(cc):
+    cc.Message("Making sure this is really a 32 bit compiler ...")
+    result=cc.TryCompile('int main(void)\n{\nint foo[4==sizeof(void *) ? 1 : 0];\n}\n', '.cpp')
+    cc.Result(result)
+    return result
+
+def CheckCompilerPtr64(cc):
+    cc.Message("Making sure this is really a 64 bit compiler ...")
+    result=cc.TryCompile('int main(void)\n{\nint foo[8==sizeof(void *) ? 1 : 0];\n}\n', '.cpp')
+    cc.Result(result)
+    return result
+
 def doConfTests(env, prefixpath=""):
-    conf=Configure(env)
+    conf=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64 } )
+    if make64bit:
+        assert conf.CheckCompilerPtr64()
+    else:
+        assert conf.CheckCompilerPtr32()
     def checkLib(conf, name, header, prefix=""):
         capsname=string.upper(name)
         if os.path.exists(prefixpath+"windows/lib"+name+"/lib"+name+ternary(make64bit, "64", "32")+".lib"):
@@ -315,7 +331,7 @@ def doConfTests(env, prefixpath=""):
         print "Found OpenSSL library"
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]
         conf.env['CPPPATH']+=[prefixpath+"../openssl/inc32"]
-        conf.env['LIBPATH']+=[prefixpath+"../openssl/out"+ternary(make64bit, "64", "32")]
+        conf.env['LIBPATH']+=[prefixpath+"../openssl/out32"]
         conf.env['LIBS']+=["libeay"+ternary(make64bit, "64", "32"), "ssleay"+ternary(make64bit, "64", "32")]
     elif conf.CheckLibWithHeader("ssl", ["openssl/ssl.h"], "c", "SSL_library_init();"):
         conf.env['CPPDEFINES']+=["HAVE_OPENSSL"]

@@ -19,19 +19,27 @@ def CheckMSVC80(cc):
     cc.Result(result)
     return result
 conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
-assert conf.CheckMSVC71()
-MSVCVersion=710
+MSVCVersion=0
+if conf.CheckMSVC71():
+    MSVCVersion=710
 if conf.CheckMSVC80():
     MSVCVersion=800
+assert MSVCVersion>0
 env=conf.Finish()
 # Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping, wchar_t native
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t')
 assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                        # Only functions may alias
-                "/G%d" % architecture_version # Optimise for given processor revision
+                "/G%d" % architecture_version, # Optimise for given processor revision
+                "/Gm",                         # Minimum rebuild
+                "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
               ]
 else:
+    cppflags+=[ "/fp:fast",                    # Fastest floating-point performance
+                ###"/Gm",                         # Minimum rebuild (seriously broken on MSVC8)
+                "/Fd"+builddir+"/vc80.pdb"     # Set PDB location
+              ]
     # Stop the stupid STDC function deprecated warnings
     env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
 if architecture=="x86":
@@ -41,16 +49,13 @@ if debugmode:
     cppflags+=["/Od",        # Optimisation off
                "/Zi",        # Program database debug info
                #"/O2", "/Oy-",
-               "/Gm",        # Minimum rebuild
                "/RTC1",      # Stack and uninit run time checks
                "/RTCc",      # Smaller data type without cast run time check
                "/MDd",       # Select MSVCRTD.dll
-               "/GS",        # Buffer overrun check
-               "/Fd"+builddir+"/vc70.pdb" # Set PDB location
+               "/GS"         # Buffer overrun check
                ]
 else:
     cppflags+=["/O2",        # Optimise for fast code
-               #"/Zd",        # Line no debug info only
                "/Zi",
                "/Ob2",       # Inline all suitable
                "/Oi",        # Enable intrinsics
@@ -65,11 +70,12 @@ env['LINKFLAGS']=["/version:"+tnfoxversion,
                   "/OPT:NOWIN98",
                   "/STACK:524288,65536"
                   ]
+if MSVCVersion>=800:
+    env['LINKFLAGS']+=["/NXCOMPAT"]
 if make64bit:
-    # This seems to be missing
-    env['LINKFLAGS']+=["/FORCE:UNRESOLVED"]
+    env['LINKFLAGS']+=["/MACHINE:X64"]
 else:
-    env['LINKFLAGS']+=["/BASE:0x60000000", "/LARGEADDRESSAWARE"]
+    env['LINKFLAGS']+=["/MACHINE:X86", "/LARGEADDRESSAWARE"]
 if debugmode:
     env['LINKFLAGS']+=["/INCREMENTAL"]
 else:

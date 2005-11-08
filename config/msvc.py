@@ -20,25 +20,33 @@ def CheckMSVC80(cc):
     cc.Result(result)
     return result
 conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
-assert conf.CheckMSVC71()
-MSVCVersion=710
+MSVCVersion=0
+if conf.CheckMSVC71():
+    MSVCVersion=710
 if conf.CheckMSVC80():
     MSVCVersion=800
+assert MSVCVersion>0
 env=conf.Finish()
 
 env['CPPPATH']+=[prefixpath+"windows"]
 if not os.path.exists(builddir):
     os.mkdir(builddir)
 
-# Warnings, synchronous exceptions, enable RTTI, pool strings, ANSI for scoping,
-# wchar_t native, types defined before pointers to members used
-cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t /vmb /vmm')
+# Warnings, synchronous exceptions, enable RTTI, pool strings, separate COMDAT per function,
+# ANSI for scoping, wchar_t native, types defined before pointers to members used
+cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Gy /Zc:forScope /Zc:wchar_t /vmb /vmm')
 assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
-    cppflags+=[ "/Ow",                        # Only functions may alias
-                "/G%d" % architecture_version # Optimise for given processor revision
+    cppflags+=[ "/Ow",                         # Only functions may alias
+                "/G%d" % architecture_version, # Optimise for given processor revision
+                "/Gm",                         # Minimum rebuild
+                "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
               ]
 else:
+    cppflags+=[ "/fp:fast",                    # Fastest floating-point performance
+                ###"/Gm",                         # Minimum rebuild (seriously broken on MSVC8)
+                "/Fd"+builddir+"/vc80.pdb"     # Set PDB location
+              ]
     # Stop the stupid STDC function deprecated warnings
     env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
 if architecture=="x86":
@@ -50,17 +58,15 @@ if debugmode:
                #"/O2", "/Oy-",
                "/Zi",        # Program database debug info
                ####"/GL",
-               "/Gm",        # Minimum rebuild
-               #"/RTC1",      # Stack and uninit run time checks
+               "/RTC1",      # Stack and uninit run time checks
                ####"/RTCc",      # Smaller data type without cast run time check
-               #"/GS",        # Buffer overrun check
-               "/MDd",       # Select MSVCRTD.dll
-               "/Fd"+builddir+"/vc70.pdb" # Set PDB location
+               "/GS",        # Buffer overrun check
+               "/MDd"        # Select MSVCRTD.dll
                ]
     #env['CCWPOOPTS']=["/W4"] # Maximum warnings for TnFOX files only
 else:
     cppflags+=["/O2",        # Optimise for fast code
-               "/Zd",        # Line no debug info only
+               "/Zi",        # Program database debug info
                #"/Zi", #"/Og-",
                "/MD"         # Select MSVCRT.dll
                ]
@@ -74,13 +80,15 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/DLL",
                   "/DEBUG",
                   "/OPT:NOWIN98",
+                  "/PDBSTRIPPED:"+builddir+"\\..\\TnFOXMiniSymbols.pdb",
                   "/STACK:524288,65536"
                   ]
+if MSVCVersion>=800:
+    env['LINKFLAGS']+=["/NXCOMPAT"]
 if make64bit:
-    # This seems to be missing
-    env['LINKFLAGS']+=["/BASE:0x7ff06000000"] + ["/FORCE:UNRESOLVED"]
+    env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
 else:
-    env['LINKFLAGS']+=["/BASE:0x60000000", "/LARGEADDRESSAWARE"]
+    env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x60000000", "/LARGEADDRESSAWARE"]
 if debugmode:
     if MSVCVersion==710:
         env['LINKFLAGS']+=["/INCREMENTAL:NO"]
