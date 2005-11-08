@@ -352,9 +352,9 @@ const unsigned char InformationalIcon[]={
   0x00,0x3b
   };
 #else
-static FXAutoPtr<FXIcon> loadMsgIcon(const FXString &name)
+static FXIcon *loadMsgIcon(const FXString &name)
 {
-	FXAutoPtr<FXIcon> i;
+	FXIcon *i;
 	FXString tnpath=getenv("TnHomeDir");
 	if(!tnpath.empty())
 	{
