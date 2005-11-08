@@ -435,16 +435,29 @@ public:
 	//! Decrements the iterator
 	type *operator--()
 	{
-		typename std::list<type *>::iterator &me=*this; --me;
+		typename std::list<type *>::iterator &me=*this;
+		if(mylist->int_begin()==me)
+		{
+			me=mylist->int_end();
+			dead=true;
+		}
+		else --me;
 		return retptr();
 	}
 	//! Decrements the iterator
 	type *operator-=(uint j)
 	{
 		typename std::list<type *>::iterator &me=*this;
-		typename std::list<type *>::iterator myend=mylist->int_end();
-		for(uint n=0; n<j && me!=myend; n++)
-			--me;
+		typename std::list<type *>::iterator myend=mylist->int_begin();
+		for(uint n=0; n<j && !dead; n++)
+		{
+			if(myend==me)
+			{
+				me=mylist->int_end();
+				dead=true;
+			}
+			else --me;
+		}
 		return retptr();
 	}
 };
