@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="libtiff"
-	ProjectGUID="{91BAAFCF-B9C2-4AFF-96A1-5AC08518BCDC}"
+	Name="zlib"
+	ProjectGUID="{49C23D74-16F5-40B6-AE62-79E41E1243F9}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -19,7 +19,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="libtiff"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -32,7 +31,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libtiff.lib"/>
+				OutputFile="$(OutDir)/zlib.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -60,7 +59,6 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="libtiff,..\zlib,..\libjpeg"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -71,7 +69,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libtiff32.lib"/>
+				OutputFile="zlib32.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -100,112 +98,40 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\libtiff\tif_aux.c">
+				RelativePath=".\adler32.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_close.c">
+				RelativePath=".\compress.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_codec.c">
+				RelativePath=".\crc32.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_color.c">
+				RelativePath=".\deflate.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_compress.c">
+				RelativePath=".\gzio.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_dir.c">
+				RelativePath=".\infback.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_dirinfo.c">
+				RelativePath=".\inffast.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_dirread.c">
+				RelativePath=".\inflate.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_dirwrite.c">
+				RelativePath=".\inftrees.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_dumpmode.c">
+				RelativePath=".\trees.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_error.c">
+				RelativePath=".\uncompr.c">
 			</File>
 			<File
-				RelativePath=".\libtiff\tif_extension.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_fax3.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_fax3sm.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_flush.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_getimage.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_jpeg.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_luv.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_lzw.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_next.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_ojpeg.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_open.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_packbits.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_pixarlog.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_predict.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_print.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_read.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_strip.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_swab.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_thunder.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_tile.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_version.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_warning.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_win32.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_write.c">
-			</File>
-			<File
-				RelativePath=".\libtiff\tif_zip.c">
+				RelativePath=".\zutil.c">
 			</File>
 		</Filter>
 		<Filter
