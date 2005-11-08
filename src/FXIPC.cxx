@@ -564,15 +564,18 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 				}
 				else
 				{	// If has ack, reply we don't know this
-#ifndef DEBUG
-					if(p->printstats)
-#endif
-						fxmessage("Thread %u msg 0x%x (%s) unknown\n", (FXuint) QThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
 					HandledCode handled=unknownMsgReceived(&tmsg, data.data());
-					if(NotHandled==handled && tmsg.hasAck())
+					if(NotHandled==handled)
 					{
-						FXIPCMsg_Unhandled badmsg(tmsg.msgId(), 1);
-						sendMsg(badmsg);
+#ifndef DEBUG
+						if(p->printstats)
+#endif
+							fxmessage("Thread %u msg 0x%x (%s) unknown\n", (FXuint) QThread::id(), tmsg.msgType(), p->registry->decodeType(tmsg.msgType()).text());
+						if(tmsg.hasAck())
+						{
+							FXIPCMsg_Unhandled badmsg(tmsg.msgId(), 1);
+							sendMsg(badmsg);
+						}
 					}
 				}
 				read-=tmsg.length();
