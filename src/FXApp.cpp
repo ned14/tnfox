@@ -368,6 +368,12 @@ struct FXInvocation {
     }
   };
 
+struct FXAppDestructUpcall {
+  FXAppDestructUpcall *next;
+  void (*addr)(void *);
+  void *data;
+};
+
 
 /*******************************************************************************/
 
@@ -790,6 +796,7 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   appArgv=NULL;                           // Program arguments
   waitCount=0;                            // Cursor wait count
   initialized=FALSE;                      // Not yet initialized
+  destructUpcalls=0;                      // Destruction upcalls
 
   // Monochrome visual
   monoVisual=new FXVisual(this,VISUAL_MONOCHROME);
@@ -4952,9 +4959,36 @@ void FXApp::setSelMenuBackColor(FXColor color){
   registry.writeColorEntry("SETTINGS","selmenubackcolor",selMenuBackColor);
   }
 
+/// Add a destruction upcall
+void FXApp::addDestructionUpcall(void (*func)(void *), void *data){
+  FXAppDestructUpcall *adu=new FXAppDestructUpcall;
+  adu->addr=func;
+  adu->data=data;
+  adu->next=destructUpcalls;
+  destructUpcalls=adu;
+  }
+
+/// Remove a destruction upcall
+void FXApp::removeDestructionUpcall(void (*func)(void *), void *data){
+  FXAppDestructUpcall *t, **tt;
+  for(tt=&destructUpcalls; (t=*tt); tt=&t->next){
+    if(t->addr==func && t->data==data){
+      *tt=t->next; t->next=0;
+      delete t;
+      }
+    }
+  }
+
 
 // Virtual destructor
 FXApp::~FXApp(){
+  // Invoke all the destruction upcalls
+  while(destructUpcalls){
+    FXAppDestructUpcall *adu=destructUpcalls;
+    (*adu->addr)(adu->data);
+    destructUpcalls=destructUpcalls->next;
+    delete adu;
+  }
 
   // Delete event loop
   delete eventLoop;

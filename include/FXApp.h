@@ -59,7 +59,7 @@ struct FXRepaint;
 struct FXInput;
 struct FXAsyncMsg;
 struct FXInvocation;
-
+struct FXAppDestructUpcall;
 
 
 /// File input modes for addInput
@@ -584,6 +584,7 @@ private:
   FXint            appArgc;             // Argument count
   const FXchar   **appArgv;             // Argument vector
   FXbool           initialized;         // Has been initialized
+  FXAppDestructUpcall *destructUpcalls; // Destruction upcalls
 
 private:
   static FXApp    *app;                 // Application pointer
@@ -1093,6 +1094,12 @@ public:
 
   /// Dump widget information
   void dumpWidgets() const;
+
+  /// Add a destruction upcall
+  void addDestructionUpcall(void (*func)(void *), void *data);
+
+  /// Remove a destruction upcall
+  void removeDestructionUpcall(void (*func)(void *), void *data);
 
   /// Destroy the application and all reachable resources
   virtual ~FXApp();

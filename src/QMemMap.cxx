@@ -58,6 +58,10 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 #ifdef USE_WINAPI
+#ifndef SE_CREATE_GLOBAL_NAME			// Not present on older SDK's
+#define SE_CREATE_GLOBAL_NAME			TEXT("SeCreateGlobalPrivilege")
+#endif
+
 class QMemMapInit
 {	// Cached here to speed FXACL::check()
 public:

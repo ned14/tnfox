@@ -368,10 +368,14 @@ static FXAutoPtr<FXIcon> loadMsgIcon(const FXString &name)
 	return i;
 }
 #endif
+static void deleteIcon(void *data)
+{
+	FXDELETE(*(FXIcon **) data);
+}
 
 const FXIcon *FXHandedMsgBox::fatalErrorIcon()
 {
-	static FXAutoPtr<FXIcon> myicon;
+	static FXIcon *myicon;
 	if(!myicon)
 	{
 #ifdef BUILDING_TCOMMON
@@ -379,13 +383,14 @@ const FXIcon *FXHandedMsgBox::fatalErrorIcon()
 #else
 		FXERRHM(myicon=new FXGIFIcon(FXApp::instance(), FatalErrorIcon));
 #endif
+		FXApp::instance()->addDestructionUpcall(deleteIcon, &myicon);
 		myicon->create();
 	}
-	return PtrPtr(myicon);
+	return myicon;
 }
 const FXIcon *FXHandedMsgBox::errorIcon()
 {
-	static FXAutoPtr<FXIcon> myicon;
+	static FXIcon *myicon;
 	if(!myicon)
 	{
 #ifdef BUILDING_TCOMMON
@@ -393,13 +398,14 @@ const FXIcon *FXHandedMsgBox::errorIcon()
 #else
 		FXERRHM(myicon=new FXGIFIcon(FXApp::instance(), ErrorIcon));
 #endif
+		FXApp::instance()->addDestructionUpcall(deleteIcon, &myicon);
 		myicon->create();
 	}
-	return PtrPtr(myicon);
+	return myicon;
 }
 const FXIcon *FXHandedMsgBox::questionIcon()
 {
-	static FXAutoPtr<FXIcon> myicon;
+	static FXIcon *myicon;
 	if(!myicon)
 	{
 #ifdef BUILDING_TCOMMON
@@ -407,13 +413,14 @@ const FXIcon *FXHandedMsgBox::questionIcon()
 #else
 		FXERRHM(myicon=new FXGIFIcon(FXApp::instance(), QuestionIcon));
 #endif
+		FXApp::instance()->addDestructionUpcall(deleteIcon, &myicon);
 		myicon->create();
 	}
-	return PtrPtr(myicon);
+	return myicon;
 }
 const FXIcon *FXHandedMsgBox::informationalIcon()
 {
-	static FXAutoPtr<FXIcon> myicon;
+	static FXIcon *myicon;
 	if(!myicon)
 	{
 #ifdef BUILDING_TCOMMON
@@ -421,9 +428,10 @@ const FXIcon *FXHandedMsgBox::informationalIcon()
 #else
 		FXERRHM(myicon=new FXGIFIcon(FXApp::instance(), InformationalIcon));
 #endif
+		FXApp::instance()->addDestructionUpcall(deleteIcon, &myicon);
 		myicon->create();
 	}
-	return PtrPtr(myicon);
+	return myicon;
 }
 
 } // namespace
