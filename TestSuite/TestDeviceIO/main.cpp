@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 			char buffer[256];
 			do
 			{
-				r=16*rand()/RAND_MAX;
+				r=(FXuval)(16ULL*rand()/RAND_MAX);
 				oldpos=src.at();
 				r=src.readBlock(buffer, r);
 				dest.writeBlock(buffer, r);
