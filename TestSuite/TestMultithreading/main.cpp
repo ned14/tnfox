@@ -100,7 +100,7 @@ int main( int argc, char** argv)
 	TestThread *threads[MAX_THREADS];
 	FXString desc;
 	fxmessage(FXString("OS ver=%1\n").arg(FXProcess::hostOSDescription()).text());
-	fxmessage(FXString("Main mutex=%1\n").arg((FXuint) &shareddata.lock, 0, 16).text());
+	fxmessage(FXString("Main mutex=%1\n").arg((FXuval) &shareddata.lock, 0, 16).text());
 	fxmessage("\nPress Return to begin closing down the threads\n\n");
 
 	// Without this this test occupies so much of the scheduler I can't debug!

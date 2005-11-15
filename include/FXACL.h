@@ -112,6 +112,9 @@ public:
 	//static QValueList<FXACLEntity> localEntities();
 };
 
+class FXACLIterator;
+class FXACLPrivate;
+
 /*! \class FXACL
 \ingroup security
 \brief Provides a portable Access Control List

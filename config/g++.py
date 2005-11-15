@@ -29,8 +29,8 @@ if architecture=="x86":
         if x86_SSE>1: cppflags+=["-msse%d" % x86_SSE]
         else: cppflags+=["-msse"]
 elif architecture=="x64":
-    cppflagsopts=["athlon64"]
-    cppflags+=["-m64", "-march="+cppflagsopts[architecture_version] ]
+    #cppflagsopts=["athlon64"]
+    cppflags+=["-m64"] #, "-march="+cppflagsopts[architecture_version] ]
 else:
     raise IOError, "Unknown architecture type"
 cppflags+=["-fexceptions",              # Enable exceptions
@@ -52,7 +52,7 @@ else:
 env['CPPFLAGS']+=cppflags
 
 # Linkage
-env['LINKFLAGS']+=["-Wl,--allow-multiple-definition", # You may need this when cross-compiling
+env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    ternary(make64bit, "-m64", "-m32")
                   ]
 

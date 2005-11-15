@@ -19,18 +19,19 @@
 
 import os
 import sys
-execfile("../../../sconslib.py")
-init(globals(), "../../../", "../../")
 dir,name=os.path.split(os.getcwd())
-if "hgfs" in dir: dir="/home/ned/Tornado/TClient/TnFOX/TestSuite/TestDLL"
-if "kate/D" in dir: dir="/usr/home/ned/Tornado/TClient/TnFOX/TestSuite/TestDLL"
+if "windows" in dir:
+    # Replace with Unix equiv
+    dir="/home/ned/"+dir[dir.find("Tn"):]
+execfile(dir+"/../sconslib.py")
+init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../../lib/MyTestDLL"
 
-env['CPPDEFINES']=[ "FOXDLL", "TESTDLL_EXPORTS" ]
-env['CPPPATH']=[ ".",
+env['CPPDEFINES']+=[ "FOXDLL", "TESTDLL_EXPORTS" ]
+env['CPPPATH']+=[ ".",
                  "../../../include"
                  ]
-env['LIBPATH']=[dir+"/../../lib"]
+env['LIBPATH']+=[dir+"/../../lib"]
 env['LIBS']=[ libtnfox ]
 
 if debugmode:

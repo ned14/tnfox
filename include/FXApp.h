@@ -35,6 +35,7 @@ namespace FX {
 
 
 // Forward declarations
+class FXApp;
 class FXWindow;
 class FXIcon;
 class FXBitmap;

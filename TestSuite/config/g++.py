@@ -16,7 +16,7 @@ env['CPPPATH']+=["/usr/kerberos/include"]
 # Include X11
 env['CPPPATH']+=["/usr/X11R6/include"]
 env['LIBPATH']+=["/usr/X11R6/"+libPathSpec(make64bit)]
-env['LIBS']+=["Xext", "X11"]
+env['LIBS']+=["Xext", "X11", "stdc++"]
 
 # Warnings
 cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
@@ -30,8 +30,8 @@ if architecture=="x86":
         if x86_SSE>1: cppflags+=["-msse%d" % x86_SSE]
         else: cppflags+=["-msse"]
 elif architecture=="x64":
-    cppflagsopts=["athlon64"]
-    cppflags+=["-m64", "-march="+cppflagsopts[architecture_version] ]
+    #cppflagsopts=["athlon64"]
+    cppflags+=["-m64"] #, "-march="+cppflagsopts[architecture_version] ]
 else:
     raise IOError, "Unknown architecture type"
 cppflags+=["-fexceptions",              # Enable exceptions
@@ -57,12 +57,12 @@ env['CPPFLAGS']+=cppflags
 if "freebsd" in sys.platform:
     env['LINK']="libtool --tag=CXX --mode=link g++"
 else: env['LINK']="libtool --mode=link g++"
-env['LINKFLAGS']+=["-Wl,--allow-multiple-definition", # You may need this when cross-compiling
+env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    ternary(make64bit, "-m64", "-m32")
                   ]
 
 if debugmode:
-    env['LINKFLAGS']+=[ #"-static"        # Don't use shared objects
+    env['LINKFLAGS']+=[ # "-static"        # Don't use shared objects
                        ]
 else:
     env['LINKFLAGS']+=[ # "-O"             # Optimise
