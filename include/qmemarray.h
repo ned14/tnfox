@@ -207,12 +207,14 @@ public:
 	bool operator==(const QMemArray<type> &o) const
 	{
 		if(extArray) throw "Not implemented for external arrays";
-		return std::vector<type>::operator==(o);
+		const std::vector<type> &me=*this;
+		return me==o;
 	}
 	bool operator!=(const QMemArray<type> &o) const
 	{
 		if(extArray) throw "Not implemented for external arrays";
-		return std::vector<type>::operator!=(o);
+		const std::vector<type> &me=*this;
+		return me!=o;
 	}
 	//! Returns an iterator pointing to the first element
 	Iterator begin() { return data(); }
