@@ -81,6 +81,7 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/DEBUG",
                   "/OPT:NOWIN98",
                   "/PDBSTRIPPED:"+builddir+"\\..\\TnFOXMiniSymbols.pdb",
+                  "/INCREMENTAL:NO",      # Incremental linking is just broken on all versions of MSVC
                   "/STACK:524288,65536"
                   ]
 if MSVCVersion>=800:
@@ -90,14 +91,9 @@ if make64bit:
 else:
     env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x60000000", "/LARGEADDRESSAWARE"]
 if debugmode:
-    if MSVCVersion==710:
-        env['LINKFLAGS']+=["/INCREMENTAL:NO"]
-    else:
-        env['LINKFLAGS']+=["/INCREMENTAL"]
     env['LINKFLAGS']+=["/NODEFAULTLIB:MSVCRT"]
 else:
-    env['LINKFLAGS']+=["/INCREMENTAL:NO",
-                       "/OPT:REF",
+    env['LINKFLAGS']+=["/OPT:REF",
                        "/OPT:ICF",
                        "/RELEASE",
                        "/DELAYLOAD:opengl32.dll",

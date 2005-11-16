@@ -61,7 +61,7 @@ public:
 		{
 			FXuval read=rdev->readBlock(buffer, sizeof(buffer));
 			crc=fxadler32(crc, (FXuchar *) buffer, read);
-			byteCount-=read;
+			byteCount-=(int) read;
 		}
 	}
 	virtual void *cleanup()
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 					    "-=-=-=-=-=-=-=-=-=\n");
 			FXSSLKey key(128, FXSSLKey::Blowfish);
 			FXSSLPKey pkey(1024, FXSSLPKey::RSA);
-			QMemMap src("../ReadMe.txt"), dest("BigFile.txt"), dest2("BigFile2.txt");
+			QMemMap src("../../ReadMe.txt"), dest("../BigFile.txt"), dest2("../BigFile2.txt");
 			QSSLDevice dev(&dest);
 
 			// Encrypt
@@ -160,12 +160,12 @@ int main(int argc, char *argv[])
 			key.setAsymmetricKey(&pkey);
 			QPtrList<DevInfo> devs(true);
 			if(1) {
-				FXFile *dev=new FXFile("BigFile3.bin");
+				FXFile *dev=new FXFile("../BigFile3.bin");
 				dev->open(IO_WriteOnly|IO_ShredTruncate);
 				devs.append(new DevInfo("FXFile", dev));
 			}
 			if(1) {
-				QMemMap *dev=new QMemMap("BigFile2.bin");
+				QMemMap *dev=new QMemMap("../BigFile2.bin");
 				dev->open(IO_WriteOnly|IO_ShredTruncate);
 				dev->truncate(testsize);
 				dev->mapIn();

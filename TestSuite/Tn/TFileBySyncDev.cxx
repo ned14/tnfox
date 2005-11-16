@@ -339,7 +339,7 @@ inline void TFileBySyncDev::requestData()
 		}
 		if(amount)
 		{
-			TFBSD_Read i(offset, (u32) amount, p->buffers.count(), p->blockSize);
+			TFBSD_Read i(offset, (u32) amount, (u32) p->buffers.count(), p->blockSize);
 			h.unlock();
 			p->ctrl->sendMsg(i);
 		}
@@ -607,7 +607,7 @@ FXuval TFileBySyncDev::writeBlock(const char *data, FXuval maxlen)
 			b.modified=true;
 			if(b.len!=-1)
 			{
-				if(p->blockSize==(b.len=boffset+togo))
+				if(p->blockSize==(b.len=(s32)(boffset+togo)))
 					b.len=-1;
 			}
 			ioIndex+=togo; data+=togo; maxlen-=togo; written+=togo;

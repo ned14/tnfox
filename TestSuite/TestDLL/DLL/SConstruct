@@ -23,23 +23,18 @@ dir,name=os.path.split(os.getcwd())
 if "windows" in dir:
     # Replace with Unix equiv
     dir="/home/ned/"+dir[dir.find("Tn"):]
-execfile(dir+"/../sconslib.py")
-init(globals(), dir+"/../", dir+"/")
-targetname=dir+"/../../lib/MyTestDLL"
+execfile(dir+"/../../sconslib.py")
+init(globals(), dir+"/../..", dir+"/..")
+targetname=dir+"/../../lib/"+architectureSpec()+"/MyTestDLL"
 
 env['CPPDEFINES']+=[ "FOXDLL", "TESTDLL_EXPORTS" ]
 env['CPPPATH']+=[ ".",
                  "../../../include"
                  ]
-env['LIBPATH']+=[dir+"/../../lib"]
+env['LIBPATH']+=[dir+"/../../lib/"+architectureSpec()]
 env['LIBS']=[ libtnfox ]
 
-if debugmode:
-    builddir="Debug"
-else:
-    builddir="Release"
 dir+="/.."    # So the libtool hack finds the right place
-execfile(platformconfig)
 if "freebsd" in sys.platform:
     env['LINK']="libtool --tag=CXX --mode=link gcc" # Force always dynamic linking
 elif "linux" in sys.platform:
@@ -47,14 +42,14 @@ elif "linux" in sys.platform:
 objects=[env.SharedObject(builddir+"/maindll", "maindll.cpp")]
 Clean(targetname, objects)
 if onWindows:
-    env['LINKFLAGS']+=["/PDB:TestDLL.pdb"]
+    env['LINKFLAGS']+=["/PDB:MyTestDLL.pdb"]
 DLL=env.SharedLibrary(targetname, objects)
 env.Precious(DLL)
-#if not onWindows:
-#    def runRename(target, source, env):
-#        stem, leaf=os.path.split(str(target[0]))
-#        os.system('mv '+str(target[0])+' '+stem+'/TestDLL.so')
-#    AddPostAction(DLL, Action(runRename))
+if not onWindows:
+    def runRename(target, source, env):
+        stem, leaf=os.path.split(str(target[0]))
+        os.system('cp '+stem+'/.libs/'+leaf+' '+stem+'/MyTestDLL.so')
+    AddPostAction(DLL, Action(runRename))
 
 if onWindows:
     env.MSVSProject("project"+env['MSVSPROJECTSUFFIX'],

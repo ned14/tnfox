@@ -1758,14 +1758,17 @@ QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool 
 		if(!p->waiting.takeRef(code))
 		{
 			QThreadPoolTimeKeeper::Entry *entry;
-			for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current()); ++it)
+			if(mastertimekeeper)
 			{
-				if(this==entry->which && PtrPtr(entry->code)==code)
+				for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current()); ++it)
 				{
-					PtrReset(entry->code, 0);		// deletes functor
-					mastertimekeeper->entries.removeRef(entry);
-					//fxmessage("Thread pool cancel %p found\n", code);
-					return Cancelled;
+					if(this==entry->which && PtrPtr(entry->code)==code)
+					{
+						PtrReset(entry->code, 0);		// deletes functor
+						mastertimekeeper->entries.removeRef(entry);
+						//fxmessage("Thread pool cancel %p found\n", code);
+						return Cancelled;
+					}
 				}
 			}
 			h2.unlock();	// Unlock time keeper

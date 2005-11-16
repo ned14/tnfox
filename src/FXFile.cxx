@@ -98,8 +98,8 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 // Replacement ftruncate() (as there's no 64 bit version of _chsize())
 extern "C" static int ftruncate(int fh, FX::FXfval _newsize)
 {
-	long _h=_get_osfhandle(fh);
-	if(-1==_h) return _h;
+	intptr_t _h=_get_osfhandle(fh);
+	if(-1==_h) return -1;
 	HANDLE h=(HANDLE) _h;
 	LARGE_INTEGER current={0}, newsize;
 	current.LowPart=SetFilePointer(h, 0, &current.HighPart, FILE_CURRENT);
@@ -461,11 +461,11 @@ FXuval FXFile::readBlock(char *data, FXuval maxlen)
 			memcpy(data, ungetchdata, copylen);
 			readed+=copylen; ioIndex+=copylen;
 			if(copylen<ungetchlen) memmove(ungetchdata, ungetchdata+copylen, ungetchlen-copylen);
-			p->ungetchbuffer.resize(ungetchlen-copylen);
+			p->ungetchbuffer.resize((FXuint)(ungetchlen-copylen));
 		}
 		int ioreaded;
 #ifdef WIN32
-		FXERRHWIN(ReadFile((HANDLE) _get_osfhandle(p->handle), data+readed, maxlen-readed, (LPDWORD) &ioreaded, NULL));
+		FXERRHWIN(ReadFile((HANDLE) _get_osfhandle(p->handle), data+readed, (DWORD)(maxlen-readed), (LPDWORD) &ioreaded, NULL));
 #else
 		FXERRHIO(ioreaded=::read((p->amStdio) ? fileno(stdin) : p->handle, data+readed, maxlen-readed));
 #endif
@@ -498,7 +498,7 @@ FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 	if(isOpen())
 	{
 		QThread_DTHold dth;
-		FXuval written;
+		FXuval written=0;
 #ifdef USE_POSIX
 		if(FXFilePrivate::Read==p->lastop && !p->amStdio)
 		{
@@ -515,7 +515,9 @@ FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 				bool midNL;
 				FXuval inputlen=maxlen-writeidx;
 #ifdef WIN32
-				FXERRHWIN(WriteFile((HANDLE) _get_osfhandle(p->handle), buffer, applyCRLF(midNL, buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen), (LPDWORD) &written, NULL));
+				DWORD __written;
+				FXERRHWIN(WriteFile((HANDLE) _get_osfhandle(p->handle), buffer, (DWORD) applyCRLF(midNL, buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen), (LPDWORD) &__written, NULL));
+				written=__written;
 #else
 				FXERRHIO(written=::write(p->handle, buffer, applyCRLF(midNL, buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen)));
 #endif
@@ -527,7 +529,9 @@ FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 		else
 		{
 #ifdef WIN32
-			FXERRHWIN(WriteFile((HANDLE) _get_osfhandle(p->handle), data, maxlen, (LPDWORD) &written, NULL));
+			DWORD __written;
+			FXERRHWIN(WriteFile((HANDLE) _get_osfhandle(p->handle), data, (DWORD) maxlen, (LPDWORD) &__written, NULL));
+			written=__written;
 #else
 			FXERRHIO(written=::write(p->handle, data, maxlen));
 #endif
@@ -568,16 +572,22 @@ int FXFile::ungetch(int c)
 	return -1;
 }
 
-void FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize, FXuint *hardLinks)
+bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize, FXuint *hardLinks)
 {
+	if(flags) *flags=0;
+	if(size) *size=0;
+	if(created) created->value=0;
+	if(lastModified) lastModified->value=0;
+	if(lastAccessed) lastAccessed->value=0;
+	if(compressedSize) *compressedSize=0;
+	if(hardLinks) *hardLinks=0;
 	if(!path.empty() && (flags || size || created || lastModified || lastAccessed || compressedSize || hardLinks))
 	{
 #ifndef WIN32
 		struct ::stat st;
-		FXERRHOS(::lstat(path.text(), &st));
+		if(::lstat(path.text(), &st)<0) return false;
 		if(flags)
 		{
-			*flags=0;
 			if(S_ISREG(st.st_mode))
 				*flags|=IsFile;
 			if(S_ISDIR(st.st_mode))
@@ -595,7 +605,6 @@ void FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 			{
 #if defined(__linux__)
 				// Unsupported at present
-				created->value=0;
 #elif defined(__FreeBSD__)
 				created->set_time_t(st.st_birthtimespec.tv_sec);
 				created->value+=st.st_birthtimespec.tv_nsec/1000;
@@ -635,14 +644,14 @@ void FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 #else
 		// Need to open with special semantics if it's a directory
 		HANDLE h;
-		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(FXUnicodify<>(path, true).buffer(), GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT, NULL)), path);
+		if(INVALID_HANDLE_VALUE==(h=CreateFile(FXUnicodify<>(path, true).buffer(), GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
+			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT, NULL)))
+			return false;
 		FXRBOp unh=FXRBFunc(&CloseHandle, h);
 		BY_HANDLE_FILE_INFORMATION bhfi;
 		FXERRHWIN(GetFileInformationByHandle(h, &bhfi));
 		if(flags)
 		{
-			*flags=0;
 			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 				*flags|=IsDirectory;
 			else

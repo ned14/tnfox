@@ -163,10 +163,12 @@ public:
 		IsHidden=128			//!< Is hidden
 	};
 	/*! Returns metadata for \em path. This is the fastest way to read this kind
-	of information as it can be all performed at once, or avoiding bits not required */
-	static void readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize=0, FXuint *hardLinks=0);
+	of information as it can be all performed at once, or avoiding bits not required.
+	Returns false if an error occurred. */
+	static bool readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize=0, FXuint *hardLinks=0);
 	/*! Stamps the path entry with the specified metadata. Needed to
-	work around the Windows "file tunnelling" misfeature. */
+	work around the Windows "file tunnelling" misfeature. This function can throw
+	an exception. */
 	static void writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed);
 	//! Returns the flags part of readMetadata()
 	static FXuint metaFlags(const FXString &path);

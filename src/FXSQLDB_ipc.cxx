@@ -837,7 +837,7 @@ struct FXSQLDBServerPrivate
 				FXSQLDBColumnRef cr_=curs->data(c);
 				FXSQLDBColumn *cr=PtrPtr(cr_);
 				FXSQLDBIPCMsgsI::ColumnData &cd=(*data)[r*curs->columns()+c];
-				cd.data.data.length=cr->size();
+				cd.data.data.length=(FXuint) cr->size();
 				switch((cd.data.type=(FXuchar) cr->type()))
 				{
 				case FXSQLDB::Null:

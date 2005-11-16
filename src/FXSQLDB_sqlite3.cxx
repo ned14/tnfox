@@ -410,7 +410,7 @@ namespace FXSQLDB_sqlite3Impl
 			const FXString &text=this->text();
 			const char *t=text.text();
 			mainstmth=-1;
-			for(int togo; (togo=(text.text()+text.length())-t);)
+			for(int togo; (togo=(int)((text.text()+text.length())-t));)
 			{
 				sqlite3_stmt *sth;
 				if(FXERRHSQLITE3(sqlite3_prepare(handle, t, togo, &sth, &t)))

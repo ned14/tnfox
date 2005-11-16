@@ -133,7 +133,7 @@ static const char *decodeWinsockErr(int code)
 	return "Unknown";
 }
 
-#define FXERRHSKT(exp) { int __res=(exp); if(SOCKET_ERROR==__res) { int __errorcode=WSAGetLastError(); \
+#define FXERRHSKT(exp) { int __res=(int)(exp); if(SOCKET_ERROR==__res) { int __errorcode=WSAGetLastError(); \
 	if(WSAENETDOWN==__errorcode || WSAENETRESET==__errorcode || WSAECONNABORTED==__errorcode || WSAECONNRESET==__errorcode || WSAETIMEDOUT==__errorcode) \
 		{ FXERRGCONLOST("Connection Lost", 0); } \
 	else { FXERRGIO(decodeWinsockErr(__errorcode)); } } }
@@ -213,9 +213,12 @@ struct FXDLLLOCAL QBlkSocketPrivate : public QMutex
 		QHostAddress addr;
 		FXushort port;
 	} peer;
-	int handle;
 #ifdef USE_WINAPI
+	SOCKET handle;
 	OVERLAPPED olr, olw;
+#endif
+#ifdef USE_POSIX
+	int handle;
 #endif
 	QBlkSocketPrivate(QBlkSocket::Type _type, FXushort port) : type(_type), unique(false), amServer(false),
 		connected(false), monitoring(false), maxPending(50), handle(0), QMutex()
@@ -784,7 +787,7 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 		FXuval readed;
 #ifdef USE_WINAPI
 		{
-			WSABUF wsabuf; wsabuf.buf=data; wsabuf.len=maxlen;
+			WSABUF wsabuf; wsabuf.buf=data; wsabuf.len=(u_long) maxlen;
 			DWORD _readed, flags=0;
 			if(p->monitoring)
 			{
@@ -847,7 +850,7 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 		FXuval written;
 #ifdef USE_WINAPI
 		{
-			WSABUF wsabuf; wsabuf.buf=(char *) data; wsabuf.len=maxlen;
+			WSABUF wsabuf; wsabuf.buf=(char *) data; wsabuf.len=(u_long) maxlen;
 			DWORD _written, flags=0;
 			int ret=WSASend(p->handle, &wsabuf, 1, &_written, flags, &p->olw, NULL);
 			if(SOCKET_ERROR==ret)
@@ -941,7 +944,7 @@ QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 	socklen_t salen=sizeof(sa6);
 #ifdef USE_WINAPI
 	// This is made considerably harder by AcceptEx() being too low level :(
-	int newskt;
+	SOCKET newskt;
 	FXERRHSKT(newskt=::socket(p->mine.addr.isIp6Addr() ? PF_INET6 : PF_INET, (p->type==Datagram) ? SOCK_DGRAM : SOCK_STREAM, 0));
 	FXRBOp unnewskt=FXRBFunc(::closesocket, newskt);
 	const int MaxSockAddr=16+sizeof(sockaddr_in6);
@@ -981,7 +984,7 @@ QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 	}
 	FXERRHSKT(setsockopt(newskt, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT, (char *)&p->handle, sizeof(p->handle)));
 	FXAutoPtr<QBlkSocket> ret;
-	FXERRHM(ret=new QBlkSocket(*this, newskt));
+	FXERRHM(ret=new QBlkSocket(*this, (int) newskt));
 	unnewskt.dismiss();
 	if(isReadable())
 	{
@@ -1031,7 +1034,7 @@ FXuval QBlkSocket::waitForMore(int msecs, bool *timeout)
 		FD_ZERO(&fds);
 		FD_SET(p->handle, &fds);
 		h.unlock();
-		int ret=::select(p->handle+1, &fds, 0, 0, &tv); 
+		int ret=::select((int) p->handle+1, &fds, 0, 0, &tv); 
 		h.relock();
 		if(timeout) *timeout=(!ret) ? true : false;
 		return (FXuval) size();

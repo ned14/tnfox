@@ -85,7 +85,7 @@ static int get_byte(gz_stream *s)
 {
     if (s->z_eof) return EOF;
     if (s->stream.avail_in == 0) {
-	s->stream.avail_in = s->file->readBlock((char *) s->inbuf, Z_BUFSIZE);
+	s->stream.avail_in = (uInt) s->file->readBlock((char *) s->inbuf, Z_BUFSIZE);
 	if (s->stream.avail_in == 0) {
 	    s->z_eof = 1;
 	    return EOF;
@@ -283,7 +283,7 @@ static int gz_read (gzFile file, void *buf, unsigned len)
 		s->stream.avail_in  -= n;
 	    }
 	    if (s->stream.avail_out > 0) {
-		s->stream.avail_out -= s->file->readBlock((char *) next_out, s->stream.avail_out);
+		s->stream.avail_out -= (uInt) s->file->readBlock((char *) next_out, s->stream.avail_out);
 	    }
 	    len -= s->stream.avail_out;
 	    s->stream.total_in  += (uLong)len;
@@ -294,7 +294,7 @@ static int gz_read (gzFile file, void *buf, unsigned len)
         if (s->stream.avail_in == 0 && !s->z_eof) {
 
             errno = 0;
-            s->stream.avail_in = s->file->readBlock((char *) s->inbuf, Z_BUFSIZE);
+            s->stream.avail_in = (uInt) s->file->readBlock((char *) s->inbuf, Z_BUFSIZE);
             if (s->stream.avail_in == 0) {
                 s->z_eof = 1;
             }
@@ -501,7 +501,7 @@ bool QGZipDevice::open(FXuint mode)
 					FXuchar *data=p->uncomp.buffer().data();
 					FXuval datasize=p->uncomp.buffer().size();
 					bool midNL;
-					p->uncomp.buffer().resize(removeCRLF(midNL, data, data, datasize));
+					p->uncomp.buffer().resize((FXuint) removeCRLF(midNL, data, data, datasize));
 				}
 			}
 		}
@@ -546,10 +546,10 @@ void QGZipDevice::flush()
 				in=sizeof(buffer);
 				bool midNL;
 				out=applyCRLF(midNL, buffer, data+idx, sizeof(buffer), in);
-				ZLib::gz_write(p->outh, buffer, out);
+				ZLib::gz_write(p->outh, buffer, (FXuint) out);
 			}
 		}
-		else ZLib::gz_write(p->outh, data, datalen);
+		else ZLib::gz_write(p->outh, data, (FXuint) datalen);
 		ZLib::gz_close(p->outh);
 		p->outh=0;
 		p->src->truncate(p->src->at());

@@ -54,7 +54,7 @@ public:
 		{
 			FXuval read=rdev->readBlock(buffer, sizeof(buffer));
 			crc=fxadler32(crc, (FXuchar *) buffer, read);
-			byteCount-=read;
+			byteCount-=(int) read;
 		}
 	}
 	virtual void *cleanup()
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		{	// Basic i/o test
 			fxmessage("\nGeneral purpose i/o test:\n"
 						"-=-=-=-=-=-=-=-=-=-=-=-=-\n");
-			FXFile fh("../ReadMe.txt");
+			FXFile fh("../../ReadMe.txt");
 			QBuffer bufferh;
 			fh.open(IO_ReadOnly);
 			bufferh.open(IO_ReadWrite);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 			int count=0;
 			while(!fh.atEnd())
 			{	// Obviously there are much more efficient ways than this
-				int read=fh.readBlock(buffer, 5);
+				int read=(int) fh.readBlock(buffer, 5);
 				sbufferh << buffer[0]; count++;
 				fh.at(fh.at()-read+1);
 			}
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
 			fxmessage("\nGZip device test:\n"
 					  "-=-=-=-=-=-=-=-=-=-\n");
-			FXFile zipped("IOTestOutput.gz");
+			FXFile zipped("../IOTestOutput.gz");
 			QGZipDevice gzipdev(&zipped);
 			gzipdev.open(IO_WriteOnly);
 			bufferh.at(0);
@@ -146,10 +146,10 @@ int main(int argc, char *argv[])
 					    "-=-=-=-=-=-=-=-=-\n");
 			QPtrList<DevInfo> devs(true);
 			if(1) {
-				devs.append(new DevInfo("FXFile", new FXFile("BigFile3.txt")));
+				devs.append(new DevInfo("FXFile", new FXFile("../BigFile3.txt")));
 			}
 			if(1) {
-				QMemMap *dev=new QMemMap("BigFile2.txt");
+				QMemMap *dev=new QMemMap("../BigFile2.txt");
 				dev->open(IO_WriteOnly);
 				dev->truncate(testsize);
 				dev->mapIn();
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 		{
 			fxmessage("\nStippled i/o test:\n"
 						"-=-=-=-=-=-=-=-=-=\n");
-			QMemMap src("../ReadMe.txt"), dest("BigFile.txt");
+			QMemMap src("../../ReadMe.txt"), dest("../BigFile.txt");
 			src.open(IO_ReadOnly);
 			dest.open(IO_WriteOnly);
 			dest.truncate(src.size());
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 		{	// Test of 64 bit file handling
 			fxmessage("\n64 bit file handling test:\n"
 						"-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
-			FXFile largefile("BigFile.txt");
+			FXFile largefile("../BigFile.txt");
 			FXStream slargefile(&largefile);
 			largefile.open(IO_ReadWrite);
 			largefile.at(((FXuint)-11));

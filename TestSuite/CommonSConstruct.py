@@ -25,7 +25,7 @@ if "windows" in dir:
     dir="/home/ned/"+dir[dir.find("Tn"):]
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
-targetname=dir+"/../lib/"+name
+targetname=dir+"/../lib/"+architectureSpec()+"/"+name
 
 env['CPPDEFINES']+=[ "FOXDLL" ]
 env['CPPPATH']+=[ ".",
@@ -33,7 +33,7 @@ env['CPPPATH']+=[ ".",
                  "../../../boost",
                  "../../Python"
                  ]
-env['LIBPATH']+=[dir+"/../lib"]
+env['LIBPATH']+=[dir+"/../lib/"+architectureSpec()]
 if PYTHON_INCLUDE:
     env['CPPPATH'].append(PYTHON_INCLUDE)
 else:
@@ -47,7 +47,7 @@ else:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
 if not onWindows: # Can't put in g++.py as dir isn't defined there
-    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
+    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
 try:
     if wantPython:
         if PYTHON_LIB:
@@ -58,7 +58,7 @@ try:
             env['LIBS']+=[ "TnFOX" ]
         else:
             env['LIBS']+=[ "util" ]
-            env['LINKFLAGS']+=[ os.path.abspath(dir+"/../lib/TnFOX.so") ]
+            env['LINKFLAGS']+=[ os.path.abspath(dir+"/../lib/"+architectureSpec()+"/TnFOX.so") ]
 except: pass
 assert os.path.exists("../../include/fxdefs.h")
 

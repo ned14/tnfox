@@ -382,8 +382,10 @@ void FXFSMon::Watcher::Path::callHandlers()
 		changes.append(ch);
 	}
 	// Try to detect renames
-	for(QValueList<Change>::iterator it1=changes.begin(); it1!=changes.end(); ++it1)
+	bool noIncIter1;
+	for(QValueList<Change>::iterator it1=changes.begin(); it1!=changes.end(); !noIncIter1 ? (++it1, 0) : 0)
 	{
+		noIncIter1=false;
 		Change &ch1=*it1;
 		if(ch1.oldfi && ch1.newfi) continue;
 		if(ch1.change.renamed) continue;
@@ -420,7 +422,8 @@ void FXFSMon::Watcher::Path::callHandlers()
 			}
 			solution->oldfi=candidate->oldfi;
 			solution->change.renamed=true;
-			if(candidate==&(*it1)) --it1;
+			if((noIncIter1=(candidate==&(*it1))))
+				++it1;
 			changes.remove(Change(*candidate));
 		}
 	}

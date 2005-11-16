@@ -525,7 +525,7 @@ void *calloc(size_t no, size_t _size, FXMemoryPool *heap) throw()
 	_ret[0]=*(FXuval *) "FXMPFXMP";
 	_ret[1]=(FXuval) mp;
 	_ret[2]=(FXuval) size;
-	if(mp) mp->allocated+=size;
+	if(mp) mp->allocated+=(int) size;
 #endif
 	//fxmessage("=%p\n", ret);
 	return ret;
@@ -610,7 +610,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	//_ret[0]=*(FXuval *) "FXMPFXMP";
 	_ret[1]=(FXuval) mp;
 	_ret[2]=(FXuval) size;
-	if(realmp) realmp->allocated-=oldsize;
+	if(realmp) realmp->allocated-=(int) oldsize;
 	if(mp) mp->allocated+=(int) size;
 #endif
 	//fxmessage("=%p\n", ret);
@@ -681,7 +681,7 @@ void free(void *p, FXMemoryPool *) throw()
 	}
 	else p=(void *) _p;
 	realmp=(FXMemoryPoolPrivate *) _p[1];
-	if(realmp) realmp->allocated-=_p[2];
+	if(realmp) realmp->allocated-=(int) _p[2];
 	::free(p);
 	if(realmp && realmp->deleted && realmp->allocated==0)
 	{

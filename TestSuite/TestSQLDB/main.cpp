@@ -348,7 +348,7 @@ int main( int argc, char** argv)
 
 		FXMEMDBG_TESTHEAP;
 		fxmessage("\nInserting ReadMe.txt ...\n");
-		FXFile fh("../ReadMe.txt");
+		FXFile fh("../../ReadMe.txt");
 		fh.open(IO_ReadOnly);
 		begin=FXProcess::getNsCount();
 		FXSQLDBStatementRef stmt=mydb->prepare("INSERT INTO 'test' ('value', 'text') VALUES(?2, ?1);");

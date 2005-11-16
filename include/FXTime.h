@@ -72,12 +72,12 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 	//! Returns the value as a \c time_t
 	time_t as_time_t() const throw()
 	{
-		return (time_t)((value-mics1stJan1970)/micsPerSecond);
+		return (time_t)(value ? (value-mics1stJan1970)/micsPerSecond : 0);
 	}
 	//! Sets the value from a \c time_t
 	FXTime &set_time_t(time_t v) throw()
 	{
-		value=mics1stJan1970+v*micsPerSecond;
+		value=v ? mics1stJan1970+v*micsPerSecond : 0;
 		return *this;
 	}
 	//! Returns the value as a \c struct \c tm

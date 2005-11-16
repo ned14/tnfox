@@ -105,7 +105,7 @@ static void initHourglass(FXApp *app)
 {
 	if(templates.isEmpty())
 	{
-		FXString icpath="../TestSuite/Tn";
+		FXString icpath="../../TestSuite/Tn";
 		for(FXuint n=0; n<FRAMES; n++)
 		{
 			FXString ipath=icpath+"/icons/Hourglass%1.png";

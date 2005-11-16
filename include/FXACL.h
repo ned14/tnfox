@@ -30,6 +30,9 @@ namespace FX {
 \brief Defines classes used in providing Access Control Lists
 */
 
+class FXACLIterator;
+struct FXACLPrivate;
+
 /*! \class FXACLEntity
 \ingroup security
 \brief Something which can be permitted or denied to do something within
@@ -111,9 +114,6 @@ public:
 	/*! Returns a list of entities available on the local machine */
 	//static QValueList<FXACLEntity> localEntities();
 };
-
-class FXACLIterator;
-class FXACLPrivate;
 
 /*! \class FXACL
 \ingroup security

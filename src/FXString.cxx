@@ -238,7 +238,7 @@ FXString FXString::section(const FXString& delim,FXint start,FXint num) const {
 FXString& FXString::operator=(const FXString& s){
   if(str!=s.str){
     register FXint len=s.length();
-    FXDELETE(inserts);
+	delete[] inserts; inserts=0;
     if(0<len){
       length(len);
       memmove(str,s.str,len);
@@ -254,7 +254,7 @@ FXString& FXString::operator=(const FXString& s){
 // Assign a string
 FXString& FXString::operator=(const FXchar* s){
   if(str!=s){
-    FXDELETE(inserts);
+    delete[] inserts; inserts=0;
     if(s && s[0]){
       register FXint len=strlen(s);
       length(len);
@@ -307,7 +307,7 @@ FXString operator+(FXchar c,const FXString& s){
 // Fill with a constant
 FXString& FXString::fill(FXchar c,FXint n){
   length(n);
-  FXDELETE(inserts);
+  delete[] inserts; inserts=0;
   memset(str,c,n);
   return *this;
   }
@@ -323,7 +323,7 @@ FXString& FXString::fill(FXchar c) throw() {
 // Assign input character to this string
 FXString& FXString::assign(FXchar c){
   length(1);
-  FXDELETE(inserts);
+  delete[] inserts; inserts=0;
   str[0]=c;
   return *this;
   }
@@ -332,7 +332,7 @@ FXString& FXString::assign(FXchar c){
 // Assign input n characters c to this string
 FXString& FXString::assign(FXchar c,FXint n){
   length(n);
-  FXDELETE(inserts);
+  delete[] inserts; inserts=0;
   memset(str,c,n);
   return *this;
   }
@@ -347,7 +347,7 @@ FXString& FXString::assign(const FXchar* s,FXint n){
   else{
     length(0);
     }
-  FXDELETE(inserts);
+  delete[] inserts; inserts=0;
   return *this;
   }
 
@@ -369,7 +369,7 @@ FXString& FXString::assign(const FXchar* s){
   else{
     length(0);
     }
-  FXDELETE(inserts);
+  delete[] inserts; inserts=0;
   return *this;
   }
 
@@ -830,7 +830,7 @@ FXString& FXString::simplify(){
       str[d++]=' ';
       }
     length(d);
-	FXDELETE(inserts);
+	delete[] inserts; inserts=0;
     }
   return *this;
   }
@@ -845,7 +845,7 @@ FXString& FXString::trim(){
     while(s<e && isspace((FXuchar)str[s])) s++;
     memmove(str,&str[s],e-s);
     length(e-s);
-	FXDELETE(inserts);
+	delete[] inserts; inserts=0;
     }
   return *this;
   }
@@ -871,7 +871,7 @@ FXString& FXString::trimEnd(){
     register FXint e=length();
     while(0<e && isspace((FXuchar)str[e-1])) e--;
     length(e);
-	FXDELETE(inserts);
+	delete[] inserts; inserts=0;
     }
   return *this;
   }
@@ -1856,7 +1856,7 @@ inline void FXString::shiftInserts(FXint pos, FXint diff)
 	// If ppos!=-1, we have a new insert
 	if(-1!=ppos)
 	{
-		FXDELETE(inserts);
+		delete[] inserts; inserts=0;
 	}
 }
 inline void FXString::doneInsert()
@@ -1909,7 +1909,7 @@ void FXString::calcInserts()
 			FXERRHM(inserts2=new FXint[insertscnt+aboveEnd*2]);
 			memcpy(inserts2, inserts, sizeof(FXint)*insertscnt);
 			memset(inserts2+insertscnt, 0, sizeof(FXint)*aboveEnd*2);
-			FXDELETE(inserts);
+			delete[] inserts;
 			inserts=inserts2;
 			insertscnt+=aboveEnd*2;
 			assert(v-(insertscnt-3)/2<0);
@@ -2121,7 +2121,7 @@ const FXString &FXString::nullStr() throw()
 FXString &FXString::move(FXString &src)
 {
 	length(0);
-	FXDELETE(inserts);
+	delete[] inserts; inserts=0;
 	str=src.str;
 	src.str=0;
 	return *this;
@@ -2131,7 +2131,7 @@ FXString &FXString::move(FXString &src)
 // Delete
 FXString::~FXString(){
   length(0);
-  FXDELETE(inserts);
+  delete[] inserts; inserts=0;
   }
 
 }

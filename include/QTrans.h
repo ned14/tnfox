@@ -243,6 +243,8 @@ public:
 		ProvidedInfo() { }
 		ProvidedInfo(const FXString &_module, const FXString &_language, const FXString &_country)
 			: module(_module), language(_language), country(_country) { }
+		bool operator<(const ProvidedInfo &o) const { return module<o.module || (module==o.module && (language<o.language || (language==o.language && country<o.country))); }
+		bool operator>(const ProvidedInfo &o) const { return module>o.module || (module==o.module && (language>o.language || (language==o.language && country>o.country))); }
 	};
 	//! Defines a list of QTrans::ProvidedInfo
 	typedef QValueList<ProvidedInfo> ProvidedInfoList;

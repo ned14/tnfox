@@ -471,8 +471,8 @@ static void *mmap (void *ptr, INTERNAL_INTPTR_T size, INTERNAL_INTPTR_T prot, IN
 		if(ptr)
 		{	/* prot==PROT_NONE also appears to be a euphemism for free */
 			MEMORY_BASIC_INFORMATION mbi;
-			DWORD read=0;
-			for(char *p=((char *)ptr)+read; read<(DWORD) size && VirtualQuery(p, &mbi, sizeof(mbi)); read+=mbi.RegionSize)
+			INTERNAL_INTPTR_T read=0;
+			for(char *p=((char *)ptr)+read; read<size && VirtualQuery(p, &mbi, sizeof(mbi)); read+=mbi.RegionSize)
 			{
 				if(mbi.State & MEM_COMMIT)
 				{
@@ -574,8 +574,8 @@ static int mprotect(const void *addr, INTERNAL_INTPTR_T len, int prot)
 	if(prot)
 	{	/* Do we need to commit any? */
 		MEMORY_BASIC_INFORMATION mbi;
-		DWORD read=0;
-		for(; read<(DWORD) len && VirtualQuery(((char *)(addr))+read, &mbi, sizeof(mbi)); read+=mbi.RegionSize)
+		INTERNAL_INTPTR_T read=0;
+		for(; read<len && VirtualQuery(((char *)(addr))+read, &mbi, sizeof(mbi)); read+=mbi.RegionSize)
 		{
 			if(!(mbi.State & MEM_COMMIT))
 			{	/* Might as well do the lot */
@@ -591,8 +591,8 @@ static int mprotect(const void *addr, INTERNAL_INTPTR_T len, int prot)
 	else
 	{	/* prot==PROT_NONE also appears to be a euphemism for free */
 		MEMORY_BASIC_INFORMATION mbi;
-		DWORD read=0;
-		for(char *p=((char *)addr)+read; read<(DWORD) len && VirtualQuery(p, &mbi, sizeof(mbi)); read+=mbi.RegionSize)
+		INTERNAL_INTPTR_T read=0;
+		for(char *p=((char *)addr)+read; read<len && VirtualQuery(p, &mbi, sizeof(mbi)); read+=mbi.RegionSize)
 		{
 			if(mbi.State & MEM_COMMIT)
 			{

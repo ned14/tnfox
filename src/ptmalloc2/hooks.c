@@ -192,18 +192,18 @@ mem2chunk_check(mem) Void_t* mem;
     }
     ((unsigned char*)p)[sz] ^= 0xFF;
   } else {
-    unsigned long offset, page_mask = malloc_getpagesize-1;
+    size_t offset, page_mask = malloc_getpagesize-1;
 
     /* mmap()ed chunks have MALLOC_ALIGNMENT or higher power-of-two
        alignment relative to the beginning of a page.  Check this
        first. */
-    offset = (unsigned long)mem & page_mask;
+    offset = (size_t)mem & page_mask;
     if((offset!=MALLOC_ALIGNMENT && offset!=0 && offset!=0x10 &&
         offset!=0x20 && offset!=0x40 && offset!=0x80 && offset!=0x100 &&
         offset!=0x200 && offset!=0x400 && offset!=0x800 && offset!=0x1000 &&
         offset<0x2000) ||
        !chunk_is_mmapped(p) || (p->size & PREV_INUSE) ||
-       ( (((unsigned long)p - p->prev_size) & page_mask) != 0 ) ||
+       ( (((size_t)p - p->prev_size) & page_mask) != 0 ) ||
        ( (sz = chunksize(p)), ((p->prev_size + sz) & page_mask) != 0 ) )
       return NULL;
     magic = MAGICBYTE(p);
@@ -229,7 +229,7 @@ top_check()
   mchunkptr t = top(&main_arena);
   char* brk, * new_brk;
   INTERNAL_SIZE_T front_misalign, sbrk_size;
-  unsigned long pagesz = malloc_getpagesize;
+  size_t pagesz = malloc_getpagesize;
 
   if((char*)t + chunksize(t) == mp_.sbrk_base + main_arena.system_mem ||
      t == initial_top(&main_arena)) return 0;
@@ -252,11 +252,11 @@ top_check()
 
   /* Try to set up a new top chunk. */
   brk = (char *) MORECORE(0);
-  front_misalign = (unsigned long)chunk2mem(brk) & MALLOC_ALIGN_MASK;
+  front_misalign = (size_t)chunk2mem(brk) & MALLOC_ALIGN_MASK;
   if (front_misalign > 0)
     front_misalign = MALLOC_ALIGNMENT - front_misalign;
   sbrk_size = front_misalign + mp_.top_pad + MINSIZE;
-  sbrk_size += pagesz - ((unsigned long)(brk + sbrk_size) & (pagesz - 1));
+  sbrk_size += pagesz - ((size_t)(brk + sbrk_size) & (pagesz - 1));
   new_brk = (char*)(MORECORE (sbrk_size));
   if (new_brk == (char*)(MORECORE_FAILURE)) return -1;
   /* Call the `morecore' hook if necessary.  */
@@ -530,17 +530,17 @@ struct malloc_save_state {
   mbinptr       av[NBINS * 2 + 2];
   char*         sbrk_base;
   int           sbrked_mem_bytes;
-  unsigned long trim_threshold;
-  unsigned long top_pad;
+  size_t trim_threshold;
+  size_t top_pad;
   unsigned int  n_mmaps_max;
-  unsigned long mmap_threshold;
+  size_t mmap_threshold;
   int           check_action;
-  unsigned long max_sbrked_mem;
-  unsigned long max_total_mem;
+  size_t max_sbrked_mem;
+  size_t max_total_mem;
   unsigned int  n_mmaps;
   unsigned int  max_n_mmaps;
-  unsigned long mmapped_mem;
-  unsigned long max_mmapped_mem;
+  size_t mmapped_mem;
+  size_t max_mmapped_mem;
   int           using_malloc_checking;
 };
 

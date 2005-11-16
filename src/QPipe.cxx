@@ -277,7 +277,7 @@ bool QPipe::open(FXuint mode)
 		if(mode & IO_ReadOnly)
 		{	// Monitor inbound (start a read reading no data) so event object is correct
 			DWORD ret=ReadFile(p->readh, 0, 0, 0, &p->ol);
-			assert(ret==0 && GetLastError()==ERROR_IO_PENDING);
+			assert(ret || GetLastError()==ERROR_IO_PENDING);
 			p->inprogress=3;
 		}
 #endif

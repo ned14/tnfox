@@ -410,7 +410,7 @@ const FXString &FXException::report() const
 					if(!stack[i].pc) break;
 					{
 						FXString line(templ);
-						line.arg((FXulong) stack[i].pc, -8, 16).arg(FXString(stack[i].module), -21).arg(FXString(stack[i].functname));
+						line.arg((FXulong) stack[i].pc, -(int)(2*sizeof(void *)), 16).arg(FXString(stack[i].module), -21).arg(FXString(stack[i].functname));
 						line.arg(stack[i].file, -25).arg(stack[i].lineno);
 						reporttxt->append(line);
 					}

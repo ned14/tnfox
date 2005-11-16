@@ -1044,13 +1044,6 @@ void QTrans::overrideCountry(const FXString &iso3166)
 	else me->p->overrides.country.upper();
 }
 
-static bool operator<(const QTrans::ProvidedInfo &a, const QTrans::ProvidedInfo &b)
-{
-	if(a.module<b.module) return true;
-	else if(a.language<b.language) return true;
-	else if(a.country<b.country) return true;
-	return false;
-}
 static void addProvidedInfo(QValueList<QTrans::ProvidedInfo> &ret, QTrans::ProvidedInfo &newpi)
 {
 	QValueList<QTrans::ProvidedInfo>::const_iterator it=ret.begin();
