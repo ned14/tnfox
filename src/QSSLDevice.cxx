@@ -220,13 +220,14 @@ public:
 		if(mode & CRYPTO_LOCK) m->lock(); else m->unlock();
 	}
 #endif
-	QSSLDevice_Init() : QMutex()
+	QSSLDevice_Init()
+#ifndef HAVE_OPENSSL
 	{
-#ifdef HAVE_OPENSSL
-		ctx=0;
+#else
+		: ctx(0), locks(CRYPTO_num_locks())
+	{
 		SSL_load_error_strings();
 		FXERRHSSL(SSL_library_init());
-		locks.resize(CRYPTO_num_locks());
 		for(FXuint n=0; n<locks.size(); n++)
 		{
 			FXERRHM(locks[n]=new QMutex);
@@ -252,7 +253,7 @@ public:
 			{
 				FXuchar buffer[SEED_SIZE];
 				FXuval size=Secure::Randomness::readBlock(buffer, FXMIN(SEED_SIZE, Secure::Randomness::size()));
-				RAND_seed(buffer, size);
+				RAND_seed(buffer, (FXuint) size);
 			}
 			FXERRHSSL(ctx=SSL_CTX_new(SSLv23_method()));
 			FXERRHSSL(SSL_CTX_set_options(ctx, SSL_OP_SINGLE_DH_USE));
@@ -749,7 +750,7 @@ void FXSSLPKey::generate()
 		FXuchar buffer[SEED_SIZE];
 		FXuval keysize=(7+p->bitsize)/8;
 		FXuval size=Secure::Randomness::readBlock(buffer, FXMIN(keysize, Secure::Randomness::size()));
-		RAND_seed(buffer, size);
+		RAND_seed(buffer, (FXuint) size);
 	}
 	switch(p->type)
 	{
@@ -1176,7 +1177,7 @@ void FXSSLKey::generate()
 	{
 		FXuchar buffer[SEED_SIZE];
 		FXuval randsize=Secure::Randomness::readBlock(buffer, FXMIN(p->size, Secure::Randomness::size()));
-		RAND_seed(buffer, randsize);
+		RAND_seed(buffer, (FXuint) randsize);
 	}
 	if(None!=p->type)
 	{
@@ -1316,7 +1317,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 		{
 			FXuchar buffer[SEED_SIZE];
 			FXuval size=Secure::Randomness::readBlock(buffer, FXMIN(SEED_SIZE, Secure::Randomness::size()));
-			RAND_seed(buffer, size);
+			RAND_seed(buffer, (FXuint) size);
 		}
 		FXERRHSSL(handle=SSL_new(myinit->ctx));
 		if(enabled.v2 && enabled.v3)
@@ -1421,7 +1422,7 @@ inline void QSSLDevice::int_genEBuffer() const
 		for(FXuval n=0; n<p->noncelen/sizeof(FXfval); n++)
 			((FXfval *) buffer)[n]=((FXfval *) p->nonce)[n] ^ (cblock+n*sizeof(FXfval));
 		int outlen=0, ret;
-		ret=EVP_EncryptUpdate(&p->estream, p->ebuffer, &outlen, buffer, p->noncelen);
+		ret=EVP_EncryptUpdate(&p->estream, p->ebuffer, &outlen, buffer, (FXuint) p->noncelen);
 		memset(buffer, 0, p->noncelen);		// Ensure buffer is wiped on exit
 		FXERRHSSL(ret);
 		assert(outlen==p->noncelen);
@@ -1927,7 +1928,7 @@ bool QSSLDevice::open(FXuint mode)
 			else
 			{	// Generate and write the nonce
 				//if(EVP_enc_null()!=cipher)
-					FXERRHSSL(RAND_pseudo_bytes(p->nonce, p->noncelen));
+					FXERRHSSL(RAND_pseudo_bytes(p->nonce, (FXuint) p->noncelen));
 				s.writeRawBytes(p->nonce, p->noncelen);
 #ifdef DEBUG
 				fxmessage("QSSLDevice: Writing nonce=%s\n", fxdump8(p->nonce, p->noncelen).text());
@@ -2233,7 +2234,7 @@ namespace Secure
 	FXuval PRandomness::readBlock(FXuchar *buffer, FXuval length)
 	{
 #ifdef HAVE_OPENSSL
-		FXERRHSSL(RAND_bytes(buffer, length));
+		FXERRHSSL(RAND_bytes(buffer, (FXuint) length));
 		return length;
 #else
 		return 0;
@@ -2245,7 +2246,7 @@ namespace Secure
 		FXuchar buffer[SEED_SIZE];
 		if(amount>SEED_SIZE) amount=SEED_SIZE;
 		FXuval randsize=Secure::Randomness::readBlock(buffer, FXMIN(amount, Secure::Randomness::size()));
-		RAND_seed(buffer, randsize);
+		RAND_seed(buffer, (FXuint) randsize);
 #endif
 	}
 }

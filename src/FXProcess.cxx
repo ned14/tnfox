@@ -1184,10 +1184,10 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	FXString path_=path;
 	FXUnicodify<> path__(path_);
 	// Need GetModuleHandleEx (>win2k only) to avoid race condition
-	static BOOL (*pGetModuleHandleEx)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
+	static BOOL (WINAPI *pGetModuleHandleEx)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule);
 	if(!pGetModuleHandleEx)
 	{
-		pGetModuleHandleEx=(BOOL (*)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule))
+		pGetModuleHandleEx=(BOOL (WINAPI *)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule))
 			GetProcAddress(GetModuleHandle("kernel32"),
 #ifdef UNICODE
 			"GetModuleHandleExW");
@@ -1239,6 +1239,7 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
 	}
+	path_=FXFile::absolute(path_);
 	QValueList<MappedFileInfo> list=mappedFiles();
 	for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
 	{
@@ -2019,9 +2020,9 @@ void *FXProcess::int_lockMem(void *addr, FXuval len)
 	QMtxHold h(p);
 	for(QValueList<LockedMem::MemLockEntry>::iterator it=p->lockedRegions.begin(); ; ++it)
 	{
-		LockedMem::MemLockEntry &mle=*it;
 		bool done=(p->lockedRegions.end()==it);
-		if(mle.addr>addr || done)
+		const LockedMem::MemLockEntry &mle=!done ? *it : LockedMem::MemLockEntry(0, 0, 0, 0);
+		if(done || it->addr>addr)
 		{	// Found where to insert
 			FXuval start=(FXuval) addr, end=((FXuval) addr)+len;
 			start&=~p->pageSizeM1;
@@ -2069,7 +2070,7 @@ void FXProcess::int_unlockMem(void *handle)
 		{
 			QValueList<LockedMem::MemLockEntry>::iterator hit=it;
 			bool atEnd=(++it==p->lockedRegions.end());
-			LockedMem::MemLockEntry &mlea=*it;
+			const LockedMem::MemLockEntry &mlea=!atEnd ? *it : LockedMem::MemLockEntry(0, 0, 0, 0);
 			void *start=mle.startp;
 			if(!atEnd) for(; start<=prevend; start=FXOFFSETPTR(start, p->pageSizeM1+1));
 			void *end=mle.endp;
