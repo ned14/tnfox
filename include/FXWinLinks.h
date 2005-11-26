@@ -175,6 +175,7 @@ struct FXAPI FXWinShellLink
 	  +8: int created		d:\windows=0x63893326, c:\windows=0x052D3321, c:\downloads=0x48853328
 	  +12: GetFileAttributes() for entry
 	  +14: Null terminated ASCII short filename version (padded to two byte multiple)
+	 On WinXP only:
 	  +n: length of this item
 	  +n+2: short 0x3
 	  +n+4: short 0x4

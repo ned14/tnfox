@@ -35,6 +35,8 @@
 static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
+#define PRINT_DEBUG
+
 namespace FX {
 
 FXStream &operator<<(FXStream &s, const FXWinShellLink::Header &i)
@@ -101,6 +103,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 		s << (FXushort)(fi.isDir() ? 0x10 : 0x20);
 		{	// Generate short name
 			FXString shortname(i.path1+(p1+1-i.path2), (FXint)(p2-p1-1));
+#if 0
 			if(fi.isDir())
 			{
 				if(shortname.length()>12)
@@ -114,12 +117,14 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 				if(shortname.length()>12)
 					shortname.truncate(12);
 			}
+#endif
 			int cnt=0;
 			s.writeRawBytes(shortname.text(), shortname.length()+1);
 			if((shortname.length()+1)&1)
 				s << (FXuchar) 0;	// pas
 		}
 		FXfval itempos2=s.device()->at();
+#if 0	// WinXP only
 		s << (FXushort) 0;	// length
 		s << (FXushort) 0x3 << (FXushort) 0x4 << (FXushort) 0xbeef;
 		s << (FXuint) 0xffffffff;	// modified
@@ -128,6 +133,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 		s.save(p1+1, (FXint)(p2-p1-1));
 		s << (FXushort) 0;	// terminator
 		s << (FXushort) 0;	// unknown
+#endif
 
 		FXushort length1=(FXushort)(s.device()->at()-itempos), length2=(FXushort)(s.device()->at()-itempos2);
 		s.device()->at(itempos2);
@@ -155,13 +161,16 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::ItemIdListTag &i)
 		FXushort taglen;
 		s >> taglen;
 		if(!taglen) break;
+#ifdef PRINT_DEBUG
+		fxmessage("ItemIdListTag no %d offset 0x%lx, len %u\n", n, (long) tagpos, taglen);
+#endif
 		if(!n)
 		{	// Is "My Computer" guid
 		}
 		else if(1==n)
 		{	// Is drive specifier
 			s >> *i.path1;
-			assert(0x2f==*i.path1);
+			assert(0x23==(*i.path1 & 0x23));
 			s.readRawBytes(i.path1, 22);
 			*strchr(i.path1, '\\')=0;
 			for(int q=0; q<22; q++)
@@ -177,40 +186,44 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::ItemIdListTag &i)
 			s >> created;
 			s >> type2;
 			assert(0x10==type2 || 0x20==type2);
-			FXuchar c, sncnt=0;
-			while((s >> c, sncnt++, c));
-			if(sncnt&1) s >> c; // Round up to nearest two multiple
-			FXushort unicodelen;
-			FXushort unicodeheader1, unicodeheader2, unicodeheader3;
-			s >> unicodelen >> unicodeheader1 >> unicodeheader2 >> unicodeheader3;
-			assert(0x3==unicodeheader1);
-			assert(0x4==unicodeheader2);
-			assert(0xbeef==unicodeheader3);
-			s >> modified >> accessed;
-			FXuint unicodeheader4; s >> unicodeheader4;
-			assert(0x14==unicodeheader4);
 			char *p1=strchr(i.path1, 0);
-			FXushort *p2=i.path2+(int)(p1-i.path1);
-			*p1++='\\'; *p2++='\\';
-			while((s >> *p2, *p2))
+			*p1++='\\';
+			FXuint sncnt=0;
+			while((s >> *p1, sncnt++, *p1++));
+			if(sncnt&1) s >> *p1; // Round up to nearest two multiple
+			if(s.device()->at()-tagpos>taglen)
+			{	// This is only on WinXP
+				FXushort unicodelen;
+				FXushort unicodeheader1, unicodeheader2, unicodeheader3;
+				s >> unicodelen >> unicodeheader1 >> unicodeheader2 >> unicodeheader3;
+				assert(0x3==unicodeheader1);
+				assert(0x4==unicodeheader2);
+				assert(0xbeef==unicodeheader3);
+				s >> modified >> accessed;
+				FXuint unicodeheader4; s >> unicodeheader4;
+				assert(0x14==unicodeheader4);
+				FXushort *p2=i.path2+sncnt;
+				*p2++='\\';
+				while((s >> *p2, *p2))
 #ifdef UNICODE
 #error Fixme
 #endif
-				*p1++=(char) *p2++;
-			*p1=0; *p2=0;
-			FXushort unknown4; s >> unknown4;
-			/*WIN32_FILE_ATTRIBUTE_DATA fad={0};
-			GetFileAttributesEx(i.path1, GetFileExInfoStandard, &fad);
-			fxmessage("%s\n", FXString("Path '%1'\nhas unknowns 0x%2, 0x%3, 0x%4, 0x%5\n0x%6, 0x%7, 0x%8").arg(FXString(i.path1))
-				.arg(unknown1, 0, 16).arg(unknown2, 0, 16).arg(unknown3, 0, 16).arg(unknown4, 0, 16)
-				.arg(*(FXulong *)&fad.ftCreationTime).arg(*(FXulong *)&fad.ftLastWriteTime).arg(*(FXulong *)&fad.ftLastAccessTime).text());
-			fxmessage("%lf, %lf, %lf\n", (double) fad.ftCreationTime.dwHighDateTime/unknown1, (double) fad.ftLastWriteTime.dwHighDateTime/unknown2, (double) fad.ftLastAccessTime.dwHighDateTime/unknown3);*/
+					*p1++=(char) *p2++;
+				*p1=0; *p2=0;
+				FXushort unknown4; s >> unknown4;
+				/*WIN32_FILE_ATTRIBUTE_DATA fad={0};
+				GetFileAttributesEx(i.path1, GetFileExInfoStandard, &fad);
+				fxmessage("%s\n", FXString("Path '%1'\nhas unknowns 0x%2, 0x%3, 0x%4, 0x%5\n0x%6, 0x%7, 0x%8").arg(FXString(i.path1))
+					.arg(unknown1, 0, 16).arg(unknown2, 0, 16).arg(unknown3, 0, 16).arg(unknown4, 0, 16)
+					.arg(*(FXulong *)&fad.ftCreationTime).arg(*(FXulong *)&fad.ftLastWriteTime).arg(*(FXulong *)&fad.ftLastAccessTime).text());
+				fxmessage("%lf, %lf, %lf\n", (double) fad.ftCreationTime.dwHighDateTime/unknown1, (double) fad.ftLastWriteTime.dwHighDateTime/unknown2, (double) fad.ftLastAccessTime.dwHighDateTime/unknown3);*/
+			}
 		}
 		s.device()->at(tagpos+taglen);
 		n++;
 	}
-#ifdef DEBUG
-	//fxmessage("ItemIdListTag was %u long, seeking to %u\n", (FXuint) i.length, (FXuint)(mypos+i.length));
+#ifdef PRINT_DEBUG
+	fxmessage("ItemIdListTag was %u long, seeking to %u\n", (FXuint) i.length, (FXuint)(mypos+i.length));
 #endif
 	s.device()->at(mypos+i.length);
 	return s;
@@ -316,8 +329,8 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::FileLocationTag &i)
 		*/
 		FXuint lvOffset, bpOffset, nvOffset, rpOffset;
 		s >> lvOffset >> bpOffset >> nvOffset >> rpOffset;
-#ifdef DEBUG
-		//fxmessage("mypos=%u, lvOffset=%u, bpOffset=%u, nvOffset=%u, rpOffset=%u\n", (FXuint) mypos, lvOffset, bpOffset, nvOffset, rpOffset);
+#ifdef PRINT_DEBUG
+		fxmessage("mypos=%u, lvOffset=%u, bpOffset=%u, nvOffset=%u, rpOffset=%u\n", (FXuint) mypos, lvOffset, bpOffset, nvOffset, rpOffset);
 #endif
 		if(i.flags.onLocalVolume)
 		{
@@ -352,8 +365,8 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::StringTag &i)
 FXStream &operator>>(FXStream &s, FXWinShellLink::StringTag &i)
 {
 	s >> i.length;
-#ifdef DEBUG
-	//fxmessage("StringTag: mypos=%u, length=%u\n", (FXuint)(s.device()->at()-2), (FXuint) i.length);
+#ifdef PRINT_DEBUG
+	fxmessage("StringTag: mypos=%u, length=%u\n", (FXuint)(s.device()->at()-2), (FXuint) i.length);
 #endif
 	s.load(i.string, i.length);
 	i.string[i.length]=0;
@@ -502,7 +515,9 @@ FXString FXWinShellLink::read(const FXString &path, bool doDriveConversion)
 		if(sl.fileLocation.remainingPath[0])
 			ret+="\\"+FXString(sl.fileLocation.remainingPath);
 	}
-	//fxmessage("Shell link '%s' points to '%s'\n\n", path.text(), ret.text());
+#ifdef PRINT_DEBUG
+	fxmessage("Shell link '%s' points to '%s'\n\n", path.text(), ret.text());
+#endif
 #ifdef USE_POSIX
 	if(doDriveConversion)
 	{

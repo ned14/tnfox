@@ -143,10 +143,11 @@ public:
 	//! Joins two parts of a path separated by the system-specific path separator
 	static FXString join(const FXString &a, const FXString &b)
 	{
+		FXString ret(a);
 		if(PATHSEP!=a[a.length()-1] && PATHSEP!=b[0])
-			return a+PATHSEP+b;
+			return ret.append(PATHSEP).append(b);
 		else
-			return a+b;
+			return ret.append(b);
 	}
 	//! \overload
 	static FXString join(const FXString &a, const FXString &b, const FXString &c) { return join(join(a,b), c); }
