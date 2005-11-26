@@ -308,17 +308,17 @@ void FXIPCChannel::setMaxMsgSize(FXuint newsize)
 }
 FXuint FXIPCChannel::garbageMessageCount() const
 {
-	QMtxHold h(this);
+	//QMtxHold h(this);
 	return p->garbageMessageCount;
 }
 void FXIPCChannel::setGarbageMessageCount(FXuint newsize)
 {
-	QMtxHold h(this);
+	//QMtxHold h(this);
 	p->garbageMessageCount=newsize;
 }
 void FXIPCChannel::setPrintStatistics(bool v)
 {
-	QMtxHold h(this);
+	//QMtxHold h(this);
 	p->printstats=v;
 }
 void FXIPCChannel::requestClose()

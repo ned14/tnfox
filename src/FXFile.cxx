@@ -641,6 +641,7 @@ bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 			*compressedSize=st.st_size;
 		if(hardLinks)
 			*hardLinks=st.st_nlink;
+		return true;
 #else
 		// Need to open with special semantics if it's a directory
 		HANDLE h;
@@ -682,8 +683,10 @@ bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 		}
 		if(hardLinks)
 			*hardLinks=bhfi.nNumberOfLinks;
+		return true;
 #endif
 	}
+	return false;
 }
 
 void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed)

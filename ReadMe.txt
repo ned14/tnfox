@@ -56,6 +56,10 @@ as an argument to scons.
 If on Windows, you may prefer to work from within your IDE - simply generate
 a MSVC project using "scons msvcproj" and get to work.
 
+Note that if you have a DUAL-CORE or multiprocessor machine, you can get
+much faster build times if you specify -j X to scons where X is the number
+of processors you have plus one.
+
 WARNING: Some optional facilities provided by FXSSLDevice use patented
 and/or legally controlled algorithms. Depending on the country you are
 in and whether it enforces US software patents, you may have to pay

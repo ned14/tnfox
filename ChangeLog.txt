@@ -49,6 +49,9 @@ B QSSLDevice wasn't closing underlying device if open() failed
 B QPipe wasn't deleting named pipes on close
 B Fixed fatal error on process load when running under Terminal Services
 B Fixed compile error in Boost.Python patches with throw() declarations
+B QFileInfo wasn't detecting if a file got deleted during metadata read
+B FXFSMonitor wasn't detecting if files vanished between directory scan
+and metadata scan
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -170,6 +173,7 @@ link points to
 * Merged SQLite3 v3.2.7
 * Made changes to support MSVC8.0 RTM
 + Added FXApp::addDestructionUpcall() and FXApp::removeDestructionUpcall()
++ Added ability to use multiple processors when building
 
 
 
