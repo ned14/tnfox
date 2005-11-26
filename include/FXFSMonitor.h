@@ -110,6 +110,18 @@ public:
 			struct Change_ { FXulong eventNo; FXuint flags; } *me=(Change_ *) this;
 			return me->flags;
 		}
+		//! Sets the modified bit
+		Change &setModified(bool v=true) throw()	{ modified=v; return *this; }
+		//! Sets the created bit
+		Change &setCreated(bool v=true) throw()		{ created=v; return *this; }
+		//! Sets the deleted bit
+		Change &setDeleted(bool v=true) throw()		{ deleted=v; return *this; }
+		//! Sets the renamed bit
+		Change &setRenamed(bool v=true) throw()		{ renamed=v; return *this; }
+		//! Sets the attrib bit
+		Change &setAttrib(bool v=true) throw()		{ attrib=v; return *this; }
+		//! Sets the security bit
+		Change &setSecurity(bool v=true) throw()	{ security=v; return *this; }
 	};
 	typedef Generic::TL::create<void, Change, QFileInfo, QFileInfo>::value ChangeHandlerPars;
 	//! Defines the type of functor change handlers are

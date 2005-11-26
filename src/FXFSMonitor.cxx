@@ -326,7 +326,7 @@ void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, 
 			if(ch.change.renamed)  chs.append("renamed (to "+newfi.filePath()+") ");
 			if(ch.change.attrib)   chs.append("attrib ");
 			if(ch.change.security) chs.append("security ");
-			fxmessage("FXFSMonitor: File %s had changes: %s\n", file.text(), chs.text());
+			fxmessage("FXFSMonitor: File %s had changes: %s at %s\n", file.text(), chs.text(), (ch.newfi ? *ch.newfi : *ch.oldfi).lastModified().asString().text());
 		}
 #endif
 		callvs.removeRef(callv);
@@ -352,12 +352,20 @@ void FXFSMon::Watcher::Path::callHandlers()
 	newpathdir->entryInfoList();
 	QStringList rawchanges=QDir::extractChanges(*pathdir, *newpathdir);
 	QValueList<Change> changes;
-	for(QStringList::iterator it=rawchanges.begin(); it!=rawchanges.end(); ++it)
+	for(QStringList::iterator it=rawchanges.begin(); it!=rawchanges.end(); )
 	{
 		const FXString &name=*it;
 		Change ch(findFIByName(pathdir->entryInfoList(), name), findFIByName(newpathdir->entryInfoList(), name));
+		// It's possible that between the directory enumeration and fetching metadata
+		// entries the entry vanished. Delete any entries which no longer exist
+		if((ch.oldfi && !ch.oldfi->exists()) || (ch.newfi && !ch.newfi->exists()))
+		{
+			it=rawchanges.erase(it);
+			continue;
+		}
 		if(!ch.oldfi && !ch.newfi)
 		{	// Change vanished
+			++it;
 			continue;
 		}
 		else if(ch.oldfi && ch.newfi)
@@ -380,6 +388,7 @@ void FXFSMon::Watcher::Path::callHandlers()
 			}
 		}
 		changes.append(ch);
+		++it;
 	}
 	// Try to detect renames
 	bool noIncIter1;

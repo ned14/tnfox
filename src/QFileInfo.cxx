@@ -173,6 +173,16 @@ void QFileInfo::refresh()
 			{	// Give it a null ACL owned by root
 				p->permissions=FXACL(isFile() ? FXACL::File : FXACL::Directory, FXACLEntity::root());
 			}
+			// It's possible that file has been deleted during our metadata
+			// scan, so make very sure
+			if(!(p->exists=FXFile::exists(p->pathname)!=0))
+			{
+				p->readable=p->writeable=p->executable=false;
+				p->linkedto=FXString::nullStr();
+				p->flags=0; p->size=0;
+				p->created=p->lastModified=p->lastAccessed=FXTime();
+				p->compressedSize=0; p->hardLinks=0;
+			}
 		}
 	}
 }
