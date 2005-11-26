@@ -39,7 +39,6 @@ assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                         # Only functions may alias
                 "/G%d" % architecture_version, # Optimise for given processor revision
-                "/Gm",                         # Minimum rebuild
                 "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
               ]
 else:
@@ -53,10 +52,13 @@ if architecture=="x86":
     if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
     elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
+    if env.GetOption('num_jobs')>1:
+        cppflags+=["/Z7"]    # Put debug info into .obj files
+    else:
+        cppflags+=["/Zi"]    # Program database debug info
     cppflags+=["/w34701",    # Report uninitialized variable use
                "/Od",        # Optimisation off
                #"/O2", "/Oy-",
-               "/Zi",        # Program database debug info
                ####"/GL",
                "/RTC1",      # Stack and uninit run time checks
                ####"/RTCc",      # Smaller data type without cast run time check
@@ -65,8 +67,11 @@ if debugmode:
                ]
     #env['CCWPOOPTS']=["/W4"] # Maximum warnings for TnFOX files only
 else:
+    if env.GetOption('num_jobs')>1:
+        cppflags+=["/Z7"]    # Put debug info into .obj files
+    else:
+        cppflags+=["/Zi"]    # Program database debug info
     cppflags+=["/O2",        # Optimise for fast code
-               "/Zi",        # Program database debug info
                #"/Zi", #"/Og-",
                "/MD"         # Select MSVCRT.dll
                ]
