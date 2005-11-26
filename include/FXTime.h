@@ -69,6 +69,15 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 	bool operator<(const FXTime &o) const throw() { return isLocalTime<o.isLocalTime || value<o.value; }
 	bool operator>(const FXTime &o) const throw() { return isLocalTime>o.isLocalTime || value>o.value; }
 
+	friend FXTime operator+(const FXTime &a, const FXTime &b) throw() { return FXTime(a.value+b.value); }
+	friend FXTime operator+(const FXTime &a, FXulong v) throw() { return FXTime(a.value+v); }
+	friend FXTime operator-(const FXTime &a, const FXTime &b) throw() { return FXTime(a.value-b.value); }
+	friend FXTime operator-(const FXTime &a, FXulong v) throw() { return FXTime(a.value-v); }
+	FXTime &operator+=(const FXTime &b) throw() { value+=b.value; return *this; }
+	FXTime &operator+=(FXulong v) throw() { value+=v; return *this; }
+	FXTime &operator-=(const FXTime &b) throw() { value-=b.value; return *this; }
+	FXTime &operator-=(FXulong v) throw() { value-=v; return *this; }
+
 	//! Returns the value as a \c time_t
 	time_t as_time_t() const throw()
 	{
