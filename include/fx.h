@@ -251,10 +251,8 @@
 
 #ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
 // The stuff normally not included
-#include "FXMat3d.h"
-#include "FXMat3f.h"
-#include "FXMat4d.h"
-#include "FXMat4f.h"
+#include "fx3d.h"
+
 #include "qdict.h"
 #include "qmemarray.h"
 #include "qptrdict.h"
