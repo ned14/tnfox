@@ -50,7 +50,7 @@
  #if defined(_M_IX86)
   // MSVC does give us some idea of what we are compiling
   #if _M_IX86>=800
-   #define ARCHITECTURE "AMD64"
+   #define ARCHITECTURE "x64"
   #elif _M_IX86>=600
    #define ARCHITECTURE "i686"
   #elif _M_IX86>=500
@@ -86,7 +86,7 @@
  #endif
  // GCC lets us know what it's compiling
  #if defined(__x86_64__)
-  #define ARCHITECTURE "AMD64"
+  #define ARCHITECTURE "x64"
  #elif defined(__i686__) || defined(__athlon__) || defined(__pentiumpro__) || defined(__pentium4__)
   #define ARCHITECTURE "i686"
  #elif defined(__i586__) || defined(__k6__)
@@ -555,8 +555,8 @@ void FXProcess::init(int &argc, char *argv[])
 			act.sa_sigaction=MyUnhandledSignalHandler;
 			sigemptyset(&act.sa_mask);
 			act.sa_flags=SA_SIGINFO;
-			static int sigs[]={ SIGABRT, SIGALRM, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGKILL, SIGPIPE,
-				SIGPROF, SIGQUIT, SIGSEGV, SIGSTOP, SIGSYS, SIGTERM, SIGTRAP, SIGXCPU, SIGXFSZ };
+			static int sigs[]={ SIGABRT, SIGALRM, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, /*SIGKILL,*/ SIGPIPE,
+				SIGPROF, SIGQUIT, SIGSEGV, /*SIGSTOP,*/ SIGSYS, SIGTERM, /*SIGTRAP,*/ SIGXCPU, SIGXFSZ };
 			for(uint n=0; n<sizeof(sigs)/sizeof(int); n++)
 			{
 				sigaction(sigs[n], &act, NULL);
