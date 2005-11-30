@@ -87,7 +87,7 @@ public:
 			haveCreateGlobalNamePriv=1;
 	}
 };
-static FXProcess_StaticInit<QMemMapInit> qmemmapinit("QMemMapInit");
+static QMemMapInit qmemmapinit;
 #endif
 
 struct FXDLLLOCAL Mapping
@@ -505,7 +505,7 @@ void QMemMap::winopen(int mode)
 			if(p->unique)
 				p->name=FXString("%1_%2").arg(FXProcess::id()).arg(rand(),0,16);
 			name=FXString("Global\\"+p->name);
-			if(qmemmapinit->haveCreateGlobalNamePriv)
+			if(qmemmapinit.haveCreateGlobalNamePriv)
 			{
 				if(mode & IO_WriteOnly)
 				{
