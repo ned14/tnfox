@@ -53,7 +53,7 @@ template<class type> class QSortedList : private QPtrList<type>
 	bool findInternal(QSortedListIterator<type> *itout, int *idx, const type *d) const;
 	QSortedListIterator<type> findRefInternal(const type *d) const;
 public:
-	QSortedList(bool wantAutoDel=false) : QPtrList<type>(wantAutoDel) {}
+	explicit QSortedList(bool wantAutoDel=false) : QPtrList<type>(wantAutoDel) {}
 	QSortedList(const QSortedList<type> &o) : QPtrList<type>(o) {}
 	~QSortedList()				{ clear(); }
 	QSortedList<type> &operator=(const QSortedList<type> &l)

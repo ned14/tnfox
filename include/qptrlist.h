@@ -68,7 +68,7 @@ template<class type> class QPtrList : protected std::list<type *>
 		return it;
 	}
 public:
-	QPtrList(bool wantAutoDel=false) : autodel(wantAutoDel), std::list<type *>() {}
+	explicit QPtrList(bool wantAutoDel=false) : autodel(wantAutoDel), std::list<type *>() {}
 	explicit QPtrList(std::list<type *> &l) : autodel(false), std::list<type *>(l) {}
 	~QPtrList()	{ clear(); }
 	//! Returns if auto-deletion is enabled
@@ -420,43 +420,55 @@ public:
 	//! Increments the iterator
 	type *operator++()
 	{
-		typename std::list<type *>::iterator &me=int_getIterator(); ++me;
+		if(!dead)
+		{
+			typename std::list<type *>::iterator &me=int_getIterator(); ++me;
+		}
 		return retptr();
 	}
 	//! Increments the iterator
 	type *operator+=(uint j)
 	{
-		typename std::list<type *>::iterator &me=*this;
-		typename std::list<type *>::iterator myend=mylist->int_end();
-		for(uint n=0; n<j && me!=myend; n++)
-			++me;
+		if(!dead)
+		{
+			typename std::list<type *>::iterator &me=*this;
+			typename std::list<type *>::iterator myend=mylist->int_end();
+			for(uint n=0; n<j && me!=myend; n++)
+				++me;
+		}
 		return retptr();
 	}
 	//! Decrements the iterator
 	type *operator--()
 	{
-		typename std::list<type *>::iterator &me=*this;
-		if(mylist->int_begin()==me)
+		if(!dead)
 		{
-			me=mylist->int_end();
-			dead=true;
-		}
-		else --me;
-		return retptr();
-	}
-	//! Decrements the iterator
-	type *operator-=(uint j)
-	{
-		typename std::list<type *>::iterator &me=*this;
-		typename std::list<type *>::iterator myend=mylist->int_begin();
-		for(uint n=0; n<j && !dead; n++)
-		{
-			if(myend==me)
+			typename std::list<type *>::iterator &me=*this;
+			if(mylist->int_begin()==me)
 			{
 				me=mylist->int_end();
 				dead=true;
 			}
 			else --me;
+		}
+		return retptr();
+	}
+	//! Decrements the iterator
+	type *operator-=(uint j)
+	{
+		if(!dead)
+		{
+			typename std::list<type *>::iterator &me=*this;
+			typename std::list<type *>::iterator myend=mylist->int_begin();
+			for(uint n=0; n<j && !dead; n++)
+			{
+				if(myend==me)
+				{
+					me=mylist->int_end();
+					dead=true;
+				}
+				else --me;
+			}
 		}
 		return retptr();
 	}

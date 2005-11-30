@@ -72,7 +72,7 @@ template<class type> class QPtrVector : private std::vector<type *>
 {
 	bool autodel;
 public:
-	QPtrVector(bool wantAutoDel=false) : autodel(wantAutoDel), std::vector<type *>() {}
+	explicit QPtrVector(bool wantAutoDel=false) : autodel(wantAutoDel), std::vector<type *>() {}
 	explicit QPtrVector(std::vector<type *> &l) : autodel(false), std::vector<type *>(l) {}
 	~QPtrVector()	{ clear(); }
 	//! Returns if auto-deletion is enabled

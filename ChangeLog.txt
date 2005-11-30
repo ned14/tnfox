@@ -174,7 +174,8 @@ link points to
 * Made changes to support MSVC8.0 RTM
 + Added FXApp::addDestructionUpcall() and FXApp::removeDestructionUpcall()
 + Added ability to use multiple processors when building
-
+* Changed QTL constructors to be explicit. This traps incorrect usage of
+iterator operators.
 
 
 v0.85 13th Feb 2005:

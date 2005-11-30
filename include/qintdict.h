@@ -40,7 +40,7 @@ template<class type> class QIntDict : public QDictBase<FXint, type>
 {
 public:
 	//! Creates a hash table indexed by FXint's. Choose a prime for \em size
-	QIntDict(int size=13, bool wantAutoDel=false) : QDictBase<FXint, type>(size, wantAutoDel) { }
+	explicit QIntDict(int size=13, bool wantAutoDel=false) : QDictBase<FXint, type>(size, wantAutoDel) { }
 	~QIntDict() { QDictBase<FXint, type>::clear(); }
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(FXint k, const type *d)

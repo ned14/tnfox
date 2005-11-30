@@ -43,7 +43,7 @@ template<class type> class QPtrDict : public QDictBase<FXuval, type>
 	}
 public:
 	//! Creates a hash table indexed by void pointers. Choose a prime for \em size
-	QPtrDict(int size=13, bool wantAutoDel=false) : QDictBase<FXuval, type>(size, wantAutoDel) { }
+	explicit QPtrDict(int size=13, bool wantAutoDel=false) : QDictBase<FXuval, type>(size, wantAutoDel) { }
 	~QPtrDict() { QDictBase<FXuval, type>::clear(); }
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(void *k, const type *d)

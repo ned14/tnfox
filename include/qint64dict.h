@@ -41,7 +41,7 @@ template<class type> class QInt64Dict : public QDictBase<FXlong, type>
 	inline FXuint hash(FXlong k) const throw() { return (FXuint)((k>>32)^(k & 0xffffffff)); }
 public:
 	//! Creates a hash table indexed by FXlong's. Choose a prime for \em size
-	QInt64Dict(int size=13, bool wantAutoDel=false) : QDictBase<FXlong, type>(size, wantAutoDel) { }
+	explicit QInt64Dict(int size=13, bool wantAutoDel=false) : QDictBase<FXlong, type>(size, wantAutoDel) { }
 	~QInt64Dict() { QDictBase<FXlong, type>::clear(); }
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(FXlong k, const type *d)

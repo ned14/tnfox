@@ -84,7 +84,7 @@ template<class type> class QDict : public QDictBase<FXString, type>
 public:
 	enum { HasSlowKeyCompare=true };
 	//! Creates a hash table indexed by FXString's. Choose a prime for \em size
-	QDict(int size=13, bool caseSensitive=true, bool wantAutoDel=false)
+	explicit QDict(int size=13, bool caseSensitive=true, bool wantAutoDel=false)
 		: checkcase(caseSensitive), QDictBase<FXString, type>(size, wantAutoDel)
 	{
 	}
