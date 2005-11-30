@@ -85,7 +85,6 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/DLL",
                   "/DEBUG",
                   "/OPT:NOWIN98",
-                  "/PDBSTRIPPED:"+builddir+"\\..\\TnFOXMiniSymbols.pdb",
                   "/INCREMENTAL:NO",      # Incremental linking is just broken on all versions of MSVC
                   "/STACK:524288,65536"
                   ]
@@ -101,6 +100,7 @@ else:
     env['LINKFLAGS']+=["/OPT:REF",
                        "/OPT:ICF",
                        "/RELEASE",
+                       "/PDBSTRIPPED:"+builddir+"\\..\\TnFOXMiniSymbols.pdb",
                        "/DELAYLOAD:opengl32.dll",
                        "/DELAYLOAD:glu32.dll"
                        ]
