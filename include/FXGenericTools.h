@@ -392,8 +392,24 @@ public:
 	ptr &operator=(type *data) { PtrReset(*this, data); return *this; }
 	type &operator *() { assert(PtrPtr(*this)); return *PtrPtr(*this); }
 	const type &operator *() const { assert(PtrPtr(*this)); return *PtrPtr(*this); }
-	type *operator->() { assert(PtrPtr(*this)); return PtrPtr(*this); }
-	const type *operator->() const { assert(PtrPtr(*this)); return PtrPtr(*this); }
+	type *operator->()
+	{
+		type *ret=PtrPtr(*this);
+		if(!ret)
+		{
+			assert(ret);
+		}
+		return ret;
+	}
+	const type *operator->() const
+	{
+		const type *ret=PtrPtr(*this);
+		if(!ret)
+		{
+			assert(ret);
+		}
+		return ret;
+	}
 	//! Releases the pointer (sets it to zero, returns the former contents)
 	friend type *PtrRelease(ptr &p)
 	{

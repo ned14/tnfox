@@ -1106,7 +1106,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 	{
 		long start, end; int res, pres; void *obj; char r,w,x; int refcnt, shadcnt, flags;
 		char cow[8], nc[8], type[32], path[4096];
-		sscanf(ptr, "0x%lx 0x%lx %d %d %p %c%c%c %d %d 0x%x %s %s %s %s", &start, &end, &res, &pres,
+		sscanf(ptr, "0x%lx 0x%lx %d %d 0x%p %c%c%c %d %d 0x%x %s %s %s %s", &start, &end, &res, &pres,
 			&obj, &r, &w, &x, &refcnt, &shadcnt, &flags, cow, nc, type, path);
 		bi.startaddr=start; bi.endaddr=end; bi.length=bi.endaddr-bi.startaddr;
 		bi.read='r'==r; bi.write='w'==w; bi.execute='x'==x; bi.copyonwrite=!strcmp("COW", cow);
