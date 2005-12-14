@@ -47,7 +47,7 @@ addBind(DLL)
 
 if onWindows:
     env.MSVSProject("windows/TnFOXProject"+env['MSVSPROJECTSUFFIX'],
-                srcs=["../src/"+x for x in getTnFOXSources()],
+                srcs=["../src/"+x for x in getTnFOXSources()] + ["../src/"+x for x in getTnFOXSources("", True)],
                 incs=["../include/"+x for x in getTnFOXIncludes()],
                 localincs=["../config.py", "../config/msvc.py", "../config/g++.py"],
                 resources="../"+versionrc,
