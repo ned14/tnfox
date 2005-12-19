@@ -485,6 +485,7 @@ void QMemMap::winopen(int mode)
 	HANDLE fileh=INVALID_HANDLE_VALUE;
 	DWORD access=0;
 	if(File==p->type) fileh=(HANDLE) _get_osfhandle(p->filefd);
+	p->pageaccess|=READ_CONTROL|DELETE;
 	if(mode & IO_WriteOnly)
 	{
 		access|=PAGE_READWRITE;
@@ -520,11 +521,11 @@ void QMemMap::winopen(int mode)
 					}
 				}
 				else
-					p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer());
+					p->mappingh=OpenFileMapping(p->pageaccess, FALSE, FXUnicodify<>(name).buffer());
 			}
 			else
 			{	// Not allowed create Global\ objects, so try opening and if not create in Local\ 
-				if(!(p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer())))
+				if(!(p->mappingh=OpenFileMapping(p->pageaccess, FALSE, FXUnicodify<>(name).buffer())))
 				{
 					name.replace(0, 6, "Local");
 					if(mode & IO_WriteOnly)
@@ -540,7 +541,7 @@ void QMemMap::winopen(int mode)
 						}
 					}
 					else
-						p->mappingh=OpenFileMapping(access, FALSE, FXUnicodify<>(name).buffer());
+						p->mappingh=OpenFileMapping(p->pageaccess, FALSE, FXUnicodify<>(name).buffer());
 				}
 			}
 		} while(false);

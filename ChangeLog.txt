@@ -52,6 +52,8 @@ B Fixed compile error in Boost.Python patches with throw() declarations
 B QFileInfo wasn't detecting if a file got deleted during metadata read
 B FXFSMonitor wasn't detecting if files vanished between directory scan
 and metadata scan
+B QMemMap wasn't opening existing shared memory with read ACL access
+B Fixed deadlock when creating thread during thread creation upcall
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been

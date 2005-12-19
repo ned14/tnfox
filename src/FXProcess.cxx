@@ -1102,12 +1102,18 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 		end=ptr+read; end[0]=10; end[1]=0;
 	}
 	// Format is 0xstart 0xend resident privresident 0xobj rwx refcnt shadcnt 0xflags NCOW|COW NNC|NC type path
-	for(; ptr<end; ptr=strchr(ptr, 10)+1)
+	for(; ptr<end && ptr!=(char *) 1; ptr=strchr(ptr, 10)+1)
 	{
-		long start, end; int res, pres; void *obj; char r,w,x; int refcnt, shadcnt, flags;
+		long start, end, objptr; int res, pres; char r,w,x; int refcnt, shadcnt, flags;
 		char cow[8], nc[8], type[32], path[4096];
-		sscanf(ptr, "0x%lx 0x%lx %d %d 0x%p %c%c%c %d %d 0x%x %s %s %s %s", &start, &end, &res, &pres,
-			&obj, &r, &w, &x, &refcnt, &shadcnt, &flags, cow, nc, type, path);
+		sscanf(ptr, "0x%lx 0x%lx %d %d", &start, &end, &res, &pres);
+		// Sometimes it has a 0x, sometimes not
+		for(int n=0; n<4; n++)
+			ptr=strchr(ptr, ' ')+1;
+		assert(ptr>=rawbuffer);
+		if('x'==ptr[1]) ptr+=2;
+		sscanf(ptr, "%lx %c%c%c %d %d 0x%x %s %s %s %s\n", 
+			&objptr, &r, &w, &x, &refcnt, &shadcnt, &flags, cow, nc, type, path);
 		bi.startaddr=start; bi.endaddr=end; bi.length=bi.endaddr-bi.startaddr;
 		bi.read='r'==r; bi.write='w'==w; bi.execute='x'==x; bi.copyonwrite=!strcmp("COW", cow);
 		bi.offset=0;

@@ -821,7 +821,9 @@ void QThreadPrivate::run(QThread *t)
 		CreationUpcall *cu;
 		for(QPtrListIterator<CreationUpcall> it(creationupcalls); (cu=it.current()); ++it)
 		{
+			h.unlock();
 			if(cu->inThread) cu->upcallv(t);
+			h.relock();
 		}
 	}
 	if(t->p->startedwc) t->p->startedwc->wakeAll();
@@ -1053,7 +1055,9 @@ void QThread::start(bool waitTillStarted)
 		CreationUpcall *cu;
 		for(QPtrListIterator<CreationUpcall> it(creationupcalls); (cu=it.current()); ++it)
 		{
+			h.unlock();
 			if(!cu->inThread) cu->upcallv(this);
+			h.relock();
 		}
 	}
 	h.unlock();
