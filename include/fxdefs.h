@@ -154,8 +154,14 @@
  #define FXFORCEINLINE inline __attribute__ ((always_inline))
  #define FXDEPRECATED __attribute ((deprecated))
 #else
+//! Forces a function to be inlined no matter what (use extremely sparingly). Only works in release builds.
  #define FXFORCEINLINE inline
+//! Marks a function as being deprecated
  #define FXDEPRECATED
+#endif
+#ifdef DEBUG	// No inlining when debugging
+ #undef FXFORCEINLINE
+ #define FXFORCEINLINE
 #endif
 #if defined(FOXDLL_EXPORTS) || defined(FOXPYTHONDLL_EXPORTS)
  #define FXDEPRECATEDEXT

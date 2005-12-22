@@ -156,10 +156,11 @@ else:
     print "Disabling PAM support"
 
 if conf.CheckGCCHasVisibility():
-    env['CPPFLAGS']+=["-fvisibility=hidden",        # All symbols are hidden unless marked otherwise
-                      "-fvisibility-inlines-hidden" # All inlines are always hidden
-                     ]
-    env['CPPDEFINES']+=["GCC_HASCLASSVISIBILITY"]
+    if not debugmode:
+        env['CPPFLAGS']+=["-fvisibility=hidden",        # All symbols are hidden unless marked otherwise
+                          "-fvisibility-inlines-hidden" # All inlines are always hidden
+                         ]
+        env['CPPDEFINES']+=["GCC_HASCLASSVISIBILITY"]
 else:
     print "Disabling -fvisibility support"
 
