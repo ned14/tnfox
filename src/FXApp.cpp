@@ -973,31 +973,53 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   wheelLines=10;
 
   // Make font
-  {	// We want 8pt Tahoma, 8pt Arial, 8pt Luxi Sans or 8pt helvetica
+  {
 	FXString bestfont("helvetica,80,normal,normal");
 	FXFontDesc *fonts=0;
 	FXuint numfonts, f;
 	if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
 		FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SWISS|FONTHINT_SCALABLE))
 	{
+		int bestscore=32;
 		for(f=0; f<numfonts; f++)
 		{
 			if(fonts[f].flags & FONTPITCH_VARIABLE)
 			{
 				//fxmessage("Candidate font: face=%s, size=%u, weight=%u, slant=%u, width=%u, encoding=%u, flags=%u\n", fonts[f].face, fonts[f].size, fonts[f].weight, fonts[f].slant, fonts[f].setwidth, fonts[f].encoding, fonts[f].flags);
 				FXString face(fonts[f].face);
-				if(!comparecase(face, "tahoma", 6))
-				{
+				if(bestscore>0 && !comparecase(face, "tahoma", 6))
+				{	// Best of the lot as it looks just like Windows
 					bestfont="tahoma,80,normal,normal";
-					break;		// Good as it gets
+					bestscore=0;
+					break;
 				}
-				else if(!comparecase(face, "arial", 5))
-				{
+#if 0
+				else if(bestscore>1 && !comparecase(face, "nimbus sans l", 13))
+				{	// Better quality at low sizes
+					bestfont="nimbus sans l,80,normal,normal";
+					bestscore=1;
+				}
+				else if(bestscore>2 && !comparecase(face, "arial", 5))
+				{	// MS font is better quality and more complete than luxi sans
 					bestfont="arial,80,normal,normal";
+					bestscore=2;
 				}
-				else if(!comparecase(face, "luxi sans", 9) && !comparecase(bestfont, "helvetica", 9))
+				else if(bestscore>3 && !comparecase(face, "freesans", 8))
+				{
+					bestfont="freesans,80,normal,normal";
+					bestscore=3;
+				}
+#endif
+				else if(bestscore>4 && !comparecase(face, "luxi sans", 9))
 				{
 					bestfont="luxi sans,80,normal,normal";
+					bestscore=4;
+				}
+				// The following are much wider than the above (typical helvetica metrics)
+				else if(bestscore>5 && !comparecase(face, "verdana", 7))
+				{
+					bestfont="verdana,80,normal,normal";
+					bestscore=5;
 				}
 			}
 		}
