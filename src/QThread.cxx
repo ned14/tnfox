@@ -876,7 +876,7 @@ void QThreadPrivate::cleanup(QThread *t)
 	currentThread=0;
 	if(doAutoDelete)
 		t->selfDestruct();
-    if(stoppedwc)
+	if(stoppedwc)
 	{
 		stoppedwc->wakeAll();
 		FXDELETE(stoppedwc);
@@ -1031,13 +1031,17 @@ void QThread::start(bool waitTillStarted)
 	else if(InKernel==p->threadLocation)
 		scope=PTHREAD_SCOPE_SYSTEM;
 	else
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 		/* On KSE threads, process scheduled threads can still run across multiple
 		CPU's though with scope process, a number of very useful optimisations
 		can come into play. Therefore it's the default here */
 		scope=PTHREAD_SCOPE_PROCESS;
 #else
 		scope=PTHREAD_SCOPE_SYSTEM;
+#endif
+#if defined(__FreeBSD__)
+#warning Mixing KSE process & system scope threads still not stable in FreeBSD 6.0 so disabling. This may change in the future!
+	scope=PTHREAD_SCOPE_SYSTEM;
 #endif
 	FXERRHOS(pthread_attr_setscope(&attr, scope));
 	if(p->stackSize) FXERRHOS(pthread_attr_setstacksize(&attr, p->stackSize));
@@ -1126,10 +1130,8 @@ FXulong QThread::id() throw()
 		// don't care about rest
 	};
 	FreeBSD_pthread *pt=(FreeBSD_pthread *) pthread_self();
-	FXulong ret=getpid();
-	ret=ret<<32;
-	ret|=(FXuint) pt->uniqueid;
-	return ret;
+	assert(0xd09ba115==pt->magic);
+	return pt->uniqueid;
   #else
    #error Unknown POSIX architecture, don't know how to convert pthread_self()
   #endif
