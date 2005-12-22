@@ -1101,25 +1101,61 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 		assert(read>0 && read<sizeof(rawbuffer)-2);
 		end=ptr+read; end[0]=10; end[1]=0;
 	}
-	// Format is 0xstart 0xend resident privresident 0xobj rwx refcnt shadcnt 0xflags NCOW|COW NNC|NC type path
-	for(; ptr<end && ptr!=(char *) 1; ptr=strchr(ptr, 10)+1)
-	{
-		long start, end, objptr; int res, pres; char r,w,x; int refcnt, shadcnt, flags;
-		char cow[8], nc[8], type[32], path[4096];
-		sscanf(ptr, "0x%lx 0x%lx %d %d", &start, &end, &res, &pres);
-		// Sometimes it has a 0x, sometimes not
-		for(int n=0; n<4; n++)
-			ptr=strchr(ptr, ' ')+1;
-		assert(ptr>=rawbuffer);
-		if('x'==ptr[1]) ptr+=2;
-		sscanf(ptr, "%lx %c%c%c %d %d 0x%x %s %s %s %s\n", 
-			&objptr, &r, &w, &x, &refcnt, &shadcnt, &flags, cow, nc, type, path);
-		bi.startaddr=start; bi.endaddr=end; bi.length=bi.endaddr-bi.startaddr;
-		bi.read='r'==r; bi.write='w'==w; bi.execute='x'==x; bi.copyonwrite=!strcmp("COW", cow);
+	// Format is 0xstart 0xend resident privresident [0x]obj rwx refcnt shadcnt 0xflags NCOW|COW NNC|NC type path
+	// (or from kernel sources) "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x %s %s %s %s\n"
+	while(ptr<end)
+	{	// sscanf seems to have thread safety issues on FreeBSD :( - so we parse manually
+		long start, end, objptr; char r,w,x; int refcnt, shadcnt, flags;
+		char cow[8], nc[8], type[32], *sp; bool ok;
+		
+		// Start
+		assert('0'==ptr[0] && 'x'==ptr[1]);
+		if((sp=strchr(ptr, ' '))) *sp=0; assert(sp);
+		bi.startaddr=FXString(ptr+2, sp).toULong(&ok, 16); assert(ok);
+		if(sp) ptr=sp+1;
+		
+		// End
+		assert('0'==ptr[0] && 'x'==ptr[1]);
+		if((sp=strchr(ptr, ' '))) *sp=0; assert(sp);
+		bi.endaddr=FXString(ptr+2, sp).toULong(&ok, 16); assert(ok);
+		if(sp) ptr=sp+1;
+		
+		bi.length=bi.endaddr-bi.startaddr;
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// resident
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// privresident
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// obj
+		
+		// rwx
+		bi.read='r'==ptr[0];
+		bi.write='w'==ptr[1];
+		bi.execute='x'==ptr[2];
+		ptr+=4;
+		
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// refcnt
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// shadcnt
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// flags
+		
+		// COW
+		//fxmessage("Processing %s\n", FXString(ptr, 32).text());
+		assert(!strncmp("NCOW", ptr, 4) || !strncmp("COW", ptr, 3));
+		bi.copyonwrite='C'==ptr[0];
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;
+		
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// NNC
+		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// type
 		bi.offset=0;
-		bi.path=path; if(bi.path=="-") bi.path.truncate(0);
+		char *nl=strchr(ptr, 10);
+		if('-'==ptr[0])
+			bi.path.truncate(0);
+		else
+			bi.path.assign(ptr, nl-ptr);
 		list.append(bi);
+		if(nl)
+			ptr=nl+1;
+		else
+			break;
 	}
+	assert(end-ptr<2);
 #endif
 #endif
 	return list;
