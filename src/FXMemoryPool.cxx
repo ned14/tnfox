@@ -3,7 +3,7 @@
 *                              Custom Memory Pool                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -22,6 +22,12 @@
 //#define DEBUG
 //#define FXDISABLE_GLOBAL_MARKER 0
 //#define FXDISABLE_SEPARATE_POOLS 1
+
+
+
+/* TODO: Only adjust allocated if there is a size limit
+Remove header detection in favour of improved nedpgetvalue()
+*/
 
 #ifdef USE_POSIX
 // Force a "real" copy of global operators new & delete to satisfy GNU
@@ -68,9 +74,9 @@ purposes (especially memory leak checking) */
 On all systems except Linux, replace system allocator with our own
 superior implementation (which is the same as Linux's) */
 #ifndef __linux__
- #define MYMALLOC(size)       ptmalloc2::dlmalloc(size)
- #define MYREALLOC(ptr, size) ptmalloc2::dlrealloc(ptr, size)
- #define MYFREE(ptr)          ptmalloc2::dlfree(ptr)
+ #define MYMALLOC(size)       nedalloc::nedmalloc(size)
+ #define MYREALLOC(ptr, size) nedalloc::nedrealloc(ptr, size)
+ #define MYFREE(ptr)          nedalloc::nedfree(ptr)
  #ifndef _MSC_VER
   // Python bindings need this on POSIX
   #define FXDISABLE_GLOBAL_MARKER 0
@@ -106,25 +112,12 @@ block causes an assertion failure. Only really has a point in debug builds */
  #define FXFAILONFREESLOTS 0
 #endif
 
-namespace FX {
-
-#define USE_DL_PREFIX				// Prevent symbol collision
-#ifndef WIN32
-#define USE_PTHREADS
-#undef _LIBC						// Prevent glibc's ptmalloc2 customisations
+#define ABORT_ON_ASSERT_FAILURE 0
+#ifdef NDEBUG
+// Some speed increase options
+#define INSECURE 1
 #endif
-#define PTMALLOC_IN_CPPNAMESPACE	// Prevent symbol collision with glibc's ptmalloc2
-#define MORECORE_IS_MMAP			// Always use mmap to allocate (high memory downwards)
-#ifdef DEBUG
-#define MALLOC_DEBUG 1
-#endif
-//#define TRACE
-namespace ptmalloc2
-{
-#include "ptmalloc2/win32.c"
-#include "ptmalloc2/malloc.c"
-}
-}
+#include "nedmalloc/nedmalloc.c"
 #undef malloc
 #undef free
 #undef realloc
@@ -132,24 +125,18 @@ namespace ptmalloc2
 
 namespace FX {
 
-static struct ptmalloc2_init_t
+static struct nedmalloc_init_t
 {
-	ptmalloc2_init_t()
-	{	// This must be done in a single thread
-		ptmalloc2::ptmalloc_init();
+	nedmalloc_init_t()
+	{
 #ifndef FXDISABLE_NO_SEPARATE_POOL_WARNING
 #if defined(_MSC_VER) && (FXDISABLE_GLOBALALLOCATORREPLACEMENTS || FXDISABLE_SEPARATE_POOLS)
 		fxmessage("WARNING: Using Win32 memory allocator, performance will be degraded!\n");
 #endif
 #endif
 	}
-} ptmalloc2_init;
+} nedmalloc_init;
 
-static void delHeap(ptmalloc2::mstate h)
-{
-	void *heap=(void *) (((FXuval) h) & ~0xff);
-	FXERRH(!ptmalloc2::delete_heap(heap), "Unknown error deleting ptmalloc2 heap", 0, FXERRH_ISDEBUG);
-}
 struct FXMemoryPoolPrivate;
 static struct MemPoolsList
 {
@@ -164,16 +151,14 @@ static struct MemPoolsList
 struct FXDLLLOCAL FXMemoryPoolPrivate
 {
 	FXMemoryPool *parent;		// =0 when orphaned
-	ptmalloc2::mstate heap;
+	nedalloc::nedpool *heap;
 	FXuval maxsize;
 	bool deleted, lazydeleted;
 	const char *identifier;
 	QThread *owner;
 	FXulong threadId;
 	Generic::BoundFunctorV *cleanupcall;
-#ifdef FXDISABLE_SEPARATE_POOLS
 	FXAtomicInt allocated;
-#endif
 	FXMemoryPoolPrivate(FXMemoryPool *_parent, FXuval _maxsize, const char *_identifier, QThread *_owner, bool _lazydeleted)
 		: parent(_parent), heap(0), maxsize(_maxsize), deleted(false), lazydeleted(_lazydeleted), identifier(_identifier), owner(_owner), threadId(_owner ? _owner->myId() : 0), cleanupcall(0)
 	{	// NOTE TO SELF: Must be safe to be called during static init/deinit!!!
@@ -194,7 +179,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 		}
 		if(heap)
 		{
-			delHeap(heap);
+			nedalloc::neddestroypool(heap);
 			heap=0;
 		}
 		if(mempools.enabled)
@@ -206,74 +191,54 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	}
 	FXuval size() const throw()
 	{
-		return heap ? heap->system_mem : 0;
+		return allocated;
 	}
 	void *malloc(FXuval size) throw()
 	{
-		if((FXuval)-1!=maxsize && heap->system_mem+size>maxsize) return 0;
-		void *ret;
-		ptmalloc2::mutex_lock(&heap->mutex);
-		ret=ptmalloc2::_int_malloc(heap, size);
-		ptmalloc2::mutex_unlock(&heap->mutex);
+		if((FXuval)-1!=maxsize)
+		{
+			if(allocated+size>maxsize) return 0;
+		}
+		void *ret=nedalloc::nedpmalloc(heap, size);
+		if(ret && (FXuval)-1!=maxsize) allocated+=nedalloc::nedblksize(ret);
 		return ret;
 	}
 	void *calloc(FXuint no, FXuval esize) throw()
 	{
 		FXuval size=esize*no;
-		if((FXuval)-1!=maxsize && heap->system_mem+size>maxsize) return 0;
-		ptmalloc2::mutex_lock(&heap->mutex);
-		void *ret=ptmalloc2::_int_malloc(heap, size);
-		ptmalloc2::mutex_unlock(&heap->mutex);
-		if(!ret) return 0;
-		memset(ret, 0, size);
+		if((FXuval)-1!=maxsize)
+		{
+			if(allocated+size>maxsize) return 0;
+		}
+		void *ret=nedalloc::nedpcalloc(heap, no, esize);
+		if(ret && (FXuval)-1!=maxsize) allocated+=nedalloc::nedblksize(ret);
 		return ret;
 	}
 	void free(void *blk) throw()
 	{
-		using namespace ptmalloc2;
-		mchunkptr cp=mem2chunk(blk);
-		if(chunk_is_mmapped(cp))                       /* release mmapped memory. */
-		{
-			munmap_chunk(cp);
-			return;
-		}
-		assert(inuse(cp));
-		mstate ar_ptr=arena_for_chunk(cp);
-		assert(ar_ptr==heap);
-		ptmalloc2::mutex_lock(&ar_ptr->mutex);
-		_int_free(ar_ptr, blk);
-		ptmalloc2::mutex_unlock(&ar_ptr->mutex);
+		if((FXuval)-1!=maxsize)
+			allocated-=nedalloc::nedblksize(blk);
+		nedalloc::nedpfree(heap, blk);
 	}
 	void *realloc(void *blk, FXuval size) throw()
 	{
-		using namespace ptmalloc2;
 		if(!blk) return malloc(size);
-		mchunkptr oldp=mem2chunk(blk);
-		void *newmem;
-		FXuval oldsize=chunksize(oldp);
-		if((FXuval)-1!=maxsize && heap->system_mem-oldsize+size>maxsize) return 0;
-		if(chunk_is_mmapped(oldp))
-		{	// Don't have mremap on Win32 (could be implemented easily enough though)
-			if(!(newmem=malloc(size))) return 0;
-			memcpy(newmem, blk, FXMIN(oldsize, size));
-			munmap_chunk(oldp);
-			return newmem;
+		FXuval oldsize=nedalloc::nedblksize(blk);
+		if((FXuval)-1!=maxsize)
+		{
+			if(allocated+(size-oldsize)>maxsize) return 0;
 		}
-		mstate ar_ptr=arena_for_chunk(oldp);
-		assert(ar_ptr==heap);
-		void *ret;
-		ptmalloc2::mutex_lock(&ar_ptr->mutex);
-		ret=_int_realloc(ar_ptr, blk, size);
-		ptmalloc2::mutex_unlock(&ar_ptr->mutex);
+		void *ret=nedalloc::nedprealloc(heap, blk, size);
+		if(ret && (FXuval)-1!=maxsize) allocated+=nedalloc::nedblksize(ret)-oldsize;
 		return ret;
 	}
 	static FXMemoryPoolPrivate *poolFromBlk(void *blk) throw()
 	{
-		using namespace ptmalloc2;
-		mchunkptr cp=mem2chunk(blk);
-		if(!chunk_non_main_arena(cp)) return 0;
-		mstate ar_ptr=arena_for_chunk(cp);
-		return static_cast<FXMemoryPoolPrivate *>(ar_ptr->data);
+		nedalloc::nedpool *pool=0;
+		FXMemoryPoolPrivate *p=(FXMemoryPoolPrivate *) nedgetvalue(&pool, blk);
+		if(p) return p;
+		if(pool) return 0;					// system pool
+		return (FXMemoryPoolPrivate *)-1;	// unknown
 	}
 };
 
@@ -286,9 +251,9 @@ FXMemoryPool::FXMemoryPool(FXuval maxsize, const char *identifier, QThread *owne
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new FXMemoryPoolPrivate(this, maxsize, identifier, owner, lazydeleted));
-	FXERRHM(p->heap=ptmalloc2::_int_new_arena(0));
+	FXERRHM(p->heap=nedalloc::nedcreatepool(0, 0));
 	unconstr.dismiss();
-	p->heap->data=p;
+	nedalloc::nedpsetvalue(p->heap, (void *) p);
 	if(owner)
 	{
 		if(mempools.enabled && QThread::current()==owner)
@@ -336,37 +301,40 @@ void *FXMemoryPool::realloc(void *blk, FXuval size) throw()
 }
 FXMemoryPool *FXMemoryPool::poolFromBlk(void *blk) throw()
 {
-	return FXMemoryPoolPrivate::poolFromBlk(blk)->parent;
+	FXMemoryPoolPrivate *p=FXMemoryPoolPrivate::poolFromBlk(blk);
+	if(!p) return 0;
+	if((FXMemoryPoolPrivate *)-1!=p) return p->parent;
+	return (FXMemoryPool *)-1;
 }
 
 
 
 void *FXMemoryPool::glmalloc(FXuval size) throw()
 {
-	void *ret=ptmalloc2::dlmalloc(size);
+	void *ret=nedalloc::nedmalloc(size);
 	return ret;
 }
 void *FXMemoryPool::glcalloc(FXuval no, FXuval size) throw()
 {
-	return ptmalloc2::dlcalloc(no, size);
+	return nedalloc::nedcalloc(no, size);
 }
 void FXMemoryPool::glfree(void *blk) throw()
 {
-	ptmalloc2::dlfree(blk);
+	nedalloc::nedfree(blk);
 }
 void *FXMemoryPool::glrealloc(void *blk, FXuval size) throw()
 {
-	return ptmalloc2::dlrealloc(blk, size);
+	return nedalloc::nedrealloc(blk, size);
 }
 bool FXMemoryPool::gltrim(FXuval left) throw()
 {
-	return ptmalloc2::dlmalloc_trim(left)!=0;
+	return nedalloc::nedmalloc_trim(left)!=0;
 }
 FXMemoryPool::Statistics FXMemoryPool::glstats() throw()
 {	// Workaround GCC's refusal to find struct mallinfo
-	using namespace ptmalloc2;
+	using namespace nedalloc;
 	struct mallinfo mi;
-	mi=dlmallinfo();
+	mi=nedmallinfo();
 	return Statistics(mi.arena, mi.ordblks, mi.smblks, mi.hblks, mi.hblkhd,
 		mi.usmblks, mi.fsmblks, mi.uordblks, mi.fordblks, mi.keepcost);
 }
@@ -542,13 +510,8 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
 		_p-=1;
-		using namespace ptmalloc2;
-		mchunkptr cp=mem2chunk(_p);
-		if(!chunk_is_mmapped(cp))
-		{
-			mstate ar_ptr=arena_for_chunk(cp);
-			realmp=(FXMemoryPoolPrivate *) ar_ptr->data;
-		}
+		realmp=FXMemoryPoolPrivate::poolFromBlk(_p);
+		assert((FXMemoryPoolPrivate *)-1!=realmp);
 	}
 	if(realmp!=mp)
 	{	// Reparent
@@ -632,13 +595,8 @@ void free(void *p, FXMemoryPool *) throw()
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
 		_p-=1;
-		using namespace ptmalloc2;
-		mchunkptr cp=mem2chunk(_p);
-		if(!chunk_is_mmapped(cp))
-		{
-			mstate ar_ptr=arena_for_chunk(cp);
-			realmp=(FXMemoryPoolPrivate *) ar_ptr->data;
-		}
+		realmp=FXMemoryPoolPrivate::poolFromBlk(_p);
+		assert((FXMemoryPoolPrivate *)-1!=realmp);
 	}
 	p=(void *) _p;
 	if(realmp)
@@ -658,6 +616,7 @@ void free(void *p, FXMemoryPool *) throw()
 		{
 #if !FXDISABLE_GLOBAL_MARKER
 			_p-=1;
+			*_p=0;
 #endif
 			MYFREE(_p);
 		}
@@ -665,7 +624,7 @@ void free(void *p, FXMemoryPool *) throw()
 	if(realmp && realmp->deleted && realmp->size()==0)
 	{
 #ifdef DEBUG
-		fxmessage("Deleting FXMemoryPoolPrivate %p (%p) as it is empty and pending deletion (%u remaining)\n", realmp, realmp->heap, mempools.count());
+		fxmessage("Deleting FXMemoryPoolPrivate %p (%p) as it is empty and pending deletion (%u remaining)\n", realmp, realmp->heap, mempools.pools.count());
 #endif
 		FXDELETE(realmp);
 	}
@@ -698,6 +657,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 {
 	void *ret;
 	FXMemoryPoolPrivate *mp=!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current;
+	//fxmessage("FX::malloc_dbg(%u, %p, %s, %d)", size, mp, file, lineno);
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
@@ -716,7 +676,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 #if !FXDISABLE_GLOBAL_MARKER
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
-		_ret[0]=*(FXuval *) "FXMPFXMP";
+		_ret[0]=*(FXuval *) "FYMPFYMP";
 #endif
 	}
 #else
@@ -730,6 +690,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 	_ret[2]=(FXuval) size;
 	if(mp) mp->allocated+=(int) size;
 #endif
+	//fxmessage("=%p\n", ret);
 	return ret;
 }
 #endif
