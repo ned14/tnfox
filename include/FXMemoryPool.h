@@ -238,7 +238,7 @@ public:
 	ANSI \c realloc() you must still free \em blk on failure.
 	*/
 	FXMALLOCATTR void *realloc(void *blk, FXuval size) throw();
-	//! Returns the memory pool associated with a memory chunk (=0 if from system pool)
+	//! Returns the memory pool associated with a memory chunk (=0 if from system pool, =-1 if not from any pool)
 	static FXMemoryPool *poolFromBlk(void *blk) throw();
 public:
 	//! Allocates a block from the global heap, returning zero if unable
