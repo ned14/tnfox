@@ -178,6 +178,7 @@ link points to
 + Added ability to use multiple processors when building
 * Changed QTL constructors to be explicit. This traps incorrect usage of
 iterator operators.
+* Replaced ptmalloc2 with nedmalloc
 
 
 v0.85 13th Feb 2005:
