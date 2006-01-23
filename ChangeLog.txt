@@ -54,6 +54,8 @@ B FXFSMonitor wasn't detecting if files vanished between directory scan
 and metadata scan
 B QMemMap wasn't opening existing shared memory with read ACL access
 B Fixed deadlock when creating thread during thread creation upcall
+R *** Issued snapshot 4
+B Fixed some compilation errors in QPtrVector
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -179,6 +181,7 @@ link points to
 * Changed QTL constructors to be explicit. This traps incorrect usage of
 iterator operators.
 * Replaced ptmalloc2 with nedmalloc
+R *** Issued snapshot 4
 
 
 v0.85 13th Feb 2005:

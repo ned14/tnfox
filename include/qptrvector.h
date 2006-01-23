@@ -100,9 +100,9 @@ public:
 	{
 		for(typename std::vector<type *>::iterator it=std::vector<type *>::begin(); it!=std::vector<type *>::end(); ++it)
 		{
-			if(compareItems(*it, d)>=0)
+			if(compareItems(*it, const_cast<type *>(d))>=0)
 			{
-				FXEXCEPTION_STL1 { insert(it, d); } FXEXCEPTION_STL2;
+				FXEXCEPTION_STL1 { std::vector<type *>::insert(it, const_cast<type *>(d)); } FXEXCEPTION_STL2;
 			}
 		}
 	}
@@ -171,7 +171,7 @@ public:
 	type *take(uint i)
 	{
 		if(isEmpty()) return 0; // Fails for non-pointer types
-		typename std::vector<type *>::iterator it=std::vector<type >::begin()+i;
+		typename std::vector<type *>::iterator it=std::vector<type *>::begin()+i;
 		type *ret=*it;
 		std::vector<type *>::erase(it);
 		return ret;
@@ -222,10 +222,15 @@ public:
 		std::vector<type *>::clear();
 	}
 private:
-	bool sortPredicate(type *a, type *b)
+	struct SortPredicate
 	{
-		return compareItems(a, b)==-1;
-	}
+		QPtrVector *me;
+		SortPredicate(QPtrVector *_me) : me(_me) { }
+		bool operator()(type *a, type *b)
+		{
+			return me->compareItems(a, b)==-1;
+		}
+	};
 public:
 	//! Sorts the list using a user supplied callable entity taking two pointers of type \em type
 	template<class SortFunc> void sort(SortFunc sortfunc)
@@ -235,7 +240,7 @@ public:
 	//! Sorts the list
 	void sort()
 	{
-		std::sort(std::vector<type *>::begin(), std::vector<type *>::end(), sortPredicate);
+		std::sort(std::vector<type *>::begin(), std::vector<type *>::end(), SortPredicate(this));
 	}
 	//! Returns the index of the position of item \em d via compareItems(), or -1 if not found
 	int find(const type *d)
@@ -243,7 +248,7 @@ public:
 		int idx=0;
 		for(typename std::vector<type *>::iterator it=std::vector<type *>::begin(); it!=std::vector<type *>::end(); ++it, ++idx)
 		{
-			if(0==compareItems(*it, d)) return idx;
+			if(0==compareItems(*it, const_cast<type *>(d))) return idx;
 		}
 		return -1;
 	}
@@ -261,9 +266,9 @@ public:
 	uint contains(const type *d) const
 	{
 		uint count=0;
-		for(typename std::vector<type *>::iterator it=std::vector<type *>::begin(); it!=std::vector<type *>::end(); ++it)
+		for(typename std::vector<type *>::const_iterator it=std::vector<type *>::begin(); it!=std::vector<type *>::end(); ++it)
 		{
-			if(0==compareItems(*it, d)) count++;
+			if(0==compareItems(const_cast<type *>(*it), const_cast<type *>(d))) count++;
 		}
 		return count;
 	}
@@ -271,7 +276,7 @@ public:
 	uint containsRef(const type *d) const
 	{
 		uint count=0;
-		for(typename std::vector<type *>::iterator it=std::vector<type *>::begin(); it!=std::vector<type *>::end(); ++it)
+		for(typename std::vector<type *>::const_iterator it=std::vector<type *>::begin(); it!=std::vector<type *>::end(); ++it)
 		{
 			if(*it==d) count++;
 		}
