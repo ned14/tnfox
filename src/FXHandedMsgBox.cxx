@@ -354,7 +354,7 @@ const unsigned char InformationalIcon[]={
 #else
 static FXIcon *loadMsgIcon(const FXString &name)
 {
-	FXIcon *i;
+	FXIcon *i=0;
 	FXString tnpath=getenv("TnHomeDir");
 	if(!tnpath.empty())
 	{
