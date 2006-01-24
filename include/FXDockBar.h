@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockBar.h,v 1.17 2005/02/03 17:09:24 fox Exp $                         *
+* $Id: FXDockBar.h,v 1.17.2.2 2005/06/22 06:15:59 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXDOCKBAR_H
 #define FXDOCKBAR_H
@@ -109,7 +109,7 @@ public:
   * Construct a non-floatable dock bar.
   * The dock bar can not be undocked.
   */
-  FXDockBar(FXComposite* p,FXuint opts=LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=2,FXint pr=3,FXint pt=3,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
+  FXDockBar(FXComposite* p,FXuint opts,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=2,FXint pr=3,FXint pt=3,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 
   /// Return true if docked
   FXbool isDocked() const;
@@ -162,13 +162,13 @@ public:
   * Change set of sides where docking is allowed.
   * The default is to allow docking on all sides.
   */
-  void allowedSides(FXuchar allow=ALLOW_EVERYWHERE){ allowed=allow; }
-  
+  void allowedSides(FXuchar allow){ allowed=allow; }
+
   /**
   * Return set of sides where docking is allowed
   */
   FXuchar allowedSides() const { return allowed; }
-  
+
   /// Save toolbar to a stream
   virtual void save(FXStream& store) const;
 

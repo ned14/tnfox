@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxutils.cpp,v 1.103 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: fxutils.cpp,v 1.103.2.1 2005/12/13 16:57:32 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -987,46 +987,46 @@ FXuint fxcpuid(){
   // Return capabilities
   return caps;
   }
+#endif
 
 
 /*
-* Return clock ticks from x86 TSC register, if present.
-* Execute cpuid, which is serializing, to complete uops first.
-* It is strongly recommended that you know fxcpuid() to return
-* CPU_HAS_TSC before calling this function!
-* Save EBX because its used when generating position independent code;
-* According to i386 ABI, EBP,  EBX, EDI, ESI, ESP need to be saved
-* for caller, EAX, ECX, EDX are for callee to use; since we're only
-* using EBX, that's the only one that needs saving.
+* Return clock ticks from x86 TSC register [GCC/ICC x86 version].
 */
+#if (defined(__GNUC__) || defined(__ICC)) && defined(__linux__) && defined(__i386__)
+extern FXAPI FXlong fxgetticks();
 FXlong fxgetticks(){
   FXlong value;
-  asm volatile ("pushl %%ebx            \n\t"
-                "xor   %%eax,%%eax      \n\t"
-                "cpuid                  \n\t"
-                "rdtsc                  \n\t"
-                "popl  %%ebx            \n\t"
-                "movl  %%edx,%1         \n\t"
-                "movl  %%eax,%0         \n\t"
-                : "=m" (value), "=m" (*(((char *)&value) + 4))
-                : /* no input */
-                : "eax", "edx", "cc", "memory" );
+  asm volatile ("rdtsc" : "=A" (value));
   return value;
   }
-
 #endif
 
-#ifdef WIN32
+
+/*
+* Return clock ticks from performance counter [GCC AMD64 version].
+*/
+#if defined(__GNUC__) && defined(__linux__) && defined(__x86_64__)
+extern FXAPI FXlong fxgetticks();
+FXlong fxgetticks(){
+  register FXuint a,d;
+  asm volatile("rdtsc" : "=a" (a), "=d" (d));
+//asm volatile("rdtscp" : "=a" (a), "=d" (d): : "%ecx");        // Serializing version (%ecx has processor id)
+  return ((FXulong)a) | (((FXulong)d)<<32);
+  }
+#endif
+
 
 /*
 * Return clock ticks from performance counter.
 */
+#ifdef WIN32
+extern FXAPI FXlong fxgetticks();
 FXlong fxgetticks(){
   FXlong value;
   QueryPerformanceCounter((LARGE_INTEGER*)&value);
   return value;
   }
-
 #endif
 
 #if (defined(__GNUC__) &&  __GNUC__>=3) || defined(__DMC__)

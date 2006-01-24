@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpngio.cpp,v 1.35 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: fxpngio.cpp,v 1.35.2.1 2005/11/19 20:22:25 fox Exp $                         *
 ********************************************************************************/
 #include "fxver.h"
 #include "fxdefs.h"
@@ -279,6 +279,12 @@ FXbool fxsavePNG(FXStream& store,const FXColor* data,FXint width,FXint height){
 #else
 
 
+// Check if stream contains a PNG
+FXbool fxcheckPNG(FXStream&){
+  return FALSE;
+  }
+  
+  
 // Stub routine
 FXbool fxloadPNG(FXStream&,FXColor*& data,FXint& width,FXint& height){
   static const FXuchar png_bits[] = {

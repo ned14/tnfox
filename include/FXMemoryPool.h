@@ -112,18 +112,22 @@ which you must later free and using the TnFOX replacements will cause a segfault
 There is now a facility for a "current pool" set per thread which causes all
 global memory allocations to occur from that pool. See FX::FXMemPoolHold.
 
-This particular heap implementation is not my own - I know they're tough
-to debug, especially for good multithreaded performance so I used someone
-else's - the famous ptmalloc2 which is the standard allocator in GNU glibc.
+This particular heap implementation is not my own - previous to v0.86 it used
+the famous ptmalloc2 which is the standard allocator in GNU glibc (and thus
+is the standard allocator for Linux). As of v0.86 onwards it uses nedmalloc,
+an even better memory allocator once again. nedmalloc has a similar design to
+ptmalloc2 except that it adds a threadcache for improved scalability so the
+following resources remain useful:
+
 ptmalloc2 was shown to have the optimum speed versus wastefulness of all
 thread-optimised allocators according to Sun (<a
 href="http://developers.sun.com/solaris/articles/multiproc/multiproc.html">
 http://developers.sun.com/solaris/articles/multiproc/multiproc.html</a>). You
 can read more about how ptmalloc2's algorithm works at <a
 href="http://gee.cs.oswego.edu/dl/html/malloc.html">
-http://gee.cs.oswego.edu/dl/html/malloc.html</a>. Note that ptmalloc2 is
+http://gee.cs.oswego.edu/dl/html/malloc.html</a>. Note that nedmalloc is
 compiled in debug mode when TnFOX is compiled as such - thus you may get
-assertion errors if you corrupt the ptmalloc2 based heap.
+assertion errors if you corrupt the nedmalloc based heap.
 
 If you'd like to know more in general about heap algorithms, implementations and
 performance, please see <a href="ftp://ftp.cs.utexas.edu/pub/garbage/allocsrv.ps">
@@ -135,41 +139,10 @@ the custom memory infrastructure
 \endlink
 page for more information.
 
-<h3>Implementation:</h3>
-You normally don't need to read this section, but it may be useful to those
-deciding how best to use FXMemoryPool.
-
-I used my own custom version of ptmalloc2 as the one from http://www.malloc.de/
-has had its Win32 support removed, so I put it back in again and optimised
-it while I was at it. However ptmalloc2 was designed to be used as a process heap,
-not as a custom multi-heap implemention. ptmalloc2 comes from dlmalloc or Doug
-Lea's allocator as it's more commonly known but it's a single-threaded heap
-using a global lock - highly inefficient. Wolfram Gloger took Doug Lea's allocator
-and hacked it to allocate from multiple heaps (arenas), usually with one existing
-per thread. This very substantially reduces lock contention.
-
-In FXMemoryPool's ptmalloc2 implementation by default
-allocation occurs at the highest point available in the process' address space
-so theroretically avoiding the process core as long as possible. However you
-must note that on Win32 each process gets a space of 2Gb - after DLL maps, only
-1.4Gb is available. This equals a \em maximum of 1535 threads or heaps per
-process and it's likely to be far less if things like OpenGL or memory mapped
-files get used. <b>What's important to note is that for all systems you can
-exhaust your virtual address space much quicker than actual memory</b> - hence
-take this into consideration when using this class.
-
-For simplicity and virtual address space exhaustion considerations, if you
-create a custom heap one arena only is ever allocated to it. Therefore if you
-have multiple threads working with a custom heap, performance can nose-dive
-quickly - you can of course do as ptmalloc2 does and store a FXMemoryPool
-pointer in a FX::QThreadLocalStorage (eg; current()).
-
 <h3>Usage:</h3>
-You are guaranteed though that irrespective of which memory pool you allocate from,
-you can free it with any other memory pool in effect. This is a side effect of how
-\c ptmalloc2 in FX::FXMemoryPool is designed and is most useful. Furthermore as each
-pool must serialise usage, it is strongly suggested that you try to use different
-pools in each thread which as it just happens, this design encourages anyway. When
+You are guaranteed that irrespective of which memory pool you allocate from,
+you can free it with any other memory pool in effect. This is a requirement for any
+serious usage. When
 you create a FXMemoryPool, you can supply which thread you wish to associate it with - when
 that thread exits, the memory pool will automatically be deleted. Deletion of a memory
 pool can take one of two forms - either immediate, or marked for deletion when the

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVisual.cpp,v 1.73 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXVisual.cpp,v 1.73.2.1 2005/02/12 06:46:19 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -257,7 +257,7 @@ void FXVisual::setupdirectcolor(){
   register FXuint  redshift,greenshift,blueshift;
   register FXPixel redmask,greenmask,bluemask;
   register FXPixel redmax,greenmax,bluemax;
-  register FXuint  mapsize,maxcols,i,j,r,g,b,emax,rr,gg,bb,rm,gm,bm,em,d;
+  register FXuint  mapsize,maxcols,i,j,r,g,b,emax,rr,gg,bb,rm,gm,bm,d;
   register FXuint  bestmatchr,bestmatchg,bestmatchb;
   register FXdouble mindist,dist,gamma;
   register FXbool gottable,allocedcolor;
@@ -284,7 +284,6 @@ void FXVisual::setupdirectcolor(){
   rm=redmax;
   gm=greenmax;
   bm=bluemax;
-  em=FXMAX3(rm,gm,bm);
 
   // Maximum number of colors to allocate
   maxcols=FXMIN(maxcolors,mapsize);

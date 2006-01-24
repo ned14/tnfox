@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuBar.h,v 1.12 2005/01/16 16:06:06 fox Exp $                         *
+* $Id: FXMenuBar.h,v 1.12.2.1 2005/02/10 15:41:36 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXMENUBAR_H
 #define FXMENUBAR_H
@@ -62,7 +62,7 @@ public:
   * Construct a non-floatable menubar.
   * The menubar can not be undocked.
   */
-  FXMenuBar(FXComposite* p,FXuint opts=LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=3,FXint pr=3,FXint pt=2,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
+  FXMenuBar(FXComposite* p,FXuint opts,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=3,FXint pr=3,FXint pt=2,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 
   /// Returns true if specified coordinate (in parent's coordinate system) is in menubar
   virtual FXbool contains(FXint parentx,FXint parenty) const;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeListBox.h,v 1.37 2005/02/06 17:20:00 fox Exp $                     *
+* $Id: FXTreeListBox.h,v 1.37.2.1 2005/04/10 03:24:47 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXTREELISTBOX_H
 #define FXTREELISTBOX_H
@@ -177,9 +177,6 @@ public:
   * in the list.  Flags may be SEARCH_FORWARD or SEARCH_BACKWARD to control
   * the search direction; this can be combined with SEARCH_NOWRAP or SEARCH_WRAP
   * to control whether the search wraps at the start or end of the list.
-  * The option SEARCH_IGNORECASE causes a case-insensitive match.  Finally,
-  * passing SEARCH_PREFIX causes searching for a prefix of the item name.
-  * Return NULL if no matching item is found.
   */
   FXTreeItem* findItemByData(const void *ptr,FXTreeItem* start=NULL,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
 

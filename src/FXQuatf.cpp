@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatf.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXQuatf.cpp,v 1.22.2.1 2005/06/22 06:15:59 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -315,7 +315,7 @@ void FXQuatf::setAxes(const FXVec3f& ex,const FXVec3f& ey,const FXVec3f& ez){
     y=0.25f*scale;
     x=(ex.y+ey.x)/scale;
     z=(ey.z+ez.y)/scale;
-    w=(ex.z-ez.x)/scale;
+    w=(ez.x-ex.z)/scale;
     }
   else{
     scale=2.0f*sqrtf(1.0f+ez.z-ex.x-ey.y);

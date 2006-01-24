@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.cpp,v 1.33 2005/02/01 06:19:17 fox Exp $                      *
+* $Id: FXSettings.cpp,v 1.33.2.3 2005/11/05 11:12:03 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -96,10 +96,10 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
   file=fopen(filename.text(),"r");
   if(file){
     FXTRACE((100,"Reading settings file: %s\n",filename.text()));
-    
+
     // Parse one line at a time
     while(fgets(buffer,MAXBUFFER,file)!=NULL){
-    
+
       // Parse buffer
       ptr=buffer;
 
@@ -112,9 +112,9 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
       // Parse section name
       if(*ptr=='['){
         for(name=++ptr; *ptr && *ptr!=']'; ptr++){
-          if((FXuchar)*ptr<' '){ 
-            fxwarning("%s:%d: illegal section name.\n",filename.text(),lineno); 
-            goto next; 
+          if((FXuchar)*ptr<' '){
+            fxwarning("%s:%d: illegal section name.\n",filename.text(),lineno);
+            goto next;
             }
           }
 
@@ -136,12 +136,12 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
 
         // Transfer key, checking validity
         for(name=ptr; *ptr && *ptr!='='; ptr++){
-          if((FXuchar)*ptr<' '){ 
-            fxwarning("%s:%d: illegal key name.\n",filename.text(),lineno); 
-            goto next; 
+          if((FXuchar)*ptr<' '){
+            fxwarning("%s:%d: illegal key name.\n",filename.text(),lineno);
+            goto next;
             }
           }
-        
+
         // Should be a '='
         if(*ptr!='='){
           fxwarning("%s:%d: expected '=' to follow key.\n",filename.text(),lineno);
@@ -150,12 +150,12 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
 
         // Remove trailing spaces
         for(p=ptr; name<p && *(p-1)==' '; p--);
-        
+
         // End
         *p='\0';
-        
+
         ptr++;
-        
+
         // Skip more spaces
         while(*ptr && isspace((FXuchar)*ptr)) ptr++;
 
@@ -168,11 +168,11 @@ FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
         // Add entry to current section
         group->replace(name,value,mark);
         }
-        
+
       // Next line
 next: lineno++;
       }
-      
+
     // Done
     fclose(file);
     return TRUE;
@@ -273,15 +273,15 @@ FXbool FXSettings::parseValue(FXchar* value,const FXchar* buffer){
 
   // String not starting or ending with spaces
   else{
-  
+
     // Copy as much as we can
     while(*ptr && isprint((FXuchar)*ptr)){
       *out++=*ptr++;
       }
-  
+
     // Strip spaces at the end
     while(value<out && *(out-1)==' ') --out;
-    
+
     // Terminate
     *out='\0';
     }
@@ -366,7 +366,7 @@ FXbool FXSettings::unparseFile(const FXString& filename){
 FXbool FXSettings::unparseValue(FXchar* buffer,const FXchar* value){
   register FXbool mustquote=FALSE;
   register FXchar *ptr=buffer;
-  register FXuint v;
+  register FXuchar v;
   FXASSERT(value);
   while((v=*value++) && ptr<&buffer[MAXVALUE-5]){
     switch(v){
@@ -573,7 +573,7 @@ FXint FXSettings::writeFormatEntry(const FXchar *section,const FXchar *key,const
   va_start(args,fmt);
   FXint result=0;
   if(group){
-    FXchar buffer[2000];
+    FXchar buffer[2048];
 #if defined(WIN32) || defined(HAVE_VSNPRINTF)
     result=vsnprintf(buffer,sizeof(buffer),fmt,args);
 #else
@@ -609,7 +609,7 @@ FXbool FXSettings::writeIntEntry(const FXchar *section,const FXchar *key,FXint v
   if(!key || !key[0]){ fxerror("FXSettings::writeIntEntry: bad key argument.\n"); }
   FXStringDict *group=insert(section);
   if(group){
-    FXchar buffer[10];
+    FXchar buffer[32];
     sprintf(buffer,"%d",val);
     group->replace(key,buffer,TRUE);
     modified=TRUE;
@@ -626,7 +626,7 @@ FXbool FXSettings::writeUnsignedEntry(const FXchar *section,const FXchar *key,FX
   if(!key || !key[0]){ fxerror("FXSettings::writeUnsignedEntry: bad key argument.\n"); }
   FXStringDict *group=insert(section);
   if(group){
-    FXchar buffer[10];
+    FXchar buffer[32];
     sprintf(buffer,"%u",val);
     group->replace(key,buffer,TRUE);
     modified=TRUE;
@@ -643,7 +643,7 @@ FXbool FXSettings::writeRealEntry(const FXchar *section,const FXchar *key,FXdoub
   if(!key || !key[0]){ fxerror("FXSettings::writeRealEntry: bad key argument.\n"); }
   FXStringDict *group=insert(section);
   if(group){
-    FXchar buffer[60];
+    FXchar buffer[64];
     sprintf(buffer,"%.16g",val);
     group->replace(key,buffer,TRUE);
     modified=TRUE;
@@ -660,7 +660,7 @@ FXbool FXSettings::writeColorEntry(const FXchar *section,const FXchar *key,FXCol
   if(!key || !key[0]){ fxerror("FXSettings::writeColorEntry: bad key argument.\n"); }
   FXStringDict *group=insert(section);
   if(group){
-    FXchar buffer[60];
+    FXchar buffer[64];
     group->replace(key,fxnamefromcolor(buffer,val),TRUE);
     modified=TRUE;
     return TRUE;

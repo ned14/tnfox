@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.h,v 1.57 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXTopWindow.h,v 1.57.2.1 2005/10/25 11:33:11 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTOPWINDOW_H
 #define FXTOPWINDOW_H

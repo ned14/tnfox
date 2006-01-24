@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXListBox.cpp,v 1.54 2005/02/06 17:20:00 fox Exp $                       *
+* $Id: FXListBox.cpp,v 1.54.2.1 2005/03/24 01:52:45 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -96,7 +96,7 @@ FXListBox::FXListBox(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXi
   field=new FXButton(this," ",NULL,this,FXListBox::ID_FIELD,ICON_BEFORE_TEXT|JUSTIFY_LEFT, 0,0,0,0, pl,pr,pt,pb);
   field->setBackColor(getApp()->getBackColor());
   pane=new FXPopup(this,FRAME_LINE);
-  list=new FXList(pane,this,FXListBox::ID_LIST,LIST_BROWSESELECT|LIST_AUTOSELECT|LAYOUT_FILL_X|LAYOUT_FILL_Y|SCROLLERS_TRACK|HSCROLLER_NEVER);
+  list=new FXList(pane,this,FXListBox::ID_LIST,LIST_BROWSESELECT|LIST_AUTOSELECT|LAYOUT_FILL_X|LAYOUT_FILL_Y|SCROLLERS_TRACK|HSCROLLING_OFF);
   button=new FXMenuButton(this,NULL,NULL,pane,FRAME_RAISED|FRAME_THICK|MENUBUTTON_DOWN|MENUBUTTON_ATTACH_RIGHT, 0,0,0,0, 0,0,0,0);
   button->setXOffset(border);
   button->setYOffset(border);

@@ -97,7 +97,7 @@ FXVec4f vecplane(const FXVec4f& vec){
 
 // Signed distance normalized plane and point
 FXfloat vecdistance(const FXVec4f& plane,const FXVec3f& p){
-  return plane.x*p.x+plane.y*p.y+plane.z*p.z+plane.z;
+  return plane.x*p.x+plane.y*p.y+plane.z*p.z+plane.w;
   }
 
 

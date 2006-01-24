@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.h,v 1.195 2005/02/04 03:41:00 fox Exp $                            *
+* $Id: FXApp.h,v 1.195.2.2 2005/03/18 05:36:12 fox Exp $                            *
 ********************************************************************************/
 #if !defined(FXAPP_H) && !defined(FX_DISABLEGUI)
 #define FXAPP_H

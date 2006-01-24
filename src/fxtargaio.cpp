@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxtargaio.cpp,v 1.27 2005/01/16 16:06:07 fox Exp $                       *
+* $Id: fxtargaio.cpp,v 1.27.2.1 2005/02/13 22:47:25 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -811,7 +811,7 @@ FXbool fxloadTGA(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 //  FXTRACE((1,"fxloadTGA PixelDepth=%d ColorMapLength=%d ColorMapEntrySize=%d width=%d height=%d\n",PixelDepth,ColorMapLength,ColorMapEntrySize,width,height));
 
   // Don't load too many colors
-  if(ColorMapLength>=256) return FALSE;
+  if(ColorMapLength>256) return FALSE;
 
   // Verify sanity
   if(PixelDepth!=1 && PixelDepth!=8 && PixelDepth!=15 && PixelDepth!=16 && PixelDepth!=24 && PixelDepth!=32) return FALSE;

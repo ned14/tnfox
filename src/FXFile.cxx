@@ -936,7 +936,7 @@ FXString FXFile::getTempDirectory(){
 #ifndef WIN32
   // Conform Linux File Hierarchy standard; this should be
   // good for SUN, SGI, HP-UX, AIX, and OSF1 also.
-  return FXString("/tmp",5);
+  return FXString("/tmp",4);
 #else
   FXchar buffer[MAXPATHLEN];
   FXuint len=GetTempPath(MAXPATHLEN,buffer);

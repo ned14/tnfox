@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMessageBox.h,v 1.26 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXMessageBox.h,v 1.26.2.1 2005/08/14 15:49:04 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXMESSAGEBOX_H
 #define FXMESSAGEBOX_H
@@ -40,7 +40,7 @@ enum {
   MBOX_QUIT_CANCEL          = 0x50000000, /// Message box has QUIT and CANCEL buttons
   MBOX_QUIT_SAVE_CANCEL     = 0x60000000, /// Message box has QUIT, SAVE, and CANCEL buttons
   MBOX_SKIP_SKIPALL_CANCEL  = 0x70000000, /// Message box has SKIP, SKIP ALL, and CANCEL buttons
-  MBOX_SAVE_CANCEL_DONTSAVE = 0x80000000, /// Message box has DON'T SAVE,CANCEL and SAVE buttons
+  MBOX_SAVE_CANCEL_DONTSAVE = 0x80000000  /// Message box has DON'T SAVE,CANCEL and SAVE buttons
   };
 
 

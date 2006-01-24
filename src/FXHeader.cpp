@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.cpp,v 1.94 2005/02/06 17:20:00 fox Exp $                        *
+* $Id: FXHeader.cpp,v 1.94.2.1 2005/02/22 23:17:37 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -60,7 +60,7 @@
 
 #define FUDGE         4
 #define ICON_SPACING  4
-#define HEADER_MASK   (HEADER_BUTTON|HEADER_TRACKING|HEADER_VERTICAL)
+#define HEADER_MASK   (HEADER_BUTTON|HEADER_TRACKING|HEADER_VERTICAL|HEADER_RESIZE)
 
 
 
@@ -290,14 +290,14 @@ FXint FXHeaderItem::getHeight(const FXHeader* header) const {
 
 
 // Change item's text label
-void FXHeaderItem::setText(const FXString& txt){ 
-  label=txt; 
+void FXHeaderItem::setText(const FXString& txt){
+  label=txt;
   }
 
 
 // Change item's icon
-void FXHeaderItem::setIcon(FXIcon* icn){ 
-  icon=icn; 
+void FXHeaderItem::setIcon(FXIcon* icn){
+  icon=icn;
   }
 
 
@@ -954,7 +954,6 @@ long FXHeader::onTipTimer(FXObject*,FXSelector,void*){
   }
 
 
-
 // Button being pressed
 long FXHeader::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
@@ -971,14 +970,14 @@ long FXHeader::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     coord=(options&HEADER_VERTICAL)?event->win_y:event->win_x;
     active=getItemAt(coord);
     if(0<=active){
-      if(active<items.no() && pos+items[active]->getPos()+items[active]->getSize()-FUDGE<coord){
+      if((options&HEADER_RESIZE) && (active<items.no()) && (pos+items[active]->getPos()+items[active]->getSize()-FUDGE<coord)){
         activepos=pos+items[active]->getPos();
         activesize=items[active]->getSize();
         offset=coord-activepos-activesize;
         setDragCursor((options&HEADER_VERTICAL)?getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR):getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
         flags|=FLAG_PRESSED|FLAG_TRYDRAG;
         }
-      else if(0<active && coord<pos+items[active-1]->getPos()+items[active-1]->getSize()+FUDGE){
+      else if((options&HEADER_RESIZE) && (0<active) && (coord<pos+items[active-1]->getPos()+items[active-1]->getSize()+FUDGE)){
         active--;
         activepos=pos+items[active]->getPos();
         activesize=items[active]->getSize();
@@ -986,7 +985,7 @@ long FXHeader::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
         setDragCursor((options&HEADER_VERTICAL)?getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR):getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
         flags|=FLAG_PRESSED|FLAG_TRYDRAG;
         }
-      else if(active<items.no()){
+      else if((options&HEADER_BUTTON) && (active<items.no())){
         activepos=pos+items[active]->getPos();
         activesize=items[active]->getSize();
         setItemPressed(active,TRUE);
@@ -1107,22 +1106,24 @@ long FXHeader::onMotion(FXObject*,FXSelector,void* ptr){
     }
 
   // When hovering over a split, show the split cursor
-  if(options&HEADER_VERTICAL){
-    index=getItemAt(event->win_y-FUDGE);
-    if(0<=index && index<items.no() && pos+items[index]->getPos()+items[index]->getSize()-FUDGE<event->win_y){
-      setDefaultCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
+  if(options&HEADER_RESIZE){
+    if(options&HEADER_VERTICAL){
+      index=getItemAt(event->win_y-FUDGE);
+      if(0<=index && index<items.no() && pos+items[index]->getPos()+items[index]->getSize()-FUDGE<event->win_y){
+        setDefaultCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
+        }
+      else{
+        setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+        }
       }
     else{
-      setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
-      }
-    }
-  else{
-    index=getItemAt(event->win_x-FUDGE);
-    if(0<=index && index<items.no() && pos+items[index]->getPos()+items[index]->getSize()-FUDGE<event->win_x){
-      setDefaultCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
-      }
-    else{
-      setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+      index=getItemAt(event->win_x-FUDGE);
+      if(0<=index && index<items.no() && pos+items[index]->getPos()+items[index]->getSize()-FUDGE<event->win_x){
+        setDefaultCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
+        }
+      else{
+        setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+        }
       }
     }
 

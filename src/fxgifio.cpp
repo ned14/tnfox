@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxgifio.cpp,v 1.72 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: fxgifio.cpp,v 1.72.2.2 2005/12/30 07:21:26 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -217,9 +217,9 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       if(flags&0x80){
         ncolors=2<<(flags&7);
         for(i=0; i<ncolors; i++){
-          store >> ((FXuchar*)(colormap+i))[0]; // Blue
+          store >> ((FXuchar*)(colormap+i))[0]; // Red
           store >> ((FXuchar*)(colormap+i))[1]; // Green
-          store >> ((FXuchar*)(colormap+i))[2]; // Red
+          store >> ((FXuchar*)(colormap+i))[2]; // Blue
           ((FXuchar*)(colormap+i))[3]=255;      // Alpha
           }
         }
@@ -259,6 +259,9 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       InitCodeSize=CodeSize;
       MaxCode=1<<CodeSize;
       ReadMask=MaxCode-1;
+
+      // Maximum code should not exceed 4096
+      if(MaxCode>=4096){ FXFREE(&data); return false; }
 
       // Read all blocks of compressed data into one single buffer.
       // We have an extra test to make sure we don't write past 3/4
@@ -314,6 +317,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
           CurCode=OldCode=Code;
           FinChar=CurCode&BitMask;
+
           if(!interlace){
             *ptr++=FinChar;
             }
@@ -353,8 +357,8 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
           // Unless this code is raw data, pursue the chain pointed to by CurCode
           // through the hash table to its end; each code in the chain puts its
           // associated output code on the output queue.
-          while(CurCode>BitMask){
-            if(OutCount>4096) break;    // corrupt file
+          while(CurCode>=ClearCode){
+            if(OutCount>4096 || CurCode>=FreeCode){ FXFREE(&data); return false; }
             OutCode[OutCount++]=Suffix[CurCode];
             CurCode=Prefix[CurCode];
             }

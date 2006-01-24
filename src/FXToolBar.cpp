@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBar.cpp,v 1.41 2005/02/03 04:00:59 fox Exp $                       *
+* $Id: FXToolBar.cpp,v 1.41.2.1 2005/02/22 23:17:37 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -412,7 +412,7 @@ void FXToolBar::layout(){
         else x=left;
 
         // Determine child height
-        if(dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
+        if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) h=child->getDefaultHeight();
         else if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
         else if(options&PACK_UNIFORM_HEIGHT) h=mh;
         else h=child->getDefaultHeight();
@@ -482,7 +482,7 @@ void FXToolBar::layout(){
         else y=top;
 
         // Determine child width
-        if(dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
+        if(dynamic_cast<FXSeparator*>(child) || dynamic_cast<FXToolBarGrip*>(child)) w=child->getDefaultWidth();
         else if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
         else if(options&PACK_UNIFORM_WIDTH) w=mw;
         else w=child->getDefaultWidth();

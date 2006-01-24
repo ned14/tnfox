@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.508 2005/02/07 04:11:56 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.508.2.4 2005/11/09 05:28:30 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -1119,6 +1119,19 @@ static int xfatalerrorhandler(Display*){
 
 #endif
 
+
+#ifdef WIN32
+
+// Trick to find module handle of FOX library
+static HINSTANCE GetOwnModuleHandle(){
+  MEMORY_BASIC_INFORMATION mbi;
+  VirtualQuery((const void*)GetOwnModuleHandle,&mbi,sizeof(mbi));
+  return (HINSTANCE)mbi.AllocationBase;
+  }
+
+#endif
+
+
 /*******************************************************************************/
 
 // Open the display
@@ -1294,7 +1307,8 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 #else
 
     // Set to HINSTANCE on Windows
-    display=GetModuleHandle(NULL);
+    display=GetOwnModuleHandle();
+//    display=GetModuleHandle(NULL);
 
     // TARGETS
     ddeTargets=GlobalAddAtom("TARGETS");
@@ -2131,7 +2145,7 @@ FXbool FXEventLoop::getNextEvent(FXRawEvent& ev,FXbool blocking){
   FXbool result=TRUE;
   // Check non-immediate signals that may have fired
   if(nsignals){
-    for(register FXint sig=0; sig<MAXSIGNALS; sig++){
+    for(FXint sig=0; sig<MAXSIGNALS; sig++){
       if(signals[sig].notified){
         signals[sig].notified=FALSE;
         if(signals[sig].target && signals[sig].target->tryHandle(this,FXSEL(SEL_SIGNAL,signals[sig].message),(void*)(FXival)sig)){
@@ -3024,7 +3038,7 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         FXTRACE((100,"PropertyNotify %d\n",ev.xproperty.atom));
 
         event.time=ev.xproperty.time;
-        
+
         // Update window position after minimize/maximize/restore whatever
         if(ev.xproperty.atom==app->wmState || ev.xproperty.atom==app->wmNetState){
           FXTRACE((100,"Window wmState Change window=%d atom=%d state=%d\n",ev.xproperty.window,ev.xproperty.atom,ev.xproperty.state));

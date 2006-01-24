@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXProgressBar.cpp,v 1.42 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXProgressBar.cpp,v 1.42.2.1 2005/10/31 00:27:40 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -215,9 +215,19 @@ void FXProgressBar::drawInterior(FXDCWindow& dc){
       tx=tx+d/2-tw/2;
       ty=ty+d/2+font->getFontAscent()+5;
       //dc.setForeground(textNumColor);
-      dc.setForeground(FXRGB(255,255,255));
-      dc.setFunction(BLT_SRC_XOR_DST);      // FIXME
+#ifdef HAVE_XFT_H
+      dc.setForeground(barBGColor);             // Code for XFT until XFT can use BLT_SRC_XOR_DST
+      dc.drawText(tx-1,ty,numtext,n);
+      dc.drawText(tx+1,ty,numtext,n);
+      dc.drawText(tx,ty-1,numtext,n);
+      dc.drawText(tx,ty+1,numtext,n);
+      dc.setForeground(textNumColor);
       dc.drawText(tx,ty,numtext,n);
+#else
+      dc.setForeground(FXRGB(255,255,255));     // Original code
+      dc.setFunction(BLT_SRC_XOR_DST);
+      dc.drawText(tx,ty,numtext,n);
+#endif 
       }
     }
 

@@ -182,6 +182,8 @@ link points to
 iterator operators.
 * Replaced ptmalloc2 with nedmalloc
 R *** Issued snapshot 4
+* Now enables thread caching win32 allocator variant when available
+* Merged FOX v1.4.29
 
 
 v0.85 13th Feb 2005:

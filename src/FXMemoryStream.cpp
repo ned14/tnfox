@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMemoryStream.cpp,v 1.5 2004/02/08 17:29:06 fox Exp $                   *
+* $Id: FXMemoryStream.cpp,v 1.10.2.1 2005/06/22 06:15:59 fox Exp $                  *
 ********************************************************************************/
 #include "fxdefs.h"
 #include "FXMemoryStream.h"

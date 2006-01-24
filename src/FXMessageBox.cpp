@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMessageBox.cpp,v 1.34 2005/01/16 16:06:07 fox Exp $                    *
+* $Id: FXMessageBox.cpp,v 1.34.2.1 2005/07/31 19:05:33 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -140,7 +140,7 @@ void FXMessageBox::initialize(const FXString& text,FXIcon* ic,FXuint whichbutton
     new FXButton(buttons,"&Don't Save",NULL,this,ID_CLICKED_NO,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_TOP|LAYOUT_CENTER_X,0,0,0,0,15,15,VERT_PAD,VERT_PAD);
     FXHorizontalFrame *buttons3=new FXHorizontalFrame(buttons,LAYOUT_RIGHT|PACK_UNIFORM_WIDTH,0,0,0,0,0,0,0,0);
     new FXButton(buttons3,"&Cancel",NULL,this,ID_CLICKED_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0,15,15,VERT_PAD,VERT_PAD);
-    initial=new FXButton(buttons3,"&Save",NULL,this,ID_CLICKED_YES,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0,15,15,VERT_PAD,VERT_PAD);
+    initial=new FXButton(buttons3,"&Save",NULL,this,ID_CLICKED_SAVE,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0,15,15,VERT_PAD,VERT_PAD);
     initial->setFocus();
     }
   }

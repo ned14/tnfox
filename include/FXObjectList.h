@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObjectList.h,v 1.27 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXObjectList.h,v 1.27.2.1 2005/02/11 01:02:47 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXOBJECTLIST_H
 #define FXOBJECTLIST_H
@@ -141,7 +141,7 @@ public:
 
 /// Specialize list to pointers to TYPE
 template<class TYPE>
-class FXObjectListOf : public FXObjectList {
+class FXAPI FXObjectListOf : public FXObjectList {
 public:
   FXObjectListOf(){}
 

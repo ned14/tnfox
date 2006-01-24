@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileSelector.cpp,v 1.173 2005/02/08 06:12:35 fox Exp $                 *
+* $Id: FXFileSelector.cpp,v 1.173.2.2 2005/02/11 13:33:39 fox Exp $                 *
 ********************************************************************************/
 #ifndef BUILDING_TCOMMON
 
@@ -509,9 +509,53 @@ long FXFileSelector::onUpdNew(FXObject* sender,FXSelector,void*){
   }
 
 
+// Selected files and directories
+FXString *FXFileSelector::getSelectedFiles() const {
+  register FXString *files=NULL;
+  register FXint i,n;
+  for(i=n=0; i<filebox->getNumItems(); i++){
+    if(filebox->isItemSelected(i) && filebox->getItemFilename(i)!=".." && filebox->getItemFilename(i)!="."){
+      n++;
+      }
+    }
+  if(n){
+    files=new FXString [n+1];
+    for(i=n=0; i<filebox->getNumItems(); i++){
+      if(filebox->isItemSelected(i) && filebox->getItemFilename(i)!=".." && filebox->getItemFilename(i)!="."){
+        files[n++]=filebox->getItemPathname(i);
+        }
+      }
+    files[n]=FXString::null;
+    }
+  return files;
+  }
+
+
+// Selected files only
+FXString *FXFileSelector::getSelectedFilesOnly() const {
+  register FXString *files=NULL;
+  register FXint i,n;
+  for(i=n=0; i<filebox->getNumItems(); i++){
+    if(filebox->isItemSelected(i) && !filebox->isItemDirectory(i)){
+      n++;
+      }
+    }
+  if(n){
+    files=new FXString [n+1];
+    for(i=n=0; i<filebox->getNumItems(); i++){
+      if(filebox->isItemSelected(i) && !filebox->isItemDirectory(i)){
+        files[n++]=filebox->getItemPathname(i);
+        }
+      }
+    files[n]=FXString::null;
+    }
+  return files;
+  }
+
+
 // Copy file or directory
 long FXFileSelector::onCmdCopy(FXObject*,FXSelector,void*){
-  FXString *filenamelist=getFilenames();
+  FXString *filenamelist=getSelectedFiles();
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
       FXInputDialog inputdialog(this,"Copy File","Copy file from location:\n\n"+filenamelist[i]+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
@@ -532,7 +576,7 @@ long FXFileSelector::onCmdCopy(FXObject*,FXSelector,void*){
 
 // Move file or directory
 long FXFileSelector::onCmdMove(FXObject*,FXSelector,void*){
-  FXString *filenamelist=getFilenames();
+  FXString *filenamelist=getSelectedFiles();
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
       FXInputDialog inputdialog(this,"Move File","Move file from location:\n\n"+filenamelist[i]+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
@@ -553,7 +597,7 @@ long FXFileSelector::onCmdMove(FXObject*,FXSelector,void*){
 
 // Link file or directory
 long FXFileSelector::onCmdLink(FXObject*,FXSelector,void*){
-  FXString *filenamelist=getFilenames();
+  FXString *filenamelist=getSelectedFiles();
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
       FXInputDialog inputdialog(this,"Link File","Link file from location:\n\n"+filenamelist[i]+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
@@ -574,7 +618,7 @@ long FXFileSelector::onCmdLink(FXObject*,FXSelector,void*){
 
 // Delete file or directory
 long FXFileSelector::onCmdDelete(FXObject*,FXSelector,void*){
-  FXString *filenamelist=getFilenames();
+  FXString *filenamelist=getSelectedFiles();
   FXuint answer;
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
@@ -663,6 +707,7 @@ long FXFileSelector::onPopupMenu(FXObject*,FXSelector,void* ptr){
   new FXMenuSeparator(&viewmenu);
   new FXMenuCheck(&viewmenu,"Hidden files",filebox,FXFileList::ID_TOGGLE_HIDDEN);
   new FXMenuCheck(&viewmenu,"Preview images",filebox,FXFileList::ID_TOGGLE_IMAGES);
+  new FXMenuSeparator(&viewmenu);
   new FXMenuRadio(&viewmenu,"Normal images",this,ID_NORMAL_SIZE);
   new FXMenuRadio(&viewmenu,"Medium images",this,ID_MEDIUM_SIZE);
   new FXMenuRadio(&viewmenu,"Giant images",this,ID_GIANT_SIZE);
@@ -800,43 +845,15 @@ FXString FXFileSelector::getFilename() const {
   }
 
 
+
 // Return empty-string terminated list of selected file names, or NULL
 FXString* FXFileSelector::getFilenames() const {
-  register FXString *files=NULL;
-  register FXint i,n;
-  if(filebox->getNumItems()){
-    if(selectmode==SELECTFILE_MULTIPLE_ALL){
-      for(i=n=0; i<filebox->getNumItems(); i++){
-        if(filebox->isItemSelected(i) && filebox->getItemFilename(i)!=".." && filebox->getItemFilename(i)!="."){
-          n++;
-          }
-        }
-      if(n){
-        files=new FXString [n+1];
-        for(i=n=0; i<filebox->getNumItems(); i++){
-          if(filebox->isItemSelected(i) && filebox->getItemFilename(i)!=".." && filebox->getItemFilename(i)!="."){
-            files[n++]=filebox->getItemPathname(i);
-            }
-          }
-        files[n]=FXString::null;
-        }
-      }
-    else{
-      for(i=n=0; i<filebox->getNumItems(); i++){
-        if(filebox->isItemSelected(i) && !filebox->isItemDirectory(i)){
-          n++;
-          }
-        }
-      if(n){
-        files=new FXString [n+1];
-        for(i=n=0; i<filebox->getNumItems(); i++){
-          if(filebox->isItemSelected(i) && !filebox->isItemDirectory(i)){
-            files[n++]=filebox->getItemPathname(i);
-            }
-          }
-        files[n]=FXString::null;
-        }
-      }
+  register FXString *files;
+  if(selectmode==SELECTFILE_MULTIPLE_ALL){
+    files=getSelectedFiles();
+    }
+  else{
+    files=getSelectedFilesOnly();
     }
   return files;
   }

@@ -143,7 +143,7 @@ FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar*
     if(data){
       begptr=data;
       if(size==ULONG_MAX)
-        endptr=((FXuchar*)NULL)-1;
+        endptr=(FXuchar*)(FXival)-1L;
       else
         endptr=begptr+size;
       wrptr=begptr;

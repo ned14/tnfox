@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockSite.h,v 1.22 2005/02/03 04:00:59 fox Exp $                      *
+* $Id: FXDockSite.h,v 1.22.2.1 2005/08/17 04:05:13 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXDOCKSITE_H
 #define FXDOCKSITE_H
@@ -110,8 +110,7 @@ public:
   /**
   * Move tool bar, changing its options to suite the new position.
   * Used by the toolbar dragging to rearrange the toolbars inside the
-  * toolbar dock.  This function returns FALSE if the given position
-  * is too far outside the toolbar dock to consider docking it.
+  * toolbar dock.  
   */
   virtual void moveToolBar(FXDockBar* bar,FXint barx,FXint bary);
 

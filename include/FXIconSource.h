@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconSource.h,v 1.8 2005/02/08 06:12:35 fox Exp $                       *
+* $Id: FXIconSource.h,v 1.8.2.1 2005/04/10 03:24:47 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXICONSOURCE_H
 #define FXICONSOURCE_H
@@ -106,8 +106,8 @@ public:
   * versions will attempt to inspect the first few bytes of the stream
   * to divine the icon format if the parameter is omitted].
   */
-  virtual FXIcon *loadImage(const void *pixels,const FXString& type=FXString::null) const;
-  
+  virtual FXImage *loadImage(const void *pixels,const FXString& type=FXString::null) const;
+
   /**
   * Load an image of a given type (e.g. "gif") from an already open stream.
   * Returns NULL if there's some error loading the image.  [The optional

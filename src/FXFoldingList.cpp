@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFoldingList.cpp,v 1.55 2005/02/06 19:24:47 fox Exp $                   *
+* $Id: FXFoldingList.cpp,v 1.55.2.1 2005/12/15 22:52:37 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -442,7 +442,7 @@ FXFoldingList::FXFoldingList(){
 FXFoldingList::FXFoldingList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXScrollArea(p,opts,x,y,w,h){
   flags|=FLAG_ENABLED;
-  header=new FXHeader(this,this,FXFoldingList::ID_HEADER_CHANGE,HEADER_TRACKING|HEADER_BUTTON|FRAME_RAISED|FRAME_THICK);
+  header=new FXHeader(this,this,FXFoldingList::ID_HEADER_CHANGE,HEADER_TRACKING|HEADER_BUTTON|HEADER_RESIZE|FRAME_RAISED|FRAME_THICK);
   target=tgt;
   message=sel;
   firstitem=NULL;

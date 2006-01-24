@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStatusBar.cpp,v 1.12 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXStatusBar.cpp,v 1.12.2.1 2005/02/16 05:45:26 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -263,7 +263,7 @@ FXbool FXStatusBar::getCornerStyle() const {
 
 // Save object to stream
 void FXStatusBar::save(FXStream& store) const {
-  FXComposite::save(store);
+  FXHorizontalFrame::save(store);
   store << corner;
   store << status;
   }
@@ -271,7 +271,7 @@ void FXStatusBar::save(FXStream& store) const {
 
 // Load object from stream
 void FXStatusBar::load(FXStream& store){
-  FXComposite::load(store);
+  FXHorizontalFrame::load(store);
   store >> corner;
   store >> status;
   }

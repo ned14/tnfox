@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCursor.h,v 1.25 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXCursor.h,v 1.25.2.1 2005/04/10 03:24:47 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXCURSOR_H
 #define FXCURSOR_H
@@ -83,13 +83,13 @@ public:
   /// Height of cursor; returns 0 for stock cursors
   FXint getHeight() const { return height; }
 
-  /// Get hotspot x; returns 0 for stock cursors
+  /// Set hotspot x; returns 0 for stock cursors
   void setHotX(FXint x){ hotx=x; }
 
   /// Get hotspot x; returns 0 for stock cursors
   FXint getHotX() const { return hotx; }
 
-  /// Get hotspot y; returns 0 for stock cursors
+  /// Set hotspot y; returns 0 for stock cursors
   void setHotY(FXint y){ hoty=y; }
 
   /// Get hotspot y; returns 0 for stock cursors

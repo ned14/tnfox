@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComboBox.h,v 1.41 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXComboBox.h,v 1.41.2.1 2005/04/10 03:24:47 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXCOMBOBOX_H
 #define FXCOMBOBOX_H
@@ -208,9 +208,6 @@ public:
   * Flags may be SEARCH_FORWARD or SEARCH_BACKWARD to control the
   * search direction; this can be combined with SEARCH_NOWRAP or SEARCH_WRAP
   * to control whether the search wraps at the start or end of the list.
-  * The option SEARCH_IGNORECASE causes a case-insensitive match.  Finally,
-  * passing SEARCH_PREFIX causes searching for a prefix of the item name.
-  * Return -1 if no matching item is found.
   */
   FXint findItemByData(const void *ptr,FXint start=-1,FXuint flags=SEARCH_FORWARD|SEARCH_WRAP) const;
 

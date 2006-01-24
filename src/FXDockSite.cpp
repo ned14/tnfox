@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockSite.cpp,v 1.63 2005/02/04 06:12:58 fox Exp $                      *
+* $Id: FXDockSite.cpp,v 1.63.2.1 2005/02/12 06:46:19 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -82,18 +82,17 @@ FXDockSite::FXDockSite(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint 
 // Compute minimum width based on child layout hints
 FXint FXDockSite::getDefaultWidth(){
   register FXint total=0,galw=0,any=0,w;
-  register FXWindow *child,*begin;
+  register FXWindow *child;
   register FXuint hints;
 
   // Vertically oriented
   if(options&LAYOUT_SIDE_LEFT){
-    for(child=begin=getFirst(); child; child=child->getNext()){
+    for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
         w=(hints&LAYOUT_FIX_WIDTH)?child->getWidth():child->getDefaultWidth();
         if(any && (hints&LAYOUT_DOCK_NEXT)){
           total+=galw+hspacing;
-          begin=child;
           galw=w;
           }
         else{
@@ -107,13 +106,12 @@ FXint FXDockSite::getDefaultWidth(){
 
   // Horizontally oriented
   else{
-    for(child=begin=getFirst(); child; child=child->getNext()){
+    for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
         w=(hints&LAYOUT_FIX_WIDTH)?child->getWidth():child->getDefaultWidth();
         if(any && (hints&LAYOUT_DOCK_NEXT)){
           if(galw>total) total=galw;
-          begin=child;
           galw=w;
           }
         else{
@@ -132,18 +130,17 @@ FXint FXDockSite::getDefaultWidth(){
 // Compute minimum height based on child layout hints
 FXint FXDockSite::getDefaultHeight(){
   register FXint total=0,galh=0,any=0,h;
-  register FXWindow *child,*begin;
+  register FXWindow *child;
   register FXuint hints;
 
   // Vertically oriented
   if(options&LAYOUT_SIDE_LEFT){
-    for(child=begin=getFirst(); child; child=child->getNext()){
+    for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
         h=(hints&LAYOUT_FIX_HEIGHT)?child->getHeight():child->getDefaultHeight();
         if(any && (hints&LAYOUT_DOCK_NEXT)){
           if(galh>total) total=galh;
-          begin=child;
           galh=h;
           }
         else{
@@ -158,13 +155,12 @@ FXint FXDockSite::getDefaultHeight(){
 
   // Horizontally oriented
   else{
-    for(child=begin=getFirst(); child; child=child->getNext()){
+    for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
         h=(hints&LAYOUT_FIX_HEIGHT)?child->getHeight():child->getDefaultHeight();
         if(any && (hints&LAYOUT_DOCK_NEXT)){
           total+=galh+vspacing;
-          begin=child;
           galh=h;
           }
         else{
@@ -644,7 +640,7 @@ void FXDockSite::moveToolBar(FXDockBar* bar,FXint barx,FXint bary){
     if(options&LAYOUT_SIDE_LEFT){
 
       // Determine galley sizes
-      galx=left; 
+      galx=left;
       galw=0;
       for(begin=getFirst(),cur=prv=nxt=curend=prvend=nxtend=NULL; begin; begin=end->getNext()){
         w=galleyWidth(begin,end,bottom-top,require,expand);

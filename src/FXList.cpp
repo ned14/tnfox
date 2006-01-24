@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.cpp,v 1.148 2005/02/06 17:20:00 fox Exp $                         *
+* $Id: FXList.cpp,v 1.148.2.1 2005/06/09 14:08:55 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -946,7 +946,6 @@ long FXList::onKeyPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(!isEnabled()) return 0;
   if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
-  if(index<0) index=0;
   switch(event->code){
     case KEY_Control_L:
     case KEY_Control_R:

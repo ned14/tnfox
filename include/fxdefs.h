@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxdefs.h,v 1.145 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: fxdefs.h,v 1.145.2.3 2005/03/24 01:35:50 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXDEFS_H
 #define FXDEFS_H
@@ -300,7 +300,7 @@ enum {
   CAPSLOCKMASK     = 0x002,           /// Caps Lock key is down
   CONTROLMASK      = 0x004,           /// Ctrl key is down
 #ifdef __APPLE__
-  ALTMASK          = 0x2000           /// Alt key is down
+  ALTMASK          = 0x2000,          /// Alt key is down
   METAMASK         = 0x10,            /// Meta key is down
 #else
   ALTMASK          = 0x008,           /// Alt key is down

@@ -25,8 +25,7 @@
 
 
 
-/* TODO: Only adjust allocated if there is a size limit
-Remove header detection in favour of improved nedpgetvalue()
+/* TODO: Remove header detection in favour of improved nedpgetvalue()
 */
 
 #ifdef USE_POSIX
@@ -133,6 +132,13 @@ static struct nedmalloc_init_t
 #if defined(_MSC_VER) && (FXDISABLE_GLOBALALLOCATORREPLACEMENTS || FXDISABLE_SEPARATE_POOLS)
 		fxmessage("WARNING: Using Win32 memory allocator, performance will be degraded!\n");
 #endif
+#endif
+#ifdef WIN32
+		ULONG data=2;
+		if(!HeapSetInformation(GetProcessHeap(), HeapCompatibilityInformation, &data, sizeof(data)))
+		{
+			fxmessage("WARNING: Failed to set process heap to thread caching variant (probably you are in a debugger)!\n");
+		}
 #endif
 	}
 } nedmalloc_init;
@@ -242,6 +248,31 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	}
 };
 
+static void DisableThreadCache()
+{
+	if(mempools.enabled)
+	{
+		FXMemoryPoolPrivate *pool;
+		QMtxHold h(mempools.lock);
+		for(QPtrDictIterator<FXMemoryPoolPrivate> it(mempools.pools); (pool=it.current()); ++it)
+		{
+			nedalloc::neddisablethreadcache(pool->heap);
+		}
+	}
+	nedalloc::neddisablethreadcache(0 /*system*/);
+}
+struct RegisterThreadCacheCleanup
+{
+	RegisterThreadCacheCleanup()
+	{	// Register thread deallocation call per thread
+		QThread::addCreationUpcall(QThread::CreationUpcallSpec(RegisterSystemCleanupCall));
+	}
+	static void RegisterSystemCleanupCall(QThread *t)
+	{
+		t->addCleanupCall(Generic::BindFuncN(DisableThreadCache), true);
+	}
+};
+static FXProcess_StaticInit<RegisterThreadCacheCleanup> registerthreadcachecleaup("ThreadCacheCleanup");
 static void callfree(FXMemoryPoolPrivate *p)
 {
 	p->cleanupcall=0;

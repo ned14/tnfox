@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxjpegio.cpp,v 1.47.2.1 2005/02/08 21:22:31 fox Exp $                        *
+* $Id: fxjpegio.cpp,v 1.47.2.2 2005/11/19 20:22:25 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -362,6 +362,12 @@ FXbool fxsaveJPG(FXStream& store,const FXColor* data,FXint width,FXint height,FX
 
 
 #else
+
+
+// Check if stream contains a JPG
+FXbool fxcheckJPG(FXStream&){
+  return FALSE;
+  }
 
 
 // Stub routine

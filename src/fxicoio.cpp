@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxicoio.cpp,v 1.27 2005/01/15 19:54:15 fox Exp $                         *
+* $Id: fxicoio.cpp,v 1.27.2.1 2005/12/15 22:52:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -114,6 +114,8 @@ FXbool fxloadICO(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint
   data=NULL;
   width=0;
   height=0;
+  xspot=0;
+  yspot=0;
 
   // Start of icon file header
   base=store.position();

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.149 2005/01/29 05:02:02 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.149.2.5 2005/10/25 12:34:28 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -262,7 +262,8 @@ void FXTopWindow::setFocus(){
 #ifndef WIN32
     XSetInputFocus(DISPLAY(getApp()),xid,RevertToPointerRoot,CurrentTime);
 #else
-    SetFocus((HWND)xid);
+    SetActiveWindow((HWND)xid);
+    //SetFocus((HWND)xid);
 #endif
     }
   }
@@ -287,6 +288,7 @@ void FXTopWindow::killFocus(){
         }
       }
 #else
+/*
     if(GetFocus()==(HWND)xid){
       if(getOwner() && getOwner()->id()){
         FXTRACE((100,"focus back to owner\n"));
@@ -295,6 +297,13 @@ void FXTopWindow::killFocus(){
       else{
         FXTRACE((100,"focus back to NULL\n"));
         SetFocus((HWND)NULL);
+        }
+      }
+*/
+    if(GetActiveWindow()==(HWND)xid){
+      if(getOwner() && getOwner()->id()){
+        FXTRACE((100,"focus back to owner\n"));
+        SetActiveWindow((HWND)getOwner()->id());
         }
       }
 #endif
@@ -410,8 +419,8 @@ void FXTopWindow::place(FXuint placement){
     GetMonitorInfoA(hMon,&minfo);
     rx=minfo.rcWork.left;
     ry=minfo.rcWork.top;
-    rw=minfo.rcWork.right;
-    rh=minfo.rcWork.bottom;
+    rw=minfo.rcWork.right-minfo.rcWork.left;
+    rh=minfo.rcWork.bottom-minfo.rcWork.top;
     }
   else
 #endif
@@ -539,9 +548,8 @@ void* FXTopWindow::makeicon(FXIcon* icon){
   iconinfo.xHotspot=0;
   iconinfo.yHotspot=0;
   iconinfo.hbmMask=(HBITMAP)icon->shape;
-  iconinfo.hbmColor=(HBITMAP)icon->xid;
-  void* wicon=CreateIconIndirect(&iconinfo);
-  return wicon;
+  iconinfo.hbmColor=(HBITMAP)icon->id();
+  return (void*)CreateIconIndirect(&iconinfo);
   }
 
 
@@ -582,13 +590,32 @@ void FXTopWindow::seticons(){
 
   // Set both large and mini icon for MS-Windows
 #else
+  HICON icold,icnew;
+  icnew=NULL;
   if(icon){
-    if(!icon->xid || !icon->shape){ fxerror("%s::setIcon: illegal icon specified.\n",getClassName()); }
-    SendMessage((HWND)xid,WM_SETICON,ICON_BIG,(LPARAM)makeicon(icon));
+    ICONINFO iconinfo;
+    iconinfo.fIcon=TRUE;
+    iconinfo.xHotspot=0;
+    iconinfo.yHotspot=0;
+    iconinfo.hbmMask=(HBITMAP)icon->shape;
+    iconinfo.hbmColor=(HBITMAP)icon->xid;
+    icnew=CreateIconIndirect(&iconinfo);
     }
+  if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_BIG,(LPARAM)icnew))!=0){
+    DestroyIcon(icold);
+    }
+  icnew=NULL;
   if(miniIcon){
-    if(!miniIcon->xid || !miniIcon->shape){ fxerror("%s::setMiniIcon: illegal icon specified.\n",getClassName()); }
-    SendMessage((HWND)xid,WM_SETICON,ICON_SMALL,(LPARAM)makeicon(miniIcon));
+    ICONINFO iconinfo;
+    iconinfo.fIcon=TRUE;
+    iconinfo.xHotspot=0;
+    iconinfo.yHotspot=0;
+    iconinfo.hbmMask=(HBITMAP)miniIcon->shape;
+    iconinfo.hbmColor=(HBITMAP)miniIcon->xid;
+    icnew=CreateIconIndirect(&iconinfo);
+    }
+  if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_SMALL,(LPARAM)icnew))!=0){
+    DestroyIcon(icold);
     }
 #endif
   }
@@ -1481,6 +1508,15 @@ void FXTopWindow::load(FXStream& store){
 
 // Remove this one from toplevel window list
 FXTopWindow::~FXTopWindow(){
+#ifdef WIN32
+  HICON icold;
+  if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_BIG,0))!=0){
+    DestroyIcon(icold);
+    }
+  if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_SMALL,0))!=0){
+    DestroyIcon(icold);
+    }
+#endif
   icon=(FXIcon*)-1L;
   miniIcon=(FXIcon*)-1L;
   }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.cpp,v 1.184 2005/02/06 17:20:00 fox Exp $                     *
+* $Id: FXIconList.cpp,v 1.184.2.2 2005/06/09 14:08:55 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -579,7 +579,7 @@ FXIconList::FXIconList(){
 FXIconList::FXIconList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXScrollArea(p,opts,x,y,w,h){
   flags|=FLAG_ENABLED;
-  header=new FXHeader(this,this,FXIconList::ID_HEADER_CHANGE,HEADER_TRACKING|HEADER_BUTTON|FRAME_RAISED|FRAME_THICK);
+  header=new FXHeader(this,this,FXIconList::ID_HEADER_CHANGE,HEADER_TRACKING|HEADER_BUTTON|HEADER_RESIZE|FRAME_RAISED|FRAME_THICK);
   target=tgt;
   message=sel;
   nrows=1;
@@ -1954,7 +1954,6 @@ long FXIconList::onKeyPress(FXObject*,FXSelector,void* ptr){
   flags&=~FLAG_TIP;
   if(!isEnabled()) return 0;
   if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
-  if(index<0) index=0;
   switch(event->code){
     case KEY_Control_L:
     case KEY_Control_R:

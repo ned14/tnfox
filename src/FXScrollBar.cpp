@@ -585,6 +585,9 @@ long FXScrollBar::onMouseWheel(FXObject*,FXSelector,void* ptr){
           getApp()->addTimeout(this,ID_TIMEWHEEL,5,(void*)(FXival)dragjump);
           }
         }
+      else{
+        dragpoint=0;
+        }
       return 1;
       }
     }
@@ -607,7 +610,7 @@ long FXScrollBar::onTimeWheel(FXObject*,FXSelector,void* ptr){
       if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
     }
-  else{
+  else if(dragpoint>pos){
     if(p>=dragpoint){
       setPosition(dragpoint);
       dragpoint=0;
@@ -618,6 +621,9 @@ long FXScrollBar::onTimeWheel(FXObject*,FXSelector,void* ptr){
       getApp()->addTimeout(this,ID_TIMEWHEEL,5,ptr);
       if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)pos);
       }
+    }
+  else{
+    dragpoint=0;
     }
   return 1;
   }

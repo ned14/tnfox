@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.h,v 1.150 2005/02/06 17:20:00 fox Exp $                          *
+* $Id: FXTable.h,v 1.150.2.2 2005/02/22 23:17:37 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABLE_H
 #define FXTABLE_H
@@ -48,10 +48,9 @@ enum { DEFAULT_MARGIN = 2 };
 enum {
   TABLE_COL_SIZABLE     = 0x00100000,   /// Columns are resizable
   TABLE_ROW_SIZABLE     = 0x00200000,   /// Rows are resizable
-  TABLE_HEADERS_SIZABLE = 0x00400000,   /// Headers are sizable
-  TABLE_NO_COLSELECT    = 0x00900000,   /// Disallow column selections
-  TABLE_NO_ROWSELECT    = 0x01000000,   /// Disallow row selections
-  TABLE_READONLY        = 0x02000000    /// Table is NOT editable
+  TABLE_NO_COLSELECT    = 0x00400000,   /// Disallow column selections
+  TABLE_NO_ROWSELECT    = 0x00800000,   /// Disallow row selections
+  TABLE_READONLY        = 0x01000000    /// Table is NOT editable
   };
 
 
@@ -285,9 +284,7 @@ protected:
     MOUSE_NONE,
     MOUSE_SCROLL,
     MOUSE_DRAG,
-    MOUSE_SELECT,
-    MOUSE_COL_SIZE,
-    MOUSE_ROW_SIZE
+    MOUSE_SELECT
     };
 private:
   FXTable(const FXTable&);
@@ -689,13 +686,13 @@ public:
 
   /// Modify cell text
   void setItemText(FXint r,FXint c,const FXString& text);
-  
+
   /// Return cell text
   FXString getItemText(FXint r,FXint c) const;
 
   /// Modify cell icon, deleting the old icon if it was owned
   void setItemIcon(FXint r,FXint c,FXIcon* icon,FXbool owned=FALSE);
-  
+
   /// Return cell icon
   FXIcon* getItemIcon(FXint r,FXint c) const;
 

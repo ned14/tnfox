@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.cpp,v 1.213 2005/02/06 17:20:00 fox Exp $                        *
+* $Id: FXTable.cpp,v 1.213.2.7 2005/08/17 16:25:50 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -201,7 +201,7 @@
 #define DEFAULTROWHEIGHT    20      // Initial value for defRowHeight
 #define FUDGE               1
 
-#define TABLE_MASK          (TABLE_COL_SIZABLE|TABLE_ROW_SIZABLE|TABLE_HEADERS_SIZABLE)
+#define TABLE_MASK          (TABLE_COL_SIZABLE|TABLE_ROW_SIZABLE|TABLE_NO_COLSELECT|TABLE_NO_ROWSELECT)
 
 
 
@@ -655,11 +655,12 @@ FXDragType FXTable::csvType=0;
 // Serialization
 FXTable::FXTable(){
   flags|=FLAG_ENABLED;
-  colHeader=(FXHeader*)-1L;
-  rowHeader=(FXHeader*)-1L;
-  cells=(FXTableItem**)-1L;
+  colHeader=NULL;
+  rowHeader=NULL;
+  cornerButton=NULL;
+  FXCALLOC(&cells,FXTableItem*,1);
   editor=NULL;
-  font=(FXFont*)-1L;
+  font=NULL;
   nrows=0;
   ncols=0;
   visiblerows=0;
@@ -679,6 +680,10 @@ FXTable::FXTable(){
   stippleColor=0;
   cellBorderColor=0;
   cellBorderWidth=0;
+  cellBackColor[0][0]=0;
+  cellBackColor[0][1]=0;
+  cellBackColor[1][0]=0;
+  cellBackColor[1][1]=0;
   defColWidth=DEFAULTCOLWIDTH;
   defRowHeight=DEFAULTROWHEIGHT;
   current.row=-1;
@@ -707,12 +712,18 @@ FXTable::FXTable(){
 // Build table
 FXTable::FXTable(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint pl,FXint pr,FXint pt,FXint pb):
   FXScrollArea(p,opts,x,y,w,h){
+  FXuint colhs=HEADER_HORIZONTAL|HEADER_TRACKING|HEADER_BUTTON|FRAME_RAISED|FRAME_THICK|LAYOUT_FIX_HEIGHT;
+  FXuint rowhs=HEADER_VERTICAL|HEADER_TRACKING|HEADER_BUTTON|FRAME_RAISED|FRAME_THICK|LAYOUT_FIX_WIDTH;
+  if(options&TABLE_COL_SIZABLE) colhs|=HEADER_RESIZE;
+  if(options&TABLE_NO_COLSELECT) colhs&=~HEADER_BUTTON;
+  if(options&TABLE_ROW_SIZABLE) rowhs|=HEADER_RESIZE;
+  if(options&TABLE_NO_ROWSELECT) rowhs&=~HEADER_BUTTON;
+  colHeader=new FXHeader(this,this,FXTable::ID_SELECT_COLUMN_INDEX,colhs,0,0,0,DEFAULTROWHEIGHT);
+  rowHeader=new FXHeader(this,this,FXTable::ID_SELECT_ROW_INDEX,rowhs,0,0,DEFAULTCOLWIDTH,0);
+  cornerButton=new FXButton(this,FXString::null,NULL,this,FXTable::ID_SELECT_ALL,FRAME_RAISED|FRAME_THICK);
   flags|=FLAG_ENABLED;
   target=tgt;
   message=sel;
-  colHeader=new FXHeader(this,this,FXTable::ID_SELECT_COLUMN_INDEX,HEADER_TRACKING|HEADER_BUTTON|FRAME_RAISED|FRAME_THICK|LAYOUT_FIX_HEIGHT,0,0,0,DEFAULTROWHEIGHT);
-  rowHeader=new FXHeader(this,this,FXTable::ID_SELECT_ROW_INDEX,HEADER_VERTICAL|HEADER_TRACKING|HEADER_BUTTON|FRAME_RAISED|FRAME_THICK|LAYOUT_FIX_WIDTH,0,0,DEFAULTCOLWIDTH,0);
-  cornerButton=new FXButton(this,FXString::null,NULL,this,FXTable::ID_SELECT_ALL,FRAME_RAISED|FRAME_THICK);
   editor=NULL;
   FXCALLOC(&cells,FXTableItem*,1);
   font=getApp()->getNormalFont();
@@ -986,7 +997,7 @@ void FXTable::moveContents(FXint x,FXint y){
   rowHeader->setPosition(y);
 
   // Scroll table
-  scroll(colHeader->getX(),rowHeader->getY(),colHeader->getTotalSize()+vgrid,rowHeader->getTotalSize()+hgrid,dx,dy);
+  scroll(colHeader->getX(),rowHeader->getY(),FXMIN(colHeader->getTotalSize()+vgrid,width),FXMIN(rowHeader->getTotalSize()+hgrid,height),dx,dy);
 
   // Place editor control
   if(editor){
@@ -1363,6 +1374,7 @@ void FXTable::countText(FXint& nr,FXint& nc,const FXchar* text,FXint size,FXchar
       cc++;
       if(cc>nc) nc=cc;
       nr++;
+      cc=0;
       }
     }
   }
@@ -1417,8 +1429,8 @@ void FXTable::setCurrentItem(FXint r,FXint c,FXbool notify){
   register FXTableItem* item;
 
   // Verify input indices
-  if(r<-1 || nrows<=r){ fxerror("%s::setCurrentItem: row index out of range.\n",getClassName()); }
-  if(c<-1 || ncols<=c){ fxerror("%s::setCurrentItem: column index out of range.\n",getClassName()); }
+  r=FXCLAMP(-1,r,nrows-1);
+  c=FXCLAMP(-1,c,ncols-1);
 
   // End editing
   acceptInput(notify);
@@ -1465,10 +1477,8 @@ void FXTable::setCurrentItem(FXint r,FXint c,FXbool notify){
 
 // Set anchor item
 void FXTable::setAnchorItem(FXint r,FXint c){
-  if(r<-1 || nrows<=r){ fxerror("%s::setAnchorItem: row index out of range.\n",getClassName()); }
-  if(c<-1 || ncols<=c){ fxerror("%s::setAnchorItem: column index out of range.\n",getClassName()); }
-  anchor.row=r;
-  anchor.col=c;
+  anchor.row=FXCLAMP(-1,r,nrows-1);
+  anchor.col=FXCLAMP(-1,c,ncols-1);
   }
 
 
@@ -1583,6 +1593,12 @@ FXbool FXTable::selectRange(FXint startrow,FXint endrow,FXint startcol,FXint end
   FXASSERT(0<=rlo && rlo<=rhi && rhi<nrows);
   FXASSERT(0<=clo && clo<=chi && chi<ncols);
 
+  // New selection rectangle
+  selection.fm.row=nrlo;
+  selection.fm.col=nclo;
+  selection.to.row=nrhi;
+  selection.to.col=nchi;
+
   // Change items
   for(tablepos.row=rlo; tablepos.row<=rhi; tablepos.row++){
     for(tablepos.col=clo; tablepos.col<=chi; tablepos.col++){
@@ -1601,12 +1617,6 @@ FXbool FXTable::selectRange(FXint startrow,FXint endrow,FXint startcol,FXint end
         }
       }
     }
-
-  // New selection rectangle
-  selection.fm.row=nrlo;
-  selection.fm.col=nclo;
-  selection.to.row=nrhi;
-  selection.to.col=nchi;
   return TRUE;
   }
 
@@ -2783,14 +2793,18 @@ long FXTable::onCmdSelectCell(FXObject*,FXSelector,void*){
 
 // Select row
 long FXTable::onCmdSelectRow(FXObject*,FXSelector,void*){
-  selectRow(current.row,TRUE);
+  if(options&TABLE_NO_ROWSELECT){
+    selectRow(current.row,TRUE);
+    }
   return 1;
   }
 
 
 // Select column
 long FXTable::onCmdSelectColumn(FXObject*,FXSelector,void*){
-  selectColumn(current.col,TRUE);
+  if(options&TABLE_NO_COLSELECT){
+    selectColumn(current.col,TRUE);
+    }
   return 1;
   }
 
@@ -2949,7 +2963,7 @@ void FXTable::setTableSize(FXint nr,FXint nc,FXbool notify){
 // Insert a row
 void FXTable::insertRows(FXint row,FXint nr,FXbool notify){
   register FXint oldrow=current.row;
-  register FXint r,c,s,n;
+  register FXint r,c,n;
   FXTableItem **oldcells=cells;
   FXTableRange tablerange;
 
@@ -2960,7 +2974,6 @@ void FXTable::insertRows(FXint row,FXint nr,FXbool notify){
   if(row<0 || row>nrows){ fxerror("%s::insertRows: row out of range.\n",getClassName()); }
 
   // Space for nr new rows
-  s=nr*defRowHeight;
   n=nrows+nr;
 
   // Initialize row headers
@@ -3046,7 +3059,7 @@ void FXTable::insertRows(FXint row,FXint nr,FXbool notify){
 // Insert a column
 void FXTable::insertColumns(FXint col,FXint nc,FXbool notify){
   register FXint oldcol=current.col;
-  register FXint r,c,s,n;
+  register FXint r,c,n;
   FXTableItem **oldcells=cells;
   FXTableRange tablerange;
 
@@ -3057,7 +3070,6 @@ void FXTable::insertColumns(FXint col,FXint nc,FXbool notify){
   if(col<0 || col>ncols){ fxerror("%s::insertColumns: column out of range.\n",getClassName()); }
 
   // Space for nr new rows
-  s=nc*defColWidth;
   n=ncols+nc;
 
   // Initialize column headers
@@ -3883,7 +3895,19 @@ FXColor FXTable::getCellColor(FXint r,FXint c) const {
 
 // Change list style
 void FXTable::setTableStyle(FXuint style){
-  options=(options&~TABLE_MASK) | (style&TABLE_MASK);
+  FXuint opts=(options&~TABLE_MASK) | (style&TABLE_MASK);
+  FXuint hs;
+  if(opts!=options){
+    hs=HEADER_HORIZONTAL|HEADER_TRACKING|HEADER_BUTTON;
+    if(opts&TABLE_COL_SIZABLE) hs|=HEADER_RESIZE;
+    if(opts&TABLE_NO_COLSELECT) hs&=~HEADER_BUTTON;
+    colHeader->setHeaderStyle(hs);
+    hs=HEADER_VERTICAL|HEADER_TRACKING|HEADER_BUTTON;
+    if(opts&TABLE_ROW_SIZABLE) hs|=HEADER_RESIZE;
+    if(opts&TABLE_NO_ROWSELECT) hs&=~HEADER_BUTTON;
+    rowHeader->setHeaderStyle(hs);
+    options=opts;
+    }
   }
 
 

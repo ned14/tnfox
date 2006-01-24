@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fx.h,v 1.90 2005/02/05 20:52:07 fox Exp $                                *
+* $Id: fx.h,v 1.90.2.1 2005/02/16 05:40:09 fox Exp $                                *
 ********************************************************************************/
 #ifndef FX_H
 #define FX_H
@@ -192,6 +192,7 @@
 #include "FXFontSelector.h"
 #include "FXFontDialog.h"
 #include "FXUndoList.h"
+#include "FXRex.h"
 #include "FXText.h"
 #include "FXDataTarget.h"
 #include "FXProgressBar.h"

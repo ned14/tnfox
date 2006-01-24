@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXString.cpp,v 1.130 2005/01/16 16:06:07 fox Exp $                       *
+* $Id: FXString.cpp,v 1.130.2.1 2005/05/27 20:01:36 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include <qcstring.h>
@@ -1489,16 +1489,15 @@ FXString& FXString::vformat(const char* fmt,va_list args){
   if(fmt && *fmt){
     register FXint n=strlen(fmt);       // Result is longer than format string
 #if defined(WIN32) || defined(HAVE_VSNPRINTF)
-    n+=128;                             // Add a bit of slop
-x:  length(n);
-    len=vsnprintf(str,n+1,fmt,args);
-    if(len<0){ n<<=1; goto x; }         // Some implementations return -1 if not enough room
-    if(n<len){ n=len; goto x; }         // Others return how much space would be needed
+    n+=1024;                            // Add a lot of slop
+    length(n);                          // Some implementations return -1 if not enough room
+    len=vsnprintf(str,n+1,fmt,args);    // Others return how much space would be needed
 #else
     n+=1024;                            // Add a lot of slop
     length(n);
     len=vsprintf(str,fmt,args);
 #endif
+    FXASSERT(0<=len && len<=n);
     }
   length(len);
   return *this;

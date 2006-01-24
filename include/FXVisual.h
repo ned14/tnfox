@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVisual.h,v 1.36 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXVisual.h,v 1.36.2.1 2005/12/19 13:14:03 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXVISUAL_H
 #define FXVISUAL_H
@@ -150,10 +150,10 @@ public:
   FXuint getNumRed() const { return numred; }
 
   /// Get number of greens
-  FXuint getNumGreen() const { return numred; }
+  FXuint getNumGreen() const { return numgreen; }
 
   /// Get number of blues
-  FXuint getNumBlue() const { return numred; }
+  FXuint getNumBlue() const { return numblue; }
 
   /// Get device pixel value for color
   FXPixel getPixel(FXColor clr);

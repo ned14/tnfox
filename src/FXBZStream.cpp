@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBZStream.cpp,v 1.9 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXBZStream.cpp,v 1.9.2.1 2005/03/18 05:36:12 fox Exp $                       *
 ********************************************************************************/
 #ifdef FX_FOXCOMPAT
 
@@ -71,12 +71,10 @@ unsigned long FXBZFileStream::writeBuffer(unsigned long){
   if(code==FXStreamOK){
     m=wrptr-rdptr;
     BZ2_bzWrite(&bzerror,(BZFILE*)bzfile,(void*)rdptr,m);
-    if(bzerror!=BZ_OK){
-      code=FXStreamFull;
-      return endptr-wrptr;
+    if(bzerror==BZ_OK){
+      rdptr=begptr;             // BZ2_bzWrite either fails or succeeds writing ALL data
+      wrptr=begptr;
       }
-    rdptr=begptr;
-    wrptr=begptr;
     return endptr-wrptr;
     }
   return 0;
@@ -96,14 +94,9 @@ unsigned long FXBZFileStream::readBuffer(unsigned long){
     rdptr=begptr;
     wrptr=begptr+m;
     n=BZ2_bzRead(&bzerror,(BZFILE*)bzfile,wrptr,endptr-wrptr);
-    if(bzerror!=BZ_OK){
-      if(bzerror!=BZ_STREAM_END){
-        code=FXStreamFormat;
-        return wrptr-rdptr;
-        }
-      code=FXStreamEnd;
+    if(((bzerror==BZ_OK)||(bzerror==BZ_STREAM_END)) && 0<n){
+      wrptr+=n;
       }
-    wrptr+=n;
     return wrptr-rdptr;
     }
   return 0;

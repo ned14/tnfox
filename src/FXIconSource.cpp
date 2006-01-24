@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconSource.cpp,v 1.12 2005/02/08 06:12:35 fox Exp $                    *
+* $Id: FXIconSource.cpp,v 1.12.2.2 2005/04/10 03:24:47 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -45,8 +45,10 @@
 #include "FXBMPIcon.h"
 #include "FXGIFIcon.h"
 #include "FXICOIcon.h"
+#include "FXIFFIcon.h"
 #include "FXPCXIcon.h"
 #include "FXPPMIcon.h"
+#include "FXRASIcon.h"
 #include "FXRGBIcon.h"
 #include "FXTGAIcon.h"
 #include "FXXBMIcon.h"
@@ -56,8 +58,10 @@
 #include "FXBMPImage.h"
 #include "FXGIFImage.h"
 #include "FXICOImage.h"
+#include "FXIFFImage.h"
 #include "FXPCXImage.h"
 #include "FXPPMImage.h"
+#include "FXRASImage.h"
 #include "FXRGBImage.h"
 #include "FXTGAImage.h"
 #include "FXXBMImage.h"
@@ -164,14 +168,20 @@ FXIcon *FXIconSource::loadIcon(FXStream& store,const FXString& type) const {
   else if(comparecase(FXGIFIcon::fileExt,type)==0){
     icon=new FXGIFIcon(app);
     }
-  else if(comparecase(FXICOIcon::fileExt,type)==0){
+  else if(comparecase(FXICOIcon::fileExt,type)==0 || comparecase("cur",type)==0){
     icon=new FXICOIcon(app);
+    }
+  else if(comparecase(FXIFFIcon::fileExt,type)==0 || comparecase("lbm",type)==0){
+    icon=new FXIFFIcon(app);
     }
   else if(comparecase(FXPCXIcon::fileExt,type)==0){
     icon=new FXPCXIcon(app);
     }
-  else if(comparecase(FXPPMIcon::fileExt,type)==0){
+  else if(comparecase(FXPPMIcon::fileExt,type)==0 || comparecase("pbm",type)==0 || comparecase("pgm",type)==0 || comparecase("pnm",type)==0){
     icon=new FXPPMIcon(app);
+    }
+  else if(comparecase(FXRASIcon::fileExt,type)==0){
+    icon=new FXRASIcon(app);
     }
   else if(comparecase(FXRGBIcon::fileExt,type)==0){
     icon=new FXRGBIcon(app);
@@ -197,7 +207,7 @@ FXIcon *FXIconSource::loadIcon(FXStream& store,const FXString& type) const {
     }
 #endif
 #ifdef HAVE_TIFF_H
-  else if(comparecase(FXTIFIcon::fileExt,type)==0){
+  else if(comparecase(FXTIFIcon::fileExt,type)==0 || comparecase("tiff",type)==0){
     icon=new FXTIFIcon(app);
     }
 #endif
@@ -231,15 +241,15 @@ FXImage *FXIconSource::loadImage(const FXString& filename,const FXString& type) 
 
 
 // Load from data array
-FXIcon *FXIconSource::loadImage(const void *pixels,const FXString& type) const {
-  FXIcon *icon=NULL;
+FXImage *FXIconSource::loadImage(const void *pixels,const FXString& type) const {
+  FXImage *image=NULL;
   if(pixels){
     FXMemoryStream store;
     store.open(FXStreamLoad,(FXuchar*)pixels);
-    icon=loadIcon(store,type);
+    image=loadImage(store,type);
     store.close();
     }
-  return icon;
+  return image;
   }
 
 
@@ -252,14 +262,20 @@ FXImage *FXIconSource::loadImage(FXStream& store,const FXString& type) const {
   else if(comparecase(FXGIFImage::fileExt,type)==0){
     image=new FXGIFImage(app);
     }
-  else if(comparecase(FXICOImage::fileExt,type)==0){
+  else if(comparecase(FXICOImage::fileExt,type)==0 || comparecase("cur",type)==0){
     image=new FXICOImage(app);
+    }
+  else if(comparecase(FXIFFImage::fileExt,type)==0 || comparecase("lbm",type)==0){
+    image=new FXIFFImage(app);
     }
   else if(comparecase(FXPCXImage::fileExt,type)==0){
     image=new FXPCXImage(app);
     }
-  else if(comparecase(FXPPMImage::fileExt,type)==0){
+  else if(comparecase(FXPPMImage::fileExt,type)==0 || comparecase("pbm",type)==0 || comparecase("pgm",type)==0 || comparecase("pnm",type)==0){
     image=new FXPPMImage(app);
+    }
+  else if(comparecase(FXRASImage::fileExt,type)==0){
+    image=new FXRASImage(app);
     }
   else if(comparecase(FXRGBImage::fileExt,type)==0){
     image=new FXRGBImage(app);
@@ -285,7 +301,7 @@ FXImage *FXIconSource::loadImage(FXStream& store,const FXString& type) const {
     }
 #endif
 #ifdef HAVE_TIFF_H
-  else if(comparecase(FXTIFImage::fileExt,type)==0){
+  else if(comparecase(FXTIFImage::fileExt,type)==0 || comparecase("tiff",type)==0){
     image=new FXTIFImage(app);
     }
 #endif

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.cpp,v 1.82 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXPopup.cpp,v 1.82.2.2 2005/10/24 01:04:21 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -760,12 +760,12 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
     GetMonitorInfoA(hMon,&minfo);
     rx=minfo.rcWork.left;
     ry=minfo.rcWork.top;
-    rw=minfo.rcWork.right;
-    rh=minfo.rcWork.bottom;
+    rw=minfo.rcWork.right-minfo.rcWork.left;
+    rh=minfo.rcWork.bottom-minfo.rcWork.top;
     }
   else
 #endif
-    {
+    { 
     // On Win95 and WinNT, we have to use the following
     SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
     rx=rect.left;
