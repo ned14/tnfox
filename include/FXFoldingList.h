@@ -268,7 +268,6 @@ protected:
   virtual FXFoldingItem* createItem(const FXString& text,FXIcon* oi,FXIcon* ci,void* ptr);
   virtual void moveContents(FXint x,FXint y);
   void sort(FXFoldingItem*& f1,FXFoldingItem*& t1,FXFoldingItem*& f2,FXFoldingItem*& t2,int n);
-  void mergesort(FXFoldingItem*& list);
   void recompute();
 private:
   FXFoldingList(const FXFoldingList&);

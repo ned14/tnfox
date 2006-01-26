@@ -71,7 +71,6 @@ protected:
   void drawGrooveRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
   void drawDoubleRaisedRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
   void drawDoubleSunkenRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
-  void drawFocusRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
   void drawFrame(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
 private:
   FXPacker(const FXPacker&);
