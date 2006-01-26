@@ -162,8 +162,8 @@ public:
 	//! Returns the number of times \em val is in the array
 	int contains(const type &val) const
 	{
-		int count=0;
-		for(int n=0; n<size(); n++)
+		uint count=0;
+		for(uint n=0; n<size(); n++)
 		{
 			if(at(n)==val) count++;
 		}
