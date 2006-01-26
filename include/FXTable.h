@@ -79,8 +79,6 @@ protected:
   FXuint      state;
 protected:
   FXTableItem():icon(NULL),data(NULL),state(0){}
-  FXint textWidth(const FXTable* table) const;
-  FXint textHeight(const FXTable* table) const;
   virtual void draw(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
   virtual void drawBorders(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
   virtual void drawContent(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;

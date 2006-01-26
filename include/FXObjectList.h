@@ -141,7 +141,7 @@ public:
 
 /// Specialize list to pointers to TYPE
 template<class TYPE>
-class FXAPI FXObjectListOf : public FXObjectList {
+class FXObjectListOf : public FXObjectList {
 public:
   FXObjectListOf(){}
 
