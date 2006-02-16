@@ -521,7 +521,7 @@ for line in inh:
         #line=line[:-1]+" // Namespace ends\n"
     if bracketcnt<classbracketidx:
         # Modify the end of the destructor
-        if not moddestructdisabled and not (options.flags & 1):
+        if currentclass and not moddestructdisabled and not (options.flags & 1):
             if "~"+currentclass==currentmethod and -1==string.find(line, "} FXEXCEPTIONDESTRUCT2; "):
                 line="} FXEXCEPTIONDESTRUCT2; "+line
                 infilechanged=True

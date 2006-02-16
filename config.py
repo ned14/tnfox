@@ -22,8 +22,8 @@ inlineMutex=False  # not debugmode
 # 0=generate just the DLL, 1=also generate a static library, 2=only generate a static library
 GenStaticLib=(sys.platform!="win32")
 
-# Set to disable FOX compatibility layer
-noFOXCompat=False
+# Set to include FOX compatibility layer
+FOXCompatLayer=False
 
 # Set to disable inclusion of GUI ie; no FXObject, no FXApp etc
 disableGUI=False
