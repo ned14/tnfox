@@ -3,7 +3,7 @@
 *                         C u r s o r - O b j e c t                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCursor.cpp,v 1.55.2.1 2005/02/09 06:30:24 fox Exp $                        *
+* $Id: FXCursor.cpp,v 1.62 2006/01/22 17:58:21 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -54,13 +54,13 @@
 #define CURSOR_MASK      (255)
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
 
-extern FXbool fxloadXBM(FXColor*& data,const FXuchar *pixels,const FXuchar *mask,FXint width,FXint height);
+extern bool fxloadXBM(FXColor*& data,const FXuchar *pixels,const FXuchar *mask,FXint width,FXint height);
 
 
 // Standard colors
@@ -96,44 +96,44 @@ FXCursor::FXCursor(FXApp* a,FXStockCursor curid):FXId(a){
 
 
 // Make cursor from source and mask
-FXCursor::FXCursor(FXApp* a,const FXuchar* src,const FXuchar* msk,FXint w,FXint h,FXint hx,FXint hy,FXint opts):FXId(a){
+FXCursor::FXCursor(FXApp* a,const FXuchar* src,const FXuchar* msk,FXint w,FXint h,FXint hx,FXint hy):FXId(a){
   FXTRACE((100,"FXCursor::FXCursor %p\n",this));
   fxloadXBM(data,src,msk,w,h);
   width=w;
   height=h;
   hotx=FXCLAMP(0,hx,width-1);
   hoty=FXCLAMP(0,hy,height-1);
-  options=opts|CURSOR_OWNED;
+  options=CURSOR_OWNED;
   }
 
 
 // Make cursor from FXColor pixels
-FXCursor::FXCursor(FXApp* a,const FXColor *pix,FXint w,FXint h,FXint hx,FXint hy,FXint opts):FXId(a){
+FXCursor::FXCursor(FXApp* a,const FXColor *pix,FXint w,FXint h,FXint hx,FXint hy):FXId(a){
   FXTRACE((100,"FXCursor::FXCursor %p\n",this));
   data=(FXColor*)pix;
   width=w;
   height=h;
   hotx=FXCLAMP(0,hx,width-1);
   hoty=FXCLAMP(0,hy,height-1);
-  options=opts;
+  options=0;
   }
 
 
 // Return TRUE if color cursor
-FXbool FXCursor::isColor() const {
+bool FXCursor::isColor() const {
   register FXint i;
   if(data){
     for(i=width*height-1; 0<=i; i--){
-      if(data[i]!=black && data[i]!=white && FXALPHAVAL(data[i])!=0) return TRUE;
+      if(data[i]!=black && data[i]!=white && FXALPHAVAL(data[i])!=0) return true;
       }
     }
-  return FALSE;
+  return false;
   }
 
 
 #ifdef WIN32
 
-static FXbool supportsColorCursors(){
+static bool supportsColorCursors(){
 
   // Try calling GetVersionEx using the OSVERSIONINFOEX structure.
   // If that fails, try using the OSVERSIONINFO structure.
@@ -147,16 +147,16 @@ static FXbool supportsColorCursors(){
     // If OSVERSIONINFOEX doesn't work, try OSVERSIONINFO.
     osvi.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
     if(!GetVersionEx((OSVERSIONINFO*)&osvi)){
-      return FALSE; // should not happen
+      return false; // should not happen
       }
     }
   if(osvi.dwPlatformId==VER_PLATFORM_WIN32_NT){
     if(osvi.dwMajorVersion==5 && osvi.dwMinorVersion>=0 || osvi.dwMajorVersion>5){
-      return TRUE;
+      return true;
       }
     }
 
-  return FALSE;
+  return false;
   }
 
 
@@ -319,9 +319,8 @@ void FXCursor::create(){
 
         // No support for color cursor or simple black/white cursor
         else{
-          FXint i,j,srcbytes,srcoffset,dstoffset; FXuchar tmpxor[128],tmpand[128];
+          FXint i,j,srcoffset,dstoffset; FXuchar tmpxor[128],tmpand[128];
           FXTRACE((100,"%s::create: custom b/w %dx%d cursor\n",getClassName(),width,height));
-          srcbytes=(width+7)/8;
           srcoffset=dstoffset=0;
           memset(tmpand,0xff,sizeof(tmpand));
           memset(tmpxor,0,sizeof(tmpxor));
@@ -394,21 +393,21 @@ void FXCursor::destroy(){
 
 
 // Save pixel data only
-FXbool FXCursor::savePixels(FXStream& store) const {
+bool FXCursor::savePixels(FXStream& store) const {
   FXuint size=width*height;
   store.save(data,size);
-  return TRUE;
+  return true;
   }
 
 
 // Load pixel data only
-FXbool FXCursor::loadPixels(FXStream& store){
+bool FXCursor::loadPixels(FXStream& store){
   FXuint size=width*height;
   if(options&CURSOR_OWNED){FXFREE(&data);}
-  if(!FXMALLOC(&data,FXColor,size)) return FALSE;
+  if(!FXMALLOC(&data,FXColor,size)) return false;
   store.load(data,size);
   options|=CURSOR_OWNED;
-  return TRUE;
+  return true;
   }
 
 

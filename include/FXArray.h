@@ -3,7 +3,7 @@
 *                          G e n e r i c   A r r a y                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXArray.h,v 1.18 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXArray.h,v 1.24 2006/01/22 17:57:58 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXARRAY_H
 #define FXARRAY_H
@@ -31,282 +31,202 @@
 namespace FX {
 
 
-/*************************  D e f i n i t i o n  *******************************/
-
-
+/// Array of some generic type
 template<class TYPE>
 class FXArray {
-  TYPE   *list;                // List of items
-  FXint   number;              // Used slots
-  FXint   total;               // Total slots
-  FXint   grow;                // Grow amount
+protected:
+  TYPE  *ptr;   // Data array
+  FXint  num;   // Number in array
 public:
-  FXArray();
-  FXArray(const FXArray<TYPE>& orig);
-  FXArray<TYPE>& operator=(const FXArray<TYPE> &orig);
-  inline FXint no() const;
-  inline TYPE* data() const;
-  inline FXint size() const;
-  void size(FXint n);
-  FXint inc() const;
-  void inc(FXint n);
-  inline const TYPE& operator [](FXint i) const;
-  inline TYPE& operator [](FXint i);
-  void insert(FXint pos,const TYPE& p);
-  void append(const TYPE& p);
-  void prepend(const TYPE& p);
-  void remove(FXint pos);
-  void extract(const TYPE& p);
-  FXint find(const TYPE& p,FXint pos=0);
-  FXint rfind(const TYPE& p,FXint pos=2147483647);
-  void trunc();
-  void clear();
-  void save(FXStream& store) const;
-  void load(FXStream& store);
- ~FXArray();
+
+  /// Create as empty
+  FXArray():ptr(NULL),num(0){
+    }
+
+  /// Create with given size n
+  FXArray(FXint n):ptr(NULL),num(0){
+    if(allocElms(ptr,n)){ constructElms(ptr,n); num=n; }
+    }
+
+  /// Create initialized from another array
+  FXArray(const FXArray<TYPE>& src):ptr(NULL),num(0){
+    if(allocElms(ptr,src.num)){ constructElms(ptr,src.num); copyElms(ptr,src.ptr,src.num); num=src.num; }
+    }
+
+  /// Create initialized with n copies of object
+  FXArray(const TYPE& src,FXint n):ptr(NULL),num(0){
+    if(allocElms(ptr,n)){ constructElms(ptr,n); fillElms(ptr,src,n); num=n; }
+    }
+
+  /// Create initialized with array of n objects
+  FXArray(const TYPE* src,FXint n):ptr(NULL),num(0){
+    if(allocElms(ptr,n)){ constructElms(ptr,n); copyElms(ptr,src,n); num=n; }
+    }
+
+  /// Return number of elements
+  FXint no() const { return num; }
+
+  /// Change number of elements to n
+  bool no(FXint n){
+    if(n!=num){
+      if(n<num){
+        destructElms(ptr+n,num-n);
+        if(!resizeElms(ptr,n)) return false;
+        }
+      else{
+        if(!resizeElms(ptr,n)) return false;
+        constructElms(ptr+num,n-num);
+        }
+      num=n;
+      }
+    return true;
+    }
+
+  /// Assign from another list
+  FXArray<TYPE>& operator=(const FXArray<TYPE>& src){
+    if(ptr!=src.ptr){ no(src.num); copyElms(ptr,src.ptr,src.num); }
+    return *this;
+    }
+
+  /// Index into array
+  TYPE& operator[](FXint i){ return ptr[i]; }
+  const TYPE& operator[](FXint i) const { return ptr[i]; }
+
+  /// Index into list
+  TYPE& at(FXint i){ return ptr[i]; }
+  const TYPE& at(FXint i) const { return ptr[i]; }
+
+  /// Return pointer to list
+  TYPE* data() const { return ptr; }
+
+  /// Adopt array from source
+  FXArray<TYPE>& adopt(FXArray<TYPE>& src){
+    no(0);
+    ptr=src.ptr; src.ptr=NULL;
+    num=src.num; src.num=0;
+    return *this;
+    }
+
+  /// Assign object p to list
+  FXArray<TYPE>& assign(const TYPE& src){
+    if(no(1)){ ptr[0]=src; }
+    return *this;
+    }
+
+  /// Assign n copies of object to list
+  FXArray<TYPE>& assign(const TYPE& src,FXint n){
+    if(no(n)){ fillElms(ptr,src,n); }
+    return *this;
+    }
+
+  /// Assign n objects to list
+  FXArray<TYPE>& assign(const TYPE* src,FXint n){
+    if(no(n)){ copyElms(ptr,src,n); }
+    return *this;
+    }
+
+  /// Assign n objects to list
+  FXArray<TYPE>& assign(const FXArray<TYPE>& src){
+    if(no(src.num)){ copyElms(ptr,src.ptr,src.num); }
+    return *this;
+    }
+
+  /// Insert an object
+  FXArray<TYPE>& insert(FXint pos,const TYPE& src){
+    if(no(num+1)){ moveElms(ptr+pos+1,ptr+pos,num-pos-1); ptr[pos]=src; }
+    return *this;
+    }
+
+  /// Insert n copies of object at specified position
+  FXArray<TYPE>& insert(FXint pos,const TYPE& src,FXint n){
+    if(no(num+n)){ moveElms(ptr+pos+n,ptr+pos,num-pos-n); fillElms(ptr+pos,src,n); }
+    return *this;
+    }
+
+  /// Insert n objects at specified position
+  FXArray<TYPE>& insert(FXint pos,const TYPE* src,FXint n){
+    if(no(num+n)){ moveElms(ptr+pos+n,ptr+pos,num-pos-n); copyElms(ptr+pos,src,n); }
+    return *this;
+    }
+
+  /// Insert n objects at specified position
+  FXArray<TYPE>& insert(FXint pos,const FXArray<TYPE>& src){
+    if(no(num+src.num)){ moveElms(ptr+pos+src.num,ptr+pos,num-pos-src.num); copyElms(ptr+pos,src.ptr,src.num); }
+    return *this;
+    }
+
+  /// Prepend object
+  FXArray<TYPE>& prepend(const TYPE& src){
+    if(no(num+1)){ moveElms(ptr+1,ptr,num-1); ptr[0]=src; }
+    return *this;
+    }
+
+  /// Prepend n copies of object
+  FXArray<TYPE>& prepend(const TYPE& src,FXint n){
+    if(no(num+n)){ moveElms(ptr+n,ptr,num-n); fillElms(ptr,src,n); }
+    return *this;
+    }
+
+  /// Prepend n objects
+  FXArray<TYPE>& prepend(const TYPE* src,FXint n){
+    if(no(num+n)){ moveElms(ptr+n,ptr,num-n); copyElms(ptr,src,n); }
+    return *this;
+    }
+
+  /// Prepend n objects
+  FXArray<TYPE>& prepend(const FXArray<TYPE>& src){
+    if(no(num+src.num)){ moveElms(ptr+src.num,ptr,num-src.num); copyElms(ptr,src.ptr,src.num); }
+    return *this;
+    }
+
+  /// Append object
+  FXArray<TYPE>& append(const TYPE& src){
+    if(no(num+1)){ ptr[num-1]=src; }
+    return *this;
+    }
+
+  /// Append n copies of object
+  FXArray<TYPE>& append(const TYPE& src,FXint n){
+    if(no(num+n)){ fillElms(ptr+num-n,src,n); }
+    return *this;
+    }
+
+  /// Append n objects
+  FXArray<TYPE>& append(const TYPE* src,FXint n){
+    if(no(num+n)){ copyElms(ptr+num-n,src,n); }
+    return *this;
+    }
+
+  /// Append n objects
+  FXArray<TYPE>& append(const FXArray<TYPE>& src){
+    if(no(num+src.num)){ copyElms(ptr+num-src.num,src.ptr,src.num); }
+    return *this;
+    }
+
+  /// Remove object at pos
+  FXArray<TYPE>& erase(FXint pos){
+    moveElms(ptr+pos,ptr+pos+1,num-pos-1); no(num-1);
+    return *this;
+    }
+
+  /// Remove n objects starting at pos
+  FXArray<TYPE>& erase(FXint pos,FXint n){
+    moveElms(ptr+pos,ptr+pos+n,num-n-pos); no(num-n);
+    return *this;
+    }
+
+  /// Remove all objects
+  FXArray<TYPE>& clear(){
+    destructElms(ptr,num); freeElms(ptr); num=0;
+    return *this;
+    }
+
+  /// Delete data
+  ~FXArray(){
+    destructElms(ptr,num); freeElms(ptr);
+    }
   };
-
-
-/**********************  I m p l e m e n t a t i o n  ************************/
-
-
-// Construct as empty
-template<class TYPE>
-FXArray<TYPE>::FXArray(){
-  list=NULL;
-  number=0;
-  total=0;
-  grow=0;
-  }
-
-
-// Copy construct
-template<class TYPE>
-FXArray<TYPE>::FXArray(const FXArray<TYPE>& orig){
-  number=orig.number;
-  total=orig.total;
-  grow=orig.grow;
-  allocElms(list,total);
-  constructElms(list,number);
-  copyElms(list,orig.list,number);
-  }
-
-
-// Return number of elements
-template<class TYPE>
-FXint FXArray<TYPE>::no() const {
-  return number;
-  }
-
-
-// Return pointer to the list
-template<class TYPE>
-TYPE* FXArray<TYPE>::data() const {
-  return list;
-  }
-
-
-// Return size of list
-template<class TYPE>
-FXint FXArray<TYPE>::size() const {
-  return total;
-  }
-
-
-// Return grow delta
-template<class TYPE>
-FXint FXArray<TYPE>::inc() const {
-  return grow;
-  }
-
-
-// Set grow delta
-template<class TYPE>
-void FXArray<TYPE>::inc(FXint g){
-  FXASSERT(g>=0);
-  grow=g;
-  }
-
-
-// Return element rvalue
-template<class TYPE>
-const TYPE& FXArray<TYPE>::operator[](FXint i) const {
-  FXASSERT(0<=i&&i<number);
-  return list[i];
-  }
-
-
-// Return element lvalue
-template<class TYPE>
-TYPE& FXArray<TYPE>::operator[](FXint i){
-  FXASSERT(0<=i&&i<number);
-  return list[i];
-  }
-
-
-// Assign an array
-template<class TYPE>
-FXArray<TYPE>& FXArray<TYPE>::operator=(const FXArray<TYPE>& orig){
-  if(this!=&orig){
-    destructElms(list,number);
-    freeElms(list);
-    number=orig.number;
-    total=orig.total;
-    grow=orig.grow;
-    allocElms(list,total);
-    constructElms(list,number);
-    copyElms(list,orig.list,number);
-    }
-  return *this;
-  }
-
-
-// Set new size
-template<class TYPE>
-void FXArray<TYPE>::size(FXint n){
-  FXASSERT(n>=0);
-  if(n!=number){
-    if(n<number){
-      destructElms(&list[n],number-n);                // Destruct old elements
-      if(n==0){
-        freeElms(list);
-        total=0;
-        }
-      }
-    else{
-      if(n>total){
-        TYPE *ptr;
-        FXint s=total+grow;
-        if(grow==0) s=total+total;
-        if(s<n) s=n;
-        allocElms(ptr,s);
-        constructElms(ptr,n);                         // Construct blank elements
-        copyElms(ptr,list,number);                    // Uses assignment operator
-        destructElms(list,number);                    // Destruct old ones
-        freeElms(list);
-        list=ptr;
-        total=s;
-        }
-      FXASSERT(n<=total);
-      constructElms(&list[number],n-number);          // Construct new elements
-      }
-    number=n;
-    }
-  }
-
-
-// Insert element anywhere
-template<class TYPE>
-void FXArray<TYPE>::insert(FXint pos,const TYPE& p){
-  FXint s=number-pos;
-  size(number+1);
-  moveElms(&list[pos+1],&list[pos],s);
-  list[pos]=p;
-  }
-
-
-// Append element at end
-template<class TYPE>
-void FXArray<TYPE>::append(const TYPE& p){
-  FXint s=number;
-  size(number+1);
-  list[s]=p;
-  }
-
-
-// Prepend element at begin
-template<class TYPE>
-void FXArray<TYPE>::prepend(const TYPE& p){
-  FXint s=number;
-  size(number+1);
-  moveElms(&list[1],&list[0],s);
-  list[0]=p;
-  }
-
-
-// Remove element at pos
-template<class TYPE>
-void FXArray<TYPE>::remove(FXint pos){
-  FXint s=number;
-  moveElms(&list[pos],&list[pos+1],s-pos-1);          // Uses assignment operator
-  size(s-1);
-  }
-
-
-// Find element, -1 if not found
-template<class TYPE>
-FXint FXArray<TYPE>::find(const TYPE& p,FXint pos){
-  if(pos<0) pos=0;
-  while(pos<number){ if(list[pos]==p){ return pos; } ++pos; }
-  return -1;
-  }
-
-
-// Find element, -1 if not found
-template<class TYPE>
-FXint FXArray<TYPE>::rfind(const TYPE& p,FXint pos){
-  if(pos>=number) pos=number-1;
-  while(0<=pos){ if(list[pos]==p){ return pos; } --pos; }
-  return -1;
-  }
-
-
-// Extract element
-template<class TYPE>
-void FXArray<TYPE>::extract(const TYPE& p){
-  FXint s=number;
-  while(s-- != 0){
-    if(list[s]==p){
-      moveElms(&list[s],&list[s+1],number-s);         // Uses assignment operator
-      size(number-1);
-      break;
-      }
-    }
-  }
-
-
-// Trunc excess
-template<class TYPE>
-void FXArray<TYPE>::trunc(){
-  size(number);
-  }
-
-
-// Clear the list
-template<class TYPE>
-void FXArray<TYPE>::clear(){
-  size(0);
-  }
-
-
-// Save operator
-template<class TYPE>
-void FXArray<TYPE>::save(FXStream& store) const {
-  store << number << total << grow;
-  saveElms(store,list,number);                        // Uses save operator
-  }
-
-
-// Load operator
-template<class TYPE>
-void FXArray<TYPE>::load(FXStream& store){
-  destructElms(list,number);                          // Destruct elements
-  freeElms(list);
-  store >> number >> total >> grow;
-  allocElms(list,total);
-  constructElms(list,number);                         // Fresh elements
-  loadElms(store,list,number);                        // Uses load operator
-  }
-
-
-// Destruct list
-template<class TYPE>
-FXArray<TYPE>::~FXArray(){
-  destructElms(list,number);
-  freeElms(list);
-  }
 
 }
 
 #endif
-

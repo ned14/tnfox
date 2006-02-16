@@ -3,7 +3,7 @@
 *                       F i l e   S t r e a m   C l a s s                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 * TnFOX Extensions (C) 2003 Niall Douglas                                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
@@ -20,11 +20,11 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileStream.cpp,v 1.19.2.1 2005/03/18 05:36:12 fox Exp $                    *
+* $Id: FXFileStream.cpp,v 1.26 2006/01/22 17:58:26 fox Exp $                    *
 ********************************************************************************/
 #include "fxdefs.h"
 #include "FXFileStream.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "FXException.h"
 
 
@@ -45,8 +45,8 @@ FXbool FXFileStream::open(const FXString& filename,FXStreamDirection save_or_loa
   // Stream should not yet be open
   if(dir!=FXStreamDead){ fxerror("FXFileStream::open: stream is already open.\n"); }
 
-  FXFile *d;
-  FXERRHM(d=new FXFile(filename));
+  QFile *d;
+  FXERRHM(d=new QFile(filename));
   setDevice(d);
 
   if(save_or_load==FXStreamLoad)

@@ -3,7 +3,7 @@
 *                       D o c k H a n d l e r   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2005,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockHandler.cpp,v 1.1 2005/02/04 03:41:00 fox Exp $                   *
+* $Id: FXDockHandler.cpp,v 1.8 2006/01/22 17:58:23 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -117,7 +117,7 @@ FXDockHandler::FXDockHandler(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint 
 
 
 // Can have focus
-FXbool FXDockHandler::canFocus() const { return TRUE; }
+bool FXDockHandler::canFocus() const { return true; }
 
 
 // Moved

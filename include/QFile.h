@@ -19,13 +19,13 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXFILE_H
-#define FXFILE_H
+#ifndef QFile_H
+#define QFile_H
 
 #include "QIODevice.h"
 #include "FXTime.h"
 
-/*! \file FXFile.h
+/*! \file QFile.h
 \brief Defines items and classes used for accessing files
 */
 
@@ -34,7 +34,7 @@ extern "C" { struct stat; }
 
 namespace FX {
 
-/*! \class FXFile
+/*! \class QFile
 \ingroup fiodevices
 \brief An i/o device accessing the filing system directly (Qt compatible)
 
@@ -43,50 +43,50 @@ so multiple threads can read and write from it (though the current file pointer
 is the same for both, so it probably doesn't help you much).
 
 Most likely you'll prefer to use FX::QMemMap all the time as it offers
-superior performance and facilities in most cases. Indeed, FXFile does no
+superior performance and facilities in most cases. Indeed, QFile does no
 internal buffering as it is expected it will only be used rarely.
 
-For speed, FXFile maintains its own record of file length which it manages.
-This normally isn't a problem, but when multiple FXFile's are working on the
+For speed, QFile maintains its own record of file length which it manages.
+This normally isn't a problem, but when multiple QFile's are working on the
 same file (either in-process or across processes) then the internal count
 can become desynchronised with the actual length. If you want to reset the
 length, call reloadSize().
 
-One major difference is default security, especially on NT. FXFile like
+One major difference is default security, especially on NT. QFile like
 all TnFOX sets very conservative permissions on all things it creates -
 see FX::FXACL::default_(). Note that until the file is opened, permissions()
 returns what will be applied to the file on open() rather than the file
 itself - if you want the latter, use the static method.
 
-\note I folded FOX's FXFile namespace functions into this FXFile as static
+\note I folded FOX's QFile namespace functions into this QFile as static
 methods. This should maintain compatibility with FOX applications
 
 \warning Try not to call atEnd() too much. Because of limitations in POSIX
 it works by reading a byte which if successful means not EOF and a ungetch()
 or moving the file pointer back!
 */
-class FXFilePrivate;
+class QFilePrivate;
 class QMemMap;
-class FXAPIR FXFile : public QIODevice
+class FXAPIR QFile : public QIODevice
 {
-	FXFilePrivate *p;
-	FXFile(const FXFile &);
-	FXFile &operator=(const FXFile &);
+	QFilePrivate *p;
+	QFile(const QFile &);
+	QFile &operator=(const QFile &);
 	struct WantStdioType
 	{
 		typedef int foo;
 	};
-	struct WantLightFXFile { };
-	FXFile(WantStdioType);
-	FXFile(const FXString &name, WantLightFXFile);
+	struct WantLightQFile { };
+	QFile(WantStdioType);
+	QFile(const FXString &name, WantLightQFile);
 	friend class QMemMap;
 	friend class FXProcess;
 	FXDLLLOCAL int int_fileDescriptor() const;
 public:
-	FXFile();
+	QFile();
 	//! Constructs a new instance, setting the file name to be used to \em name
-	FXFile(const FXString &name);
-	~FXFile();
+	QFile(const FXString &name);
+	~QFile();
 	//! Returns the file name being addressed by this device
 	const FXString &name() const;
 	//! Sets the file name being addressed by this device. Closes the old file first.
@@ -129,39 +129,6 @@ public:
 // Fix this up into the parts FOX now has later
 
 public:
-	//! Joins two parts of a path separated by the system-specific path separator
-	static FXString join(const FXString &a, const FXString &b)
-	{
-		FXString ret(a);
-		if(PATHSEP!=a[a.length()-1] && PATHSEP!=b[0])
-			return ret.append(PATHSEP).append(b);
-		else
-			return ret.append(b);
-	}
-	//! \overload
-	static FXString join(const FXString &a, const FXString &b, const FXString &c) { return join(join(a,b), c); }
-	//! \overload
-	static FXString join(const FXString &a, const FXString &b, const FXString &c, const FXString &d) { return join(join(join(a,b), c), d); }
-	//! Holds meta information about data
-	enum MetaFileFlags
-	{
-		IsFile=1,				//!< Is a file
-		IsDirectory=2,			//!< Is a directory
-		IsLink=4,				//!< Is a symbolic link
-
-		IsCompressed=64,		//!< Is compressed
-		IsHidden=128			//!< Is hidden
-	};
-	/*! Returns metadata for \em path. This is the fastest way to read this kind
-	of information as it can be all performed at once, or avoiding bits not required.
-	Returns false if an error occurred. */
-	static bool readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize=0, FXuint *hardLinks=0);
-	/*! Stamps the path entry with the specified metadata. Needed to
-	work around the Windows "file tunnelling" misfeature. This function can throw
-	an exception. */
-	static void writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed);
-	//! Returns the flags part of readMetadata()
-	static FXuint metaFlags(const FXString &path);
 
 
 	// These are directly copied from FOX

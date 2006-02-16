@@ -3,7 +3,7 @@
 *                       M e n u   T i t l e   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuTitle.cpp,v 1.45 2005/02/01 21:29:58 fox Exp $                     *
+* $Id: FXMenuTitle.cpp,v 1.52 2006/01/22 17:58:36 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -54,6 +54,8 @@
 */
 
 
+
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -114,7 +116,7 @@ void FXMenuTitle::detach(){
 
 
 // If window can have focus
-FXbool FXMenuTitle::canFocus() const { return 1; }
+bool FXMenuTitle::canFocus() const { return true; }
 
 
 // Get default width
@@ -386,9 +388,9 @@ long FXMenuTitle::onPaint(FXObject*,FXSelector,void* ptr){
     if(!label.empty()){
       yy+=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setForeground(isActive() ? seltextColor : textColor);
-      dc.drawText(xx,yy,label.text(),label.length());
+      dc.drawText(xx,yy,label);
       if(0<=hotoff){
-        dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+        dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
         }
       }
     }
@@ -402,14 +404,14 @@ long FXMenuTitle::onPaint(FXObject*,FXSelector,void* ptr){
     if(!label.empty()){
       yy+=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setForeground(hiliteColor);
-      dc.drawText(xx+1,yy+1,label.text(),label.length());
+      dc.drawText(xx+1,yy+1,label);
       if(0<=hotoff){
-        dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+        dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
         }
       dc.setForeground(shadowColor);
-      dc.drawText(xx,yy,label.text(),label.length());
+      dc.drawText(xx,yy,label);
       if(0<=hotoff){
-        dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+        dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
         }
       }
     }
@@ -418,14 +420,14 @@ long FXMenuTitle::onPaint(FXObject*,FXSelector,void* ptr){
 
 
 // Test if logically inside
-FXbool FXMenuTitle::contains(FXint parentx,FXint parenty) const {
+bool FXMenuTitle::contains(FXint parentx,FXint parenty) const {
   FXint x,y;
-  if(FXMenuCaption::contains(parentx,parenty)) return 1;
+  if(FXMenuCaption::contains(parentx,parenty)) return true;
   if(getMenu() && getMenu()->shown()){
     getParent()->translateCoordinatesTo(x,y,getRoot(),parentx,parenty);
-    if(getMenu()->contains(x,y)) return 1;
+    if(getMenu()->contains(x,y)) return true;
     }
-  return 0;
+  return false;
   }
 
 

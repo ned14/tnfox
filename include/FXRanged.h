@@ -3,7 +3,7 @@
 *          D o u b l e - P r e c i s i o n    R a n g e    C l a s s            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,17 +19,16 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRanged.h,v 1.9 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXRanged.h,v 1.17 2006/01/22 17:58:08 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXRANGED_H
 #define FXRANGED_H
 
-#include "FXVec3d.h"
 
 namespace FX {
 
+
 class FXSphered;
-class FXVec4d;
 
 
 /// Bounds
@@ -42,7 +41,7 @@ public:
   /// Default constructor
   FXRanged(){}
 
-  /// Copy constructor
+  /// Initialize from another range
   FXRanged(const FXRanged& bounds):lower(bounds.lower),upper(bounds.upper){}
 
   /// Initialize from two vectors
@@ -57,11 +56,24 @@ public:
   /// Assignment
   FXRanged& operator=(const FXRanged& bounds){ lower=bounds.lower; upper=bounds.upper; return *this; }
 
+  /// Set value from another range
+  FXRanged& set(const FXRanged& bounds){ lower=bounds.lower; upper=bounds.upper; return *this; }
+
+  /// Set value from two vectors
+  FXRanged& set(const FXVec3d& lo,const FXVec3d& hi){ lower=lo; upper=hi; return *this; }
+
+  /// Set value from six numbers
+  FXRanged& set(FXdouble xlo,FXdouble xhi,FXdouble ylo,FXdouble yhi,FXdouble zlo,FXdouble zhi){ lower.set(xlo,ylo,zlo); upper.set(xhi,yhi,zhi); return *this; }
+
   /// Indexing with 0..1
   FXVec3d& operator[](FXint i){ return (&lower)[i]; }
 
   /// Indexing with 0..1
   const FXVec3d& operator[](FXint i) const { return (&lower)[i]; }
+
+  /// Comparison
+  bool operator==(const FXRanged& r) const { return lower==r.lower && upper==r.upper; }
+  bool operator!=(const FXRanged& r) const { return lower!=r.lower || upper!=r.upper; }
 
   /// Width of box
   FXdouble width() const { return upper.x-lower.x; }
@@ -81,6 +93,9 @@ public:
   /// Length of diagonal
   FXdouble diameter() const;
 
+  /// Get radius of box
+  FXdouble radius() const;
+
   /// Compute diagonal
   FXVec3d diagonal() const;
 
@@ -88,19 +103,19 @@ public:
   FXVec3d center() const;
 
   /// Test if empty
-  FXbool empty() const;
+  bool empty() const;
 
   /// Test if box contains point x,y,z
-  FXbool contains(FXdouble x,FXdouble y,FXdouble z) const;
+  bool contains(FXdouble x,FXdouble y,FXdouble z) const;
 
   /// Test if box contains point p
-  FXbool contains(const FXVec3d& p) const;
+  bool contains(const FXVec3d& p) const;
 
   /// Test if box properly contains another box
-  FXbool contains(const FXRanged& bounds) const;
+  bool contains(const FXRanged& bounds) const;
 
   /// Test if box properly contains sphere
-  FXbool contains(const FXSphered& sphere) const;
+  bool contains(const FXSphered& sphere) const;
 
   /// Include point
   FXRanged& include(FXdouble x,FXdouble y,FXdouble z);
@@ -118,10 +133,10 @@ public:
   FXint intersect(const FXVec4d &plane) const;
 
   /// Intersect box with ray u-v
-  FXbool intersect(const FXVec3d& u,const FXVec3d& v);
+  bool intersect(const FXVec3d& u,const FXVec3d& v);
 
   /// Test if bounds overlap
-  friend FXAPI FXbool overlap(const FXRanged& a,const FXRanged& b);
+  friend FXAPI bool overlap(const FXRanged& a,const FXRanged& b);
 
   /// Get corner number 0..7
   FXVec3d corner(FXint c) const { return FXVec3d((&lower)[c&1].x, (&lower)[(c>>1)&1].y, (&lower)[c>>2].z); }
@@ -138,6 +153,15 @@ public:
   /// Load object from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXRanged& bounds);
   };
+
+
+extern FXAPI bool overlap(const FXRanged& a,const FXRanged& b);
+
+extern FXAPI FXRanged unite(const FXRanged& a,const FXRanged& b);
+extern FXAPI FXRanged intersect(const FXRanged& a,const FXRanged& b);
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXRanged& bounds);
+extern FXAPI FXStream& operator>>(FXStream& store,FXRanged& bounds);
 
 }
 

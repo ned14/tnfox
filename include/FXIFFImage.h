@@ -3,7 +3,7 @@
 *                         I F F   I m a g e   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIFFImage.h,v 1.7 2005/01/16 16:06:06 fox Exp $                         *
+* $Id: FXIFFImage.h,v 1.10 2006/01/22 17:58:04 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXIFFIMAGE_H
 #define FXIFFIMAGE_H
@@ -43,16 +43,17 @@ private:
   FXIFFImage &operator=(const FXIFFImage&);
 public:
   static const FXchar *fileExt;
+  static const FXchar *mimeType;
 public:
 
   /// Construct an image from memory stream formatted as IFF format
   FXIFFImage(FXApp* a,const void *pix=NULL,FXuint opts=0,FXint w=1,FXint h=1);
 
   /// Save pixels into stream in IFF format
-  virtual FXbool savePixels(FXStream& store) const;
+  virtual bool savePixels(FXStream& store) const;
 
   /// Load pixels from stream in IFF format
-  virtual FXbool loadPixels(FXStream& store);
+  virtual bool loadPixels(FXStream& store);
 
   /// Destroy
   virtual ~FXIFFImage();
@@ -66,7 +67,7 @@ public:
 /**
 * Check if stream contains a IFF, return TRUE if so.
 */
-extern FXAPI FXbool fxcheckIFF(FXStream& store);
+extern FXAPI bool fxcheckIFF(FXStream& store);
 
 
 /**
@@ -74,7 +75,7 @@ extern FXAPI FXbool fxcheckIFF(FXStream& store);
 * Upon successful return, the pixel array and size are returned.
 * If an error occurred, the pixel array is set to NULL.
 */
-extern FXAPI FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 
 
 #endif

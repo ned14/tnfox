@@ -3,7 +3,7 @@
 *                       D r a g   C o r n e r   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDragCorner.cpp,v 1.27 2005/01/16 16:06:07 fox Exp $                    *
+* $Id: FXDragCorner.cpp,v 1.34 2006/01/22 17:58:24 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -40,6 +40,8 @@
 
 #define CORNERSIZE    17
 
+#define DISPLAY(app) ((Display*)((app)->getDisplay()))
+
 
 /*
   Notes:
@@ -48,11 +50,15 @@
     and so on are properly observed.
 */
 
+using namespace FX;
 
 
 /*******************************************************************************/
 
 namespace FX {
+
+extern FXbool wmNetMoveResizeAvailable;
+
 
 // Map
 FXDEFMAP(FXDragCorner) FXDragCornerMap[]={
@@ -76,6 +82,7 @@ FXDragCorner::FXDragCorner(){
   oldh=0;
   xoff=0;
   yoff=0;
+  ewmh=0;
   }
 
 
@@ -92,6 +99,7 @@ FXDragCorner::FXDragCorner(FXComposite* p):
   oldh=0;
   xoff=0;
   yoff=0;
+  ewmh=0;
   }
 
 
@@ -104,6 +112,21 @@ FXint FXDragCorner::getDefaultWidth(){
 // Get default height
 FXint FXDragCorner::getDefaultHeight(){
   return CORNERSIZE;
+  }
+
+
+// Create drag corner
+void FXDragCorner::create(){
+  FXWindow::create();
+#ifndef WIN32
+  unsigned long n,i; Atom type,*list; int format;
+  if(XGetWindowProperty(DISPLAY(getApp()),XDefaultRootWindow(DISPLAY(getApp())),getApp()->wmNetSupported,0,2048,False,XA_ATOM,&type,&format,&n,&i,(unsigned char**)&list)==Success && list){
+    for(i=0; i<n; i++){
+      if(list[i]==getApp()->wmNetMoveResize){ ewmh=1; break; }
+      }
+    XFree(list);
+    }
+#endif
   }
 
 
@@ -125,17 +148,35 @@ long FXDragCorner::onPaint(FXObject*,FXSelector,void* ptr){
   }
 
 
-
 // Pressed LEFT button
 long FXDragCorner::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   FXEvent *event=(FXEvent*)ptr;
+#ifndef WIN32
+  if(ewmh){
+    XClientMessageEvent ev;
+    ev.type=ClientMessage;
+    ev.display=DISPLAY(getApp());
+    ev.window=getShell()->id();
+    ev.message_type=getApp()->wmNetMoveResize;
+    ev.format=32;
+    ev.data.l[0]=event->root_x;
+    ev.data.l[1]=event->root_y;
+    ev.data.l[2]=4;                // Bottom right
+    ev.data.l[3]=LEFTBUTTON;
+    ev.data.l[4]=0;
+    XSendEvent(DISPLAY(getApp()),XDefaultRootWindow(DISPLAY(getApp())),False,(SubstructureRedirectMask|SubstructureNotifyMask),(XEvent*)&ev);
+    ungrab();
+    return 1;
+    }
+#endif
   FXDCWindow dc(getRoot());
-  FXint xx,yy;
+  FXint xx,yy,wx,wy;
   grab();
   xoff=width-event->win_x;
   yoff=height-event->win_y;
-  oldw=width;
-  oldh=height;
+  translateCoordinatesTo(wx,wy,getShell(),event->win_x,event->win_y);
+  oldw=wx+xoff;
+  oldh=wy+yoff;
   dc.clipChildren(FALSE);
   dc.setFunction(BLT_SRC_XOR_DST);
   dc.setForeground(FXRGB(255,255,255));
@@ -146,20 +187,23 @@ long FXDragCorner::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   }
 
 
+
 // Released LEFT button
 long FXDragCorner::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
   FXEvent *event=(FXEvent*)ptr;
-  FXDCWindow dc(getRoot());
-  FXint xx,yy,wx,wy;
-  ungrab();
-  getShell()->translateCoordinatesTo(xx,yy,getRoot(),0,0);
-  translateCoordinatesTo(wx,wy,getShell(),event->win_x,event->win_y);
-  dc.clipChildren(FALSE);
-  dc.setFunction(BLT_SRC_XOR_DST);
-  dc.setForeground(FXRGB(255,255,255));
-  dc.drawRectangle(xx,yy,oldw,oldh);
-  getShell()->resize(wx+xoff,wy+yoff);
-  flags&=~FLAG_PRESSED;
+  if(flags&FLAG_PRESSED){
+    FXDCWindow dc(getRoot());
+    FXint xx,yy,wx,wy;
+    ungrab();
+    getShell()->translateCoordinatesTo(xx,yy,getRoot(),0,0);
+    translateCoordinatesTo(wx,wy,getShell(),event->win_x,event->win_y);
+    dc.clipChildren(FALSE);
+    dc.setFunction(BLT_SRC_XOR_DST);
+    dc.setForeground(FXRGB(255,255,255));
+    dc.drawRectangle(xx,yy,oldw,oldh);
+    getShell()->resize(wx+xoff,wy+yoff);
+    flags&=~FLAG_PRESSED;
+    }
   return 1;
   }
 

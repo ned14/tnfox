@@ -1,9 +1,11 @@
+#ifndef BUILDING_TCOMMON
+
 /********************************************************************************
 *                                                                               *
 *                        F i l e    L i s t   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,10 +21,8 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.h,v 1.50 2005/02/08 03:23:28 fox Exp $                        *
+* $Id: FXFileList.h,v 1.57 2006/01/22 17:58:01 fox Exp $                        *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
-
 #ifndef FXFILELIST_H
 #define FXFILELIST_H
 
@@ -47,7 +47,8 @@ enum {
   FILELIST_SHOWDIRS     = 0x08000000, /// Show only directories
   FILELIST_SHOWFILES    = 0x10000000, /// Show only files
   FILELIST_SHOWIMAGES   = 0x20000000, /// Show preview of images
-  FILELIST_NO_OWN_ASSOC = 0x40000000  /// Do not create associations for files
+  FILELIST_NO_OWN_ASSOC = 0x40000000, /// Do not create associations for files
+  FILELIST_NO_PARENT    = 0x80000000  /// Suppress display of '.' and '..'
   };
 
 
@@ -61,6 +62,9 @@ protected:
   FXFileItem   *link;                   // Link to next item
   FXlong        size;                   // File size
   FXTime        date;                   // File time
+private:
+  FXFileItem(const FXFileItem&);
+  FXFileItem& operator=(const FXFileItem&);
 protected:
   FXFileItem():assoc(NULL),link(NULL),size(0){}
 protected:
@@ -124,6 +128,7 @@ public:
 * settings.  A number of messages can be sent to the File List to control the
 * filter pattern, sort category, sorting order, case sensitivity, and hidden file
 * display mode.
+* The File list widget supports drags and drops of files.
 */
 class FXAPI FXFileList : public FXIconList {
   FXDECLARE(FXFileList)
@@ -201,20 +206,20 @@ public:
   long onUpdHeader(FXObject*,FXSelector,void*);
   long onCmdRefresh(FXObject*,FXSelector,void*);
 public:
-  static FXint ascending(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descending(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint ascendingCase(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descendingCase(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint ascendingType(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descendingType(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint ascendingSize(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descendingSize(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint ascendingTime(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descendingTime(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint ascendingUser(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descendingUser(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint ascendingGroup(const FXIconItem* pa,const FXIconItem* pb);
-  static FXint descendingGroup(const FXIconItem* pa,const FXIconItem* pb);
+  static FXint ascending(const FXIconItem* a,const FXIconItem* b);
+  static FXint descending(const FXIconItem* a,const FXIconItem* b);
+  static FXint ascendingCase(const FXIconItem* a,const FXIconItem* b);
+  static FXint descendingCase(const FXIconItem* a,const FXIconItem* b);
+  static FXint ascendingType(const FXIconItem* a,const FXIconItem* b);
+  static FXint descendingType(const FXIconItem* a,const FXIconItem* b);
+  static FXint ascendingSize(const FXIconItem* a,const FXIconItem* b);
+  static FXint descendingSize(const FXIconItem* a,const FXIconItem* b);
+  static FXint ascendingTime(const FXIconItem* a,const FXIconItem* b);
+  static FXint descendingTime(const FXIconItem* a,const FXIconItem* b);
+  static FXint ascendingUser(const FXIconItem* a,const FXIconItem* b);
+  static FXint descendingUser(const FXIconItem* a,const FXIconItem* b);
+  static FXint ascendingGroup(const FXIconItem* a,const FXIconItem* b);
+  static FXint descendingGroup(const FXIconItem* a,const FXIconItem* b);
 public:
   enum {
     ID_REFRESHTIMER=FXIconList::ID_LAST,
@@ -255,7 +260,7 @@ public:
   void scan(FXbool force=TRUE);
 
   /// Set current file
-  void setCurrentFile(const FXString& file);
+  void setCurrentFile(const FXString& file,FXbool notify=FALSE);
 
   /// Return current file
   FXString getCurrentFile() const;
@@ -325,10 +330,16 @@ public:
 
   /// Return images preview size
   FXint getImageSize() const { return imagesize; }
-  
+
   /// Change images preview size
   void setImageSize(FXint size);
-  
+
+  /// Return TRUE if showing parent directories
+  FXbool showParents() const;
+
+  /// Show parent directories
+  void showParents(FXbool shown);
+
   /// Change file associations
   void setAssociations(FXFileDict* assoc);
 

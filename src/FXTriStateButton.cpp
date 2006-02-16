@@ -3,7 +3,7 @@
 *               T r i - S t a t e    B u t t o n    W i d g e t                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Charles Warren.   All Rights Reserved.             *
+* Copyright (C) 2002,2006 by Charles Warren.   All Rights Reserved.             *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTriStateButton.cpp,v 1.12 2005/01/16 16:06:07 fox Exp $                *
+* $Id: FXTriStateButton.cpp,v 1.15 2006/01/22 17:58:50 fox Exp $                *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -52,7 +52,7 @@
   - The fallback logic needs to be properly adhered to in the size computation.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 

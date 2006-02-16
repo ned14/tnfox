@@ -3,7 +3,7 @@
 *                             M e n u B a r   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuBar.h,v 1.12.2.1 2005/02/10 15:41:36 fox Exp $                         *
+* $Id: FXMenuBar.h,v 1.15 2006/01/22 17:58:06 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXMENUBAR_H
 #define FXMENUBAR_H
@@ -65,10 +65,9 @@ public:
   FXMenuBar(FXComposite* p,FXuint opts,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=3,FXint pr=3,FXint pt=2,FXint pb=2,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING);
 
   /// Returns true if specified coordinate (in parent's coordinate system) is in menubar
-  virtual FXbool contains(FXint parentx,FXint parenty) const;
+  virtual bool contains(FXint parentx,FXint parenty) const;
   };
 
 }
 
 #endif
-

@@ -3,7 +3,7 @@
 *                      J P E G   I m a g e   O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by David Tyree.   All Rights Reserved.                *
+* Copyright (C) 2000,2006 by David Tyree.   All Rights Reserved.                *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXJPGImage.cpp,v 1.24 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXJPGImage.cpp,v 1.30 2006/01/24 13:53:11 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -42,7 +42,7 @@
   - Requires JPEG library.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -53,19 +53,23 @@ namespace FX {
 const FXchar *FXJPGImage::fileExt="jpg";
 
 
+// Suggested mime type
+const FXchar *FXJPGImage::mimeType="image/jpeg";
+
+
 // Object implementation
 FXIMPLEMENT(FXJPGImage,FXImage,NULL,0)
 
 
 #ifdef HAVE_JPEG_H
-const FXbool FXJPGImage::supported=TRUE;
+const bool FXJPGImage::supported=true;
 #else
-const FXbool FXJPGImage::supported=FALSE;
+const bool FXJPGImage::supported=false;
 #endif
 
 
 // Initialize
-FXJPGImage::FXJPGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXImage(a,NULL,opts,w,h),quality(75){
+FXJPGImage::FXJPGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h,FXint q):FXImage(a,NULL,opts,w,h),quality(q){
   if(pix){
     FXMemoryStream ms;
     ms.open(FXStreamLoad,(FXuchar*)pix);
@@ -76,22 +80,22 @@ FXJPGImage::FXJPGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXI
 
 
 // Save the pixels only
-FXbool FXJPGImage::savePixels(FXStream& store) const {
+bool FXJPGImage::savePixels(FXStream& store) const {
   if(fxsaveJPG(store,data,width,height,quality)){
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load pixels only
-FXbool FXJPGImage::loadPixels(FXStream& store){
+bool FXJPGImage::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadJPG(store,pixels,w,h,quality)){
     setData(pixels,IMAGE_OWNED,w,h);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

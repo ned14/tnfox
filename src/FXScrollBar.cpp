@@ -3,7 +3,7 @@
 *                         S c r o l l b a r   O b j e c t s                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollBar.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXScrollBar.cpp,v 1.27 2006/01/22 17:58:41 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
-#include "fxkeys.h"
 #include "fxdefs.h"
+#include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -48,11 +48,9 @@
 */
 
 
-#define THUMB_MINIMUM   8
-#define BAR_SIZE        15
 #define SCROLLBAR_MASK  (SCROLLBAR_HORIZONTAL|SCROLLBAR_WHEELJUMP)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -87,8 +85,9 @@ FXIMPLEMENT(FXScrollBar,FXWindow,FXScrollBarMap,ARRAYNUMBER(FXScrollBarMap))
 // For deserialization
 FXScrollBar::FXScrollBar(){
   flags|=FLAG_ENABLED|FLAG_SHOWN;
-  thumbpos=BAR_SIZE;
-  thumbsize=THUMB_MINIMUM;
+  barsize=15;
+  thumbsize=8;
+  thumbpos=15;
   dragpoint=0;
   mode=MODE_NONE;
   }
@@ -103,8 +102,9 @@ FXScrollBar::FXScrollBar(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts
   shadowColor=getApp()->getShadowColor();
   borderColor=getApp()->getBorderColor();
   arrowColor=getApp()->getForeColor();
-  thumbpos=BAR_SIZE;
-  thumbsize=THUMB_MINIMUM;
+  barsize=getApp()->getScrollBarSize();
+  thumbpos=barsize;
+  thumbsize=barsize>>1;
   target=tgt;
   message=sel;
   dragpoint=0;
@@ -118,12 +118,12 @@ FXScrollBar::FXScrollBar(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts
 
 // Get default size
 FXint FXScrollBar::getDefaultWidth(){
-  return (options&SCROLLBAR_HORIZONTAL) ? BAR_SIZE+BAR_SIZE+THUMB_MINIMUM : BAR_SIZE;
+  return (options&SCROLLBAR_HORIZONTAL) ? barsize+barsize+(barsize>>1) : barsize;
   }
 
 
 FXint FXScrollBar::getDefaultHeight(){
-  return (options&SCROLLBAR_HORIZONTAL) ? BAR_SIZE : BAR_SIZE+BAR_SIZE+THUMB_MINIMUM;
+  return (options&SCROLLBAR_HORIZONTAL) ? barsize : barsize+barsize+(barsize>>1);
   }
 
 
@@ -891,7 +891,7 @@ void FXScrollBar::setPosition(FXlong p){
   if(options&SCROLLBAR_HORIZONTAL){
     total=width-height-height;
     thumbsize=(FXint)((total*page)/range);
-    if(thumbsize<THUMB_MINIMUM) thumbsize=THUMB_MINIMUM;
+    if(thumbsize<(barsize>>1)) thumbsize=(barsize>>1);
     travel=total-thumbsize;
     if(range>page){ thumbpos=height+(FXint)((((FXdouble)pos)*travel)/(range-page)); } else { thumbpos=height; }
     l=thumbpos;
@@ -903,7 +903,7 @@ void FXScrollBar::setPosition(FXlong p){
   else{
     total=height-width-width;
     thumbsize=(FXint)((total*page)/range);
-    if(thumbsize<THUMB_MINIMUM) thumbsize=THUMB_MINIMUM;
+    if(thumbsize<(barsize>>1)) thumbsize=(barsize>>1);
     travel=total-thumbsize;
     if(range>page){ thumbpos=width+(FXint)((((FXdouble)pos)*travel)/(range-page)); } else { thumbpos=width; }
     l=thumbpos;
@@ -952,13 +952,13 @@ void FXScrollBar::setArrowColor(FXColor clr){
 
 
 // Change the scrollbar style
-FXuint FXScrollBar::getScrollbarStyle() const {
+FXuint FXScrollBar::getScrollBarStyle() const {
   return (options&SCROLLBAR_MASK);
   }
 
 
 // Get the current scrollbar style
-void FXScrollBar::setScrollbarStyle(FXuint style){
+void FXScrollBar::setScrollBarStyle(FXuint style){
   FXuint opts=(options&~SCROLLBAR_MASK) | (style&SCROLLBAR_MASK);
   if(options!=opts){
     options=opts;
@@ -968,9 +968,19 @@ void FXScrollBar::setScrollbarStyle(FXuint style){
   }
 
 
+// Change the bar size
+void FXScrollBar::setBarSize(FXint size){
+  if(barsize!=size){
+    barsize=size;
+    recalc();
+    }
+  }
+
+
 // Save object to stream
 void FXScrollBar::save(FXStream& store) const {
   FXWindow::save(store);
+  store << barsize;
   store << hiliteColor;
   store << shadowColor;
   store << borderColor;
@@ -985,6 +995,7 @@ void FXScrollBar::save(FXStream& store) const {
 // Load object from stream
 void FXScrollBar::load(FXStream& store){
   FXWindow::load(store);
+  store >> barsize;
   store >> hiliteColor;
   store >> shadowColor;
   store >> borderColor;

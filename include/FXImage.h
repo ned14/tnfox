@@ -3,7 +3,7 @@
 *                             I m a g e    O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImage.h,v 1.61 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXImage.h,v 1.64 2006/01/22 17:58:05 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXIMAGE_H
 #define FXIMAGE_H
@@ -140,8 +140,8 @@ public:
   /// Change pixel at x,y
   void setPixel(FXint x,FXint y,FXColor color){ data[y*width+x]=color; }
 
-  /// Scan the image and return FALSE if fully opaque
-  FXbool hasAlpha() const;
+  /// Scan the image and return false if fully opaque
+  bool hasAlpha() const;
 
   /**
   * Create the server side pixmap, then call render() to fill it with the
@@ -167,7 +167,7 @@ public:
 
   /**
   * Retrieves pixels from the server-side image.  For example, to make
-  * screen snapshots, or to retrieve an image after it has been drawin
+  * screen snapshots, or to retrieve an image after it has been drawn
   * into by various means.
   */
   virtual void restore();
@@ -201,7 +201,7 @@ public:
   virtual void scale(FXint w,FXint h,FXint quality=0);
 
   /// Mirror image horizontally and/or vertically
-  virtual void mirror(FXbool horizontal,FXbool vertical);
+  virtual void mirror(bool horizontal,bool vertical);
 
   /**
   * Rotate image by degrees ccw; this calls resize() to adjust the client
@@ -256,10 +256,10 @@ public:
   virtual void load(FXStream& store);
 
   /// Save pixel data only
-  virtual FXbool savePixels(FXStream& store) const;
+  virtual bool savePixels(FXStream& store) const;
 
   /// Load pixel data only
-  virtual FXbool loadPixels(FXStream& store);
+  virtual bool loadPixels(FXStream& store);
 
   /// Destructor
   virtual ~FXImage();

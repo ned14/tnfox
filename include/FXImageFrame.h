@@ -3,7 +3,7 @@
 *                       I m a g e   F r a m e   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by H. J. Daniel III. All Rights Reserved.             *
+* Copyright (C) 2001,2006 by H. J. Daniel III. All Rights Reserved.             *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImageFrame.h,v 1.7 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXImageFrame.h,v 1.8 2006/01/22 17:58:05 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXIMAGEFRAME_H
 #define FXIMAGEFRAME_H
@@ -30,7 +30,6 @@
 
 namespace FX {
 
-class FXImage;
 
 /**
 * The image frame is a simple frame widget displaying
@@ -88,4 +87,3 @@ public:
 
 
 #endif
-

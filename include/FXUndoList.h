@@ -3,7 +3,7 @@
 *                  U n d o / R e d o - a b l e   C o m m a n d                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXUndoList.h,v 1.36 2005/01/26 19:11:41 fox Exp $                        *
+* $Id: FXUndoList.h,v 1.38 2006/01/22 17:58:12 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXUNDOLIST_H
 #define FXUNDOLIST_H
@@ -27,7 +27,6 @@
 #ifndef FXOBJECT_H
 #include "FXObject.h"
 #endif
-#include "FXWindow.h"
 
 namespace FX {
 
@@ -94,14 +93,14 @@ public:
   * single-character text changes into a single block change.
   * The default implementation returns FALSE.
   */
-  virtual FXbool canMerge() const;
+  virtual bool canMerge() const;
 
   /**
   * Called by the undo system to try and merge the new incoming command
   * with this command; should return TRUE if merging was possible.
   * The default implementation returns FALSE.
   */
-  virtual FXbool mergeWith(FXCommand* command);
+  virtual bool mergeWith(FXCommand* command);
 
   /// Delete undo command
   virtual ~FXCommand(){}
@@ -131,7 +130,7 @@ public:
   FXCommandGroup():undolist(NULL),redolist(NULL),group(NULL){}
 
   /// Return TRUE if empty
-  FXbool empty(){ return !undolist; }
+  bool empty(){ return !undolist; }
 
   /// Undo whole command group
   virtual void undo();
@@ -158,7 +157,7 @@ private:
   FXint      redocount;     // Number of redo records
   FXint      marker;        // Marker value
   FXuint     space;         // Space taken up by all the undo records
-  FXbool     working;       // Currently busy with undo or redo
+  bool       working;       // Currently busy with undo or redo
 private:
   FXUndoList(const FXUndoList&);
   FXUndoList &operator=(const FXUndoList&);
@@ -209,7 +208,7 @@ public:
   * all redo commands will be deleted since it is no longer possible to redo
   * from this point.
   */
-  void add(FXCommand* command,FXbool doit=FALSE,FXbool merge=TRUE);
+  void add(FXCommand* command,bool doit=false,bool merge=true);
 
   /**
   * Begin undo command sub-group. This begins a new group of commands that
@@ -254,20 +253,20 @@ public:
   void revert();
 
   /// Can we undo more commands
-  FXbool canUndo() const;
+  bool canUndo() const;
 
   /// Can we redo more commands
-  FXbool canRedo() const;
+  bool canRedo() const;
 
   /// Can revert to marked
-  FXbool canRevert() const;
+  bool canRevert() const;
 
   /**
   * Return TRUE if currently inside undo or redo operation; this
   * is useful to avoid generating another undo command while inside
   * an undo operation.
   */
-  FXbool busy() const { return working; }
+  bool busy() const { return working; }
 
   /// Current top level undo command
   FXCommand* current() const { return undolist; }
@@ -330,7 +329,7 @@ public:
   * Check if the current state was marked, if the application has returned
   * to the previously marked state.
   */
-  FXbool marked() const;
+  bool marked() const;
   };
 
 

@@ -3,7 +3,7 @@
 *                          X B M   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2003,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxxbmio.cpp,v 1.14 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: fxxbmio.cpp,v 1.17 2006/01/22 17:58:58 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
 #include "FXHash.h"
 #include "FXStream.h"
 #include "fxpriv.h"
@@ -38,7 +39,7 @@
   - Should we load (or save) image name?
 */
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -46,16 +47,16 @@
 namespace FX {
 
 
-extern FXAPI FXbool fxcheckXBM(FXStream& store);
-extern FXAPI FXbool fxloadXBM(FXColor*& data,const FXuchar *pix,const FXuchar *msk,FXint width,FXint height);
-extern FXAPI FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& hotx,FXint& hoty);
-extern FXAPI FXbool fxsaveXBM(FXStream& store,const FXColor *data,FXint width,FXint height,FXint hotx=-1,FXint hoty=-1);
+extern FXAPI bool fxcheckXBM(FXStream& store);
+extern FXAPI bool fxloadXBM(FXColor*& data,const FXuchar *pix,const FXuchar *msk,FXint width,FXint height);
+extern FXAPI bool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& hotx,FXint& hoty);
+extern FXAPI bool fxsaveXBM(FXStream& store,const FXColor *data,FXint width,FXint height,FXint hotx=-1,FXint hoty=-1);
 
 
 // Little helper
 static void readline(FXStream& store,FXchar* buffer,FXuint size){
   register FXuint i=0;
-  while(!store.atEnd() && i<size){
+  while(!store.eof() && i<size){
     store >> buffer[i];
     if(buffer[i]=='\r') continue;
     if(buffer[i]=='\n') break;
@@ -66,7 +67,7 @@ static void readline(FXStream& store,FXchar* buffer,FXuint size){
 
 
 // Check if stream contains a XBM
-FXbool fxcheckXBM(FXStream& store){
+bool fxcheckXBM(FXStream& store){
   FXuchar signature[4];
   store.load(signature,4);
   store.position(-4,FXFromCurrent);
@@ -75,7 +76,7 @@ FXbool fxcheckXBM(FXStream& store){
 
 
 // Load alpha XBM image from pixels and mask
-FXbool fxloadXBM(FXColor*& data,const FXuchar *pixels,const FXuchar *mask,FXint width,FXint height){
+bool fxloadXBM(FXColor*& data,const FXuchar *pixels,const FXuchar *mask,FXint width,FXint height){
   register FXint x,y,byt,bit,row;
   data=NULL;
   if(pixels && mask && 0<width && 0<height){
@@ -91,15 +92,15 @@ FXbool fxloadXBM(FXColor*& data,const FXuchar *pixels,const FXuchar *mask,FXint 
             }
           }
         }
-      return TRUE;
+      return true;
       }
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load image from stream
-FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& hotx,FXint& hoty){
+bool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& hotx,FXint& hoty){
   const FXColor colormap[2]={FXRGB(255,255,255),FXRGB(0,0,0)};
   FXchar buffer[1024],name[255],ch;
   FXint  value,i,j;
@@ -113,11 +114,11 @@ FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint
   hoty=-1;
 
   // Read header
-  while(!store.atEnd()){
+  while(!store.eof()){
 
     // Read buffer
     readline(store,buffer,sizeof(buffer));
-    while(strstr(buffer,"/*") && !store.atEnd()){
+    while(strstr(buffer,"/*") && !store.eof()){
       readline(store,buffer,sizeof(buffer));
       }
 
@@ -136,11 +137,11 @@ FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint
     }
 
   // Test sensible width, height
-  if(width<=0 || height<=0) return FALSE;
+  if(width<=0 || height<=0) return false;
 
   // Allocate image to return
   if(!FXCALLOC(&data,FXColor,width*height)){
-    return FALSE;
+    return false;
     }
 
   // Load image; note we will read a whole number of bytes
@@ -149,17 +150,17 @@ FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint
     for(i=0; i<width; i++){
       if((i&7)==0){
         value=0;
-        while(!store.atEnd()){
+        while(!store.eof()){
           store >> ch;
           if(ch!='0') continue;
           store >> ch;
           if(ch!='x' && ch!='X') continue;
           break;
           }
-        while(!store.atEnd()){
+        while(!store.eof()){
           store >> ch;
-          if(!isxdigit((FXuchar)ch)) break;
-          value=value*16+(('a'<=ch) ? ch-'a'+10 : ('A'<=ch) ? ch-'A'+10 : ch-'0');
+          if(!Ascii::isHexDigit(ch)) break;
+          value=value*16+Ascii::digitValue(ch);
           }
         }
       *pp++=colormap[value&1];
@@ -170,12 +171,12 @@ FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint
   // We got the image, but we're not done yet; need to read few more bytes
   // the number of bytes read here must match the number of bytes written
   // by fxsaveXBM() so that the stream won't get out of sync
-  while(!store.atEnd()){
+  while(!store.eof()){
     store >> ch;
     if(ch=='\n') break;
     }
 
-  return TRUE;
+  return true;
   }
 
 
@@ -184,7 +185,7 @@ FXbool fxloadXBM(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint
 
 
 // Save image to a stream
-FXbool fxsaveXBM(FXStream& store,const FXColor *data,FXint width,FXint height,FXint hotx,FXint hoty){
+bool fxsaveXBM(FXStream& store,const FXColor *data,FXint width,FXint height,FXint hotx,FXint hoty){
   static const FXint dither[4][4]={{0,32768, 8192,40960},{49152,16384,57344,24576},{12288,45056,4096,36864},{61440,28672,53248,20480}};
   register const FXuchar *ptr=(const FXuchar*)data;
   register FXint bit,code,count,x,y,n;
@@ -236,7 +237,7 @@ FXbool fxsaveXBM(FXStream& store,const FXColor *data,FXint width,FXint height,FX
   // Wrap it up
   store.save("};\n",3);
 
-  return TRUE;
+  return true;
   }
 
 }

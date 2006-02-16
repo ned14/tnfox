@@ -3,7 +3,7 @@
 *                       S c r o l l A r e a   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollArea.h,v 1.28 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXScrollArea.h,v 1.29 2006/01/22 17:58:09 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXSCROLLAREA_H
 #define FXSCROLLAREA_H
@@ -49,7 +49,7 @@ enum {
 
 class FXScrollBar;
 class FXScrollCorner;
-struct FXEvent;
+
 
 /**
 * The scroll area widget manages a content area and a viewport

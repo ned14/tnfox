@@ -3,7 +3,7 @@
 *               D e v i c e   C o n t e x t   B a s e   C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDC.cpp,v 1.33 2005/01/16 16:06:06 fox Exp $                            *
+* $Id: FXDC.cpp,v 1.38 2006/01/22 17:58:21 fox Exp $                            *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -100,7 +100,7 @@
     This also means it is possible to make your own, simply by subclassing FXDC!
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -259,16 +259,32 @@ void FXDC::fillConcavePolygonRel(const FXPoint*,FXuint){ }
 void FXDC::fillComplexPolygonRel(const FXPoint*,FXuint){ }
 
 
-// Draw string (only foreground bits)
-void FXDC::drawText(FXint,FXint,const FXchar*,FXuint){ }
+// Draw string with base line starting at x, y
+void FXDC::drawText(FXint,FXint,const FXchar*,FXuint){
+  }
 
 
-// Draw string (both foreground and background bits)
-void FXDC::drawImageText(FXint,FXint,const FXchar*,FXuint){ }
+// Draw string with base line starting at x, y
+void FXDC::drawText(FXint,FXint,const FXString&){
+  }
+
+
+// Draw text starting at x, y over filled background
+void FXDC::drawImageText(FXint,FXint,const FXchar*,FXuint){
+  }
+
+
+// Draw text starting at x, y over filled background
+void FXDC::drawImageText(FXint,FXint,const FXString&){
+  }
 
 
 // Draw area from source
 void FXDC::drawArea(const FXDrawable*,FXint,FXint,FXint,FXint,FXint,FXint){ }
+
+
+// Draw area stretched area from source
+void FXDC::drawArea(const FXDrawable*,FXint,FXint,FXint,FXint,FXint,FXint,FXint,FXint){ }
 
 
 // Draw image

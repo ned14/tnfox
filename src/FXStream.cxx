@@ -215,7 +215,7 @@ FXulong FXStream::position() const
 }
 
 // Move to position
-FXbool FXStream::position(FXfval newpos,FXWhence whence)
+bool FXStream::position(FXfval newpos,FXWhence whence)
 {
 	if(FXFromCurrent==whence) newpos+=dev->at();
 	else if(FXFromEnd==whence) newpos=dev->size()-newpos;

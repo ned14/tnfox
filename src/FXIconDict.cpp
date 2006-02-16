@@ -3,7 +3,7 @@
 *                         I c o n   D i c t i o n a r y                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,20 +19,21 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconDict.cpp,v 1.4 2005/02/05 06:42:45 fox Exp $                       *
+* $Id: FXIconDict.cpp,v 1.12 2006/01/22 17:58:31 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
+#include "FXFile.h"
 #include "FXStream.h"
 #include "FXFileStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
-#include "FXFile.h"
+#include "FXPath.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXApp.h"
@@ -45,6 +46,8 @@
   Notes:
   - This class loads an icon from a collection found off the
     icon search path.
+  - FXIconDict owns the icons being loaded; other classes like
+    FXFileDict and FXFileList merely reference them.
 */
 
 
@@ -79,7 +82,7 @@ FXIconDict::FXIconDict(FXApp* app,const FXString& p):path(p){
 
 // Search for the icon name along the search path, and try to load it
 void *FXIconDict::createData(const void* ptr){
-  return source->loadIcon(FXFile::search(path,(const char*)ptr));
+  return source->loadIconFile(FXPath::search(path,(const char*)ptr));
   }
 
 

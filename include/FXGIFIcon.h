@@ -3,7 +3,7 @@
 *                        G I F   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGIFIcon.h,v 1.21 2005/01/16 16:06:06 fox Exp $                         *
+* $Id: FXGIFIcon.h,v 1.24 2006/01/22 17:58:02 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXGIFICON_H
 #define FXGIFICON_H
@@ -40,16 +40,17 @@ private:
   FXGIFIcon &operator=(const FXGIFIcon&);
 public:
   static const FXchar *fileExt;
+  static const FXchar *mimeType;
 public:
 
   /// Construct an icon from memory stream formatted as GIF format
   FXGIFIcon(FXApp* a,const void *pix=NULL,FXColor clr=FXRGB(192,192,192),FXuint opts=0,FXint w=1,FXint h=1);
 
   /// Save pixels into stream in GIF format
-  virtual FXbool savePixels(FXStream& store) const;
+  virtual bool savePixels(FXStream& store) const;
 
   /// Load pixels from stream in GIF format
-  virtual FXbool loadPixels(FXStream& store);
+  virtual bool loadPixels(FXStream& store);
 
   /// Destroy
   virtual ~FXGIFIcon();
@@ -63,7 +64,7 @@ public:
 /**
 * Check if stream contains a GIF, return TRUE if so.
 */
-extern FXAPI FXbool fxcheckGIF(FXStream& store);
+extern FXAPI bool fxcheckGIF(FXStream& store);
 
 
 /**
@@ -71,7 +72,7 @@ extern FXAPI FXbool fxcheckGIF(FXStream& store);
 * Upon successful return, the pixel array and size are returned.
 * If an error occurred, the pixel array is set to NULL.
 */
-extern FXAPI FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 
 
 /**
@@ -79,7 +80,7 @@ extern FXAPI FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint&
 * "fast" is used to select the faster Floyd-Steinberg dither method instead
 * of the slower Wu quantization algorithm.
 */
-extern FXAPI FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FXbool fast=TRUE);
+extern FXAPI bool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,bool fast=true);
 
 #endif
 

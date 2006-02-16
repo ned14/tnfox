@@ -23,7 +23,7 @@
 #include "fxdefs.h"
 #include "QMemMap.h"
 #include "FXString.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "FXException.h"
 #include "QThread.h"
 #include "FXProcess.h"
@@ -103,7 +103,7 @@ struct FXDLLLOCAL QMemMapPrivate : public QMutex
 {
 	QMemMap::Type type;
 	bool myfile, creator, mappingsFailed, unique;
-	FXFile *file;
+	QFile *file;
 	int filefd;				// Either than of file (all platforms) or shared memory object (POSIX)
 	FXString name;
 	FXfval size;			// Size of file. Doesn't necessarily reflect file->size()
@@ -121,7 +121,7 @@ struct FXDLLLOCAL QMemMapPrivate : public QMutex
 #ifdef USE_POSIX
 	int pageaccess;
 #endif
-	QMemMapPrivate(QMemMap::Type _type, FXFile *f=0) : type(_type), myfile(0==f), creator(false),
+	QMemMapPrivate(QMemMap::Type _type, QFile *f=0) : type(_type), myfile(0==f), creator(false),
 		mappingsFailed(false), unique(false), file(f), filefd(0), size(0), acl(FXACL::MemMap), mappings(true),
 		pageSize(FXProcess::pageSize()), cmapping(0), cmappingit(mappings),
 #ifdef USE_WINAPI
@@ -239,7 +239,7 @@ QMemMap::QMemMap() : p(0), QIODevice()
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QMemMapPrivate(File));
 	p->setPrivatePerms();
-	FXERRHM(p->file=new FXFile);
+	FXERRHM(p->file=new QFile);
 	p->myfile=true;
 	unconstr.dismiss();
 }
@@ -249,13 +249,13 @@ QMemMap::QMemMap(const FXString &filename) : p(0), QIODevice()
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QMemMapPrivate(File));
 	p->setPrivatePerms();
-	FXERRHM(p->file=new FXFile(filename));
+	FXERRHM(p->file=new QFile(filename));
 	p->myfile=true;
 	p->name=p->file->name();
 	unconstr.dismiss();
 }
 
-QMemMap::QMemMap(FXFile &file) : p(0), QIODevice()
+QMemMap::QMemMap(QFile &file) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QMemMapPrivate(File, &file));

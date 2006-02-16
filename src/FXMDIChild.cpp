@@ -3,7 +3,7 @@
 *          M u l t i p l e   D o c u m e n t   C h i l d   W i n d o w          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.cpp,v 1.88 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXMDIChild.cpp,v 1.95 2006/01/22 17:58:34 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -72,7 +72,7 @@
 #define TITLESPACE       120                        // Width of title when minimized
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -314,7 +314,7 @@ FXbool FXMDIChild::maximize(FXbool notify){
     options|=MDI_MAXIMIZED;
     options&=~MDI_MINIMIZED;
     recalc();
-    if(notify && target){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
+    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
     }
   return TRUE;
   }
@@ -336,7 +336,7 @@ FXbool FXMDIChild::minimize(FXbool notify){
     options|=MDI_MINIMIZED;
     options&=~MDI_MAXIMIZED;
     recalc();
-    if(notify && target){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
+    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
     }
   return TRUE;
   }
@@ -357,7 +357,7 @@ FXbool FXMDIChild::restore(FXbool notify){
     height=normalHeight;
     options&=~(MDI_MINIMIZED|MDI_MAXIMIZED);
     recalc();
-    if(notify && target){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
+    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
     }
   return TRUE;
   }
@@ -369,7 +369,7 @@ FXbool FXMDIChild::close(FXbool notify){
   FXMDIChild *alternative;
 
   // See if OK to close
-  if(!notify || !target || !target->tryHandle(this,FXSEL(SEL_CLOSE,message),NULL)){
+  if(!notify || !target || !message || !target->tryHandle(this,FXSEL(SEL_CLOSE,message),NULL)){
 
     // Target will receive no further messages from us
     setTarget(NULL);
@@ -458,9 +458,7 @@ void FXMDIChild::setFocus(){
 
 
 // If window can have focus
-FXbool FXMDIChild::canFocus() const {
-  return TRUE;
-  }
+bool FXMDIChild::canFocus() const { return true; }
 
 
 // Change cursor based on location over window
@@ -921,7 +919,7 @@ long FXMDIChild::onCmdGetIconValue(FXObject*,FXSelector,void* ptr){
 // Window was selected
 long FXMDIChild::onSelected(FXObject*,FXSelector,void* ptr){    // FIXME
   if(!(flags&FLAG_ACTIVE)){
-    if(target) target->tryHandle(this,FXSEL(SEL_SELECTED,message),ptr);
+    if(target && message) target->tryHandle(this,FXSEL(SEL_SELECTED,message),ptr);
     windowbtn->setBackColor(hasFocus() ? titleBackColor : shadowColor);
     flags|=FLAG_ACTIVE;
     recalc();
@@ -934,7 +932,7 @@ long FXMDIChild::onSelected(FXObject*,FXSelector,void* ptr){    // FIXME
 // Window was deselected
 long FXMDIChild::onDeselected(FXObject*,FXSelector,void* ptr){    // FIXME
   if(flags&FLAG_ACTIVE){
-    if(target) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),ptr);
+    if(target && message) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),ptr);
     windowbtn->setBackColor(backColor);
     flags&=~FLAG_ACTIVE;
     recalc();
@@ -1129,14 +1127,14 @@ void FXMDIChild::setTitle(const FXString& name){
   }
 
 
-// Delegate all other messages to child window
+// Delegate all unhandled messages to content window or MDI child's target,
+// except for those messages with ID's which belong to the MDI child itself.
 long FXMDIChild::onDefault(FXObject* sender,FXSelector sel,void* ptr){
-
-  // Try to handle in child
-  if(contentWindow() && contentWindow()->tryHandle(sender,sel,ptr)) return 1;
-
-  // Bounce to target
-  return target && target->tryHandle(sender,sel,ptr);
+  if(FXMDIChild::ID_LAST<=FXSELID(sel)){
+    if(contentWindow() && contentWindow()->tryHandle(sender,sel,ptr)) return 1;
+    return target && message && target->tryHandle(sender,sel,ptr);
+    }
+  return 0;
   }
 
 

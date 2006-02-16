@@ -21,9 +21,11 @@
 
 #include "FXWinLinks.h"
 #include "QFileInfo.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "QTrans.h"
 #include "FXRollback.h"
+#include "FXPath.h"
+#include "FXStat.h"
 #include "FXErrCodes.h"
 #ifndef USE_POSIX
  #define USE_WINAPI
@@ -464,7 +466,7 @@ void FXWinShellLink::write(FXStream s, const QFileInfo &whereTo)
 	}
 	if(whereTo.isFile())
 	{	// Has a working directory if it's a file
-		FXString _workingDir(FXFile::directory(convertedPath));
+		FXString _workingDir(FXPath::directory(convertedPath));
 #ifdef UNICODE
 #error Fixme
 #endif
@@ -495,7 +497,7 @@ void FXWinShellLink::write(FXStream s, const QFileInfo &whereTo)
 
 FXString FXWinShellLink::read(const FXString &path, bool doDriveConversion)
 {
-	FXFile h(path);
+	QFile h(path);
 	FXStream s(&h);
 	h.open(IO_ReadOnly);
 	FXWinShellLink sl;
@@ -545,7 +547,7 @@ FXString FXWinShellLink::read(const FXString &path, bool doDriveConversion)
 void FXWinShellLink::write(const FXString &path, const QFileInfo &whereTo)
 {
 	FXERRH(whereTo.exists(), QTrans::tr("FXWinShellLink", "Destination '%1' must exist").arg(whereTo.filePath()), FXEXCEPTION_NOTFOUND, 0);
-	FXFile h(path);
+	QFile h(path);
 	FXStream s(&h);
 	h.open(IO_WriteOnly);
 	FXWinShellLink().write(s, whereTo);
@@ -567,7 +569,7 @@ struct REPARSE_TAG_MOUNT_POINT
 
 bool FXWinJunctionPoint::test(const FXString &path)
 {
-	return !!(FXFile::metaFlags(path) & FXFile::IsLink);
+	return !!(FXStat::metaFlags(path) & FXStat::IsLink);
 }
 
 FXString FXWinJunctionPoint::read(const FXString &_path)
@@ -599,10 +601,13 @@ FXString FXWinJunctionPoint::read(const FXString &_path)
 	}
 #endif
 #ifdef USE_POSIX
-	FXString ret=FXFile::symlink(_path);
+	FXchar lnk[MAXPATHLEN+1];
+	FXint len=::readlink(_path.text(),lnk,MAXPATHLEN);
+	FXString ret;
+	if(0<=len) ret.assign(lnk,len);
 	if('/'!=ret[0])
 	{	// Partial path
-		ret=FXFile::absolute(FXFile::directory(_path), ret);
+		ret=QFile::absolute(QFile::directory(_path), ret);
 	}
 	return ret;
 #endif
@@ -674,7 +679,7 @@ void FXWinJunctionPoint::write(const FXString &_path, const QFileInfo &whereTo)
 	uncreatedir.dismiss();
 #endif
 #ifdef USE_POSIX
-	FXERRH(FXFile::symlink(whereTo.filePath(), _path, true), QTrans::tr("FXWinJunctionPoint", "Failed to link '%1' to '%2'").arg(whereTo.filePath()).arg(_path), FXEXCEPTION_NOTFOUND, 0);
+	FXERRH(QFile::symlink(whereTo.filePath(), _path, true), QTrans::tr("FXWinJunctionPoint", "Failed to link '%1' to '%2'").arg(whereTo.filePath()).arg(_path), FXEXCEPTION_NOTFOUND, 0);
 #endif
 }
 

@@ -3,7 +3,7 @@
 *                         I c o n   D i c t i o n a r y                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconDict.h,v 1.4 2005/02/05 06:42:45 fox Exp $                         *
+* $Id: FXIconDict.h,v 1.6 2006/02/03 00:33:15 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXICONDICT_H
 #define FXICONDICT_H
@@ -39,7 +39,7 @@ class FXIconSource;
 * by their file name.  When first encountering a new file name, the icon is
 * located by searching the icon search path for the icon file.  If found, the
 * services of the icon source object are used to load the icon from the file.
-* A custom icon source may be installed to furnish support for additonal 
+* A custom icon source may be installed to furnish support for additonal
 * image file formats.
 * Once the icon is loaded, an association between the icon name and the icon
 * is entered into the icon dictionary.  Subsequent searches for an icon with
@@ -53,7 +53,7 @@ private:
   FXIconSource *source; // Icon source
   FXString      path;   // Where to search icons
 protected:
-  FXIconDict(){}
+  FXIconDict():source(NULL){}
   virtual void *createData(const void*);
   virtual void deleteData(void*);
 private:

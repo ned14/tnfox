@@ -3,7 +3,7 @@
 *                           S e t t i n g s   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.h,v 1.24 2005/02/02 16:37:40 fox Exp $                        *
+* $Id: FXSettings.h,v 1.33 2006/01/22 17:58:09 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXSETTINGS_H
 #define FXSETTINGS_H
@@ -38,32 +38,37 @@ class FXStringDict;
 * The Settings class manages a key-value database.  This is normally used as
 * part of Registry, but can also be used separately in applications that need
 * to maintain a key-value database in a file of their own.
+* String values can contain any character, and will be escaped when written
+* to the file.
 */
 class FXAPI FXSettings : public FXDict {
   FXDECLARE(FXSettings)
 protected:
-  FXbool modified;      // Changed settings
+  bool modified;
 protected:
   virtual void *createData(const void*);
   virtual void deleteData(void*);
-  FXbool parseValue(FXchar* value,const FXchar* buffer);
-  FXbool unparseValue(FXchar* buffer,const FXchar* value);
+  FXchar* dequote(FXchar* text) const;
+  FXchar* enquote(FXchar* result,const FXchar* text);
   FXStringDict* insert(const FXchar* ky){ return (FXStringDict*)FXDict::insert(ky,NULL); }
-  FXStringDict* replace(const FXchar* ky,FXStringDict* section){ return (FXStringDict*)FXDict::replace(ky,section,TRUE); }
+  FXStringDict* replace(const FXchar* ky,FXStringDict* section){ return (FXStringDict*)FXDict::replace(ky,section,true); }
   FXStringDict* remove(const FXchar* ky){ return (FXStringDict*)FXDict::remove(ky); }
-private:
-  FXSettings(const FXSettings&);
-  FXSettings &operator=(const FXSettings&);
 public:
 
   /// Construct settings database.
   FXSettings();
 
+  /// Construct copy of existing database.
+  FXSettings(const FXSettings& orig);
+
+  /// Assignment operator
+  FXSettings &operator=(const FXSettings& orig);
+
   /// Parse a file containing a settings database.
-  FXbool parseFile(const FXString& filename,FXbool mark);
+  bool parseFile(const FXString& filename,bool mark);
 
   /// Unparse settings database into given file.
-  FXbool unparseFile(const FXString& filename);
+  bool unparseFile(const FXString& filename);
 
   /// Obtain the string dictionary for the given section
   FXStringDict* data(FXuint pos) const { return (FXStringDict*)FXDict::data(pos); }
@@ -89,44 +94,50 @@ public:
   /// Read a color value registry entry; if no value is found, the default value def is returned
   FXColor readColorEntry(const FXchar *section,const FXchar *key,FXColor def=0);
 
+  /// Read a boolean registry entry
+  FXbool readBoolEntry(const FXchar *section,const FXchar *key,FXbool def=FALSE);
+
   /// Write a formatted registry entry, using printf-style format
   FXint writeFormatEntry(const FXchar *section,const FXchar *key,const FXchar *fmt,...) FX_PRINTF(4,5) ;
 
   /// Write a string registry entry
-  FXbool writeStringEntry(const FXchar *section,const FXchar *key,const FXchar *val);
+  bool writeStringEntry(const FXchar *section,const FXchar *key,const FXchar *val);
 
   /// Write a integer registry entry
-  FXbool writeIntEntry(const FXchar *section,const FXchar *key,FXint val);
+  bool writeIntEntry(const FXchar *section,const FXchar *key,FXint val);
 
   /// Write a unsigned integer registry entry
-  FXbool writeUnsignedEntry(const FXchar *section,const FXchar *key,FXuint val);
+  bool writeUnsignedEntry(const FXchar *section,const FXchar *key,FXuint val);
 
   /// Write a double-precision floating point registry entry
-  FXbool writeRealEntry(const FXchar *section,const FXchar *key,FXdouble val);
+  bool writeRealEntry(const FXchar *section,const FXchar *key,FXdouble val);
 
   /// Write a color value entry
-  FXbool writeColorEntry(const FXchar *section,const FXchar *key,FXColor val);
+  bool writeColorEntry(const FXchar *section,const FXchar *key,FXColor val);
+
+  /// Write a boolean value entry
+  bool writeBoolEntry(const FXchar *section,const FXchar *key,FXbool val);
 
   /// Delete a registry entry
-  FXbool deleteEntry(const FXchar *section,const FXchar *key);
+  bool deleteEntry(const FXchar *section,const FXchar *key);
 
   /// See if entry exists
-  FXbool existingEntry(const FXchar *section,const FXchar *key);
+  bool existingEntry(const FXchar *section,const FXchar *key);
 
   /// Delete section
-  FXbool deleteSection(const FXchar *section);
+  bool deleteSection(const FXchar *section);
 
   /// See if section exists
-  FXbool existingSection(const FXchar *section);
+  bool existingSection(const FXchar *section);
 
   /// Clear all sections
-  FXbool clear();
+  bool clear();
 
   /// Mark as changed
-  void setModified(FXbool mdfy=TRUE){ modified=mdfy; }
+  void setModified(bool mdfy=true){ modified=mdfy; }
 
   /// Is it modified
-  FXbool isModified() const { return modified; }
+  bool isModified() const { return modified; }
 
   /// Cleanup
   virtual ~FXSettings();

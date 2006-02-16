@@ -3,7 +3,7 @@
 *                        I F F   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIFFIcon.cpp,v 1.7 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXIFFIcon.cpp,v 1.12 2006/01/22 17:58:31 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -53,6 +53,10 @@ namespace FX {
 const FXchar *FXIFFIcon::fileExt="iff";
 
 
+// Suggested mime type
+const FXchar *FXIFFIcon::mimeType="image/x-iff";
+
+
 // Object implementation
 FXIMPLEMENT(FXIFFIcon,FXIcon,NULL,0)
 
@@ -69,20 +73,20 @@ FXIFFIcon::FXIFFIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FX
 
 
 // Save object to stream
-FXbool FXIFFIcon::savePixels(FXStream&) const {
-  return FALSE;
+bool FXIFFIcon::savePixels(FXStream&) const {
+  return false;
   }
 
 
 // Load object from stream
-FXbool FXIFFIcon::loadPixels(FXStream& store){
+bool FXIFFIcon::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadIFF(store,pixels,w,h)){
     setData(pixels,IMAGE_OWNED,w,h);
     if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

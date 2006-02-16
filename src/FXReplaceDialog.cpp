@@ -1,9 +1,11 @@
+#ifndef BUILDING_TCOMMON
+
 /********************************************************************************
 *                                                                               *
 *                      T e x t   R e p l a c e   D i a l o g                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,16 +21,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXReplaceDialog.cpp,v 1.43 2005/01/16 16:06:07 fox Exp $                 *
+* $Id: FXReplaceDialog.cpp,v 1.48 2006/01/22 17:58:40 fox Exp $                 *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
-
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -70,7 +70,7 @@
 #define VERT_PAD      2
 #define SEARCH_MASK   (SEARCH_EXACT|SEARCH_IGNORECASE|SEARCH_REGEX)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -110,17 +110,17 @@ FXIMPLEMENT(FXReplaceDialog,FXDialogBox,FXReplaceDialogMap,ARRAYNUMBER(FXReplace
 FXReplaceDialog::FXReplaceDialog(FXWindow* owner,const FXString& caption,FXIcon* ic,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXDialogBox(owner,caption,opts|DECOR_TITLE|DECOR_BORDER|DECOR_RESIZE,x,y,w,h,10,10,10,10, 10,10){
   FXHorizontalFrame* buttons=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X|PACK_UNIFORM_WIDTH|PACK_UNIFORM_HEIGHT,0,0,0,0,0,0,0,0);
-  accept=new FXButton(buttons,"&Replace",NULL,this,ID_ACCEPT,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
-  every=new FXButton(buttons,"Re&place All",NULL,this,ID_ALL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,6,6,VERT_PAD,VERT_PAD);
-  cancel=new FXButton(buttons,"&Cancel",NULL,this,ID_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
+  accept=new FXButton(buttons,tr("&Replace"),NULL,this,ID_ACCEPT,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
+  every=new FXButton(buttons,tr("Re&place All"),NULL,this,ID_ALL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,6,6,VERT_PAD,VERT_PAD);
+  cancel=new FXButton(buttons,tr("&Cancel"),NULL,this,ID_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
   FXHorizontalFrame* pair=new FXHorizontalFrame(buttons,LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0, 0,0,0,0);
   FXArrowButton* searchlast=new FXArrowButton(pair,this,ID_PREV,ARROW_LEFT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
   FXArrowButton* searchnext=new FXArrowButton(pair,this,ID_NEXT,ARROW_RIGHT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
   new FXHorizontalSeparator(this,SEPARATOR_GROOVE|LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X);
   FXHorizontalFrame* toppart=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X|LAYOUT_CENTER_Y,0,0,0,0, 0,0,0,0, 10,10);
-  new FXLabel(toppart,NULL,ic,ICON_BEFORE_TEXT|JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|LAYOUT_FILL_Y|LAYOUT_FILL_X);
+  new FXLabel(toppart,FXString::null,ic,ICON_BEFORE_TEXT|JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|LAYOUT_FILL_Y|LAYOUT_FILL_X);
   FXVerticalFrame* entry=new FXVerticalFrame(toppart,LAYOUT_FILL_X|LAYOUT_CENTER_Y,0,0,0,0, 0,0,0,0);
-  searchlabel=new FXLabel(entry,"S&earch for:",NULL,JUSTIFY_LEFT|ICON_BEFORE_TEXT|LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X);
+  searchlabel=new FXLabel(entry,tr("S&earch for:"),NULL,JUSTIFY_LEFT|ICON_BEFORE_TEXT|LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_X);
   searchbox=new FXHorizontalFrame(entry,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_CENTER_Y,0,0,0,0, 0,0,0,0, 0,0);
   searchtext=new FXTextField(searchbox,26,this,ID_SEARCH_TEXT,TEXTFIELD_ENTER_ONLY|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 4,4,4,4);
   FXVerticalFrame* searcharrows=new FXVerticalFrame(searchbox,LAYOUT_RIGHT|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0, 0,0);
@@ -128,7 +128,7 @@ FXReplaceDialog::FXReplaceDialog(FXWindow* owner,const FXString& caption,FXIcon*
   FXArrowButton* ar2=new FXArrowButton(searcharrows,this,ID_SEARCH_DN,FRAME_RAISED|FRAME_THICK|ARROW_DOWN|ARROW_REPEAT|LAYOUT_FILL_Y|LAYOUT_FIX_WIDTH, 0,0,16,0, 1,1,1,1);
   ar1->setArrowSize(3);
   ar2->setArrowSize(3);
-  replacelabel=new FXLabel(entry,"Replace &with:",NULL,LAYOUT_LEFT);
+  replacelabel=new FXLabel(entry,tr("Replace &with:"),NULL,LAYOUT_LEFT);
   replacebox=new FXHorizontalFrame(entry,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_CENTER_Y,0,0,0,0, 0,0,0,0, 0,0);
   replacetext=new FXTextField(replacebox,26,this,ID_REPLACE_TEXT,TEXTFIELD_ENTER_ONLY|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 4,4,4,4);
   FXVerticalFrame* replacearrows=new FXVerticalFrame(replacebox,LAYOUT_RIGHT|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0, 0,0);
@@ -137,10 +137,10 @@ FXReplaceDialog::FXReplaceDialog(FXWindow* owner,const FXString& caption,FXIcon*
   ar3->setArrowSize(3);
   ar4->setArrowSize(3);
   FXHorizontalFrame* options1=new FXHorizontalFrame(entry,LAYOUT_FILL_X,0,0,0,0, 0,0,0,0);
-  new FXRadioButton(options1,"Ex&act",this,ID_MODE+SEARCH_EXACT,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
-  new FXRadioButton(options1,"&Ignore Case",this,ID_MODE+SEARCH_IGNORECASE,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
-  new FXRadioButton(options1,"E&xpression",this,ID_MODE+SEARCH_REGEX,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
-  new FXCheckButton(options1,"&Backward",this,ID_DIR,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
+  new FXRadioButton(options1,tr("Ex&act"),this,ID_MODE+SEARCH_EXACT,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
+  new FXRadioButton(options1,tr("&Ignore Case"),this,ID_MODE+SEARCH_IGNORECASE,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
+  new FXRadioButton(options1,tr("E&xpression"),this,ID_MODE+SEARCH_REGEX,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
+  new FXCheckButton(options1,tr("&Backward"),this,ID_DIR,ICON_BEFORE_TEXT|LAYOUT_CENTER_X);
   searchlast->setTipText("Ctl-B");
   searchnext->setTipText("Ctl-F");
   searchlast->addHotKey(MKUINT(KEY_b,CONTROLMASK));

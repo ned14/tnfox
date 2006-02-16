@@ -3,7 +3,7 @@
 *                       H a s h   T a b l e   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2003,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHash.cpp,v 1.21 2005/01/16 16:06:07 fox Exp $                          *
+* $Id: FXHash.cpp,v 1.25 2006/01/22 17:58:31 fox Exp $                          *
 ********************************************************************************/
 #include "fxver.h"
 #include "fxdefs.h"
@@ -43,12 +43,11 @@
     be rehashed into the new table.
 */
 
-#define HASH1(x,m) (((FXuint)((FXuval)(key)^(((FXuval)(key))>>13)))&(m))
-#define HASH2(x,m) (((FXuint)((FXuval)(key)^(((FXuval)(key))>>17)|1))&(m))
+#define HASH1(x,m) (((FXuint)((FXuval)(x)^(((FXuval)(x))>>13)))&((m)-1))
+#define HASH2(x,m) (((FXuint)((FXuval)(x)^(((FXuval)(x))>>17)|1))&((m)-1))
 
 
-
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -58,85 +57,87 @@ namespace FX {
 FXHash::FXHash(){
   FXMALLOC(&table,FXEntry,2);
   table[0].key=NULL;
-  table[0].val=NULL;
+  table[0].value=NULL;
   table[1].key=NULL;
-  table[1].val=NULL;
+  table[1].value=NULL;
+  total=2;
   used=0;
   free=2;
-  max=1;
   }
 
 
 // Resize hash table, and rehash old stuff into it
-void FXHash::resize(FXuint m){
-  register void *key,*val;
-  register FXuint p,x,i;
+void FXHash::size(FXuint m){
+  register void *key,*value;
+  register FXuint q,x,i;
   FXEntry *newtable;
-  FXCALLOC(&newtable,FXEntry,m+1);
-  for(i=0; i<=max; i++){
+  FXCALLOC(&newtable,FXEntry,m);
+  for(i=0; i<total; i++){
     key=table[i].key;
-    val=table[i].val;
+    value=table[i].value;
     if(key==NULL || key==(void*)-1L) continue;
-    p=HASH1(key,m);
+    q=HASH1(key,m);
     x=HASH2(key,m);
-    while(newtable[p].key) p=(p+x)&m;
-    newtable[p].key=key;
-    newtable[p].val=val;
+    while(newtable[q].key) q=(q+x)&(m-1);
+    newtable[q].key=key;
+    newtable[q].value=value;
     }
   FXFREE(&table);
   table=newtable;
-  free=m+1-used;
-  max=m;
+  total=m;
+  free=m-used;
   }
 
 
 // Insert key into the table
-void* FXHash::insert(void* key,void* val){
-  register FXuint p,pp,x;
+void* FXHash::insert(void* key,void* value){
+  register FXuint p,q,x;
   if(key){
-    if((free<<1)<=max+1) resize((max<<1)|1);
-    p=pp=HASH1(key,max);
-    x=HASH2(key,max);
-    while(table[p].key){
-      if(table[p].key==key) goto y;             // Return existing
-      p=(p+x)&max;
+    if((free<<1)<=total) size(total<<1);
+    p=HASH1(key,total);
+    x=HASH2(key,total);
+    q=p;
+    while(table[q].key){
+      if(table[q].key==key) goto y;             // Return existing
+      q=(q+x)&(total-1);
       }
-    p=pp;
-    while(table[p].key){
-      if(table[p].key==(void*)-1L) goto x;      // Put it in empty slot
-      p=(p+x)&max;
+    q=p;
+    while(table[q].key){
+      if(table[q].key==(void*)-1L) goto x;      // Put it in empty slot
+      q=(q+x)&(total-1);
       }
     free--;
 x:  used++;
-    table[p].key=key;
-    table[p].val=val;
-y:  return table[p].val;
+    table[q].key=key;
+    table[q].value=value;
+y:  return table[q].value;
     }
   return NULL;
   }
 
 
 // Replace key in the table
-void* FXHash::replace(void* key,void* val){
-  register FXuint p,pp,x;
+void* FXHash::replace(void* key,void* value){
+  register FXuint p,q,x;
   if(key){
-    if((free<<1)<=max+1) resize((max<<1)|1);
-    p=pp=HASH1(key,max);
-    x=HASH2(key,max);
-    while(table[p].key){
-      if(table[p].key==key) goto y;             // Replace existing
-      p=(p+x)&max;
+    if((free<<1)<=total) size(total<<1);
+    p=HASH1(key,total);
+    x=HASH2(key,total);
+    q=p;
+    while(table[q].key){
+      if(table[q].key==key) goto y;             // Replace existing
+      q=(q+x)&(total-1);
       }
-    p=pp;
-    while(table[p].key){
-      if(table[p].key==(void*)-1L) goto x;      // Put it in empty slot
-      p=(p+x)&max;
+    q=p;
+    while(table[q].key){
+      if(table[q].key==(void*)-1L) goto x;      // Put it in empty slot
+      q=(q+x)&(total-1);
       }
     free--;
 x:  used++;
-    table[p].key=key;
-y:  table[p].val=val;
-    return table[p].val;
+    table[q].key=key;
+y:  table[q].value=value;
+    return table[q].value;
     }
   return NULL;
   }
@@ -144,20 +145,20 @@ y:  table[p].val=val;
 
 // Remove association from the table
 void* FXHash::remove(void* key){
-  register FXuint p,x;
+  register FXuint q,x;
   register void* val;
   if(key){
-    p=HASH1(key,max);
-    x=HASH2(key,max);
-    while(table[p].key!=key){
-      if(table[p].key==NULL) goto x;
-      p=(p+x)&max;
+    q=HASH1(key,total);
+    x=HASH2(key,total);
+    while(table[q].key!=key){
+      if(table[q].key==NULL) goto x;
+      q=(q+x)&(total-1);
       }
-    val=table[p].val;
-    table[p].key=(void*)-1L;                    // Empty but not free
-    table[p].val=NULL;
+    val=table[q].value;
+    table[q].key=(void*)-1L;                    // Empty but not free
+    table[q].value=NULL;
     used--;
-    if(used<((max+1)>>2)) resize(max>>1);
+    if(used<(total>>2)) size(total>>1);
     return val;
     }
 x:return NULL;
@@ -166,15 +167,15 @@ x:return NULL;
 
 // Return true if association in table
 void* FXHash::find(void* key) const {
-  register FXuint p,x;
+  register FXuint q,x;
   if(key){
-    p=HASH1(key,max);
-    x=HASH2(key,max);
-    while(table[p].key!=key){
-      if(table[p].key==NULL) goto x;
-      p=(p+x)&max;
+    q=HASH1(key,total);
+    x=HASH2(key,total);
+    while(table[q].key!=key){
+      if(table[q].key==NULL) goto x;
+      q=(q+x)&(total-1);
       }
-    return table[p].val;
+    return table[q].value;
     }
 x:return NULL;
   }
@@ -184,12 +185,12 @@ x:return NULL;
 void FXHash::clear(){
   FXRESIZE(&table,FXEntry,2);
   table[0].key=NULL;
-  table[0].val=NULL;
+  table[0].value=NULL;
   table[1].key=NULL;
-  table[1].val=NULL;
+  table[1].value=NULL;
+  total=2;
   used=0;
   free=2;
-  max=1;
   }
 
 

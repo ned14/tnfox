@@ -25,7 +25,7 @@
 #include "QDir.h"
 #include "QThread.h"
 #include "QTrans.h"
-#include "FXFile.h"
+#include "FXStat.h"
 #include "FXProcess.h"
 #include "FXErrCodes.h"
 #include "qvaluelist.h"
@@ -1598,7 +1598,7 @@ void FXACL::resetPath(const FXString &path, const FXACL &dirs, const FXACL &file
 		QStringList entries=dl.entryList();
 		for(QStringList::const_iterator it=entries.begin(); it!=entries.end(); ++it)
 		{
-			if(FXFile::isDirectory(dl.filePath(*it)))
+			if(FXStat::isDirectory(dl.filePath(*it)))
 				resetPath(dl.filePath(*it), dirs, files);
 			else
 				files.writeTo(dl.filePath(*it));

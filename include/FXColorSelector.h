@@ -3,7 +3,7 @@
 *                          C o l o r   S e l e c t o r                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorSelector.h,v 1.26 2005/01/16 16:06:06 fox Exp $                   *
+* $Id: FXColorSelector.h,v 1.30 2006/01/22 17:57:59 fox Exp $                   *
 ********************************************************************************/
 #ifndef FXCOLORSELECTOR_H
 #define FXCOLORSELECTOR_H
@@ -35,6 +35,8 @@ class FXTabBook;
 class FXColorBar;
 class FXColorWell;
 class FXColorWheel;
+class FXColorRing;
+class FXColorList;
 class FXList;
 class FXSlider;
 class FXTextField;
@@ -49,9 +51,8 @@ class FXAPI FXColorSelector : public FXPacker {
 protected:
   FXTabBook    *panels;               // Color panes
   FXColorWell  *well;                 // Main well
-  FXList       *list;                 // List of color names
-  FXColorBar   *bar;                  // Color bar
-  FXColorWheel *wheel;                // Color wheel
+  FXColorList  *list;                 // List of color names
+  FXColorRing  *wheel;                // Color ring
   FXSlider     *rgbaslider[4];        // RGBA sliders
   FXTextField  *rgbatext[4];          // RGBA text fields
   FXSlider     *hsvaslider[4];        // HSVA sliders
@@ -104,8 +105,6 @@ public:
   long onUpdAlphaLabel(FXObject*,FXSelector,void*);
   long onCmdWheel(FXObject*,FXSelector,void*);
   long onUpdWheel(FXObject*,FXSelector,void*);
-  long onCmdBar(FXObject*,FXSelector,void*);
-  long onUpdBar(FXObject*,FXSelector,void*);
   long onCmdColorPick(FXObject*,FXSelector,void*);
 public:
   enum {
@@ -130,7 +129,6 @@ public:
     ID_CMY_MAGENTA_TEXT,
     ID_CMY_YELLOW_TEXT,
     ID_DIAL_WHEEL,
-    ID_COLOR_BAR,
     ID_COLOR_LIST,
     ID_WELL_CHANGED,
     ID_ACTIVEPANE,
@@ -179,4 +177,3 @@ public:
 }
 
 #endif
-

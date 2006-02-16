@@ -3,7 +3,7 @@
 *                         D o c u m e n t   O b j e c t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDocument.h,v 1.15 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXDocument.h,v 1.16 2006/01/22 17:58:01 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXDOCUMENT_H
 #define FXDOCUMENT_H
@@ -87,4 +87,3 @@ public:
 }
 
 #endif
-

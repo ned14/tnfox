@@ -3,7 +3,7 @@
 *                            V i s u a l   C l a s s                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVisual.h,v 1.36.2.1 2005/12/19 13:14:03 fox Exp $                          *
+* $Id: FXVisual.h,v 1.41 2006/01/22 17:58:12 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXVISUAL_H
 #define FXVISUAL_H
@@ -71,14 +71,15 @@ class FXDCWindow;
 /// Visual describes pixel format of a drawable
 class FXAPI FXVisual : public FXId {
   FXDECLARE(FXVisual)
+  friend class FXApp;
   friend class FXEventLoop;
   friend class FXWindow;
-  friend class FXGLContext;
-  friend class FXGLCanvas;
   friend class FXImage;
   friend class FXIcon;
   friend class FXBitmap;
   friend class FXDCWindow;
+  friend class FXGLCanvas;
+  friend class FXGLContext;
 protected:
   FXuint        flags;                  // Visual flags
   FXuint        hint;                   // Depth Hint
@@ -90,13 +91,13 @@ protected:
   FXuint        maxcolors;              // Maximum number of colors
   FXVisualType  type;                   // Visual type
   void         *info;                   // Opaque data
+  void         *visual;                 // Application visual/pixel format
   FXID          colormap;               // Color map, if any
   FXbool        freemap;                // We allocated the map
 #ifndef WIN32
 protected:
-  void*         visual;                 // Application visual [Visual]
-  void*         gc;                     // Drawing GC
-  void*         scrollgc;               // Scrolling GC
+  void         *gc;                     // Drawing GC
+  void         *scrollgc;               // Scrolling GC
   FXPixel       rpix[16][256];          // Mapping from red -> pixel
   FXPixel       gpix[16][256];          // Mapping from green -> pixel
   FXPixel       bpix[16][256];          // Mapping from blue -> pixel
@@ -111,9 +112,6 @@ protected:
   void setupstaticgray();
   void setuppixmapmono();
   void setupcolormap();
-#else
-protected:
-  int           pixelformat;            // PIXELFORMAT number
 #endif
 protected:
   FXVisual();
@@ -127,6 +125,12 @@ public:
 
   /// Get visual type
   FXVisualType getType() const { return type; }
+
+  /// Get visual info
+  void* getInfo() const { return info; }
+
+  /// Get visual or pixel format
+  void* getVisual() const { return visual; }
 
   /// Create visual
   virtual void create();

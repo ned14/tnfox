@@ -3,7 +3,7 @@
 *                            L i s t   W i d g e t                              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,16 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.h,v 1.82.2.1 2005/04/10 03:24:47 fox Exp $                            *
+* $Id: FXList.h,v 1.88 2006/01/22 17:58:05 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXLIST_H
 #define FXLIST_H
 
 #ifndef FXSCROLLAREA_H
 #include "FXScrollArea.h"
-#endif
-#ifndef FXOBJECTLIST_H
-#include "FXObjectList.h"
 #endif
 
 namespace FX {
@@ -60,6 +57,9 @@ protected:
   void     *data;
   FXuint    state;
   FXint     x,y;
+private:
+  FXListItem(const FXListItem&);
+  FXListItem& operator=(const FXListItem&);
 protected:
   FXListItem():icon(NULL),data(NULL),state(0),x(0),y(0){}
   virtual void draw(const FXList* list,FXDC& dc,FXint x,FXint y,FXint w,FXint h);
@@ -178,6 +178,7 @@ protected:
   FXint          current;           // Current item
   FXint          extent;            // Extent item
   FXint          cursor;            // Cursor item
+  FXint          viewable;          // Viewable item
   FXFont        *font;              // Font
   FXColor        textColor;         // Text color
   FXColor        selbackColor;      // Selected back color
@@ -264,7 +265,7 @@ public:
   virtual void recalc();
 
   /// List widget can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();
@@ -316,6 +317,9 @@ public:
 
   /// Move item from oldindex to newindex
   FXint moveItem(FXint newindex,FXint oldindex,FXbool notify=FALSE);
+
+  /// Extract item from list
+  FXListItem* extractItem(FXint index,FXbool notify=FALSE);
 
   /// Remove item from list
   void removeItem(FXint index,FXbool notify=FALSE);
@@ -490,4 +494,3 @@ public:
 }
 
 #endif
-

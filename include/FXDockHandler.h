@@ -3,7 +3,7 @@
 *                       D o c k H a n d l e r   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2005,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockHandler.h,v 1.1 2005/02/04 03:41:00 fox Exp $                     *
+* $Id: FXDockHandler.h,v 1.3 2006/01/22 17:58:00 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXDOCKHANDLER_H
 #define FXDOCKHANDLER_H
@@ -29,11 +29,11 @@
 #endif
 
 namespace FX {
- 
+
 
 /**
 * The dock handler exists as a common base class for tool bar grip
-* and dock title.  
+* and dock title.
 */
 class FXAPI FXDockHandler : public FXFrame {
   FXDECLARE_ABSTRACT(FXDockHandler)
@@ -64,7 +64,7 @@ protected:
 public:
 
   /// The grip can receive the focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Set the status line help text for grip
   void setHelpText(const FXString& text){ help=text; }

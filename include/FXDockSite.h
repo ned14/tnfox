@@ -3,7 +3,7 @@
 *                         D o c k S i t e   W i d g e t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockSite.h,v 1.22.2.1 2005/08/17 04:05:13 fox Exp $                      *
+* $Id: FXDockSite.h,v 1.30 2006/01/22 17:58:01 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXDOCKSITE_H
 #define FXDOCKSITE_H
@@ -32,6 +32,13 @@ namespace FX {
 
 
 class FXDockBar;
+
+/// Dock site options
+enum {
+  DOCKSITE_WRAP    = 0,           /// Dockbars are wrapped to another galley when not enough space on current galley
+  DOCKSITE_NO_WRAP = 0x00020000   /// Never wrap dockbars to another galley even if not enough space
+  };
+
 
 /**
 * The dock site widget is a widget where dock bars can be docked.
@@ -110,7 +117,7 @@ public:
   /**
   * Move tool bar, changing its options to suite the new position.
   * Used by the toolbar dragging to rearrange the toolbars inside the
-  * toolbar dock.  
+  * toolbar dock.
   */
   virtual void moveToolBar(FXDockBar* bar,FXint barx,FXint bary);
 
@@ -138,6 +145,11 @@ public:
   */
   virtual void undockToolBar(FXDockBar* bar);
 
+  /// Change wrap option
+  void wrapGalleys(FXbool wrap);
+
+  /// Get wrap option
+  FXbool wrapGalleys() const;
   };
 
 }

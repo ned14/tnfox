@@ -3,7 +3,7 @@
 *                            R u l e r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRuler.h,v 1.28 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXRuler.h,v 1.36 2006/01/28 20:30:21 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXRULER_H
 #define FXRULER_H
@@ -33,20 +33,28 @@ namespace FX {
 
 /// Ruler options
 enum {
-  RULER_NORMAL       = 0,                                   /// Default appearance (default)
-  RULER_HORIZONTAL   = 0,                                   /// Ruler is horizontal (default)
-  RULER_VERTICAL     = 0x00008000,                          /// Ruler is vertical
-  RULER_TICKS_OFF    = 0,                                   /// Tick marks off (default)
-  RULER_TICKS_TOP    = 0x00010000,                          /// Ticks on the top (if horizontal)
-  RULER_TICKS_BOTTOM = 0x00020000,                          /// Ticks on the bottom (if horizontal)
-  RULER_TICKS_LEFT   = RULER_TICKS_TOP,                     /// Ticks on the left (if vertical)
-  RULER_TICKS_RIGHT  = RULER_TICKS_BOTTOM,                  /// Ticks on the right (if vertical)
-  RULER_TICKS_CENTER = RULER_TICKS_TOP|RULER_TICKS_BOTTOM,  /// Tickmarks centered
-  RULER_NUMBERS      = 0x00040000,                          /// Show numbers
-  RULER_ARROW        = 0x00080000,                          /// Draw small arrow for cursor position
-  RULER_MARKERS      = 0x00100000,                          /// Draw markers for indentation settings
-  RULER_METRIC       = 0,                                   /// Metric subdivision (default)
-  RULER_ENGLISH      = 0x00200000                           /// English subdivision
+  RULER_NORMAL        = 0,                                      /// Default appearance (default)
+  RULER_HORIZONTAL    = 0,                                      /// Ruler is horizontal (default)
+  RULER_VERTICAL      = 0x00008000,                             /// Ruler is vertical
+  RULER_TICKS_OFF     = 0,                                      /// Tick marks off (default)
+  RULER_TICKS_TOP     = 0x00010000,                             /// Ticks on the top (if horizontal)
+  RULER_TICKS_BOTTOM  = 0x00020000,                             /// Ticks on the bottom (if horizontal)
+  RULER_TICKS_LEFT    = RULER_TICKS_TOP,                        /// Ticks on the left (if vertical)
+  RULER_TICKS_RIGHT   = RULER_TICKS_BOTTOM,                     /// Ticks on the right (if vertical)
+  RULER_TICKS_CENTER  = RULER_TICKS_TOP|RULER_TICKS_BOTTOM,     /// Tickmarks centered
+  RULER_NUMBERS       = 0x00040000,                             /// Show numbers
+  RULER_ARROW         = 0x00080000,                             /// Draw small arrow for cursor position
+  RULER_MARKERS       =  0x00100000,                            /// Draw markers for indentation settings
+  RULER_METRIC        = 0,                                      /// Metric subdivision (default)
+  RULER_ENGLISH       = 0x00200000,                             /// English subdivision
+  RULER_MARGIN_ADJUST = 0x00400000,                             /// Allow margin adjustment
+  RULER_ALIGN_CENTER  = 0,                                      /// Center document horizontally
+  RULER_ALIGN_LEFT    = 0x00800000,                             /// Align document to the left
+  RULER_ALIGN_RIGHT   = 0x01000000,                             /// Align document to the right
+  RULER_ALIGN_TOP     = RULER_ALIGN_LEFT,                       /// Align document to the top
+  RULER_ALIGN_BOTTOM  = RULER_ALIGN_RIGHT,                      /// Align document to the bottom
+  RULER_ALIGN_STRETCH = RULER_ALIGN_LEFT|RULER_ALIGN_RIGHT,     /// Stretch document to fit horizontally
+  RULER_ALIGN_NORMAL  = RULER_ALIGN_CENTER                      /// Normally, document is centered both ways
   };
 
 
@@ -59,6 +67,13 @@ class FXFont;
 * indents, and tickmarks.
 * The ruler widget sends a SEL_CHANGED when the indentation or margins
 * are interactively changed by the user.
+* If the document size exceeds the available space, it is possible to
+* scroll the document using setPosition().  When the document size is
+* less than the available space, the alignment options can be used to
+* center, left-adjust, or right-adjust the document.
+* Finally, a special option exists to stretch the document to the
+* available space, that is to say, the document will always be fitten
+* with given left and right edges substracted from the available space.
 */
 class FXAPI FXRuler : public FXFrame {
   FXDECLARE(FXRuler)
@@ -78,6 +93,7 @@ protected:
   FXint    tinyTicks;           // Tick increments between tiny ticks
   FXint    arrowPos;            // Arrow position
   FXColor  textColor;           // Color for numbers and ticks
+  FXint    shift;               // Left edge of content
   FXint    pos;                 // Scroll position
   FXint    off;                 // Offset item was grabbed
   FXString tip;                 // Tooltip text
@@ -130,6 +146,9 @@ public:
   /// Construct label with given text and icon
   FXRuler(FXComposite* p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=RULER_NORMAL,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD);
 
+  /// Perform layout
+  virtual void layout();
+
   /// Create server-side resources
   virtual void create();
 
@@ -143,10 +162,20 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Set the current position
-  void setPosition(FXint pos);
+  void setPosition(FXint pos,FXbool notify=FALSE);
 
   /// Return the current position
   FXint getPosition() const { return pos; }
+
+  /// Change/return content size
+  void setContentSize(FXint size,FXbool notify=FALSE);
+  FXint getContentSize() const;
+
+  /// Get lower edge of document
+  FXint getDocumentLower() const;
+
+  /// Get upper edge of document
+  FXint getDocumentUpper() const;
 
   /// Change/return document size
   void setDocumentSize(FXint size,FXbool notify=FALSE);
@@ -197,15 +226,15 @@ public:
   FXdouble getPixelPerTick() const { return pixelPerTick; }
 
   /// Set the text font
-  void setFont(FXFont *fnt);
+  void setFont(FXFont *fnt,FXbool notify=FALSE);
 
   /// Get the text font
   FXFont* getFont() const { return font; }
 
-  /// Change slider value
+  /// Change arrow value, relative to document position
   void setValue(FXint value);
 
-  /// Return slider value
+  /// Return arrow value in document
   FXint getValue() const { return arrowPos; }
 
   /// Set ruler style
@@ -214,22 +243,28 @@ public:
   /// Get ruler style
   FXuint getRulerStyle() const;
 
+  /// Set ruler alignment
+  void setRulerAlignment(FXuint alignment,FXbool notify=FALSE);
+
+  /// Get ruler alignment
+  FXuint getRulerAlignment() const;
+
   /// Get the current text color
   FXColor getTextColor() const { return textColor; }
 
   /// Set the current text color
   void setTextColor(FXColor clr);
 
-  /// Set the status line help text for this label
-  void setHelpText(const FXString& text);
+  /// Set the status line help text for the ruler
+  void setHelpText(const FXString& text){ help=text; }
 
-  /// Get the status line help text for this label
+  /// Get the status line help text for the ruler
   const FXString& getHelpText() const { return help; }
 
-  /// Set the tool tip message for this label
-  void setTipText(const FXString&  text);
+  /// Set the tool tip message for the ruler
+  void setTipText(const FXString& text){ tip=text; }
 
-  /// Get the tool tip message for this label
+  /// Get the tool tip message for the ruler
   const FXString& getTipText() const { return tip; }
 
   /// Save label to a stream
@@ -245,4 +280,3 @@ public:
 }
 
 #endif
-

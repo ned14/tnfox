@@ -3,7 +3,7 @@
 *                     A r r o w   B u t t o n    O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXArrowButton.cpp,v 1.45 2005/01/16 16:06:06 fox Exp $                   *
+* $Id: FXArrowButton.cpp,v 1.50 2006/01/22 17:58:17 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -53,7 +53,7 @@
 // Arrow styles
 #define ARROW_MASK    (ARROW_UP|ARROW_DOWN|ARROW_LEFT|ARROW_RIGHT|ARROW_AUTO|ARROW_REPEAT|ARROW_AUTOGRAY|ARROW_AUTOHIDE|ARROW_TOOLBAR)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -150,7 +150,7 @@ void FXArrowButton::setState(FXbool s){
 
 
 // If window can have focus
-FXbool FXArrowButton::canFocus() const { return 1; }
+bool FXArrowButton::canFocus() const { return true; }
 
 
 // Implement auto-hide or auto-gray modes

@@ -3,7 +3,7 @@
 *                  R a d i o   B u t t o n    O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRadioButton.cpp,v 1.58 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXRadioButton.cpp,v 1.64 2006/01/22 17:58:38 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -52,7 +52,7 @@
 
 #define RADIOBUTTON_MASK  (RADIOBUTTON_AUTOGRAY|RADIOBUTTON_AUTOHIDE)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -108,7 +108,7 @@ FXRadioButton::FXRadioButton(FXComposite* p,const FXString& text,FXObject* tgt,F
 
 
 // If window can have focus
-FXbool FXRadioButton::canFocus() const { return 1; }
+bool FXRadioButton::canFocus() const { return true; }
 
 
 // Get default width
@@ -135,10 +135,11 @@ FXint FXRadioButton::getDefaultHeight(){
 
 
 // Check button
-void FXRadioButton::setCheck(FXbool s){
+void FXRadioButton::setCheck(FXbool s,FXbool notify){
   if(check!=s){
     check=s;
     update();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)check);}
     }
   }
 

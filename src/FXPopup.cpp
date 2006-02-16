@@ -3,7 +3,7 @@
 *                     P o p u p   W i n d o w   O b j e c t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.cpp,v 1.82.2.2 2005/10/24 01:04:21 fox Exp $                         *
+* $Id: FXPopup.cpp,v 1.91 2006/01/22 17:58:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -56,7 +56,7 @@
 // Frame styles
 #define FRAME_MASK        (FRAME_SUNKEN|FRAME_RAISED|FRAME_THICK)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -115,14 +115,14 @@ FXPopup::FXPopup(FXWindow* owner,FXuint opts,FXint x,FXint y,FXint w,FXint h):
 
 
 // Popups do override-redirect
-FXbool FXPopup::doesOverrideRedirect() const {
-  return 1;
+bool FXPopup::doesOverrideRedirect() const {
+  return true;
   }
 
 
 // Popups do save-unders
-FXbool FXPopup::doesSaveUnder() const {
-  return 1;
+bool FXPopup::doesSaveUnder() const {
+  return true;
   }
 
 
@@ -609,7 +609,8 @@ long FXPopup::onUngrabbed(FXObject* sender,FXSelector sel,void* ptr){
 // Key press; escape cancels popup
 long FXPopup::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
-  if(event->code==KEY_Escape || event->code==KEY_Cancel || event->code==KEY_Alt_L || event->code==KEY_Alt_R){
+//  if(event->code==KEY_Escape || event->code==KEY_Cancel || event->code==KEY_Alt_L || event->code==KEY_Alt_R){
+  if(event->code==KEY_Escape || event->code==KEY_Cancel){
     handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
     return 1;
     }
@@ -670,57 +671,6 @@ void FXPopup::hide(){
   }
 
 
-/*
-// Popup the menu at some location
-void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
-#ifndef WIN32
-  FXint rx=getRoot()->getX();
-  FXint ry=getRoot()->getY();
-  FXint rw=getRoot()->getWidth();
-  FXint rh=getRoot()->getHeight();
-#else
-  OSVERSIONINFO version;
-  RECT rect;
-  FXint rx,ry,rw,rh;
-  version.dwOSVersionInfoSize=sizeof(OSVERSIONINFO);
-  GetVersionEx (&version);
-
-  // Patch from "Rafael de Pelegrini Soares" <Rafael@enq.ufrgs.br>
-  // Older Microsoft Operating Systems, Win95 and NT4 or below
-  if(version.dwMajorVersion<5 && version.dwMinorVersion<10){
-    SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
-    rx=rect.left;
-    ry=rect.top;
-    rw=rect.right-rect.left;
-    rh=rect.bottom-rect.top;
-    }
-
-  // Later Microsoft Operating Systems
-  // Patch from Brian Hook <hook_l@pyrogon.com>
-  else{
-    rx=GetSystemMetrics(SM_XVIRTUALSCREEN);
-    ry=GetSystemMetrics(SM_YVIRTUALSCREEN);
-    rw=GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    rh=GetSystemMetrics(SM_CYVIRTUALSCREEN);
-    }
-#endif
-  FXTRACE((150,"%s::popup %p\n",getClassName(),this));
-  grabowner=grabto;
-  if((options&POPUP_SHRINKWRAP) || w<=1) w=getDefaultWidth();
-  if((options&POPUP_SHRINKWRAP) || h<=1) h=getDefaultHeight();
-  if(x+w>rw) x=rw-w;
-  if(y+h>rh) y=rh-h;
-  if(x<rx) x=rx;
-  if(y<ry) y=ry;
-  position(x,y,w,h);
-  show();
-  raise();
-  setFocus();
-  if(!grabowner) grab();
-  }
-*/
-
-
 // Popup the menu at some location
 void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   FXint rx,ry,rw,rh;
@@ -731,10 +681,6 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   rh=getRoot()->getHeight();
 #else
   RECT rect;
-//OSVERSIONINFO vinfo;
-//memset(&vinfo,0,sizeof(vinfo));
-//vinfo.dwOSVersionInfoSize=sizeof(vinfo);
-//GetVersionEx(&vinfo);
 #if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
   HINSTANCE user32;
   typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);
@@ -747,8 +693,8 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   // We can't even link it, let alone call it.
   // The solution is to ask the DLL if the function exists.
   // And another patch from Lothar Scholtz; now it works!
-  if((user32=LoadLibrary("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
-    MONITORINFOEX minfo;
+  if((user32=LoadLibraryA("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
+    MONITORINFOEXA minfo;
     HMONITOR hMon;
     rect.left=x;
     rect.right=x+w;
@@ -765,7 +711,7 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
     }
   else
 #endif
-    { 
+    {
     // On Win95 and WinNT, we have to use the following
     SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
     rx=rect.left;

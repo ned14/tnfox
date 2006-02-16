@@ -3,7 +3,7 @@
 *                   W i l d c a r d   M a t c h   F u n c t i o n               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxfilematch.cpp,v 1.12 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: fxfilematch.cpp,v 1.15 2006/01/22 17:58:52 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
 #include "fxkeys.h"
 
 
@@ -70,9 +71,9 @@
 */
 
 // If folding case, make lower case
-#define FOLD(c)          ((flags&FILEMATCH_CASEFOLD)?tolower(c):(c))
+#define FOLD(c)          ((flags&FILEMATCH_CASEFOLD)?Ascii::toLower(c):(c))
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -80,7 +81,7 @@ namespace FX {
 
 
 // Perform match
-static FXint domatch(const char *pattern,const char *string,FXuint flags){
+static bool domatch(const char *pattern,const char *string,FXuint flags){
   register const char *p=pattern;
   register const char *q=string;
   register const char *s;
@@ -89,60 +90,60 @@ static FXint domatch(const char *pattern,const char *string,FXuint flags){
   while((c=*p++)!='\0'){
     switch(c){
       case '?':
-        if(*q=='\0') return 0;
-        if((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*q)) return 0;
-        if((flags&FILEMATCH_PERIOD) && (*q=='.') && ((q==string) || ((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*(q-1))))) return 0;
+        if(*q=='\0') return false;
+        if((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*q)) return false;
+        if((flags&FILEMATCH_PERIOD) && (*q=='.') && ((q==string) || ((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*(q-1))))) return false;
         q++;
         break;
       case '*':
         c=*p;
         while(c=='*') c=*++p;
-        if((flags&FILEMATCH_PERIOD) && (*q=='.') && ((q==string) || ((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*(q-1))))) return 0;
+        if((flags&FILEMATCH_PERIOD) && (*q=='.') && ((q==string) || ((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*(q-1))))) return false;
         if(c=='\0'){    // Optimize for case of trailing '*'
-          if(flags&FILEMATCH_FILE_NAME){ for(s=q; *s; s++){ if(ISPATHSEP(*s)) return 0; } }
+          if(flags&FILEMATCH_FILE_NAME){ for(s=q; *s; s++){ if(ISPATHSEP(*s)) return false; } }
           return 1;
           }
         while(!domatch(p,q,flags&~FILEMATCH_PERIOD)){
-          if((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*q)) return 0;
-          if(*q++=='\0') return 0;
+          if((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*q)) return false;
+          if(*q++=='\0') return false;
           }
         return 1;
       case '[':
-        if(*q=='\0') return 0;
-        if((flags&FILEMATCH_PERIOD) && (*q=='.') && ((q==string) || ((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*(q-1))))) return 0;
+        if(*q=='\0') return false;
+        if((flags&FILEMATCH_PERIOD) && (*q=='.') && ((q==string) || ((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(*(q-1))))) return false;
         cc=FOLD(*q);
         if((neg=((*p=='!')||(*p=='^')))) p++;
         c=*p++;
         do{
           if(c=='\\' && !(flags&FILEMATCH_NOESCAPE)) c=*p++;
           cs=ce=FOLD(c);
-          if(c=='\0') return 0;
+          if(c=='\0') return false;
           c=*p++;
           c=FOLD(c);
-          if((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(c)) return 0;
+          if((flags&FILEMATCH_FILE_NAME) && ISPATHSEP(c)) return false;
           if(c=='-' && *p!=']'){
             ce = *p++;
             if(ce=='\\' && !(flags&FILEMATCH_NOESCAPE)) c=*p++;
-            if(c=='\0') return 0;
+            if(c=='\0') return false;
             ce=FOLD(c);
             c=*p++;
             }
           if(((FXuchar)cs)<=((FXuchar)cc) && ((FXuchar)cc)<=((FXuchar)ce)) goto match;
           }
         while(c!=']');
-        if(!neg) return 0;
+        if(!neg) return false;
         q++;
         break;
 match:  while(c!=']'){
-          if(c=='\0') return 0;
+          if(c=='\0') return false;
           c=*p++;
           if(c=='\\' && !(flags&FILEMATCH_NOESCAPE)) p++;
           }
-        if(neg) return 0;
+        if(neg) return false;
         q++;
         break;
       case '(':
-nxt:    if(domatch(p,q,flags)) return 1;
+nxt:    if(domatch(p,q,flags)) return true;
         for(level=0; *p && 0<=level; ){
           switch(*p++){
             case '\\': if(*p) p++; break;
@@ -152,7 +153,7 @@ nxt:    if(domatch(p,q,flags)) return 1;
             case ',': if (level==0) goto nxt;
             }
           }
-        return 0;
+        return false;
       case ')':
         break;
       case '|':
@@ -168,7 +169,7 @@ nxt:    if(domatch(p,q,flags)) return 1;
       case '\\':
         if(*p && !(flags&FILEMATCH_NOESCAPE)) c=*p++;   // Trailing escape represents itself
       default:
-        if(FOLD(c)!=FOLD(*q)) return 0;
+        if(FOLD(c)!=FOLD(*q)) return false;
         q++;
         break;
       }
@@ -178,12 +179,12 @@ nxt:    if(domatch(p,q,flags)) return 1;
 
 
 // Public API to matcher
-FXint fxfilematch(const char *pattern,const char *string,FXuint flags){
+bool fxfilematch(const char *pattern,const char *string,FXuint flags){
   register const char *p=pattern;
   register const char *q=string;
   register int level;
   if(p && q){
-nxt:if(domatch(p,q,flags)) return 1;
+nxt:if(domatch(p,q,flags)) return true;
     for(level=0; *p && 0<=level; ){
       switch(*p++){
         case '\\': if(*p) p++; break;
@@ -194,7 +195,7 @@ nxt:if(domatch(p,q,flags)) return 1;
         }
       }
     }
-  return 0;
+  return false;
   }
 
 }

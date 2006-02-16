@@ -3,7 +3,7 @@
 *                           T a b   I t e m    W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabItem.cpp,v 1.23 2005/01/16 16:06:07 fox Exp $                       *
+* $Id: FXTabItem.cpp,v 1.29 2006/01/22 17:58:45 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -61,7 +61,7 @@
 #define TAB_ORIENT_MASK    (TAB_TOP|TAB_LEFT|TAB_RIGHT|TAB_BOTTOM)
 #define TABBOOK_MASK       (TABBOOK_SIDEWAYS|TABBOOK_BOTTOMTABS)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -94,7 +94,7 @@ FXTabItem::FXTabItem(FXTabBar* p,const FXString& text,FXIcon* ic,FXuint opts,FXi
 
 
 // If window can have focus
-FXbool FXTabItem::canFocus() const { return 1; }
+bool FXTabItem::canFocus() const { return true; }
 
 
 // Gained focus
@@ -207,9 +207,10 @@ long FXTabItem::onPaint(FXObject*,FXSelector,void* ptr){
       dc.setForeground(hiliteColor);
       dc.drawLine(2,0,width-1,0);
       dc.drawLine(0,2,1,1);
-      dc.drawLine(0,height-2,0,2);
+      dc.drawLine(0,height-4,0,2);
       dc.setForeground(shadowColor);
-      dc.drawLine(2,height-2,width-1,height-2);
+      dc.fillRectangle(1,height-3,1,1);
+      dc.fillRectangle(2,height-2,width-3,1);
       dc.setForeground(borderColor);
       dc.drawLine(3,height-1,width-1,height-1);
       break;
@@ -244,12 +245,10 @@ long FXTabItem::onPaint(FXObject*,FXSelector,void* ptr){
       dc.drawLine(0,2,2,0);
       dc.fillRectangle(2,0,width-4,1);
       dc.setForeground(shadowColor);
-      dc.drawLine(width-2,1,width-2,height-1);
+      dc.fillRectangle(width-2,1,1,height-1);
       dc.setForeground(borderColor);
       dc.drawLine(width-2,1,width-1,2);
-      dc.drawLine(width-1,2,width-1,height-2);
-      dc.setForeground(hiliteColor);
-      dc.drawLine(width-1,height-1,width-1,height-1);
+      dc.fillRectangle(width-1,2,1,height-3);
       break;
     }
   if(!label.empty()){

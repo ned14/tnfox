@@ -3,7 +3,7 @@
 *                       M e n u   C a s c a d e   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCascade.cpp,v 1.48 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXMenuCascade.cpp,v 1.55 2006/01/22 17:58:35 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -56,7 +56,7 @@
 #define LEADSPACE   22
 #define TRAILSPACE  16
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -126,9 +126,7 @@ void FXMenuCascade::destroy(){
 
 
 // If window can have focus
-FXbool FXMenuCascade::canFocus() const {
-  return 1;
-  }
+bool FXMenuCascade::canFocus() const { return true; }
 
 
 // Pressed button
@@ -301,11 +299,11 @@ long FXMenuCascade::onPaint(FXObject*,FXSelector,void* ptr){
       yy=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setFont(font);
       dc.setForeground(hiliteColor);
-      dc.drawText(xx+1,yy+1,label.text(),label.length());
+      dc.drawText(xx+1,yy+1,label);
       dc.setForeground(shadowColor);
-      dc.drawText(xx,yy,label.text(),label.length());
+      dc.drawText(xx,yy,label);
       if(0<=hotoff){
-        dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+        dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
         }
       }
     yy=(height-8)/2;
@@ -325,9 +323,9 @@ long FXMenuCascade::onPaint(FXObject*,FXSelector,void* ptr){
       yy=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setFont(font);
       dc.setForeground(isEnabled() ? seltextColor : shadowColor);
-      dc.drawText(xx,yy,label.text(),label.length());
+      dc.drawText(xx,yy,label);
       if(0<=hotoff){
-        dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+        dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
         }
       }
     yy=(height-8)/2;
@@ -347,9 +345,9 @@ long FXMenuCascade::onPaint(FXObject*,FXSelector,void* ptr){
       yy=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setFont(font);
       dc.setForeground(textColor);
-      dc.drawText(xx,yy,label.text(),label.length());
+      dc.drawText(xx,yy,label);
       if(0<=hotoff){
-        dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+        dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
         }
       }
     yy=(height-8)/2;
@@ -375,14 +373,14 @@ void FXMenuCascade::drawTriangle(FXDCWindow& dc,FXint l,FXint t,FXint,FXint b){
 
 
 // Test if logically inside
-FXbool FXMenuCascade::contains(FXint parentx,FXint parenty) const {
+bool FXMenuCascade::contains(FXint parentx,FXint parenty) const {
   FXint x,y;
-  if(FXMenuCaption::contains(parentx,parenty)) return 1;
+  if(FXMenuCaption::contains(parentx,parenty)) return true;
   if(getMenu() && getMenu()->shown()){
     getParent()->translateCoordinatesTo(x,y,getRoot(),parentx,parenty);
-    if(getMenu()->contains(x,y)) return 1;
+    if(getMenu()->contains(x,y)) return true;
     }
-  return 0;
+  return false;
   }
 
 

@@ -3,7 +3,7 @@
 *                          C o l o r   S e l e c t o r                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorSelector.cpp,v 1.64 2005/01/16 16:06:06 fox Exp $                 *
+* $Id: FXColorSelector.cpp,v 1.74 2006/01/22 17:58:20 fox Exp $                 *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -27,7 +27,7 @@
 #include "fxkeys.h"
 #include "fxpriv.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -50,6 +50,8 @@
 #include "FXColorBar.h"
 #include "FXColorWell.h"
 #include "FXColorWheel.h"
+#include "FXColorRing.h"
+#include "FXColorList.h"
 #include "FXTextField.h"
 #include "FXButton.h"
 #include "FXPicker.h"
@@ -91,11 +93,14 @@
   - Still need a way to pick a color from the screen:- look at WindowMaker.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
+
+
+/*******************************************************************************/
 
 // Map
 FXDEFMAP(FXColorSelector) FXColorSelectorMap[]={
@@ -130,9 +135,6 @@ FXDEFMAP(FXColorSelector) FXColorSelectorMap[]={
   FXMAPFUNC(SEL_UPDATE,FXColorSelector::ID_DIAL_WHEEL,FXColorSelector::onUpdWheel),
   FXMAPFUNC(SEL_COMMAND,FXColorSelector::ID_DIAL_WHEEL,FXColorSelector::onCmdWheel),
   FXMAPFUNC(SEL_CHANGED,FXColorSelector::ID_DIAL_WHEEL,FXColorSelector::onCmdWheel),
-  FXMAPFUNC(SEL_UPDATE,FXColorSelector::ID_COLOR_BAR,FXColorSelector::onUpdBar),
-  FXMAPFUNC(SEL_COMMAND,FXColorSelector::ID_COLOR_BAR,FXColorSelector::onCmdBar),
-  FXMAPFUNC(SEL_CHANGED,FXColorSelector::ID_COLOR_BAR,FXColorSelector::onCmdBar),
   FXMAPFUNC(SEL_COMMAND,FXColorSelector::ID_COLORPICK,FXColorSelector::onCmdColorPick),
   };
 
@@ -154,8 +156,6 @@ const FXchar* FXColorSelector::wellname[24]={
 
 /*******************************************************************************/
 
-
-
 // Separator item
 FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXPacker(p,opts,x,y,w,h){
@@ -165,8 +165,8 @@ FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXu
 
   // Buttons
   FXHorizontalFrame *buttons=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X|PACK_UNIFORM_WIDTH);
-  accept=new FXButton(buttons,"&Accept",NULL,NULL,0,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
-  cancel=new FXButton(buttons,"&Cancel",NULL,NULL,0,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
+  accept=new FXButton(buttons,tr("&Accept"),NULL,NULL,0,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
+  cancel=new FXButton(buttons,tr("&Cancel"),NULL,NULL,0,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
 
   // Separator
   new FXHorizontalSeparator(this,SEPARATOR_RIDGE|LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X);
@@ -217,7 +217,7 @@ FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXu
   FXVerticalFrame *wellframe=new FXVerticalFrame(main,LAYOUT_FILL_Y,0,0,0,0, 0,0,10,0,0,2);
 
   // Color sucker
-  new FXPicker(wellframe,"\tPick color",eyedropicon,this,ID_COLORPICK,JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_X|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,56,32,0,0,0,0);
+  new FXPicker(wellframe,tr("\tPick color"),eyedropicon,this,ID_COLORPICK,JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_X|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,56,32,0,0,0,0);
 
   // Main color well
   well=new FXColorWell(wellframe,FXRGBA(255,255,255,255),this,ID_WELL_CHANGED,COLORWELL_SOURCEONLY|LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FILL_Y|LAYOUT_FIX_WIDTH, 0,0,64,0 ,0,0,0,0);
@@ -226,38 +226,38 @@ FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXu
   panels=new FXTabBook(main,this,ID_ACTIVEPANE,TABBOOK_TOPTABS|LAYOUT_FILL_Y|LAYOUT_FILL_X);
 
   // HSV Dial Mode
-  new FXTabItem(panels,"\tHue, Saturation, Value",dialmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
+  new FXTabItem(panels,tr("\tHue, Saturation, Value"),dialmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
 
-    // RGB Sliders
-    FXHorizontalFrame *dialblock=new FXHorizontalFrame(panels,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0,10,10,10,10, 5,8);
+    // Color wheel
+    FXHorizontalFrame *dialblock=new FXHorizontalFrame(panels,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_LEFT,0,0,0,0,15,15,5,5, 5,8);
 
-    wheel=new FXColorWheel(dialblock,this,ID_DIAL_WHEEL,LAYOUT_CENTER_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,104,104,1,1,1,1);
+    wheel=new FXColorRing(dialblock,this,ID_DIAL_WHEEL,LAYOUT_CENTER_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,120,120,1,1,1,1);
 
-    bar=new FXColorBar(dialblock,this,ID_COLOR_BAR,COLORBAR_VERTICAL|LAYOUT_CENTER_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,30,104,1,1,1,1);
+    //new FXColorWheel(dialblock,NULL,0,LAYOUT_CENTER_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,130,130,1,1,1,1);
 
   // RGB Mode
-  new FXTabItem(panels,"\tRed, Green, Blue",rgbmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
+  new FXTabItem(panels,tr("\tRed, Green, Blue"),rgbmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
 
     // RGB Sliders
     FXMatrix *rgbblock=new FXMatrix(panels,3,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_LEFT|MATRIX_BY_COLUMNS,0,0,0,0,10,10,10,10, 5,8);
 
     // Red
-    new FXLabel(rgbblock,"&Red:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(rgbblock,tr("&Red:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     rgbatext[0]=new FXTextField(rgbblock,5,this,FXColorSelector::ID_RGB_RED_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     rgbaslider[0]=new FXSlider(rgbblock,this,FXColorSelector::ID_RGB_RED_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Green slider
-    new FXLabel(rgbblock,"&Green:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(rgbblock,tr("&Green:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     rgbatext[1]=new FXTextField(rgbblock,5,this,FXColorSelector::ID_RGB_GREEN_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     rgbaslider[1]=new FXSlider(rgbblock,this,FXColorSelector::ID_RGB_GREEN_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Blue slider
-    new FXLabel(rgbblock,"&Blue:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(rgbblock,tr("&Blue:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     rgbatext[2]=new FXTextField(rgbblock,5,this,FXColorSelector::ID_RGB_BLUE_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     rgbaslider[2]=new FXSlider(rgbblock,this,FXColorSelector::ID_RGB_BLUE_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Alpha slider
-    label=new FXLabel(rgbblock,"&Alpha:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    label=new FXLabel(rgbblock,tr("&Alpha:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     rgbatext[3]=new FXTextField(rgbblock,5,this,FXColorSelector::ID_ALPHA_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     rgbaslider[3]=new FXSlider(rgbblock,this,FXColorSelector::ID_ALPHA_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
@@ -271,28 +271,28 @@ FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXu
     rgbaslider[3]->setRange(0,255);
 
   // HSV Mode
-  new FXTabItem(panels,"\tHue, Saturation, Value",hsvmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
+  new FXTabItem(panels,tr("\tHue, Saturation, Value"),hsvmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
 
     // RGB Sliders
     FXMatrix *hsvblock=new FXMatrix(panels,3,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_LEFT|MATRIX_BY_COLUMNS,0,0,0,0,10,10,10,10, 5,8);
 
     // Hue Slider
-    new FXLabel(hsvblock,"Hue:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(hsvblock,tr("Hue:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     hsvatext[0]=new FXTextField(hsvblock,5,this,FXColorSelector::ID_HSV_HUE_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     hsvaslider[0]=new FXSlider(hsvblock,this,FXColorSelector::ID_HSV_HUE_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Saturation slider
-    new FXLabel(hsvblock,"Saturation:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(hsvblock,tr("Saturation:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     hsvatext[1]=new FXTextField(hsvblock,5,this,FXColorSelector::ID_HSV_SATURATION_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     hsvaslider[1]=new FXSlider(hsvblock,this,FXColorSelector::ID_HSV_SATURATION_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Value slider
-    new FXLabel(hsvblock,"Value:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(hsvblock,tr("Value:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     hsvatext[2]=new FXTextField(hsvblock,5,this,FXColorSelector::ID_HSV_VALUE_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     hsvaslider[2]=new FXSlider(hsvblock,this,FXColorSelector::ID_HSV_VALUE_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Alpha slider
-    label=new FXLabel(hsvblock,"Alpha:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    label=new FXLabel(hsvblock,tr("Alpha:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     hsvatext[3]=new FXTextField(hsvblock,5,this,FXColorSelector::ID_ALPHA_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     hsvaslider[3]=new FXSlider(hsvblock,this,FXColorSelector::ID_ALPHA_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
@@ -306,28 +306,28 @@ FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXu
     hsvaslider[3]->setRange(0,255);
 
   // CMY Mode
-  new FXTabItem(panels,"\tCyan, Magenta, Yellow",cmymodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
+  new FXTabItem(panels,tr("\tCyan, Magenta, Yellow"),cmymodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
 
     // RGB Sliders
     FXMatrix *cmyblock=new FXMatrix(panels,3,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_LEFT|MATRIX_BY_COLUMNS,0,0,0,0,10,10,10,10, 5,8);
 
     // Cyan Slider
-    new FXLabel(cmyblock,"Cyan:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(cmyblock,tr("Cyan:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     cmytext[0]=new FXTextField(cmyblock,5,this,FXColorSelector::ID_CMY_CYAN_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     cmyslider[0]=new FXSlider(cmyblock,this,FXColorSelector::ID_CMY_CYAN_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Magenta slider
-    new FXLabel(cmyblock,"Magenta:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(cmyblock,tr("Magenta:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     cmytext[1]=new FXTextField(cmyblock,5,this,FXColorSelector::ID_CMY_MAGENTA_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     cmyslider[1]=new FXSlider(cmyblock,this,FXColorSelector::ID_CMY_MAGENTA_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Yellow slider
-    new FXLabel(cmyblock,"Yellow:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    new FXLabel(cmyblock,tr("Yellow:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     cmytext[2]=new FXTextField(cmyblock,5,this,FXColorSelector::ID_CMY_YELLOW_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     cmyslider[2]=new FXSlider(cmyblock,this,FXColorSelector::ID_CMY_YELLOW_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
     // Alpha slider
-    label=new FXLabel(cmyblock,"Alpha:",NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
+    label=new FXLabel(cmyblock,tr("Alpha:"),NULL,LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|LAYOUT_RIGHT);
     cmytext[3]=new FXTextField(cmyblock,5,this,FXColorSelector::ID_ALPHA_TEXT,JUSTIFY_RIGHT|LAYOUT_FILL_ROW|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, DEFAULT_PAD,DEFAULT_PAD,0,0);
     cmyslider[3]=new FXSlider(cmyblock,this,FXColorSelector::ID_ALPHA_SLIDER,LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN|LAYOUT_CENTER_Y|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT|SLIDER_HORIZONTAL|SLIDER_INSIDE_BAR,0,0,0,15);
 
@@ -341,17 +341,17 @@ FXColorSelector::FXColorSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXu
     cmyslider[3]->setRange(0,255);
 
   // Named Color Mode
-  new FXTabItem(panels,"\tBy Name",txtmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
+  new FXTabItem(panels,tr("\tBy Name"),txtmodeicon,TAB_TOP_NORMAL,0,0,0,0, 6,6,0,0);
 
     // Name list
     FXHorizontalFrame *outer=new FXHorizontalFrame(panels,FRAME_THICK|FRAME_RAISED|LAYOUT_FILL_Y|LAYOUT_FILL_X);
     FXHorizontalFrame *frame=new FXHorizontalFrame(outer,LAYOUT_FILL_Y|LAYOUT_FILL_X|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, 0,0,0,0);
-    list=new FXList(frame,this,ID_COLOR_LIST,LAYOUT_FILL_Y|LAYOUT_FILL_X|LIST_BROWSESELECT);
+    list=new FXColorList(frame,this,ID_COLOR_LIST,LAYOUT_FILL_Y|LAYOUT_FILL_X|LIST_BROWSESELECT);
     list->setNumVisible(6);
 
     // Add color names
     for(FXuint i=0; i<fxnumcolornames; i++){
-      list->appendItem(fxcolornames[i].name);
+      list->appendItem(fxcolornames[i].name,fxcolornames[i].color);
       }
 
   // Init RGBA
@@ -474,13 +474,13 @@ long FXColorSelector::onUpdAlphaLabel(FXObject* sender,FXSelector,void*){
 /*******************************************************************************/
 
 
-// Wheel & bar
+// Wheel
 
 // Update well from wheel
 long FXColorSelector::onCmdWheel(FXObject*,FXSelector sel,void*){
   hsva[0]=wheel->getHue();
   hsva[1]=wheel->getSat();
-  //hsva[2]=wheel->getVal();
+  hsva[2]=wheel->getVal();
   fxhsv_to_rgb(rgba[0],rgba[1],rgba[2],hsva[0],hsva[1],hsva[2]);
   updateWell();
   if(target) target->tryHandle(this,FXSEL(FXSELTYPE(sel),message),(void*)(FXuval)well->getRGBA());
@@ -492,30 +492,10 @@ long FXColorSelector::onCmdWheel(FXObject*,FXSelector sel,void*){
 long FXColorSelector::onUpdWheel(FXObject*,FXSelector,void*){
   wheel->setHue(hsva[0]);
   wheel->setSat(hsva[1]);
-  //wheel->setVal(hsva[2]);
+  wheel->setVal(hsva[2]);
   return 1;
   }
 
-
-// Update well from bar
-long FXColorSelector::onCmdBar(FXObject*,FXSelector sel,void*){
-  hsva[0]=bar->getHue();
-  hsva[1]=bar->getSat();
-  hsva[2]=bar->getVal();
-  fxhsv_to_rgb(rgba[0],rgba[1],rgba[2],hsva[0],hsva[1],hsva[2]);
-  updateWell();
-  if(target) target->tryHandle(this,FXSEL(FXSELTYPE(sel),message),(void*)(FXuval)well->getRGBA());
-  return 1;
-  }
-
-
-// Update bar
-long FXColorSelector::onUpdBar(FXObject*,FXSelector,void*){
-  bar->setHue(hsva[0]);
-  bar->setSat(hsva[1]);
-  bar->setVal(hsva[2]);
-  return 1;
-  }
 
 /*******************************************************************************/
 
@@ -864,7 +844,7 @@ FXColorSelector::~FXColorSelector(){
   delete hsvmodeicon;
   delete cmymodeicon;
   delete txtmodeicon;
-  wheel=(FXColorWheel*)-1L;
+  wheel=(FXColorRing*)-1L;
   eyedropicon=(FXIcon*)-1L;
   dialmodeicon=(FXIcon*)-1L;
   rgbmodeicon=(FXIcon*)-1L;

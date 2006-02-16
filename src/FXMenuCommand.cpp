@@ -3,7 +3,7 @@
 *                         M e n u   C o m m a n d    W i d g e t                *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCommand.cpp,v 1.62 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXMenuCommand.cpp,v 1.72 2006/01/22 17:58:36 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -59,7 +59,7 @@
 #define LEADSPACE   22
 #define TRAILSPACE  16
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -105,7 +105,7 @@ FXMenuCommand::FXMenuCommand(FXComposite* p,const FXString& text,FXIcon* ic,FXOb
   target=tgt;
   message=sel;
   accel=text.section('\t',1);
-  acckey=fxparseAccel(accel);
+  acckey=parseAccel(accel);
   if(acckey){
     own=getShell()->getOwner();
     if(own){
@@ -141,9 +141,7 @@ FXint FXMenuCommand::getDefaultHeight(){
 
 
 // If window can have focus
-FXbool FXMenuCommand::canFocus() const {
-  return 1;
-  }
+bool FXMenuCommand::canFocus() const { return true; }
 
 
 // Enter
@@ -182,14 +180,12 @@ long FXMenuCommand::onButtonRelease(FXObject*,FXSelector,void*){
 // Keyboard press
 long FXMenuCommand::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
-  if(!isEnabled()) return 0;
-  FXTRACE((200,"%s::onKeyPress %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
-  switch(event->code){
-    case KEY_KP_Enter:
-    case KEY_Return:
-    case KEY_space:
-    case KEY_KP_Space:
+  if(isEnabled() && !(flags&FLAG_PRESSED)){
+    FXTRACE((200,"%s::onKeyPress %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
+    if(event->code==KEY_space || event->code==KEY_KP_Space || event->code==KEY_Return || event->code==KEY_KP_Enter){
+      flags|=FLAG_PRESSED;
       return 1;
+      }
     }
   return 0;
   }
@@ -198,16 +194,14 @@ long FXMenuCommand::onKeyPress(FXObject*,FXSelector,void* ptr){
 // Keyboard release
 long FXMenuCommand::onKeyRelease(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
-  if(!isEnabled()) return 0;
-  FXTRACE((200,"%s::onKeyRelease %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
-  switch(event->code){
-    case KEY_KP_Enter:
-    case KEY_Return:
-    case KEY_space:
-    case KEY_KP_Space:
+  if(isEnabled() && (flags&FLAG_PRESSED)){
+    FXTRACE((200,"%s::onKeyRelease %p keysym=0x%04x state=%04x\n",getClassName(),this,event->code,event->state));
+    if(event->code==KEY_space || event->code==KEY_KP_Space || event->code==KEY_Return || event->code==KEY_KP_Enter){
+      flags&=~FLAG_PRESSED;
       getParent()->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
       if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
       return 1;
+      }
     }
   return 0;
   }
@@ -217,6 +211,9 @@ long FXMenuCommand::onKeyRelease(FXObject*,FXSelector,void* ptr){
 long FXMenuCommand::onHotKeyPress(FXObject*,FXSelector,void* ptr){
   FXTRACE((200,"%s::onHotKeyPress %p\n",getClassName(),this));
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
+  if(isEnabled() && !(flags&FLAG_PRESSED)){
+    flags|=FLAG_PRESSED;
+    }
   return 1;
   }
 
@@ -224,7 +221,8 @@ long FXMenuCommand::onHotKeyPress(FXObject*,FXSelector,void* ptr){
 // Hot key combination released
 long FXMenuCommand::onHotKeyRelease(FXObject*,FXSelector,void*){
   FXTRACE((200,"%s::onHotKeyRelease %p\n",getClassName(),this));
-  if(isEnabled()){
+  if(isEnabled() && (flags&FLAG_PRESSED)){
+    flags&=~FLAG_PRESSED;
     getParent()->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
     if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)1);
     }
@@ -280,13 +278,13 @@ long FXMenuCommand::onPaint(FXObject*,FXSelector,void* ptr){
       yy=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setFont(font);
       dc.setForeground(hiliteColor);
-      dc.drawText(xx+1,yy+1,label.text(),label.length());
-      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel.text(),accel.length())+1,yy+1,accel.text(),accel.length());
-      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff)+1,yy+2,font->getTextWidth(&label[hotoff],1),1);
+      dc.drawText(xx+1,yy+1,label);
+      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel)+1,yy+1,accel);
+      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff)+1,yy+2,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
       dc.setForeground(shadowColor);
-      dc.drawText(xx,yy,label.text(),label.length());
-      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel.text(),accel.length()),yy,accel.text(),accel.length());
-      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+      dc.drawText(xx,yy,label);
+      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel),yy,accel);
+      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
       }
     }
 
@@ -302,9 +300,9 @@ long FXMenuCommand::onPaint(FXObject*,FXSelector,void* ptr){
       yy=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setFont(font);
       dc.setForeground(isEnabled() ? seltextColor : shadowColor);
-      dc.drawText(xx,yy,label.text(),label.length());
-      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel.text(),accel.length()),yy,accel.text(),accel.length());
-      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+      dc.drawText(xx,yy,label);
+      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel),yy,accel);
+      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
       }
     }
 
@@ -320,9 +318,9 @@ long FXMenuCommand::onPaint(FXObject*,FXSelector,void* ptr){
       yy=font->getFontAscent()+(height-font->getFontHeight())/2;
       dc.setFont(font);
       dc.setForeground(textColor);
-      dc.drawText(xx,yy,label.text(),label.length());
-      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel.text(),accel.length()),yy,accel.text(),accel.length());
-      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+      dc.drawText(xx,yy,label);
+      if(!accel.empty()) dc.drawText(width-TRAILSPACE-font->getTextWidth(accel),yy,accel);
+      if(0<=hotoff) dc.fillRectangle(xx+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
       }
     }
   return 1;

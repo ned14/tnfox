@@ -3,7 +3,7 @@
 *            S i n g l e - P r e c i s i o n   4 x 4   M a t r i x              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,17 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMat4f.h,v 1.5 2005/01/16 16:06:06 fox Exp $                            *
+* $Id: FXMat4f.h,v 1.9 2006/01/22 17:58:06 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXMAT4F_H
 #define FXMAT4F_H
 
-#include "FXVec3f.h"
-#include "FXVec4f.h"
 
 namespace FX {
 
-class FXQuatf;
 
 /// Single-precision 4x4 matrix
 class FXAPI FXMat4f {
@@ -46,9 +43,26 @@ public:
   FXMat4f(const FXVec4f& a,const FXVec4f& b,const FXVec4f& c,const FXVec4f& d);
   FXMat4f(const FXMat4f& other);
 
-  /// Assignment operators
+  /// Assignment
   FXMat4f& operator=(const FXMat4f& other);
   FXMat4f& operator=(FXfloat w);
+
+  /// Set value from another matrix
+  FXMat4f& set(const FXMat4f& other);
+
+  /// Set value from scalar
+  FXMat4f& set(FXfloat w);
+
+  /// Set value from components
+  FXMat4f& set(FXfloat a00,FXfloat a01,FXfloat a02,FXfloat a03,
+               FXfloat a10,FXfloat a11,FXfloat a12,FXfloat a13,
+               FXfloat a20,FXfloat a21,FXfloat a22,FXfloat a23,
+               FXfloat a30,FXfloat a31,FXfloat a32,FXfloat a33);
+
+  /// Set value from four vectors
+  FXMat4f& set(const FXVec4f& a,const FXVec4f& b,const FXVec4f& c,const FXVec4f& d);
+
+  /// Assignment operators
   FXMat4f& operator+=(const FXMat4f& w);
   FXMat4f& operator-=(const FXMat4f& w);
   FXMat4f& operator*=(FXfloat w);
@@ -63,23 +77,23 @@ public:
   operator FXfloat*(){return m[0];}
   operator const FXfloat*() const {return m[0];}
 
+  /// Unary minus
+  FXMat4f operator-() const;
+
+  /// Matrix and matrix
+  FXMat4f operator+(const FXMat4f& w) const;
+  FXMat4f operator-(const FXMat4f& w) const;
+  FXMat4f operator*(const FXMat4f& w) const;
+
   /// Other operators
-  friend FXAPI FXMat4f operator+(const FXMat4f& a,const FXMat4f& b);
-  friend FXAPI FXMat4f operator-(const FXMat4f& a,const FXMat4f& b);
-  friend FXAPI FXMat4f operator-(const FXMat4f& a);
-  friend FXAPI FXMat4f operator*(const FXMat4f& a,const FXMat4f& b);
   friend FXAPI FXMat4f operator*(FXfloat x,const FXMat4f& a);
   friend FXAPI FXMat4f operator*(const FXMat4f& a,FXfloat x);
   friend FXAPI FXMat4f operator/(const FXMat4f& a,FXfloat x);
   friend FXAPI FXMat4f operator/(FXfloat x,const FXMat4f& a);
 
   /// Multiply matrix and vector
-  friend FXAPI FXVec4f operator*(const FXVec4f& v,const FXMat4f& m);
-  friend FXAPI FXVec4f operator*(const FXMat4f& a,const FXVec4f& v);
-
-  /// Mutiply matrix and vector, for non-projective matrix
-  friend FXAPI FXVec3f operator*(const FXVec3f& v,const FXMat4f& m);
-  friend FXAPI FXVec3f operator*(const FXMat4f& a,const FXVec3f& v);
+  FXVec4f operator*(const FXVec4f& v) const;
+  FXVec3f operator*(const FXVec3f& v) const;
 
   /// Set identity matrix
   FXMat4f& eye();
@@ -127,13 +141,13 @@ public:
   FXMat4f& scale(const FXVec3f& v);
 
   /// Determinant
-  friend FXAPI FXfloat det(const FXMat4f& m);
+  FXfloat det() const;
 
   /// Transpose
-  friend FXAPI FXMat4f transpose(const FXMat4f& m);
+  FXMat4f transpose() const;
 
   /// Invert
-  friend FXAPI FXMat4f invert(const FXMat4f& m);
+  FXMat4f invert() const;
 
   /// Save to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXMat4f& m);
@@ -141,6 +155,14 @@ public:
   /// Load from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXMat4f& m);
   };
+
+extern FXAPI FXMat4f operator*(FXfloat x,const FXMat4f& a);
+extern FXAPI FXMat4f operator*(const FXMat4f& a,FXfloat x);
+extern FXAPI FXMat4f operator/(const FXMat4f& a,FXfloat x);
+extern FXAPI FXMat4f operator/(FXfloat x,const FXMat4f& a);
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXMat4f& m);
+extern FXAPI FXStream& operator>>(FXStream& store,FXMat4f& m);
 
 }
 

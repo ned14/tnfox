@@ -34,13 +34,15 @@
 #include "FXString.h"
 #include "FXProcess.h"
 #include "QThread.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "QBuffer.h"
 #include "FXPtrHold.h"
 #include "FXRollback.h"
 #include "FXErrCodes.h"
 #include "QGZipDevice.h"
 #include "FXApp.h"
+#include "FXPath.h"
+#include "FXStat.h"
 #ifdef WIN32
 #include "WindowsGubbins.h"
 #endif
@@ -475,14 +477,14 @@ static DataInfo getData(QTransEmbeddedFile &data)
 {
 	DataInfo di;
 	if(data.dllpath.empty()) data.dllpath=FXProcess::dllPath(data.staticaddr, &data.dllstart, &data.dllend);
-	FXString transfilepath=FXFile::stripExtension(data.dllpath), leaf;
-	if(FXFile::exists((leaf=transfilepath+"Trans.txt.gz")))
+	FXString transfilepath=FXPath::stripExtension(data.dllpath), leaf;
+	if(FXStat::exists((leaf=transfilepath+"Trans.txt.gz")))
 	{
-		FXERRHM(di.dev=new FXFile(leaf));
+		FXERRHM(di.dev=new QFile(leaf));
 	}
-	else if(FXFile::exists((leaf=transfilepath+"Trans.txt")))
+	else if(FXStat::exists((leaf=transfilepath+"Trans.txt")))
 	{
-		FXERRHM(di.dev=new FXFile(leaf));
+		FXERRHM(di.dev=new QFile(leaf));
 	}
 	else
 	{

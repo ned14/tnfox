@@ -124,9 +124,9 @@ protected:
 	virtual void latchLoop() { newevent.wakeAll(); }
 	virtual void resetLoopLatch() { /* Do nothing */ }
 #endif
-	virtual FXbool getNextEventI(FXRawEvent& ev,FXbool blocking);
-	virtual FXbool peekEventI();
-    virtual FXbool dispatchEvent(FXRawEvent& ev);
+	virtual bool getNextEventI(FXRawEvent& ev,bool blocking);
+	virtual bool peekEventI();
+    virtual bool dispatchEvent(FXRawEvent& ev);
 public:
 	EventLoopC(TnFXApp *app=NULL);
 	~EventLoopC();
@@ -140,8 +140,8 @@ class FXDLLLOCAL EventLoopP : public EventLoopBase
 	QPtrList<EventLoopC> eventLoops;
 	QWaitCondition noEventLoops;
 protected:
-	virtual FXbool getNextEventI(FXRawEvent& ev,FXbool blocking);
-    virtual FXbool dispatchEvent(FXRawEvent& ev);
+	virtual bool getNextEventI(FXRawEvent& ev,bool blocking);
+    virtual bool dispatchEvent(FXRawEvent& ev);
 public:
 	EventLoopP(TnFXApp *app=NULL);
 	void clientNew(EventLoopC *loop);
@@ -157,22 +157,22 @@ EventLoopP::EventLoopP(TnFXApp *app) : EventLoopBase(app)
 {
 }
 
-FXbool EventLoopP::getNextEventI(FXRawEvent& ev,FXbool blocking)
+bool EventLoopP::getNextEventI(FXRawEvent& ev,bool blocking)
 {
 	FXEXCEPTION_FOXCALLING1 {
 #ifndef MANUAL_DISPATCH
 		return FXEventLoop::getNextEventI(ev, blocking);
 #else
 		// TODO: File descriptor import
-		if(!FXEventLoop::getNextEventI(ev, blocking)) return FALSE;
+		if(!FXEventLoop::getNextEventI(ev, blocking)) return false;
 		//fxmessage("Primary received msg %d, repaints=%p, refresher=%p\n", ev.xany.type, repaints, refresher);
-		return TRUE;
+		return true;
 #endif
 	} FXEXCEPTION_FOXCALLING2;
-	return FALSE;
+	return false;
 }
 
-FXbool EventLoopP::dispatchEvent(FXRawEvent& ev)
+bool EventLoopP::dispatchEvent(FXRawEvent& ev)
 {
 	FXEXCEPTION_FOXCALLING1 {
 #ifndef MANUAL_DISPATCH
@@ -190,7 +190,7 @@ FXbool EventLoopP::dispatchEvent(FXRawEvent& ev)
 				//fxmessage("Event belongs to loop 0x%p: %s\n", el, fxdump32((FXuint*)&ev, sizeof(FXRawEvent)/4).text());
 				el->events.push_back(ev);
 				el->newevent.wakeAll();
-				return TRUE;
+				return true;
 			}
 			h2.unlock();
 			h.relock();
@@ -204,7 +204,7 @@ FXbool EventLoopP::dispatchEvent(FXRawEvent& ev)
 #endif
 			return FXEventLoop::dispatchEvent(ev);
 		}
-		return TRUE;
+		return true;
 #endif
 	} FXEXCEPTION_FOXCALLING2;
 	return FALSE;
@@ -255,7 +255,7 @@ EventLoopC::~EventLoopC()
 	static_cast<EventLoopP *>(FXApp::getPrimaryEventLoop())->clientDie(this);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXbool EventLoopC::getNextEventI(FXRawEvent& ev,FXbool blocking)
+bool EventLoopC::getNextEventI(FXRawEvent& ev,bool blocking)
 {
 	FXEXCEPTION_FOXCALLING1 {
 #ifndef MANUAL_DISPATCH
@@ -266,7 +266,7 @@ FXbool EventLoopC::getNextEventI(FXRawEvent& ev,FXbool blocking)
 		if(events.isEmpty())
 		{
 			FXuint wait=FXINFINITE;
-			if(!blocking) return FALSE;
+			if(!blocking) return false;
 			newevent.reset();
 			h.unlock();
 			if(getApp()->isInitialized())
@@ -278,24 +278,24 @@ FXbool EventLoopC::getNextEventI(FXRawEvent& ev,FXbool blocking)
 				FXint togo;
 				togo=(timers->due.tv_sec-now.tv_sec)*1000;
 				togo+=(500+timers->due.tv_usec-now.tv_usec)/1000;
-				if(togo<=0) return FALSE;
+				if(togo<=0) return false;
 				wait=togo;
 			}
 			newevent.wait(wait);
 			h.relock();
-			if(events.isEmpty()) return FALSE;
+			if(events.isEmpty()) return false;
 		}
 		ev=events.front();
 		//fxmessage("Returning event %s\n", fxdump32((FXuint*)&ev, sizeof(FXRawEvent)/4).text());
 		events.pop_front();
 		//fxmessage("Client received msg %d, repaints=%p, refresher=%p\n", ev.xany.type, repaints, refresher);
-		return TRUE;
+		return true;
 #endif
 	} FXEXCEPTION_FOXCALLING2;
-	return FALSE;
+	return false;
 }
 
-FXbool EventLoopC::peekEventI()
+bool EventLoopC::peekEventI()
 {
 	FXEXCEPTION_FOXCALLING1 {
 #ifndef MANUAL_DISPATCH
@@ -305,10 +305,10 @@ FXbool EventLoopC::peekEventI()
 		return !events.isEmpty();
 #endif
 	} FXEXCEPTION_FOXCALLING2;
-	return FALSE;
+	return false;
 }
 
-FXbool EventLoopC::dispatchEvent(FXRawEvent& ev)
+bool EventLoopC::dispatchEvent(FXRawEvent& ev)
 {
 	//fxmessage("Client dispatching msg %d, repaints=%p, refresher=%p\n", ev.xany.type, repaints, refresher);
 	return FXEventLoop::dispatchEvent(ev);
@@ -394,7 +394,7 @@ void TnFXApp::detach()
 	FXApp::detach();
 }
 
-void TnFXApp::init(int &argc, char **argv, FXbool connect)
+void TnFXApp::init(int &argc, char **argv, bool connect)
 {
 	QMtxHold h(this);
 	FXApp::init(argc, argv, connect);

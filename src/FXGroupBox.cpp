@@ -3,7 +3,7 @@
 *                G r o u p  B o x   W i n d o w   O b j e c t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGroupBox.cpp,v 1.32 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXGroupBox.cpp,v 1.38 2006/01/22 17:58:30 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -52,7 +52,7 @@
 #define FRAME_MASK           (FRAME_SUNKEN|FRAME_RAISED|FRAME_THICK)
 #define GROUPBOX_TITLE_MASK  (GROUPBOX_TITLE_LEFT|GROUPBOX_TITLE_CENTER|GROUPBOX_TITLE_RIGHT)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -61,6 +61,9 @@ namespace FX {
 // Map
 FXDEFMAP(FXGroupBox) FXGroupBoxMap[]={
   FXMAPFUNC(SEL_PAINT,0,FXGroupBox::onPaint),
+  FXMAPFUNC(SEL_COMMAND,FXGroupBox::ID_SETVALUE,FXGroupBox::onCmdSetValue),
+  FXMAPFUNC(SEL_COMMAND,FXGroupBox::ID_SETSTRINGVALUE,FXGroupBox::onCmdSetStringValue),
+  FXMAPFUNC(SEL_COMMAND,FXGroupBox::ID_GETSTRINGVALUE,FXGroupBox::onCmdGetStringValue),
   };
 
 
@@ -132,7 +135,7 @@ void FXGroupBox::setFont(FXFont* fnt){
 FXint FXGroupBox::getDefaultWidth(){
   FXint cw=FXPacker::getDefaultWidth();
   if(!label.empty()){
-    FXint tw=font->getTextWidth(label.text(),label.length())+16;
+    FXint tw=font->getTextWidth(label)+16;
     return FXMAX(cw,tw);
     }
   return cw;
@@ -143,7 +146,7 @@ FXint FXGroupBox::getDefaultWidth(){
 FXint FXGroupBox::getDefaultHeight(){
   FXint ch=FXPacker::getDefaultHeight();
   if(!label.empty()){
-    return ch+font->getFontHeight()+4;
+    return ch+font->getFontHeight()+4-border;           // Have text instead of border
     }
   return ch;
   }
@@ -153,64 +156,88 @@ FXint FXGroupBox::getDefaultHeight(){
 void FXGroupBox::layout(){
   FXint tmp=padtop;
   if(!label.empty()){
-    padtop=padtop+font->getFontHeight()+4-border;
+    padtop=padtop+font->getFontHeight()+4-border;       // Have text instead of border
     }
   FXPacker::layout();
-  padtop=tmp;
   flags&=~FLAG_DIRTY;
+  padtop=tmp;
+  }
+
+
+// Update value from a message
+long FXGroupBox::onCmdSetValue(FXObject*,FXSelector,void* ptr){
+  setText((const FXchar*)ptr);
+  return 1;
+  }
+
+
+// Update value from a message
+long FXGroupBox::onCmdSetStringValue(FXObject*,FXSelector,void* ptr){
+  setText(*((FXString*)ptr));
+  return 1;
+  }
+
+
+// Obtain value from text field
+long FXGroupBox::onCmdGetStringValue(FXObject*,FXSelector,void* ptr){
+  *((FXString*)ptr)=getText();
+  return 1;
   }
 
 
 // Handle repaint
 long FXGroupBox::onPaint(FXObject*,FXSelector,void* ptr){
-  FXEvent *ev=(FXEvent*)ptr;
-  FXDCWindow dc(this,ev);
-  FXint tw,yy,xx,hh;
+  FXEvent *event=(FXEvent*)ptr;
+  FXDCWindow dc(this,event);
+  FXint tw,th,yy,xx;
 
-  tw=0;
   xx=0;
   yy=0;
-  hh=height;
 
   // Paint background
   dc.setForeground(backColor);
-  dc.fillRectangle(ev->rect.x,ev->rect.y,ev->rect.w,ev->rect.h);
+  dc.fillRectangle(event->rect.x,event->rect.y,event->rect.w,event->rect.h);
 
   // Draw label if there is one
   if(!label.empty()){
-    tw=font->getTextWidth(label.text(),label.length());
     yy=2+font->getFontAscent()/2;
-    hh=height-yy;
     }
 
   // We should really just draw what's exposed!
   switch(options&FRAME_MASK) {
-    case FRAME_LINE: drawBorderRectangle(dc,0,yy,width,hh); break;
-    case FRAME_SUNKEN: drawSunkenRectangle(dc,0,yy,width,hh); break;
-    case FRAME_RAISED: drawRaisedRectangle(dc,0,yy,width,hh); break;
-    case FRAME_GROOVE: drawGrooveRectangle(dc,0,yy,width,hh); break;
-    case FRAME_RIDGE: drawRidgeRectangle(dc,0,yy,width,hh); break;
-    case FRAME_SUNKEN|FRAME_THICK: drawDoubleSunkenRectangle(dc,0,yy,width,hh); break;
-    case FRAME_RAISED|FRAME_THICK: drawDoubleRaisedRectangle(dc,0,yy,width,hh); break;
+    case FRAME_LINE: drawBorderRectangle(dc,0,yy,width,height-yy); break;
+    case FRAME_SUNKEN: drawSunkenRectangle(dc,0,yy,width,height-yy); break;
+    case FRAME_RAISED: drawRaisedRectangle(dc,0,yy,width,height-yy); break;
+    case FRAME_GROOVE: drawGrooveRectangle(dc,0,yy,width,height-yy); break;
+    case FRAME_RIDGE: drawRidgeRectangle(dc,0,yy,width,height-yy); break;
+    case FRAME_SUNKEN|FRAME_THICK: drawDoubleSunkenRectangle(dc,0,yy,width,height-yy); break;
+    case FRAME_RAISED|FRAME_THICK: drawDoubleRaisedRectangle(dc,0,yy,width,height-yy); break;
     }
 
   // Draw label
   if(!label.empty()){
-    if(options&GROUPBOX_TITLE_RIGHT) xx=width-tw-16;
+    tw=font->getTextWidth(label);
+    th=font->getFontHeight()+4;
+    if(options&GROUPBOX_TITLE_RIGHT) xx=width-tw-12;
     else if(options&GROUPBOX_TITLE_CENTER) xx=(width-tw)/2-4;
-    else xx=8;
-    dc.setForeground(backColor);
-    dc.setFont(font);
-    dc.fillRectangle(xx,yy,tw+8,2);
-    if(isEnabled()){
-      dc.setForeground(textColor);
-      dc.drawText(xx+4,2+font->getFontAscent(),label.text(),label.length());
-      }
-    else{
-      dc.setForeground(hiliteColor);
-      dc.drawText(xx+5,3+font->getFontAscent(),label.text(),label.length());
-      dc.setForeground(shadowColor);
-      dc.drawText(xx+4,2+font->getFontAscent(),label.text(),label.length());
+    else xx=4;
+    if(xx<4) xx=4;
+    if(tw+16>width) tw=width-16;
+    if(0<tw){
+      dc.setForeground(backColor);
+      dc.setFont(font);
+      dc.fillRectangle(xx,yy,tw+8,2);
+      dc.setClipRectangle(xx+4,0,tw,th);
+      if(isEnabled()){
+        dc.setForeground(textColor);
+        dc.drawText(xx+4,2+font->getFontAscent(),label);
+        }
+      else{
+        dc.setForeground(hiliteColor);
+        dc.drawText(xx+5,3+font->getFontAscent(),label);
+        dc.setForeground(shadowColor);
+        dc.drawText(xx+4,2+font->getFontAscent(),label);
+        }
       }
     }
   return 1;

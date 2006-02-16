@@ -1,9 +1,11 @@
+#ifndef BUILDING_TCOMMON
+
 /********************************************************************************
 *                                                                               *
 *                        P r i n t   J o b   D i a l o g                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,17 +21,17 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPrintDialog.cpp,v 1.45 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXPrintDialog.cpp,v 1.54 2006/01/22 17:58:37 fox Exp $                   *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
-
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "fxascii.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
+#include "FXStat.h"
 #include "FXFile.h"
 #include "FXSize.h"
 #include "FXPoint.h"
@@ -178,7 +180,7 @@
 
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -239,28 +241,28 @@ FXPrintDialog::FXPrintDialog(FXWindow* owner,const FXString& caption,FXuint opts
 
   // Close and cancel buttons
   FXHorizontalFrame* buttons=new FXHorizontalFrame(contents,LAYOUT_BOTTOM|LAYOUT_FILL_X|PACK_UNIFORM_WIDTH,0,0,0,0,0,0,0,0);
-  new FXButton(buttons,"&Print",NULL,this,ID_ACCEPT,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,20,20);
-  new FXButton(buttons,"&Cancel",NULL,this,ID_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,20,20);
+  new FXButton(buttons,tr("&Print"),NULL,this,ID_ACCEPT,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,20,20);
+  new FXButton(buttons,tr("&Cancel"),NULL,this,ID_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,20,20);
 #ifdef HAVE_CUPS_H
-  FXLabel *label=new FXLabel(buttons,"Using CUPS",NULL,LAYOUT_CENTER_Y|LAYOUT_LEFT,0,0,0,0,0,0);
+  FXLabel *label=new FXLabel(buttons,tr("Using CUPS"),NULL,LAYOUT_CENTER_Y|LAYOUT_LEFT,0,0,0,0,0,0);
   label->setTextColor(label->getShadowColor());
 #endif
 
   // Print destination
-  FXGroupBox *dest=new FXGroupBox(contents,"Print Destination",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5, 10,5);
+  FXGroupBox *dest=new FXGroupBox(contents,tr("Print Destination"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5, 10,5);
 
-  sendtoprinter=new FXRadioButton(dest,"Pr&inter:",this,ID_TO_PRINTER,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  sendtoprinter=new FXRadioButton(dest,tr("Pr&inter:"),this,ID_TO_PRINTER,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
   FXHorizontalFrame* printdest=new FXHorizontalFrame(dest,LAYOUT_SIDE_TOP|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 10,10);
   printername=new FXComboBox(printdest,25,this,ID_PRINTER_NAME,COMBOBOX_NORMAL|FRAME_SUNKEN|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_FILL_X);
   printername->setNumVisible(4);
-  new FXButton(printdest,"Properties...",NULL,this,ID_PROPERTIES,FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT|LAYOUT_FIX_WIDTH,0,0,100,0, 10,10);
+  new FXButton(printdest,tr("Properties..."),NULL,this,ID_PROPERTIES,FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT|LAYOUT_FIX_WIDTH,0,0,100,0, 10,10);
 
   new FXFrame(dest,LAYOUT_SIDE_TOP|LAYOUT_FIX_HEIGHT,0,0,0,10);
 
-  sendtofile=new FXRadioButton(dest,"&File:",this,ID_TO_FILE,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  sendtofile=new FXRadioButton(dest,tr("&File:"),this,ID_TO_FILE,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
   FXHorizontalFrame* filedest=new FXHorizontalFrame(dest,LAYOUT_SIDE_TOP|LAYOUT_FILL_X,0,0,0,0, 0,0,0,0, 10,10);
   filename=new FXTextField(filedest,25,this,ID_FILE_NAME,FRAME_THICK|FRAME_SUNKEN|LAYOUT_CENTER_Y|LAYOUT_FILL_X);
-  new FXButton(filedest,"&Browse...",NULL,this,ID_BROWSE_FILE,FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT|LAYOUT_FIX_WIDTH,0,0,100,0, 10,10);
+  new FXButton(filedest,tr("&Browse..."),NULL,this,ID_BROWSE_FILE,FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT|LAYOUT_FIX_WIDTH,0,0,100,0, 10,10);
 
   FXHorizontalFrame* bottom=new FXHorizontalFrame(contents,LAYOUT_BOTTOM|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0,0,0,0,0);
 
@@ -268,22 +270,22 @@ FXPrintDialog::FXPrintDialog(FXWindow* owner,const FXString& caption,FXuint opts
   FXVerticalFrame *left=new FXVerticalFrame(bottom,LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0,0,0,0,0, 10,10);
 
   // Pages
-  FXGroupBox *pages=new FXGroupBox(left,"Pages",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
-  printall=new FXRadioButton(pages,"Print &All",this,ID_PAGES_ALL,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
-  printeven=new FXRadioButton(pages,"&Even Pages",this,ID_PAGES_EVEN,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
-  printodd=new FXRadioButton(pages,"&Odd Pages",this,ID_PAGES_ODD,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
-  printrange=new FXRadioButton(pages,"Print &Range:",this,ID_PAGES_RANGE,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  FXGroupBox *pages=new FXGroupBox(left,tr("Pages"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
+  printall=new FXRadioButton(pages,tr("Print &All"),this,ID_PAGES_ALL,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  printeven=new FXRadioButton(pages,tr("&Even Pages"),this,ID_PAGES_EVEN,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  printodd=new FXRadioButton(pages,tr("&Odd Pages"),this,ID_PAGES_ODD,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  printrange=new FXRadioButton(pages,tr("Print &Range:"),this,ID_PAGES_RANGE,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
   FXMatrix *pagerange=new FXMatrix(pages,2,MATRIX_BY_ROWS|LAYOUT_FILL_X|LAYOUT_SIDE_TOP,0,0,0,0, 20,0,0,0);
-  new FXLabel(pagerange,"From:",NULL,LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_RIGHT);
-  new FXLabel(pagerange,"To:",NULL,LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_RIGHT);
+  new FXLabel(pagerange,tr("From:"),NULL,LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_RIGHT);
+  new FXLabel(pagerange,tr("To:"),NULL,LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_RIGHT);
   firstpage=new FXSpinner(pagerange,4,this,ID_PAGES_FIRST,FRAME_THICK|FRAME_SUNKEN|LAYOUT_RIGHT);
   lastpage=new FXSpinner(pagerange,4,this,ID_PAGES_LAST,FRAME_THICK|FRAME_SUNKEN|LAYOUT_RIGHT);
   firstpage->setRange(1,10000000);
   lastpage->setRange(1,10000000);
 
-  FXGroupBox *colors=new FXGroupBox(left,"Colors",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
-  printincolor=new FXRadioButton(colors,"Print in Color",this,ID_COLOR_PRINTER,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
-  printinblacknwhite=new FXRadioButton(colors,"Print in Black and White",this,ID_GRAY_PRINTER,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  FXGroupBox *colors=new FXGroupBox(left,tr("Colors"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
+  printincolor=new FXRadioButton(colors,tr("Print in Color"),this,ID_COLOR_PRINTER,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  printinblacknwhite=new FXRadioButton(colors,tr("Print in Black and White"),this,ID_GRAY_PRINTER,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
 
   // Right
   FXVerticalFrame *right=new FXVerticalFrame(bottom,LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0,0,0,0,0, 10,10);
@@ -293,25 +295,25 @@ FXPrintDialog::FXPrintDialog(FXWindow* owner,const FXString& caption,FXuint opts
   portraitIcon=new FXGIFIcon(getApp(),portrait);
 
   // Layout
-  FXGroupBox *copies=new FXGroupBox(right,"Copies",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
-  new FXLabel(copies,"Number of copies to print:",NULL,LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_RIGHT|LAYOUT_SIDE_LEFT);
+  FXGroupBox *copies=new FXGroupBox(right,tr("Copies"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
+  new FXLabel(copies,tr("Number of copies to print:"),NULL,LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_RIGHT|LAYOUT_SIDE_LEFT);
   numberofcopies=new FXSpinner(copies,4,this,ID_NUM_COPIES,FRAME_THICK|FRAME_SUNKEN|LAYOUT_CENTER_Y|LAYOUT_SIDE_LEFT);
   numberofcopies->setRange(1,1000);
 
   // Collate
-  FXGroupBox *collate=new FXGroupBox(right,"Collate Order",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
-  firstpagefirst=new FXRadioButton(collate,"First Page First",this,ID_COLLATE_NORMAL,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
-  lastpagefirst=new FXRadioButton(collate,"Last Page First",this,ID_COLLATE_REVERSED,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  FXGroupBox *collate=new FXGroupBox(right,tr("Collate Order"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
+  firstpagefirst=new FXRadioButton(collate,tr("First Page First"),this,ID_COLLATE_NORMAL,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
+  lastpagefirst=new FXRadioButton(collate,tr("Last Page First"),this,ID_COLLATE_REVERSED,LAYOUT_SIDE_TOP|ICON_BEFORE_TEXT);
 
   // Layout
-  FXGroupBox *orientation=new FXGroupBox(right,"Layout",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
-  new FXLabel(orientation,NULL,portraitIcon,LAYOUT_SIDE_LEFT|LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
-  orientportrait=new FXRadioButton(orientation,"Portrait",this,ID_PORTRAIT,LAYOUT_SIDE_LEFT|ICON_BEFORE_TEXT|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
-  orientlanscape=new FXRadioButton(orientation,"Landscape",this,ID_LANDSCAPE,LAYOUT_SIDE_RIGHT|ICON_BEFORE_TEXT|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
-  new FXLabel(orientation,NULL,landscapeIcon,LAYOUT_SIDE_RIGHT|LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
+  FXGroupBox *orientation=new FXGroupBox(right,tr("Layout"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
+  new FXLabel(orientation,FXString::null,portraitIcon,LAYOUT_SIDE_LEFT|LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
+  orientportrait=new FXRadioButton(orientation,tr("Portrait"),this,ID_PORTRAIT,LAYOUT_SIDE_LEFT|ICON_BEFORE_TEXT|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
+  orientlanscape=new FXRadioButton(orientation,tr("Landscape"),this,ID_LANDSCAPE,LAYOUT_SIDE_RIGHT|ICON_BEFORE_TEXT|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
+  new FXLabel(orientation,FXString::null,landscapeIcon,LAYOUT_SIDE_RIGHT|LAYOUT_CENTER_Y|LAYOUT_RIGHT|JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y|LAYOUT_CENTER_Y);
 
   // Paper
-  FXGroupBox *paperdims=new FXGroupBox(right,"Paper Size",GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
+  FXGroupBox *paperdims=new FXGroupBox(right,tr("Paper Size"),GROUPBOX_TITLE_LEFT|FRAME_RIDGE|LAYOUT_FILL_X|LAYOUT_TOP|LAYOUT_FILL_Y,0,0,0,0, 10,10,5,5);
   media=new FXListBox(paperdims,this,ID_MEDIA,FRAME_SUNKEN|FRAME_THICK|LISTBOX_NORMAL|LAYOUT_FILL_X|LAYOUT_SIDE_TOP);
   media->setNumVisible(6);
 
@@ -441,7 +443,7 @@ void FXPrintDialog::create(){
       }
 
     // Blank line
-    if(buf[0]=='#' || isspace(buf[0])){
+    if(buf[0]=='#' || Ascii::isSpace(buf[0])){
       continue;
       }
 
@@ -605,8 +607,8 @@ long FXPrintDialog::onUpdToFile(FXObject* sender,FXSelector,void*){
 // Close dialog with an accept
 long FXPrintDialog::onCmdAccept(FXObject* sender,FXSelector sel,void* ptr){
   if(printer.flags&PRINT_DEST_FILE){
-    if(FXFile::exists(printer.name)){
-      FXuint answer=FXMessageBox::question(this,MBOX_YES_NO_CANCEL,"Overwrite file?","Overwrite existing file %s?",printer.name.text());
+    if(FXStat::exists(printer.name)){
+      FXuint answer=FXMessageBox::question(this,MBOX_YES_NO_CANCEL,tr("Overwrite file?"),tr("Overwrite existing file %s?"),printer.name.text());
       if(answer==MBOX_CLICKED_CANCEL) return 1;
       if(answer==MBOX_CLICKED_NO){
         return FXDialogBox::onCmdCancel(sender,sel,ptr);
@@ -620,9 +622,7 @@ long FXPrintDialog::onCmdAccept(FXObject* sender,FXSelector sel,void* ptr){
 // Browse output file
 long FXPrintDialog::onCmdBrowse(FXObject*,FXSelector,void*){
   FXString name=getApp()->reg().readStringEntry("PRINTER","file","output.ps");
-#ifndef BUILDING_TCOMMON
-  name=FXFileDialog::getSaveFilename(this,"Select Output File",name,"All Files (*)\nPostscript Files (*.ps,*.eps)",0);
-#endif
+  name=FXFileDialog::getSaveFilename(this,tr("Select Output File"),name,tr("All Files (*)\nPostscript Files (*.ps,*.eps)"),0);
   if(name.empty()) return 1;
   getApp()->reg().writeStringEntry("PRINTER","file",name.text());
   if(printer.flags&PRINT_DEST_FILE){
@@ -644,7 +644,7 @@ long FXPrintDialog::onUpdBrowse(FXObject* sender,FXSelector,void*){
 long FXPrintDialog::onCmdProps(FXObject*,FXSelector,void*){   // FIXME this needs a dialog to add/remove printers
 #ifndef WIN32
   FXString command="lpr -P%s -#%d";
-  if(FXInputDialog::getString(command,this,"Printer Command","Specify the printer command, for example:\n\n  \"lpr -P%s -#%d\" or \"lp -d%s -n%d\"\n\nThis will print \"%d\" copies to printer \"%s\".")){
+  if(FXInputDialog::getString(command,this,tr("Printer Command"),"Specify the printer command, for example:\n\n  \"lpr -P%s -#%d\" or \"lp -d%s -n%d\"\n\nThis will print \"%d\" copies to printer \"%s\".")){
     getApp()->reg().writeStringEntry("PRINTER","command",command.text());
     }
 #else

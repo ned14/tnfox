@@ -3,7 +3,7 @@
 *                   T o g g l e    B u t t o n    O b j e c t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToggleButton.cpp,v 1.55 2005/01/16 16:06:07 fox Exp $                  *
+* $Id: FXToggleButton.cpp,v 1.63 2006/01/22 17:58:47 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -34,6 +34,7 @@
 #include "FXRectangle.h"
 #include "FXRegistry.h"
 #include "FXApp.h"
+#include "FXAccelTable.h"
 #include "FXDCWindow.h"
 #include "FXIcon.h"
 #include "FXToggleButton.h"
@@ -51,7 +52,7 @@
 // ToggleButton styles
 #define TOGGLEBUTTON_MASK (TOGGLEBUTTON_AUTOGRAY|TOGGLEBUTTON_AUTOHIDE|TOGGLEBUTTON_TOOLBAR|TOGGLEBUTTON_KEEPSTATE)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -100,12 +101,12 @@ FXToggleButton::FXToggleButton(FXComposite* p,const FXString& text1,const FXStri
   FXString string=text2.section('\t',0);
   target=tgt;
   message=sel;
-  altlabel=fxstripHotKey(string);
+  altlabel=stripHotKey(string);
   alttip=text2.section('\t',1);
   althelp=text2.section('\t',2);
   alticon=icon2;
-  althotkey=fxparseHotKey(string);
-  althotoff=fxfindHotKey(string);
+  althotkey=parseHotKey(string);
+  althotoff=findHotKey(string);
   addHotKey(althotkey);
   state=FALSE;
   down=FALSE;
@@ -163,10 +164,11 @@ FXint FXToggleButton::getDefaultHeight(){
 
 
 // Set button state
-void FXToggleButton::setState(FXbool s){
+void FXToggleButton::setState(FXbool s,FXbool notify){
   if(state!=s){
     state=s;
     update();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXuval)state);}
     }
   }
 
@@ -181,7 +183,7 @@ void FXToggleButton::press(FXbool dn){
 
 
 // If window can have focus
-FXbool FXToggleButton::canFocus() const { return 1; }
+bool FXToggleButton::canFocus() const { return true; }
 
 
 // Update value from a message
@@ -552,11 +554,11 @@ long FXToggleButton::onPaint(FXObject*,FXSelector,void* ptr){
 
 // Change text
 void FXToggleButton::setAltText(const FXString& text){
-  FXString string=fxstripHotKey(text);
+  FXString string=stripHotKey(text);
   if(altlabel!=string){
     remHotKey(althotkey);
-    althotkey=fxparseHotKey(text);
-    althotoff=fxfindHotKey(text);
+    althotkey=parseHotKey(text);
+    althotoff=findHotKey(text);
     addHotKey(althotkey);
     altlabel=string;
     recalc();
@@ -612,6 +614,7 @@ void FXToggleButton::save(FXStream& store) const {
   store << althotoff;
   store << alttip;
   store << althelp;
+  store << state;
   }
 
 
@@ -625,6 +628,7 @@ void FXToggleButton::load(FXStream& store){
   store >> althotoff;
   store >> alttip;
   store >> althelp;
+  store >> state;
   }
 
 

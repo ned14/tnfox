@@ -3,7 +3,7 @@
 *                          T r e e L i s t   O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,15 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeList.cpp,v 1.155 2005/02/06 17:20:00 fox Exp $                     *
+* $Id: FXTreeList.cpp,v 1.165 2006/01/22 17:58:50 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "fxascii.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -66,7 +67,7 @@
 #define TREELIST_MASK       (SELECT_MASK|TREELIST_AUTOSELECT|TREELIST_SHOWS_LINES|TREELIST_SHOWS_BOXES|TREELIST_ROOT_BOXES)
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -107,7 +108,7 @@ void FXTreeItem::draw(const FXTreeList* list,FXDC& dc,FXint xx,FXint yy,FXint,FX
       dc.setForeground(list->getSelTextColor());
     else
       dc.setForeground(list->getTextColor());
-    dc.drawText(xx+2,yy+font->getFontAscent()+2,label.text(),label.length());
+    dc.drawText(xx+2,yy+font->getFontAscent()+2,label);
     }
   }
 
@@ -395,6 +396,7 @@ FXTreeList::FXTreeList(){
   currentitem=NULL;
   extentitem=NULL;
   cursoritem=NULL;
+  viewableitem=NULL;
   font=(FXFont*)-1L;
   sortfunc=NULL;
   textColor=0;
@@ -423,6 +425,7 @@ FXTreeList::FXTreeList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,F
   currentitem=NULL;
   extentitem=NULL;
   cursoritem=NULL;
+  viewableitem=NULL;
   font=getApp()->getNormalFont();
   sortfunc=NULL;
   textColor=getApp()->getForeColor();
@@ -468,7 +471,7 @@ void FXTreeList::detach(){
 
 
 // Can have focus
-FXbool FXTreeList::canFocus() const { return TRUE; }
+bool FXTreeList::canFocus() const { return true; }
 
 
 // Into focus chain
@@ -588,6 +591,11 @@ void FXTreeList::layout(){
 
   // Force repaint
   update();
+
+  // We were supposed to make this item viewable
+  if(viewableitem){
+    makeItemVisible(viewableitem);
+    }
 
   // No more dirty
   flags&=~FLAG_DIRTY;
@@ -710,6 +718,9 @@ void FXTreeList::makeItemVisible(FXTreeItem* item){
   register FXint x,y,h,w;
   if(item){
 
+    // Remember for later
+    viewableitem=item;
+
     // Expand parents of this node
     if(!(options&TREELIST_AUTOSELECT)){
       for(par=item->parent; par; par=par->parent){
@@ -717,7 +728,7 @@ void FXTreeList::makeItemVisible(FXTreeItem* item){
         }
       }
 
-    // Now we adjust the scrolled position to fit everything
+    // Was realized
     if(xid){
 
       // Force layout if dirty
@@ -728,14 +739,24 @@ void FXTreeList::makeItemVisible(FXTreeItem* item){
       w=item->getWidth(this);
       h=item->getHeight(this);
 
+      // Horizontal scroll to ensure visibility; the +-box, if shown, should also be visible
       if(viewport_w<=x+item->x+w) x=viewport_w-item->x-w;
-      if(x+item->x<=0) x=-item->x;
+      if((options&(TREELIST_SHOWS_LINES|TREELIST_SHOWS_BOXES)) && (item->parent || (options&TREELIST_ROOT_BOXES))){
+        if(x+item->x-indent-HALFBOX_SIZE<=0) x=-item->x+indent+HALFBOX_SIZE;
+        }
+      else{
+        if(x+item->x<=0) x=-item->x;
+        }
 
+      // Vertical scroll to ensure visibility
       if(viewport_h<=y+item->y+h) y=viewport_h-item->y-h;
       if(y+item->y<=0) y=-item->y;
 
       // Scroll into view
       setPosition(x,y);
+
+      // Done it
+      viewableitem=NULL;
       }
     }
   }
@@ -1406,7 +1427,7 @@ hop:  lookup=FXString::null;
     default:
       if((FXuchar)event->text[0]<' ') return 0;
       if(event->state&(CONTROLMASK|ALTMASK)) return 0;
-      if(!isprint((FXuchar)event->text[0])) return 0;
+      if(!Ascii::isPrint(event->text[0])) return 0;
       lookup.append(event->text);
       getApp()->addTimeout(this,ID_LOOKUPTIMER,getApp()->getTypingSpeed());
       item=findItem(lookup,currentitem,SEARCH_FORWARD|SEARCH_WRAP|SEARCH_PREFIX);
@@ -2165,10 +2186,81 @@ FXTreeItem *FXTreeList::moveItem(FXTreeItem* other,FXTreeItem* father,FXTreeItem
   }
 
 
+// Extract node from list
+FXTreeItem* FXTreeList::extractItem(FXTreeItem* item,FXbool notify){
+  register FXTreeItem *olditem=currentitem;
+  register FXTreeItem *result=item;
+  register FXTreeItem *prv;
+  register FXTreeItem *nxt;
+  register FXTreeItem *par;
+  if(item){
+
+    // Remember hookups
+    nxt=result->next;
+    prv=result->prev;
+    par=result->parent;
+
+    // Unlink item from tree
+    if(prv) prv->next=nxt; else if(par) par->first=nxt; else firstitem=nxt;
+    if(nxt) nxt->prev=prv; else if(par) par->last=prv; else lastitem=prv;
+
+    // Is now unhooked
+    result->parent=NULL;
+    result->next=NULL;
+    result->prev=NULL;
+
+    // Successor value
+    if(prv) par=prv;
+    if(nxt) par=nxt;
+
+    // Visit all children
+    while(item){
+
+       // Adjust pointers
+      if(anchoritem==item) anchoritem=par;
+      if(currentitem==item) currentitem=par;
+      if(extentitem==item) extentitem=par;
+      if(viewableitem==item) viewableitem=par;
+
+      // Next item
+      if(item->first){
+        item=item->first;
+        continue;
+        }
+      while(!item->next && item->parent){
+        item=item->parent;
+        }
+      item=item->next;
+      }
+
+    // Current item has changed
+    if(olditem!=currentitem){
+      if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)currentitem);}
+      }
+
+    // Extracted current item
+    if(currentitem && currentitem!=olditem){
+      if(hasFocus()){
+        currentitem->setFocus(TRUE);
+        }
+      if((options&SELECT_MASK)==TREELIST_BROWSESELECT && currentitem->isEnabled()){
+        selectItem(currentitem,notify);
+        }
+      }
+
+    // Redo layout
+    recalc();
+    }
+  return result;
+  }
+
+
 // Remove all siblings from [fm,to]
 void FXTreeList::removeItems(FXTreeItem* fm,FXTreeItem* to,FXbool notify){
   register FXTreeItem *olditem=currentitem;
-  register FXTreeItem *prv,*nxt,*par;
+  register FXTreeItem *prv;
+  register FXTreeItem *nxt;
+  register FXTreeItem *par;
   if(fm && to){
     if(fm->parent!=to->parent){ fxerror("%s::removeItems: arguments have different parent.\n",getClassName()); }
 
@@ -2190,8 +2282,9 @@ void FXTreeList::removeItems(FXTreeItem* fm,FXTreeItem* to,FXbool notify){
 
          // Adjust pointers; suggested by Alan Ott <ott@acusoft.com>
         if(anchoritem==to){ anchoritem=par; if(prv) anchoritem=prv; if(nxt) anchoritem=nxt; }
-        if(extentitem==to){ extentitem=par; if(prv) extentitem=prv; if(nxt) extentitem=nxt; }
         if(currentitem==to){ currentitem=par; if(prv) currentitem=prv; if(nxt) currentitem=nxt; }
+        if(extentitem==to){ extentitem=par; if(prv) extentitem=prv; if(nxt) extentitem=nxt; }
+        if(viewableitem==to){ viewableitem=par; if(prv) viewableitem=prv; if(nxt) viewableitem=nxt; }
 
         // Remove item from list
         if(prv) prv->next=nxt; else if(par) par->first=nxt; else firstitem=nxt;
@@ -2448,6 +2541,7 @@ FXTreeList::~FXTreeList(){
   anchoritem=(FXTreeItem*)-1L;
   currentitem=(FXTreeItem*)-1L;
   extentitem=(FXTreeItem*)-1L;
+  currentitem=(FXTreeItem*)-1L;
   font=(FXFont*)-1L;
   }
 

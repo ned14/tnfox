@@ -3,7 +3,7 @@
 *                            T a b l e   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.h,v 1.150.2.2 2005/02/22 23:17:37 fox Exp $                          *
+* $Id: FXTable.h,v 1.165 2006/01/27 02:07:44 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABLE_H
 #define FXTABLE_H
@@ -27,7 +27,6 @@
 #ifndef FXSCROLLAREA_H
 #include "FXScrollArea.h"
 #endif
-#include "FXDC.h"
 
 namespace FX {
 
@@ -50,7 +49,9 @@ enum {
   TABLE_ROW_SIZABLE     = 0x00200000,   /// Rows are resizable
   TABLE_NO_COLSELECT    = 0x00400000,   /// Disallow column selections
   TABLE_NO_ROWSELECT    = 0x00800000,   /// Disallow row selections
-  TABLE_READONLY        = 0x01000000    /// Table is NOT editable
+  TABLE_READONLY        = 0x01000000,   /// Table is NOT editable
+  TABLE_COL_RENUMBER    = 0x02000000,   /// Renumber columns
+  TABLE_ROW_RENUMBER    = 0x04000000    /// Renumber rows
   };
 
 
@@ -77,6 +78,9 @@ protected:
   FXIcon     *icon;
   void       *data;
   FXuint      state;
+private:
+  FXTableItem(const FXTableItem&);
+  FXTableItem& operator=(const FXTableItem&);
 protected:
   FXTableItem():icon(NULL),data(NULL),state(0){}
   virtual void draw(const FXTable* table,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
@@ -93,9 +97,9 @@ public:
     RESERVED1  = 0x00000010,    /// Reserved
     RESERVED2  = 0x00000020,    /// Reserved
     ICONOWNED  = 0x00000040,    /// Icon owned by table item
-    RIGHT      = 0x00002000,    /// Align on right
+    RIGHT      = 0x00002000,    /// Align on right (default)
     LEFT       = 0x00004000,    /// Align on left
-    CENTER_X   = 0,             /// Aling centered horizontally (default)
+    CENTER_X   = 0,             /// Aling centered horizontally
     TOP        = 0x00008000,    /// Align on top
     BOTTOM     = 0x00010000,    /// Align on bottom
     CENTER_Y   = 0,             /// Aling centered vertically (default)
@@ -211,6 +215,34 @@ public:
   };
 
 
+/// Combobox Item
+class FXAPI FXComboTableItem : public FXTableItem {
+  FXDECLARE(FXComboTableItem)
+protected:
+  FXString selections;
+private:
+  FXComboTableItem(const FXComboTableItem&);
+  FXComboTableItem& operator=(const FXComboTableItem&);
+protected:
+  FXComboTableItem(){}
+public:
+
+  /// Construct new table item
+  FXComboTableItem(const FXString& text,FXIcon* ic=NULL,void* ptr=NULL);
+
+  /// Create input control for editing this item
+  virtual FXWindow *getControlFor(FXTable* table);
+
+  /// Set value from input control
+  virtual void setFromControl(FXWindow *control);
+  
+  /// Set selections as newline-separated strings
+  void setSelections(const FXString& strings);
+  
+  /// Return selections
+  const FXString& getSelections() const { return selections; }
+  };
+
 
 /// Table Widget
 class FXAPI FXTable : public FXScrollArea {
@@ -248,8 +280,7 @@ protected:
   FXTablePos    anchor;                 // Anchor position
   FXTableRange  input;                  // Input cell
   FXTableRange  selection;              // Range of selected cells
-  FXchar       *clipbuffer;             // Clipped text
-  FXint         cliplength;             // Length of clipped text
+  FXString      clipped;                // Clipped text
   FXbool        hgrid;                  // Horizontal grid lines shown
   FXbool        vgrid;                  // Vertical grid lines shown
   FXuchar       mode;                   // Mode widget is in
@@ -276,7 +307,8 @@ protected:
   virtual FXTableItem* createItem(const FXString& text,FXIcon* icon,void* ptr);
   virtual FXWindow *getControlForItem(FXint r,FXint c);
   virtual void setItemFromControl(FXint r,FXint c,FXWindow *control);
-  void countText(FXint& nr,FXint& nc,const FXchar* text,FXint size,FXchar cs='\t',FXchar rs='\n') const;
+  virtual void updateColumnNumbers(FXint lo,FXint hi);
+  virtual void updateRowNumbers(FXint lo,FXint hi);
 protected:
   enum {
     MOUSE_NONE,
@@ -441,7 +473,7 @@ public:
   virtual void recalc();
 
   /// Table widget can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();
@@ -451,6 +483,9 @@ public:
 
   /// Notification that focus moved to new child
   virtual void changeFocus(FXWindow *child);
+
+  /// Return button in the top/left corner
+  FXButton* getCornerButton() const { return cornerButton; }
 
   /// Return column header control
   FXHeader* getColumnHeader() const { return colHeader; }
@@ -579,6 +614,9 @@ public:
   /// Remove column of cells
   virtual void removeColumns(FXint col,FXint nc=1,FXbool notify=FALSE);
 
+  /// Extract item from table
+  virtual FXTableItem* extractItem(FXint row,FXint col,FXbool notify=FALSE);
+
   /// Clear single cell
   virtual void removeItem(FXint row,FXint col,FXbool notify=FALSE);
 
@@ -615,6 +653,18 @@ public:
 
   /// Return row header width mode
   FXuint getRowHeaderMode() const;
+
+  /// Set column header font
+  void setColumnHeaderFont(FXFont* fnt);
+
+  /// Return column header font
+  FXFont* getColumnHeaderFont() const;
+
+  /// Set row header font
+  void setRowHeaderFont(FXFont* fnt);
+
+  /// Return row header font
+  FXFont* getRowHeaderFont() const;
 
   /// Change column header height
   void setColumnHeaderHeight(FXint h);
@@ -670,26 +720,62 @@ public:
   /// Fit column widths to contents
   void fitColumnsToContents(FXint col,FXint nc=1);
 
-  /// Change column header
+  /// Change column header text
   void setColumnText(FXint index,const FXString& text);
 
   /// Return text of column header at index
   FXString getColumnText(FXint index) const;
 
-  /// Change row header
+  /// Change row header text
   void setRowText(FXint index,const FXString& text);
 
   /// Return text of row header at index
   FXString getRowText(FXint index) const;
 
+  /// Change column header icon
+  void setColumnIcon(FXint index,FXIcon* icon);
+
+  /// Return icon of column header at index
+  FXIcon* getColumnIcon(FXint index) const;
+
+  /// Change row header icon
+  void setRowIcon(FXint index,FXIcon* icon);
+
+  /// Return icon of row header at index
+  FXIcon* getRowIcon(FXint index) const;
+
+  /// Change column header icon position, e.g. FXHeaderItem::BEFORE, etc.
+  void setColumnIconPosition(FXint index,FXuint mode);
+
+  /// Return icon position of column header at index
+  FXuint getColumnIconPosition(FXint index) const;
+
+  /// Change row header icon position, e.g. FXHeaderItem::BEFORE, etc.
+  void setRowIconPosition(FXint index,FXuint mode);
+
+  /// Return icon position of row header at index
+  FXuint getRowIconPosition(FXint index) const;
+
+  /// Change column header justify, e.g. FXHeaderItem::RIGHT, etc.
+  void setColumnJustify(FXint index,FXuint justify);
+
+  /// Return justify of column header at index
+  FXuint getColumnJustify(FXint index) const;
+
+  /// Change row header justify, e.g. FXHeaderItem::RIGHT, etc.
+  void setRowJustify(FXint index,FXuint justify);
+
+  /// Return justify of row header at index
+  FXuint getRowJustify(FXint index) const;
+
   /// Modify cell text
-  void setItemText(FXint r,FXint c,const FXString& text);
+  void setItemText(FXint r,FXint c,const FXString& text,FXbool notify=FALSE);
 
   /// Return cell text
   FXString getItemText(FXint r,FXint c) const;
 
   /// Modify cell icon, deleting the old icon if it was owned
-  void setItemIcon(FXint r,FXint c,FXIcon* icon,FXbool owned=FALSE);
+  void setItemIcon(FXint r,FXint c,FXIcon* icon,FXbool owned=FALSE,FXbool notify=FALSE);
 
   /// Return cell icon
   FXIcon* getItemIcon(FXint r,FXint c) const;
@@ -698,11 +784,29 @@ public:
   void setItemData(FXint r,FXint c,void* ptr);
   void* getItemData(FXint r,FXint c) const;
 
-  /// Extract cells from given range as text.
-  void extractText(FXchar*& text,FXint& size,FXint startrow,FXint endrow,FXint startcol,FXint endcol,FXchar cs='\t',FXchar rs='\n') const;
+  /**
+  * Extract cells from given range as text, each column separated by a string cs,
+  * and each row separated by a string rs.
+  */
+  void extractText(FXchar*& text,FXint& size,FXint startrow,FXint endrow,FXint startcol,FXint endcol,const FXchar* cs="\t",const FXchar* rs="\n") const;
+  void extractText(FXString& text,FXint startrow,FXint endrow,FXint startcol,FXint endcol,const FXchar* cs="\t",const FXchar* rs="\n") const;
 
-  /// Overlay text over given cell range
-  void overlayText(FXint startrow,FXint endrow,FXint startcol,FXint endcol,const FXchar* text,FXint size,FXchar cs='\t',FXchar rs='\n');
+  /**
+  * Overlay text over given cell range; the text is interpreted as
+  * a number of columns separated by a character from the set cs, and
+  * a number of rows separated by a character from the set rs.
+  * Cells outside the given cell range are unaffected.
+  */
+  void overlayText(FXint startrow,FXint endrow,FXint startcol,FXint endcol,const FXchar* text,FXint size,const FXchar* cs="\t,",const FXchar* rs="\n",FXbool notify=FALSE);
+  void overlayText(FXint startrow,FXint endrow,FXint startcol,FXint endcol,const FXString& text,const FXchar* cs="\t,",const FXchar* rs="\n",FXbool notify=FALSE);
+
+  /**
+  * Determine the number of rows and columns in a block of text
+  * where columns are separated by characters from the set cs, and rows
+  * are separated by characters from the set rs.
+  */
+  void countText(FXint& nr,FXint& nc,const FXchar* text,FXint size,const FXchar* cs="\t,",const FXchar* rs="\n") const;
+  void countText(FXint& nr,FXint& nc,const FXString& text,const FXchar* cs="\t,",const FXchar* rs="\n") const;
 
   /// Return TRUE if its a spanning cell
   FXbool isItemSpanning(FXint r,FXint c) const;
@@ -869,6 +973,18 @@ public:
 
   /// Return table style
   FXuint getTableStyle() const;
+
+  /// Set column renumbering
+  void setColumnRenumbering(FXbool flag);
+
+  /// Get column renumbering
+  FXbool getColumnRenumbering() const;
+
+  /// Set row renumbering
+  void setRowRenumbering(FXbool flag);
+
+  /// Get row renumbering
+  FXbool getRowRenumbering() const;
 
   /// Change help text
   void setHelpText(const FXString& text){ help=text; }

@@ -3,7 +3,7 @@
 *                          P C X   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2006 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpcxio.cpp,v 1.26.2.1 2005/02/13 22:47:25 fox Exp $                         *
+* $Id: fxpcxio.cpp,v 1.31 2006/01/22 17:58:53 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -33,23 +33,22 @@
   Notes:
   - Loading 1-bit/1-plane, 4-bit/1-plane, 8-bit/1-plane and 8-bit/3-plane
     images appears to work.
-  - Slight question as to whether to round up width to even for saving.
   - Need to check if fewer colors, if so fall back on lower pixel depth
     mode to save space.
   - Needs to be updated when new stream classes are here (can do byte
     swap on writing).
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
 
 
-extern FXAPI FXbool fxcheckPCX(FXStream& store);
-extern FXAPI FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height);
-extern FXAPI FXbool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height);
+extern FXAPI bool fxcheckPCX(FXStream& store);
+extern FXAPI bool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height);
 
 
 static inline FXuint read16(FXStream& store){
@@ -60,7 +59,7 @@ static inline FXuint read16(FXStream& store){
 
 
 // Check if stream contains a PCX
-FXbool fxcheckPCX(FXStream& store){
+bool fxcheckPCX(FXStream& store){
   FXuchar signature[4];
   store.load(signature,4);
   store.position(-4,FXFromCurrent);
@@ -95,7 +94,7 @@ static void readscanline(FXStream& store,FXuchar line[],int size,int compressed)
 
 
 // Load PCX image from stream
-FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
+bool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   const FXuchar Mono[2]={0,255};
   FXuchar Colormap[256][3];
   FXuchar Manufacturer;
@@ -114,10 +113,9 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   FXint   BytesPerLine;
   FXint   NumPixels;
   FXint   totalBytes;
-  FXshort PaletteInfo;
   FXuchar c;
-  FXint   i,clr,x,y,rc,rgb,index,shift;
-  
+  FXint   i,clr,x,y,index,shift;
+
   // Null out
   data=NULL;
   width=0;
@@ -125,7 +123,7 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
   // Check Manufacturer
   store >> Manufacturer;
-  if(Manufacturer!=10) return FALSE;
+  if(Manufacturer!=10) return false;
 
   // Get Version
   store >> Version;
@@ -137,7 +135,7 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   store >> BitsPerPixel;
 
   // One of these four possibilities?
-  if(BitsPerPixel!=1 && BitsPerPixel!=2 && BitsPerPixel!=4 && BitsPerPixel!=8) return FALSE;
+  if(BitsPerPixel!=1 && BitsPerPixel!=2 && BitsPerPixel!=4 && BitsPerPixel!=8) return false;
 
   // Get Xmin, Ymin, Xmax, Ymax
   Xmin=read16(store);
@@ -166,7 +164,7 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   store >> NPlanes;
 
   // Does it make sense?
-  if(NPlanes!=1 && NPlanes!=3 && NPlanes!=4) return FALSE;
+  if(NPlanes!=1 && NPlanes!=3 && NPlanes!=4) return false;
 
   // Get BytesPerLine
   BytesPerLine=read16(store);
@@ -174,8 +172,8 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   // Total bytes for scanline
   totalBytes=BytesPerLine*NPlanes;
 
-  // Get PaletteInfo
-  PaletteInfo=read16(store);
+  // Read over PaletteInfo
+  read16(store);
 
   // Get 58 bytes, to get to 128 byte header
   for(i=0; i<58; i++) store >> fill;
@@ -183,11 +181,11 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   FXTRACE((1,"fxloadPCX: width=%d height=%d Version=%d BitsPerPixel=%d NPlanes=%d BytesPerLine=%d Encoding=%d\n",width,height,Version,BitsPerPixel,NPlanes,BytesPerLine,Encoding));
 
   // Allocate memory
-  if(!FXCALLOC(&data,FXColor,NumPixels)) return FALSE;
+  if(!FXCALLOC(&data,FXColor,NumPixels)) return false;
 
   // Scanline buffer
-  if(!FXMALLOC(&line,FXuchar,totalBytes)){ FXFREE(&line); return FALSE; }
-  
+  if(!FXMALLOC(&line,FXuchar,totalBytes)){ FXFREE(&line); return false; }
+
   // Load 1 bit/pixel
   if(BitsPerPixel==1 && NPlanes==1){
     pp=(FXuchar*)data;
@@ -202,7 +200,7 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
         }
       }
     }
-      
+
   // Load 8 bit/pixel
   else if(BitsPerPixel==8 && NPlanes==1){
     pp=(FXuchar*)data;
@@ -224,7 +222,7 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       *pp++=255;
       }
     }
-  
+
   // Load 24 bits/pixel
   else if(BitsPerPixel==8 && NPlanes==3){
     pp=(FXuchar*)data;
@@ -238,7 +236,7 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
         }
       }
     }
-    
+
   // Load 4 bit/pixel
   else if((BitsPerPixel==4) || (BitsPerPixel==1 && NPlanes==4)){
     pp=(FXuchar*)data;
@@ -262,8 +260,8 @@ FXbool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
   // Done with that
   FXFREE(&line);
-    
-  return TRUE;
+
+  return true;
   }
 
 
@@ -280,7 +278,7 @@ static inline void write16(FXStream& store,FXuint i){
 
 
 // Save a PCX file to a stream
-FXbool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height){
+bool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height){
   const FXuchar Colormap[16][3]={{0,0,0},{255,255,255},{0,170,0},{0,170,170},{170,0,0},{170,0,170},{170,170,0},{170,170,170},{85,85,85},{85,85,255},{85,255,85},{85,255,255},{255,85,85},{255,85,255},{255,255,85},{255,255,255}};
   const FXuchar Manufacturer=10;
   const FXuchar Version=5;
@@ -301,7 +299,7 @@ FXbool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height){
   FXuchar       Current,Last,RLECount,rc;
 
   // Must make sense
-  if(!data || width<=0 || height<=0) return FALSE;
+  if(!data || width<=0 || height<=0) return false;
 
   // Manufacturer, Version, Encoding and BitsPerPixel
   store << Manufacturer;
@@ -389,7 +387,7 @@ FXbool fxsavePCX(FXStream& store,const FXColor *data,FXint width,FXint height){
         }
       }
     }
-  return TRUE;
+  return true;
   }
 
 }

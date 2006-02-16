@@ -32,13 +32,13 @@ namespace FX {
 \brief Defines classes used to detail a file entry
 */
 
-class FXFile;
+class QFile;
 
 /*! \class QFileInfo
 \brief Provides detailed information about an entry in the file system (Qt compatible)
 
 While most of what is offered by this class can be done manually via the static methods
-in FX::FXFile, it can be useful to have a container knowing everything there is to know
+in FX::QFile, it can be useful to have a container knowing everything there is to know
 about an entry in a file system, particularly for purposes of comparison.
 
 Like Qt's QFileInfo, this class also caches its information by default and thus after
@@ -48,7 +48,7 @@ maintained - however, the old system of permissions has been replaced with an AC
 one so that NT file permissions are available. On Linux or BSD, suitable entries are
 created to reflect the much simpler POSIX security model though it could be easily
 extended to reflect the ACL security implemented by SE-Linux. For these reasons, I
-recommend you use QFileInfo over FXFile directly (it's just as efficient at worst as
+recommend you use QFileInfo over QFile directly (it's just as efficient at worst as
 the original FOX code does a \c stat() even where on Win32 there's a separate faster
 call - except for \c isFile() and \c isDirectory()). Note that if FX::FXACL throws an
 exception when reading the file entry's security info (this could happen if the file
@@ -67,8 +67,8 @@ public:
 	QFileInfo();
 	//! Constructs a new instance detailing \em path
 	QFileInfo(const FXString &path);
-	//! Constructs a new instance detailing the file used by the FXFile
-	QFileInfo(const FXFile &file);
+	//! Constructs a new instance detailing the file used by the QFile
+	QFileInfo(const QFile &file);
 	//! Constructs a new instance detailing the file \em leafname within directory \em dir
 	QFileInfo(const QDir &dir, const FXString &leafname);
 	QFileInfo(const QFileInfo &o);
@@ -82,7 +82,7 @@ public:
 	//! Sets the detail to use \em path
 	void setFile(const FXString &path);
 	//! Sets the detail to use \em file
-	void setFile(const FXFile &file);
+	void setFile(const QFile &file);
 	//! Sets the detail to use \em leafname in \em dir
 	void setFile(const QDir &dir, const FXString &leafname);
 	//! Returns true if the filing system entry exists
@@ -119,7 +119,7 @@ public:
 	bool isWritable() const { return isWriteable(); }
 	//! Returns true if the entry is an executable
     bool isExecutable() const;
-	//! Returns the flags for this entry in the format FX::FXFile::MetaFileFlags
+	//! Returns the flags for this entry in the format FX::QFile::MetaFileFlags
 	FXuint metaFlags() const;
 	//! Returns true if the entry is hidden
 	bool isHidden() const;

@@ -3,7 +3,7 @@
 *             R e a l - V a l u e d   S p i n n e r  W i d g e t                *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003,2005 by Bill Baxter.   All Rights Reserved.                *
+* Copyright (C) 2003,2006 by Bill Baxter.   All Rights Reserved.                *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRealSpinner.h,v 1.12 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXRealSpinner.h,v 1.16 2006/02/10 03:53:47 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXREALSPINNER_H
 #define FXREALSPINNER_H
@@ -27,11 +27,9 @@
 #ifndef FXPACKER_H
 #include "FXPacker.h"
 #endif
-#ifndef FXFRAME_H
-#include "FXFrame.h"
-#endif
 
 namespace FX {
+
 
 /// RealSpinner Options
 enum {
@@ -44,10 +42,9 @@ enum {
   };
 
 
-class FXArrowButton;
 class FXTextField;
 class FXDial;
-class FXFont;
+
 
 /// Spinner control
 class FXAPI FXRealSpinner : public FXPacker {
@@ -57,10 +54,9 @@ protected:
   FXArrowButton *upButton;          // The up button
   FXArrowButton *downButton;        // The down button
   FXdouble       range[2];          // Reported data range
-  FXdouble       base;              // Base while incrementing
   FXdouble       incr;              // Increment
+  FXdouble       gran;              // Granularity
   FXdouble       pos;               // Current position
-  FXint          ticks;             // Ticks incrementing
 protected:
   FXRealSpinner();
 private:
@@ -114,10 +110,16 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Increment spinner
-  void increment();
+  void increment(FXbool notify=FALSE);
+
+  /// Increment spinner by certain amount
+  void incrementByAmount(FXdouble amount,FXbool notify=FALSE);
 
   /// Decrement spinner
-  void decrement();
+  void decrement(FXbool notify=FALSE);
+
+  /// Decrement spinner by certain amount
+  void decrementByAmount(FXdouble amount, FXbool notify=FALSE);
 
   /// Return TRUE if in cyclic mode
   FXbool isCyclic() const;
@@ -132,13 +134,13 @@ public:
   void setTextVisible(FXbool shown);
 
   /// Change current value
-  virtual void setValue(FXdouble value);
+  virtual void setValue(FXdouble value,FXbool notify=FALSE);
 
   /// Return current value
   FXdouble getValue() const { return pos; }
 
   /// Change the spinner's range
-  void setRange(FXdouble lo,FXdouble hi);
+  void setRange(FXdouble lo,FXdouble hi,FXbool notify=FALSE);
 
   /// Get the spinner's current range
   void getRange(FXdouble& lo,FXdouble& hi) const { lo=range[0]; hi=range[1]; }
@@ -148,6 +150,12 @@ public:
 
   /// Return spinner increment
   FXdouble getIncrement() const { return incr; }
+
+  /// Change spinner granularity
+  void setGranularity(FXdouble gr);
+
+  /// Return spinner granularity
+  FXdouble getGranularity() const { return gran; }
 
   /// Set the text font
   void setFont(FXFont *fnt);

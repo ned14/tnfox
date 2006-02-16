@@ -3,7 +3,7 @@
 *                           S e t t i n g s   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,17 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.cpp,v 1.33.2.3 2005/11/05 11:12:03 fox Exp $                      *
+* $Id: FXSettings.cpp,v 1.52 2006/01/22 17:58:41 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
+#include "FXApp.h"
 #include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXStringDict.h"
+#include "FXFile.h"
 #include "FXSettings.h"
-#include "FXApp.h"
 
 /*
   Notes:
@@ -51,13 +53,17 @@
   - Escape sequences now allow octal (\377) as well as hex (\xff) codes.
 
   - EntryKey format should be like values.
+
+  - Extensive error checking in unparseFile() to ensure no settings data is
+    lost when disk is full.
+
 */
 
 #define MAXBUFFER 2000
 #define MAXNAME   200
 #define MAXVALUE  2000
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -67,9 +73,36 @@ namespace FX {
 FXIMPLEMENT(FXSettings,FXDict,NULL,0)
 
 
-// Make registry object
+// Construct settings database
 FXSettings::FXSettings(){
-  modified=FALSE;
+  modified=false;
+  }
+
+
+// Construct copy of existing database
+FXSettings::FXSettings(const FXSettings& orig):FXDict(orig){
+  register FXint i;
+  modified=orig.modified;
+  for(i=0; i<orig.total; i++){
+    if(0<=dict[i].hash){
+      dict[i].data=new FXStringDict(*((FXStringDict*)orig.dict[i].data));
+      }
+    }
+  }
+
+
+// Assignment operator
+FXSettings& FXSettings::operator=(const FXSettings& orig){
+  register FXint i;
+  if(&orig!=this){
+    FXDict::operator=(orig);
+    for(i=0; i<orig.total; i++){
+      if(0<=orig.dict[i].hash){
+        dict[i].data=new FXStringDict(*((FXStringDict*)orig.dict[i].data));
+        }
+      }
+    }
+  return *this;
   }
 
 
@@ -85,362 +118,318 @@ void FXSettings::deleteData(void* ptr){
   }
 
 
+// Read string
+static bool readString(FXFile& file,FXchar *buffer,FXint& bol,FXint& eol,FXint& end){
+  register FXint n;
+  while(eol<end && buffer[eol++]!='\n');
+  if(eol>=end){
+    if(bol<end){ memmove(buffer,buffer+bol,end-bol); }
+    end=end-bol;
+    bol=0;
+    eol=end;
+    n=file.readBlock(buffer+end,MAXBUFFER-end);
+    if(n<0) return false;
+    end+=n;
+    while(eol<end && buffer[eol++]!='\n');
+    }
+  return bol<eol;
+  }
+
+
 // Parse filename
-FXbool FXSettings::parseFile(const FXString& filename,FXbool mark){
+bool FXSettings::parseFile(const FXString& filename,bool mark){
   FXLockHold applock(FXApp::instance());
-  FXchar buffer[MAXBUFFER],value[MAXVALUE];
-  register FXStringDict *group=NULL;
-  register FXchar *name,*ptr,*p;
-  register FXint lineno=1;
-  FILE *file;
-  file=fopen(filename.text(),"r");
-  if(file){
+  FXFile file(filename,FXIO::Reading);
+  if(file.isOpen()){
+    FXchar line[MAXBUFFER];
+    FXint bol,eol,end,section,name,value,p,lineno;
+    FXStringDict *group=NULL;
+
     FXTRACE((100,"Reading settings file: %s\n",filename.text()));
 
-    // Parse one line at a time
-    while(fgets(buffer,MAXBUFFER,file)!=NULL){
-
-      // Parse buffer
-      ptr=buffer;
+    lineno=bol=eol=end=0;
+    while(readString(file,line,bol,eol,end)){
+      lineno++;
 
       // Skip leading spaces
-      while(*ptr && isspace((FXuchar)*ptr)) ptr++;
+      while(bol<eol && Ascii::isBlank(line[bol])) bol++;
 
-      // Test for comments
-      if(*ptr=='#' || *ptr==';' || *ptr=='\0') goto next;
+      // Skip comment lines and empty lines
+      if(bol>=eol || line[bol]=='#' || line[bol]==';' || line[bol]=='\n' || line[bol]=='\r') goto next;
 
       // Parse section name
-      if(*ptr=='['){
-        for(name=++ptr; *ptr && *ptr!=']'; ptr++){
-          if((FXuchar)*ptr<' '){
-            fxwarning("%s:%d: illegal section name.\n",filename.text(),lineno);
-            goto next;
-            }
-          }
+      if(line[bol]=='['){
 
-        // End
-        *ptr='\0';
+        // Scan section name
+        for(section=++bol; bol<eol && line[bol]!=']' && !Ascii::isControl(line[bol]); bol++);
+
+        // Check errors
+        if(bol>=eol || line[bol]!=']'){ fxwarning("%s:%d: illegal section name.\n",filename.text(),lineno); goto next; }
+
+        // Terminate name
+        line[bol]='\0';
 
         // Add new section dict
-        group=insert(name);
+        group=insert(line+section);
         }
 
-      // Parse key name
+      // Parse name-value pair
       else{
 
         // Should have a group
-        if(!group){
-          fxwarning("%s:%d: settings entry should follow a section.\n",filename.text(),lineno);
-          goto next;
-          }
+        if(!group){ fxwarning("%s:%d: settings entry should follow a section.\n",filename.text(),lineno); goto next; }
 
-        // Transfer key, checking validity
-        for(name=ptr; *ptr && *ptr!='='; ptr++){
-          if((FXuchar)*ptr<' '){
-            fxwarning("%s:%d: illegal key name.\n",filename.text(),lineno);
-            goto next;
-            }
-          }
+        // Scan key name
+        for(name=bol; bol<eol && line[bol]!='=' && !Ascii::isControl(line[bol]); bol++);
 
-        // Should be a '='
-        if(*ptr!='='){
-          fxwarning("%s:%d: expected '=' to follow key.\n",filename.text(),lineno);
-          goto next;
-          }
+        // Check errors
+        if(bol>=eol || line[bol]!='='){ fxwarning("%s:%d: expected '=' to follow key.\n",filename.text(),lineno); goto next; }
 
-        // Remove trailing spaces
-        for(p=ptr; name<p && *(p-1)==' '; p--);
+        // Remove trailing spaces after name
+        for(p=bol; name<p && Ascii::isBlank(line[p-1]); p--);
 
-        // End
-        *p='\0';
+        // Terminate name
+        line[p]='\0';
 
-        ptr++;
+        // Skip leading spaces
+        for(bol++; bol<eol && Ascii::isBlank(line[bol]); bol++);
 
-        // Skip more spaces
-        while(*ptr && isspace((FXuchar)*ptr)) ptr++;
+        // Scan value
+        for(value=bol; bol<eol && !Ascii::isControl(line[bol]); bol++);
 
-        // Parse value
-        if(!parseValue(value,ptr)){
-          fxwarning("%s:%d: error parsing value.\n",filename.text(),lineno);
-          goto next;
-          }
+        // Remove trailing spaces after value
+        for(p=bol; value<p && Ascii::isBlank(line[p-1]); p--);
+
+        // Terminate value
+        line[p]='\0';
 
         // Add entry to current section
-        group->replace(name,value,mark);
+        group->replace(line+name,dequote(line+value),mark);
         }
-
-      // Next line
-next: lineno++;
+next: bol=eol;
       }
 
     // Done
-    fclose(file);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
-// Parse value
-FXbool FXSettings::parseValue(FXchar* value,const FXchar* buffer){
-  register const FXchar *ptr=buffer;
-  register FXchar *out=value;
-  register FXuint v,c;
-
-  // Was quoted string; copy verbatim
-  if(*ptr=='"'){
-    ptr++;
-    while(*ptr){
-      switch(*ptr){
-        case '\\':
-          ptr++;
-          switch(*ptr){
-            case 'n':
-              *out++='\n';
-              break;
-            case 'r':
-              *out++='\r';
-              break;
-            case 'b':
-              *out++='\b';
-              break;
-            case 'v':
-              *out++='\v';
-              break;
-            case 'a':
-              *out++='\a';
-              break;
-            case 'f':
-              *out++='\f';
-              break;
-            case 't':
-              *out++='\t';
-              break;
-            case '\\':
-              *out++='\\';
-              break;
-            case '"':
-              *out++='"';
-              break;
-            case '\'':
-              *out++='\'';
-              break;
-            case 'x':
-              v='x';
-              if(isxdigit((FXuchar)*(ptr+1))){
-                c=*++ptr;
-                v=('a'<=c)?(c-'a'+10):('A'<=c)?(c-'A'+10):(c-'0');
-                if(isxdigit((FXuchar)*(ptr+1))){
-                  c=*++ptr;
-                  v=(v<<4)+(('a'<=c)?(c-'a'+10):('A'<=c)?(c-'A'+10):(c-'0'));
-                  }
-                }
-              *out++=v;
-              break;
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-              v=*ptr-'0';
-              if('0'<=*(ptr+1) && *(ptr+1)<='7'){
-                v=v*8+*++ptr-'0';
-                if('0'<=*(ptr+1) && *(ptr+1)<='7'){
-                  v=v*8+*++ptr-'0';
-                  }
-                }
-              *out++=v;
-            default:
-              *out++=*ptr;
-              break;
-            }
-          break;
-        case '"':
-          *out='\0';
-          return TRUE;
-        default:
-          *out++=*ptr;
-          break;
-        }
-      ptr++;
-      }
-    *value='\0';
-    return FALSE;
-    }
-
-  // String not starting or ending with spaces
-  else{
-
-    // Copy as much as we can
-    while(*ptr && isprint((FXuchar)*ptr)){
-      *out++=*ptr++;
-      }
-
-    // Strip spaces at the end
-    while(value<out && *(out-1)==' ') --out;
-
-    // Terminate
-    *out='\0';
-    }
-  return TRUE;
+// Write string
+static bool writeString(FXFile& file,const FXchar* string){
+  register FXint len=strlen(string);
+  return file.writeBlock(string,len)==len;
   }
-
 
 
 // Unparse registry file
-FXbool FXSettings::unparseFile(const FXString& filename){
+bool FXSettings::unparseFile(const FXString& filename){
   FXLockHold applock(FXApp::instance());
-  FXchar buffer[MAXVALUE];
-  FXStringDict *group;
-  FILE *file;
-  FXint s,e;
-  FXbool sec,mrk;
-  file=fopen(filename.text(),"w");
-  if(file){
+  FXFile file(filename,FXIO::Writing);
+  FXchar line[MAXVALUE];
+  if(file.isOpen()){
+
     FXTRACE((100,"Writing settings file: %s\n",filename.text()));
 
     // Loop over all sections
-    for(s=first(); s<size(); s=next(s)){
+    for(FXint s=first(); s<size(); s=next(s)){
 
       // Get group
-      group=data(s);
-      FXASSERT(group);
-      sec=FALSE;
+      FXStringDict* group=data(s);
+      bool sec=false;
 
       // Loop over all entries
-      for(e=group->first(); e<group->size(); e=group->next(e)){
-        mrk=group->mark(e);
+      for(FXint e=group->first(); e<group->size(); e=group->next(e)){
 
-        // Write section name if not written yet
-        if(mrk && !sec){
-          FXASSERT(key(s));
-          fputc('[',file);
-          fputs(key(s),file);
-          fputc(']',file);
-          fputc('\n',file);
-          sec=TRUE;
-          }
+        // Is key-value pair marked?
+        if(group->mark(e)){
 
-        // Only write marked entries
-        if(mrk){
-          FXASSERT(group->key(e));
-          FXASSERT(group->data(e));
-
-          // Write key name
-          fputs(group->key(e),file);
-          fputc('=',file);
-
-          // Write quoted value
-          if(unparseValue(buffer,group->data(e))){
-            fputc('"',file);
-            fputs(buffer,file);
-            fputc('"',file);
+          // Write section name if not written yet
+          if(!sec){
+            if(!writeString(file,"[")) goto x;
+            if(!writeString(file,key(s))) goto x;
+            if(!writeString(file,"]" ENDLINE)) goto x;
+            sec=true;
             }
 
-          // Write unquoted
-          else{
-            fputs(buffer,file);
-            }
-
-          // End of line
-          fputc('\n',file);
+          // Write marked key-value pairs only
+          if(!writeString(file,group->key(e))) goto x;
+          if(!writeString(file,"=")) goto x;
+          if(!writeString(file,enquote(line,group->data(e)))) goto x;
+          if(!writeString(file,ENDLINE)) goto x;
           }
         }
 
       // Blank line after end
       if(sec){
-        fputc('\n',file);
+        if(!writeString(file,ENDLINE)) goto x;
         }
       }
-    fclose(file);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+x:return false;
   }
 
 
-// Unparse value by quoting strings; return TRUE if quote needed
-FXbool FXSettings::unparseValue(FXchar* buffer,const FXchar* value){
-  register FXbool mustquote=FALSE;
-  register FXchar *ptr=buffer;
-  register FXuchar v;
-  FXASSERT(value);
-  while((v=*value++) && ptr<&buffer[MAXVALUE-5]){
-    switch(v){
-      case '\n':
-        *ptr++='\\';
-        *ptr++='n';
-        mustquote=TRUE;
-        break;
-      case '\r':
-        *ptr++='\\';
-        *ptr++='r';
-        mustquote=TRUE;
-        break;
-      case '\b':
-        *ptr++='\\';
-        *ptr++='b';
-        mustquote=TRUE;
-        break;
-      case '\v':
-        *ptr++='\\';
-        *ptr++='v';
-        mustquote=TRUE;
-        break;
-      case '\a':
-        *ptr++='\\';
-        *ptr++='a';
-        mustquote=TRUE;
-        break;
-      case '\f':
-        *ptr++='\\';
-        *ptr++='f';
-        mustquote=TRUE;
-        break;
-      case '\t':
-        *ptr++='\\';
-        *ptr++='t';
-        mustquote=TRUE;
-        break;
-      case '\\':
-        *ptr++='\\';
-        *ptr++='\\';
-        mustquote=TRUE;
-        break;
-      case '"':
-        *ptr++='\\';
-        *ptr++='"';
-        mustquote=TRUE;
-        break;
-      case '\'':
-        *ptr++='\\';
-        *ptr++='\'';
-        mustquote=TRUE;
-        break;
-      case ' ':
-        if((ptr==buffer) || (*value=='\0')) mustquote=TRUE;
-        *ptr++=' ';
-        break;
-      default:
-        if(v<0x20 || 0x7f<v){
+// Dequote a value, in situ
+FXchar* FXSettings::dequote(FXchar* text) const {
+  register FXchar *result=text;
+  register FXchar *ptr=text;
+  register FXuint v;
+  if(*text=='"'){
+    text++;
+    while((v=*text++)!='\0' && v!='\n' && v!='"'){
+      if(v=='\\'){
+        v=*text++;
+        switch(v){
+          case 'n':
+            v='\n';
+            break;
+          case 'r':
+            v='\r';
+            break;
+          case 'b':
+            v='\b';
+            break;
+          case 'v':
+            v='\v';
+            break;
+          case 'a':
+            v='\a';
+            break;
+          case 'f':
+            v='\f';
+            break;
+          case 't':
+            v='\t';
+            break;
+          case '\\':
+            v='\\';
+            break;
+          case '"':
+            v='"';
+            break;
+          case '\'':
+            v='\'';
+            break;
+          case 'x':
+            v='x';
+            if(Ascii::isHexDigit(*text)){
+              v=Ascii::digitValue(*text++);
+              if(Ascii::isHexDigit(*text)){
+                v=(v<<4)+Ascii::digitValue(*text++);
+                }
+              }
+            break;
+          case '0':
+          case '1':
+          case '2':
+          case '3':
+          case '4':
+          case '5':
+          case '6':
+          case '7':
+            v=v-'0';
+            if('0'<=*text && *text<='7'){
+              v=(v<<3)+*text++-'0';
+              if('0'<=*text && *text<='7'){
+                v=(v<<3)+*text++-'0';
+                }
+              }
+            break;
+          }
+        }
+      *ptr++=v;
+      }
+    *ptr='\0';
+    }
+  return result;
+  }
+
+
+// Check if quotes are needed
+static bool needquotes(const FXchar* text){
+  register const FXchar *ptr=text;
+  register FXuchar c;
+  while((c=*ptr++)!='\0'){
+    if(0x7f<=c || c<0x20 || c=='"' || c=='\'' || c=='\\' || (c==' ' && (ptr==(text+1) || *ptr=='\0'))) return true;
+    }
+  return false;
+  }
+
+
+// Enquote a value
+FXchar* FXSettings::enquote(FXchar* result,const FXchar* text){
+  register FXchar *end=result+MAXVALUE-6;
+  register FXchar *ptr=result;
+  register FXuchar c;
+  if(needquotes(text)){
+    *ptr++='"';
+    while((c=*text++) && ptr<end){
+      switch(c){
+        case '\n':
           *ptr++='\\';
-          *ptr++='x';
-          *ptr++=FXString::HEX[v>>4];
-          *ptr++=FXString::HEX[v&15];
-          mustquote=TRUE;
-          }
-        else{
-          *ptr++=v;
-          }
-        break;
+          *ptr++='n';
+          break;
+        case '\r':
+          *ptr++='\\';
+          *ptr++='r';
+          break;
+        case '\b':
+          *ptr++='\\';
+          *ptr++='b';
+          break;
+        case '\v':
+          *ptr++='\\';
+          *ptr++='v';
+          break;
+        case '\a':
+          *ptr++='\\';
+          *ptr++='a';
+          break;
+        case '\f':
+          *ptr++='\\';
+          *ptr++='f';
+          break;
+        case '\t':
+          *ptr++='\\';
+          *ptr++='t';
+          break;
+        case '\\':
+          *ptr++='\\';
+          *ptr++='\\';
+          break;
+        case '"':
+          *ptr++='\\';
+          *ptr++='"';
+          break;
+        case '\'':
+          *ptr++='\\';
+          *ptr++='\'';
+          break;
+        default:
+          if(c<0x20 || 0x7f<c){
+            *ptr++='\\';
+            *ptr++='x';
+            *ptr++=FXString::HEX[c>>4];
+            *ptr++=FXString::HEX[c&15];
+            }
+          else{
+            *ptr++=c;
+            }
+          break;
+        }
+      }
+    *ptr++='"';
+    }
+  else{
+    while((c=*text++) && ptr<end){
+      *ptr++=c;
       }
     }
-  FXASSERT(ptr<&buffer[MAXVALUE]);
   *ptr='\0';
-  return mustquote;
+  return result;
   }
 
 
@@ -562,6 +551,30 @@ FXColor FXSettings::readColorEntry(const FXchar *section,const FXchar *key,FXCol
   }
 
 
+// Read a boolean registry entry
+FXbool FXSettings::readBoolEntry(const FXchar *section,const FXchar *key,FXbool def){
+  FXLockHold applock(FXApp::instance());
+  if(!section || !section[0]){ fxerror("FXSettings::readBoolEntry: bad section argument.\n"); }
+  if(!key || !key[0]){ fxerror("FXSettings::readBoolEntry: bad key argument.\n"); }
+  FXStringDict *group=find(section);
+  if(group){
+    const char *value=group->find(key);
+    if(value){
+      if(comparecase(value,"true")==0) return TRUE;
+      else if(comparecase(value,"false")==0) return FALSE;
+      else if(comparecase(value,"yes")==0) return TRUE;
+      else if(comparecase(value,"no")==0) return FALSE;
+      else if(comparecase(value,"on")==0) return TRUE;
+      else if(comparecase(value,"off")==0) return FALSE;
+      else if(comparecase(value,"1")==0) return TRUE;
+      else if(comparecase(value,"0")==0) return FALSE;
+      else if(comparecase(value,"maybe")==0) return MAYBE;
+      }
+    }
+  return def;
+  }
+
+
 // Write a formatted registry entry
 FXint FXSettings::writeFormatEntry(const FXchar *section,const FXchar *key,const FXchar *fmt,...){
   FXLockHold applock(FXApp::instance());
@@ -580,7 +593,7 @@ FXint FXSettings::writeFormatEntry(const FXchar *section,const FXchar *key,const
     result=vsprintf(buffer,fmt,args);
 #endif
     group->replace(key,buffer,TRUE);
-    modified=TRUE;
+    modified=true;
     }
   va_end(args);
   return result;
@@ -588,22 +601,22 @@ FXint FXSettings::writeFormatEntry(const FXchar *section,const FXchar *key,const
 
 
 // Write a string-valued registry entry
-FXbool FXSettings::writeStringEntry(const FXchar *section,const FXchar *key,const FXchar *val){
+bool FXSettings::writeStringEntry(const FXchar *section,const FXchar *key,const FXchar *val){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::writeStringEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::writeStringEntry: bad key argument.\n"); }
   FXStringDict *group=insert(section);
   if(group){
-    group->replace(key,val,TRUE);
-    modified=TRUE;
-    return TRUE;
+    group->replace(key,val,true);
+    modified=true;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Write a int-valued registry entry
-FXbool FXSettings::writeIntEntry(const FXchar *section,const FXchar *key,FXint val){
+bool FXSettings::writeIntEntry(const FXchar *section,const FXchar *key,FXint val){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::writeIntEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::writeIntEntry: bad key argument.\n"); }
@@ -611,16 +624,16 @@ FXbool FXSettings::writeIntEntry(const FXchar *section,const FXchar *key,FXint v
   if(group){
     FXchar buffer[32];
     sprintf(buffer,"%d",val);
-    group->replace(key,buffer,TRUE);
-    modified=TRUE;
-    return TRUE;
+    group->replace(key,buffer,true);
+    modified=true;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Write a unsigned int-valued registry entry
-FXbool FXSettings::writeUnsignedEntry(const FXchar *section,const FXchar *key,FXuint val){
+bool FXSettings::writeUnsignedEntry(const FXchar *section,const FXchar *key,FXuint val){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::writeUnsignedEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::writeUnsignedEntry: bad key argument.\n"); }
@@ -629,15 +642,15 @@ FXbool FXSettings::writeUnsignedEntry(const FXchar *section,const FXchar *key,FX
     FXchar buffer[32];
     sprintf(buffer,"%u",val);
     group->replace(key,buffer,TRUE);
-    modified=TRUE;
-    return TRUE;
+    modified=true;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Write a double-valued registry entry
-FXbool FXSettings::writeRealEntry(const FXchar *section,const FXchar *key,FXdouble val){
+bool FXSettings::writeRealEntry(const FXchar *section,const FXchar *key,FXdouble val){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::writeRealEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::writeRealEntry: bad key argument.\n"); }
@@ -646,15 +659,15 @@ FXbool FXSettings::writeRealEntry(const FXchar *section,const FXchar *key,FXdoub
     FXchar buffer[64];
     sprintf(buffer,"%.16g",val);
     group->replace(key,buffer,TRUE);
-    modified=TRUE;
-    return TRUE;
+    modified=true;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Write a color registry entry
-FXbool FXSettings::writeColorEntry(const FXchar *section,const FXchar *key,FXColor val){
+bool FXSettings::writeColorEntry(const FXchar *section,const FXchar *key,FXColor val){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::writeColorEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::writeColorEntry: bad key argument.\n"); }
@@ -662,49 +675,64 @@ FXbool FXSettings::writeColorEntry(const FXchar *section,const FXchar *key,FXCol
   if(group){
     FXchar buffer[64];
     group->replace(key,fxnamefromcolor(buffer,val),TRUE);
-    modified=TRUE;
-    return TRUE;
+    modified=true;
+    return true;
     }
-  return FALSE;
+  return false;
+  }
+
+
+// Write a boolean registry entry
+bool FXSettings::writeBoolEntry(const FXchar *section,const FXchar *key,FXbool val){
+  FXLockHold applock(FXApp::instance());
+  if(!section || !section[0]){ fxerror("FXSettings::writeBoolEntry: bad section argument.\n"); }
+  if(!key || !key[0]){ fxerror("FXSettings::writeBoolEntry: bad key argument.\n"); }
+  FXStringDict *group=insert(section);
+  if(group){
+    group->replace(key,(val==FALSE) ? "false" : (val==TRUE) ? "true" : "maybe",TRUE);
+    modified=true;
+    return true;
+    }
+  return false;
   }
 
 
 // Delete a registry entry
-FXbool FXSettings::deleteEntry(const FXchar *section,const FXchar *key){
+bool FXSettings::deleteEntry(const FXchar *section,const FXchar *key){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::deleteEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::deleteEntry: bad key argument.\n"); }
   FXStringDict *group=insert(section);
   if(group){
     group->remove(key);
-    modified=TRUE;
-    return TRUE;
+    modified=true;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Delete section
-FXbool FXSettings::deleteSection(const FXchar *section){
+bool FXSettings::deleteSection(const FXchar *section){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::deleteSection: bad section argument.\n"); }
   remove(section);
-  modified=TRUE;
-  return TRUE;
+  modified=true;
+  return true;
   }
 
 
 // Clear all sections
-FXbool FXSettings::clear(){
+bool FXSettings::clear(){
   FXLockHold applock(FXApp::instance());
   FXDict::clear();
-  modified=TRUE;
-  return TRUE;
+  modified=true;
+  return true;
   }
 
 
 // See if section exists
-FXbool FXSettings::existingSection(const FXchar *section){
+bool FXSettings::existingSection(const FXchar *section){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::existingSection: bad section argument.\n"); }
   return find(section)!=NULL;
@@ -712,7 +740,7 @@ FXbool FXSettings::existingSection(const FXchar *section){
 
 
 // See if entry exists
-FXbool FXSettings::existingEntry(const FXchar *section,const FXchar *key){
+bool FXSettings::existingEntry(const FXchar *section,const FXchar *key){
   FXLockHold applock(FXApp::instance());
   if(!section || !section[0]){ fxerror("FXSettings::existingEntry: bad section argument.\n"); }
   if(!key || !key[0]){ fxerror("FXSettings::existingEntry: bad key argument.\n"); }

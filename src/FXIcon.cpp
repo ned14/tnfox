@@ -3,7 +3,7 @@
 *                               I c o n - O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIcon.cpp,v 1.66 2005/01/16 16:06:07 fox Exp $                          *
+* $Id: FXIcon.cpp,v 1.71 2006/01/22 17:58:31 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -57,7 +57,7 @@
 
 #define DISPLAY(app) ((Display*)((app)->display))
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -199,7 +199,7 @@ void FXIcon::render(){
   if(xid){
     register Visual *vis;
     register XImage *xim=NULL;
-    register FXbool shmi=FALSE;
+    register bool shmi=false;
     register FXColor *img;
     register FXint x,y;
     XGCValues values;
@@ -234,7 +234,7 @@ void FXIcon::render(){
           if(shminfo.shmid==-1){ xim->data=NULL; XDestroyImage(xim); xim=NULL; shmi=0; }
           if(shmi){
             shminfo.shmaddr=xim->data=(char*)shmat(shminfo.shmid,0,0);
-            shminfo.readOnly=FALSE;
+            shminfo.readOnly=false;
             XShmAttach(DISPLAY(getApp()),&shminfo);
             FXTRACE((150,"Bitmap XSHM attached at memory=%p (%d bytes)\n",xim->data,xim->bytes_per_line*xim->height));
             }
@@ -487,10 +487,11 @@ void FXIcon::render(){
       // flicker-free icon painting later using the `black source' method
       SelectObject(hdcmsk,(HBITMAP)shape);
       HDC hdcmem=::CreateCompatibleDC(NULL);
-      SelectObject(hdcmem,(HBITMAP)xid);
+HGDIOBJ hbm=SelectObject(hdcmem,(HBITMAP)xid);
       SetBkColor(hdcmem,RGB(0,0,0));                // 1 -> black
       SetTextColor(hdcmem,RGB(255,255,255));        // 0 -> white
       BitBlt(hdcmem,0,0,width,height,hdcmsk,0,0,SRCAND);
+SelectObject(hdcmem,hbm);
       ::DeleteDC(hdcmem);
       ::DeleteDC(hdcmsk);
       }

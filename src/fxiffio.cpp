@@ -3,7 +3,7 @@
 *                          I F F   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxiffio.cpp,v 1.11 2005/02/04 06:12:58 fox Exp $                          *
+* $Id: fxiffio.cpp,v 1.14 2006/01/22 17:58:53 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -46,8 +46,8 @@ using namespace FX;
 namespace FX {
 
 
-extern FXAPI FXbool fxcheckIFF(FXStream& store);
-extern FXAPI FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxcheckIFF(FXStream& store);
+extern FXAPI bool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
 
 
 // Tags
@@ -107,7 +107,7 @@ static inline FXuint read32(FXStream& store){
 
 
 // Check if stream contains a IFF
-FXbool fxcheckIFF(FXStream& store){
+bool fxcheckIFF(FXStream& store){
   FXuint signature;
   signature=read32(store);
   store.position(-4,FXFromCurrent);
@@ -116,7 +116,7 @@ FXbool fxcheckIFF(FXStream& store){
 
 
 // Load IFF image from stream
-FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
+bool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   FXuint pixels,bit,view,tag,size,type,colors,i,bytesperline,value,plane,remainingbytes,fmt;
   FXuchar *buffer,*ptr,planes,masking,compress,padding,c1,c2,c3,color,count;
   FXColor colormap[256],*dest,pixelcolor;
@@ -141,7 +141,7 @@ FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   //FXTRACE((1,"fxloadIFF tag=%c%c%c%c\n",(tag>>24)&255,(tag>>16)&255,(tag>>8)&255,tag&255));
 
   // Check for FORM tag
-  if(tag!=FORM && tag!=FOR1 && tag!=FOR2 && tag!=FOR3 && tag!=FOR4) return FALSE;
+  if(tag!=FORM && tag!=FOR1 && tag!=FOR2 && tag!=FOR3 && tag!=FOR4) return false;
 
   // Read size
   size=read32(store);
@@ -152,13 +152,13 @@ FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
   // Read type
   type=read32(store);
-  if(type!=ILBM) return FALSE;
+  if(type!=ILBM) return false;
 
   // Read stuff
   while(1){
 
     // Bail if at the end
-    if(store.position()+8>end) return FALSE;
+    if(store.position()+8>end) return false;
 
     // Read next chunk header
     tag=read32(store);
@@ -166,7 +166,7 @@ FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
     pos=store.position();
 
     // Empty block is a problem too
-    if(size==0) return FALSE;
+    if(size==0) return false;
 
     //FXTRACE((1,"CHUNK %c%c%c%c POS=%d SIZE=%d\n",(tag>>24)&255,(tag>>16)&255,(tag>>8)&255,tag&255,pos,size));
 
@@ -187,8 +187,8 @@ FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
     // Colormap
     else if(tag==CMAP){
       colors=size/3;
-      if(colors<1) return FALSE;
-      if(colors>256) return FALSE;
+      if(colors<1) return false;
+      if(colors>256) return false;
       memset(colormap,0,sizeof(colormap));
       for(i=0; i<colors; i++){                  // Load colors
         store >> c1 >> c2 >> c3;
@@ -260,10 +260,10 @@ FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
     }
 
   // Try allocate image
-  if(!FXMALLOC(&data,FXColor,pixels)) return FALSE;
+  if(!FXMALLOC(&data,FXColor,pixels)) return false;
 
   // Temp buffer
-  if(!FXMALLOC(&buffer,FXuchar,bytesperline*planes)){ FXFREE(&data); return FALSE; }
+  if(!FXMALLOC(&buffer,FXuchar,bytesperline*planes)){ FXFREE(&data); return false; }
 
   dest=data;
 
@@ -352,7 +352,7 @@ FXbool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   // Release buffer
   FXFREE(&buffer);
 
-  return TRUE;
+  return true;
   }
 
 

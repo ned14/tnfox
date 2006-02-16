@@ -3,7 +3,7 @@
 *                S p l i t t e r   W i n d o w   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSplitter.cpp,v 1.50 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXSplitter.cpp,v 1.54 2006/01/22 17:58:42 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -67,7 +67,7 @@
 // Splitter styles
 #define SPLITTER_MASK     (SPLITTER_REVERSED|SPLITTER_VERTICAL|SPLITTER_TRACKING)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -585,19 +585,18 @@ long FXSplitter::onFocusPrev(FXObject* sender,FXSelector sel,void* ptr){
 
 // Focus moved up
 long FXSplitter::onFocusUp(FXObject*,FXSelector,void* ptr){
-  FXWindow *child;
-  if(options&SPLITTER_VERTICAL){
-    if(getFocus())
-      child=getFocus()->getPrev();
-    else
-      child=getLast();
-    while(child){
-      if(child->shown()){
-        if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
-        if(child->handle(this,FXSEL(SEL_FOCUS_UP,0),ptr)) return 1;
-        }
-      child=child->getPrev();
+  FXWindow *child=getLast();
+  if(getFocus()){
+    if(getFocus()->handle(this,FXSEL(SEL_FOCUS_UP,0),ptr)) return 1;
+    if(!(options&SPLITTER_VERTICAL)) return 0;
+    child=getFocus()->getPrev();
+    }
+  while(child){
+    if(child->shown()){
+      if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
+      if(child->handle(this,FXSEL(SEL_FOCUS_UP,0),ptr)) return 1;
       }
+    child=child->getPrev();
     }
   return 0;
   }
@@ -605,19 +604,18 @@ long FXSplitter::onFocusUp(FXObject*,FXSelector,void* ptr){
 
 // Focus moved down
 long FXSplitter::onFocusDown(FXObject*,FXSelector,void* ptr){
-  FXWindow *child;
-  if(options&SPLITTER_VERTICAL){
-    if(getFocus())
-      child=getFocus()->getNext();
-    else
-      child=getFirst();
-    while(child){
-      if(child->shown()){
-        if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
-        if(child->handle(this,FXSEL(SEL_FOCUS_DOWN,0),ptr)) return 1;
-        }
-      child=child->getNext();
+  FXWindow *child=getFirst();
+  if(getFocus()){
+    if(getFocus()->handle(this,FXSEL(SEL_FOCUS_DOWN,0),ptr)) return 1;
+    if(!(options&SPLITTER_VERTICAL)) return 0;
+    child=getFocus()->getNext();
+    }
+  while(child){
+    if(child->shown()){
+      if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
+      if(child->handle(this,FXSEL(SEL_FOCUS_DOWN,0),ptr)) return 1;
       }
+    child=child->getNext();
     }
   return 0;
   }
@@ -625,19 +623,18 @@ long FXSplitter::onFocusDown(FXObject*,FXSelector,void* ptr){
 
 // Focus moved to left
 long FXSplitter::onFocusLeft(FXObject*,FXSelector,void* ptr){
-  FXWindow *child;
-  if(!(options&SPLITTER_VERTICAL)){
-    if(getFocus())
-      child=getFocus()->getPrev();
-    else
-      child=getLast();
-    while(child){
-      if(child->shown()){
-        if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
-        if(child->handle(this,FXSEL(SEL_FOCUS_LEFT,0),ptr)) return 1;
-        }
-      child=child->getPrev();
+  FXWindow *child=getLast();
+  if(getFocus()){
+    if(getFocus()->handle(this,FXSEL(SEL_FOCUS_LEFT,0),ptr)) return 1;
+    if(options&SPLITTER_VERTICAL) return 0;
+    child=getFocus()->getPrev();
+    }
+  while(child){
+    if(child->shown()){
+      if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
+      if(child->handle(this,FXSEL(SEL_FOCUS_LEFT,0),ptr)) return 1;
       }
+    child=child->getPrev();
     }
   return 0;
   }
@@ -645,19 +642,18 @@ long FXSplitter::onFocusLeft(FXObject*,FXSelector,void* ptr){
 
 // Focus moved to right
 long FXSplitter::onFocusRight(FXObject*,FXSelector,void* ptr){
-  FXWindow *child;
-  if(!(options&SPLITTER_VERTICAL)){
-    if(getFocus())
-      child=getFocus()->getNext();
-    else
-      child=getFirst();
-    while(child){
-      if(child->shown()){
-        if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
-        if(child->handle(this,FXSEL(SEL_FOCUS_RIGHT,0),ptr)) return 1;
-        }
-      child=child->getNext();
+  FXWindow *child=getFirst();
+  if(getFocus()){
+    if(getFocus()->handle(this,FXSEL(SEL_FOCUS_RIGHT,0),ptr)) return 1;
+    if(options&SPLITTER_VERTICAL) return 0;
+    child=getFocus()->getNext();
+    }
+  while(child){
+    if(child->shown()){
+      if(child->handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr)) return 1;
+      if(child->handle(this,FXSEL(SEL_FOCUS_RIGHT,0),ptr)) return 1;
       }
+    child=child->getNext();
     }
   return 0;
   }

@@ -3,7 +3,7 @@
 *                        M e n u   P a n e   W i d g e t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuPane.cpp,v 1.19 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXMenuPane.cpp,v 1.23 2006/01/22 17:58:36 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -46,7 +46,7 @@
   - Should FXPopup still exist?
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -67,14 +67,14 @@ FXMenuPane::FXMenuPane(FXWindow* owner,FXuint opts):
 // Cursor is considered inside when it's in this window, or in any subwindow
 // that's open; we'll find the latter through the cascade menu, by asking it for
 // it's popup window.
-FXbool FXMenuPane::contains(FXint parentx,FXint parenty) const {
+bool FXMenuPane::contains(FXint parentx,FXint parenty) const {
   FXint x,y;
-  if(FXPopup::contains(parentx,parenty)) return 1;
+  if(FXPopup::contains(parentx,parenty)) return true;
   if(getFocus()){
     getParent()->translateCoordinatesTo(x,y,this,parentx,parenty);
-    if(getFocus()->contains(x,y)) return 1;
+    if(getFocus()->contains(x,y)) return true;
     }
-  return 0;
+  return false;
   }
 
 }

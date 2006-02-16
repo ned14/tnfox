@@ -3,7 +3,7 @@
 *             S U N   R A S T E R   I M A G E   I n p u t / O u t p u t         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxrasio.cpp,v 1.13 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: fxrasio.cpp,v 1.16 2006/01/22 17:58:54 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -162,13 +162,11 @@ const FXint RT_OLD          = 0;        // Raster types
 const FXint RT_STANDARD     = 1;
 const FXint RT_BYTE_ENCODED = 2;
 const FXint RT_FORMAT_RGB   = 3;        // [X]RGB instead of [X]BGR
-const FXint RT_EXPERIMENTAL = 0xffff;
 
 const FXint RMT_NONE      = 0;          // Map type
 const FXint RMT_EQUAL_RGB = 1;
 const FXint RMT_RAW       = 2;
 
-const FXint RAS_RLE = 0x80;             // Run length encoding
 
 
 struct HEADER {                         // File header
@@ -183,9 +181,9 @@ struct HEADER {                         // File header
   };
 
 
-extern FXAPI FXbool fxcheckRAS(FXStream& store);
-extern FXAPI FXbool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height);
-extern FXAPI FXbool fxsaveRAS(FXStream& store,const FXColor *data,FXint width,FXint height);
+extern FXAPI bool fxcheckRAS(FXStream& store);
+extern FXAPI bool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxsaveRAS(FXStream& store,const FXColor *data,FXint width,FXint height);
 
 
 // Read in MSB order
@@ -197,7 +195,7 @@ static inline FXuint read32(FXStream& store){
 
 
 // Check if stream contains a RAS
-FXbool fxcheckRAS(FXStream& store){
+bool fxcheckRAS(FXStream& store){
   FXint signature;
   signature=read32(store);
   store.position(-4,FXFromCurrent);
@@ -206,7 +204,7 @@ FXbool fxcheckRAS(FXStream& store){
 
 
 // Load SUN raster image file format
-FXbool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
+bool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   FXuchar red[256],green[256],blue[256],*line,count,c,*p,*q,bit;
   register FXint npixels,depth,linesize,x,y,i;
   HEADER header;
@@ -230,22 +228,22 @@ FXbool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   FXTRACE((1,"fxloadRAS: magic=%08x width=%d height=%d depth=%d length=%d type=%d maptype=%d maplength=%d\n",header.magic,header.width,header.height,header.depth,header.length,header.type,header.maptype,header.maplength));
 
   // Check magic code
-  if(header.magic!=RAS_MAGIC) return FALSE;
+  if(header.magic!=RAS_MAGIC) return false;
 
   // Trivial reject
-  if(header.width<1 || header.height<1) return FALSE;
+  if(header.width<1 || header.height<1) return false;
 
   // Bad colormap size
-  if(header.maplength<0 || header.maplength>768) return FALSE;
+  if(header.maplength<0 || header.maplength>768) return false;
 
   // Verify depth options; must be 1,8,24, or 32
-  if(header.depth!=1 && header.depth!=8 && header.depth!=24 && header.depth!=32) return FALSE;
+  if(header.depth!=1 && header.depth!=8 && header.depth!=24 && header.depth!=32) return false;
 
   // Verify supported types
-  if(header.type!=RT_OLD && header.type!=RT_STANDARD && header.type!=RT_BYTE_ENCODED && header.type!=RT_FORMAT_RGB) return FALSE;
+  if(header.type!=RT_OLD && header.type!=RT_STANDARD && header.type!=RT_BYTE_ENCODED && header.type!=RT_FORMAT_RGB) return false;
 
   // Verify map types
-  if(header.maptype!=RMT_RAW && header.maptype!=RMT_NONE && header.maptype!=RMT_EQUAL_RGB) return FALSE;
+  if(header.maptype!=RMT_RAW && header.maptype!=RMT_NONE && header.maptype!=RMT_EQUAL_RGB) return false;
 
   // Get size
   width=header.width;
@@ -286,10 +284,10 @@ FXbool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
     }
 
   // Allocate pixel data
-  if(!FXMALLOC(&data,FXColor,npixels)) return FALSE;
+  if(!FXMALLOC(&data,FXColor,npixels)) return false;
 
   // Allocate scanline
-  if(!FXMALLOC(&line,FXuchar,linesize)){ FXFREE(&data); return FALSE; }
+  if(!FXMALLOC(&line,FXuchar,linesize)){ FXFREE(&data); return false; }
 
   // Now read the image
   for(y=0,p=(FXuchar*)data,count=c=0; y<height; y++){
@@ -378,7 +376,7 @@ FXbool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   // Release temporary stuff
   FXFREE(&line);
 
-  return TRUE;
+  return true;
   }
 
 
@@ -399,11 +397,11 @@ static inline void write32(FXStream& store,FXuint i){
 
 
 // Save SUN raster image file format
-FXbool fxsaveRAS(FXStream& store,const FXColor *data,FXint width,FXint height){
+bool fxsaveRAS(FXStream& store,const FXColor *data,FXint width,FXint height){
   register FXint npixels=width*height;
 
   // Must make sense
-  if(!data || width<=0 || height<=0) return FALSE;
+  if(!data || width<=0 || height<=0) return false;
 
   // Write header
   write32(store,RAS_MAGIC);
@@ -418,7 +416,7 @@ FXbool fxsaveRAS(FXStream& store,const FXColor *data,FXint width,FXint height){
   // No RLE, or any other attempt to reduce size; sorry!
   store.save(data,npixels);
 
-  return TRUE;
+  return true;
   }
 
 

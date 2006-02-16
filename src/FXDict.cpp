@@ -3,7 +3,7 @@
 *                          D i c t i o n a r y    C l a s s                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDict.cpp,v 1.28 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXDict.cpp,v 1.33 2006/01/22 17:58:22 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -58,7 +58,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #define HASH1(x,n) (((unsigned int)(x))%(n))              // Probe Position [0..n-1]
 #define HASH2(x,n) (1|(((unsigned int)(x)*17)%((n)-1)))   // Probe Distance [1..n-2]
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -66,7 +66,7 @@ namespace FX {
 
 
 // Hash function for string
-static inline FXint strhash(const FXchar* str){
+FXint FXDict::hash(const FXchar* str){
   register const FXuchar *s=(const FXuchar*)str;
   register FXint h=0;
   register FXint c;
@@ -83,10 +83,64 @@ FXIMPLEMENT(FXDict,FXObject,NULL,0)
 
 // Construct empty dictionary
 FXDict::FXDict(){
-  FXCALLOC(&dict,FXDictEntry,DEF_HASH_SIZE);
-  for(FXuint i=0; i<DEF_HASH_SIZE; i++) dict[i].hash=-1;
+  register FXint i;
+  FXMALLOC(&dict,FXDictEntry,DEF_HASH_SIZE);
+  for(i=0; i<DEF_HASH_SIZE; i++){
+    dict[i].key=NULL;
+    dict[i].data=NULL;
+    dict[i].hash=-1;
+    dict[i].mark=false;
+    }
   total=DEF_HASH_SIZE;
   number=0;
+  }
+
+
+// Copy constructor
+FXDict::FXDict(const FXDict& orig):FXObject(orig){
+  register FXint i;
+  FXMALLOC(&dict,FXDictEntry,orig.total);
+  for(i=0; i<orig.total; i++){
+    if(0<=orig.dict[i].hash){
+      dict[i].key=strdup(orig.dict[i].key);
+      dict[i].data=orig.dict[i].data;
+      dict[i].hash=orig.dict[i].hash;
+      dict[i].mark=orig.dict[i].mark;
+      continue;
+      }
+    dict[i].key=NULL;
+    dict[i].data=NULL;
+    dict[i].hash=-1;
+    dict[i].mark=false;
+    }
+  total=orig.total;
+  number=orig.number;
+  }
+
+
+// Assignment operator
+FXDict& FXDict::operator=(const FXDict& orig){
+  register FXint i;
+  if(&orig!=this){
+    clear();
+    FXRESIZE(&dict,FXDictEntry,orig.total);
+    for(i=0; i<orig.total; i++){
+      if(0<=orig.dict[i].hash){
+        dict[i].key=strdup(orig.dict[i].key);
+        dict[i].data=orig.dict[i].data;
+        dict[i].hash=orig.dict[i].hash;
+        dict[i].mark=orig.dict[i].mark;
+        continue;
+        }
+      dict[i].key=NULL;
+      dict[i].data=NULL;
+      dict[i].hash=-1;
+      dict[i].mark=false;
+      }
+    total=orig.total;
+    number=orig.number;
+    }
+  return *this;
   }
 
 
@@ -134,12 +188,12 @@ void FXDict::size(FXint m){
 
 
 // Insert a new entry, leave it alone if already existing
-void* FXDict::insert(const FXchar* ky,const void* pdata,FXbool mrk){
+void* FXDict::insert(const FXchar* ky,const void* pdata,bool mrk){
   register FXint p,i,x,h,n;
   register void *ptr;
   if(!ky){ fxerror("FXDict::insert: NULL key argument.\n"); }
   FXASSERT(number<total);
-  h=strhash(ky);
+  h=hash(ky);
   FXASSERT(0<=h);
   p=HASH1(h,total);
   FXASSERT(0<=p && p<total);
@@ -172,12 +226,12 @@ void* FXDict::insert(const FXchar* ky,const void* pdata,FXbool mrk){
 
 
 // Add or replace entry
-void* FXDict::replace(const FXchar* ky,const void* pdata,FXbool mrk){
+void* FXDict::replace(const FXchar* ky,const void* pdata,bool mrk){
   register FXint p,i,x,h,n;
   register void *ptr;
   if(!ky){ fxerror("FXDict::replace: NULL key argument.\n"); }
   FXASSERT(number<total);
-  h=strhash(ky);
+  h=hash(ky);
   FXASSERT(0<=h);
   p=HASH1(h,total);
   FXASSERT(0<=p && p<total);
@@ -220,7 +274,7 @@ void* FXDict::remove(const FXchar* ky){
   register FXint p,x,h,n;
   if(!ky){ fxerror("FXDict::remove: NULL key argument.\n"); }
   if(0<number){
-    h=strhash(ky);
+    h=hash(ky);
     FXASSERT(0<=h);
     p=HASH1(h,total);
     FXASSERT(0<=p && p<total);
@@ -232,7 +286,7 @@ void* FXDict::remove(const FXchar* ky){
       if(dict[p].hash==h && strcmp(dict[p].key,ky)==0){
         FXTRACE((120,"FXDict::remove: %p removing: \"%s\"\n",this,ky));
         dict[p].hash=-2;
-        dict[p].mark=FALSE;
+        dict[p].mark=false;
         free(dict[p].key);
         deleteData(dict[p].data);
         dict[p].key=NULL;
@@ -255,7 +309,7 @@ void* FXDict::find(const FXchar* ky) const {
   register FXint p,x,h,n;
   if(!ky){ fxerror("FXDict::find: NULL key argument.\n"); }
   if(0<number){
-    h=strhash(ky);
+    h=hash(ky);
     FXASSERT(0<=h);
     p=HASH1(h,total);
     FXASSERT(0<=p && p<total);

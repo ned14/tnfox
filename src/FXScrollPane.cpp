@@ -3,7 +3,7 @@
 *               S c r o l l i n g   M e n u   P a n e   W i d g e t             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollPane.cpp,v 1.17 2005/01/16 16:06:07 fox Exp $                    *
+* $Id: FXScrollPane.cpp,v 1.21 2006/01/22 17:58:41 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -45,9 +45,11 @@
 /*
   Notes:
   - Should we reset the topmost item each time it is shown?
+  - Don't disable arrows since not catching the event means
+    it gets passed to the grab owner [at least on Windows].
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -55,9 +57,7 @@ namespace FX {
 
 // Map
 FXDEFMAP(FXScrollPane) FXScrollPaneMap[]={
-  FXMAPFUNC(SEL_UPDATE,FXScrollPane::ID_SCROLL_DN,FXScrollPane::onUpdIncrement),
   FXMAPFUNC(SEL_COMMAND,FXScrollPane::ID_SCROLL_DN,FXScrollPane::onCmdIncrement),
-  FXMAPFUNC(SEL_UPDATE,FXScrollPane::ID_SCROLL_UP,FXScrollPane::onUpdDecrement),
   FXMAPFUNC(SEL_COMMAND,FXScrollPane::ID_SCROLL_UP,FXScrollPane::onCmdDecrement),
   };
 
@@ -262,23 +262,9 @@ void FXScrollPane::layout(){
   }
 
 
-// Gray out scroll up arrow
-long FXScrollPane::onUpdIncrement(FXObject*,FXSelector,void*){
-  if(top>=numChildren()-visible-2) dn->disable(); else dn->enable();
-  return 1;
-  }
-
-
 // Scroll contents up
 long FXScrollPane::onCmdIncrement(FXObject*,FXSelector,void*){
   setTopItem(top+1);
-  return 1;
-  }
-
-
-// Gray out scroll down arrow
-long FXScrollPane::onUpdDecrement(FXObject*,FXSelector,void*){
-  if(top<=0) up->disable(); else up->enable();
   return 1;
   }
 
@@ -287,6 +273,16 @@ long FXScrollPane::onUpdDecrement(FXObject*,FXSelector,void*){
 long FXScrollPane::onCmdDecrement(FXObject*,FXSelector,void*){
   setTopItem(top-1);
   return 1;
+  }
+
+
+// List is multiple of nitems
+void FXScrollPane::setNumVisible(FXint nvis){
+  if(nvis<0) nvis=0;
+  if(visible!=nvis){
+    visible=nvis;
+    setTopItem(top);                    // FIXME is this enough?
+    }
   }
 
 

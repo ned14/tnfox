@@ -3,7 +3,7 @@
 *                         M e n u C a p t i o n   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCaption.h,v 1.30 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXMenuCaption.h,v 1.33 2006/01/22 17:58:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXMENUCAPTION_H
 #define FXMENUCAPTION_H
@@ -51,6 +51,7 @@ class FXAPI FXMenuCaption : public FXWindow {
 protected:
   FXString     label;
   FXString     help;
+  FXString     tip;
   FXIcon      *icon;
   FXFont      *font;
   FXint        hotoff;
@@ -74,7 +75,10 @@ public:
   long onCmdGetIconValue(FXObject*,FXSelector,void*);
   long onCmdSetHelp(FXObject*,FXSelector,void*);
   long onCmdGetHelp(FXObject*,FXSelector,void*);
+  long onCmdSetTip(FXObject*,FXSelector,void*);
+  long onCmdGetTip(FXObject*,FXSelector,void*);
   long onQueryHelp(FXObject*,FXSelector,void*);
+  long onQueryTip(FXObject*,FXSelector,void*);
 public:
 
   /// Construct a menu caption
@@ -122,23 +126,23 @@ public:
   /// Get menu caption style
   FXuint getMenuStyle() const;
 
-  /// Get the current text color
-  FXColor getTextColor() const { return textColor; }
-
   /// Return the current text color
   void setTextColor(FXColor clr);
 
-  /// Return the selection background color
-  FXColor getSelBackColor() const { return selbackColor; }
+  /// Get the current text color
+  FXColor getTextColor() const { return textColor; }
 
   /// Return the selection background color
   void setSelBackColor(FXColor clr);
 
-  /// Return the selection text color
-  FXColor getSelTextColor() const { return seltextColor; }
+  /// Return the selection background color
+  FXColor getSelBackColor() const { return selbackColor; }
 
   /// Return the selection text color
   void setSelTextColor(FXColor clr);
+
+  /// Return the selection text color
+  FXColor getSelTextColor() const { return seltextColor; }
 
   /// Change highlight color
   void setHiliteColor(FXColor clr);
@@ -157,6 +161,12 @@ public:
 
   /// Get the status line help text for this menu
   const FXString& getHelpText() const { return help; }
+
+  /// Set the tool tip message for this menu
+  void setTipText(const FXString& text){ tip=text; }
+
+  /// Get the tool tip message for this menu
+  const FXString& getTipText() const { return tip; }
 
   /// Save menu to a stream
   virtual void save(FXStream& store) const;

@@ -3,7 +3,7 @@
 *                 R e g u l a r   E x p r e s s i o n   C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRex.h,v 1.49 2005/01/16 16:06:06 fox Exp $                             *
+* $Id: FXRex.h,v 1.53 2006/01/22 17:58:09 fox Exp $                             *
 ********************************************************************************/
 #ifndef FXREX_H
 #define FXREX_H
@@ -125,7 +125,7 @@ public:
   * will be empty when it is unable to parse a pattern due to
   * a syntax error.
   */
-  FXbool empty() const { return (code==fallback); }
+  bool empty() const { return (code==fallback); }
 
   /// Parse pattern, return error code if syntax error is found
   FXRexError parse(const FXchar* pattern,FXint mode=REX_NORMAL);
@@ -140,10 +140,10 @@ public:
   * refers to the position after the last matched character.
   * Sub expressions from capturing parenthesis i are returned in beg[i] and end[i].
   */
-  FXbool match(const FXchar* string,FXint len,FXint* beg=NULL,FXint* end=NULL,FXint mode=REX_FORWARD,FXint npar=1,FXint fm=0,FXint to=2147483647) const;
+  bool match(const FXchar* string,FXint len,FXint* beg=NULL,FXint* end=NULL,FXint mode=REX_FORWARD,FXint npar=1,FXint fm=0,FXint to=2147483647) const;
 
   /// Search for match in a string
-  FXbool match(const FXString& string,FXint* beg=NULL,FXint* end=NULL,FXint mode=REX_FORWARD,FXint npar=1,FXint fm=0,FXint to=2147483647) const;
+  bool match(const FXString& string,FXint* beg=NULL,FXint* end=NULL,FXint mode=REX_FORWARD,FXint npar=1,FXint fm=0,FXint to=2147483647) const;
 
   /**
   * After performing a regular expression match with capturing parentheses,
@@ -161,8 +161,8 @@ public:
   static const FXchar* getError(FXRexError err){ return errors[err]; }
 
   /// Comparison operators
-  friend FXAPI FXbool operator==(const FXRex &r1,const FXRex &r2);
-  friend FXAPI FXbool operator!=(const FXRex &r1,const FXRex &r2);
+  bool operator==(const FXRex& rex) const;
+  bool operator!=(const FXRex& rex) const;
 
   /// Saving and loading
   friend FXAPI FXStream& operator<<(FXStream& store,const FXRex& s);
@@ -172,7 +172,10 @@ public:
  ~FXRex();
   };
 
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXRex& s);
+extern FXAPI FXStream& operator>>(FXStream& store,FXRex& s);
+
 }
 
 #endif
-

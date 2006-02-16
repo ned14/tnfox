@@ -3,7 +3,7 @@
 *                            V i s u a l   C l a s s                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVisual.cpp,v 1.73.2.1 2005/02/12 06:46:19 fox Exp $                        *
+* $Id: FXVisual.cpp,v 1.79 2006/01/22 17:58:51 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -100,7 +100,7 @@
 #define MAX_MAPSIZE 256
 #endif
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -122,14 +122,12 @@ FXVisual::FXVisual(){
   maxcolors=1000000;
   type=VISUALTYPE_UNKNOWN;
   info=NULL;
+  visual=NULL;
   colormap=0;
   freemap=FALSE;
 #ifndef WIN32
-  visual=NULL;
   gc=0;
   scrollgc=0;
-#else
-  pixelformat=0;
 #endif
   }
 
@@ -147,14 +145,13 @@ FXVisual::FXVisual(FXApp* a,FXuint flgs,FXuint d):FXId(a){
   maxcolors=1000000;
   type=VISUALTYPE_UNKNOWN;
   info=NULL;
+  visual=NULL;
   colormap=0;
   freemap=FALSE;
 #ifndef WIN32
   visual=NULL;
   gc=0;
   scrollgc=0;
-#else
-  pixelformat=0;
 #endif
   }
 
@@ -257,7 +254,7 @@ void FXVisual::setupdirectcolor(){
   register FXuint  redshift,greenshift,blueshift;
   register FXPixel redmask,greenmask,bluemask;
   register FXPixel redmax,greenmax,bluemax;
-  register FXuint  mapsize,maxcols,i,j,r,g,b,emax,rr,gg,bb,rm,gm,bm,d;
+  register FXuint  mapsize,maxcols,i,j,r,g,b,emax,rr,gg,bb,d;
   register FXuint  bestmatchr,bestmatchg,bestmatchb;
   register FXdouble mindist,dist,gamma;
   register FXbool gottable,allocedcolor;
@@ -280,10 +277,6 @@ void FXVisual::setupdirectcolor(){
   redmax=redmask>>redshift;
   greenmax=greenmask>>greenshift;
   bluemax=bluemask>>blueshift;
-
-  rm=redmax;
-  gm=greenmax;
-  bm=bluemax;
 
   // Maximum number of colors to allocate
   maxcols=FXMIN(maxcolors,mapsize);

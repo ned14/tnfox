@@ -3,7 +3,7 @@
 *                               H e a d e r   O b j e c t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.cpp,v 1.94.2.1 2005/02/22 23:17:37 fox Exp $                        *
+* $Id: FXHeader.cpp,v 1.103 2006/01/22 17:58:31 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXObjectList.h"
@@ -62,7 +62,7 @@
 #define ICON_SPACING  4
 #define HEADER_MASK   (HEADER_BUTTON|HEADER_TRACKING|HEADER_VERTICAL|HEADER_RESIZE)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -559,6 +559,34 @@ FXint FXHeader::fillItems(const FXString& strings,FXIcon *icon,FXint size,void* 
   }
 
 
+// Extract node from list
+FXHeaderItem* FXHeader::extractItem(FXint index,FXbool notify){
+  register FXHeaderItem *result;
+  register FXint i,d;
+
+  // Must be in range
+  if(index<0 || items.no()<=index){ fxerror("%s::extractItem: index out of range.\n",getClassName()); }
+
+  // Notify item will be deleted
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+
+  // Adjust remaining columns
+  for(i=index+1,d=items[index]->getSize(); i<items.no(); i++) items[i]->setPos(items[i]->getPos()-d);
+
+  // Delete item
+  result=items[index];
+
+  // Remove item from list
+  items.erase(index);
+
+  // Redo layout
+  recalc();
+
+  // Return item
+  return result;
+  }
+
+
 // Remove node from list
 void FXHeader::removeItem(FXint index,FXbool notify){
   register FXint i,d;
@@ -576,7 +604,7 @@ void FXHeader::removeItem(FXint index,FXbool notify){
   delete items[index];
 
   // Remove item from list
-  items.remove(index);
+  items.erase(index);
 
   // Redo layout
   recalc();
@@ -827,7 +855,7 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
         if(0<y){
           if(options&FRAME_THICK)
             drawDoubleRaisedRectangle(dc,0,0,width,y);
-          else
+          else if(options&FRAME_RAISED)
             drawRaisedRectangle(dc,0,0,width,y);
           }
         ilo=0;
@@ -839,7 +867,7 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
         if(y<height){
           if(options&FRAME_THICK)
             drawDoubleRaisedRectangle(dc,0,y,width,height-y);
-          else
+          else if(options&FRAME_RAISED)
             drawRaisedRectangle(dc,0,y,width,height-y);
           }
         ihi=items.no()-1;
@@ -852,13 +880,13 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
         if(items[i]->isPressed()){
           if(options&FRAME_THICK)
             drawDoubleSunkenRectangle(dc,0,y,width,h);
-          else
+          else if(options&FRAME_RAISED)
             drawSunkenRectangle(dc,0,y,width,h);
           }
         else{
           if(options&FRAME_THICK)
             drawDoubleRaisedRectangle(dc,0,y,width,h);
-          else
+          else if(options&FRAME_RAISED)
             drawRaisedRectangle(dc,0,y,width,h);
           }
         items[i]->draw(this,dc,0,y,width,h);
@@ -876,7 +904,7 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
         if(0<x){
           if(options&FRAME_THICK)
             drawDoubleRaisedRectangle(dc,0,0,x,height);
-          else
+          else if(options&FRAME_RAISED)
             drawRaisedRectangle(dc,0,0,x,height);
           }
         ilo=0;
@@ -888,7 +916,7 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
         if(x<width){
           if(options&FRAME_THICK)
             drawDoubleRaisedRectangle(dc,x,0,width-x,height);
-          else
+          else if(options&FRAME_RAISED)
             drawRaisedRectangle(dc,x,0,width-x,height);
           }
         ihi=items.no()-1;
@@ -901,13 +929,13 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
         if(items[i]->isPressed()){
           if(options&FRAME_THICK)
             drawDoubleSunkenRectangle(dc,x,0,w,height);
-          else
+          else if(options&FRAME_RAISED)
             drawSunkenRectangle(dc,x,0,w,height);
           }
         else{
           if(options&FRAME_THICK)
             drawDoubleRaisedRectangle(dc,x,0,w,height);
-          else
+          else if(options&FRAME_RAISED)
             drawRaisedRectangle(dc,x,0,w,height);
           }
         items[i]->draw(this,dc,x,0,w,height);

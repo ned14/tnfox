@@ -3,7 +3,7 @@
 *                  U n d o / R e d o - a b l e   C o m m a n d                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXUndoList.cpp,v 1.52.2.1 2005/03/17 05:04:45 fox Exp $                      *
+* $Id: FXUndoList.cpp,v 1.57 2006/01/22 17:58:50 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -74,7 +74,7 @@
 
   - Because we may need to know during execution of a command whether this
     was due to undoing or directly issued by the user, we keep a flag "working"
-    which is TRUE during a undo or redo operation.
+    which is true during a undo or redo operation.
 
   - Command groups are collections of smaller undo/redo records which are
     executed as a unit, so that large operations may be broken up into
@@ -92,7 +92,7 @@
 
 #define NOMARK 2147483647       // No mark is set
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -112,11 +112,11 @@ FXString FXCommand::redoName() const { return "Redo"; }
 
 
 // Allow merging is false by default
-FXbool FXCommand::canMerge() const { return FALSE; }
+bool FXCommand::canMerge() const { return false; }
 
 
 // Don't merge by default
-FXbool FXCommand::mergeWith(FXCommand*){ return FALSE; }
+bool FXCommand::mergeWith(FXCommand*){ return false; }
 
 
 // Default returns size of undo record itself
@@ -218,7 +218,7 @@ FXUndoList::FXUndoList(){
   redocount=0;
   marker=NOMARK;
   space=0;
-  working=FALSE;
+  working=false;
   }
 
 
@@ -235,7 +235,7 @@ void FXUndoList::unmark(){
 
 
 // Check if marked
-FXbool FXUndoList::marked() const {
+bool FXUndoList::marked() const {
   return (group==NULL) && (marker==0);
   }
 
@@ -256,7 +256,7 @@ void FXUndoList::cut(){
 
 
 // Add new command, executing if desired
-void FXUndoList::add(FXCommand* command,FXbool doit,FXbool merge){
+void FXUndoList::add(FXCommand* command,bool doit,bool merge){
   register FXCommandGroup* g=this;
   register FXuint size=0;
 
@@ -266,7 +266,7 @@ void FXUndoList::add(FXCommand* command,FXbool doit,FXbool merge){
   // Adding undo while in the middle of doing something!
   if(working){ fxerror("FXCommandGroup::add: already working on undo or redo.\n"); }
 
-  working=TRUE;
+  working=true;
 
   // Cut redo list
   cut();
@@ -289,7 +289,7 @@ void FXUndoList::add(FXCommand* command,FXbool doit,FXbool merge){
       // Update space, which is the new size less the old size
       space+=g->undolist->size()-size;
       }
-      
+
     // Delete incoming command that was merged
     delete command;
     }
@@ -315,7 +315,7 @@ void FXUndoList::add(FXCommand* command,FXbool doit,FXbool merge){
 
   FXTRACE((100,"FXUndoList::add: space=%d undocount=%d marker=%d\n",space,undocount,marker));
 
-  working=FALSE;
+  working=false;
   }
 
 
@@ -370,7 +370,7 @@ void FXUndoList::end(){
 
       // Update space of completed command group
       space+=command->size();
-      
+
       // Update marker and undo counter
       if(marker!=NOMARK) marker++;
       undocount++;
@@ -412,7 +412,7 @@ void FXUndoList::undo(){
   register FXCommand *command;
   if(group){ fxerror("FXCommandGroup::undo: cannot call undo inside begin-end block.\n"); }
   if(undolist){
-    working=TRUE;
+    working=true;
     command=undolist;                   // Remove from undolist BEFORE undo
     undolist=undolist->next;
     space-=command->size();		// Measure BEFORE undo!
@@ -423,7 +423,7 @@ void FXUndoList::undo(){
     redocount++;
     if(marker!=NOMARK) marker--;
     FXTRACE((100,"FXUndoList::undo: space=%d undocount=%d redocount=%d marker=%d\n",space,undocount,redocount,marker));
-    working=FALSE;
+    working=false;
     }
   }
 
@@ -433,7 +433,7 @@ void FXUndoList::redo(){
   register FXCommand *command;
   if(group){ fxerror("FXCommandGroup::redo: cannot call undo inside begin-end block.\n"); }
   if(redolist){
-    working=TRUE;
+    working=true;
     command=redolist;                   // Remove from redolist BEFORE redo
     redolist=redolist->next;
     command->redo();
@@ -444,7 +444,7 @@ void FXUndoList::redo(){
     redocount--;
     if(marker!=NOMARK) marker++;
     FXTRACE((100,"FXUndoList::redo: space=%d undocount=%d redocount=%d marker=%d\n",space,undocount,redocount,marker));
-    working=FALSE;
+    working=false;
     }
   }
 
@@ -471,19 +471,19 @@ void FXUndoList::revert(){
 
 
 // Can we undo more commands
-FXbool FXUndoList::canUndo() const {
+bool FXUndoList::canUndo() const {
   return undolist!=NULL;
   }
 
 
 // Can we redo more commands
-FXbool FXUndoList::canRedo() const {
+bool FXUndoList::canRedo() const {
   return redolist!=NULL;
   }
 
 
 // Can revert to marked
-FXbool FXUndoList::canRevert() const {
+bool FXUndoList::canRevert() const {
   return marker!=NOMARK && marker!=0;
   }
 

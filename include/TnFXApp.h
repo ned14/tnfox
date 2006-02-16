@@ -165,7 +165,7 @@ public:
 	virtual void create();
 	virtual void destroy();
 	virtual void detach();
-	virtual void init(int& argc,char** argv,FXbool connect=TRUE);
+	virtual void init(int& argc,char** argv,bool connect=TRUE);
 	/*! Threadsafe way to immediately end the application. Closes down all
 	event loops and returns back into main() returning \em code */
 	virtual void exit(FXint code=0);

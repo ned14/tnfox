@@ -3,7 +3,7 @@
 *                   A c c e l e r a t o r   T a b l e   C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXAccelTable.h,v 1.21 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXAccelTable.h,v 1.27 2006/01/22 17:57:58 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXACCELTABLE_H
 #define FXACCELTABLE_H
@@ -69,10 +69,45 @@ public:
   void removeAccel(FXHotKey hotkey);
 
   /// Return true if accelerator specified
-  FXbool hasAccel(FXHotKey hotkey) const;
+  bool hasAccel(FXHotKey hotkey) const;
 
   /// Return target object of the given accelerator
   FXObject* targetOfAccel(FXHotKey hotkey) const;
+
+  /**
+  * Parse accelerator from string, yielding modifier and
+  * key code.  For example, parseAccel("Ctl+Shift+X")
+  * yields MKUINT(KEY_X,CONTROLMASK|SHIFTMASK).
+  */
+  friend FXAPI FXHotKey parseAccel(const FXString& string);
+
+  /**
+  * Unparse hot key comprising modifier and key code back
+  * into a string suitable for parsing with fxparseHotKey.
+  */
+  friend FXAPI FXString unparseAccel(FXHotKey key);
+
+  /**
+  * Parse hot key from string, yielding modifier and
+  * key code.  For example, parseHotKey(""Salt && &Pepper!"")
+  * yields MKUINT(KEY_p,ALTMASK).
+  */
+  friend FXAPI FXHotKey parseHotKey(const FXString& string);
+
+  /**
+  * Obtain hot key offset in string, or -1 if not found.
+  * For example, findHotKey("Salt && &Pepper!") yields 7.
+  * Note that this is the byte-offset, not the character
+  * index!
+  */
+  friend FXAPI FXint findHotKey(const FXString& string);
+
+  /**
+  * Strip hot key combination from the string.
+  * For example, stripHotKey("Salt && &Pepper") should
+  * yield "Salt & Pepper".
+  */
+  friend FXAPI FXString stripHotKey(const FXString& string);
 
   /// Save table to a stream
   virtual void save(FXStream& store) const;
@@ -84,6 +119,12 @@ public:
   virtual ~FXAccelTable();
   };
 
+
+extern FXAPI FXHotKey parseAccel(const FXString& string);
+extern FXAPI FXString unparseAccel(FXHotKey key);
+extern FXAPI FXHotKey parseHotKey(const FXString& string);
+extern FXAPI FXint findHotKey(const FXString& string);
+extern FXAPI FXString stripHotKey(const FXString& string);
 
 }
 

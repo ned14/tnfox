@@ -3,7 +3,7 @@
 *                  S t r i n g   D i c t i o n a r y    C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDict.h,v 1.20 2005/01/16 16:06:06 fox Exp $                            *
+* $Id: FXDict.h,v 1.26 2006/01/22 17:58:00 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXDICT_H
 #define FXDICT_H
@@ -45,12 +45,14 @@ protected:
     FXchar *key;              // Key string
     void   *data;             // Data
     FXint   hash;             // Hash value of key
-    FXbool  mark;             // Entry is marked
+    bool    mark;             // Entry is marked
     };
 protected:
   FXDictEntry *dict;          // Dictionary
   FXint        total;         // Dictionary size
   FXint        number;        // Number of entries
+protected:
+  static FXint hash(const FXchar* str);
 protected:
 
   /**
@@ -66,9 +68,6 @@ protected:
   * does nothing.
   */
   virtual void deleteData(void*);
-private:
-  FXDict(const FXDict&);
-  FXDict &operator=(const FXDict&);
 public:
 
   /**
@@ -76,15 +75,21 @@ public:
   */
   FXDict();
 
-  /**
-  * Return the size of the table, including the empty slots.
-  */
-  FXint size() const { return total; }
+  /// Copy constructor; does bit-copy of void pointer data.
+  FXDict(const FXDict& orig);
+
+  /// Assignment operator
+  FXDict& operator=(const FXDict& orig);
 
   /**
   * Resize the table to the given size.
   */
   void size(FXint m);
+
+  /**
+  * Return the size of the table, including the empty slots.
+  */
+  FXint size() const { return total; }
 
   /**
   * Return the total number of entries in the table.
@@ -96,14 +101,14 @@ public:
   * If there is already an entry with that key, leave it unchanged,
   * otherwise insert the new entry.
   */
-  void* insert(const FXchar* ky,const void* ptr,FXbool mrk=FALSE);
+  void* insert(const FXchar* ky,const void* ptr,bool mrk=false);
 
   /**
   * Replace data at key, if the entry's mark is less than
   * or equal to the given mark.  If there was no existing entry,
   * a new entry is inserted with the given mark.
   */
-  void* replace(const FXchar* ky,const void* ptr,FXbool mrk=FALSE);
+  void* replace(const FXchar* ky,const void* ptr,bool mrk=false);
 
   /**
   * Remove data given key.
@@ -114,6 +119,11 @@ public:
   * Find data pointer given key.
   */
   void* find(const FXchar* ky) const;
+
+  /**
+  * Return true if slot is empty.
+  */
+  bool empty(FXint pos) const { return dict[pos].hash<0; }
 
   /**
   * Return key at position pos.
@@ -128,7 +138,7 @@ public:
   /**
   * Return mark flag of entry at position pos.
   */
-  FXbool mark(FXuint pos) const { return dict[pos].mark; }
+  bool mark(FXuint pos) const { return dict[pos].mark; }
 
   /**
   * Return position of first filled slot, or >= total
@@ -164,4 +174,3 @@ public:
 }
 
 #endif
-

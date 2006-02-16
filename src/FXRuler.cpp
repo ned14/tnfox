@@ -3,7 +3,7 @@
 *                            R u l e r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRuler.cpp,v 1.44 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXRuler.cpp,v 1.55 2006/01/28 20:29:30 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -164,9 +164,13 @@
 #define DOCUMENTSIZE    600     // Default document size (8.5in x 100dpi)
 #define FUDGE           2       // Fudge proximity
 
-#define RULER_MASK      (RULER_HORIZONTAL|RULER_VERTICAL|RULER_TICKS_TOP|RULER_TICKS_BOTTOM|RULER_NUMBERS|RULER_ARROW|RULER_MARKERS|RULER_METRIC|RULER_ENGLISH)
+// Ruler style bits
+#define RULER_MASK       (RULER_HORIZONTAL|RULER_VERTICAL|RULER_TICKS_TOP|RULER_TICKS_BOTTOM|RULER_NUMBERS|RULER_ARROW|RULER_MARKERS|RULER_METRIC|RULER_ENGLISH|RULER_MARGIN_ADJUST)
 
+// Ruler alignment bits
+#define RULER_ALIGN_MASK (RULER_ALIGN_CENTER|RULER_ALIGN_LEFT|RULER_ALIGN_RIGHT|RULER_ALIGN_STRETCH)
 
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -207,11 +211,12 @@ FXRuler::FXRuler(){
   indentLower=0;
   indentUpper=0;
   textColor=0;
-  arrowPos=EDGESPACING;
+  arrowPos=0;
   pixelPerTick=10.0;
   majorTicks=10;
   mediumTicks=5;
   tinyTicks=1;
+  shift=0;
   pos=0;
   off=0;
   mode=MOUSE_NONE;
@@ -234,7 +239,7 @@ FXRuler::FXRuler(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x
   indentFirst=0;
   indentLower=0;
   indentUpper=0;
-  arrowPos=EDGESPACING;
+  arrowPos=0;
   pixelPerTick=10.0;
   if(options&RULER_ENGLISH){
     numberTicks=8;
@@ -248,6 +253,7 @@ FXRuler::FXRuler(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x
     mediumTicks=5;
     tinyTicks=1;
     }
+  shift=0;
   pos=0;
   off=0;
   mode=MOUSE_NONE;
@@ -268,6 +274,18 @@ void FXRuler::detach(){
   }
 
 
+// Get lower edge of document
+FXint FXRuler::getDocumentLower() const {
+  return shift+pos+edgeSpacing;
+  }
+
+
+// Get upper edge of document
+FXint FXRuler::getDocumentUpper() const {
+  return shift+pos+edgeSpacing+documentSize;
+  }
+
+
 // Get default width
 FXint FXRuler::getDefaultWidth(){
   FXint tw,th,w=0;
@@ -283,6 +301,9 @@ FXint FXRuler::getDefaultWidth(){
       else w=FXMAX(MAJORTICKSIZE,w);                            // Ticks centered
       }
     w+=4;
+    }
+  else{
+    // FIXME
     }
   return w+padleft+padright+(border<<1);
   }
@@ -304,7 +325,48 @@ FXint FXRuler::getDefaultHeight(){
       }
     h+=4;
     }
+  else{
+    // FIXME
+    }
   return h+padtop+padbottom+(border<<1);
+  }
+
+
+// Recalculate layout
+void FXRuler::layout(){
+  FXint space=(options&RULER_VERTICAL) ? height : width;
+
+  // Stretched
+  if((options&RULER_ALIGN_LEFT) && (options&RULER_ALIGN_RIGHT)){
+    shift=0;
+    setContentSize(space,TRUE);
+    }
+
+  // Left aligned
+  else if(options&RULER_ALIGN_LEFT){
+    shift=0;
+    }
+
+  // Right-aligned
+  else if(options&RULER_ALIGN_RIGHT){
+    shift=space-getContentSize();
+    }
+
+  // Centered
+  else{
+    shift=(space-getContentSize())>>1;
+    }
+
+  // Keep positive
+  if(shift<0) shift=0;
+
+  setValue(arrowPos);
+
+  // Redraw
+  update();
+
+  // Clean
+  flags&=~FLAG_DIRTY;
   }
 
 
@@ -540,7 +602,7 @@ long FXRuler::onPaint(FXObject*,FXSelector,void* ptr){
 
     // Document well size
     boxx=border+padleft;
-    boxy=pos+edgeSpacing+marginLower;
+    boxy=getDocumentLower()+marginLower;
     boxw=width-padleft-padright-border-border;
     boxh=documentSize-marginUpper-marginLower;
 
@@ -586,7 +648,7 @@ long FXRuler::onPaint(FXObject*,FXSelector,void* ptr){
 
             numeral='0'+(FXint)((FXABS(tick)/majorTicks)%10);
 
-            tw=font->getTextWidth(&numeral,1)>>1;
+            tw=font->getTextWidth(&numeral,1);
 
             if((options&RULER_TICKS_LEFT)&&(options&RULER_TICKS_RIGHT)){
               dc.drawText(boxx+((boxw-tw)>>1),p+(th>>1),&numeral,1);
@@ -645,9 +707,9 @@ long FXRuler::onPaint(FXObject*,FXSelector,void* ptr){
     if(options&RULER_ARROW){
       dc.setForeground(textColor);
       if(options&RULER_TICKS_RIGHT)                     // Ticks on right or center
-        drawRightArrow(dc,boxx+boxw-3,arrowPos);
+        drawRightArrow(dc,boxx+boxw-3,getDocumentLower()+arrowPos);
       else if(options&RULER_TICKS_LEFT)                 // Ticks on left
-        drawLeftArrow(dc,boxx+2,arrowPos);
+        drawLeftArrow(dc,boxx+2,getDocumentLower()+arrowPos);
       }
 
     // Draw optional markers for paragraph margins
@@ -662,7 +724,7 @@ long FXRuler::onPaint(FXObject*,FXSelector,void* ptr){
   else{
 
     // Document well size
-    boxx=pos+edgeSpacing+marginLower;
+    boxx=getDocumentLower()+marginLower;
     boxy=border+padtop;
     boxw=documentSize-marginUpper-marginLower;
     boxh=height-padtop-padbottom-border-border;
@@ -706,16 +768,16 @@ long FXRuler::onPaint(FXObject*,FXSelector,void* ptr){
 
             numeral='0'+(FXint)((FXABS(tick)/majorTicks)%10);
 
-            tw=font->getTextWidth(&numeral,1)>>1;
+            tw=font->getTextWidth(&numeral,1);
 
             if((options&RULER_TICKS_TOP)&&(options&RULER_TICKS_BOTTOM)){
-              dc.drawText(p-tw+1,boxy+((boxh-th)>>1)+th-1,&numeral,1);
+              dc.drawText(p-(tw>>1),boxy+((boxh-th)>>1)+th-1,&numeral,1);
               }
             else if(options&RULER_TICKS_TOP){
-              dc.drawText(p-tw+1,boxy+2+MAJORTICKSIZE+th,&numeral,1);
+              dc.drawText(p-(tw>>1),boxy+2+MAJORTICKSIZE+th,&numeral,1);
               }
             else{
-              dc.drawText(p-tw+1,boxy+boxh-4-MAJORTICKSIZE,&numeral,1);
+              dc.drawText(p-(tw>>1),boxy+boxh-4-MAJORTICKSIZE,&numeral,1);
               }
             }
 
@@ -765,9 +827,9 @@ long FXRuler::onPaint(FXObject*,FXSelector,void* ptr){
     if(options&RULER_ARROW){
       dc.setForeground(textColor);
       if(options&RULER_TICKS_BOTTOM)                    // Ticks on bottom or center
-        drawDownArrow(dc,arrowPos,boxy+boxh-3);
+        drawDownArrow(dc,getDocumentLower()+arrowPos,boxy+boxh-3);
       else if(options&RULER_TICKS_TOP)                  // Ticks on top
-        drawUpArrow(dc,arrowPos,boxy+2);
+        drawUpArrow(dc,getDocumentLower()+arrowPos,boxy+2);
       }
 
     // Draw optional markers for paragraph margins
@@ -847,7 +909,7 @@ FXint FXRuler::picked(FXint x,FXint y){
       if(lo+indentLower-MARKERLENGTH<y && y<lo+indentLower+MARKERLENGTH) return MOUSE_PARA_LOWER;
       if(hi-indentUpper-MARKERLENGTH<y && y<hi-indentUpper+MARKERLENGTH) return MOUSE_PARA_UPPER;
       }
-    else{
+    else if(options&RULER_MARGIN_ADJUST){
       if(lo-FUDGE<y && y<lo+FUDGE) return MOUSE_MARG_LOWER;
       if(hi-FUDGE<y && y<hi+FUDGE) return MOUSE_MARG_UPPER;
       }
@@ -862,7 +924,7 @@ FXint FXRuler::picked(FXint x,FXint y){
       if(lo+indentLower-MARKERLENGTH<x && x<lo+indentLower+MARKERLENGTH) return MOUSE_PARA_LOWER;
       if(hi-indentUpper-MARKERLENGTH<x && x<hi-indentUpper+MARKERLENGTH) return MOUSE_PARA_UPPER;
       }
-    else{
+    else if(options&RULER_MARGIN_ADJUST){
       if(lo-FUDGE<x && x<lo+FUDGE) return MOUSE_MARG_LOWER;
       if(hi-FUDGE<x && x<hi+FUDGE) return MOUSE_MARG_UPPER;
       }
@@ -911,29 +973,21 @@ long FXRuler::onMotion(FXObject*,FXSelector,void*ptr){
 
 // Change arrow location
 void FXRuler::setValue(FXint val){
-  FXint doct,docb,docr,docl;
+  val=FXCLAMP(0,val,documentSize);
   if(options&RULER_VERTICAL){
-    doct=pos+edgeSpacing;
-    docb=doct+documentSize;
-    if(val<doct) val=doct;
-    if(val>docb) val=docb;
     if(arrowPos!=val){
       if(options&RULER_ARROW){
-        update(padleft+border,arrowPos-ARROWLENGTH,width-padleft-padright-(border<<1),ARROWBASE);
-        update(padleft+border,val-ARROWLENGTH,width-padleft-padright-(border<<1),ARROWBASE);
+        update(padleft+border,getDocumentLower()+arrowPos-ARROWLENGTH,width-padleft-padright-(border<<1),ARROWBASE);
+        update(padleft+border,getDocumentLower()+val-ARROWLENGTH,width-padleft-padright-(border<<1),ARROWBASE);
         }
       arrowPos=val;
       }
     }
   else{
-    docl=pos+edgeSpacing;
-    docr=docl+documentSize;
-    if(val<docl) val=docl;
-    if(val>docr) val=docr;
     if(arrowPos!=val){
       if(options&RULER_ARROW){
-        update(arrowPos-ARROWLENGTH,padtop+border,ARROWBASE,height-padtop-padbottom-(border<<1));
-        update(val-ARROWLENGTH,padtop+border,ARROWBASE,height-padtop-padbottom-(border<<1));
+        update(getDocumentLower()+arrowPos-ARROWLENGTH,padtop+border,ARROWBASE,height-padtop-padbottom-(border<<1));
+        update(getDocumentLower()+val-ARROWLENGTH,padtop+border,ARROWBASE,height-padtop-padbottom-(border<<1));
         }
       arrowPos=val;
       }
@@ -992,7 +1046,7 @@ long FXRuler::onCmdGetTip(FXObject*,FXSelector,void* ptr){
 
 // We were asked about tip text
 long FXRuler::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
-  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if(FXFrame::onQueryTip(sender,sel,ptr)) return 1;
   if((flags&FLAG_TIP) && !tip.empty()){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
     return 1;
@@ -1003,7 +1057,7 @@ long FXRuler::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
 
 // We were asked about status text
 long FXRuler::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
-  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if(FXFrame::onQueryHelp(sender,sel,ptr)) return 1;
   if((flags&FLAG_HELP) && !help.empty()){
     sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
     return 1;
@@ -1012,14 +1066,28 @@ long FXRuler::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
   }
 
 
+// Change content size
+void FXRuler::setContentSize(FXint size,FXbool notify){
+  setDocumentSize(size-edgeSpacing-edgeSpacing,notify);
+  }
+
+
+// Get content size
+FXint FXRuler::getContentSize() const {
+  return edgeSpacing+documentSize+edgeSpacing;
+  }
+
+
 // Set position, scrolling contents
-void FXRuler::setPosition(FXint p){
+void FXRuler::setPosition(FXint p,FXbool notify){
   if(pos!=p){
     if(options&RULER_VERTICAL)
       scroll(0,0,width,height,0,p-pos);
     else
       scroll(0,0,width,height,p-pos,0);
+    arrowPos+=p-pos;
     pos=p;
+    if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
   }
 
@@ -1029,6 +1097,7 @@ void FXRuler::setDocumentSize(FXint size,FXbool notify){
   if(size<0) size=0;
   if(documentSize!=size){
     documentSize=size;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1040,6 +1109,7 @@ void FXRuler::setEdgeSpacing(FXint space,FXbool notify){
   if(space<0) space=0;
   if(edgeSpacing!=space){
     edgeSpacing=space;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1052,6 +1122,7 @@ void FXRuler::setMarginLower(FXint mgn,FXbool notify){
   if(mgn>=documentSize-marginUpper) mgn=documentSize-marginUpper-1;
   if(marginLower!=mgn){
     marginLower=mgn;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1064,6 +1135,7 @@ void FXRuler::setMarginUpper(FXint mgn,FXbool notify){
   if(mgn>=documentSize-marginLower) mgn=documentSize-marginLower-1;
   if(marginUpper!=mgn){
     marginUpper=mgn;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1076,6 +1148,7 @@ void FXRuler::setIndentFirst(FXint ind,FXbool notify){
   if(ind>documentSize-marginLower) ind=documentSize-marginLower;
   if(indentFirst!=ind){
     indentFirst=ind;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1088,6 +1161,7 @@ void FXRuler::setIndentLower(FXint ind,FXbool notify){
   if(ind>documentSize-marginLower) ind=documentSize-marginLower;
   if(indentLower!=ind){
     indentLower=ind;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1100,6 +1174,7 @@ void FXRuler::setIndentUpper(FXint ind,FXbool notify){
   if(ind>documentSize-marginLower) ind=documentSize-marginLower;
   if(indentUpper!=ind){
     indentUpper=ind;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1111,6 +1186,7 @@ void FXRuler::setNumberTicks(FXint ticks,FXbool notify){
   if(ticks<1){ fxerror("%s::setNumberTicks: illegal tick spacing.\n",getClassName()); }
   if(numberTicks!=ticks){
     numberTicks=ticks;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1122,6 +1198,7 @@ void FXRuler::setMajorTicks(FXint ticks,FXbool notify){
   if(ticks<1){ fxerror("%s::setMajorTicks: illegal tick spacing.\n",getClassName()); }
   if(majorTicks!=ticks){
     majorTicks=ticks;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1133,6 +1210,7 @@ void FXRuler::setMediumTicks(FXint ticks,FXbool notify){
   if(ticks<1){ fxerror("%s::setMediumTicks: illegal tick spacing.\n",getClassName()); }
   if(mediumTicks!=ticks){
     mediumTicks=ticks;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1144,6 +1222,7 @@ void FXRuler::setTinyTicks(FXint ticks,FXbool notify){
   if(ticks<1){ fxerror("%s::setTinyTicks: illegal tick spacing.\n",getClassName()); }
   if(tinyTicks!=ticks){
     tinyTicks=ticks;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1155,6 +1234,7 @@ void FXRuler::setPixelPerTick(FXdouble space,FXbool notify){
   if(space<=0.0){ fxerror("%s::setPixelPerTick: illegal pixel per tick value.\n",getClassName()); }
   if(pixelPerTick!=space){
     pixelPerTick=space;
+    recalc();
     update();
     if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
@@ -1162,12 +1242,13 @@ void FXRuler::setPixelPerTick(FXdouble space,FXbool notify){
 
 
 // Change the font
-void FXRuler::setFont(FXFont *fnt){
+void FXRuler::setFont(FXFont *fnt,FXbool notify){
   if(!fnt){ fxerror("%s::setFont: NULL font specified.\n",getClassName()); }
   if(font!=fnt){
     font=fnt;
     recalc();
     update();
+    if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
     }
   }
 
@@ -1198,15 +1279,21 @@ FXuint FXRuler::getRulerStyle() const {
   }
 
 
-// Change help text
-void FXRuler::setHelpText(const FXString& text){
-  help=text;
+// Set ruler alignment
+void FXRuler::setRulerAlignment(FXuint alignment,FXbool notify){
+  FXuint opts=(options&~RULER_ALIGN_MASK) | (alignment&RULER_ALIGN_MASK);
+  if(options!=opts){
+    options=opts;
+    recalc();
+    update();
+    if(notify && target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
+    }
   }
 
 
-// Change tip text
-void FXRuler::setTipText(const FXString& text){
-  tip=text;
+// Get ruler alignment
+FXuint FXRuler::getRulerAlignment() const {
+  return (options&RULER_ALIGN_MASK);
   }
 
 
@@ -1214,6 +1301,18 @@ void FXRuler::setTipText(const FXString& text){
 void FXRuler::save(FXStream& store) const {
   FXFrame::save(store);
   store << font;
+  store << documentSize;
+  store << edgeSpacing;
+  store << marginLower;
+  store << marginUpper;
+  store << indentFirst;
+  store << indentLower;
+  store << indentUpper;
+  store << pixelPerTick;
+  store << numberTicks;
+  store << majorTicks;
+  store << mediumTicks;
+  store << tinyTicks;
   store << textColor;
   store << tip;
   store << help;
@@ -1224,6 +1323,18 @@ void FXRuler::save(FXStream& store) const {
 void FXRuler::load(FXStream& store){
   FXFrame::load(store);
   store >> font;
+  store >> documentSize;
+  store >> edgeSpacing;
+  store >> marginLower;
+  store >> marginUpper;
+  store >> indentFirst;
+  store >> indentLower;
+  store >> indentUpper;
+  store >> pixelPerTick;
+  store >> numberTicks;
+  store >> majorTicks;
+  store >> mediumTicks;
+  store >> tinyTicks;
   store >> textColor;
   store >> tip;
   store >> help;

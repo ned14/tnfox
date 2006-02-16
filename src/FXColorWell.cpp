@@ -3,7 +3,7 @@
 *                         C o l o r W e l l   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorWell.cpp,v 1.61 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXColorWell.cpp,v 1.68 2006/01/22 17:58:20 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -59,7 +59,7 @@
 #define WELLSIZE    12              // Minimum well size
 #define FOCUSBORDER 3               // Focus border
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -137,8 +137,9 @@ FXColorWell::FXColorWell(FXComposite* p,FXColor clr,FXObject* tgt,FXSelector sel
 // Create window
 void FXColorWell::create(){
   FXFrame::create();
-  if(!colorType){colorType=getApp()->registerDragType(colorTypeName);}
-  if(!textType){textType=getApp()->registerDragType(textTypeName);}
+  if(!colorType){ colorType=getApp()->registerDragType(colorTypeName); }
+  if(!textType){ textType=getApp()->registerDragType(textTypeName); }
+  if(!utf8Type){ utf8Type=getApp()->registerDragType(utf8TypeName); }
   }
 
 
@@ -151,7 +152,7 @@ void FXColorWell::detach(){
 
 
 // If window can have focus
-FXbool FXColorWell::canFocus() const { return 1; }
+bool FXColorWell::canFocus() const { return true; }
 
 
 // Into focus chain
@@ -593,7 +594,7 @@ long FXColorWell::onClicked(FXObject*,FXSelector,void*){
 long FXColorWell::onDoubleClicked(FXObject*,FXSelector,void*){
   if(target && target->tryHandle(this,FXSEL(SEL_DOUBLECLICKED,message),(void*)(FXuval)rgba)) return 1;
   if(options&COLORWELL_SOURCEONLY) return 1;
-  FXColorDialog colordialog(this,"Color Dialog");
+  FXColorDialog colordialog(this,tr("Color Dialog"));
   FXColor oldcolor=getRGBA();
   colordialog.setTarget(this);
   colordialog.setSelector(ID_COLORDIALOG);

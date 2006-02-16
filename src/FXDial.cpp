@@ -3,7 +3,7 @@
 *                                D i a l   W i d g e t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDial.cpp,v 1.43 2005/01/25 06:30:46 fox Exp $                          *
+* $Id: FXDial.cpp,v 1.50 2006/01/22 17:58:22 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -46,7 +47,8 @@
   - Properly handle cyclic/non cyclic stuff.
   - Callbacks should report position in the void* ptr.
   - Keep notchangle>=0, as % of negative numbers is implementation defined.
-  - Dial should work with double, not int.
+  - Not yet happy with keyboard/wheel mode valuator.
+  - Visual cue for focus:- please no ugly border!
 */
 
 #define DIALWIDTH     12
@@ -54,7 +56,7 @@
 #define NUMSIDECOLORS 16
 #define DIAL_MASK     (DIAL_HORIZONTAL|DIAL_CYCLIC|DIAL_HAS_NOTCH)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -67,6 +69,8 @@ FXDEFMAP(FXDial) FXDialMap[]={
   FXMAPFUNC(SEL_MOUSEWHEEL,0,FXDial::onMouseWheel),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,0,FXDial::onLeftBtnPress),
   FXMAPFUNC(SEL_LEFTBUTTONRELEASE,0,FXDial::onLeftBtnRelease),
+  FXMAPFUNC(SEL_KEYPRESS,0,FXDial::onKeyPress),
+  FXMAPFUNC(SEL_KEYRELEASE,0,FXDial::onKeyRelease),
   FXMAPFUNC(SEL_UNGRABBED,0,FXDial::onUngrabbed),
   FXMAPFUNC(SEL_QUERY_TIP,0,FXDial::onQueryTip),
   FXMAPFUNC(SEL_QUERY_HELP,0,FXDial::onQueryHelp),
@@ -88,6 +92,20 @@ FXDEFMAP(FXDial) FXDialMap[]={
 
 // Object implementation
 FXIMPLEMENT(FXDial,FXFrame,FXDialMap,ARRAYNUMBER(FXDialMap))
+
+FXDial::FXDial(){
+  flags|=FLAG_ENABLED;
+  range[0]=0;
+  range[1]=0;
+  notchangle=0;
+  notchspacing=0;
+  notchoffset=0;
+  notchColor=0;
+  dragpoint=0;
+  dragpos=0;
+  incr=0;
+  pos=0;
+  }
 
 
 // Make a window
@@ -111,18 +129,20 @@ FXDial::FXDial(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,F
 
 // Get minimum width
 FXint FXDial::getDefaultWidth(){
-  FXint w;
-  if(options&DIAL_HORIZONTAL) w=DIALDIAMETER; else w=DIALWIDTH;
+  register FXint w=(options&DIAL_HORIZONTAL)?DIALDIAMETER:DIALWIDTH;
   return w+padleft+padright+(border<<1);
   }
 
 
 // Get minimum height
 FXint FXDial::getDefaultHeight(){
-  FXint h;
-  if(options&DIAL_HORIZONTAL) h=DIALWIDTH; else h=DIALDIAMETER;
+  register FXint h=(options&DIAL_HORIZONTAL)?DIALWIDTH:DIALDIAMETER;
   return h+padtop+padbottom+(border<<1);
   }
+
+
+// Returns true because a dial can receive focus
+bool FXDial::canFocus() const { return true; }
 
 
 // Set help using a message
@@ -360,6 +380,73 @@ long FXDial::onMouseWheel(FXObject*,FXSelector,void* ptr){
   }
 
 
+// Keyboard press
+long FXDial::onKeyPress(FXObject*,FXSelector,void* ptr){
+  FXEvent* event=(FXEvent*)ptr;
+  if(isEnabled()){
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+    switch(event->code){
+      case KEY_Left:
+      case KEY_KP_Left:
+        if(options&DIAL_HORIZONTAL) goto dec;
+        break;
+      case KEY_Right:
+      case KEY_KP_Right:
+        if(options&DIAL_HORIZONTAL) goto inc;
+        break;
+      case KEY_Up:
+      case KEY_KP_Up:
+        if(!(options&DIAL_HORIZONTAL)) goto inc;
+        break;
+      case KEY_Down:
+      case KEY_KP_Down:
+        if(!(options&DIAL_HORIZONTAL)) goto dec;
+        break;
+      case KEY_plus:
+      case KEY_KP_Add:
+inc:    //setValue(pos+((incr+359)/360),TRUE);
+        setValue(pos+1);
+        return 1;
+      case KEY_minus:
+      case KEY_KP_Subtract:
+dec:    //setValue(pos-((incr+359)/360),TRUE);
+        setValue(pos-1);
+        return 1;
+      }
+    }
+  return 0;
+  }
+
+
+// Keyboard release
+long FXDial::onKeyRelease(FXObject*,FXSelector,void* ptr){
+  FXEvent* event=(FXEvent*)ptr;
+  if(isEnabled()){
+    if(target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+    switch(event->code){
+      case KEY_Left:
+      case KEY_KP_Left:
+      case KEY_Right:
+      case KEY_KP_Right:
+        if(options&DIAL_HORIZONTAL) return 1;
+        break;
+      case KEY_Up:
+      case KEY_KP_Up:
+      case KEY_Down:
+      case KEY_KP_Down:
+        if(!(options&DIAL_HORIZONTAL)) return 1;
+        break;
+      case KEY_plus:
+      case KEY_KP_Add:
+      case KEY_KP_Subtract:
+      case KEY_minus:
+        return 1;
+      }
+    }
+  return 0;
+  }
+
+
 // Handle repaint
 long FXDial::onPaint(FXObject*,FXSelector,void* ptr){
   const FXdouble fac=0.5*PI/((FXdouble)(NUMSIDECOLORS-1));
@@ -567,27 +654,29 @@ long FXDial::onPaint(FXObject*,FXSelector,void* ptr){
 
 
 // Set dial range
-void FXDial::setRange(FXint lo,FXint hi){
+void FXDial::setRange(FXint lo,FXint hi,FXbool notify){
   if(lo>hi){ fxerror("%s::setRange: trying to set negative range.\n",getClassName()); }
   if(range[0]!=lo || range[1]!=hi){
     range[0]=lo;
     range[1]=hi;
-    if(pos<range[0]) pos=range[0];
-    if(pos>range[1]) pos=range[1];
-    notchangle=(notchoffset+(3600*(pos-range[0]))/incr)%3600;
-    update();
+    setValue(pos,notify);
     }
   }
 
 
 // Set dial value
-void FXDial::setValue(FXint p){
+void FXDial::setValue(FXint p,FXbool notify){
+  register FXint n;
   if(p<range[0]) p=range[0];
   if(p>range[1]) p=range[1];
+  n=(notchoffset+(3600*(p-range[0]))/incr)%3600;
+  if(n!=notchangle){
+    notchangle=n;
+    update();
+    }
   if(p!=pos){
     pos=p;
-    notchangle=(notchoffset+(3600*(pos-range[0]))/incr)%3600;
-    update();
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)pos);}
     }
   }
 

@@ -3,7 +3,7 @@
 *                   U n i c o d e   T e x t   C o d e c                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 2002,2006 by L.Johnson & J.van der Zijp.  All Rights Reserved.  *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,73 +19,129 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextCodec.h,v 1.8 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXTextCodec.h,v 1.30 2006/01/22 17:58:11 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTEXTCODEC_H
 #define FXTEXTCODEC_H
 
-
-//////////////////////////////  UNDER DEVELOPMENT  //////////////////////////////
+#ifndef FXOBJECT_H
+#include "FXObject.h"
+#endif
 
 
 namespace FX {
 
-class FXTextCodecDict;
 
 /**
  * Abstract base class for a stateless coder/decoder.
  */
-class FXTextCodec {
-protected:
-  friend struct DeleteFXTextCodecs;
-  static FXTextCodecDict* codecs;
-protected:
-  FXTextCodec(){}
+class FXAPI FXTextCodec : public FXObject {
+  FXDECLARE_ABSTRACT(FXTextCodec)
 public:
 
-  /**
-   * Convert a sequence of wide characters from Unicode to the specified
-   * 8-bit encoding. Reads at most n wide characters from src and writes
-   * at most m bytes into dest. Returns the number of characters actually
-   * written into dest.
-   *
-   * On exit, the src and dest pointers are updated to point to the next
-   * available character (or byte) for reading (writing).
-   */
-  virtual unsigned long fromUnicode(FXuchar*& dest,unsigned long m,const FXwchar*& src,unsigned long n) = 0;
+  /// Construct text codec
+  FXTextCodec(){}
+
+
+  /// Convert utf8 to single wide character
+  static FXint utf2wc(FXwchar& wc,const FXchar* src,FXint nsrc);
+
+  /// Convert utf16 to single wide character
+  static FXint utf2wc(FXwchar& wc,const FXnchar* src,FXint nsrc);
+
+  /// Convert utf32 to single wide character
+  static FXint utf2wc(FXwchar& wc,const FXwchar* src,FXint nsrc);
+
+
+  /// Convert single wide character to utf8
+  static FXint wc2utf(FXchar* dst,FXint ndst,FXwchar wc);
+
+  /// Convert single wide character to utf16
+  static FXint wc2utf(FXnchar* dst,FXint ndst,FXwchar wc);
+
+  /// Convert single wide character to utf32
+  static FXint wc2utf(FXwchar* dst,FXint ndst,FXwchar wc);
+
+
+  /// Count utf8 bytes needed to convert multi-byte characters from src
+  virtual FXint mb2utflen(const FXchar* src,FXint nsrc) const;
+
+  /// Count utf8 bytes needed to convert multi-byte characters from src
+  FXint mb2utflen(const FXString& src) const;
+
+  /// Convert multi-byte characters from src to utf8 characters at dst
+  virtual FXint mb2utf(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const;
+
+  /// Convert multi-byte characters from src to utf8 characters at dst
+  FXint mb2utf(FXchar* dst,FXint ndst,const FXchar* src) const;
+
+  /// Convert multi-byte characters from src to utf8 characters at dst
+  FXint mb2utf(FXchar* dst,FXint ndst,const FXString& src) const;
+
+  /// Convert multi-byte characters from src to utf8 string
+  FXString mb2utf(const FXchar* src,FXint nsrc) const;
+
+  /// Convert multi-byte characters from src to utf8 string
+  FXString mb2utf(const FXchar* src) const;
+
+  /// Convert multi-byte string to utf8 string
+  FXString mb2utf(const FXString& src) const;
+
+  /// Convert multi-byte characters from src to single wide character
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+
+
+
+  /// Count multi-byte characters characters needed to convert utf8 from src
+  virtual FXint utf2mblen(const FXchar* src,FXint nsrc) const;
+
+  /// Count multi-byte characters characters needed to convert utf8 from src
+  virtual FXint utf2mblen(const FXString& src) const;
+
+  /// Convert utf8 characters at src to multi-byte characters at dst
+  virtual FXint utf2mb(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const;
+
+  /// Convert utf8 characters at src to multi-byte characters at dst
+  FXint utf2mb(FXchar* dst,FXint ndst,const FXchar* src) const;
+
+  /// Convert utf8 characters at src to multi-byte characters at dst
+  FXint utf2mb(FXchar* dst,FXint ndst,const FXString& src) const;
+
+  /// Convert utf8 characters at src to multi-byte string
+  FXString utf2mb(const FXchar* src,FXint nsrc) const;
+
+  /// Convert utf8 characters at src to multi-byte string
+  FXString utf2mb(const FXchar* src) const;
+
+  /// Convert utf8 string to multi-byte string
+  FXString utf2mb(const FXString& src) const;
+
+  /// Convert single wide character to multi-byte characters at dst
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+
 
   /**
-   * Convert a sequence of bytes in some 8-bit encoding to a sequence
-   * of wide characters (Unicode). Reads at most n bytes from src and
-   * writes at most m characters into dest. Returns the number of characters
-   * actually read from src.
-   *
-   * On exit, the src and dest pointers are updated to point to the next
-   * available byte (or character) for writing (reading).
-   */
-  virtual unsigned long toUnicode(FXwchar*& dest,unsigned long m,const FXuchar*& src,unsigned long n) = 0;
-
-  /**
-   * Return the IANA mime name for this codec; this is used for example
-   * as "text/utf-8" in drag and drop protocols.
-   */
-  virtual const FXchar* mimeName() const = 0;
-
-  /**
-   * Return the Management Information Base (MIBenum) for the character set.
-   */
+  * Return the Management Information Base (MIBenum) for the character set.
+  */
   virtual FXint mibEnum() const = 0;
 
   /**
-   * Register codec with this name. Returns FALSE if a different codec
-   * has already been registered with this name, otherwise TRUE.
-   */
-  static FXbool registerCodec(const FXchar* name,FXTextCodec* codec);
+  * Return name of the codec.
+  */
+  virtual const FXchar* name() const = 0;
 
-  /// Return the codec associated with this name (or NULL if no match is found)
-  static FXTextCodec* codecForName(const FXchar* name);
+  /**
+  * Return the IANA mime name for this codec; this is used for example
+  * as "text/utf-8" in drag and drop protocols.
+  */
+  virtual const FXchar* mimeName() const = 0;
 
-  /// Destructor
+  /**
+  * Return NULL-terminated list of aliases for this codec.
+  */
+  virtual const FXchar* const* aliases() const = 0;
+
+  /// Destruct codec
   virtual ~FXTextCodec(){}
   };
 

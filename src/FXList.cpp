@@ -3,7 +3,7 @@
 *                            L i s t   O b j e c t                              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,15 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.cpp,v 1.148.2.1 2005/06/09 14:08:55 fox Exp $                         *
+* $Id: FXList.cpp,v 1.159 2006/01/27 02:20:47 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -79,6 +80,7 @@
   - As with FXIconList, it probably shouldn't autoscroll when draggin icons.
   - Even/odd background colors would be nice, but may look funny when
     not all items are same size.
+  - Item justification and icon/text relationships would be nice, too.
 */
 
 
@@ -89,7 +91,7 @@
 #define SELECT_MASK (LIST_SINGLESELECT|LIST_BROWSESELECT)
 #define LIST_MASK   (SELECT_MASK|LIST_AUTOSELECT)
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -127,7 +129,7 @@ void FXListItem::draw(const FXList* list,FXDC& dc,FXint xx,FXint yy,FXint ww,FXi
       dc.setForeground(list->getSelTextColor());
     else
       dc.setForeground(list->getTextColor());
-    dc.drawText(xx,yy+(hh-th)/2+font->getFontAscent(),label.text(),label.length());
+    dc.drawText(xx,yy+(hh-th)/2+font->getFontAscent(),label);
     }
   }
 
@@ -320,6 +322,7 @@ FXList::FXList(){
   current=-1;
   extent=-1;
   cursor=-1;
+  viewable=-1;
   font=(FXFont*)-1L;
   textColor=0;
   selbackColor=0;
@@ -344,6 +347,7 @@ FXList::FXList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,F
   current=-1;
   extent=-1;
   cursor=-1;
+  viewable=-1;
   font=getApp()->getNormalFont();
   textColor=getApp()->getForeColor();
   selbackColor=getApp()->getSelbackColor();
@@ -377,7 +381,7 @@ void FXList::detach(){
 
 
 // Can have focus
-FXbool FXList::canFocus() const { return TRUE; }
+bool FXList::canFocus() const { return true; }
 
 
 // Into focus chain
@@ -473,6 +477,11 @@ void FXList::layout(){
 
   update();
 
+  // We were supposed to make this item viewable
+  if(0<=viewable){
+    makeItemVisible(viewable);
+    }
+
   // No more dirty
   flags&=~FLAG_DIRTY;
   }
@@ -554,18 +563,28 @@ FXbool FXList::isItemVisible(FXint index) const {
 // Make item fully visible
 void FXList::makeItemVisible(FXint index){
   register FXint y,h;
-  if(xid && 0<=index && index<items.no()){
+  if(0<=index && index<items.no()){
 
-    // Force layout if dirty
-    if(flags&FLAG_RECALC) layout();
+    // Remember for later
+    viewable=index;
 
-    y=pos_y;
-    h=items[index]->getHeight(this);
-    if(viewport_h<=y+items[index]->y+h) y=viewport_h-items[index]->y-h;
-    if(y+items[index]->y<=0) y=-items[index]->y;
+    // Was realized
+    if(xid){
 
-    // Scroll into view
-    setPosition(pos_x,y);
+      // Force layout if dirty
+      if(flags&FLAG_RECALC) layout();
+
+      y=pos_y;
+      h=items[index]->getHeight(this);
+      if(viewport_h<=y+items[index]->y+h) y=viewport_h-items[index]->y-h;
+      if(y+items[index]->y<=0) y=-items[index]->y;
+
+      // Scroll into view
+      setPosition(pos_x,y);
+
+      // Done it
+      viewable=-1;
+      }
     }
   }
 
@@ -589,7 +608,7 @@ FXint FXList::getItemAt(FXint,FXint y) const {
   register FXint index;
   y-=pos_y;
   for(index=0; index<items.no(); index++){
-    if(items[index]->y<y && y<items[index]->y+items[index]->getHeight(this)){
+    if(items[index]->y<=y && y<items[index]->y+items[index]->getHeight(this)){
       return index;
       }
     }
@@ -1055,7 +1074,7 @@ hop:  lookup=FXString::null;
     default:
       if((FXuchar)event->text[0]<' ') return 0;
       if(event->state&(CONTROLMASK|ALTMASK)) return 0;
-      if(!isprint((FXuchar)event->text[0])) return 0;
+      if(!Ascii::isPrint(event->text[0])) return 0;
       lookup.append(event->text);
       getApp()->addTimeout(this,ID_LOOKUPTIMER,getApp()->getTypingSpeed());
       index=findItem(lookup,current,SEARCH_FORWARD|SEARCH_WRAP|SEARCH_PREFIX);
@@ -1585,6 +1604,7 @@ FXint FXList::insertItem(FXint index,FXListItem* item,FXbool notify){
   if(anchor>=index) anchor++;
   if(extent>=index) extent++;
   if(current>=index) current++;
+  if(viewable>=index) viewable++;
   if(current<0 && items.no()==1) current=0;
 
   // Notify item has been inserted
@@ -1677,7 +1697,7 @@ FXint FXList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
 
     // Move item
     item=items[oldindex];
-    items.remove(oldindex);
+    items.erase(oldindex);
     items.insert(newindex,item);
 
     // Move item down
@@ -1685,6 +1705,7 @@ FXint FXList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
       if(newindex<=anchor && anchor<oldindex) anchor++;
       if(newindex<=extent && extent<oldindex) extent++;
       if(newindex<=current && current<oldindex) current++;
+      if(newindex<=viewable && viewable<oldindex) viewable++;
       }
 
     // Move item up
@@ -1692,12 +1713,14 @@ FXint FXList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
       if(oldindex<anchor && anchor<=newindex) anchor--;
       if(oldindex<extent && extent<=newindex) extent--;
       if(oldindex<current && current<=newindex) current--;
+      if(oldindex<viewable && viewable<=newindex) viewable--;
       }
 
     // Adjust if it was equal
     if(anchor==oldindex) anchor=newindex;
     if(extent==oldindex) extent=newindex;
     if(current==oldindex) current=newindex;
+    if(viewable==oldindex) viewable=newindex;
 
     // Current item may have changed
     if(old!=current){
@@ -1708,6 +1731,52 @@ FXint FXList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
     recalc();
     }
   return newindex;
+  }
+
+
+// Extract node from list
+FXListItem* FXList::extractItem(FXint index,FXbool notify){
+  register FXListItem *result;
+  register FXint old=current;
+
+  // Must be in range
+  if(index<0 || items.no()<=index){ fxerror("%s::extractItem: index out of range.\n",getClassName()); }
+
+  // Notify item will be deleted
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+
+  // Extract item
+  result=items[index];
+
+  // Remove item from list
+  items.erase(index);
+
+  // Adjust indices
+  if(anchor>index || anchor>=items.no())  anchor--;
+  if(extent>index || extent>=items.no())  extent--;
+  if(current>index || current>=items.no()) current--;
+  if(viewable>index || viewable>=items.no()) viewable--;
+
+  // Current item has changed
+  if(index<=old){
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+    }
+
+  // Deleted current item
+  if(0<=current && index==old){
+    if(hasFocus()){
+      items[current]->setFocus(TRUE);
+      }
+    if((options&SELECT_MASK)==LIST_BROWSESELECT && items[current]->isEnabled()){
+      selectItem(current,notify);
+      }
+    }
+
+  // Redo layout
+  recalc();
+
+  // Return the item
+  return result;
   }
 
 
@@ -1725,12 +1794,13 @@ void FXList::removeItem(FXint index,FXbool notify){
   delete items[index];
 
   // Remove item from list
-  items.remove(index);
+  items.erase(index);
 
   // Adjust indices
   if(anchor>index || anchor>=items.no())  anchor--;
   if(extent>index || extent>=items.no())  extent--;
   if(current>index || current>=items.no()) current--;
+  if(viewable>index || viewable>=items.no()) viewable--;
 
   // Current item has changed
   if(index<=old){
@@ -1769,6 +1839,7 @@ void FXList::clearItems(FXbool notify){
   current=-1;
   anchor=-1;
   extent=-1;
+  viewable=-1;
 
   // Current item has changed
   if(old!=-1){

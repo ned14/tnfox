@@ -3,7 +3,7 @@
 *                        S p i n   B u t t o n   W i d g e t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 1998,2006 by Lyle Johnson.   All Rights Reserved.               *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSpinner.h,v 1.43 2005/01/16 16:06:06 fox Exp $                         *
+* $Id: FXSpinner.h,v 1.46 2006/02/06 03:03:40 fox Exp $                         *
 ********************************************************************************/
 #ifndef FXSPINNER_H
 #define FXSPINNER_H
@@ -27,11 +27,9 @@
 #ifndef FXPACKER_H
 #include "FXPacker.h"
 #endif
-#include "FXFrame.h"
 
 namespace FX {
 
-class FXFont;
 
 /// Spinner Options
 enum {
@@ -106,10 +104,16 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Increment spinner
-  void increment();
+  void increment(FXbool notify=FALSE);
+
+  /// Increment spinner by certain amount
+  void incrementByAmount(FXint amount,FXbool notify=FALSE);
 
   /// Decrement spinner
-  void decrement();
+  void decrement(FXbool notify=FALSE);
+
+  /// Decrement spinner by certain amount
+  void decrementByAmount(FXint amount, FXbool notify=FALSE);
 
   /// Return TRUE if in cyclic mode
   FXbool isCyclic() const;
@@ -124,13 +128,13 @@ public:
   void setTextVisible(FXbool shown);
 
   /// Change current value
-  virtual void setValue(FXint value);
+  virtual void setValue(FXint value,FXbool notify=FALSE);
 
   /// Return current value
   FXint getValue() const { return pos; }
 
   /// Change the spinner's range
-  void setRange(FXint lo,FXint hi);
+  void setRange(FXint lo,FXint hi,FXbool notify=FALSE);
 
   /// Get the spinner's current range
   void getRange(FXint& lo,FXint& hi) const { lo=range[0]; hi=range[1]; }

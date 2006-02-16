@@ -3,7 +3,7 @@
 *                    O p e n G L   C a n v a s   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLCanvas.cpp,v 1.57 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXGLCanvas.cpp,v 1.61 2006/01/22 17:58:27 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -52,7 +52,7 @@
 */
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -120,7 +120,7 @@ void FXGLCanvas::create(){
     void *sharedctx=NULL;
 
     // Must have GL info available
-    if(!visual->info){
+    if(!visual->getInfo()){
       throw FXWindowException("unable to create GL window.");
       }
 
@@ -136,7 +136,7 @@ void FXGLCanvas::create(){
         }
 
       // The visuals have to match, the book says...
-      if(sgnext->visual!=canvas->visual){
+      if(sgnext->getVisual()!=canvas->getVisual()){
         throw FXWindowException("unable to create GL window.");
         }
       }
@@ -144,7 +144,7 @@ void FXGLCanvas::create(){
 #ifndef WIN32
 
     // Make context
-    ctx=glXCreateContext((Display*)getApp()->getDisplay(),(XVisualInfo*)visual->info,(GLXContext)sharedctx,TRUE);
+    ctx=glXCreateContext((Display*)getApp()->getDisplay(),(XVisualInfo*)visual->getInfo(),(GLXContext)sharedctx,TRUE);
     if(!ctx){
       throw FXWindowException("unable to create GL window.");
       }
@@ -153,8 +153,7 @@ void FXGLCanvas::create(){
 
     // Make that the pixel format of the device context
     HDC hdc=::GetDC((HWND)xid);
-    PIXELFORMATDESCRIPTOR *pfd=(PIXELFORMATDESCRIPTOR*)visual->info;
-    if(!SetPixelFormat(hdc,visual->pixelformat,pfd)){
+    if(!SetPixelFormat(hdc,(FXint)(FXival)visual->getVisual(),(PIXELFORMATDESCRIPTOR*)visual->getInfo())){
       throw FXWindowException("unable to create GL window.");
       }
 

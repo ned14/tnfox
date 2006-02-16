@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFile.cpp,v 1.182 2004/11/30 03:16:56 fox Exp $                         *
+* $Id: QFile.cpp,v 1.182 2004/11/30 03:16:56 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "qcstring.h"
@@ -29,7 +29,7 @@
 #include "fxdefs.h"
 #include "FXStream.h"
 #include "FXString.h"
-#include "FXFile.h"
+#include "QFile.h"
 #ifdef WIN32
 #include <shellapi.h>
 #else
@@ -42,6 +42,8 @@
 #include "FXRollback.h"
 #include "FXACL.h"
 #include "FXWinLinks.h"
+#include "FXStat.h"
+#include "FXDir.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
 static const char *_fxmemdbg_current_file_ = __FILE__;
@@ -70,7 +72,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
       -  Must not begin with $
       -  Uppercase only filename.
   - Perhaps use GetEnvironmentVariable instead of getenv?
-  - FXFile::search() what if some paths are quoted, like
+  - QFile::search() what if some paths are quoted, like
 
       \this\dir;"\that\dir with a ;";\some\other\dir
 
@@ -86,7 +88,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
   - Perhaps also taking into account certain environment variables in the
     contraction function?
-  - FXFile::copy( "C:\tmp", "c:\tmp\tmp" ) results infinite-loop.
+  - QFile::copy( "C:\tmp", "c:\tmp\tmp" ) results infinite-loop.
 
 */
 
@@ -120,7 +122,7 @@ err:
 
 namespace FX {
 
-class FXDLLLOCAL FXFilePrivate : public QMutex
+class FXDLLLOCAL QFilePrivate : public QMutex
 {
 public:
 	FXString filename;
@@ -135,67 +137,67 @@ public:
 	} lastop;
 	QByteArray ungetchbuffer;
 	FXACL *acl;
-	FXFilePrivate(bool _amStdio, bool doacl) : amStdio(_amStdio), handle(0), size(0), lastop(NoOp), acl(0)
+	QFilePrivate(bool _amStdio, bool doacl) : amStdio(_amStdio), handle(0), size(0), lastop(NoOp), acl(0)
 	{
 		if(doacl)
 		{
 			FXERRHM(acl=new FXACL(FXACL::default_(FXACL::File)));
 		}
 	}
-	~FXFilePrivate()
+	~QFilePrivate()
 	{
 		FXDELETE(acl);
 	}
 };
-static FXPtrHold<FXFile> stdiofile;
+static FXPtrHold<QFile> stdiofile;
 
-int FXFile::int_fileDescriptor() const
+int QFile::int_fileDescriptor() const
 {
 	return p->handle;
 }
 
-FXFile::FXFile() : p(0), QIODevice()
+QFile::QFile() : p(0), QIODevice()
 {
-	FXERRHM(p=new FXFilePrivate(false, true));
+	FXERRHM(p=new QFilePrivate(false, true));
 }
 
-FXFile::FXFile(WantStdioType) : p(0), QIODevice()
-{	// Special FXFile talking to stdin/stdout
-	FXERRHM(p=new FXFilePrivate(true, true));
+QFile::QFile(WantStdioType) : p(0), QIODevice()
+{	// Special QFile talking to stdin/stdout
+	FXERRHM(p=new QFilePrivate(true, true));
 	p->handle=fileno(stdout);
 	setFlags(IO_ReadWrite|IO_Append|IO_Truncate|IO_Open);
 }
 
-FXFile::FXFile(const FXString &name, WantLightFXFile) : p(0), QIODevice()
-{	// Special FXFile for a "light" instance. This instance is much faster to create
+QFile::QFile(const FXString &name, WantLightQFile) : p(0), QIODevice()
+{	// Special QFile for a "light" instance. This instance is much faster to create
 	// and destroy but does not implement ACL's and so is private
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXFilePrivate(false, false));
+	FXERRHM(p=new QFilePrivate(false, false));
 	p->filename=name;
 	unconstr.dismiss();
 }
 
-FXFile::FXFile(const FXString &name) : p(0), QIODevice()
+QFile::QFile(const FXString &name) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new FXFilePrivate(false, true));
+	FXERRHM(p=new QFilePrivate(false, true));
 	p->filename=name;
 	unconstr.dismiss();
 }
 
-FXFile::~FXFile()
+QFile::~QFile()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-const FXString &FXFile::name() const
+const FXString &QFile::name() const
 {
 	// QMtxHold h(p);	can do without
 	return p->filename;
 }
 
-void FXFile::setName(const FXString &name)
+void QFile::setName(const FXString &name)
 {
 	QMtxHold h(p);
 	if(!p->amStdio)
@@ -205,22 +207,22 @@ void FXFile::setName(const FXString &name)
 	}
 }
 
-bool FXFile::exists() const
+bool QFile::exists() const
 {
 	QMtxHold h(p);
 	if(p->amStdio) return true;
-	return exists(p->filename)!=0;
+	return FXStat::exists(p->filename)!=0;
 }
 
-bool FXFile::remove()
+bool QFile::remove()
 {
 	QMtxHold h(p);
 	if(p->amStdio) return false;
 	close();
-	return remove(p->filename)!=0;
+	return FXDir::remove(p->filename)!=0;
 }
 
-FXfval FXFile::reloadSize()
+FXfval QFile::reloadSize()
 {
 	QMtxHold h(p);
 	if(isOpen())
@@ -238,11 +240,11 @@ FXfval FXFile::reloadSize()
 	return 0;
 }
 
-QIODevice &FXFile::stdio(bool applyCRLFTranslation)
+QIODevice &QFile::stdio(bool applyCRLFTranslation)
 {
 	if(!stdiofile)
 	{
-		FXERRHM(stdiofile=new FXFile(WantStdioType()));
+		FXERRHM(stdiofile=new QFile(WantStdioType()));
 	}
 	if(applyCRLFTranslation)
 		stdiofile->setMode(stdiofile->mode()|IO_Translate);
@@ -251,12 +253,12 @@ QIODevice &FXFile::stdio(bool applyCRLFTranslation)
 	return *stdiofile;
 }
 
-bool FXFile::open(FXuint mode)
+bool QFile::open(FXuint mode)
 {
 	QMtxHold h(p);
 	if(isOpen())
 	{	// I keep fouling myself up here, so assertion check
-		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("FXFile", "Device reopen has different mode"));
+		if(QIODevice::mode()!=mode) FXERRGIO(QTrans::tr("QFile", "Device reopen has different mode"));
 	}
 	else
 	{
@@ -270,7 +272,7 @@ bool FXFile::open(FXuint mode)
 		}
 		if(mode & IO_Append) access|=O_APPEND;
 		if(mode & IO_Truncate) access|=O_TRUNC;
-		if(!(access & O_CREAT) && !exists()) FXERRGNF(QTrans::tr("FXFile", "File '%1' not found").arg(p->filename), 0);
+		if(!(access & O_CREAT) && !exists()) FXERRGNF(QTrans::tr("QFile", "File '%1' not found").arg(p->filename), 0);
 #ifdef WIN32
 		access|=O_BINARY;
 		// Annoyingly, you must create a file handle with WRITE_DAC permission to
@@ -310,14 +312,14 @@ bool FXFile::open(FXuint mode)
 		}
 		if(p->acl) *p->acl=FXACL(p->handle, FXACL::File);
 		setFlags((mode & IO_ModeMask)|IO_Open);
-		p->lastop=FXFilePrivate::NoOp;
+		p->lastop=QFilePrivate::NoOp;
 		reloadSize();
 		ioIndex=(mode & IO_Append) ? p->size : 0;
 	}
 	return true;
 }
 
-void FXFile::close()
+void QFile::close()
 {
 	QMtxHold h(p);
 	if(isOpen() && !p->amStdio)
@@ -336,7 +338,7 @@ void FXFile::close()
 	}
 }
 
-void FXFile::flush()
+void QFile::flush()
 {
 	QMtxHold h(p);
 	if(isOpen() && isWriteable())
@@ -349,11 +351,11 @@ void FXFile::flush()
 #ifdef USE_POSIX
 		FXERRHIO(::fsync(p->handle));
 #endif
-		p->lastop=FXFilePrivate::NoOp;
+		p->lastop=QFilePrivate::NoOp;
 	}
 }
 
-FXfval FXFile::size() const
+FXfval QFile::size() const
 {
 	// QMtxHold h(p); can do without
 	if(isOpen() && !p->amStdio)
@@ -362,10 +364,10 @@ FXfval FXFile::size() const
 		return 0;
 }
 
-void FXFile::truncate(FXfval size)
+void QFile::truncate(FXfval size)
 {
 	QMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(QTrans::tr("FXFile", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QFile", "Not open for writing"));
 	if(isOpen() && !p->amStdio)
 	{
 		QThread_DTHold dth;
@@ -377,13 +379,13 @@ void FXFile::truncate(FXfval size)
 	}
 }
 
-FXfval FXFile::at() const
+FXfval QFile::at() const
 {
 	QMtxHold h(p);
 	return p->amStdio ? 0 : ioIndex;
 }
 
-bool FXFile::at(FXfval newpos)
+bool QFile::at(FXfval newpos)
 {
 	QMtxHold h(p);
 	if(isOpen() && ioIndex!=newpos && !p->amStdio)
@@ -403,13 +405,13 @@ bool FXFile::at(FXfval newpos)
 	return false;
 }
 
-bool FXFile::atEnd() const
+bool QFile::atEnd() const
 {
 	QMtxHold h(p);
 	if(!isOpen()) return true;
 	// Unfortunately GNU/Linux doesn't have eof() and MSVC6's _eof() doesn't like file pointers > 4Gb!
 	// You also need to stay compatible with when the input is stdin
-	FXFile *me=(FXFile *) this;
+	QFile *me=(QFile *) this;
 	int c=me->getch();
 	if(-1==c) return true;
 	if(p->amStdio)
@@ -419,36 +421,36 @@ bool FXFile::atEnd() const
 	return false;
 }
 
-const FXACL &FXFile::permissions() const
+const FXACL &QFile::permissions() const
 {
 	assert(p->acl);
 	return *p->acl;
 }
-void FXFile::setPermissions(const FXACL &perms)
+void QFile::setPermissions(const FXACL &perms)
 {
 	assert(p->acl);
 	if(isOpen()) perms.writeTo(p->handle);
 	*p->acl=perms;
 }
-FXACL FXFile::permissions(const FXString &path)
+FXACL QFile::permissions(const FXString &path)
 {
-	return FXACL(path, isFile(path) ? FXACL::File : FXACL::Directory);
+	return FXACL(path, FXStat::isFile(path) ? FXACL::File : FXACL::Directory);
 }
-void FXFile::setPermissions(const FXString &path, const FXACL &perms)
+void QFile::setPermissions(const FXString &path, const FXACL &perms)
 {
 	perms.writeTo(path);
 }
 
-FXuval FXFile::readBlock(char *data, FXuval maxlen)
+FXuval QFile::readBlock(char *data, FXuval maxlen)
 {
 	QMtxHold h(p);
-	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("FXFile", "Not open for reading"));
+	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QFile", "Not open for reading"));
 	if(isOpen() && maxlen)
 	{
 		QThread_DTHold dth;
 		FXuval readed=0;
 #ifdef USE_POSIX
-		if(FXFilePrivate::Write==p->lastop && !p->amStdio)
+		if(QFilePrivate::Write==p->lastop && !p->amStdio)
 		{
 			FXERRHIO(::lseek(p->handle, 0, SEEK_CUR));
 		}
@@ -470,7 +472,7 @@ FXuval FXFile::readBlock(char *data, FXuval maxlen)
 		FXERRHIO(ioreaded=::read((p->amStdio) ? fileno(stdin) : p->handle, data+readed, maxlen-readed));
 #endif
 		ioIndex+=ioreaded; readed+=ioreaded;
-		p->lastop=FXFilePrivate::Read;
+		p->lastop=QFilePrivate::Read;
 		if(isTranslated())
 		{
 			bool midNL;
@@ -491,16 +493,16 @@ FXuval FXFile::readBlock(char *data, FXuval maxlen)
 	return 0;
 }
 
-FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
+FXuval QFile::writeBlock(const char *data, FXuval maxlen)
 {
 	QMtxHold h(p);
-	if(!isWriteable()) FXERRGIO(QTrans::tr("FXFile", "Not open for writing"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QFile", "Not open for writing"));
 	if(isOpen())
 	{
 		QThread_DTHold dth;
 		FXuval written=0;
 #ifdef USE_POSIX
-		if(FXFilePrivate::Read==p->lastop && !p->amStdio)
+		if(QFilePrivate::Read==p->lastop && !p->amStdio)
 		{
 			FXERRHIO(::lseek(p->handle, 0, SEEK_CUR));
 			p->ungetchbuffer.resize(0);
@@ -538,27 +540,27 @@ FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 			ioIndex+=written;
 		}
 		if(ioIndex>p->size) p->size=ioIndex;
-		p->lastop=FXFilePrivate::Write;
+		p->lastop=QFilePrivate::Write;
 		if(isRaw()) flush();
 		return written;
 	}
 	return 0;
 }
 
-FXuval FXFile::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
+FXuval QFile::readBlockFrom(char *data, FXuval maxlen, FXfval pos)
 {
 	QMtxHold h(p);
 	at(pos);
 	return readBlock(data, maxlen);
 }
-FXuval FXFile::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
+FXuval QFile::writeBlockTo(FXfval pos, const char *data, FXuval maxlen)
 {
 	QMtxHold h(p);
 	at(pos);
 	return writeBlock(data, maxlen);
 }
 
-int FXFile::ungetch(int c)
+int QFile::ungetch(int c)
 {
 	QMtxHold h(p);
 	if(isOpen())
@@ -572,209 +574,7 @@ int FXFile::ungetch(int c)
 	return -1;
 }
 
-bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize, FXuint *hardLinks)
-{
-	if(flags) *flags=0;
-	if(size) *size=0;
-	if(created) created->value=0;
-	if(lastModified) lastModified->value=0;
-	if(lastAccessed) lastAccessed->value=0;
-	if(compressedSize) *compressedSize=0;
-	if(hardLinks) *hardLinks=0;
-	if(!path.empty() && (flags || size || created || lastModified || lastAccessed || compressedSize || hardLinks))
-	{
-#ifndef WIN32
-		struct ::stat st;
-		if(::lstat(path.text(), &st)<0) return false;
-		if(flags)
-		{
-			if(S_ISREG(st.st_mode))
-				*flags|=IsFile;
-			if(S_ISDIR(st.st_mode))
-				*flags|=IsDirectory;
-			if(S_ISLNK(st.st_mode))
-				*flags|=IsLink;
-			if('.'==path[0])
-				*flags|=IsHidden;
-		}
-		if(size)
-			*size=st.st_size;
-		if(created || lastModified || lastAccessed)
-		{
-			if(created)
-			{
-#if defined(__linux__)
-				// Unsupported at present
-#elif defined(__FreeBSD__)
-				created->set_time_t(st.st_birthtimespec.tv_sec);
-				created->value+=st.st_birthtimespec.tv_nsec/1000;
-#else
-#error Unknown POSIX architecture
-#endif
-			}
-			if(lastModified)
-			{
-#if defined(__linux__)
-				lastModified->set_time_t(st.st_mtim.tv_sec);
-				lastModified->value+=st.st_mtim.tv_nsec/1000;
-#elif defined(__FreeBSD__)
-				lastModified->set_time_t(st.st_mtimespec.tv_sec);
-				lastModified->value+=st.st_mtimespec.tv_nsec/1000;
-#else
-#error Unknown POSIX architecture
-#endif
-			}
-			if(lastAccessed)
-			{
-#if defined(__linux__)
-				lastAccessed->set_time_t(st.st_atim.tv_sec);
-				lastAccessed->value+=st.st_atim.tv_nsec/1000;
-#elif defined(__FreeBSD__)
-				lastAccessed->set_time_t(st.st_atimespec.tv_sec);
-				lastAccessed->value+=st.st_atimespec.tv_nsec/1000;
-#else
-#error Unknown POSIX architecture
-#endif
-			}
-		}
-		if(compressedSize)
-			*compressedSize=st.st_size;
-		if(hardLinks)
-			*hardLinks=st.st_nlink;
-		return true;
-#else
-		// Need to open with special semantics if it's a directory
-		HANDLE h;
-		if(INVALID_HANDLE_VALUE==(h=CreateFile(FXUnicodify<>(path, true).buffer(), GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OPEN_REPARSE_POINT, NULL)))
-			return false;
-		FXRBOp unh=FXRBFunc(&CloseHandle, h);
-		BY_HANDLE_FILE_INFORMATION bhfi;
-		FXERRHWIN(GetFileInformationByHandle(h, &bhfi));
-		if(flags)
-		{
-			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				*flags|=IsDirectory;
-			else
-				*flags|=IsFile;
-			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
-				*flags|=IsLink;
-			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_COMPRESSED)
-				*flags|=IsCompressed;
-			if(bhfi.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN)
-				*flags|=IsHidden;
-		}
-		if(size)
-			*size=((FXulong) bhfi.nFileSizeHigh<<32)|bhfi.nFileSizeLow;
-		if(created || lastModified || lastAccessed)
-		{
-			if(created)
-				FXTIMEFROMFILETIME(*created, bhfi.ftCreationTime);
-			if(lastModified)
-				FXTIMEFROMFILETIME(*lastModified, bhfi.ftLastWriteTime);
-			if(lastAccessed)
-				FXTIMEFROMFILETIME(*lastAccessed, bhfi.ftLastAccessTime);
-		}
-		if(compressedSize)
-		{
-			DWORD high;
-			*compressedSize=GetCompressedFileSize(FXUnicodify<>(path, true).buffer(), &high);
-			*compressedSize|=(FXulong)high<<32;
-		}
-		if(hardLinks)
-			*hardLinks=bhfi.nNumberOfLinks;
-		return true;
-#endif
-	}
-	return false;
-}
-
-void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FXTime *lastModified, const FXTime *lastAccessed)
-{
-#ifndef WIN32
-	struct ::timeval times[2]; // [0] is accessed, [1] is modified
-#if defined(__FreeBSD__)
-	if(created)
-	{	// Uses non-standard extension to set created time, but if this isn't supported
-		// then set lastModified and lastAccessed after
-		// NOTE: If modification is older than access time, sets creation time to modification
-		times[1].tv_sec =created->as_time_t();
-		times[1].tv_usec=created->value % FXTime::micsPerSecond;
-		times[0].tv_sec =times[1].tv_sec+1;
-		times[0].tv_usec=times[1].tv_usec;
-		FXERRHOSFN(::utimes(path.text(), times), path);
-	}
-#endif
-	if(lastModified || lastAccessed)
-	{
-		if(!lastModified || !lastAccessed)
-		{
-			struct ::stat orig;
-			FXERRHOSFN(::stat(path.text(), &orig), path);
-#if defined(__linux__)
-			times[0].tv_sec =orig.st_atim.tv_sec;
-			times[0].tv_usec=orig.st_atim.tv_nsec/1000;
-			times[1].tv_sec =orig.st_mtim.tv_sec;
-			times[1].tv_usec=orig.st_mtim.tv_nsec/1000;
-#elif defined(__FreeBSD__)
-			times[0].tv_sec =orig.st_atimespec.tv_sec;
-			times[0].tv_usec=orig.st_atimespec.tv_nsec/1000;
-			times[1].tv_sec =orig.st_mtimespec.tv_sec;
-			times[1].tv_usec=orig.st_mtimespec.tv_nsec/1000;
-#else
-#error Unknown POSIX architecture
-#endif
-		}
-		if(lastAccessed)
-		{
-			times[0].tv_sec =lastAccessed->as_time_t();
-			times[0].tv_usec=lastAccessed->value % FXTime::micsPerSecond;
-		}
-		if(lastModified)
-		{
-			times[1].tv_sec =lastModified->as_time_t();
-			times[1].tv_usec=lastModified->value % FXTime::micsPerSecond;
-		}
-		FXERRHOSFN(::utimes(path.text(), times), path);
-	}
-#else
-	if(created || lastModified || lastAccessed)
-	{	// Need to open with special semantics if it's a directory
-		HANDLE h;
-		FXERRHWINFN(INVALID_HANDLE_VALUE!=(h=CreateFile(FXUnicodify<>(path, true).buffer(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
-			NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS, NULL)), path);
-		FXRBOp unh=FXRBFunc(&CloseHandle, h);
-		FILETIME _cre, _mod, _acc;
-		FILETIME *cre=0, *mod=0, *acc=0;
-		if(created)
-		{
-			cre=&_cre;
-			FXTIMETOFILETIME(_cre, *created);
-		}
-		if(lastModified)
-		{
-			mod=&_mod;
-			FXTIMETOFILETIME(_mod, *lastModified);
-		}
-		if(lastAccessed)
-		{
-			acc=&_acc;
-			FXTIMETOFILETIME(_acc, *lastAccessed);
-		}
-		FXERRHWIN(SetFileTime(h, cre, acc, mod));
-	}
-#endif
-}
-
-FXuint FXFile::metaFlags(const FXString &path)
-{
-	FXuint flags;
-	readMetadata(path, &flags, 0, 0, 0, 0);
-	return flags;
-}
-
-
-//*****************************************************************************
+#if 0
 
 // Return value of environment variable name
 FXString FXFile::getEnvironment(const FXString& name){
@@ -2228,7 +2028,7 @@ FXString FXFile::dequote(const FXString& file){
 
 // Match filenames using *, ?, [^a-z], and so on
 FXbool FXFile::match(const FXString& pattern,const FXString& file,FXuint flags){
-  return fxfilematch(pattern.text(),file.text(),flags);
+  return FXFilematch(pattern.text(),file.text(),flags);
   }
 
 
@@ -2902,6 +2702,7 @@ FXString FXFile::symlink(const FXString& file){
 #endif
   return FXString::null;
   }
+#endif
 
 }
 

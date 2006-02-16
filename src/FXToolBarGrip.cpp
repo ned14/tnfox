@@ -3,7 +3,7 @@
 *                       T o o l B a r G r i p   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarGrip.cpp,v 1.23 2005/02/04 03:41:00 fox Exp $                   *
+* $Id: FXToolBarGrip.cpp,v 1.29 2006/01/22 17:58:47 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -55,6 +55,8 @@
 
 #define JUSTIFY_MASK (JUSTIFY_HZ_APART|JUSTIFY_VT_APART)
 
+
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -107,6 +109,10 @@ FXint FXToolBarGrip::getDefaultWidth(){
 FXint FXToolBarGrip::getDefaultHeight(){
   return padtop+padbottom+(border<<1)+((options&TOOLBARGRIP_DOUBLE)?GRIP_DOUBLE:GRIP_SINGLE);
   }
+
+
+// Can have focus
+bool FXToolBarGrip::canFocus() const { return false; }
 
 
 // Change toolbar orientation

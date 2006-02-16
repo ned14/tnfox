@@ -3,7 +3,7 @@
 *                          M e n u C h e c k   W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCheck.h,v 1.10 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXMenuCheck.h,v 1.13 2006/01/22 17:58:06 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXMENUCHECK_H
 #define FXMENUCHECK_H
@@ -36,6 +36,8 @@ namespace FX {
 * application from a menu.  Menu checks may reflect
 * the state of the application by graying out, becoming hidden,
 * or by a check mark.
+* When activated, a menu check sends a SEL_COMMAND to its target;
+* the void* argument of the message contains the new state.
 */
 class FXAPI FXMenuCheck : public FXMenuCommand {
   FXDECLARE(FXMenuCheck)
@@ -95,4 +97,3 @@ public:
 }
 
 #endif
-

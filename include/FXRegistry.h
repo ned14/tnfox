@@ -3,7 +3,7 @@
 *                           R e g i s t r y   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegistry.h,v 1.29 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXRegistry.h,v 1.31 2006/01/22 17:58:08 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXREGISTRY_H
 #define FXREGISTRY_H
@@ -52,19 +52,19 @@ namespace FX {
 * The registry is read when FXApp::init() is called, and written back to the
 * system when FXApp::exit() is called.
 */
-class FXAPIR FXRegistry : public FXSettings {
+class FXAPI FXRegistry : public FXSettings {
   FXDECLARE(FXRegistry)
 protected:
   FXString applicationkey;  // Application key
   FXString vendorkey;       // Vendor key
-  FXbool   ascii;           // ASCII file-based registry
+  bool     ascii;           // ASCII file-based registry
 protected:
-  FXbool readFromDir(const FXString& dirname,FXbool mark);
+  bool readFromDir(const FXString& dirname,bool mark);
 #ifdef WIN32
-  FXbool readFromRegistry(void* hRootKey,FXbool mark);
-  FXbool writeToRegistry(void* hRootKey);
-  FXbool readFromRegistryGroup(void* org,const char* groupname,FXbool mark=FALSE);
-  FXbool writeToRegistryGroup(void* org,const char* groupname);
+  bool readFromRegistry(void* hRootKey,bool mark);
+  bool writeToRegistry(void* hRootKey);
+  bool readFromRegistryGroup(void* org,const char* groupname,bool mark=false);
+  bool writeToRegistryGroup(void* org,const char* groupname);
 #endif
 private:
   FXRegistry(const FXRegistry&);
@@ -78,10 +78,10 @@ public:
   FXRegistry(const FXString& akey=FXString::null,const FXString& vkey=FXString::null);
 
   /// Read registry
-  FXbool read();
+  bool read();
 
   /// Write registry
-  FXbool write();
+  bool write();
 
   /// Return application key
   const FXString& getAppKey() const { return applicationkey; }
@@ -93,13 +93,12 @@ public:
   * Set ASCII mode; under MS-Windows, this will switch the system to a
   * file-based registry system, instead of using the System Registry API.
   */
-  void setAsciiMode(FXbool asciiMode){ ascii=asciiMode; }
+  void setAsciiMode(bool asciiMode){ ascii=asciiMode; }
 
   /// Get ASCII mode
-  FXbool getAsciiMode() const { return ascii; }
+  bool getAsciiMode() const { return ascii; }
   };
 
 }
 
 #endif
-

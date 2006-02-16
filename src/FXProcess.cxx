@@ -25,7 +25,7 @@
 #include "FXException.h"
 #include "FXPtrHold.h"
 #include "FXErrCodes.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "QBuffer.h"
 #include "FXStream.h"
 #include "QTrans.h"
@@ -33,6 +33,8 @@
 #include "FXACL.h"
 #include "FXApp.h"
 #include "FXRollback.h"
+#include "FXTime.h"
+#include "FXPath.h"
 #include <stdlib.h>
 #include <qptrlist.h>
 #include <qvaluelist.h>
@@ -574,7 +576,7 @@ void FXProcess::init(int &argc, char *argv[])
 		}*/
 		{	// Ensure /proc is working
 			FXString myprocloc=FXString("/proc/%1").arg(id());
-			if(!FXFile::exists(myprocloc))
+			if(!QFile::exists(myprocloc))
 			{
 				fxerror("The /proc pseudo-filing system must be installed and mounted\nfor this application to run\n");
 				::exit(1);
@@ -593,7 +595,7 @@ void FXProcess::init(int &argc, char *argv[])
 		if(runPendingStaticInits(argc, argv, stxtholder)) inHelpMode=true;
 		p->argscopy.argc=argc;
 		p->argscopy.argv=argv;
-		QIODevice &stdio=FXFile::stdio(true);
+		QIODevice &stdio=QFile::stdio(true);
 		FXStream sstdio(&stdio);
 		for(int argi=0; argi<argc; argi++)
 		{
@@ -601,7 +603,7 @@ void FXProcess::init(int &argc, char *argv[])
 			{
 				inHelpMode=true;
 				QTransString temp2=QTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n");
-				temp2.arg(FXFile::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR);
+				temp2.arg(FXPath::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR);
 				temp2.arg(FOX_MAJOR).arg(FOX_MINOR).arg(FOX_LEVEL).arg(FXString(__TIME__)).arg(FXString(__DATE__));
 				FXString temp(temp2);
 				sstdio << temp.text();
@@ -1051,7 +1053,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 #ifdef USE_POSIX
 #ifdef __linux__
 	FXString procpath=FXString("/proc/%1/maps").arg(FXProcess::id());
-	FXFile fh(procpath, FXFile::WantLightFXFile());
+	QFile fh(procpath, QFile::WantLightQFile());
 	fh.open(IO_ReadOnly|IO_Translate);
 	char rawbuffer[4096];
 	while(fh.readLine(rawbuffer, sizeof(rawbuffer)))
@@ -1093,7 +1095,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 	char rawbuffer[131072 /* WARNING: This value derived by experimentation */ ];
 	char *ptr=rawbuffer, *end;
 	{
-		FXFile fh(procpath, FXFile::WantLightFXFile());
+		QFile fh(procpath, QFile::WantLightQFile());
 		if(!fh.exists()) // Probably /proc isn't mounted - let FXProcess take care of that
 			return list;
 		fh.open(IO_ReadOnly|IO_Translate);
@@ -1263,25 +1265,25 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	problem is that libraries can have "lib" on their front :( */
 	FXString path_=path;
 	bool hasLib=path_.left(3)=="lib", hasSO=path_.right(3)==".so";
-	while(!FXFile::exists(path_) && !FXFile::isAbsolute(path_))
+	while(!QFile::exists(path_) && !QFile::isAbsolute(path_))
 	{
-		if(!hasSO)  { path_+=".so";			if(FXFile::exists(path_)) break; }
-		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(path_)) break; }
+		if(!hasSO)  { path_+=".so";			if(QFile::exists(path_)) break; }
+		if(!hasLib) { path_="lib"+path_;	if(QFile::exists(path_)) break; }
 		// Try directory where my executable is
-		FXString inexecpath=FXFile::directory(execpath())+PATHSEPSTRING;
+		FXString inexecpath=QFile::directory(execpath())+PATHSEPSTRING;
 		path_=path;
-		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(!hasSO)  { path_+=".so";			if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;	if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		// Try current directory
 		inexecpath="." PATHSEPSTRING;
 		path_=path;
-		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(!hasSO)  { path_+=".so";			if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;	if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
 	}
-	path_=FXFile::absolute(path_);
+	path_=QFile::absolute(path_);
 	QValueList<MappedFileInfo> list=mappedFiles();
 	for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
 	{
@@ -1531,7 +1533,7 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 #endif
 #ifdef USE_POSIX
 #ifdef __linux__
-	FXFile fh("/proc/meminfo", FXFile::WantLightFXFile());
+	QFile fh("/proc/meminfo", QFile::WantLightQFile());
 	fh.open(IO_ReadOnly|IO_Translate);
 	char rawbuffer[4096];
 	rawbuffer[fh.readBlock(rawbuffer, sizeof(rawbuffer)+1)]=0;
@@ -1804,13 +1806,13 @@ QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
 #ifdef USE_POSIX
 	FXString fstab, mtab;
 	{
-		FXFile l("/etc/fstab", FXFile::WantLightFXFile());
+		QFile l("/etc/fstab", QFile::WantLightQFile());
 		l.open(IO_ReadOnly);
 		fstab.length((FXuint) l.size());
 		l.readBlock((char *) fstab.text(), fstab.length());
 		// FreeBSD doesn't maintain /etc/mtab, and doesn't appear to have an equivalent :(
 #ifndef __FreeBSD__
-		FXFile m("/etc/mtab", FXFile::WantLightFXFile());
+		QFile m("/etc/mtab", QFile::WantLightQFile());
 		m.open(IO_ReadOnly);
 		mtab.length((FXuint) m.size());
 		m.readBlock((char *) mtab.text(), mtab.length());

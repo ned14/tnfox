@@ -3,7 +3,7 @@
 *                          I c o n L i s t   O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,16 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.cpp,v 1.184.2.2 2005/06/09 14:08:55 fox Exp $                     *
+* $Id: FXIconList.cpp,v 1.197 2006/01/22 17:58:31 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "fxascii.h"
+#include "fxunicode.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -75,6 +77,8 @@
     from the header instead.
   - Perhaps the ICONLIST_AUTOSIZE mode should be set with a separate API so that
     the visual stuff changed setListStyle().
+  - Since '\0' is no longer special in FXString, perhaps we can replace the function
+    of '\t' with '\0'.  This would be significantly more efficient.
 */
 
 
@@ -89,11 +93,12 @@
 #define SELECT_MASK   (ICONLIST_EXTENDEDSELECT|ICONLIST_SINGLESELECT|ICONLIST_BROWSESELECT|ICONLIST_MULTIPLESELECT)
 #define ICONLIST_MASK (SELECT_MASK|ICONLIST_MINI_ICONS|ICONLIST_BIG_ICONS|ICONLIST_COLUMNS|ICONLIST_AUTOSIZE)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
+
 
 // Object implementation
 FXIMPLEMENT(FXIconItem,FXObject,NULL,0)
@@ -123,7 +128,7 @@ void FXIconItem::drawBigIcon(const FXIconList* list,FXDC& dc,FXint x,FXint y,FXi
     if(tw>space){
       dw=font->getTextWidth("...",3);
       s=space-dw;
-      while((tw=4+font->getTextWidth(label.text(),len))>s && len>1) --len;
+      while((tw=4+font->getTextWidth(label.text(),len))>s && len>1) len=label.dec(len);
       if(tw>s) dw=0;
       }
     if(tw<=space){         // FIXME as below in drawDetails
@@ -190,7 +195,7 @@ void FXIconItem::drawMiniIcon(const FXIconList* list,FXDC& dc,FXint x,FXint y,FX
     if(tw>space){                  // FIXME as below in drawDetails
       dw=font->getTextWidth("...",3);
       s=space-dw;
-      while((tw=4+font->getTextWidth(label.text(),len))>s && len>1) --len;
+      while((tw=4+font->getTextWidth(label.text(),len))>s && len>1) len=label.dec(len);
       if(tw>s) dw=0;
       }
     if(tw<=space){
@@ -254,7 +259,7 @@ void FXIconItem::drawDetails(const FXIconList* list,FXDC& dc,FXint x,FXint y,FXi
         drw=end-beg;
         tw=font->getTextWidth(&label[beg],drw);
         if(tw>space-4){
-          while((tw=font->getTextWidth(&label[beg],drw))+dw>space-4 && drw>1) drw--;
+          while((tw=font->getTextWidth(&label[beg],drw))+dw>space-4 && drw>1) drw=label.dec(drw);
           dc.setClipRectangle(xx,y,space,h);
           dc.drawText(xx+2,yt+font->getFontAscent()+2,&label[beg],drw);
           dc.drawText(xx+tw+2,yt+font->getFontAscent()+2,"...",3);
@@ -557,6 +562,7 @@ FXIconList::FXIconList(){
   current=-1;
   extent=-1;
   cursor=-1;
+  viewable=-1;
   font=(FXFont*)-1L;
   sortfunc=NULL;
   textColor=0;
@@ -588,6 +594,7 @@ FXIconList::FXIconList(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,F
   current=-1;
   extent=-1;
   cursor=-1;
+  viewable=-1;
   font=getApp()->getNormalFont();
   sortfunc=NULL;
   textColor=getApp()->getForeColor();
@@ -625,7 +632,7 @@ void FXIconList::detach(){
 
 
 // If window can have focus
-FXbool FXIconList::canFocus() const { return 1; }
+bool FXIconList::canFocus() const { return true; }
 
 
 // Into focus chain
@@ -769,6 +776,11 @@ void FXIconList::layout(){
   // Set line size
   vertical->setLine(itemHeight);
   horizontal->setLine(itemSpace);
+
+  // We were supposed to make this item viewable
+  if(0<=viewable){
+    makeItemVisible(viewable);
+    }
 
   // Force repaint
   update();
@@ -1044,42 +1056,53 @@ FXbool FXIconList::isItemVisible(FXint index) const {
 // Make item fully visible
 void FXIconList::makeItemVisible(FXint index){
   register FXint x,y,hh,px,py;
-  if(xid && 0<=index && index<items.no()){
+  if(0<=index && index<items.no()){
 
-    // Force layout if dirty
-    if(flags&FLAG_RECALC) layout();
 
-    px=pos_x;
-    py=pos_y;
+    // Remember for later
+    viewable=index;
 
-    // Showing icon view
-    if(options&(ICONLIST_BIG_ICONS|ICONLIST_MINI_ICONS)){
-      if(options&ICONLIST_COLUMNS){
-        FXASSERT(ncols>0);
-        x=itemSpace*(index%ncols);
-        y=itemHeight*(index/ncols);
+    // Was realized
+    if(xid){
+
+      // Force layout if dirty
+      if(flags&FLAG_RECALC) layout();
+
+      px=pos_x;
+      py=pos_y;
+
+      // Showing icon view
+      if(options&(ICONLIST_BIG_ICONS|ICONLIST_MINI_ICONS)){
+        if(options&ICONLIST_COLUMNS){
+          FXASSERT(ncols>0);
+          x=itemSpace*(index%ncols);
+          y=itemHeight*(index/ncols);
+          }
+        else{
+          FXASSERT(nrows>0);
+          x=itemSpace*(index/nrows);
+          y=itemHeight*(index%nrows);
+          }
+        if(px+x+itemSpace >= viewport_w) px=viewport_w-x-itemSpace;
+        if(px+x <= 0) px=-x;
+        if(py+y+itemHeight >= viewport_h) py=viewport_h-y-itemHeight;
+        if(py+y <= 0) py=-y;
         }
+
+      // Showing list view
       else{
-        FXASSERT(nrows>0);
-        x=itemSpace*(index/nrows);
-        y=itemHeight*(index%nrows);
+        hh=header->getDefaultHeight();
+        y=hh+index*itemHeight;
+        if(py+y+itemHeight >= viewport_h+hh) py=hh+viewport_h-y-itemHeight;
+        if(py+y <= hh) py=hh-y;
         }
-      if(px+x+itemSpace >= viewport_w) px=viewport_w-x-itemSpace;
-      if(px+x <= 0) px=-x;
-      if(py+y+itemHeight >= viewport_h) py=viewport_h-y-itemHeight;
-      if(py+y <= 0) py=-y;
-      }
 
-    // Showing list view
-    else{
-      hh=header->getDefaultHeight();
-      y=hh+index*itemHeight;
-      if(py+y+itemHeight >= viewport_h+hh) py=hh+viewport_h-y-itemHeight;
-      if(py+y <= hh) py=hh-y;
-      }
+      // Scroll into view
+      setPosition(px,py);
 
-    // Scroll into view
-    setPosition(px,py);
+      // Done it
+      viewable=-1;
+      }
     }
   }
 
@@ -1134,8 +1157,8 @@ static FXint compcase(const FXString& s1,const FXString& s2,FXint n){
   register FXint c1,c2;
   if(0<n){
     do{
-      c1=tolower(*p1++); if(c1=='\t') c1=0;
-      c2=tolower(*p2++); if(c2=='\t') c2=0;
+      c1=Ascii::toLower(*p1++); if(c1=='\t') c1=0;      // FIXME UTF8 version
+      c2=Ascii::toLower(*p2++); if(c2=='\t') c2=0;
       }
     while(--n && c1 && (c1==c2));
     return c1-c2;
@@ -1732,6 +1755,7 @@ long FXIconList::onCmdArrangeByRows(FXObject*,FXSelector,void*){
 // Update sender
 long FXIconList::onUpdArrangeByRows(FXObject* sender,FXSelector,void*){
   sender->handle(this,(options&ICONLIST_COLUMNS)?FXSEL(SEL_COMMAND,ID_UNCHECK):FXSEL(SEL_COMMAND,ID_CHECK),NULL);
+  sender->handle(this,(options&(ICONLIST_MINI_ICONS|ICONLIST_BIG_ICONS))?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
   return 1;
   }
 
@@ -1747,6 +1771,7 @@ long FXIconList::onCmdArrangeByColumns(FXObject*,FXSelector,void*){
 // Update sender
 long FXIconList::onUpdArrangeByColumns(FXObject* sender,FXSelector,void*){
   sender->handle(this,(options&ICONLIST_COLUMNS)?FXSEL(SEL_COMMAND,ID_CHECK):FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
+  sender->handle(this,(options&(ICONLIST_MINI_ICONS|ICONLIST_BIG_ICONS))?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
   return 1;
   }
 
@@ -1820,45 +1845,61 @@ long FXIconList::onCmdSelectInverse(FXObject*,FXSelector,void*){
   }
 
 
+// Compare sectioned strings
+FXint FXIconList::compareSection(const FXchar *p,const FXchar* q,FXint s){
+  register FXint c1,c2,x;
+  for(x=s; x && *p; x-=(*p++=='\t'));
+  for(x=s; x && *q; x-=(*q++=='\t'));
+  do{
+    c1=FXuchar(*p++);
+    c2=FXuchar(*q++);
+    }
+  while('\t'<c1 && (c1==c2));
+  return c1-c2;
+  }
+
+
+// Compare sectioned strings, case-insensitive
+FXint FXIconList::compareSectionCase(const FXchar *p,const FXchar* q,FXint s){
+  register FXint c1,c2,x;
+  for(x=s; x && *p; x-=(*p++=='\t'));
+  for(x=s; x && *q; x-=(*q++=='\t'));
+  do{
+    if((*p & 0x80) && (*q & 0x80)){
+      c1=Unicode::toLower(wc(p)); p+=wclen(p);
+      c2=Unicode::toLower(wc(q)); q+=wclen(q);
+      }
+    else{
+      c1=Ascii::toLower(*p); p+=1;
+      c2=Ascii::toLower(*q); q+=1;
+      }
+    }
+  while('\t'<c1 && (c1==c2));
+  return c1-c2;
+  }
+
+
 // Sort items in ascending order
 FXint FXIconList::ascending(const FXIconItem* a,const FXIconItem* b){
-  register const FXuchar *p=(const FXuchar*)a->getText().text();
-  register const FXuchar *q=(const FXuchar*)b->getText().text();
-  while(1){
-    if(*p > *q) return 1;
-    if(*p < *q) return -1;
-    if(*p <= '\t') return 0;
-    p++;
-    q++;
-    }
-  return 0;
+  return compareSection(a->getText().text(),b->getText().text(),0);
   }
 
 
 // Sort items in descending order
 FXint FXIconList::descending(const FXIconItem* a,const FXIconItem* b){
-  return FXIconList::ascending(b,a);
+  return compareSection(b->getText().text(),a->getText().text(),0);
   }
 
 
 // Sort items in ascending order, case insensitive
 FXint FXIconList::ascendingCase(const FXIconItem* a,const FXIconItem* b){
-  register const FXuchar *p=(const FXuchar*)a->getText().text();
-  register const FXuchar *q=(const FXuchar*)b->getText().text();
-  while(1){
-    if(tolower((FXuchar)*p) > tolower((FXuchar)*q)) return 1;
-    if(tolower((FXuchar)*p) < tolower((FXuchar)*q)) return -1;
-    if(*p <= '\t') return 0;
-    p++;
-    q++;
-    }
-  return 0;
+  return compareSectionCase(a->getText().text(),b->getText().text(),0);
   }
 
 
 // Sort items in descending order, case insensitive
 FXint FXIconList::descendingCase(const FXIconItem* a,const FXIconItem* b){
-  return FXIconList::ascendingCase(b,a);
+  return compareSectionCase(b->getText().text(),a->getText().text(),0);
   }
 
 
@@ -2078,7 +2119,7 @@ hop:  lookup=FXString::null;
     default:
       if((FXuchar)event->text[0]<' ') return 0;
       if(event->state&(CONTROLMASK|ALTMASK)) return 0;
-      if(!isprint((FXuchar)event->text[0])) return 0;
+      if(!Ascii::isPrint(event->text[0])) return 0;
       lookup.append(event->text);
       getApp()->addTimeout(this,ID_LOOKUPTIMER,getApp()->getTypingSpeed());
       index=findItem(lookup,current,SEARCH_FORWARD|SEARCH_WRAP|SEARCH_PREFIX);
@@ -2524,6 +2565,7 @@ FXint FXIconList::insertItem(FXint index,FXIconItem* item,FXbool notify){
   if(anchor>=index)  anchor++;
   if(extent>=index)  extent++;
   if(current>=index) current++;
+  if(viewable>=index) viewable++;
   if(current<0 && items.no()==1) current=0;
 
   // Notify item has been inserted
@@ -2617,7 +2659,7 @@ FXint FXIconList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
 
     // Move item
     item=items[oldindex];
-    items.remove(oldindex);
+    items.erase(oldindex);
     items.insert(newindex,item);
 
     // Move item down
@@ -2625,6 +2667,7 @@ FXint FXIconList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
       if(newindex<=anchor && anchor<oldindex) anchor++;
       if(newindex<=extent && extent<oldindex) extent++;
       if(newindex<=current && current<oldindex) current++;
+      if(newindex<=viewable && viewable<oldindex) viewable++;
       }
 
     // Move item up
@@ -2632,12 +2675,14 @@ FXint FXIconList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
       if(oldindex<anchor && anchor<=newindex) anchor--;
       if(oldindex<extent && extent<=newindex) extent--;
       if(oldindex<current && current<=newindex) current--;
+      if(oldindex<viewable && viewable<=newindex) viewable--;
       }
 
     // Adjust if it was equal
     if(anchor==oldindex) anchor=newindex;
     if(extent==oldindex) extent=newindex;
     if(current==oldindex) current=newindex;
+    if(viewable==oldindex) viewable=newindex;
 
     // Current item may have changed
     if(old!=current){
@@ -2648,6 +2693,52 @@ FXint FXIconList::moveItem(FXint newindex,FXint oldindex,FXbool notify){
     recalc();
     }
   return newindex;
+  }
+
+
+// Extract node from list
+FXIconItem* FXIconList::extractItem(FXint index,FXbool notify){
+  register FXIconItem *result;
+  register FXint old=current;
+
+  // Must be in range
+  if(index<0 || items.no()<=index){ fxerror("%s::extractItem: index out of range.\n",getClassName()); }
+
+  // Notify item will be deleted
+  if(notify && target){target->tryHandle(this,FXSEL(SEL_DELETED,message),(void*)(FXival)index);}
+
+  // Extract item
+  result=items[index];
+
+  // Remove from list
+  items.erase(index);
+
+  // Adjust indices
+  if(anchor>index || anchor>=items.no())  anchor--;
+  if(extent>index || extent>=items.no())  extent--;
+  if(current>index || current>=items.no()) current--;
+  if(viewable>index || viewable>=items.no())  viewable--;
+
+  // Current item has changed
+  if(index<=old){
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_CHANGED,message),(void*)(FXival)current);}
+    }
+
+  // Deleted current item
+  if(0<=current && index==old){
+    if(hasFocus()){
+      items[current]->setFocus(TRUE);
+      }
+    if((options&SELECT_MASK)==ICONLIST_BROWSESELECT && items[current]->isEnabled()){
+      selectItem(current,notify);
+      }
+    }
+
+  // Redo layout
+  recalc();
+
+  // Return item
+  return result;
   }
 
 
@@ -2665,12 +2756,13 @@ void FXIconList::removeItem(FXint index,FXbool notify){
   delete items[index];
 
   // Remove from list
-  items.remove(index);
+  items.erase(index);
 
   // Adjust indices
   if(anchor>index || anchor>=items.no())  anchor--;
   if(extent>index || extent>=items.no())  extent--;
   if(current>index || current>=items.no()) current--;
+  if(viewable>index || viewable>=items.no())  viewable--;
 
   // Current item has changed
   if(index<=old){
@@ -2709,6 +2801,7 @@ void FXIconList::clearItems(FXbool notify){
   current=-1;
   anchor=-1;
   extent=-1;
+  viewable=-1;
 
   // Current item has changed
   if(old!=-1){

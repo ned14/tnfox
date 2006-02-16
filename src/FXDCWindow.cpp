@@ -3,7 +3,7 @@
 *  D e v i c e   C o n t e x t   F o r   W i n d o w s   a n d   I m a g e s    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.cpp,v 1.128 2005/02/03 22:06:11 fox Exp $                     *
+* $Id: FXDCWindow.cpp,v 1.162 2006/01/22 17:58:21 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXObject.h"
@@ -53,6 +53,7 @@
 #include "FXRegion.h"
 #include "FXDC.h"
 #include "FXDCWindow.h"
+
 
 /*
   Notes:
@@ -140,7 +141,7 @@
 
 #define DISPLAY(app) ((Display*)((app)->display))
 
-
+using namespace FX;
 
 namespace FX {
 
@@ -506,36 +507,117 @@ void FXDCWindow::fillComplexPolygonRel(const FXPoint* points,FXuint npoints){
   }
 
 
-// Draw text
+// Set text font
+void FXDCWindow::setFont(FXFont *fnt){
+  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
+  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
+#ifndef HAVE_XFT_H
+  XSetFont(DISPLAY(getApp()),(GC)ctx,fnt->id());
+  flags|=GCFont;
+#endif
+  font=fnt;
+  }
+
+
+/*
+
+ We eventually want subclassable fonts.
+ FXDCWindow knows about surface, but does not know about font type.
+ Thus, drawText() here should vector to new API's in FXFont.
+ New API gets FXDC* (or FXDC&) so that it can obtain colors, &c.
+ Thus, all knowledge of font-technology is kept inside FXFont.
+ Knowledge of FXDCWindow surface is kept inside FXDCWindow.
+
+ But FXDC may have some responsibility for layout of characters.
+
+ Of course, certain font types can only draw on certain DC types...
+
+
+void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
+  if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
+  if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
+  font->drawText(this,x,y,string,length);
+  }
+*/
+
+
+
+#define FS ((XFontStruct*)(font->font))
+
+
+static FXint utf2db(XChar2b *dst,const FXchar *src,FXint n){
+  register FXint len,p;
+  register FXwchar w;
+  for(p=len=0; p<n; p+=wclen(src+p),len++){
+    w=wc(src+p);
+    dst[len].byte1=(w>>8);
+    dst[len].byte2=(w&255);
+    }
+  return len;
+  }
+
+
+// Draw string with base line starting at x, y
 void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
 #ifdef HAVE_XFT_H
   XftColor color;
-
-  // Does the same as XftColorAllocValue only without the server round-trip:
-  // we already have all the colors in FXVisual's dither tables.
   color.pixel=devfg;
   color.color.red=FXREDVAL(fg)*257;
   color.color.green=FXGREENVAL(fg)*257;
   color.color.blue=FXBLUEVAL(fg)*257;
   color.color.alpha=FXALPHAVAL(fg)*257;
-  XftDrawString8((XftDraw*)xftDraw,&color,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
+  XftDrawStringUtf8((XftDraw*)xftDraw,&color,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
 #else
-  XDrawString(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,(char*)string,length);
+  register FXint count,escapement,defwidth,ww,size,i;
+  register FXdouble ang,ux,uy;
+  register FXuchar r,c;
+  XChar2b sbuffer[4096];
+  count=utf2db(sbuffer,string,FXMIN(length,4096));
+  if(font->getAngle()){
+    ang=font->getAngle()*0.00027270769562411399179;
+    defwidth=FS->min_bounds.width;
+    ux=cos(ang);
+    uy=sin(ang);
+    if(FS->per_char){
+      r=FS->default_char>>8;
+      c=FS->default_char&255;
+      size=(FS->max_char_or_byte2-FS->min_char_or_byte2+1);
+      if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+        defwidth=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width;
+        }
+      for(i=escapement=0; i<count; i++){
+        XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        r=sbuffer[i].byte1;
+        c=sbuffer[i].byte2;
+        escapement+=defwidth;
+        if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+          if((ww=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width)!=0) escapement+=ww-defwidth;
+          }
+        }
+      }
+    else{
+      for(i=escapement=0; i<count; i++){
+        XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        escapement+=defwidth;
+        }
+      }
+    }
+  else{
+    XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,sbuffer,count);
+    }
 #endif
   }
 
 
-// Draw image text
+// Draw text starting at x, y over filled background
 void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawImageText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawImageText: no font selected.\n"); }
 #ifdef HAVE_XFT_H
   XGlyphInfo extents;
   XftColor fgcolor,bgcolor;
-
-  // Same method as above
   fgcolor.pixel=devfg;
   fgcolor.color.red=FXREDVAL(fg)*257;
   fgcolor.color.green=FXGREENVAL(fg)*257;
@@ -552,12 +634,63 @@ void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint lengt
 
   // Erase around text [FIXME wrong location]
   XftDrawRect((XftDraw*)xftDraw,&bgcolor,x,y-font->getFontAscent(),extents.width,extents.height);
-
-  // Draw text
-  XftDrawString8((XftDraw*)xftDraw,&fgcolor,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
+//  XftDrawRect((XftDraw*)xftDraw,&bgcolor,x+cache->xoff,y-xftfs->ascent,cache->x2off-cache->xoff,xftfs->ascent+xftfs->descent);
+//XftDrawRect((XftDraw*)xftDraw,&bgcolor,x+cache->xoff,y-((XftFont*)font->font)->ascent,cache->x2off-cache->xoff,((XftFont*)font->font)->ascent+((XftFont*)font->font)->descent);
+  XftDrawStringUtf8((XftDraw*)xftDraw,&fgcolor,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
 #else
-  XDrawImageString(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,(char*)string,length);
+  register FXint count,escapement,defwidth,ww,size,i;
+  register FXdouble ang,ux,uy;
+  register FXuchar r,c;
+  XChar2b sbuffer[4096];
+  count=utf2db(sbuffer,string,FXMIN(length,4096));
+  if(font->getAngle()){
+    ang=font->getAngle()*0.00027270769562411399179;
+    defwidth=FS->min_bounds.width;
+    ux=cos(ang);
+    uy=sin(ang);
+    if(FS->per_char){
+      r=FS->default_char>>8;
+      c=FS->default_char&255;
+      size=(FS->max_char_or_byte2-FS->min_char_or_byte2+1);
+      if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+        defwidth=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width;
+        }
+      for(i=escapement=0; i<count; i++){
+        XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        r=sbuffer[i].byte1;
+        c=sbuffer[i].byte2;
+        escapement+=defwidth;
+        if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+          if((ww=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width)!=0) escapement+=ww-defwidth;
+          }
+        }
+      }
+    else{
+      for(i=escapement=0; i<count; i++){
+        XDrawImageString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        escapement+=defwidth;
+        }
+      }
+    }
+  else{
+    XDrawImageString16(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,sbuffer,count);
+    }
 #endif
+  }
+
+#undef FS
+
+
+
+// Draw string with base line starting at x, y
+void FXDCWindow::drawText(FXint x,FXint y,const FXString& string){
+  drawText(x,y,string.text(),string.length());
+  }
+
+
+// Draw text starting at x, y over filled background
+void FXDCWindow::drawImageText(FXint x,FXint y,const FXString& string){
+  drawImageText(x,y,string.text(),string.length());
   }
 
 
@@ -566,6 +699,29 @@ void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FX
   if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
   if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
   XCopyArea(DISPLAY(getApp()),source->id(),surface->id(),(GC)ctx,sx,sy,sw,sh,dx,dy);
+  }
+
+
+// Draw area stretched area from source; FIXME this works but it's like molasses!
+void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy,FXint dw,FXint dh){
+  register FXint i,j,x,y,xs,ys;
+  if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
+  if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
+  xs=(sw<<16)/dw;
+  ys=(sh<<16)/dh;
+  i=0;
+  y=ys>>1;
+  do{
+    j=0;
+    x=xs>>1;
+    do{
+      XCopyArea(DISPLAY(getApp()),source->id(),surface->id(),(GC)ctx,sx+(x>>16),sy+(y>>16),1,1,dx+j,dy+i);
+      x+=xs;
+      }
+    while(++j<dw);
+    y+=ys;
+    }
+  while(++i<dh);
   }
 
 
@@ -908,7 +1064,7 @@ void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   if(clip.h<=0) clip.h=0;
   XSetClipRectangles(DISPLAY(getApp()),(GC)ctx,0,0,(XRectangle*)&clip,1,Unsorted);
 #ifdef HAVE_XFT_H
-  XftDrawSetClipRectangles((XftDraw*)xftDraw, 0, 0, (XRectangle*)&clip, 1);
+  XftDrawSetClipRectangles((XftDraw*)xftDraw,0,0,(XRectangle*)&clip,1);
 #endif
   flags|=GCClipMask;
   }
@@ -925,7 +1081,7 @@ void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   if(clip.h<=0) clip.h=0;
   XSetClipRectangles(DISPLAY(getApp()),(GC)ctx,0,0,(XRectangle*)&clip,1,Unsorted);
 #ifdef HAVE_XFT_H
-  XftDrawSetClipRectangles((XftDraw*)xftDraw, 0, 0, (XRectangle*)&clip, 1);
+  XftDrawSetClipRectangles((XftDraw*)xftDraw,0,0,(XRectangle*)&clip,1);
 #endif
   flags|=GCClipMask;
   }
@@ -937,7 +1093,7 @@ void FXDCWindow::clearClipRectangle(){
   clip=rect;
   XSetClipRectangles(DISPLAY(getApp()),(GC)ctx,0,0,(XRectangle*)&clip,1,Unsorted);
 #ifdef HAVE_XFT_H
-  XftDrawSetClipRectangles((XftDraw*)xftDraw, 0, 0, (XRectangle*)&clip, 1);
+  XftDrawSetClipRectangles((XftDraw*)xftDraw,0,0,(XRectangle*)&clip,1);
 #endif
   flags|=GCClipMask;
   }
@@ -973,27 +1129,21 @@ void FXDCWindow::clearClipMask(){
   }
 
 
-// Set text font
-void FXDCWindow::setFont(FXFont *fnt){
-  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
-  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
-#ifndef HAVE_XFT_H
-  XSetFont(DISPLAY(getApp()),(GC)ctx,fnt->id());
-  flags|=GCFont;
-#endif
-  font=fnt;
-  }
-
-
 // Set clip child windows
 void FXDCWindow::clipChildren(FXbool yes){
   if(!surface){ fxerror("FXDCWindow::clipChildren: window has not yet been created.\n"); }
   if(yes){
     XSetSubwindowMode(DISPLAY(getApp()),(GC)ctx,ClipByChildren);
+#ifdef HAVE_XFT_H
+    XftDrawSetSubwindowMode((XftDraw*)xftDraw,ClipByChildren);
+#endif
     flags&=~GCSubwindowMode;
     }
   else{
     XSetSubwindowMode(DISPLAY(getApp()),(GC)ctx,IncludeInferiors);
+#ifdef HAVE_XFT_H
+    XftDrawSetSubwindowMode((XftDraw*)xftDraw,IncludeInferiors);
+#endif
     flags|=GCSubwindowMode;
     }
   }
@@ -1434,6 +1584,7 @@ void FXDCWindow::fillArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   SelectObject((HDC)ctx,hPen);
   }
 
+//Ellipse((HDC)ctx,x,y,x+w,y+h);
 
 // Fill arcs
 void FXDCWindow::fillArcs(const FXArc* arcs,FXuint narcs){
@@ -1562,23 +1713,53 @@ void FXDCWindow::fillComplexPolygonRel(const FXPoint* points,FXuint npoints){
   }
 
 
-// Draw string (only foreground bits)
+// Set text font
+void FXDCWindow::setFont(FXFont *fnt){
+  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
+  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
+  SelectObject((HDC)ctx,fnt->id());
+  font=fnt;
+  }
+
+
+// Draw string with base line starting at x, y
 void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
-  int iBkMode=SetBkMode((HDC)ctx,TRANSPARENT);
-  TextOut((HDC)ctx,x,y,string,length);
+  FXnchar sbuffer[4096];
+  FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
+  FXASSERT(count<=length);
+  FXint iBkMode=SetBkMode((HDC)ctx,TRANSPARENT);
+  TextOutW((HDC)ctx,x,y,sbuffer,count);
   SetBkMode((HDC)ctx,iBkMode);
   }
 
 
-// Draw string (both foreground and background bits)
+// Draw text starting at x, y over filled background
 void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawImageText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawImageText: no font selected.\n"); }
-  int iBkMode=SetBkMode((HDC)ctx,OPAQUE);
-  TextOut((HDC)ctx,x,y,string,length);
+  FXnchar sbuffer[4096];
+  FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
+  FXASSERT(count<=length);
+  FXint iBkMode=SetBkMode((HDC)ctx,OPAQUE);
+  TextOutW((HDC)ctx,x,y,sbuffer,count);
+//    RECT r;
+//    r.left=clip.x; r.top=clip.y; r.right=clip.x+clip.w; r.bottom=clip.y+clip.h;
+//    ExtTextOutW((HDC)ctx,x,y,ETO_OPAQUE|ETO_CLIPPED,&r,sbuffer,count,NULL);
   SetBkMode((HDC)ctx,iBkMode);
+  }
+
+
+// Draw string with base line starting at x, y
+void FXDCWindow::drawText(FXint x,FXint y,const FXString& string){
+  drawText(x,y,string.text(),string.length());
+  }
+
+
+// Draw text starting at x, y over filled background
+void FXDCWindow::drawImageText(FXint x,FXint y,const FXString& string){
+  drawImageText(x,y,string.text(),string.length());
   }
 
 
@@ -1636,6 +1817,64 @@ void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FX
       break;
     case BLT_SET:                     // D := 1
       BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,WHITENESS);
+      break;
+    }
+  source->ReleaseDC(shdc);
+  }
+
+
+// Draw area stretched area from source
+void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy,FXint dw,FXint dh){
+  if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
+  if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
+  HDC shdc=(HDC)source->GetDC();
+  switch(rop){
+    case BLT_CLR:                     // D := 0
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,BLACKNESS);
+      break;
+    case BLT_SRC_AND_DST:             // D := S & D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCAND);
+      break;
+    case BLT_SRC_AND_NOT_DST:         // D := S & ~D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCERASE);
+      break;
+    case BLT_SRC:                     // D := S
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCCOPY);
+      break;
+    case BLT_NOT_SRC_AND_DST:         // D := ~S & D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0x220326);
+      break;
+    case BLT_DST:                     // D := D
+      break;
+    case BLT_SRC_XOR_DST:             // D := S ^ D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCINVERT);
+      break;
+    case BLT_SRC_OR_DST:              // D := S | D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCPAINT);
+      break;
+    case BLT_NOT_SRC_AND_NOT_DST:     // D := ~S & ~D ==  D := ~(S | D)
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,NOTSRCERASE);
+      break;
+    case BLT_NOT_SRC_XOR_DST:         // D := ~S ^ D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0x990066); // Not sure about this one
+      break;
+    case BLT_NOT_DST:                 // D := ~D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,DSTINVERT);
+      break;
+    case BLT_SRC_OR_NOT_DST:          // D := S | ~D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0xDD0228);
+      break;
+    case BLT_NOT_SRC:                 // D := ~S
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,NOTSRCCOPY);
+      break;
+    case BLT_NOT_SRC_OR_DST:          // D := ~S | D
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,MERGEPAINT);
+      break;
+    case BLT_NOT_SRC_OR_NOT_DST:      // D := ~S | ~D ==  ~(S & D)
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0x7700E6);
+      break;
+    case BLT_SET:                     // D := 1
+      StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,WHITENESS);
       break;
     }
   source->ReleaseDC(shdc);
@@ -2338,15 +2577,6 @@ void FXDCWindow::clearClipMask(){
   mask=NULL;
   cx=0;
   cy=0;
-  }
-
-
-// Set text font
-void FXDCWindow::setFont(FXFont *fnt){
-  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
-  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
-  SelectObject((HDC)ctx,fnt->id());
-  font=fnt;
   }
 
 

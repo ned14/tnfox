@@ -3,7 +3,7 @@
 *                       T A R G A  I m a g e   O b j e c t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2006 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTGAImage.cpp,v 1.21 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXTGAImage.cpp,v 1.26 2006/01/22 17:58:43 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -42,7 +42,7 @@
   Notes:
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -51,6 +51,10 @@ namespace FX {
 
 // Suggested file extension
 const FXchar *FXTGAImage::fileExt="tga";
+
+
+// Suggested mime type
+const FXchar *FXTGAImage::mimeType="image/targa";
 
 
 // Object implementation
@@ -69,22 +73,22 @@ FXTGAImage::FXTGAImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXI
 
 
 // Save pixels to stream
-FXbool FXTGAImage::savePixels(FXStream& store) const {
+bool FXTGAImage::savePixels(FXStream& store) const {
   if(fxsaveTGA(store,data,width,height)){
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load pixels from stream
-FXbool FXTGAImage::loadPixels(FXStream& store){
+bool FXTGAImage::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadTGA(store,pixels,w,h)){
     setData(pixels,IMAGE_OWNED,w,h);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

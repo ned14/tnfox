@@ -28,7 +28,7 @@
 #include "QThread.h"
 #include "QTrans.h"
 #include "FXRollback.h"
-#include "FXFile.h"
+#include "FXPath.h"
 #include "FXNetwork.h"
 #include "QBuffer.h"
 #include "FXErrCodes.h"
@@ -1349,7 +1349,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 			if(amServer)
 			{	// Need to temporarily disable the session cache
 				FXString myname("TnFOX_%1_%2_%3_disabled");
-				myname.arg(FXNetwork::hostname()).arg(FXFile::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
+				myname.arg(FXNetwork::hostname()).arg(FXPath::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
 				FXERRHSSL(SSL_CTX_set_session_id_context(myinit->ctx, (unsigned char *) myname.text(), myname.length()));
 			}
 			int ret;
@@ -1365,7 +1365,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 			if(amServer)
 			{
 				FXString myname("TnFOX_%1_%2_%3");
-				myname.arg(FXNetwork::hostname()).arg(FXFile::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
+				myname.arg(FXNetwork::hostname()).arg(FXPath::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
 				FXERRHSSL(SSL_CTX_set_session_id_context(myinit->ctx, (unsigned char *) myname.text(), myname.length()));
 			}
 			FXERRHSSL(ret);

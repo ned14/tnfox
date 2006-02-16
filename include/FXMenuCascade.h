@@ -3,7 +3,7 @@
 *                        M e n u C a s c a d e   W i d g e t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCascade.h,v 1.22 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXMenuCascade.h,v 1.24 2006/01/22 17:58:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXMENUCASCADE_H
 #define FXMENUCASCADE_H
@@ -80,7 +80,7 @@ public:
   virtual void destroy();
 
   /// Yes it can receive the focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();
@@ -95,7 +95,7 @@ public:
   FXPopup* getMenu() const { return pane; }
 
   /// True if this menu or is popup logically contains the mouse
-  virtual FXbool contains(FXint parentx,FXint parenty) const;
+  virtual bool contains(FXint parentx,FXint parenty) const;
 
   /// Save menu to a stream
   virtual void save(FXStream& store) const;
@@ -110,4 +110,3 @@ public:
 }
 
 #endif
-

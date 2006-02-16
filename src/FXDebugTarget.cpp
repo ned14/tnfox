@@ -3,7 +3,7 @@
 *                      D e b u g - T a r g e t   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDebugTarget.cpp,v 1.26 2005/01/16 16:06:06 fox Exp $                   *
+* $Id: FXDebugTarget.cpp,v 1.33 2006/01/22 17:58:22 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -36,7 +36,7 @@
   - So purely for debugging purposes.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -121,7 +121,11 @@ static const char *messageTypeName_[]={
   "SEL_IO_EXCEPT",
   "SEL_PICKED",
   "SEL_QUERY_TIP",
-  "SEL_QUERY_HELP"
+  "SEL_QUERY_HELP",
+  "SEL_DOCKED",
+  "SEL_FLOATED",
+  "SEL_SESSION_NOTIFY",
+  "SEL_SESSION_CLOSED"
   };
 const FXchar **FXDebugTarget::messageTypeName=messageTypeName_;
 

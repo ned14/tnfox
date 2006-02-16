@@ -3,7 +3,7 @@
 *                   T o g g l e    B u t t o n    W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToggleButton.h,v 1.27 2005/01/16 16:06:06 fox Exp $                    *
+* $Id: FXToggleButton.h,v 1.30 2006/01/22 17:58:11 fox Exp $                    *
 ********************************************************************************/
 #ifndef FXTOGGLEBUTTON_H
 #define FXTOGGLEBUTTON_H
@@ -98,7 +98,7 @@ public:
   virtual void detach();
 
   /// Returns true because a toggle button can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Get default width
   virtual FXint getDefaultWidth();
@@ -119,7 +119,7 @@ public:
   FXIcon* getAltIcon() const { return alticon; }
 
   /// Change toggled state
-  void setState(FXbool s=TRUE);
+  void setState(FXbool s=TRUE,FXbool notify=FALSE);
 
   /// return toggled state
   FXbool getState() const { return state; }
@@ -155,4 +155,3 @@ public:
 }
 
 #endif
-

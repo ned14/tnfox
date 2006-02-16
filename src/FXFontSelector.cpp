@@ -3,7 +3,7 @@
 *                        F o n t   S e l e c t i o n   B o x                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFontSelector.cpp,v 1.47 2005/01/16 16:06:07 fox Exp $                  *
+* $Id: FXFontSelector.cpp,v 1.55 2006/01/22 17:58:27 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -68,7 +68,7 @@
   Notes:
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -110,14 +110,14 @@ FXFontSelector::FXFontSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuin
 
   // Bottom side
   FXHorizontalFrame *buttons=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X);
-  accept=new FXButton(buttons,"&Accept",NULL,NULL,0,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
-  cancel=new FXButton(buttons,"&Cancel",NULL,NULL,0,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
+  accept=new FXButton(buttons,tr("&Accept"),NULL,NULL,0,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
+  cancel=new FXButton(buttons,tr("&Cancel"),NULL,NULL,0,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,20,20);
 
   // Left side
   FXMatrix *controls=new FXMatrix(this,3,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|LAYOUT_FIX_HEIGHT,0,0,0,160, DEFAULT_SPACING,DEFAULT_SPACING,DEFAULT_SPACING,DEFAULT_SPACING, DEFAULT_SPACING,0);
 
   // Font families, to be filled later
-  new FXLabel(controls,"&Family:",NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  new FXLabel(controls,tr("&Family:"),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   family=new FXTextField(controls,10,NULL,0,TEXTFIELD_READONLY|FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   FXHorizontalFrame *familyframe=new FXHorizontalFrame(controls,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN|LAYOUT_FILL_ROW,0,0,0,0, 0,0,0,0);
   familylist=new FXList(familyframe,this,ID_FAMILY,LIST_BROWSESELECT|LAYOUT_FILL_Y|LAYOUT_FILL_X|HSCROLLER_NEVER|VSCROLLER_ALWAYS);
@@ -126,19 +126,19 @@ FXFontSelector::FXFontSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuin
   familylist->setFocus();
 
   // Font weights
-  new FXLabel(controls,"&Weight:",NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  new FXLabel(controls,tr("&Weight:"),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   weight=new FXTextField(controls,4,NULL,0,TEXTFIELD_READONLY|FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   FXHorizontalFrame *weightframe=new FXHorizontalFrame(controls,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN,0,0,0,0, 0,0,0,0);
   weightlist=new FXList(weightframe,this,ID_WEIGHT,LIST_BROWSESELECT|LAYOUT_FILL_Y|LAYOUT_FILL_X|HSCROLLER_NEVER|VSCROLLER_ALWAYS);
 
   // Font styles
-  new FXLabel(controls,"&Style:",NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  new FXLabel(controls,tr("&Style:"),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   style=new FXTextField(controls,6,NULL,0,TEXTFIELD_READONLY|FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   FXHorizontalFrame *styleframe=new FXHorizontalFrame(controls,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN,0,0,0,0, 0,0,0,0);
   stylelist=new FXList(styleframe,this,ID_STYLE,LIST_BROWSESELECT|LAYOUT_FILL_Y|LAYOUT_FILL_X|HSCROLLER_NEVER|VSCROLLER_ALWAYS);
 
   // Font sizes, to be filled later
-  new FXLabel(controls,"Si&ze:",NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
+  new FXLabel(controls,tr("Si&ze:"),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   size=new FXTextField(controls,2,this,ID_SIZE_TEXT,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_X|LAYOUT_FILL_COLUMN);
   FXHorizontalFrame *sizeframe=new FXHorizontalFrame(controls,FRAME_SUNKEN|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_FILL_X|LAYOUT_FILL_ROW|LAYOUT_FILL_COLUMN,0,0,0,0, 0,0,0,0);
   sizelist=new FXList(sizeframe,this,ID_SIZE,LIST_BROWSESELECT|LAYOUT_FILL_Y|LAYOUT_FILL_X|HSCROLLER_NEVER|VSCROLLER_ALWAYS);
@@ -146,76 +146,77 @@ FXFontSelector::FXFontSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuin
   FXMatrix *attributes=new FXMatrix(this,2,LAYOUT_SIDE_TOP|LAYOUT_FILL_X,0,0,0,0, DEFAULT_SPACING,DEFAULT_SPACING,DEFAULT_SPACING,DEFAULT_SPACING, DEFAULT_SPACING,0);
 
   // Character set choice
-  new FXLabel(attributes,"Character Set:",NULL,LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
+  new FXLabel(attributes,tr("Character Set:"),NULL,LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
   charset=new FXComboBox(attributes,8,this,ID_CHARSET,COMBOBOX_STATIC|FRAME_SUNKEN|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
   charset->setNumVisible(10);
-  charset->appendItem("Any",(void*)FONTENCODING_DEFAULT);
-  charset->appendItem("West European",(void*)FONTENCODING_WESTEUROPE);
-  charset->appendItem("East European",(void*)FONTENCODING_EASTEUROPE);
-  charset->appendItem("South European",(void*)FONTENCODING_SOUTHEUROPE);
-  charset->appendItem("North European",(void*)FONTENCODING_NORTHEUROPE);
-  charset->appendItem("Cyrillic",(void*)FONTENCODING_CYRILLIC);
-  charset->appendItem("Arabic",(void*)FONTENCODING_ARABIC);
-  charset->appendItem("Greek",(void*)FONTENCODING_GREEK);
-  charset->appendItem("Hebrew",(void*)FONTENCODING_HEBREW);
-  charset->appendItem("Turkish",(void*)FONTENCODING_TURKISH);
-  charset->appendItem("Nordic",(void*)FONTENCODING_NORDIC);
-  charset->appendItem("Thai",(void*)FONTENCODING_THAI);
-  charset->appendItem("Baltic",(void*)FONTENCODING_BALTIC);
-  charset->appendItem("Celtic",(void*)FONTENCODING_CELTIC);
-  charset->appendItem("Russian",(void*)FONTENCODING_KOI8);
-  charset->appendItem("Central European (cp1250)",(void*)FONTENCODING_CP1250);
-  charset->appendItem("Russian (cp1251)",(void*)FONTENCODING_CP1251);
-  charset->appendItem("Latin1 (cp1252)",(void*)FONTENCODING_CP1252);
-  charset->appendItem("Greek (cp1253)",(void*)FONTENCODING_CP1253);
-  charset->appendItem("Turkish (cp1254)",(void*)FONTENCODING_CP1254);
-  charset->appendItem("Hebrew (cp1255)",(void*)FONTENCODING_CP1255);
-  charset->appendItem("Arabic (cp1256)",(void*)FONTENCODING_CP1256);
-  charset->appendItem("Baltic (cp1257)",(void*)FONTENCODING_CP1257);
-  charset->appendItem("Vietnam (cp1258)",(void*)FONTENCODING_CP1258);
-  charset->appendItem("Thai (cp874)",(void*)FONTENCODING_CP874);
+  charset->appendItem(tr("Any"),(void*)0);
+  charset->appendItem(tr("West European"),(void*)FONTENCODING_WESTEUROPE);
+  charset->appendItem(tr("East European"),(void*)FONTENCODING_EASTEUROPE);
+  charset->appendItem(tr("South European"),(void*)FONTENCODING_SOUTHEUROPE);
+  charset->appendItem(tr("North European"),(void*)FONTENCODING_NORTHEUROPE);
+  charset->appendItem(tr("Cyrillic"),(void*)FONTENCODING_CYRILLIC);
+  charset->appendItem(tr("Arabic"),(void*)FONTENCODING_ARABIC);
+  charset->appendItem(tr("Greek"),(void*)FONTENCODING_GREEK);
+  charset->appendItem(tr("Hebrew"),(void*)FONTENCODING_HEBREW);
+  charset->appendItem(tr("Turkish"),(void*)FONTENCODING_TURKISH);
+  charset->appendItem(tr("Nordic"),(void*)FONTENCODING_NORDIC);
+  charset->appendItem(tr("Thai"),(void*)FONTENCODING_THAI);
+  charset->appendItem(tr("Baltic"),(void*)FONTENCODING_BALTIC);
+  charset->appendItem(tr("Celtic"),(void*)FONTENCODING_CELTIC);
+  charset->appendItem(tr("Russian"),(void*)FONTENCODING_KOI8);
+  charset->appendItem(tr("Central European (cp1250)"),(void*)FONTENCODING_CP1250);
+  charset->appendItem(tr("Russian (cp1251)"),(void*)FONTENCODING_CP1251);
+  charset->appendItem(tr("Latin1 (cp1252)"),(void*)FONTENCODING_CP1252);
+  charset->appendItem(tr("Greek (cp1253)"),(void*)FONTENCODING_CP1253);
+  charset->appendItem(tr("Turkish (cp1254)"),(void*)FONTENCODING_CP1254);
+  charset->appendItem(tr("Hebrew (cp1255)"),(void*)FONTENCODING_CP1255);
+  charset->appendItem(tr("Arabic (cp1256)"),(void*)FONTENCODING_CP1256);
+  charset->appendItem(tr("Baltic (cp1257)"),(void*)FONTENCODING_CP1257);
+  charset->appendItem(tr("Vietnam (cp1258)"),(void*)FONTENCODING_CP1258);
+  charset->appendItem(tr("Thai (cp874)"),(void*)FONTENCODING_CP874);
+  charset->appendItem(tr("UNICODE"),(void*)FONTENCODING_UNICODE);
   charset->setCurrentItem(0);
 
   // Set width
-  new FXLabel(attributes,"Set Width:",NULL,LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
+  new FXLabel(attributes,tr("Set Width:"),NULL,LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
   setwidth=new FXComboBox(attributes,9,this,ID_SETWIDTH,COMBOBOX_STATIC|FRAME_SUNKEN|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
   setwidth->setNumVisible(10);
-  setwidth->appendItem("Any",(void*)FONTSETWIDTH_DONTCARE);
-  setwidth->appendItem("Ultra condensed",(void*)FONTSETWIDTH_ULTRACONDENSED);
-  setwidth->appendItem("Extra condensed",(void*)FONTSETWIDTH_EXTRACONDENSED);
-  setwidth->appendItem("Condensed",(void*)FONTSETWIDTH_CONDENSED);
-  setwidth->appendItem("Semi condensed",(void*)FONTSETWIDTH_SEMICONDENSED);
-  setwidth->appendItem("Normal",(void*)FONTSETWIDTH_MEDIUM);
-  setwidth->appendItem("Semi expanded",(void*)FONTSETWIDTH_SEMIEXPANDED);
-  setwidth->appendItem("Expanded",(void*)FONTSETWIDTH_EXPANDED);
-  setwidth->appendItem("Extra expanded",(void*)FONTSETWIDTH_EXTRAEXPANDED);
-  setwidth->appendItem("Ultra expanded",(void*)FONTSETWIDTH_ULTRAEXPANDED);
+  setwidth->appendItem(tr("Any"),(void*)0);
+  setwidth->appendItem(tr("Ultra condensed"),(void*)FXFont::UltraCondensed);
+  setwidth->appendItem(tr("Extra condensed"),(void*)FXFont::ExtraCondensed);
+  setwidth->appendItem(tr("Condensed"),(void*)FXFont::Condensed);
+  setwidth->appendItem(tr("Semi condensed"),(void*)FXFont::SemiCondensed);
+  setwidth->appendItem(tr("Normal"),(void*)FXFont::NonExpanded);
+  setwidth->appendItem(tr("Semi expanded"),(void*)FXFont::SemiExpanded);
+  setwidth->appendItem(tr("Expanded"),(void*)FXFont::Expanded);
+  setwidth->appendItem(tr("Extra expanded"),(void*)FXFont::ExtraExpanded);
+  setwidth->appendItem(tr("Ultra expanded"),(void*)FXFont::UltraExpanded);
   setwidth->setCurrentItem(0);
 
   // Pitch
-  new FXLabel(attributes,"Pitch:",NULL,LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
+  new FXLabel(attributes,tr("Pitch:"),NULL,LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
   pitch=new FXComboBox(attributes,5,this,ID_PITCH,COMBOBOX_STATIC|FRAME_SUNKEN|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
   pitch->setNumVisible(3);
-  pitch->appendItem("Any",(void*)0);
-  pitch->appendItem("Fixed",(void*)FONTPITCH_FIXED);
-  pitch->appendItem("Variable",(void*)FONTPITCH_VARIABLE);
+  pitch->appendItem(tr("Any"),(void*)0);
+  pitch->appendItem(tr("Fixed"),(void*)FXFont::Fixed);
+  pitch->appendItem(tr("Variable"),(void*)FXFont::Variable);
   pitch->setCurrentItem(0);
 
   // Check for scalable
   new FXFrame(attributes,FRAME_NONE|LAYOUT_FILL_COLUMN);
-  scalable=new FXCheckButton(attributes,"Scalable:",this,ID_SCALABLE,JUSTIFY_NORMAL|TEXT_BEFORE_ICON|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
+  scalable=new FXCheckButton(attributes,tr("Scalable:"),this,ID_SCALABLE,JUSTIFY_NORMAL|TEXT_BEFORE_ICON|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
 
   // Check for all (X11) fonts
 #ifndef WIN32
   new FXFrame(attributes,FRAME_NONE|LAYOUT_FILL_COLUMN);
-  allfonts=new FXCheckButton(attributes,"All Fonts:",this,ID_ALLFONTS,JUSTIFY_NORMAL|TEXT_BEFORE_ICON|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
+  allfonts=new FXCheckButton(attributes,tr("All Fonts:"),this,ID_ALLFONTS,JUSTIFY_NORMAL|TEXT_BEFORE_ICON|LAYOUT_CENTER_Y|LAYOUT_FILL_COLUMN);
 #else
   allfonts=NULL;
 #endif
 
   // Preview
   FXVerticalFrame *bottom=new FXVerticalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, DEFAULT_SPACING,DEFAULT_SPACING,DEFAULT_SPACING,DEFAULT_SPACING, 0,0);
-  new FXLabel(bottom,"Preview:",NULL,JUSTIFY_LEFT|LAYOUT_FILL_X);
+  new FXLabel(bottom,tr("Preview:"),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X);
   FXHorizontalFrame *box=new FXHorizontalFrame(bottom,LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0, 0,0,0,0, 0,0);
   FXScrollWindow *scroll=new FXScrollWindow(box,LAYOUT_FILL_X|LAYOUT_FILL_Y);
   preview=new FXLabel(scroll,"ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789",NULL,JUSTIFY_CENTER_X|JUSTIFY_CENTER_Y);
@@ -223,10 +224,10 @@ FXFontSelector::FXFontSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuin
 
   strncpy(selected.face,"helvetica",sizeof(selected.face));
   selected.size=90;
-  selected.weight=FONTWEIGHT_BOLD;
-  selected.slant=FONTSLANT_REGULAR;
+  selected.weight=FXFont::Bold;
+  selected.slant=0;
   selected.encoding=FONTENCODING_USASCII;
-  selected.setwidth=FONTSETWIDTH_DONTCARE;
+  selected.setwidth=0;
   selected.flags=0;
   previewfont=NULL;
   }
@@ -249,7 +250,7 @@ void FXFontSelector::listFontFaces(){
   FXint selindex=-1;
   familylist->clearItems();
   family->setText("");
-  if(FXFont::listFonts(fonts,numfonts,"",FONTWEIGHT_DONTCARE,FONTSLANT_DONTCARE,selected.setwidth,selected.encoding,selected.flags)){
+  if(FXFont::listFonts(fonts,numfonts,FXString::null,0,0,selected.setwidth,selected.encoding,selected.flags)){
     FXASSERT(0<numfonts);
     for(f=0; f<numfonts; f++){
       familylist->appendItem(fonts[f].face,NULL,(void*)(FXuval)fonts[f].flags);
@@ -275,7 +276,7 @@ void FXFontSelector::listWeights(){
   FXint selindex=-1;
   weightlist->clearItems();
   weight->setText("");
-  if(FXFont::listFonts(fonts,numfonts,selected.face,FONTWEIGHT_DONTCARE,FONTSLANT_DONTCARE,selected.setwidth,selected.encoding,selected.flags)){
+  if(FXFont::listFonts(fonts,numfonts,selected.face,0,0,selected.setwidth,selected.encoding,selected.flags)){
     FXASSERT(0<numfonts);
     lastww=0;
     for(f=0; f<numfonts; f++){
@@ -284,20 +285,20 @@ void FXFontSelector::listWeights(){
 
         // Get text for the weight
         switch(ww){
-          case FONTWEIGHT_THIN: wgt="thin"; break;
-          case FONTWEIGHT_EXTRALIGHT: wgt="extra light"; break;
-          case FONTWEIGHT_LIGHT: wgt="light"; break;
-          case FONTWEIGHT_NORMAL: wgt="normal"; break;
-          case FONTWEIGHT_MEDIUM: wgt="medium"; break;
-          case FONTWEIGHT_DEMIBOLD: wgt="demibold"; break;
-          case FONTWEIGHT_BOLD: wgt="bold"; break;
-          case FONTWEIGHT_EXTRABOLD: wgt="extra bold"; break;
-          case FONTWEIGHT_BLACK: wgt="black"; break;
+          case FXFont::Thin: wgt="thin"; break;
+          case FXFont::ExtraLight: wgt="extra light"; break;
+          case FXFont::Light: wgt="light"; break;
+          case FXFont::Normal: wgt="normal"; break;
+          case FXFont::Medium: wgt="medium"; break;
+          case FXFont::DemiBold: wgt="demibold"; break;
+          case FXFont::Bold: wgt="bold"; break;
+          case FXFont::ExtraBold: wgt="extra bold"; break;
+          case FXFont::Black: wgt="black"; break;
           default: wgt="normal"; break;
           }
 
         // Add it
-        weightlist->appendItem(wgt,NULL,(void*)(FXuval)ww);
+        weightlist->appendItem(tr(wgt),NULL,(void*)(FXuval)ww);
 
         // Remember if this was the current selection
         if(selected.weight==ww) selindex=weightlist->getNumItems()-1;
@@ -324,7 +325,7 @@ void FXFontSelector::listSlants(){
   FXint selindex=-1;
   stylelist->clearItems();
   style->setText("");
-  if(FXFont::listFonts(fonts,numfonts,selected.face,selected.weight,FONTSLANT_DONTCARE,selected.setwidth,selected.encoding,selected.flags)){
+  if(FXFont::listFonts(fonts,numfonts,selected.face,selected.weight,0,selected.setwidth,selected.encoding,selected.flags)){
     FXASSERT(0<numfonts);
     lasts=0;
     for(f=0; f<numfonts; f++){
@@ -333,16 +334,16 @@ void FXFontSelector::listSlants(){
 
         // Get text for the weight
         switch(s){
-          case FONTSLANT_REGULAR: slt="regular"; break;
-          case FONTSLANT_ITALIC: slt="italic"; break;
-          case FONTSLANT_OBLIQUE: slt="oblique"; break;
-          case FONTSLANT_REVERSE_ITALIC: slt="reverse italic"; break;
-          case FONTSLANT_REVERSE_OBLIQUE: slt="reverse oblique"; break;
+          case FXFont::ReverseOblique: slt="reverse oblique"; break;
+          case FXFont::ReverseItalic: slt="reverse italic"; break;
+          case FXFont::Straight: slt="regular"; break;
+          case FXFont::Italic: slt="italic"; break;
+          case FXFont::Oblique: slt="oblique"; break;
           default: slt="normal"; break;
           }
 
         // Add it
-        stylelist->appendItem(slt,NULL,(void*)(FXuval)s);
+        stylelist->appendItem(tr(slt),NULL,(void*)(FXuval)s);
 
         // Remember if this was the current selection
         if(selected.slant == s) selindex=stylelist->getNumItems()-1;
@@ -373,7 +374,7 @@ void FXFontSelector::listFontSizes(){
   if(FXFont::listFonts(fonts,numfonts,selected.face,selected.weight,selected.slant,selected.setwidth,selected.encoding,selected.flags)){
     FXASSERT(0<numfonts);
     lasts=0;
-    if(fonts[0].flags&FONTHINT_SCALABLE){
+    if(fonts[0].flags&FXFont::Scalable){
       for(f=0; f<ARRAYNUMBER(sizeint); f++){
         s=sizeint[f];
         string.format("%.1f",0.1*s);
@@ -408,10 +409,6 @@ void FXFontSelector::listFontSizes(){
 // Preview
 void FXFontSelector::previewFont(){
   FXFont *old;
-  FXString upper;
-  FXString lower;
-  FXString digits;
-  FXint i;
 
   // Save old font
   old=previewfont;
@@ -421,16 +418,6 @@ void FXFontSelector::previewFont(){
 
   // Realize new font
   previewfont->create();
-
-  // Add all upper case characters
-  for(i=previewfont->getMinChar(); i<previewfont->getMaxChar(); i++){
-    if(isupper(i)) upper.append(i);
-    if(islower(i)) lower.append(i);
-    if(isdigit(i)) digits.append(i);
-    }
-
-  // New text for current locale
-  preview->setText(upper+"\n"+lower+"\n"+digits);
 
   // Set new font
   preview->setFont(previewfont);
@@ -514,12 +501,7 @@ long FXFontSelector::onCmdCharset(FXObject*,FXSelector,void*){
 
 // Update character set
 long FXFontSelector::onUpdCharset(FXObject*,FXSelector,void*){
-  for(int i=0; i<charset->getNumItems(); i++){
-    if(selected.encoding == (FXuint)(FXuval)charset->getItemData(i)){
-      charset->setCurrentItem(i);
-      break;
-      }
-    }
+  charset->setCurrentItem(charset->findItemByData((void*)(FXuval)selected.encoding));
   return 1;
   }
 
@@ -539,7 +521,7 @@ long FXFontSelector::onCmdSetWidth(FXObject*,FXSelector,void*){
 
 // Update set width
 long FXFontSelector::onUpdSetWidth(FXObject*,FXSelector,void*){
-  setwidth->setCurrentItem(selected.setwidth/10);
+  setwidth->setCurrentItem(setwidth->findItemByData((void*)(FXuval)selected.setwidth));
   return 1;
   }
 
@@ -547,7 +529,7 @@ long FXFontSelector::onUpdSetWidth(FXObject*,FXSelector,void*){
 // Changed pitch
 long FXFontSelector::onCmdPitch(FXObject*,FXSelector,void*){
   FXint index=pitch->getCurrentItem();
-  selected.flags&=~(FONTPITCH_FIXED|FONTPITCH_VARIABLE);
+  selected.flags&=~(FXFont::Fixed|FXFont::Variable);
   selected.flags|=(FXuint)(FXuval)pitch->getItemData(index);
   listFontFaces();
   listWeights();
@@ -560,14 +542,14 @@ long FXFontSelector::onCmdPitch(FXObject*,FXSelector,void*){
 
 // Update pitch
 long FXFontSelector::onUpdPitch(FXObject*,FXSelector,void*){
-  pitch->setCurrentItem((selected.flags&FONTPITCH_FIXED) ? 1 : (selected.flags&FONTPITCH_VARIABLE) ? 2 : 0);
+  pitch->setCurrentItem((selected.flags&FXFont::Fixed) ? 1 : (selected.flags&FXFont::Variable) ? 2 : 0);
   return 1;
   }
 
 
 // Scalable toggle
 long FXFontSelector::onCmdScalable(FXObject*,FXSelector,void* ptr){
-  if(ptr) selected.flags|=FONTHINT_SCALABLE; else selected.flags&=~FONTHINT_SCALABLE;
+  if(ptr) selected.flags|=FXFont::Scalable; else selected.flags&=~FXFont::Scalable;
   listFontFaces();
   listWeights();
   listSlants();
@@ -579,14 +561,14 @@ long FXFontSelector::onCmdScalable(FXObject*,FXSelector,void* ptr){
 
 // Update scalable toggle
 long FXFontSelector::onUpdScalable(FXObject*,FXSelector,void*){
-  scalable->setCheck((selected.flags&FONTHINT_SCALABLE)!=0);
+  scalable->setCheck((selected.flags&FXFont::Scalable)!=0);
   return 1;
   }
 
 
 // All fonts toggle
 long FXFontSelector::onCmdAllFonts(FXObject*,FXSelector,void* ptr){
-  if(ptr) selected.flags|=FONTHINT_X11; else selected.flags&=~FONTHINT_X11;
+  if(ptr) selected.flags|=FXFont::X11; else selected.flags&=~FXFont::X11;
   listFontFaces();
   listWeights();
   listSlants();
@@ -598,7 +580,7 @@ long FXFontSelector::onCmdAllFonts(FXObject*,FXSelector,void* ptr){
 
 // Update all fonts toggle
 long FXFontSelector::onUpdAllFonts(FXObject*,FXSelector,void*){
-  allfonts->setCheck((selected.flags&FONTHINT_X11)!=0);
+  allfonts->setCheck((selected.flags&FXFont::X11)!=0);
   return 1;
   }
 
@@ -608,24 +590,24 @@ void FXFontSelector::setFontSelection(const FXFontDesc& fontdesc){
   selected=fontdesc;
 
   // Validate these numbers
-  if(selected.encoding>FONTENCODING_KOI8_UNIFIED){
-    selected.encoding=FONTENCODING_KOI8_UNIFIED;
+  if(selected.encoding>FONTENCODING_UNICODE){
+    selected.encoding=FONTENCODING_UNICODE;
     }
-  if(selected.slant>FONTSLANT_REVERSE_OBLIQUE){
-    selected.slant=FONTSLANT_REVERSE_OBLIQUE;
+  if(selected.slant>FXFont::ReverseOblique){
+    selected.slant=FXFont::ReverseOblique;
     }
-  if(selected.weight>FONTWEIGHT_BLACK){
-    selected.weight=FONTWEIGHT_BLACK;
+  if(selected.weight>FXFont::Black){
+    selected.weight=FXFont::Black;
     }
-  if(selected.setwidth>FONTSETWIDTH_ULTRAEXPANDED){
-    selected.setwidth=FONTSETWIDTH_ULTRAEXPANDED;
+  if(selected.setwidth>FXFont::UltraExpanded){
+    selected.setwidth=FXFont::UltraExpanded;
     }
   if(selected.size>10000){
     selected.size=10000;
     }
 
   // Under Windows, this should be OFF
-  selected.flags&=~FONTHINT_X11;
+  selected.flags&=~FXFont::X11;
 
   // Relist fonts
   listFontFaces();

@@ -3,7 +3,7 @@
 *                             O p t i o n   M e n u                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXOptionMenu.h,v 1.24 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXOptionMenu.h,v 1.28 2006/02/06 02:03:38 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXOPTIONMENU_H
 #define FXOPTIONMENU_H
@@ -27,7 +27,6 @@
 #ifndef FXLABEL_H
 #include "FXLabel.h"
 #endif
-#include "FXMenuButton.h"
 
 namespace FX {
 
@@ -39,7 +38,10 @@ class FXPopup;
 class FXAPI FXOption : public FXLabel {
   FXDECLARE(FXOption)
 protected:
-  FXOption(){}
+  FXColor selbackColor;
+  FXColor seltextColor;
+protected:
+  FXOption();
 private:
   FXOption(const FXOption&);
   FXOption &operator=(const FXOption&);
@@ -65,13 +67,25 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Returns true because a menu button can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Set focus to this window
   virtual void setFocus();
 
   /// Remove the focus from this window
   virtual void killFocus();
+
+  /// Return the selection background color
+  void setSelBackColor(FXColor clr);
+
+  /// Return the selection background color
+  FXColor getSelBackColor() const { return selbackColor; }
+
+  /// Return the selection text color
+  void setSelTextColor(FXColor clr);
+
+  /// Return the selection text color
+  FXColor getSelTextColor() const { return seltextColor; }
 
   /// Destructor
   virtual ~FXOption();
@@ -106,6 +120,7 @@ public:
   long onCmdSetValue(FXObject*,FXSelector,void*);
   long onCmdSetIntValue(FXObject*,FXSelector,void*);
   long onCmdGetIntValue(FXObject*,FXSelector,void*);
+  long onMouseWheel(FXObject*,FXSelector,void*);
 public:
 
   /// Constructor
@@ -133,7 +148,7 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Return TRUE if the position is logically in the pane
-  virtual FXbool contains(FXint parentx,FXint parenty) const;
+  virtual bool contains(FXint parentx,FXint parenty) const;
 
   /// Set the current option
   void setCurrent(FXOption *win,FXbool notify=FALSE);
@@ -157,7 +172,7 @@ public:
   FXPopup* getMenu() const { return pane; }
 
   /// Returns true because a option menu can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Return TRUE if popped up
   FXbool isPopped() const;

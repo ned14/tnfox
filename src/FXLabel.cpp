@@ -3,7 +3,7 @@
 *                            L a b e l   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXLabel.cpp,v 1.53 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXLabel.cpp,v 1.59 2006/01/22 17:58:33 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -52,7 +52,7 @@
 #define JUSTIFY_MASK    (JUSTIFY_HZ_APART|JUSTIFY_VT_APART)
 #define ICON_TEXT_MASK  (ICON_AFTER_TEXT|ICON_BEFORE_TEXT|ICON_ABOVE_TEXT|ICON_BELOW_TEXT)
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -98,14 +98,14 @@ FXLabel::FXLabel(FXComposite* p,const FXString& text,FXIcon* ic,FXuint opts,FXin
   FXFrame(p,opts,x,y,w,h,pl,pr,pt,pb){
   FXString string=text.section('\t',0);
   flags|=FLAG_ENABLED;
-  label=fxstripHotKey(string);
+  label=stripHotKey(string);
   tip=text.section('\t',1);
   help=text.section('\t',2);
   icon=ic;
   font=getApp()->getNormalFont();
   textColor=getApp()->getForeColor();
-  hotkey=fxparseHotKey(string);
-  hotoff=fxfindHotKey(string);
+  hotkey=parseHotKey(string);
+  hotoff=findHotKey(string);
   addHotKey(hotkey);
   }
 
@@ -244,7 +244,7 @@ void FXLabel::drawLabel(FXDCWindow& dc,const FXString& text,FXint hot,FXint tx,F
     else xx=tx+(tw-font->getTextWidth(&text[beg],end-beg))/2;
     dc.drawText(xx,yy,&text[beg],end-beg);
     if(beg<=hot && hot<end){
-      dc.fillRectangle(xx+font->getTextWidth(&text[beg],hot-beg),yy+1,font->getTextWidth(&text[hot],1),1);
+      dc.fillRectangle(xx+font->getTextWidth(&text[beg],hot-beg),yy+1,font->getTextWidth(&text[hot],wclen(&text[hot])),1);
       }
     yy+=font->getFontHeight();
     beg=end+1;
@@ -432,11 +432,11 @@ long FXLabel::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
 
 // Change text
 void FXLabel::setText(const FXString& text){
-  FXString string=fxstripHotKey(text);
+  FXString string=stripHotKey(text);
   if(label!=string){
     remHotKey(hotkey);
-    hotkey=fxparseHotKey(text);
-    hotoff=fxfindHotKey(text);
+    hotkey=parseHotKey(text);
+    hotoff=findHotKey(text);
     addHotKey(hotkey);
     label=string;
     recalc();

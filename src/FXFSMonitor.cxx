@@ -33,7 +33,7 @@
 #include "FXString.h"
 #include "FXProcess.h"
 #include "FXRollback.h"
-#include "FXFile.h"
+#include "FXPath.h"
 #include "QDir.h"
 #include "QFileInfo.h"
 #include "QTrans.h"
@@ -564,7 +564,7 @@ bool FXFSMon::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
 
 void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 {
-	FXString path=FXFile::absolute(_path);
+	FXString path=FXPath::absolute(_path);
 #ifdef USE_POSIX
 	FXERRH(FXFile::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)

@@ -1,9 +1,11 @@
+#ifndef BUILDING_TCOMMON
+
 /********************************************************************************
 *                                                                               *
 *                     D i r e c t o r y   L i s t   W i d g e t                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +21,11 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirList.h,v 1.66 2005/01/16 16:06:06 fox Exp $                         *
+* $Id: FXDirList.h,v 1.70 2006/01/22 17:58:00 fox Exp $                         *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
-
 #ifndef FXDIRLIST_H
 #define FXDIRLIST_H
 
-#include "FXTime.h"
 #ifndef FXTREELIST_H
 #include "FXTreeList.h"
 #endif
@@ -58,8 +57,11 @@ protected:
   FXDirItem    *list;                 // List of child items
   FXlong        size;                 // File size (if a file)
   FXTime        date;                 // Time of item
+private:
+  FXDirItem(const FXDirItem&);
+  FXDirItem& operator=(const FXDirItem&);
 protected:
-  FXDirItem():assoc(NULL),link(NULL),list(NULL),size(0L) {}
+  FXDirItem():assoc(NULL),link(NULL),list(NULL),size(0L),date(0){}
 public:
   enum {
     FOLDER      = 512,          /// Directory item
@@ -73,7 +75,7 @@ public:
 public:
 
   /// Constructor
-  FXDirItem(const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL):FXTreeItem(text,oi,ci,ptr),assoc(NULL),link(NULL),list(NULL),size(0){state=HASITEMS;}
+  FXDirItem(const FXString& text,FXIcon* oi=NULL,FXIcon* ci=NULL,void* ptr=NULL):FXTreeItem(text,oi,ci,ptr),assoc(NULL),link(NULL),list(NULL),size(0),date(0){state=HASITEMS;}
 
   /// Return true if this is a file item
   FXbool isFile() const { return (state&(FOLDER|BLOCKDEV|CHARDEV|FIFO|SOCK))==0; }
@@ -117,6 +119,7 @@ public:
 * determines the icons to be displayed by consulting the file-associations registry
 * settings.  A number of messages can be sent to the Directory List to control the
 * filter pattern, sorting order, case sensitivity, and hidden file display mode.
+* The Directory list widget supports drags and drops of files.
 */
 class FXAPI FXDirList : public FXTreeList {
   FXDECLARE(FXDirList)
@@ -292,4 +295,3 @@ public:
 
 #endif
 #endif
-

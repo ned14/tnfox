@@ -3,7 +3,7 @@
 *                       M e n u C o m m a n d   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCommand.h,v 1.27 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXMenuCommand.h,v 1.30 2006/01/22 17:58:06 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXMENUCOMMAND_H
 #define FXMENUCOMMAND_H
@@ -35,6 +35,7 @@ namespace FX {
 * The menu command widget is used to invoke a command in the
 * application from a menu.  Menu commands may reflect
 * the state of the application by graying out, or becoming hidden.
+* When activated, a menu command sends a SEL_COMMAND to its target.
 */
 class FXAPI FXMenuCommand : public FXMenuCaption {
   FXDECLARE(FXMenuCommand)
@@ -69,7 +70,7 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Yes it can receive the focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();
@@ -96,4 +97,3 @@ public:
 }
 
 #endif
-

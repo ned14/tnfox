@@ -31,7 +31,7 @@ namespace FX {
 */
 
 class FXString;
-class FXFile;
+class QFile;
 
 /*! \class QMemMap
 \ingroup fiodevices
@@ -52,10 +52,10 @@ and voilá, you're now working with the same patch of memory! Remember to
 synchronise multiple process access - the most portable is via msgs using a pipe,
 however if there is low contention in access it can be done via FX::QShrdMemMutex.
 
-You can map in an existing FX::FXFile device and indeed internally QMemMap creates
-one if you don't specify a FX::FXFile but do a filename. You should note that as a
+You can map in an existing FX::QFile device and indeed internally QMemMap creates
+one if you don't specify a FX::QFile but do a filename. You should note that as a
 result, QMemMap can lose track of the real file length under the same conditions
-as FX::FXFile for which reloadSize() is also provided. If you choose shared memory
+as FX::QFile for which reloadSize() is also provided. If you choose shared memory
 (QMemMap::Memory) rather than a filename (QMemMap::File) then the file used is kept in
 memory as much as possible rather than being flushed to disc as soon as possible.
 
@@ -99,17 +99,17 @@ something is mapped out. See FX::FXProcess::virtualAddrSpaceLeft().
 
 This is done this way because the other important facility QMemMap offers is
 transparently using the mapped section(s) when the file pointer is within
-one and doing normal readBlock() and writeBlock() with the FX::FXFile when
+one and doing normal readBlock() and writeBlock() with the FX::QFile when
 outside. Thus you can afford to map in the most commonly used portion(s) of your
 file and let the rest happen via buffered i/o as usual.
   
 \warning You \em really do not want to read or write parts of a file which have
-been mapped in using FX::FXFile directly. This inevitably causes data corruption.
-To avoid this, open() calls flush() on its FX::FXFile if it's already open
+been mapped in using FX::QFile directly. This inevitably causes data corruption.
+To avoid this, open() calls flush() on its FX::QFile if it's already open
 so therefore after this point, all i/o on the file should be done via QMemMap.
 
 Indeed unless you need absolutely critical sustained sequential reads or writes,
-I'd recommend doing all your file i/o via FX::QMemMap instead of via FX::FXFile
+I'd recommend doing all your file i/o via FX::QMemMap instead of via FX::QFile
 and indeed I've made the non static methods exactly the same.
 Memory mapped files are demand-read often with intelligent prefetching as read
 accesses are performed from its mapped section. Writes almost always remain in
@@ -118,7 +118,7 @@ reads) so you get the maximum performance from your hardware. Even better when
 free memory is tight, the operating system will write out dirty pages sooner
 rather than later thus getting the best of all possible worlds. On my development
 system running Win2k I get a three-fold speed increase copying one file to another
-over FXFile and that's even with NTFS's excellent caching of buffered i/o.
+over QFile and that's even with NTFS's excellent caching of buffered i/o.
 
 \note I've found that memory mapped file i/o is considerably faster on Linux when
 using ReiserFS rather than ext3.
@@ -185,8 +185,8 @@ public:
 	QMemMap();
 	//! Constructs an instance operating on file \em filename
 	QMemMap(const FXString &filename);
-	//! Constructs an instance using an external FX::FXFile
-	QMemMap(FXFile &file);
+	//! Constructs an instance using an external FX::QFile
+	QMemMap(QFile &file);
 	//! Constructs an instance working with named shared memory of length \em len. If name is empty, sets to be unique
 	QMemMap(const FXString &name, FXuval len);
 	~QMemMap();

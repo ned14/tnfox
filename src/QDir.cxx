@@ -25,8 +25,13 @@
 #include "QFileInfo.h"
 #include "FXException.h"
 #include "FXRollback.h"
-#include "FXFile.h"
+#include "FXPath.h"
+#include "FXDir.h"
 #include "QTrans.h"
+#include "QFile.h"
+#include "FXStat.h"
+#include "FXSystem.h"
+#include "FXWinLinks.h"
 #include "FXErrCodes.h"
 #include "qmemarray.h"
 #ifndef USE_POSIX
@@ -155,7 +160,7 @@ void FXDirPrivate::doLeafInfos()
 		FXERRHM(leafinfos=new QFileInfoList);
 		for(QStringList::iterator it=leafs.begin(); it!=leafs.end(); ++it)
 		{
-			leafinfos->append(QFileInfo(FXFile::join(path, *it)));
+			leafinfos->append(QFileInfo(FXPath::join(path, *it)));
 		}
 	}
 }
@@ -167,13 +172,13 @@ void FXDirPrivate::read()
 		FXDELETE(leafinfos);
 		{
 			FXString *list=0;
-			FXuint findflags=LIST_CASEFOLD|LIST_NO_PARENT;
-			if(!(filter & QDir::Dirs) && !allDirs) findflags|=LIST_NO_DIRS;
-			if(!(filter & QDir::Files)) findflags|=LIST_NO_FILES;
-			if(filter & QDir::Hidden) findflags|=LIST_HIDDEN_FILES|LIST_HIDDEN_DIRS;
-			if(allDirs) findflags|=LIST_ALL_DIRS;
-			if(regex.empty()) findflags|=LIST_ALL_FILES|LIST_ALL_DIRS;
-			FXint listcnt=FXFile::listFiles(list, path, regex, findflags);
+			FXuint findflags=FXDir::CaseFold|FXDir::NoParent;
+			if(!(filter & QDir::Dirs) && !allDirs) findflags|=FXDir::NoDirs;
+			if(!(filter & QDir::Files)) findflags|=FXDir::NoFiles;
+			if(filter & QDir::Hidden) findflags|=FXDir::HiddenFiles|FXDir::HiddenFiles;
+			if(allDirs) findflags|=FXDir::AllDirs;
+			if(regex.empty()) findflags|=FXDir::AllFiles|FXDir::AllDirs;
+			FXint listcnt=FXDir::listFiles(list, path, regex, findflags);
 			FXRBOp unlist=FXRBNewA(list);
 			for(FXint n=0; n<listcnt; n++)
 			{
@@ -329,26 +334,26 @@ const FXString &QDir::path() const
 }
 FXString QDir::absPath() const
 {
-	return FXFile::absolute(p->path);
+	return FXPath::absolute(p->path);
 }
 FXString QDir::canonicalPath() const
 {
 	FXString ret_=cleanDirPath(p->path);
-	FXString ret=FXFile::symlink(ret_);
+	FXString ret=FXWinJunctionPoint::test(ret_) ? FXWinJunctionPoint::read(ret_) : ret;
 	return ret.empty() ? ret_ : ret;
 }
 FXString QDir::dirName() const
 {
-	return FXFile::name(p->path);
+	return FXPath::name(p->path);
 }
 FXString QDir::filePath(const FXString &file, bool acceptAbs) const
 {
-	if(acceptAbs && FXFile::isAbsolute(file)) return file;
+	if(acceptAbs && FXPath::isAbsolute(file)) return file;
 	return p->path+QDir::separator()+file;
 }
 FXString QDir::absFilePath(const FXString &file, bool acceptAbs) const
 {
-	return FXFile::absolute(filePath(file, acceptAbs));
+	return FXPath::absolute(filePath(file, acceptAbs));
 }
 FXString QDir::convertSeparators(const FXString &path)
 {
@@ -367,7 +372,7 @@ bool QDir::cd(const FXString &name, bool acceptAbs)
 }
 bool QDir::cdUp()
 {
-	setPath(FXFile::upLevel(p->path));
+	setPath(FXPath::upLevel(p->path));
 	return exists();
 }
 const FXString &QDir::nameFilter() const
@@ -474,7 +479,7 @@ void QDir::refresh()
 bool QDir::mkdir(const FXString &leaf, bool acceptAbs)
 {
 	FXString path(filePath(leaf, acceptAbs));
-	if(!FXFile::createDirectory(path, S_IREAD|S_IWRITE))
+	if(!FXDir::create(path))
 	{
 		THROWPOSTFOX(path);
 	}
@@ -482,7 +487,7 @@ bool QDir::mkdir(const FXString &leaf, bool acceptAbs)
 	{	// Set ACL so only current user has all access
 		FXERRH_TRY
 		{
-			FXFile::setPermissions(path, FXACL::default_(FXACL::Directory, 4));
+			QFile::setPermissions(path, FXACL::default_(FXACL::Directory, 4));
 		}
 		FXERRH_CATCH(...)
 		{
@@ -494,48 +499,48 @@ bool QDir::mkdir(const FXString &leaf, bool acceptAbs)
 bool QDir::rmdir(const FXString &leaf, bool acceptAbs)
 {
 	FXString path(filePath(leaf, acceptAbs));
-	if(!FXFile::remove(path))
+	if(!FXDir::remove(path))
 		THROWPOSTFOX(path);
 	return true;
 }
 bool QDir::remove(const FXString &leaf, bool acceptAbs)
 {
 	FXString path(filePath(leaf, acceptAbs));
-	if(!FXFile::remove(path))
+	if(!FXDir::remove(path))
 		THROWPOSTFOX(path);
 	return true;
 }
 bool QDir::rename(const FXString &src, const FXString &dest, bool acceptAbs)
 {
 	FXString path(filePath(src, acceptAbs));
-	if(!FXFile::move(path, filePath(dest, acceptAbs)))
+	if(!FXDir::rename(path, filePath(dest, acceptAbs)))
 		THROWPOSTFOX(path);
 	return true;
 }
 bool QDir::exists(const FXString &leaf, bool acceptAbs)
 {
-	return FXFile::exists(filePath(leaf, acceptAbs))!=0;
+	return FXStat::exists(filePath(leaf, acceptAbs))!=0;
 }
 
 bool QDir::isReadable() const
 {
-	return FXFile::isReadable(p->path)!=0;
+	return FXStat::isReadable(p->path)!=0;
 }
 bool QDir::exists() const
 {
-	return FXFile::exists(p->path)!=0;
+	return FXStat::exists(p->path)!=0;
 }
 bool QDir::isRoot() const
 {
-	return FXFile::root(p->path)==p->path;
+	return FXPath::root(p->path)==p->path;
 }
 bool QDir::isRelative() const
 {
-	return !FXFile::isAbsolute(p->path);
+	return !FXPath::isAbsolute(p->path);
 }
 void QDir::convertToAbs()
 {
-	p->path=FXFile::absolute(p->path);
+	p->path=FXPath::absolute(p->path);
 }
 
 FXString QDir::separator() { return PATHSEPSTRING; }
@@ -553,16 +558,16 @@ QDir QDir::root()
 }
 FXString QDir::currentDirPath()
 {
-	return FXFile::getCurrentDirectory();
+	return FXSystem::getCurrentDirectory();
 }
 FXString QDir::homeDirPath()
 {
-	return FXFile::getHomeDirectory();
+	return FXSystem::getHomeDirectory();
 }
 FXString QDir::rootDirPath()
 {
 #ifdef USE_WINAPI
-	return FXFile::root(FXFile::getEnvironment("SystemRoot"));
+	return FXPath::root(FXSystem::getEnvironment("SystemRoot"));
 #endif
 #ifdef USE_POSIX
 	return "/";
@@ -570,15 +575,15 @@ FXString QDir::rootDirPath()
 }
 bool QDir::match(const FXString &filter, const FXString &filename)
 {
-	return FXFile::match(filter, filename, FILEMATCH_FILE_NAME|FILEMATCH_NOESCAPE|FILEMATCH_CASEFOLD)!=0;
+	return FXPath::match(filter, filename, FILEMATCH_FILE_NAME|FILEMATCH_NOESCAPE|FILEMATCH_CASEFOLD)!=0;
 }
 FXString QDir::cleanDirPath(const FXString &path)
 {
-	return FXFile::simplify(path);
+	return FXPath::simplify(path);
 }
 bool QDir::isRelativePath(const FXString &path)
 {
-	return !FXFile::isAbsolute(path);
+	return !FXPath::isAbsolute(path);
 }
 QStringList QDir::extractChanges(const QDir &A, const QDir &B)
 {

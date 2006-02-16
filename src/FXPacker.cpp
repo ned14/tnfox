@@ -3,7 +3,7 @@
 *                P a c k e r   C o n t a i n e r   O b j e c t                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPacker.cpp,v 1.41 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXPacker.cpp,v 1.46 2006/01/22 17:58:37 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -56,7 +56,7 @@
 // Frame styles
 #define FRAME_MASK        (FRAME_SUNKEN|FRAME_RAISED|FRAME_THICK)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -493,23 +493,22 @@ long FXPacker::onFocusRight(FXObject*,FXSelector,void* ptr){
 
 // Compute minimum width based on child layout hints
 FXint FXPacker::getDefaultWidth(){
-  register FXint w,wcum,wmax,mw=0;
+  register FXint w,wcum,wmax,mw;
   register FXWindow* child;
-  register FXuint hints,side;
-  wmax=wcum=0;
+  register FXuint hints;
+  wmax=wcum=mw=0;
   if(options&PACK_UNIFORM_WIDTH) mw=maxChildWidth();
   for(child=getLast(); child; child=child->getPrev()){
     if(child->shown()){
       hints=child->getLayoutHints();
-      side=hints&LAYOUT_SIDE_MASK;
       if(hints&LAYOUT_FIX_WIDTH) w=child->getWidth();
       else if(options&PACK_UNIFORM_WIDTH) w=mw;
       else w=child->getDefaultWidth();
-      if((hints&LAYOUT_RIGHT)&&(hints&LAYOUT_CENTER_X)){
+      if((hints&LAYOUT_RIGHT)&&(hints&LAYOUT_CENTER_X)){        // Fixed X
         w=child->getX()+w;
         if(w>wmax) wmax=w;
         }
-      else if(side==LAYOUT_SIDE_LEFT || side==LAYOUT_SIDE_RIGHT){
+      else if(hints&LAYOUT_SIDE_LEFT){                          // Left or right
         if(child->getNext()) wcum+=hspacing;
         wcum+=w;
         }
@@ -518,29 +517,29 @@ FXint FXPacker::getDefaultWidth(){
         }
       }
     }
-  return padleft+padright+(border<<1)+FXMAX(wcum,wmax);
+  wcum+=padleft+padright+(border<<1);
+  return FXMAX(wcum,wmax);
   }
 
 
 // Compute minimum height based on child layout hints
 FXint FXPacker::getDefaultHeight(){
-  register FXint h,hcum,hmax,mh=0;
+  register FXint h,hcum,hmax,mh;
   register FXWindow* child;
-  register FXuint hints,side;
-  hmax=hcum=0;
+  register FXuint hints;
+  hmax=hcum=mh=0;
   if(options&PACK_UNIFORM_HEIGHT) mh=maxChildHeight();
   for(child=getLast(); child; child=child->getPrev()){
     if(child->shown()){
       hints=child->getLayoutHints();
-      side=hints&LAYOUT_SIDE_MASK;
       if(hints&LAYOUT_FIX_HEIGHT) h=child->getHeight();
       else if(options&PACK_UNIFORM_HEIGHT) h=mh;
       else h=child->getDefaultHeight();
-      if((hints&LAYOUT_BOTTOM)&&(hints&LAYOUT_CENTER_Y)){
+      if((hints&LAYOUT_BOTTOM)&&(hints&LAYOUT_CENTER_Y)){       // Fixed Y
         h=child->getY()+h;
         if(h>hmax) hmax=h;
         }
-      else if(side==LAYOUT_SIDE_TOP || side==LAYOUT_SIDE_BOTTOM){
+      else if(!(hints&LAYOUT_SIDE_LEFT)){                       // Top or bottom
         if(child->getNext()) hcum+=vspacing;
         hcum+=h;
         }
@@ -549,7 +548,8 @@ FXint FXPacker::getDefaultHeight(){
         }
       }
     }
-  return padtop+padbottom+(border<<1)+FXMAX(hcum,hmax);
+  hcum+=padtop+padbottom+(border<<1);
+  return FXMAX(hcum,hmax);
   }
 
 

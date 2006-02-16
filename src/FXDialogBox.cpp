@@ -3,7 +3,7 @@
 *                     D i a l o g   B o x    O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDialogBox.cpp,v 1.32 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXDialogBox.cpp,v 1.36 2006/01/22 17:58:22 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
 #include "fxkeys.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -48,9 +48,12 @@
   - Hitting RETURN will localize the default button, and then send it a RETURN;
     Note that the default button is initially assigned, but whichever button
     has the focus will be the default button; default-ness moves between buttons.
+  - We now have timeouts and chores as alternative ways to cancel the dialog.
+    This reduces the amount of code needed to flash little popup dialogs on
+    the screen to just a call to app->addTimeout() or app->addChore().
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -61,8 +64,10 @@ FXDEFMAP(FXDialogBox) FXDialogBoxMap[]={
   FXMAPFUNC(SEL_KEYPRESS,0,FXDialogBox::onKeyPress),
   FXMAPFUNC(SEL_KEYRELEASE,0,FXDialogBox::onKeyRelease),
   FXMAPFUNC(SEL_CLOSE,0,FXDialogBox::onCmdCancel),
-  FXMAPFUNC(SEL_COMMAND,FXDialogBox::ID_CANCEL,FXDialogBox::onCmdCancel),
   FXMAPFUNC(SEL_COMMAND,FXDialogBox::ID_ACCEPT,FXDialogBox::onCmdAccept),
+  FXMAPFUNC(SEL_CHORE,FXDialogBox::ID_CANCEL,FXDialogBox::onCmdCancel),
+  FXMAPFUNC(SEL_TIMEOUT,FXDialogBox::ID_CANCEL,FXDialogBox::onCmdCancel),
+  FXMAPFUNC(SEL_COMMAND,FXDialogBox::ID_CANCEL,FXDialogBox::onCmdCancel),
   };
 
 

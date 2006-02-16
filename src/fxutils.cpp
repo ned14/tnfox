@@ -3,7 +3,7 @@
 *                          U t i l i t y   F u n c t i o n s                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxutils.cpp,v 1.103.2.1 2005/12/13 16:57:32 fox Exp $                        *
+* $Id: fxutils.cpp,v 1.128 2006/01/22 17:58:58 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
 #include "fxkeys.h"
 #include "FXHash.h"
 #include "FXStream.h"
@@ -39,12 +40,7 @@
 
 /*
   Notes:
-  - Those functions manipulating strings should perhaps become FXString type
-    functions?
-  - Need to pass buffer-size argument to all those fxdirpart() etc. functions
-    to protect against memory overruns (make it a default argument last one
-    so as to not impact anyone).
-  - Revive my old malloc() replacement library to detect memory block overwrites.
+  - Handy global utility functions.
 */
 
 
@@ -390,7 +386,7 @@ void fxassert(const char* expression,const char* filename,unsigned int lineno){
 #ifdef _WINDOWS
   char msg[MAXMESSAGESIZE];
   sprintf(msg,"%s(%d): FXASSERT(%s) failed.\n",filename,lineno,expression);
-  OutputDebugString(msg);
+  OutputDebugStringA(msg);
   fprintf(stderr,"%s",msg); // if a console is available
 #else
   fprintf(stderr,"%s(%d): FXASSERT(%s) failed.\n",filename,lineno,expression);
@@ -401,7 +397,7 @@ void fxassert(const char* expression,const char* filename,unsigned int lineno){
 
 // Log message to [typically] stderr
 void fxmessage(const char* format,...){
-#ifndef WIN32                         // Unix
+#ifndef WIN32
   va_list arguments;
   va_start(arguments,format);
   vfprintf(stderr,format,arguments);
@@ -413,7 +409,7 @@ void fxmessage(const char* format,...){
   va_start(arguments,format);
   vsnprintf(msg,sizeof(msg),format,arguments);
   va_end(arguments);
-  OutputDebugString(msg);
+  OutputDebugStringA(msg);
   fprintf(stderr,"%s",msg); // if a console is available
 #else
   va_list arguments;
@@ -440,9 +436,9 @@ void fxerror(const char* format,...){
   va_start(arguments,format);
   vsnprintf(msg,sizeof(msg),format,arguments);
   va_end(arguments);
-  OutputDebugString(msg);
+  OutputDebugStringA(msg);
   fprintf(stderr,"%s",msg); // if a console is available
-  MessageBox(NULL,msg,NULL,MB_OK|MB_ICONEXCLAMATION|MB_APPLMODAL);
+  MessageBoxA(NULL,msg,NULL,MB_OK|MB_ICONEXCLAMATION|MB_APPLMODAL);
   DebugBreak();
 #else
   va_list arguments;
@@ -469,9 +465,9 @@ void fxwarning(const char* format,...){
   va_start(arguments,format);
   vsnprintf(msg,sizeof(msg),format,arguments);
   va_end(arguments);
-  OutputDebugString(msg);
+  OutputDebugStringA(msg);
   fprintf(stderr,"%s",msg); // if a console is available
-  MessageBox(NULL,msg,NULL,MB_OK|MB_ICONINFORMATION|MB_APPLMODAL);
+  MessageBoxA(NULL,msg,NULL,MB_OK|MB_ICONINFORMATION|MB_APPLMODAL);
 #else
   va_list arguments;
   va_start(arguments,format);
@@ -497,7 +493,7 @@ void fxtrace(unsigned int level,const char* format,...){
     va_start(arguments,format);
     vsnprintf(msg,sizeof(msg),format,arguments);
     va_end(arguments);
-    OutputDebugString(msg);
+    OutputDebugStringA(msg);
     fprintf(stderr,"%s",msg); // if a console is available
 #else
     va_list arguments;
@@ -540,162 +536,6 @@ void fxsleep(unsigned int n){
   }
 
 
-// Parse accelerator from menu
-FXHotKey fxparseAccel(const FXString& string){
-  register FXuint code=0,mods=0;
-  register FXint pos=0;
-
-  // Parse leading space
-  while(pos<string.length() && isspace((FXuchar)string[pos])) pos++;
-
-  // Parse modifiers
-  while(pos<string.length()){
-
-    // Modifier
-    if(comparecase(&string[pos],"ctl",3)==0){ mods|=CONTROLMASK; pos+=3; }
-    else if(comparecase(&string[pos],"ctrl",4)==0){ mods|=CONTROLMASK; pos+=4; }
-    else if(comparecase(&string[pos],"alt",3)==0){ mods|=ALTMASK; pos+=3; }
-    else if(comparecase(&string[pos],"meta",4)==0){ mods|=METAMASK; pos+=4; }
-    else if(comparecase(&string[pos],"shift",5)==0){ mods|=SHIFTMASK; pos+=5; }
-    else break;
-
-    // Separator
-    if(string[pos]=='+' || string[pos]=='-' || isspace((FXuchar)string[pos])) pos++;
-    }
-
-  // Test for some special keys
-  if(comparecase(&string[pos],"home",4)==0){
-    code=KEY_Home;
-    }
-  else if(comparecase(&string[pos],"end",3)==0){
-    code=KEY_End;
-    }
-  else if(comparecase(&string[pos],"pgup",4)==0){
-    code=KEY_Page_Up;
-    }
-  else if(comparecase(&string[pos],"pgdn",4)==0){
-    code=KEY_Page_Down;
-    }
-  else if(comparecase(&string[pos],"left",4)==0){
-    code=KEY_Left;
-    }
-  else if(comparecase(&string[pos],"right",5)==0){
-    code=KEY_Right;
-    }
-  else if(comparecase(&string[pos],"up",2)==0){
-    code=KEY_Up;
-    }
-  else if(comparecase(&string[pos],"down",4)==0){
-    code=KEY_Down;
-    }
-  else if(comparecase(&string[pos],"ins",3)==0){
-    code=KEY_Insert;
-    }
-  else if(comparecase(&string[pos],"del",3)==0){
-    code=KEY_Delete;
-    }
-  else if(comparecase(&string[pos],"esc",3)==0){
-    code=KEY_Escape;
-    }
-  else if(comparecase(&string[pos],"tab",3)==0){
-    code=KEY_Tab;
-    }
-  else if(comparecase(&string[pos],"return",6)==0){
-    code=KEY_Return;
-    }
-  else if(comparecase(&string[pos],"enter",5)==0){
-    code=KEY_Return;
-    }
-  else if(comparecase(&string[pos],"back",4)==0){
-    code=KEY_BackSpace;
-    }
-  else if(comparecase(&string[pos],"spc",3)==0){
-    code=KEY_space;
-    }
-  else if(comparecase(&string[pos],"space",5)==0){
-    code=KEY_space;
-    }
-
-  // Test for function keys
-  else if(tolower((FXuchar)string[pos])=='f' && isdigit((FXuchar)string[pos+1])){
-    if(isdigit((FXuchar)string[pos+2])){
-      code=KEY_F1+10*(string[1]-'0')+(string[2]-'0')-1;
-      }
-    else{
-      code=KEY_F1+string[pos+1]-'1';
-      }
-    }
-
-  // Text if its a single character accelerator
-  else if(isprint((FXuchar)string[pos])){
-    if(mods&SHIFTMASK)
-      code=toupper((FXuchar)string[pos])+KEY_space-' ';
-    else
-      code=tolower((FXuchar)string[pos])+KEY_space-' ';
-    }
-
-  FXTRACE((110,"fxparseAccel(%s) = code=%04x mods=%04x\n",string.text(),code,mods));
-  return MKUINT(code,mods);
-  }
-
-
-// Parse hot key from string
-FXHotKey fxparseHotKey(const FXString& string){
-  register FXuint code=0,mods=0;
-  register FXint pos=0;
-  while(pos<string.length()){
-    if(string[pos]=='&'){
-      if(string[pos+1]!='&'){
-        if(isalnum((FXuchar)string[pos+1])){
-          mods=ALTMASK;
-          code=tolower((FXuchar)string[pos+1])+KEY_space-' ';
-          }
-        break;
-        }
-      pos++;
-      }
-    pos++;
-    }
-  FXTRACE((110,"fxparseHotKey(%s) = code=%04x mods=%04x\n",string.text(),code,mods));
-  return MKUINT(code,mods);
-  }
-
-
-// Obtain hot key offset in string
-FXint fxfindHotKey(const FXString& string){
-  register FXint pos=0;
-  register FXint n=0;
-  while(pos<string.length()){
-    if(string[pos]=='&'){
-      if(string[pos+1]!='&'){
-        return n;
-        }
-      pos++;
-      }
-    pos++;
-    n++;
-    }
-  return -1;
-  }
-
-
-// Strip hot key from string
-FXString fxstripHotKey(const FXString& string){
-  FXString result=string;
-  register FXint len=result.length();
-  register FXint i,j;
-  for(i=j=0; j<len; j++){
-    if(result[j]=='&'){
-      if(result[j+1]!='&') continue;
-      j++;
-      }
-    result[i++]=result[j];
-    }
-  result.trunc(i);
-  return result;
-  }
-
-
 // Get highlight color
 FXColor makeHiliteColor(FXColor clr){
   FXuint r,g,b;
@@ -728,9 +568,11 @@ FXColor makeShadowColor(FXColor clr){
   }
 
 
+/*******************************************************************************/
+
 // Convert to MSDOS clipboard format; we add a end
 // of string at the end of the entire buffer.
-FXbool fxtoDOS(FXchar*& string,FXint& len){
+bool fxtoDOS(FXchar*& string,FXint& len){
   register FXint f=0,t=0,c;
   while(f<len){
     if(string[f++]=='\n') t++;
@@ -738,7 +580,7 @@ FXbool fxtoDOS(FXchar*& string,FXint& len){
     }
   t++;
   len=t;
-  if(!FXRESIZE(&string,FXchar,len)) return FALSE;
+  if(!FXRESIZE(&string,FXchar,len)) return false;
   string[--t]='\0';
   while(0<t){
     c=string[--f];
@@ -747,21 +589,21 @@ FXbool fxtoDOS(FXchar*& string,FXint& len){
     }
   FXASSERT(f==0);
   FXASSERT(t==0);
-  return TRUE;
+  return true;
   }
 
 
 // Convert from MSDOS clipboard format; the length passed
 // in is potentially larger than the actual string length,
 // so we scan until the end of string character or the end.
-FXbool fxfromDOS(FXchar*& string,FXint& len){
+bool fxfromDOS(FXchar*& string,FXint& len){
   register FXint f=0,t=0,c;
   while(f<len && string[f]!='\0'){
     if((c=string[f++])!='\r') string[t++]=c;
     }
   len=t;
-  if(!FXRESIZE(&string,FXchar,len)) return FALSE;
-  return TRUE;
+  if(!FXRESIZE(&string,FXchar,len)) return false;
+  return true;
   }
 
 
@@ -775,18 +617,20 @@ FXint fxgetpid(){
   }
 
 
+/*******************************************************************************/
+
 // Convert RGB to HSV
 void fxrgb_to_hsv(FXfloat& h,FXfloat& s,FXfloat& v,FXfloat r,FXfloat g,FXfloat b){
   FXfloat t,delta;
   v=FXMAX3(r,g,b);
   t=FXMIN3(r,g,b);
   delta=v-t;
-  if(v!=0.0)
+  if(v!=0.0f)
     s=delta/v;
   else
-    s=0.0;
-  if(s==0.0){
-    h=0.0;
+    s=0.0f;
+  if(s==0.0f){
+    h=0.0f;
     }
   else{
     if(r==v)
@@ -796,7 +640,7 @@ void fxrgb_to_hsv(FXfloat& h,FXfloat& s,FXfloat& v,FXfloat r,FXfloat g,FXfloat b
     else if(b==v)
       h=4.0f+(r-g)/delta;
     h=h*60.0f;
-    if(h<0.0) h=h+360;
+    if(h<0.0f) h=h+360.0f;
     }
   }
 
@@ -805,13 +649,13 @@ void fxrgb_to_hsv(FXfloat& h,FXfloat& s,FXfloat& v,FXfloat r,FXfloat g,FXfloat b
 void fxhsv_to_rgb(FXfloat& r,FXfloat& g,FXfloat& b,FXfloat h,FXfloat s,FXfloat v){
   FXfloat f,w,q,t;
   FXint i;
-  if(s==0.0){
+  if(s==0.0f){
     r=v;
     g=v;
     b=v;
     }
   else{
-    if(h==360.0) h=0.0;
+    if(h==360.0f) h=0.0f;
     h=h/60.0f;
     i=(FXint)h;
     f=h-i;
@@ -842,7 +686,16 @@ FXuint fxstrhash(const FXchar* str){
   }
 
 
+/*******************************************************************************/
+
+
 // Classify IEEE 754 floating point number
+//
+//            31 30           23 22             0
+// +------------+---------------+---------------+
+// | s[31] 1bit | e[30:23] 8bit | f[22:0] 23bit |
+// +------------+---------------+---------------+
+//
 FXint fxieeefloatclass(FXfloat number){
   FXfloat num=number;
   FXASSERT(sizeof(FXfloat)==sizeof(FXuint));
@@ -863,6 +716,12 @@ FXint fxieeefloatclass(FXfloat number){
 
 
 // Classify IEEE 754 floating point number
+//
+//            63 62            52 51            32 31             0
+// +------------+----------------+----------------+---------------+
+// | s[63] 1bit | e[62:52] 11bit | f[51:32] 20bit | f[31:0] 32bit |
+// +------------+----------------+----------------+---------------+
+//
 FXint fxieeedoubleclass(FXdouble number){
   FXdouble num=number;
   FXASSERT(sizeof(FXdouble)==2*sizeof(FXuint));
@@ -893,17 +752,22 @@ FXint fxieeedoubleclass(FXdouble number){
 /*******************************************************************************/
 
 
+
+
 #if defined(__GNUC__) && defined(__linux__) && defined(__i386__)
 
+extern FXAPI FXuint fxcpuid();
 
 // Capabilities
-#define CPU_HAS_TSC             0x01
-#define CPU_HAS_MMX             0x02
-#define CPU_HAS_MMXEX           0x04
-#define CPU_HAS_SSE             0x08
-#define CPU_HAS_SSE2            0x10
-#define CPU_HAS_3DNOW           0x20
-#define CPU_HAS_3DNOWEXT        0x40
+#define CPU_HAS_TSC             0x001
+#define CPU_HAS_MMX             0x002
+#define CPU_HAS_MMXEX           0x004
+#define CPU_HAS_SSE             0x008
+#define CPU_HAS_SSE2            0x010
+#define CPU_HAS_3DNOW           0x020
+#define CPU_HAS_3DNOWEXT        0x040
+#define CPU_HAS_SSE3            0x080
+#define CPU_HAS_HT              0x100
 
 
 // The CPUID instruction returns stuff in eax, ecx, edx.
@@ -928,8 +792,8 @@ FXint fxieeedoubleclass(FXdouble number){
 FXuint fxcpuid(){
   FXuint eax, ecx, edx, caps;
 
-  // Generating code for pentium:- don't bother checking for CPUID presence.
-#if !(defined(__i586__) || defined(__i686__) || defined(__athlon__) || defined(__pentium4__))
+  // Generating code for pentium or better :- don't bother checking for CPUID presence.
+#if !(defined(__i586__) || defined(__i686__) || defined(__athlon__) || defined(__pentium4__) || defined(__x86_64__))
 
   // If EFLAGS bit 21 can be changed, we have CPUID capability.
   asm volatile ("pushfl                 \n\t"
@@ -954,7 +818,7 @@ FXuint fxcpuid(){
 
   // Get vendor string; this also returns the highest CPUID code in eax.
   // If highest CPUID code is zero, we can't call any other CPUID functions.
-  cpuid(0x00000000, eax,ecx,edx);
+  cpuid(0x00000000,eax,ecx,edx);
   if(eax){
 
     // AMD:   ebx="Auth" edx="enti" ecx="cAMD",
@@ -982,12 +846,16 @@ FXuint fxcpuid(){
     if(edx&0x00800000) caps|=CPU_HAS_MMX;
     if(edx&0x02000000) caps|=CPU_HAS_SSE;
     if(edx&0x04000000) caps|=CPU_HAS_SSE2;
+    if(edx&0x10000000) caps|=CPU_HAS_HT;
+    if(ecx&0x00000001) caps|=CPU_HAS_SSE3;
     }
 
   // Return capabilities
   return caps;
   }
 #endif
+
+
 
 
 /*
@@ -1018,7 +886,64 @@ FXlong fxgetticks(){
 
 
 /*
-* Return clock ticks from performance counter.
+* Return clock ticks from performance counter [GCC IA64 version].
+*/
+#if !defined(__INTEL_COMPILER) && defined(__GNUC__) && defined(__linux__) && defined(__ia64__)
+extern FXAPI FXlong fxgetticks();
+FXlong fxgetticks(){
+  FXlong value;
+  asm volatile ("mov %0=ar.itc" : "=r"(value));         // FIXME not tested!
+  return value;
+  }
+#endif
+
+
+/*
+* Return clock ticks from performance counter [GCC PPC version].
+*/
+#if defined(__GNUC__) && defined(__powerpc__) || defined(__ppc__)
+extern FXAPI FXlong fxgetticks();
+FXlong fxgetticks(){
+  unsigned int tbl, tbu0, tbu1;
+  do{
+    asm volatile("mftbu %0" : "=r"(tbu0));              // FIXME not tested!
+    asm volatile("mftb %0" : "=r"(tbl));
+    asm volatile("mftbu %0" : "=r"(tbu1));
+    }
+  while(tbu0!=tbu1);
+  return (((unsigned long long)tbu0) << 32) | tbl;
+  }
+#endif
+
+
+/*
+* Return clock ticks from performance counter [GCC PA-RISC version].
+*/
+#if defined(__GNUC__) && (defined(__hppa__) || defined(__hppa))
+extern FXAPI FXlong fxgetticks();
+FXlong fxgetticks(){
+  FXlong value;
+  asm volatile("mfctl 16, %0": "=r" (value));             // FIXME not tested!
+  return value;
+  }
+#endif
+
+
+/*
+* Return clock ticks from performance counter [GCC SPARC V9 version].
+*/
+#if defined(__GNUC__) && defined(__sparc_v9__)
+extern FXAPI FXlong fxgetticks();
+FXlong fxgetticks(){
+  FXlong value;
+  __asm__ __volatile__("rd %%tick, %0" : "=r" (value)); // FIXME not tested!
+  return value;
+  }
+#endif
+
+
+/*
+* Return clock ticks from performance counter [WIN32 version].
 */
 #ifdef WIN32
 extern FXAPI FXlong fxgetticks();

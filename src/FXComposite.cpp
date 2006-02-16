@@ -3,7 +3,7 @@
 *                C o m p o s i t e   W i n d o w   O b j e c t                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComposite.cpp,v 1.49 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXComposite.cpp,v 1.54 2006/01/22 17:58:21 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -50,7 +50,7 @@
     as big as the biggest child.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -92,8 +92,8 @@ FXComposite::FXComposite(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXin
 
 
 // Is widget a composite
-FXbool FXComposite::isComposite() const {
-  return 1;
+bool FXComposite::isComposite() const {
+  return true;
   }
 
 
@@ -249,7 +249,7 @@ long FXComposite::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
   if(getFocus() && getFocus()->handle(sender,sel,ptr)) return 1;
 
   // Try target first
-  if(isEnabled() && target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+  if(isEnabled() && target && message && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
 
   // Check the accelerators
   if(getAccelTable() && getAccelTable()->handle(this,sel,ptr)) return 1;
@@ -289,7 +289,7 @@ long FXComposite::onKeyRelease(FXObject* sender,FXSelector sel,void* ptr){
   if(getFocus() && getFocus()->handle(sender,sel,ptr)) return 1;
 
   // Try target first
-  if(isEnabled() && target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+  if(isEnabled() && target && message && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
 
   // Check the accelerators
   if(getAccelTable() && getAccelTable()->handle(this,sel,ptr)) return 1;

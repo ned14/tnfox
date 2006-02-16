@@ -3,7 +3,7 @@
 *                         T a b   B o o k   W i d g e t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBook.h,v 1.8 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXTabBook.h,v 1.10 2006/01/22 17:58:10 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABBOOK_H
 #define FXTABBOOK_H
@@ -43,6 +43,9 @@ namespace FX {
 * Thus, a tab book can be used to present many GUI controls
 * in a small space by placing several panels on top of each
 * other and using tab items to select the desired panel.
+* When one of the tab items is pressed, the tab book's setCurrent()
+* is called with notify=TRUE.  Thus causes the tab book to send a
+* SEL_COMMAND message to its target.
 */
 class FXAPI FXTabBook : public FXTabBar {
   FXDECLARE(FXTabBook)
@@ -78,4 +81,3 @@ public:
 }
 
 #endif
-

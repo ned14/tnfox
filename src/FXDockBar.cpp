@@ -3,7 +3,7 @@
 *                         D o c k S i t e   W i d g e t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockBar.cpp,v 1.29 2005/02/07 04:11:56 fox Exp $                       *
+* $Id: FXDockBar.cpp,v 1.37 2006/01/22 17:58:23 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -92,7 +92,7 @@
 
   Floating a docked bar.  When moving a docked bar, dragging it simply rearranges
   the order of the bars inside the dock, until such time that the bar is substantially
-  moved away form the dock site, as determined by insideDock().  Then the dock bar
+  moved away from the dock site, as determined by insideDock().  Then the dock bar
   is reparented under the toolbar shell and subsequent movement will simply move
   the floaring bar.
 
@@ -237,35 +237,38 @@ void FXDockBar::setWetDock(FXComposite* wet){
 
 
 // Dock the bar before other window
-void FXDockBar::dock(FXDockSite* docksite,FXWindow* before){
+void FXDockBar::dock(FXDockSite* docksite,FXWindow* before,FXbool notify){
   if(docksite && getParent()!=docksite){
     setDryDock(docksite);
     reparent(docksite,before);
     wetdock->hide();
     docksite->dockToolBar(this,before);
+    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_DOCKED,message),docksite);}
     }
   }
 
 
 // Dock the bar near position in dock site
-void FXDockBar::dock(FXDockSite* docksite,FXint localx,FXint localy){
+void FXDockBar::dock(FXDockSite* docksite,FXint localx,FXint localy,FXbool notify){
   if(docksite && getParent()!=docksite){
     setDryDock(docksite);
     reparent(docksite,NULL);
     wetdock->hide();
     docksite->dockToolBar(this,localx,localy);
+    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_DOCKED,message),docksite);}
     }
   }
 
 
 // Undock the bar
-void FXDockBar::undock(FXint rootx,FXint rooty){
+void FXDockBar::undock(FXint rootx,FXint rooty,FXbool notify){
   FXDockSite* docksite=dynamic_cast<FXDockSite*>(getParent());
   if(wetdock && isDocked()){
     if(docksite) docksite->undockToolBar(this);
     reparent(wetdock);
     wetdock->position(rootx,rooty,wetdock->getDefaultWidth(),wetdock->getDefaultHeight());
     wetdock->show();
+    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_FLOATED,message),docksite);}
     }
   }
 
@@ -383,7 +386,7 @@ FXDockSite* FXDockBar::findDockNear(FXint rootx,FXint rooty){
 long FXDockBar::onCmdUndock(FXObject*,FXSelector,void*){
   FXint rootx,rooty;
   translateCoordinatesTo(rootx,rooty,getRoot(),8,8);
-  undock(rootx,rooty);
+  undock(rootx,rooty,TRUE);
   return 1;
   }
 
@@ -397,7 +400,11 @@ long FXDockBar::onUpdUndock(FXObject* sender,FXSelector,void*){
 
 // Redock on top
 long FXDockBar::onCmdDockTop(FXObject*,FXSelector,void*){
-  dock(findDockAtSide(LAYOUT_SIDE_TOP),NULL);
+//  FXDockSite *docksite=findDockAtSide(LAYOUT_SIDE_TOP);
+//  if(docksite){
+//    dock(docksite,0,docksite->getHeight()-20,TRUE);
+//    }
+  dock(findDockAtSide(LAYOUT_SIDE_TOP),NULL,TRUE);
   return 1;
   }
 
@@ -412,7 +419,7 @@ long FXDockBar::onUpdDockTop(FXObject* sender,FXSelector,void*){
 
 // Redock on bottom
 long FXDockBar::onCmdDockBottom(FXObject*,FXSelector,void*){
-  dock(findDockAtSide(LAYOUT_SIDE_BOTTOM),NULL);
+  dock(findDockAtSide(LAYOUT_SIDE_BOTTOM),NULL,TRUE);
   return 1;
   }
 
@@ -427,7 +434,7 @@ long FXDockBar::onUpdDockBottom(FXObject* sender,FXSelector,void*){
 
 // Redock on left
 long FXDockBar::onCmdDockLeft(FXObject*,FXSelector,void*){
-  dock(findDockAtSide(LAYOUT_SIDE_LEFT),NULL);
+  dock(findDockAtSide(LAYOUT_SIDE_LEFT),NULL,TRUE);
   return 1;
   }
 
@@ -442,7 +449,7 @@ long FXDockBar::onUpdDockLeft(FXObject* sender,FXSelector,void*){
 
 // Redock on right
 long FXDockBar::onCmdDockRight(FXObject*,FXSelector,void*){
-  dock(findDockAtSide(LAYOUT_SIDE_RIGHT),NULL);
+  dock(findDockAtSide(LAYOUT_SIDE_RIGHT),NULL,TRUE);
   return 1;
   }
 
@@ -473,14 +480,14 @@ long FXDockBar::onPopupMenu(FXObject*,FXSelector,void* ptr){
   FXGIFIcon docklefticon(getApp(),dockleft,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
   FXGIFIcon dockrighticon(getApp(),dockright,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
   FXGIFIcon dockfreeicon(getApp(),dockfree,FXRGB(255,255,255),IMAGE_ALPHACOLOR);
-  new FXMenuCaption(&dockmenu,"Docking");
+  new FXMenuCaption(&dockmenu,tr("Docking"));
   new FXMenuSeparator(&dockmenu);
-  new FXMenuCommand(&dockmenu,"Top",&docktopicon,this,ID_DOCK_TOP);
-  new FXMenuCommand(&dockmenu,"Bottom",&dockbottomicon,this,ID_DOCK_BOTTOM);
-  new FXMenuCommand(&dockmenu,"Left",&docklefticon,this,ID_DOCK_LEFT);
-  new FXMenuCommand(&dockmenu,"Right",&dockrighticon,this,ID_DOCK_RIGHT);
-  new FXMenuCommand(&dockmenu,"Float",&dockfreeicon,this,ID_DOCK_FLOAT);
-  new FXMenuCommand(&dockmenu,"Flip",&dockflipicon,this,ID_DOCK_FLIP);
+  new FXMenuCommand(&dockmenu,tr("Top"),&docktopicon,this,ID_DOCK_TOP);
+  new FXMenuCommand(&dockmenu,tr("Bottom"),&dockbottomicon,this,ID_DOCK_BOTTOM);
+  new FXMenuCommand(&dockmenu,tr("Left"),&docklefticon,this,ID_DOCK_LEFT);
+  new FXMenuCommand(&dockmenu,tr("Right"),&dockrighticon,this,ID_DOCK_RIGHT);
+  new FXMenuCommand(&dockmenu,tr("Float"),&dockfreeicon,this,ID_DOCK_FLOAT);
+  new FXMenuCommand(&dockmenu,tr("Flip"),&dockflipicon,this,ID_DOCK_FLIP);
   dockmenu.create();
   dockmenu.popup(NULL,event->root_x,event->root_y);
   // FIXME funny problem: menu doesn't update until move despite call to refresh here
@@ -521,7 +528,7 @@ long FXDockBar::onEndDragGrip(FXObject*,FXSelector,void* ptr){
       toolbardock=findDockNear(rootx,rooty);
       if(toolbardock){
         translateCoordinatesTo(localx,localy,toolbardock,0,0);
-        dock(toolbardock,localx,localy);
+        dock(toolbardock,localx,localy,TRUE);
         }
       }
     }
@@ -534,7 +541,7 @@ long FXDockBar::onDockTimer(FXObject*,FXSelector,void* ptr){
   FXDockSite *toolbardock=static_cast<FXDockSite*>(ptr);
   FXint localx,localy;
   translateCoordinatesTo(localx,localy,toolbardock,0,0);
-  dock(toolbardock,localx,localy);
+  dock(toolbardock,localx,localy,TRUE);
   return 1;
   }
 
@@ -564,7 +571,7 @@ long FXDockBar::onDraggedGrip(FXObject*,FXSelector,void* ptr){
 
     // Test if we pulled too far to stay inside
     if(!insideDock(toolbardock,dockx+toolbardock->getX(),docky+toolbardock->getY())){
-      undock(rootx,rooty);
+      undock(rootx,rooty,TRUE);
       }
     }
 

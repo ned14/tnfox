@@ -3,7 +3,7 @@
 *                 V e r t i c a l   C o n t a i n e r   O b j e c t             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVerticalFrame.cpp,v 1.23 2005/01/16 16:06:07 fox Exp $                 *
+* $Id: FXVerticalFrame.cpp,v 1.28 2006/01/22 17:58:51 fox Exp $                 *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -44,7 +44,7 @@
   - Tabbing order takes widget layout into account
 */
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -70,10 +70,10 @@ FXVerticalFrame::FXVerticalFrame(FXComposite* p,FXuint opts,FXint x,FXint y,FXin
 
 // Compute minimum width based on child layout hints
 FXint FXVerticalFrame::getDefaultWidth(){
-  register FXint w,wmax,mw=0;
+  register FXint w,wmax,wcum,mw;
   register FXWindow* child;
   register FXuint hints;
-  wmax=0;
+  wmax=wcum=mw=0;
   if(options&PACK_UNIFORM_WIDTH) mw=maxChildWidth();
   for(child=getFirst(); child; child=child->getNext()){
     if(child->shown()){
@@ -83,20 +83,24 @@ FXint FXVerticalFrame::getDefaultWidth(){
       else w=child->getDefaultWidth();
       if((hints&LAYOUT_RIGHT)&&(hints&LAYOUT_CENTER_X)){        // LAYOUT_FIX_X
         w=child->getX()+w;
+        if(w>wmax) wmax=w;
         }
-      if(wmax<w) wmax=w;
+      else{
+        if(w>wcum) wcum=w;
+        }
       }
     }
-  return padleft+padright+wmax+(border<<1);
+  wcum+=padleft+padright+(border<<1);
+  return FXMAX(wcum,wmax);
   }
 
 
 // Compute minimum height based on child layout hints
 FXint FXVerticalFrame::getDefaultHeight(){
-  register FXint h,hcum,hmax,numc,mh=0;
+  register FXint h,hcum,hmax,mh;
   register FXWindow* child;
   register FXuint hints;
-  hcum=hmax=numc=0;
+  hcum=hmax=mh=0;
   if(options&PACK_UNIFORM_HEIGHT) mh=maxChildHeight();
   for(child=getFirst(); child; child=child->getNext()){
     if(child->shown()){
@@ -106,16 +110,16 @@ FXint FXVerticalFrame::getDefaultHeight(){
       else h=child->getDefaultHeight();
       if((hints&LAYOUT_BOTTOM)&&(hints&LAYOUT_CENTER_Y)){       // LAYOUT_FIX_Y
         h=child->getY()+h;
+        if(h>hmax) hmax=h;
         }
       else{
-        hcum+=h; numc++;
+        if(hcum) hcum+=vspacing;
+        hcum+=h;
         }
-      if(hmax<h) hmax=h;
       }
     }
-  if(numc>1) hcum+=(numc-1)*vspacing;
-  if(hmax<hcum) hmax=hcum;
-  return padtop+padbottom+hmax+(border<<1);
+  hcum+=padtop+padbottom+(border<<1);
+  return FXMAX(hcum,hmax);
   }
 
 

@@ -3,7 +3,7 @@
 *                            O b j e c t   L i s t                              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObjectList.h,v 1.27.2.1 2005/02/11 01:02:47 fox Exp $                      *
+* $Id: FXObjectList.h,v 1.31 2006/02/07 01:17:26 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXOBJECTLIST_H
 #define FXOBJECTLIST_H
@@ -33,7 +33,7 @@ namespace FX {
 /// List of pointers to objects
 class FXAPI FXObjectList {
 protected:
-  FXObject **data;
+  FXObject **ptr;
 public:
 
   /// Default constructor
@@ -52,21 +52,21 @@ public:
   FXObjectList& operator=(const FXObjectList& orig);
 
   /// Return number of objects
-  FXint no() const { return *((FXint*)(data-1)); }
+  FXint no() const { return *((FXint*)(ptr-1)); }
 
   /// Set number of objects
   void no(FXint num);
 
   /// Indexing operator
-  FXObject*& operator[](FXint i){ return data[i]; }
-  FXObject* const& operator[](FXint i) const { return data[i]; }
+  FXObject*& operator[](FXint i){ return ptr[i]; }
+  FXObject* const& operator[](FXint i) const { return ptr[i]; }
 
-  /// Access to list
-  FXObject*& list(FXint i){ return data[i]; }
-  FXObject* const& list(FXint i) const { return data[i]; }
+  /// Indexing operator
+  FXObject*& at(FXint i){ return ptr[i]; }
+  FXObject* const& at(FXint i) const { return ptr[i]; }
 
   /// Access to content array
-  FXObject** list() const { return data; }
+  FXObject** data() const { return ptr; }
 
   /// Assign object p to list
   FXObjectList& assign(FXObject* object);
@@ -114,7 +114,10 @@ public:
   FXObjectList& replace(FXint pos,FXint m,FXObjectList& objects);
 
   /// Remove object at pos
-  FXObjectList& remove(FXint pos,FXint n=1);
+  FXObjectList& erase(FXint pos);
+
+  /// Remove n objects at pos
+  FXObjectList& erase(FXint pos,FXint n);
 
   /// Remove object
   FXObjectList& remove(const FXObject* object);
@@ -146,15 +149,15 @@ public:
   FXObjectListOf(){}
 
   /// Indexing operator
-  TYPE*& operator[](FXint i){ return (TYPE*&)data[i]; }
-  TYPE *const& operator[](FXint i) const { return (TYPE*const&)data[i]; }
+  TYPE*& operator[](FXint i){ return (TYPE*&)ptr[i]; }
+  TYPE *const& operator[](FXint i) const { return (TYPE*const&)ptr[i]; }
 
   /// Access to list
-  TYPE*& list(FXint i){ return (TYPE*&)data[i]; }
-  TYPE *const& list(FXint i) const { return (TYPE*const&)data[i]; }
+  TYPE*& at(FXint i){ return (TYPE*&)ptr[i]; }
+  TYPE *const& at(FXint i) const { return (TYPE*const&)ptr[i]; }
 
   /// Access to content array
-  TYPE** list() const { return (TYPE**)data; }
+  TYPE** data() const { return (TYPE**)ptr; }
   };
 
 }
