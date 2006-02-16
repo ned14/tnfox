@@ -212,7 +212,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
-    if tcommonopts!=2 and not noFOXCompat: env['CPPDEFINES']+=["FX_FOXCOMPAT"]
+    if tcommonopts!=2 and FOXCompatLayer: env['CPPDEFINES']+=["FX_FOXCOMPAT"]
     if disableGUI: env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
     # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
     # the python bindings. Alter it at the top of fxmemoryops.h
