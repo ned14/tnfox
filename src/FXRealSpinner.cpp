@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRealSpinner.cpp,v 1.37 2006/02/10 03:53:47 fox Exp $                   *
+* $Id: FXRealSpinner.cpp,v 1.38 2006/02/14 03:32:42 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -386,8 +386,15 @@ long FXRealSpinner::onCmdGetRealRange(FXObject*,FXSelector,void* ptr){
 
 // Increment spinner
 void FXRealSpinner::increment(FXbool notify){
-  incrementByAmount(incr,notify);    
+  incrementByAmount(incr,notify);
   }
+
+
+#ifdef WIN32
+double round(double x){
+  return (x >= 0) ? floor(x+0.5) : ceil(x-0.5);
+  } 
+#endif
 
 
 // Increment spinner by certain amount
@@ -411,7 +418,7 @@ void FXRealSpinner::incrementByAmount(FXdouble amount,FXbool notify){
 
 // Decrement spinner
 void FXRealSpinner::decrement(FXbool notify){
-  decrementByAmount(incr,notify);    
+  decrementByAmount(incr,notify);
   }
 
 
@@ -472,7 +479,7 @@ void FXRealSpinner::setValue(FXdouble value,FXbool notify){
 // Change value increment
 void FXRealSpinner::setIncrement(FXdouble inc){
   if(inc<=0.0){ fxerror("%s::setIncrement: negative or zero increment specified.\n",getClassName()); }
-  incr=inc; 
+  incr=inc;
   }
 
 
@@ -480,10 +487,10 @@ void FXRealSpinner::setIncrement(FXdouble inc){
 // Change spinner granularity
 void FXRealSpinner::setGranularity(FXdouble gr){
   if(gr<0.0){ fxerror("%s::setGranularity: negative granularity specified.\n",getClassName()); }
-  gran=gr; 
+  gran=gr;
   }
-  
-  
+
+
 // True if text supposed to be visible
 FXbool FXRealSpinner::isTextVisible() const {
   return textField->shown();

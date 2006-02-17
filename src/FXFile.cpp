@@ -501,7 +501,7 @@ bool FXFile::copy(const FXString& srcfile,const FXString& dstfile,bool overwrite
     FXuchar buffer[4096]; FXival nwritten,nread; FXStat stat;
     FXFile src(srcfile,FXIO::Reading);
     if(src.isOpen()){
-      if(FXStat::stat(src,stat)){
+      if(FXStat::statFile(srcfile,stat)){
         FXFile dst(dstfile,overwrite?FXIO::Writing:FXIO::Writing|FXIO::Exclusive,stat.mode());
         if(dst.isOpen()){
           while(1){
