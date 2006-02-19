@@ -38,7 +38,7 @@ memory back to the system, especially under win32.
 Notes:
 -=-=-=
 If you want the very latest version of this allocator, get it from the
-TnFOX SVN repository at svn://svn.berlios.de/tnfox/trunk/src/nedalloc
+TnFOX SVN repository at svn://svn.berlios.de/viewcvs/tnfox/trunk/src/nedmalloc
 
 Because of how nedalloc allocates an mspace per thread, it can cause
 severe bloating of memory usage under certain allocation patterns.

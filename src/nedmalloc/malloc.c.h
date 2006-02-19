@@ -1489,49 +1489,62 @@ static MLOCK_T magic_init_mutex = {0, 0 };
 /* The POSIX threads implementation */
 struct pthread_mlock_t
 {
-  volatile pthread_t threadid;
   volatile unsigned int c;
   pthread_mutex_t l;
 };
 #define MLOCK_T struct pthread_mlock_t
 #define CURRENT_THREAD        pthread_self()
 static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
-  if(CURRENT_THREAD==sl->threadid){
-    ++sl->c;
-    return 0;
-  }
   if(!pthread_mutex_lock(&(sl)->l)){
-    assert(!sl->threadid);
-    sl->threadid=CURRENT_THREAD;
-    sl->c=1;
+    sl->c++;
     return 0;
   }
   return 1;
 }
 
 static FORCEINLINE void pthread_release_lock (MLOCK_T *sl) {
-  assert(CURRENT_THREAD==sl->threadid);
-  if (!--sl->c) {
-    sl->threadid=0;
-    pthread_mutex_unlock(&(sl)->l);
-  }
+  --sl->c;
+  pthread_mutex_unlock(&(sl)->l);
 }
 
 static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
   if(!pthread_mutex_trylock(&(sl)->l)){
-    assert(!sl->threadid);
-    sl->threadid=CURRENT_THREAD;
-    sl->c=1;
+    sl->c++;
     return 1;
   }
   return 0;
 }
 
-#define INITIAL_LOCK(sl)      (memset((sl), 0, sizeof(MLOCK_T)), pthread_mutex_init(&(sl)->l, NULL))
+static FORCEINLINE int pthread_init_lock (MLOCK_T *sl) {
+  pthread_mutexattr_t attr;
+  sl->c=0;
+  if(pthread_mutexattr_init(&attr)) return 1;
+  if(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE)) return 1;
+  if(pthread_mutex_init(&sl->l, &attr)) return 1;
+  pthread_mutexattr_destroy(&attr);
+  return 0;
+}
+
+static FORCEINLINE int pthread_islocked (MLOCK_T *sl) {
+#if 1  /* If this code doesn't work on your processor, try the alternative */
+  return sl->c!=0;
+#else
+  /* Doing this correctly portably means inefficient code :( */
+  if(!pthread_try_lock(sl)){
+    int ret=(sl->c!=0);
+	pthread_mutex_unlock(sl);
+	return ret;
+  }
+  return 0;
+#endif
+}
+
+
+#define INITIAL_LOCK(sl)      pthread_init_lock(sl)
 #define ACQUIRE_LOCK(sl)      pthread_acquire_lock(sl)
 #define RELEASE_LOCK(sl)      pthread_release_lock(sl)
 #define TRY_LOCK(sl)          pthread_try_lock(sl)
-#define IS_LOCKED(sl)         ((sl)->threadid!=0)
+#define IS_LOCKED(sl)         pthread_islocked(sl)
 
 #if HAVE_MORECORE
 static MLOCK_T morecore_mutex = {0, PTHREAD_MUTEX_INITIALIZER };
@@ -1547,6 +1560,7 @@ static MLOCK_T magic_init_mutex = {0, PTHREAD_MUTEX_INITIALIZER };
 */
 
 #if defined(_MSC_VER) && _MSC_VER>=1310
+#if 1
  #ifndef _M_AMD64
   // These are already defined on AMD64 builds
   #ifdef __cplusplus
@@ -1617,6 +1631,18 @@ static FORCEINLINE int win32_try_lock (MLOCK_T *sl) {
 #define RELEASE_LOCK(sl)      win32_release_lock(sl)
 #define TRY_LOCK(sl)          win32_try_lock(sl)
 #define IS_LOCKED(sl)         ((sl)->l)
+#else
+/* Critical section implementation */
+#define MLOCK_T         CRITICAL_SECTION
+#define CURRENT_THREAD  GetCurrentThreadId()
+#define INITIAL_LOCK(s) (!InitializeCriticalSectionAndSpinCount((s), 4000)
+#define ACQUIRE_LOCK(s) ( (!((s))->DebugInfo ? INITIAL_LOCK((s)) : 0), !EnterCriticalSection((s)), 0)
+#define RELEASE_LOCK(s) ( LeaveCriticalSection((s)), 0 )
+#define TRY_LOCK(s)     ( TryEnterCriticalSection((s)) )
+#define IS_LOCKED(s)    ( (s)->LockCount >= 0 )
+#define NULL_LOCK_INITIALIZER
+
+#endif /* 1 */
 #if HAVE_MORECORE
 static MLOCK_T morecore_mutex;
 #endif /* HAVE_MORECORE */
