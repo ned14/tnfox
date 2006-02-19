@@ -315,6 +315,12 @@ MORECORE_CANNOT_TRIM      default: NOT defined
   using a hand-crafted MORECORE function that cannot handle negative
   arguments.
 
+DONT_MERGE_SEGMENTS       default: NOT defined
+  Defined if no attempt should be made to merge memory segments
+  returned by either MORECORE or CALL_MMAP. This is mostly an
+  optimization step to avoid having to walk through all the memory
+  segments when it is known in advance that a merge will not be possible.
+
 HAVE_MMAP                 default: 1 (true)
   True if this system supports mmap or an emulation of it.  If so, and
   HAVE_MORECORE is not true, MMAP is used for all system
@@ -632,7 +638,7 @@ struct mallinfo {
 
 #ifndef FORCEINLINE
  #if defined(__GNUC__)
-  #define FORCEINLINE inline __attribute__ ((always_inline))
+#define FORCEINLINE __inline __attribute__ ((always_inline))
  #elif defined(_MSC_VER)
   #define FORCEINLINE __forceinline
  #endif
@@ -1376,7 +1382,8 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
 #if HAVE_MMAP && HAVE_MREMAP
 #define CALL_MREMAP(addr, osz, nsz, mv) mremap((addr), (osz), (nsz), (mv))
 #else  /* HAVE_MMAP && HAVE_MREMAP */
-#define CALL_MREMAP(addr, osz, nsz, mv) MFAIL
+#define CALL_MREMAP(addr, osz, nsz, mv) ((void)(addr),(void)(osz), \
+                                         (void)(nsz), (void)(mv),MFAIL)
 #endif /* HAVE_MMAP && HAVE_MREMAP */
 
 #if HAVE_MORECORE
@@ -1421,32 +1428,36 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
 struct pthread_mlock_t
 {
   volatile pthread_t threadid;
+  volatile unsigned int c;
   volatile unsigned int l;
 };
 #define MLOCK_T struct pthread_mlock_t
 #define CURRENT_THREAD        pthread_self()
 static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
   if(CURRENT_THREAD==sl->threadid)
-    return 0;
-  for (;;) {
+    ++sl->c;
+  else for (;;) {
     int ret;
     __asm__ __volatile__ ("pause\n\tlock cmpxchgl %2,(%1)" : "=a" (ret) : "r" (&sl->l), "r" (1), "a" (0));
-    if(!ret)
-      goto exit;
+    if(!ret) {
+      assert(!sl->threadid);
+      sl->threadid=CURRENT_THREAD;
+      sl->c=1;
+      break;
+    }
     sched_yield();
   }
-exit:
-  assert(!sl->threadid);
-  sl->threadid=CURRENT_THREAD;
+
   return 0;
 }
 
-static FORCEINLINE int pthread_release_lock (MLOCK_T *sl) {
+static FORCEINLINE void pthread_release_lock (MLOCK_T *sl) {
   int ret;
   assert(CURRENT_THREAD==sl->threadid);
-  sl->threadid=0;
-  __asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (ret) : "r" (&sl->l), "0" (0));
-  return 0;
+  if (!--sl->c) {
+    sl->threadid=0;
+    __asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (ret) : "r" (&sl->l), "0" (0));
+  }
 }
 
 static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
@@ -1455,6 +1466,7 @@ static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
   if(!ret){
     assert(!sl->threadid);
     sl->threadid=CURRENT_THREAD;
+    sl->c=1;
     return 1;
   }
   return 0;
@@ -1478,31 +1490,38 @@ static MLOCK_T magic_init_mutex = {0, 0 };
 struct pthread_mlock_t
 {
   volatile pthread_t threadid;
+  volatile unsigned int c;
   pthread_mutex_t l;
 };
 #define MLOCK_T struct pthread_mlock_t
 #define CURRENT_THREAD        pthread_self()
 static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
-  if(CURRENT_THREAD==sl->threadid)
+  if(CURRENT_THREAD==sl->threadid){
+    ++sl->c;
     return 0;
+  }
   if(!pthread_mutex_lock(&(sl)->l)){
     assert(!sl->threadid);
     sl->threadid=CURRENT_THREAD;
+    sl->c=1;
     return 0;
   }
   return 1;
 }
 
-static FORCEINLINE int pthread_release_lock (MLOCK_T *sl) {
+static FORCEINLINE void pthread_release_lock (MLOCK_T *sl) {
   assert(CURRENT_THREAD==sl->threadid);
-  sl->threadid=0;
-  return pthread_mutex_unlock(&(sl)->l)!=0;
+  if (!--sl->c) {
+    sl->threadid=0;
+    pthread_mutex_unlock(&(sl)->l);
+  }
 }
 
 static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
   if(!pthread_mutex_trylock(&(sl)->l)){
     assert(!sl->threadid);
     sl->threadid=CURRENT_THREAD;
+    sl->c=1;
     return 1;
   }
   return 0;
@@ -1552,6 +1571,7 @@ extern "C" {
 struct win32_mlock_t
 {
   volatile long threadid;
+  volatile unsigned int c;
   long l;
 };
 #define MLOCK_T struct win32_mlock_t
@@ -1559,46 +1579,36 @@ struct win32_mlock_t
 static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
   long mythreadid=CURRENT_THREAD;
   if(mythreadid==sl->threadid)
-    return 0;
-  for (;;) {
-#if 1
-    if (!interlockedexchange(&sl->l, 1))
-      goto exit;
-#else  /* win95 compatible but slower version */
-#ifdef InterlockedCompareExchangePointer
-    if (!interlockedcompareexchange(&sl->l, 1, 0))
-      goto exit;
-#else  /* Use older void* version */
-    if (!InterlockedCompareExchange((void**)&sl->l, (void*)1, (void*)0))
-      goto exit;
-#endif /* InterlockedCompareExchangePointer */
-#endif
-    /*Sleep (0); Faster without */
+    ++sl->c;
+  else for (;;) {
+    if (!interlockedexchange(&sl->l, 1)) {
+      assert(!sl->threadid);
+      sl->threadid=mythreadid;
+      sl->c=1;
+      break;
+    }
+    /*YieldProcessor();*/
   }
-exit:
-  assert(!sl->threadid);
-  sl->threadid=mythreadid;
+
   return 0;
 }
 
 static FORCEINLINE void win32_release_lock (MLOCK_T *sl) {
   assert(CURRENT_THREAD==sl->threadid);
-  sl->threadid=0;
-  //interlockedexchange (&sl->l, 0);
-  sl->l=0;
+  if (!--sl->c) {
+    sl->threadid=0;
+    interlockedexchange (&sl->l, 0);
+  }
 }
 
 static FORCEINLINE int win32_try_lock (MLOCK_T *sl) {
-#if 1
-  int ret=(interlockedexchange(&sl->l, 1) == 0);
-#else  /* win95 compatible but slower version */
-  int ret=(interlockedcompareexchange(&sl->l, 1, 0) == 0);
-#endif
-  if(ret){
+  if (!interlockedexchange(&sl->l, 1)){
     assert(!sl->threadid);
     sl->threadid=CURRENT_THREAD;
+    sl->c=1;
+    return 1;
   }
-  return ret;
+  return 0;
 }
 
 
@@ -1616,9 +1626,9 @@ static MLOCK_T magic_init_mutex;
 #else
 /* User defines their own locks */
 #if HAVE_MORECORE
-static MLOCK_T morecore_mutex = NULL_LOCK_INITIALIZER;
+static MLOCK_T morecore_mutex NULL_LOCK_INITIALIZER;
 #endif /* HAVE_MORECORE */
-static MLOCK_T magic_init_mutex = NULL_LOCK_INITIALIZER;
+static MLOCK_T magic_init_mutex NULL_LOCK_INITIALIZER;
 
 #endif /* USE_LOCKS==1 */
 
@@ -2180,7 +2190,8 @@ struct malloc_state {
   MLOCK_T    mutex;     /* locate lock among fields that rarely change */
 #endif /* USE_LOCKS */
   msegment   seg;
-  void*      nedpool;  /* Points back to nedpool owning this mstate */
+  void*      nedpool;   /* Points back to nedpool owning this mstate */
+  char       cachesync[128];
 };
 
 typedef struct malloc_state*    mstate;
@@ -3611,7 +3622,7 @@ static void* sys_alloc(mstate m, size_t nb) {
             if (end != CMFAIL)
               asize += esize;
             else {            /* Can't use; try to release */
-              CALL_MORECORE(-asize);
+              (void) CALL_MORECORE(-asize);
               br = CMFAIL;
             }
           }
@@ -3682,6 +3693,10 @@ static void* sys_alloc(mstate m, size_t nb) {
 
     else {
       /* Try to merge with an existing segment */
+#ifdef DONT_MERGE_SEGMENTS
+      (void) prepend_alloc;
+      add_segment(m, tbase, tsize, mmap_flag);
+#else
       msegmentptr sp = &m->seg;
       while (sp != 0 && tbase != sp->base + sp->size)
         sp = sp->next;
@@ -3709,6 +3724,7 @@ static void* sys_alloc(mstate m, size_t nb) {
         else
           add_segment(m, tbase, tsize, mmap_flag);
       }
+#endif /* DONT_MERGE_SEGMENTS */
     }
 
     if (nb < m->topsize) { /* Allocate from new or extended top space */
@@ -4969,7 +4985,7 @@ void mspace_malloc_stats(mspace msp) {
 }
 
 size_t mspace_footprint(mspace msp) {
-  size_t result;
+  size_t result = 0;
   mstate ms = (mstate)msp;
   if (ok_magic(ms)) {
     result = ms->footprint;
@@ -4980,7 +4996,7 @@ size_t mspace_footprint(mspace msp) {
 
 
 size_t mspace_max_footprint(mspace msp) {
-  size_t result;
+  size_t result = 0;
   mstate ms = (mstate)msp;
   if (ok_magic(ms)) {
     result = ms->max_footprint;

@@ -96,14 +96,14 @@ static void threadcode(int threadidx)
 	void **allocptr=allocs[threadidx];
 	unsigned int seed=threadidx;
 	usCount start;
-	//neddisablethreadcache(0);
+	neddisablethreadcache(0);
 	THREADSLEEP(100);
 	start=GetUsCount();
 	for(n=0; n<RECORDS;)
 	{
 #if 1
 		unsigned int r=myrandom(&seed);
-		if(n && (r & 65535)<32760) //<32760)
+		if(n && (r & 65535)<32760) /*<32760)*/
 		{	/* free */
 			--toallocptr;
 			--allocptr;
@@ -204,7 +204,7 @@ int main(void)
 	}
 #endif
 
-	if(1)
+	if(0)
 	{
 		printf("\nTesting standard allocator with %d threads ...\n", THREADS);
 		std=runtest();
