@@ -302,7 +302,7 @@ FXbool fxisconsole(const FXchar *path){
   FXbool                flag=MAYBE;
 
   // Open the application file.
-  hImage=CreateFile(path,GENERIC_READ,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+  hImage=CreateFileA(path,GENERIC_READ,FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
   if(hImage!=INVALID_HANDLE_VALUE){
 
     // Read MS-Dos image header.

@@ -1350,7 +1350,7 @@ void FXWindow::create(){
         }
 
       // Create this window
-      xid=CreateWindowEx(dwExStyle,GetClass(),NULL,dwStyle,xpos,ypos,FXMAX(width,1),FXMAX(height,1),hParent,NULL,(HINSTANCE)(getApp()->display),this);
+      xid=CreateWindowExA(dwExStyle,GetClass(),NULL,dwStyle,xpos,ypos,FXMAX(width,1),FXMAX(height,1),hParent,NULL,(HINSTANCE)(getApp()->display),this);
 
       // Uh-oh, we failed
       if(!xid){ throw FXWindowException("unable to create window."); }
