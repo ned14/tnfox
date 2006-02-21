@@ -267,7 +267,8 @@ FXString FXACLEntity::asString(bool withId, bool withMachine) const
 	{
 		if(ERROR_NONE_MAPPED==GetLastError())
 		{	// NT sometimes doesn't know a SID eg; if it's orphaned
-			strcpy(account, FXString(QTrans::tr("FXACLEntity", "Unknown")).text());
+			FXUnicodify<> unknowntext(QTrans::tr("FXACLEntity", "Unknown"));
+			memcpy(account, unknowntext.buffer(), unknowntext.length()+sizeof(FXnchar));
 			withId=true;
 		}
 		else
@@ -359,9 +360,9 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	*/
 	SEC_WINNT_AUTH_IDENTITY_EX swai={ SEC_WINNT_AUTH_IDENTITY_VERSION, sizeof(swai) };
 #ifdef UNICODE
-	swai.User    =(short *) account;  swai.UserLength=accsize;
-	swai.Domain  =(short *) computer; swai.DomainLength=compsize;
-	swai.Password=(short *) password; swai.PasswordLength=(int) wcslen(password);
+	swai.User    =(unsigned short *) account;  swai.UserLength=accsize;
+	swai.Domain  =(unsigned short *) computer; swai.DomainLength=compsize;
+	swai.Password=(unsigned short *) password; swai.PasswordLength=(int) wcslen(password);
 #else
 	swai.User    =(FXuchar *) account;  swai.UserLength=accsize;
 	swai.Domain  =(FXuchar *) computer; swai.DomainLength=compsize;
@@ -372,11 +373,16 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	CredHandle clientcred, servercred; TimeStamp expiry;
 	FXString ntlmstr("NTLM");
 	FXUnicodify<> ntlm(ntlmstr);
-	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, (SEC_CHAR *) ntlm.buffer(),
+#ifdef UNICODE
+	SEC_WCHAR *ntlmptr=(SEC_WCHAR *) ntlm.buffer();
+#else
+	SEC_CHAR *ntlmptr=(SEC_CHAR *) ntlm.buffer();
+#endif
+	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, ntlmptr,
 		SECPKG_CRED_OUTBOUND, NULL, &swai, NULL, NULL,
 		&clientcred, &expiry));
 	FXRBOp unclient=FXRBFunc(FreeCredentialsHandle, &clientcred);
-	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, (SEC_CHAR *) ntlm.buffer(),
+	FXERRHWIN(SEC_E_OK==AcquireCredentialsHandle(0, ntlmptr,
 		SECPKG_CRED_INBOUND, NULL, NULL, NULL, NULL,
 		&servercred, &expiry));
 	FXRBOp unserver=FXRBFunc(FreeCredentialsHandle, &servercred);
@@ -393,7 +399,11 @@ bool FXACLEntity::isLoginPassword(const FXchar *password) const
 	CtxtHandle *clienthin=0, *clienthout=&handles.clienthout, *serverhin=0, *serverhout=&handles.serverhout;
 	FXRBOp unhandles=FXRBFunc(&Handles::del, &handles.clienthout, &handles.serverhout);
 	bool doClient=true, doServer=true;
+#ifdef UNICODE
+	SEC_WCHAR target[32]=L"";
+#else
 	SEC_CHAR target[32]="";
+#endif
 	// Perform challenge acting both as server and client
 	while(doClient || doServer)
 	{
@@ -756,11 +766,12 @@ FXACLEntity FXACLEntity::lookupUser(const FXString &username, const FXString &ma
 	FXACLEntity ret;
 #ifdef USE_WINAPI
 	const FXACLEntity &_root=root();
-	char sidbuff[64], compbuff[512];
+	char sidbuff[64];
+	TCHAR compbuff[512];
 	SID *sid=(SID *) sidbuff, *group=_root.p->group;
 	DWORD sidlen=sizeof(sidbuff), complen=sizeof(compbuff);
 	SID_NAME_USE use;
-	FXERRHWIN(LookupAccountName(machine.empty() ? 0 : FXUnicodify<>(machine).buffer(), username.text(),
+	FXERRHWIN(LookupAccountName(machine.empty() ? 0 : FXUnicodify<>(machine).buffer(), FXUnicodify<>(username).buffer(),
 		sidbuff, &sidlen, compbuff, &complen, &use));
 	FXERRHM(ret.p=new FXACLEntityPrivate(sid, group, machine));
 #endif
@@ -1239,7 +1250,13 @@ FXACL::FXACL(const FXString &path, FXACL::EntityType type) : p(0)
 #endif
 #endif
 	DWORD errcode;
-	FXERRHWIN2FN(ERROR_SUCCESS==(errcode=GetNamedSecurityInfo((LPSTR) FXUnicodify<>(path).buffer(), mapType(type),
+	FXUnicodify<> path_(path);
+#ifdef UNICODE
+	LPWSTR path_ptr=(LPWSTR) path_.buffer();
+#else
+	LPSTR path_ptr=(LPSTR) path_.buffer();
+#endif
+	FXERRHWIN2FN(ERROR_SUCCESS==(errcode=GetNamedSecurityInfo(path_ptr, mapType(type),
 		DACL_SECURITY_INFORMATION|GROUP_SECURITY_INFORMATION|OWNER_SECURITY_INFORMATION,
 		0, 0, 0, NULL, (PSID *) &sd)), errcode, path);
 	init(sd, type);
@@ -1492,8 +1509,13 @@ void FXACL::writeTo(const FXString &path) const
 		FXERRH(p->owner.p->token, QTrans::tr("FXACL", "You must authenticate an entity before you can set it as owner"), FXACL_OWNERNEEDSAUTH, 0);
 		FXERRHWIN(SetThreadToken(NULL, p->owner.p->token));
 	}
-	DWORD ret=SetNamedSecurityInfo((LPSTR) FXUnicodify<>(path).buffer(), mapType(p->type), si, (PSID) p->owner.p->sid,
-		(PSID) p->owner.p->group, p->acl, NULL);
+	DWORD ret=SetNamedSecurityInfo(
+#ifdef UNICODE
+		(LPWSTR) FXUnicodify<>(path).buffer(),
+#else
+		(LPSTR) FXUnicodify<>(path).buffer(),
+#endif
+		mapType(p->type), si, (PSID) p->owner.p->sid, (PSID) p->owner.p->group, p->acl, NULL);
 	if(doImpers)
 	{
 		if(!RevertToSelf())

@@ -1232,11 +1232,11 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	if(!pGetModuleHandleEx)
 	{
 		pGetModuleHandleEx=(BOOL (WINAPI *)(DWORD dwFlags, LPCTSTR lpModuleName, HMODULE* phModule))
-			GetProcAddress(GetModuleHandle("kernel32"),
+			GetProcAddress(
 #ifdef UNICODE
-			"GetModuleHandleExW");
+			GetModuleHandle(L"kernel32"), "GetModuleHandleExW");
 #else
-			"GetModuleHandleExA");
+			GetModuleHandle("kernel32"), "GetModuleHandleExA");
 #endif
 	}
 	if((pGetModuleHandleEx && (firstLoad=!pGetModuleHandleEx(0, path__.buffer(), (HMODULE *) &h.h)))
