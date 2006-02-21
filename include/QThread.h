@@ -62,9 +62,6 @@ increases code bloat.
  #define QMUTEX_INLINEP
 #endif
 
-//! For compatibility with FOX
-typedef FXuint QThreadID;
-
 /*! \class FXAtomicInt
 \brief Provides portable interlocked increment, decrement and exchange
 
@@ -587,15 +584,10 @@ public:
 			flags|=IsLocked;
 		}
 	}
-	/*! \overload
-	\deprecated For FOX compatibility only */
-	FXFORCEINLINE FXDEPRECATEDEXT void lock() { relock(); }
 	//! Returns true if when during a read-to-write lock transition the lock was lost
 	FXFORCEINLINE bool lockLost() const { return locklost; }
 	FXFORCEINLINE ~QMtxHold() { unlock(); }
 };
-//! For FOX compatibility only
-typedef QMtxHold QMutexLock;
 
 // Needs to go here as QMtxHold needs to be defined
 namespace Generic {
@@ -972,9 +964,6 @@ public:
 	didn't permit QThread to be notified then this may wait forever
 	*/
 	bool wait(FXuint time=FXINFINITE);
-	/*! \overload
-	\deprecated For FOX compatibility only */
-	FXDEPRECATEDEXT FXbool join() { return wait(); }
 	/*! \param waitTillStarted True if you want the call to wait until the thread is running before returning
 
 	Call this to start the separate parallel execution of this thread object from its run(). Remember
@@ -987,11 +976,6 @@ public:
 	bool finished () const  throw(){ return isFinished; }
 	//! Returns true if the thread is running right now
 	bool running () const  throw(){ return isRunning; }
-	/*! \overload
-	\deprecated For FOX compatibility only */
-	FXDEPRECATEDEXT FXbool isrunning() const { return running(); }
-	//! \deprecated For FOX compatibility only
-	FXDEPRECATEDEXT FXbool iscurrent() const { return QThread::current()==this; }
 	//! Returns true if the thread is in the process of finishing (in its cleanup handler)
 	bool inCleanup() const  throw(){ return isInCleanup; }
 	//! Returns true if this object is valid (ie; not deleted)
@@ -1008,9 +992,6 @@ public:
 	\sa Detailed Description above
 	*/
 	void requestTermination();
-	/*! \overload
-	\deprecated For FOX compatibility only */
-	FXDEPRECATEDEXT FXbool cancel() { requestTermination(); return TRUE; }
 	//! Returns a unique number identifying this thread within this kernel
 	static FXulong id() throw();
 	//! Returns a unique number identifying the thread represented by this instance

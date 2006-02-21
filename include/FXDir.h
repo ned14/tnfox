@@ -55,10 +55,10 @@ public:
 public:
 
   /// Construct directory enumerator
-  FXDir();
+  FXDEPRECATEDEXT FXDir();
 
   /// Construct directory enumerator open on path
-  FXDir(const FXString& path);
+  FXDEPRECATEDEXT FXDir(const FXString& path);
 
   /// Open directory to path, return true if ok.
   virtual bool open(const FXString& path);

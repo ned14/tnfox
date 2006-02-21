@@ -38,6 +38,7 @@ typedef void*         FXThreadID;
 
 
 class FXCondition;
+class QThreadFXThread;
 
 
 /**
@@ -196,15 +197,11 @@ public:
 */
 class FXAPI FXThread {
 private:
-  FXThreadID tid;
+  friend class QThreadFXThread;
+  QThreadFXThread *r;
 private:
   FXThread(const FXThread&);
   FXThread &operator=(const FXThread&);
-#ifdef WIN32
-  static unsigned int CALLBACK execute(void*);
-#else
-  static void* execute(void*);
-#endif
 protected:
 
   /**

@@ -26,7 +26,7 @@
 
 #include "fxdefs.h"
 #include "FXFile.h"
-#include "FXGZStream.h"
+#include "FXGZFileStream.h"
 #include "QGZipDevice.h"
 #include "FXException.h"
 

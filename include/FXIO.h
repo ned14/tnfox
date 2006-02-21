@@ -124,13 +124,13 @@ public:
   FXuint mode() const { return access; }
 
   /// Return handle
-  FXInputHandle handle() const { return device; }
+  //FXInputHandle handle() const { return device; }
 
   /// Attach existing device handle
-  virtual void attach(FXInputHandle handle,FXuint mode);
+  //virtual void attach(FXInputHandle handle,FXuint mode);
 
   /// Detach device handle
-  virtual void detach();
+  //virtual void detach();
 
   /// Get current file position
   virtual FXlong position() const;

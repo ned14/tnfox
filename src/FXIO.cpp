@@ -75,18 +75,18 @@ bool FXIO::isOpen() const {
 
 
 // Attach existing file handle
-void FXIO::attach(FXInputHandle handle,FXuint mode){
+/*void FXIO::attach(FXInputHandle handle,FXuint mode){
   close();
   device=handle;
   access=mode;
-  }
+  }*/
 
 
 // Detach existing file handle
-void FXIO::detach(){
+/*void FXIO::detach(){
   device=BadHandle;
   access=NoAccess;
-  }
+  }*/
 
 
 // Get position

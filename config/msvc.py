@@ -2,6 +2,7 @@
 
 env['CPPDEFINES']+=["WIN32",
                     "_WINDOWS",
+                    "UNICODE",
                     "_USRDLL"
                     ]
 if debugmode:

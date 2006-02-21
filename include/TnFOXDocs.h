@@ -36,7 +36,7 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.4.29), and the extensions listed below are designed to not interfere with that process where
+from v1.6.0), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
 is (C) 2001-2005 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
@@ -171,7 +171,6 @@ When combined with FX::QTrans, human-language translation is now easy as pie! Si
 user-visible string literals with <tt>tr()</tt>, extract into a text file using the provided
 utility CppMunge.py and add your translations. You can then choose to embed the file, or place it next
 to the executable. You can even place translations within DLL's and arbitrarily load and unload them!
-\note Until FOX finalises support for Unicode, QTrans is limited to Latin-1.
 
 <li><b>FX::FXStream now works with a FX::QIODevice & 64 bit file i/o is now used throughout</b><br>
 A FXfval now holds a file pointer or size, ready for the transition to 128 bit disc i/o around

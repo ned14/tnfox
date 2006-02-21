@@ -3391,7 +3391,7 @@ bool FXEventLoop::getNextEventI(FXRawEvent& msg,bool blocking){
   // The new code will always fall through, with an event if there
   // is one, or without one if despite our efforts above there wasn't.
   // Thanks to Hodju Petri <phodju@cc.hut.fi> for this suggestion.
-  return PeekMessage(&msg,NULL,0,0,PM_REMOVE);
+  return PeekMessage(&msg,NULL,0,0,PM_REMOVE)!=0;
   }
 
 

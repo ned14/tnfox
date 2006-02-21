@@ -27,6 +27,7 @@
 #ifndef FXIO_H
 #include "FXIO.h"
 #endif
+#include "QFile.h"
 
 
 namespace FX {
@@ -37,24 +38,25 @@ namespace FX {
 */
 class FXAPI FXFile : public FXIO {
 private:
+  QFile f;
   FXFile(const FXFile&);
   FXFile &operator=(const FXFile&);
 public:
 
   /// Construct file
-  FXFile(){ }
+  FXDEPRECATEDEXT FXFile(){ }
 
   /// Construct file and attach existing handle h
-  FXFile(FXInputHandle handle,FXuint mode);
+  //FXFile(FXInputHandle handle,FXuint mode);
 
   /// Construct and open a file
-  FXFile(const FXString& file,FXuint mode=FXIO::Reading,FXuint perm=FXIO::OwnerReadWrite|FXIO::GroupReadWrite|FXIO::OtherReadWrite);
+  FXDEPRECATEDEXT FXFile(const FXString& file,FXuint mode=FXIO::Reading,FXuint perm=FXIO::OwnerReadWrite|FXIO::GroupReadWrite|FXIO::OtherReadWrite);
 
   /// Open file
   virtual bool open(const FXString& file,FXuint mode=FXIO::Reading,FXuint perm=FXIO::OwnerReadWrite|FXIO::GroupReadWrite|FXIO::OtherReadWrite);
 
   /// Open device with access mode and handle
-  virtual bool open(FXInputHandle handle,FXuint mode);
+  //virtual bool open(FXInputHandle handle,FXuint mode);
 
   /// Get current file position
   virtual FXlong position() const;

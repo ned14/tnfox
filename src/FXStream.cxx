@@ -116,12 +116,22 @@ FXStream::~FXStream(){
   }
 
 
+FXuval FXStream::writeBuffer(FXuval){
+  return 0;
+  }
+
+
+FXuval FXStream::readBuffer(FXuval){
+  return 0;
+  }
+
+
 void FXStream::setError(FXStreamStatus err)
 {
 	code=err;
 }
 
-unsigned long FXStream::getSpace() const
+FXuval FXStream::getSpace() const
 {
 	return 102400;	// dummy value to keep code happy
 }
@@ -134,7 +144,7 @@ void FXStream::setSpace(unsigned long)
 
 
 // Open for save or load
-FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar* data){
+bool FXStream::open(FXStreamDirection save_or_load,FXuval size,FXuchar* data){
 #ifndef FX_DISABLEGUI
   if(save_or_load!=FXStreamSave && save_or_load!=FXStreamLoad){fxerror("FXStream::open: illegal stream direction.\n");}
   if(!dir){
@@ -175,15 +185,15 @@ FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar*
     // So far, so good
     code=FXStreamOK;
 
-    return TRUE;
+    return true;
     }
 #endif
-  return FALSE;
+  return false;
   }
 
 
 // Close store; return TRUE if no errors have been encountered
-FXbool FXStream::close(){
+bool FXStream::close(){
 #ifndef FX_DISABLEGUI
   if(dir){
     hash->clear();
@@ -198,28 +208,28 @@ FXbool FXStream::close(){
     return code==FXStreamOK;
     }
 #endif
-  return FALSE;
+  return false;
   }
 
 
 // Flush buffer
-FXbool FXStream::flush(){
+bool FXStream::flush(){
   // Does nothing as underlying i/o devices do the buffering
   return code==FXStreamOK;
   }
 
 
-FXulong FXStream::position() const
+FXlong FXStream::position() const
 {
-	return dev->at();
+	return (FXlong) dev->at();
 }
 
 // Move to position
-bool FXStream::position(FXfval newpos,FXWhence whence)
+bool FXStream::position(FXlong newpos,FXWhence whence)
 {
-	if(FXFromCurrent==whence) newpos+=dev->at();
-	else if(FXFromEnd==whence) newpos=dev->size()-newpos;
-	return dev->at(newpos);
+	if(FXFromCurrent==whence) newpos+=(FXlong) dev->at();
+	else if(FXFromEnd==whence) newpos=(FXlong) dev->size()-newpos;
+	return dev->at((FXfval) newpos);
 }
 
 void FXStream::setDevice(QIODevice *_dev)

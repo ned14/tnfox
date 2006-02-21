@@ -4,6 +4,7 @@
 *                                                                               *
 *********************************************************************************
 * Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
+* TnFOX reimplementation Copyright (C) 2006 Niall Douglas                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -22,34 +23,17 @@
 * $Id: FXFile.cpp,v 1.249 2006/01/22 17:58:25 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
-#include "fxver.h"
 #include "fxdefs.h"
-#include "fxascii.h"
-#include "FXHash.h"
-#include "FXStream.h"
-#include "FXString.h"
-#include "FXPath.h"
-#include "FXIO.h"
 #include "FXStat.h"
 #include "FXFile.h"
 #include "FXPipe.h"
 #include "FXDir.h"
+#include "foxcompatlayer.h"
+#include "FXMemDbg.h"
+#if defined(DEBUG) && defined(FXMEMDBG_H)
+static const char *_fxmemdbg_current_file_ = __FILE__;
+#endif
 
-
-
-/*
-  Notes:
-
-  - Implemented many functions in terms of FXFile and FXDir
-    so we won't have to worry about unicode stuff.
-  - Perhaps we should assume FXString contains string encoded in the locale
-    of the system [which in case of Windows would mean it contains UTF-16]?
-    Because it isn't between 8-bit or 16-bit, but also about utf-8 v.s. other
-    encodings..
-  - This should be in FXSystem; FXSystem needs to determine the locale, then
-    determine the codec needed for that locale, and then use this codec for
-    encoding our strings to that locale.
-*/
 
 #ifdef WIN32
 #define BadHandle INVALID_HANDLE_VALUE
@@ -63,18 +47,28 @@
 #endif
 #endif
 
-using namespace FX;
-
 /*******************************************************************************/
 
 namespace FX {
 
+static FXuint fxconvertfxiomode(FXuint mode)
+{
+	FXuint ret=0;
+	if(mode & FXIO::ReadOnly) ret|=IO_ReadOnly;
+	if(mode & FXIO::WriteOnly) ret|=IO_WriteOnly;
+	if(mode & FXIO::Append) ret|=IO_Append;
+	if(mode & FXIO::Truncate) ret|=IO_Truncate;
+	if(!(mode & FXIO::Create)) fxwarning("fxconvertfxiomode(): FXIO::Create not specified\n");
+	if(mode & FXIO::Exclusive) fxwarning("fxconvertfxiomode(): FXIO::Exclusive not supported\n");
+	if(mode & FXIO::NonBlocking) fxwarning("fxconvertfxiomode(): FXIO::NonBlocking not supported\n");
+	return ret;
+}
 
 
 // Construct file and attach existing handle h
-FXFile::FXFile(FXInputHandle handle,FXuint mode){
+/*FXFile::FXFile(FXInputHandle handle,FXuint mode){
   FXIO::open(handle,mode);
-  }
+  }*/
 
 
 // Construct and open a file
@@ -85,136 +79,63 @@ FXFile::FXFile(const FXString& file,FXuint mode,FXuint perm){
 
 // Open file
 bool FXFile::open(const FXString& file,FXuint mode,FXuint perm){
+  bool ret=false;
+  FXEXCEPTION_FOXCOMPAT1
   if(!file.empty() && !isOpen()){
-#ifdef WIN32
-    DWORD flags=GENERIC_READ;
-    DWORD creation=OPEN_EXISTING;
-
-    // Basic access mode
-    switch(mode&(ReadOnly|WriteOnly)){
-      case ReadOnly: flags=GENERIC_READ; break;
-      case WriteOnly: flags=GENERIC_WRITE; break;
-      case ReadWrite: flags=GENERIC_READ|GENERIC_WRITE; break;
-      }
-
-    // Creation and truncation mode
-    switch(mode&(Create|Truncate|Exclusive)){
-      case Create: creation=OPEN_ALWAYS; break;
-      case Truncate: creation=TRUNCATE_EXISTING; break;
-      case Create|Truncate: creation=CREATE_ALWAYS; break;
-      case Create|Truncate|Exclusive: creation=CREATE_NEW; break;
-      }
-
-    // Non-blocking mode
-    if(mode&NonBlocking){
-      // FIXME
-      }
-
-#ifdef UNICODE
-    FXnchar unifile[1024];
-    utf2ncs(unifile,file.text(),file.length()+1);
-    device=::CreateFileW(unifile,flags,FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,creation,FILE_ATTRIBUTE_NORMAL,NULL);
-#else
-    device=::CreateFileA(file.text(),flags,FILE_SHARE_READ|FILE_SHARE_WRITE,NULL,creation,FILE_ATTRIBUTE_NORMAL,NULL);
-#endif
+    f.open(fxconvertfxiomode(mode));
+    device=0;
     access=mode;
-
-    // Appending
-    if(mode&Append) ::SetFilePointer(device,0,NULL,FILE_END);
-    return (device!=BadHandle);
-#else
-    FXuint bits=perm&0777;
-    FXuint flags=0;
-
-    // Basic access mode
-    switch(mode&(ReadOnly|WriteOnly)){
-      case ReadOnly: flags=O_RDONLY; break;
-      case WriteOnly: flags=O_WRONLY; break;
-      case ReadWrite: flags=O_RDWR; break;
-      }
-// O_LARGEFILE
-
-    // Appending and truncation
-    if(mode&Append) flags|=O_APPEND;
-    if(mode&Truncate) flags|=O_TRUNC;
-
-    // Non-blocking mode
-    if(mode&NonBlocking) flags|=O_NONBLOCK;
-
-    // Creation mode
-    if(mode&Create){
-      flags|=O_CREAT;
-      if(mode&Exclusive) flags|=O_EXCL;
-      }
-
-    // Permission bits
-    if(perm&FXIO::SetUser) bits|=S_ISUID;
-    if(perm&FXIO::SetGroup) bits|=S_ISGID;
-    if(perm&FXIO::Sticky) bits|=S_ISVTX;
-
-    // Do it
-    device=::open(file.text(),flags,bits);
-    access=mode;
-    return (device!=BadHandle);
-#endif
+	ret=true;
     }
-  return false;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Open device with access mode and handle
-bool FXFile::open(FXInputHandle handle,FXuint mode){
+/*bool FXFile::open(FXInputHandle handle,FXuint mode){
   return FXIO::open(handle,mode);
-  }
+  }*/
 
 
 // Get position
 FXlong FXFile::position() const {
+  FXlong ret=-1;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    LARGE_INTEGER pos;
-    pos.QuadPart=0;
-    pos.LowPart=::SetFilePointer(device,0,&pos.HighPart,FILE_CURRENT);
-    if(pos.LowPart==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR) pos.QuadPart=-1;
-    return pos.QuadPart;
-#else
-    return ::lseek(device,0,SEEK_CUR);
-#endif
+    ret=(FXlong) f.at();
     }
-  return -1;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Move to position
 FXlong FXFile::position(FXlong offset,FXuint from){
+  FXlong ret=-1;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    LARGE_INTEGER pos;
-    pos.QuadPart=offset;
-    pos.LowPart=::SetFilePointer(device,pos.LowPart,&pos.HighPart,from);
-    if(pos.LowPart==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR) pos.QuadPart=-1;
-    return pos.QuadPart;
-#else
-    return ::lseek(device,offset,from);
-#endif
+    FXfval pos=(FXfval) offset;
+    if(FXIO::Current==from)
+      pos+=f.at();
+	else if(FXIO::End==from)
+      pos+=f.size();
+    f.at(pos);
+    ret=(FXlong) f.at();
     }
-  return -1;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Read block
 FXival FXFile::readBlock(void* data,FXival count){
   FXival nread=-1;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    if(0==::ReadFile(device,data,count,(DWORD*)&nread,NULL)) nread=-1;
-#else
-    do{
-      nread=::read(device,data,count);
-      }
-    while(nread<0 && errno==EINTR);
-#endif
+    nread=(FXival) f.readBlock((char *) data, (FXuval) count);
     }
+  FXEXCEPTION_FOXCOMPAT2
   return nread;
   }
 
@@ -222,112 +143,91 @@ FXival FXFile::readBlock(void* data,FXival count){
 // Write block
 FXival FXFile::writeBlock(const void* data,FXival count){
   FXival nwritten=-1;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    if(0==::WriteFile(device,data,count,(DWORD*)&nwritten,NULL)) nwritten=-1;
-#else
-    do{
-      nwritten=::write(device,data,count);
-      }
-    while(nwritten<0 && errno==EINTR);
-#endif
+    nwritten=(FXival) f.writeBlock((const char *) data, (FXuval) count);
     }
+  FXEXCEPTION_FOXCOMPAT2
   return nwritten;
   }
 
 
 // Truncate file
 FXlong FXFile::truncate(FXlong size){
+  FXlong ret=-1;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    LARGE_INTEGER oldpos,newpos;
-    oldpos.QuadPart=0;
-    newpos.QuadPart=size;
-    oldpos.LowPart=::SetFilePointer(device,0,&oldpos.HighPart,FILE_CURRENT);
-    newpos.LowPart=::SetFilePointer(device,newpos.LowPart,&newpos.HighPart,FILE_BEGIN);
-    if((newpos.LowPart==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR) || ::SetEndOfFile(device)==0) newpos.QuadPart=-1;
-    ::SetFilePointer(device,oldpos.LowPart,&oldpos.HighPart,FILE_BEGIN);
-    return newpos.QuadPart;
-#else
-    if(::ftruncate(device,size)==0) return size;
-#endif
+    f.truncate((FXfval) size);
+	ret=(FXlong) f.size();
     }
-  return -1;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Flush to disk
 bool FXFile::flush(){
+  bool ret=false;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    return ::FlushFileBuffers(device)!=0;
-#else
-    return ::fsync(device)==0;
-#endif
+    f.flush();
+    ret=true;
     }
-  return false;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Test if we're at the end
 bool FXFile::eof(){
+  bool ret=true;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-    register FXlong pos=position();
-    return 0<=pos && size()<=pos;
+    ret=f.atEnd();
     }
-  return true;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Return file size
 FXlong FXFile::size(){
+  FXlong ret=-1;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-#ifdef WIN32
-    ULARGE_INTEGER result;
-    result.LowPart=::GetFileSize(device,&result.HighPart);
-    return result.QuadPart;
-#else
-    struct stat data;
-    if(::fstat(device,&data)==0) return data.st_size;
-#endif
+    ret=(FXlong) f.size();
     }
-  return -1;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Close file
 bool FXFile::close(){
+  bool ret=false;
+  FXEXCEPTION_FOXCOMPAT1
   if(isOpen()){
-    FXInputHandle dev=device;
+    f.close();
     device=BadHandle;
-#ifdef WIN32
-    return ::CloseHandle(dev)!=0;
-#else
-    return ::close(dev)==0;
-#endif
+    ret=true;
     }
-  return false;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 
 // Create new (empty) file
 bool FXFile::create(const FXString& file,FXuint perm){
+  bool ret=false;
+  FXEXCEPTION_FOXCOMPAT1
   if(!file.empty()){
-#ifdef WIN32
-#ifdef UNICODE
-    FXnchar buffer[1024];
-    utf2ncs(buffer,file.text(),file.length()+1);
-    FXInputHandle h=::CreateFileW(buffer,GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
-#else
-    FXInputHandle h=::CreateFileA(file.text(),GENERIC_WRITE,FILE_SHARE_READ,NULL,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,NULL);
-#endif
-    if(h!=BadHandle){ ::CloseHandle(h); return true; }
-#else
-    FXInputHandle h=::open(file.text(),O_CREAT|O_WRONLY|O_TRUNC|O_EXCL,perm);
-    if(h!=BadHandle){ ::close(h); return true; }
-#endif
+    QFile f(file);
+    f.open(IO_WriteOnly);
+    f.close();
+    ret=true;
     }
-  return false;
+  FXEXCEPTION_FOXCOMPAT2
+  return ret;
   }
 
 

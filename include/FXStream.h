@@ -213,6 +213,20 @@ public:
   //! Moves the file pointer backwards by the specified amount of bytes, returning the new file pointer
   FXfval rewind(FXint amount);
 
+protected:
+
+  /**
+  * Write at least count bytes from the buffer;
+  * returns number of bytes available to be written.
+  */
+  virtual FXuval writeBuffer(FXuval count);
+
+  /**
+  * Read at least count bytes into the buffer;
+  * returns number of bytes available to be read.
+  */
+  virtual FXuval readBuffer(FXuval count);
+
 public:
 
   /** \deprecated For FOX compatibility only
@@ -231,19 +245,19 @@ public:
   * If data is not NULL, it is expected to point to an external data buffer
   * of length size; otherwise stream will use an internally managed buffer.
   */
-  FXDEPRECATEDEXT FXbool open(FXStreamDirection save_or_load,FXuval size=8192,FXuchar* data=NULL);
+  FXDEPRECATEDEXT bool open(FXStreamDirection save_or_load,FXuval size=8192,FXuchar* data=NULL);
 
   /** \deprecated For FOX compatibility only
   
   Flush buffer
   */
-  virtual FXDEPRECATEDEXT FXbool flush();
+  virtual FXDEPRECATEDEXT bool flush();
 
   /** \deprecated For FOX compatibility only
 
-  Close; return TRUE if OK
+  Close; return true if OK
   */
-  virtual FXDEPRECATEDEXT FXbool close();
+  virtual FXDEPRECATEDEXT bool close();
 
   /** \deprecated For FOX compatibility only
 
@@ -263,7 +277,7 @@ public:
   */
   FXDEPRECATEDEXT FXStreamStatus status() const { return code; }
 
-  /// Return TRUE if at end of file or error
+  /// Return true if at end of file or error
   bool eof() const { return atEnd(); }
 
   /** \deprecated For FOX compatibility only
@@ -285,10 +299,10 @@ public:
   FXDEPRECATEDEXT const FXObject* container() const { return parent; }
 
   /// Get position
-  FXfval position() const;
+  FXlong position() const;
 
   /// Move to position relative to head, tail, or current location
-  virtual bool position(FXfval offset,FXWhence whence=FXFromStart);
+  virtual bool position(FXlong offset,FXWhence whence=FXFromStart);
 
   /// Change swap bytes flag. -1 sets machine default (ie; do swap on big endian machines)
   void swapBytes(FXint s){ swap=(s<0) ? !FOX_BIGENDIAN : (s!=0); }
