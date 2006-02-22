@@ -31,3 +31,22 @@ misbehave
 */
 #define FXEXCEPTION_FOXCOMPAT1 QThread_DTHold _int_disable_termination; FXERRH_TRY {
 #define FXEXCEPTION_FOXCOMPAT2 } FXERRH_CATCH(FX::FXException & /*_int_caught_e*/) { /*FXERRH_REPORT(FX::FXApp::instance(), _int_caught_e);*/ } FXERRH_ENDTRY
+
+namespace FX
+{
+	static FXuint fxconvertfxiomode(FXuint mode)
+	{
+		FXuint ret=0;
+		if(mode & FXIO::ReadOnly) ret|=IO_ReadOnly;
+		if(mode & FXIO::WriteOnly) ret|=IO_WriteOnly;
+		if(mode & FXIO::Append) ret|=IO_Append;
+		if(mode & FXIO::Truncate) ret|=IO_Truncate;
+		if((mode & FXIO::WriteOnly) && !(mode & FXIO::Create))
+			fxwarning("fxconvertfxiomode(): FXIO::Create not specified\n");
+		if(mode & FXIO::Exclusive)
+			fxwarning("fxconvertfxiomode(): FXIO::Exclusive not supported\n");
+		if(mode & FXIO::NonBlocking)
+			fxwarning("fxconvertfxiomode(): FXIO::NonBlocking not supported\n");
+		return ret;
+	}
+}

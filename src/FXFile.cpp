@@ -51,19 +51,6 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-static FXuint fxconvertfxiomode(FXuint mode)
-{
-	FXuint ret=0;
-	if(mode & FXIO::ReadOnly) ret|=IO_ReadOnly;
-	if(mode & FXIO::WriteOnly) ret|=IO_WriteOnly;
-	if(mode & FXIO::Append) ret|=IO_Append;
-	if(mode & FXIO::Truncate) ret|=IO_Truncate;
-	if(!(mode & FXIO::Create)) fxwarning("fxconvertfxiomode(): FXIO::Create not specified\n");
-	if(mode & FXIO::Exclusive) fxwarning("fxconvertfxiomode(): FXIO::Exclusive not supported\n");
-	if(mode & FXIO::NonBlocking) fxwarning("fxconvertfxiomode(): FXIO::NonBlocking not supported\n");
-	return ret;
-}
-
 
 // Construct file and attach existing handle h
 /*FXFile::FXFile(FXInputHandle handle,FXuint mode){
@@ -82,6 +69,7 @@ bool FXFile::open(const FXString& file,FXuint mode,FXuint perm){
   bool ret=false;
   FXEXCEPTION_FOXCOMPAT1
   if(!file.empty() && !isOpen()){
+    f.setName(file);
     f.open(fxconvertfxiomode(mode));
     device=0;
     access=mode;

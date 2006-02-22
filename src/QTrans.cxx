@@ -395,6 +395,12 @@ FXString QTransString::translate(const FXString *langid)
 	return translation;
 }
 
+const FXchar *QTransString::text()
+{
+	translate();
+	return p->translation->text();
+}
+
 void QTransString::contents(const char *&context, const char *&text, const char *&hint) const
 {
 	if(p)
