@@ -30,12 +30,13 @@
 
 namespace FX {
 
-
-/// Memory Store Definition
+/*! \class FXMemoryStream
+\deprecated For compatibility with FOX code only
+*/
+class QBuffer;
 class FXAPI FXMemoryStream : public FXStream {
-protected:
-  virtual FXuval writeBuffer(FXuval count);
-  virtual FXuval readBuffer(FXuval count);
+  QBuffer *buffer;
+  bool    owns;         // Owns the data array
 public:
 
   /// Create memory store
@@ -55,12 +56,6 @@ public:
 
   /// Close memory store
   virtual bool close();
-
-  /// Get position
-  FXlong position() const { return FXStream::position(); }
-
-  /// Move to position
-  virtual bool position(FXlong offset,FXWhence whence=FXFromStart);
 
   };
 
