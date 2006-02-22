@@ -56,6 +56,7 @@ B QMemMap wasn't opening existing shared memory with read ACL access
 B Fixed deadlock when creating thread during thread creation upcall
 R *** Issued snapshot 4
 B Fixed some compilation errors in QPtrVector
+R *** Issued snapshot 5
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -184,6 +185,8 @@ iterator operators.
 R *** Issued snapshot 4
 * Now enables thread caching win32 allocator variant when available
 * Merged FOX v1.4.29
+* Merged FOX v1.6.0 RC3. Extensive changes have been made.
+R *** Issued snapshot 5
 
 
 v0.85 13th Feb 2005:
