@@ -53,7 +53,7 @@ class FXDCWindow;
 class FXVisual;
 class FXGLVisual;
 class FXGLContext;
-class FXTranslator;
+//class FXTranslator;
 class FXComposeContext;
 
 // Opaque FOX objects
@@ -598,7 +598,7 @@ private:
   FXuint           waitCount;           // Number of times wait cursor was called
   FXuint           windowCount;         // Number of windows
   FXCursor        *cursor[DEF_WAIT_CURSOR+1];
-  FXTranslator    *translator;          // Message translator
+  //FXTranslator    *translator;          // Message translator
   FXint            appArgc;             // Argument count
   const FXchar *const *appArgv;         // Argument vector
   const FXchar    *inputmethod;         // Input method name
@@ -1086,10 +1086,10 @@ public:
   * Change message translator.
   * The new translator will be owned by FXApp.
   */
-  void setTranslator(FXTranslator* trans);
+  //void setTranslator(FXTranslator* trans);
 
   /// Return message translator
-  FXTranslator* getTranslator() const { return translator; }
+  //FXTranslator* getTranslator() const { return translator; }
 
   /// Obtain application-wide settings
   FXuint getTypingSpeed() const { return typingSpeed; }

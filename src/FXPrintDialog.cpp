@@ -608,7 +608,7 @@ long FXPrintDialog::onUpdToFile(FXObject* sender,FXSelector,void*){
 long FXPrintDialog::onCmdAccept(FXObject* sender,FXSelector sel,void* ptr){
   if(printer.flags&PRINT_DEST_FILE){
     if(FXStat::exists(printer.name)){
-      FXuint answer=FXMessageBox::question(this,MBOX_YES_NO_CANCEL,tr("Overwrite file?"),tr("Overwrite existing file %s?"),printer.name.text());
+      FXuint answer=FXMessageBox::question(this,MBOX_YES_NO_CANCEL,tr("Overwrite file?").text(),tr("Overwrite existing file %s?").text(),printer.name.text());
       if(answer==MBOX_CLICKED_CANCEL) return 1;
       if(answer==MBOX_CLICKED_NO){
         return FXDialogBox::onCmdCancel(sender,sel,ptr);

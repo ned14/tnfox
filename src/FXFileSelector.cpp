@@ -523,11 +523,11 @@ long FXFileSelector::onCmdNew(FXObject*,FXSelector,void*){
   if(FXInputDialog::getString(name,this,tr("Create New Directory"),tr("Create new directory with name: "),&newdirectoryicon)){
     FXString dirname=FXPath::absolute(dir,name);
     if(FXStat::exists(dirname)){
-      FXMessageBox::error(this,MBOX_OK,tr("Already Exists"),tr("File or directory %s already exists.\n"),dirname.text());
+      FXMessageBox::error(this,MBOX_OK,tr("Already Exists").text(),tr("File or directory %s already exists.\n").text(),dirname.text());
       return 1;
       }
     if(!FXDir::create(dirname)){
-      FXMessageBox::error(this,MBOX_OK,tr("Cannot Create"),tr("Cannot create directory %s.\n"),dirname.text());
+      FXMessageBox::error(this,MBOX_OK,tr("Cannot Create").text(),tr("Cannot create directory %s.\n").text(),dirname.text());
       return 1;
       }
     setDirectory(dirname);
@@ -593,14 +593,14 @@ long FXFileSelector::onCmdCopy(FXObject*,FXSelector,void*){
   FXString copymessage;
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
-      copymessage.format(tr("Copy file from location:\n\n%s\n\nto location: "),filenamelist[i].text());
+      copymessage.format(tr("Copy file from location:\n\n%s\n\nto location: ").text(),filenamelist[i].text());
       FXInputDialog inputdialog(this,tr("Copy File"),copymessage,NULL,INPUTDIALOG_STRING,0,0,0,0);
       inputdialog.setText(FXPath::absolute(FXPath::directory(filenamelist[i]),"CopyOf"+FXPath::name(filenamelist[i])));
       inputdialog.setNumColumns(60);
       if(inputdialog.execute()){
         FXString newname=inputdialog.getText();
         if(!FXFile::copyFiles(filenamelist[i],newname,FALSE)){
-          if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Copying File"),tr("Unable to copy file:\n\n%s  to:  %s\n\nContinue with operation?"),filenamelist[i].text(),newname.text())==MBOX_CLICKED_NO) break;
+          if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Copying File").text(),tr("Unable to copy file:\n\n%s  to:  %s\n\nContinue with operation?").text(),filenamelist[i].text(),newname.text())==MBOX_CLICKED_NO) break;
           }
         }
       }
@@ -616,14 +616,14 @@ long FXFileSelector::onCmdMove(FXObject*,FXSelector,void*){
   FXString movemessage;
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
-      movemessage.format(tr("Move file from location:\n\n%s\n\nto location: "),filenamelist[i].text());
+      movemessage.format(tr("Move file from location:\n\n%s\n\nto location: ").text(),filenamelist[i].text());
       FXInputDialog inputdialog(this,tr("Move File"),movemessage,NULL,INPUTDIALOG_STRING,0,0,0,0);
       inputdialog.setText(filenamelist[i]);
       inputdialog.setNumColumns(60);
       if(inputdialog.execute()){
         FXString newname=inputdialog.getText();
         if(!FXFile::moveFiles(filenamelist[i],newname,FALSE)){
-          if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Moving File"),tr("Unable to move file:\n\n%s  to:  %s\n\nContinue with operation?"),filenamelist[i].text(),newname.text())==MBOX_CLICKED_NO) break;
+          if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Moving File").text(),tr("Unable to move file:\n\n%s  to:  %s\n\nContinue with operation?").text(),filenamelist[i].text(),newname.text())==MBOX_CLICKED_NO) break;
           }
         }
       }
@@ -639,14 +639,14 @@ long FXFileSelector::onCmdLink(FXObject*,FXSelector,void*){
   FXString linkmessage;
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
-      linkmessage.format(tr("Link file from location:\n\n%s\n\nto location: "),filenamelist[i].text());
+      linkmessage.format(tr("Link file from location:\n\n%s\n\nto location: ").text(),filenamelist[i].text());
       FXInputDialog inputdialog(this,tr("Link File"),linkmessage,NULL,INPUTDIALOG_STRING,0,0,0,0);
       inputdialog.setText(FXPath::absolute(FXPath::directory(filenamelist[i]),"LinkTo"+FXPath::name(filenamelist[i])));
       inputdialog.setNumColumns(60);
       if(inputdialog.execute()){
         FXString newname=inputdialog.getText();
         if(!FXFile::symlink(filenamelist[i],newname)){
-          if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Linking File"),tr("Unable to link file:\n\n%s  to:  %s\n\nContinue with operation?"),filenamelist[i].text(),newname.text())==MBOX_CLICKED_NO) break;
+          if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Linking File").text(),tr("Unable to link file:\n\n%s  to:  %s\n\nContinue with operation?").text(),filenamelist[i].text(),newname.text())==MBOX_CLICKED_NO) break;
           }
         }
       }
@@ -662,11 +662,11 @@ long FXFileSelector::onCmdDelete(FXObject*,FXSelector,void*){
   FXuint answer;
   if(filenamelist){
     for(FXint i=0; !filenamelist[i].empty(); i++){
-      answer=FXMessageBox::warning(this,MBOX_YES_NO_CANCEL,tr("Deleting files"),tr("Are you sure you want to delete the file:\n\n%s"),filenamelist[i].text());
+      answer=FXMessageBox::warning(this,MBOX_YES_NO_CANCEL,tr("Deleting files").text(),tr("Are you sure you want to delete the file:\n\n%s").text(),filenamelist[i].text());
       if(answer==MBOX_CLICKED_CANCEL) break;
       if(answer==MBOX_CLICKED_NO) continue;
       if(!FXFile::removeFiles(filenamelist[i],TRUE)){
-        if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Deleting File"),tr("Unable to delete file:\n\n%s\n\nContinue with operation?"),filenamelist[i].text())==MBOX_CLICKED_NO) break;
+        if(FXMessageBox::error(this,MBOX_YES_NO,tr("Error Deleting File").text(),tr("Unable to delete file:\n\n%s\n\nContinue with operation?").text(),filenamelist[i].text())==MBOX_CLICKED_NO) break;
         }
       }
     delete [] filenamelist;

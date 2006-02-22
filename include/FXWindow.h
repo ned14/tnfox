@@ -795,16 +795,6 @@ public:
 
   virtual bool doesSaveUnder() const;
 
-  /**
-  * Translate message for localization; using the current FXTranslator,
-  * an attempt is made to translate the given message into the current
-  * language.  An optional hint may be passed to break any ties in case
-  * more than one tranlation is possible for the given message text.
-  * In addition, the name of the widget is passed as context name so
-  * that controls in a single dialog may be grouped together.
-  */
-  virtual const FXchar* tr(const FXchar* message,const FXchar* hint=NULL) const;
-
   /// Save window to stream
   virtual void save(FXStream& store) const;
 

@@ -2421,7 +2421,7 @@ long FXGLViewer::onCmdPrintImage(FXObject*,FXSelector,void*){
 
       // Try open printer
       if(!pdc.beginPrint(printer)){
-        FXMessageBox::error(this,MBOX_OK,tr("Printer Error"),tr("Unable to print."));
+        FXMessageBox::error(this,MBOX_OK,tr("Printer Error").text(),tr("Unable to print.").text());
         return 1;
         }
 

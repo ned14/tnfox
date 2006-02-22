@@ -70,7 +70,7 @@
 #include "FXMenuPane.h"
 #include "FXDialogBox.h"
 #include "FXMessageBox.h"
-#include "FXTranslator.h"
+//#include "FXTranslator.h"
 #include "FXComposeContext.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
@@ -1059,7 +1059,7 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   stockFont=normalFont;
 
   // Default translator
-  translator=new FXTranslator(this);
+  //translator=new FXTranslator(this);
 
   // Init colors
   borderColor=FXRGB(0,0,0);
@@ -5145,9 +5145,9 @@ void FXApp::setDefaultCursor(FXDefaultCursor which,FXCursor* cur){
 
 
 // Change message translator
-void FXApp::setTranslator(FXTranslator* trans){
+/*void FXApp::setTranslator(FXTranslator* trans){
   translator=trans;
-  }
+  }*/
 
 
 // Write a window and its children into the stream store
@@ -5515,7 +5515,7 @@ FXApp::~FXApp(){
   delete cursor[DEF_WAIT_CURSOR];
 
   // Delete translator
-  delete translator;
+  //delete translator;
 
 
   // Free left-over dde data

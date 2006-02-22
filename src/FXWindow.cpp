@@ -51,7 +51,7 @@
 #include "FXTopWindow.h"
 #include "FXException.h"
 #include "FXStatusLine.h"
-#include "FXTranslator.h"
+//#include "FXTranslator.h"
 #include "FXComposeContext.h"
 #include "FXTextField.h"
 
@@ -2671,13 +2671,13 @@ long FXWindow::onUngrabbed(FXObject*,FXSelector,void* ptr){
 
 
 // Translate message
-const FXchar* FXWindow::tr(const FXchar* message,const FXchar* hint) const {
+/*const FXchar* FXWindow::tr(const FXchar* message,const FXchar* hint) const {
   FXTranslator *translator=getApp()->getTranslator();
   if(translator){
     return translator->tr(getClassName(),message,hint);
     }
   return message;
-  }
+  }*/
 
 
 /*******************************************************************************/
