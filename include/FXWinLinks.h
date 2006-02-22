@@ -190,7 +190,7 @@ struct FXAPI FXWinShellLink
 	{
 		FXushort length;
 		char path1[260];			// In ASCII
-		FXushort path2[260];		// In unicode
+		FXnchar path2[260];		// In unicode
 		ItemIdListTag()
 		{
 			memset(this, 0, sizeof(*this));
@@ -259,7 +259,7 @@ struct FXAPI FXWinShellLink
 	struct FXAPI StringTag
 	{
 		FXushort length;			// in characters
-		FXushort string[260];		// Unicode string
+		FXnchar string[260];		// Unicode string
 		StringTag() { memset(this, 0, sizeof(*this)); }
 		friend FXAPI FXStream &operator<<(FXStream &s, const StringTag &i);
 		friend FXAPI FXStream &operator>>(FXStream &s, StringTag &i);
