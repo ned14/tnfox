@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
 			key.setAsymmetricKey(&pkey);
 			QPtrList<DevInfo> devs(true);
 			if(1) {
-				FXFile *dev=new FXFile("../BigFile3.bin");
+				QFile *dev=new QFile("../BigFile3.bin");
 				dev->open(IO_WriteOnly|IO_ShredTruncate);
 				devs.append(new DevInfo("FXFile", dev));
 			}

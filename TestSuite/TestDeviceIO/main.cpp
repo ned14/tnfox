@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 		{	// Basic i/o test
 			fxmessage("\nGeneral purpose i/o test:\n"
 						"-=-=-=-=-=-=-=-=-=-=-=-=-\n");
-			FXFile fh("../../ReadMe.txt");
+			QFile fh("../../ReadMe.txt");
 			QBuffer bufferh;
 			fh.open(IO_ReadOnly);
 			bufferh.open(IO_ReadWrite);
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
 			fxmessage("\nGZip device test:\n"
 					  "-=-=-=-=-=-=-=-=-=-\n");
-			FXFile zipped("../IOTestOutput.gz");
+			QFile zipped("../IOTestOutput.gz");
 			QGZipDevice gzipdev(&zipped);
 			gzipdev.open(IO_WriteOnly);
 			bufferh.at(0);
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 					    "-=-=-=-=-=-=-=-=-\n");
 			QPtrList<DevInfo> devs(true);
 			if(1) {
-				devs.append(new DevInfo("FXFile", new FXFile("../BigFile3.txt")));
+				devs.append(new DevInfo("QFile", new QFile("../BigFile3.txt")));
 			}
 			if(1) {
 				QMemMap *dev=new QMemMap("../BigFile2.txt");
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
 		{	// Test of 64 bit file handling
 			fxmessage("\n64 bit file handling test:\n"
 						"-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
-			FXFile largefile("../BigFile.txt");
+			QFile largefile("../BigFile.txt");
 			FXStream slargefile(&largefile);
 			largefile.open(IO_ReadWrite);
 			largefile.at(((FXuint)-11));
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 			fxmessage("From 4Gb + 2 bytes position, read '%s'\n", buffer);
 			largefile.truncate(0x100000002LL);
 			largefile.close();
-			fxmessage(FXString("File size is 0x%1 (should be two bytes above 4Gb)\n").arg(FXFile::size(largefile.name()), 0, 16).text());
+			fxmessage(FXString("File size is 0x%1 (should be two bytes above 4Gb)\n").arg(FXStat::size(largefile.name()), 0, 16).text());
 			FXFile::remove(largefile.name());
 		}
 	}

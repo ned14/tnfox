@@ -22,6 +22,7 @@
 
 #include "QFileInfo.h"
 #include "FXSQLDB_ipc.h"
+#include "QFile.h"
 #include "FXFile.h"
 #include "QPipe.h"
 #include <stdio.h>
@@ -348,7 +349,7 @@ int main( int argc, char** argv)
 
 		FXMEMDBG_TESTHEAP;
 		fxmessage("\nInserting ReadMe.txt ...\n");
-		FXFile fh("../../ReadMe.txt");
+		QFile fh("../../ReadMe.txt");
 		fh.open(IO_ReadOnly);
 		begin=FXProcess::getNsCount();
 		FXSQLDBStatementRef stmt=mydb->prepare("INSERT INTO 'test' ('value', 'text') VALUES(?2, ?1);");
