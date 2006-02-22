@@ -21,9 +21,11 @@
 
 #include "FXWinLinks.h"
 #include "QFileInfo.h"
+#include "FXFile.h"
 #include "QFile.h"
 #include "QTrans.h"
 #include "FXRollback.h"
+#include "fxver.h"
 #include "FXPath.h"
 #include "FXStat.h"
 #include "FXErrCodes.h"
@@ -207,7 +209,11 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::ItemIdListTag &i)
 				FXnchar *p2=i.path2+sncnt;
 				*p2++='\\';
 				while((s >> *((FXushort *) p2), *p2))
+#if FOX_MAJOR>1 || FOX_MINOR>=6
 					p1+=nc2utfs(p1, (FXnchar *) p2, sizeof(FXnchar));
+#else
+					*p1++=(char) *p2++;
+#endif
 				*p1=0; *p2=0;
 				FXushort unknown4; s >> unknown4;
 				/*WIN32_FILE_ATTRIBUTE_DATA fad={0};
@@ -430,8 +436,16 @@ void FXWinShellLink::write(FXStream s, const QFileInfo &whereTo)
 
 	if(header.flags.hasItemIdList)
 	{
+#if FOX_MAJOR>1 || FOX_MINOR>=6
 		memcpy(itemIdList.path1, convertedPath.text(), convertedPath.length()+1);
 		utf2ncs(itemIdList.path2, convertedPath.text(), convertedPath.length()+1);
+#else
+		for(int n=0; n<whereTo.filePath().length()+1; n++)
+		{
+			itemIdList.path1[n]=convertedPath[n];
+			itemIdList.path2[n]=convertedPath[n];
+		}
+#endif
 		memcpy(itemIdList.originalPath, whereTo.filePath().text(), whereTo.filePath().length()+1);
 	}
 	if('\\'==convertedPath[0] && '\\'==convertedPath[1])
@@ -449,12 +463,22 @@ void FXWinShellLink::write(FXStream s, const QFileInfo &whereTo)
 	}
 	{	// Always seems to have a relative path
 		FXString _relativePath(".."+convertedPath.mid(convertedPath.find('\\')));
+#if FOX_MAJOR>1 || FOX_MINOR>=6
 		utf2ncs(relativePath.string, _relativePath.text(), _relativePath.length()+1);
+#else
+		for(int n=0; n<_relativePath.length()+1; n++)
+			relativePath.string[n]=_relativePath[n];
+#endif
 	}
 	if(whereTo.isFile())
 	{	// Has a working directory if it's a file
 		FXString _workingDir(FXPath::directory(convertedPath));
+#if FOX_MAJOR>1 || FOX_MINOR>=6
 		utf2ncs(workingDir.string, _workingDir.text(), _workingDir.length()+1);
+#else
+		for(int n=0; n<_workingDir.length()+1; n++)
+			workingDir.string[n]=_workingDir[n];
+#endif
 	}
 	header.flags.hasDescription =(description.string[0]!=0);
 	header.flags.hasRelativePath=(relativePath.string[0]!=0);
@@ -584,13 +608,10 @@ FXString FXWinJunctionPoint::read(const FXString &_path)
 	}
 #endif
 #ifdef USE_POSIX
-	FXchar lnk[MAXPATHLEN+1];
-	FXint len=::readlink(_path.text(),lnk,MAXPATHLEN);
-	FXString ret;
-	if(0<=len) ret.assign(lnk,len);
+	FXString ret=FXFile::symlink(_path);
 	if('/'!=ret[0])
 	{	// Partial path
-		ret=QFile::absolute(QFile::directory(_path), ret);
+		ret=FXFile::absolute(FXFile::directory(_path), ret);
 	}
 	return ret;
 #endif
@@ -663,7 +684,7 @@ void FXWinJunctionPoint::write(const FXString &_path, const QFileInfo &whereTo)
 	uncreatedir.dismiss();
 #endif
 #ifdef USE_POSIX
-	FXERRH(QFile::symlink(whereTo.filePath(), _path, true), QTrans::tr("FXWinJunctionPoint", "Failed to link '%1' to '%2'").arg(whereTo.filePath()).arg(_path), FXEXCEPTION_NOTFOUND, 0);
+	FXERRH(FXFile::symlink(whereTo.filePath(), _path, true), QTrans::tr("FXWinJunctionPoint", "Failed to link '%1' to '%2'").arg(whereTo.filePath()).arg(_path), FXEXCEPTION_NOTFOUND, 0);
 #endif
 }
 
