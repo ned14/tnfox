@@ -81,7 +81,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 	s.writeRawBytes(zeros, 8);
 	s.writeRawBytes(zeros, 3);
 	// Push path elements
-	const FXushort *p1=i.path2+2, *p2;
+	const FXnchar *p1=i.path2+2, *p2;
 	FXString originalPath(i.originalPath);
 	originalPath.substitute('/', '\\');
 	FXint originalPathOffset=originalPath.find(i.path1+2);
@@ -204,13 +204,10 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::ItemIdListTag &i)
 				s >> modified >> accessed;
 				FXuint unicodeheader4; s >> unicodeheader4;
 				assert(0x14==unicodeheader4);
-				FXushort *p2=i.path2+sncnt;
+				FXnchar *p2=i.path2+sncnt;
 				*p2++='\\';
-				while((s >> *p2, *p2))
-#ifdef UNICODE
-#error Fixme
-#endif
-					*p1++=(char) *p2++;
+				while((s >> *((FXushort *) p2), *p2))
+					p1+=nc2utfs(p1, (FXnchar *) p2, sizeof(FXnchar));
 				*p1=0; *p2=0;
 				FXushort unknown4; s >> unknown4;
 				/*WIN32_FILE_ATTRIBUTE_DATA fad={0};
@@ -361,7 +358,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::StringTag &i)
 	FXushort len;
 	for(len=0; i.string[len]; len++);
 	s << len;
-	s.save(i.string, len);
+	s.save((FXushort *) i.string, len);
 	return s;
 }
 FXStream &operator>>(FXStream &s, FXWinShellLink::StringTag &i)
@@ -370,7 +367,7 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::StringTag &i)
 #ifdef PRINT_DEBUG
 	fxmessage("StringTag: mypos=%u, length=%u\n", (FXuint)(s.device()->at()-2), (FXuint) i.length);
 #endif
-	s.load(i.string, i.length);
+	s.load((FXushort *) i.string, i.length);
 	i.string[i.length]=0;
 	return s;
 }
@@ -433,14 +430,8 @@ void FXWinShellLink::write(FXStream s, const QFileInfo &whereTo)
 
 	if(header.flags.hasItemIdList)
 	{
-		for(int n=0; n<whereTo.filePath().length()+1; n++)
-		{
-#ifdef UNICODE
-#error Fixme
-#endif
-			itemIdList.path1[n]=convertedPath[n];
-			itemIdList.path2[n]=convertedPath[n];
-		}
+		memcpy(itemIdList.path1, convertedPath.text(), convertedPath.length()+1);
+		utf2ncs(itemIdList.path2, convertedPath.text(), convertedPath.length()+1);
 		memcpy(itemIdList.originalPath, whereTo.filePath().text(), whereTo.filePath().length()+1);
 	}
 	if('\\'==convertedPath[0] && '\\'==convertedPath[1])
@@ -458,20 +449,12 @@ void FXWinShellLink::write(FXStream s, const QFileInfo &whereTo)
 	}
 	{	// Always seems to have a relative path
 		FXString _relativePath(".."+convertedPath.mid(convertedPath.find('\\')));
-#ifdef UNICODE
-#error Fixme
-#endif
-		for(int n=0; n<_relativePath.length()+1; n++)
-			relativePath.string[n]=_relativePath[n];
+		utf2ncs(relativePath.string, _relativePath.text(), _relativePath.length()+1);
 	}
 	if(whereTo.isFile())
 	{	// Has a working directory if it's a file
 		FXString _workingDir(FXPath::directory(convertedPath));
-#ifdef UNICODE
-#error Fixme
-#endif
-		for(int n=0; n<_workingDir.length()+1; n++)
-			workingDir.string[n]=_workingDir[n];
+		utf2ncs(workingDir.string, _workingDir.text(), _workingDir.length()+1);
 	}
 	header.flags.hasDescription =(description.string[0]!=0);
 	header.flags.hasRelativePath=(relativePath.string[0]!=0);
@@ -621,9 +604,10 @@ void FXWinJunctionPoint::write(const FXString &_path, const QFileInfo &whereTo)
 	TCHAR to[MAX_PATH];
 	if('\\'==whereTo.filePath()[0] && '?'==whereTo.filePath()[1])
 	{
-		FXERRGNOTSUPP("Fixme!");
 #ifdef UNICODE
-#error Fixme!
+		utf2ncs(to, whereTo.filePath().text(), whereTo.filePath().length()+1);
+#else
+		memcpy(to, whereTo.filePath().text(), whereTo.filePath().length()+1);
 #endif
 	}
 	else
