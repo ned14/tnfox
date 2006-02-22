@@ -250,7 +250,7 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	x = (x + (x >> 4)) & 0x0F0F0F0F;
 	x = x + (x << 8);
 	x = x + (x << 16);
-	return x >> 24;
+	return 31 - (x >> 24);
 #endif
 }
 
