@@ -96,26 +96,26 @@ FXCursor::FXCursor(FXApp* a,FXStockCursor curid):FXId(a){
 
 
 // Make cursor from source and mask
-FXCursor::FXCursor(FXApp* a,const FXuchar* src,const FXuchar* msk,FXint w,FXint h,FXint hx,FXint hy):FXId(a){
+FXCursor::FXCursor(FXApp* a,const FXuchar* src,const FXuchar* msk,FXint w,FXint h,FXint hx,FXint hy,FXint opts):FXId(a){
   FXTRACE((100,"FXCursor::FXCursor %p\n",this));
   fxloadXBM(data,src,msk,w,h);
   width=w;
   height=h;
   hotx=FXCLAMP(0,hx,width-1);
   hoty=FXCLAMP(0,hy,height-1);
-  options=CURSOR_OWNED;
+  options=opts|CURSOR_OWNED;
   }
 
 
 // Make cursor from FXColor pixels
-FXCursor::FXCursor(FXApp* a,const FXColor *pix,FXint w,FXint h,FXint hx,FXint hy):FXId(a){
+FXCursor::FXCursor(FXApp* a,const FXColor *pix,FXint w,FXint h,FXint hx,FXint hy,FXint opts):FXId(a){
   FXTRACE((100,"FXCursor::FXCursor %p\n",this));
   data=(FXColor*)pix;
   width=w;
   height=h;
   hotx=FXCLAMP(0,hx,width-1);
   hoty=FXCLAMP(0,hy,height-1);
-  options=0;
+  options=opts;
   }
 
 

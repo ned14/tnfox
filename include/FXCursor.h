@@ -72,10 +72,10 @@ public:
   FXCursor(FXApp* a,FXStockCursor curid=CURSOR_ARROW);
 
   /// Make cursor from source and mask; cursor size should at most 32x32 for portability!
-  FXCursor(FXApp* a,const FXuchar* src,const FXuchar* msk,FXint w=32,FXint h=32,FXint hx=0,FXint hy=0);
+  FXCursor(FXApp* a,const FXuchar* src,const FXuchar* msk,FXint w=32,FXint h=32,FXint hx=0,FXint hy=0,FXint options=0);
 
   /// Make cursor from FXColor pixels; cursor size should be at most 32x32 for portability!
-  FXCursor(FXApp* a,const FXColor* pix,FXint w=32,FXint h=32,FXint hx=0,FXint hy=0);
+  FXCursor(FXApp* a,const FXColor* pix,FXint w=32,FXint h=32,FXint hx=0,FXint hy=0,FXint options=0);
 
   /// Width of cursor; returns 0 for stock cursors
   FXint getWidth() const { return width; }
