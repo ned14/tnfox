@@ -201,7 +201,6 @@ protected:
   // Platform dependent private stuff
 #ifndef WIN32
   void           *&xim;                 // Input method
-  void           *&xic;                 // Input method context
   void            *r_fds;               // Set of file descriptors for read
   void            *w_fds;               // Set of file descriptors for write
   void            *e_fds;               // Set of file descriptors for exceptions
@@ -240,8 +239,6 @@ protected:
   void addRepaint(FXID win,FXint x,FXint y,FXint w,FXint h,FXbool synth=0);
   void removeRepaints(FXID win,FXint x,FXint y,FXint w,FXint h);
   void scrollRepaints(FXID win,FXint dx,FXint dy);
-  static void imcreatecallback(void*,FXApp*,void*);
-  static void imdestroycallback(void*,FXApp*,void*);
 #else
   static long CALLBACK wndproc(FXID hwnd,unsigned int iMsg,unsigned int wParam,long lParam);
 protected:
@@ -553,6 +550,8 @@ class FXAPI FXApp : public FXLockable, public FXObject {
   friend class FXDC;
   friend class FXDCWindow;
   friend class FXEmbedderWindow;
+  friend class FXDragCorner;
+  friend class FXComposeContext;
 protected:
   mutable FXEventLoop *eventLoop;       // Event loop
 
@@ -709,6 +708,8 @@ private:
   FXApp(const FXApp&);
   FXApp &operator=(const FXApp&);
 #ifndef WIN32
+  static void imcreatecallback(void*,FXApp*,void*);
+  static void imdestroycallback(void*,FXApp*,void*);
 #else
 protected:
   virtual long dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,long lParam);

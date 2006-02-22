@@ -34,6 +34,7 @@
 #include "FXProcess.h"
 #include "FXRollback.h"
 #include "FXPath.h"
+#include "FXStat.h"
 #include "QDir.h"
 #include "QFileInfo.h"
 #include "QTrans.h"
@@ -566,7 +567,7 @@ void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 {
 	FXString path=FXPath::absolute(_path);
 #ifdef USE_POSIX
-	FXERRH(FXFile::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
+	FXERRH(FXStat::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)
 	{	// Try starting it again
 		if(FAMOpen(&fxfsmon->fc)<0) return;

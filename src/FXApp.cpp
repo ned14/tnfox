@@ -505,7 +505,7 @@ static FXEventLoop *primaryEventLoop;
 // Initialise event dispatch loop object
 FXEventLoop::FXEventLoop(FXApp* a) :
 #ifndef WIN32
-  xim(a->xim), xic(a->xic),
+  xim(a->xim),
 #endif
   initialized(a->initialized), display(a->display)
 {
@@ -1144,7 +1144,7 @@ static int xerrorhandler(Display* dpy,XErrorEvent* eev){
   XGetErrorText(dpy,eev->error_code,buf,sizeof(buf));
 
   // Print out meaningful warning
-  fxwarning("X Error thread %d: code %d major %d minor %d: %s.\n",(FXint)QThread::id(),eev->error_code,eev->request_code,eev->minor_code,buf);
+  fxwarning("X Error thread %d: code %d major %d minor %d: %s.\n",(FXint)FXThread::current(),eev->error_code,eev->request_code,eev->minor_code,buf);
   return 1;
   }
 
@@ -2383,7 +2383,7 @@ void FXEventLoop::resetLoopLatch() {
   }
 
 // Implementation of fetching an event. Returns false if no event
-FXbool FXEventLoop::getNextEventI(FXRawEvent& ev,FXbool blocking){
+bool FXEventLoop::getNextEventI(FXRawEvent& ev,bool blocking){
   register int ticks;
   XEvent e;
   struct timeval delta, *deltaaddr; deltaaddr=&delta;
@@ -2699,7 +2699,7 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
           else if(event.code==KEY_Scroll_Lock) event.state|=SCROLLLOCKMASK;
           else if(event.code==KEY_Super_L) event.state|=METAMASK;
           else if(event.code==KEY_Super_R) event.state|=METAMASK;
-          else{ stickyMods=event.state&(SHIFTMASK|CONTROLMASK|METAMASK|ALTMASK); }
+          else{ app->stickyMods=event.state&(SHIFTMASK|CONTROLMASK|METAMASK|ALTMASK); }
           }
         else{
           if(event.code==KEY_Shift_L) event.state&=~SHIFTMASK;
@@ -2714,10 +2714,10 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
           else if(event.code==KEY_Scroll_Lock) event.state&=~SCROLLLOCKMASK;
           else if(event.code==KEY_Super_L) event.state&=~METAMASK;
           else if(event.code==KEY_Super_R) event.state&=~METAMASK;
-          else{ event.state|=stickyMods; stickyMods=0; }
+          else{ event.state|=app->stickyMods; app->stickyMods=0; }
           }
 
-        FXTRACE((100,"%s code=%04x state=%04x stickyMods=%04x text=\"%s\"\n",(event.type==SEL_KEYPRESS)?"SEL_KEYPRESS":"SEL_KEYRELEASE",event.code,event.state,stickyMods,event.text.text()));
+        FXTRACE((100,"%s code=%04x state=%04x stickyMods=%04x text=\"%s\"\n",(event.type==SEL_KEYPRESS)?"SEL_KEYPRESS":"SEL_KEYRELEASE",event.code,event.state,app->stickyMods,event.text.text()));
 
         // Keyboard grabbed by specific window
         if(keyboardGrabWindow){
@@ -2745,7 +2745,7 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
             }
 
           // Beep if outside modal
-          if(ev.xany.type==KeyPress) beep();
+          if(ev.xany.type==KeyPress) app->beep();
           }
         return true;
 
@@ -2760,10 +2760,10 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         event.code=0;
 
         // Mouse buttons and modifiers but no wheel buttons
-        event.state=(ev.xmotion.state&~(Button4Mask|Button5Mask)) | stickyMods;
+        event.state=(ev.xmotion.state&~(Button4Mask|Button5Mask)) | app->stickyMods;
 
         // Moved more that delta
-        if((FXABS(event.root_x-event.rootclick_x)>=dragDelta) || (FXABS(event.root_y-event.rootclick_y)>=dragDelta)) event.moved=1;
+        if((FXABS(event.root_x-event.rootclick_x)>=app->dragDelta) || (FXABS(event.root_y-event.rootclick_y)>=app->dragDelta)) event.moved=1;
 
         // Dispatch to grab window
         if(mouseGrabWindow){
@@ -2792,7 +2792,7 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         event.root_y=ev.xbutton.y_root;
 
         // Mouse buttons and modifiers but no wheel buttons
-        event.state=(ev.xmotion.state&~(Button4Mask|Button5Mask)) | stickyMods;
+        event.state=(ev.xmotion.state&~(Button4Mask|Button5Mask)) | app->stickyMods;
 
         // Mouse Wheel
         if(ev.xbutton.button==Button4 || ev.xbutton.button==Button5){
@@ -2974,7 +2974,7 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         else if(ev.xselectionclear.selection==app->xcbSelection){
 
           // We lost the clipboard selection if the new clipboard owner is different from clipboardWindow
-          if(clipboardWindow && clipboardWindow->id()!=XGetSelectionOwner((Display*)display,xcbSelection)){
+          if(clipboardWindow && clipboardWindow->id()!=XGetSelectionOwner((Display*)display,app->xcbSelection)){
             event.time=ev.xselectionclear.time;
             event.type=SEL_CLIPBOARD_LOST;
             if(clipboardWindow->handle(this,FXSEL(SEL_CLIPBOARD_LOST,0),&event)) refresh();
@@ -3090,11 +3090,11 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
             // XSetInputFocus causes a spurious BadMatch error; we ignore this in xerrorhandler
             XSetInputFocus((Display*)display,ev.xclient.window,RevertToParent,ev.xclient.data.l[1]);
             }
-          else if((FXID)ev.xclient.data.l[0]==wmNetPing){          // NET_WM_PING
+          else if((FXID)ev.xclient.data.l[0]==app->wmNetPing){          // NET_WM_PING
             FXTRACE((100,"NET_WM_PING %ld\n",ev.xclient.data.l[1]));
             se.xclient.type=ClientMessage;
             se.xclient.display=(Display*)display;                       // This lets a window manager know that
-            se.xclient.message_type=wmProtocols;                        // we're still alive after having received
+            se.xclient.message_type=app->wmProtocols;                   // we're still alive after having received
             se.xclient.format=32;                                       // a WM_DELETE_WINDOW message
             se.xclient.window=XDefaultRootWindow((Display*)display);
             se.xclient.data.l[0]=ev.xclient.data.l[0];
@@ -3114,7 +3114,7 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
           app->xdndSource=ev.xclient.data.l[0];                                  // Now we're talking to this guy
           if(app->ddeTypeList){FXFREE(&app->ddeTypeList);app->ddeNumTypes=0;}
           if(ev.xclient.data.l[1]&1){
-            fxrecvtypes((Display*)display,app->xdndSource,app->xdndTypes,app->ddeTypeList,app->ddeNumTypes);
+            fxrecvtypes((Display*)display,app->xdndSource,app->xdndTypes,app->ddeTypeList,app->ddeNumTypes,FALSE);
             }
           else{
             FXMALLOC(&app->ddeTypeList,FXDragType,3);
@@ -3202,36 +3202,36 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
         else if(ev.xclient.message_type==app->xdndDrop){
           FXTRACE((100,"DNDDrop from remote window %ld\n",ev.xclient.data.l[0]));
           if(app->xdndSource!=(FXID)ev.xclient.data.l[0]) return true;   // We're not talking to this guy
-          xdndFinishSent=FALSE;
+          app->xdndFinishSent=FALSE;
           event.type=SEL_DND_DROP;
           event.time=ev.xclient.data.l[2];
 
           // Perform drop operation on drop window
-          if(!dropWindow || !dropWindow->handle(this,FXSEL(SEL_DND_DROP,0),&event)) ansAction=DRAG_REJECT;
+          if(!dropWindow || !dropWindow->handle(this,FXSEL(SEL_DND_DROP,0),&event)) app->ansAction=DRAG_REJECT;
 
           // Didn't sent finish yet
-          if(!xdndFinishSent){
+          if(!app->xdndFinishSent){
             se.xclient.type=ClientMessage;
             se.xclient.display=(Display*)display;
-            se.xclient.message_type=xdndFinished;
+            se.xclient.message_type=app->xdndFinished;
             se.xclient.format=32;
-            se.xclient.window=xdndSource;
+            se.xclient.window=app->xdndSource;
             se.xclient.data.l[0]=ev.xclient.window;                     // Proxy Target window
-            se.xclient.data.l[1]=(ansAction==DRAG_REJECT)?0:1;          // Bit #0 means accepted
-            if(ansAction==DRAG_COPY) se.xclient.data.l[2]=xdndActionCopy;
-            else if(ansAction==DRAG_MOVE) se.xclient.data.l[2]=xdndActionMove;
-            else if(ansAction==DRAG_LINK) se.xclient.data.l[2]=xdndActionLink;
-            else if(ansAction==DRAG_PRIVATE) se.xclient.data.l[2]=xdndActionPrivate;
+            se.xclient.data.l[1]=(app->ansAction==DRAG_REJECT)?0:1;          // Bit #0 means accepted
+            if(app->ansAction==DRAG_COPY) se.xclient.data.l[2]=app->xdndActionCopy;
+            else if(app->ansAction==DRAG_MOVE) se.xclient.data.l[2]=app->xdndActionMove;
+            else if(app->ansAction==DRAG_LINK) se.xclient.data.l[2]=app->xdndActionLink;
+            else if(app->ansAction==DRAG_PRIVATE) se.xclient.data.l[2]=app->xdndActionPrivate;
             else se.xclient.data.l[2]=None;
             se.xclient.data.l[3]=0;
             se.xclient.data.l[4]=0;
-            XSendEvent((Display*)display,xdndSource,True,NoEventMask,&se);
+            XSendEvent((Display*)display,app->xdndSource,True,NoEventMask,&se);
             }
 
           // Clean up
-          if(ddeTypeList){FXFREE(&ddeTypeList);ddeNumTypes=0;}
+          if(app->ddeTypeList){FXFREE(&app->ddeTypeList);app->ddeNumTypes=0;}
           dropWindow=NULL;
-          xdndSource=0;
+          app->xdndSource=0;
           refresh();
           }
 

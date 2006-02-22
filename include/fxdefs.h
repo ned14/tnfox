@@ -796,6 +796,9 @@ extern FXAPI FXint fxparsegeometry(const FXchar *string,FXint& x,FXint& y,FXint&
 /// True if executable with given path is a console application
 extern FXAPI FXbool fxisconsole(const FXchar *path);
 
+/// Demangles a raw symbol into a human-readable one
+extern FXAPI const FXString &fxdemanglesymbol(const FXString &rawsymbol);
+
 /// Version number that the library has been compiled with
 extern FXAPI const FXuchar fxversion[3];
 
@@ -806,82 +809,82 @@ extern FXAPI const FXuchar tnfoxversion[2];
 extern FXAPI unsigned int fxTraceLevel;
 
 /// Return wide character from utf8 string at ptr
-extern FXAPI FXwchar wc(const FXchar *ptr);
+extern FXAPI FXwchar wc(const FXchar *ptr) throw();
 
 /// Return wide character from utf16 string at ptr
-extern FXAPI FXwchar wc(const FXnchar *ptr);
+extern FXAPI FXwchar wc(const FXnchar *ptr) throw();
 
 /// Return number of FXchar's of wide character at ptr
-extern FXAPI FXint wclen(const FXchar *ptr);
+extern FXAPI FXint wclen(const FXchar *ptr) throw();
 
 /// Return number of FXnchar's of narrow character at ptr
-extern FXAPI FXint wclen(const FXnchar *ptr);
+extern FXAPI FXint wclen(const FXnchar *ptr) throw();
 
 /// Return start of utf8 character containing position
-extern FXAPI FXint wcvalidate(const FXchar* string,FXint pos);
+extern FXAPI FXint wcvalidate(const FXchar* string,FXint pos) throw();
 
 /// Return start of utf16 character containing position
-extern FXAPI FXint wcvalidate(const FXnchar *string,FXint pos);
+extern FXAPI FXint wcvalidate(const FXnchar *string,FXint pos) throw();
 
 /// Advance to next utf8 character start
-extern FXAPI FXint wcinc(const FXchar* string,FXint pos);
+extern FXAPI FXint wcinc(const FXchar* string,FXint pos) throw();
 
 /// Advance to next utf16 character start
-extern FXAPI FXint wcinc(const FXnchar *string,FXint pos);
+extern FXAPI FXint wcinc(const FXnchar *string,FXint pos) throw();
 
 /// Retreat to previous utf8 character start
-extern FXAPI FXint wcdec(const FXchar* string,FXint pos);
+extern FXAPI FXint wcdec(const FXchar* string,FXint pos) throw();
 
 /// Retreat to previous utf16 character start
-extern FXAPI FXint wcdec(const FXnchar *string,FXint pos);
+extern FXAPI FXint wcdec(const FXnchar *string,FXint pos) throw();
 
 /// Length of utf8 representation of wide characters string str of length n
-extern FXAPI FXint utfslen(const FXwchar *str,FXint n);
+extern FXAPI FXint utfslen(const FXwchar *str,FXint n) throw();
 
 /// Length of utf8 representation of wide character string str
-extern FXAPI FXint utfslen(const FXwchar *str);
+extern FXAPI FXint utfslen(const FXwchar *str) throw();
 
 /// Length of utf8 representation of narrow characters string str of length n
-extern FXAPI FXint utfslen(const FXnchar *str,FXint n);
+extern FXAPI FXint utfslen(const FXnchar *str,FXint n) throw();
 
 /// Length of utf8 representation of narrow characters string str
-extern FXAPI FXint utfslen(const FXnchar *str);
+extern FXAPI FXint utfslen(const FXnchar *str) throw();
 
 /// Length of wide character representation of utf8 string str of length n
-extern FXAPI FXint wcslen(const FXchar *str,FXint n);
+extern FXAPI FXint wcslen(const FXchar *str,FXint n) throw();
 
 /// Length of wide character representation of utf8 string str
-extern FXAPI FXint wcslen(const FXchar *str);
+extern FXAPI FXint wcslen(const FXchar *str) throw();
 
 /// Length of narrow character representation of utf8 string str of length n
-extern FXAPI FXint ncslen(const FXchar *str,FXint n);
+extern FXAPI FXint ncslen(const FXchar *str,FXint n) throw();
 
 /// Length of narrow character representation of utf8 string str
-extern FXAPI FXint ncslen(const FXchar *str);
+extern FXAPI FXint ncslen(const FXchar *str) throw();
 
 /// Copy utf8 string of length n to wide character string dst
-extern FXAPI FXint utf2wcs(FXwchar *dst,const FXchar *src,FXint n);
+extern FXAPI FXint utf2wcs(FXwchar *dst,const FXchar *src,FXint n) throw();
 
 /// Copy utf8 string to wide character string dst
-extern FXAPI FXint utf2wcs(FXwchar *dst,const FXchar *src);
+extern FXAPI FXint utf2wcs(FXwchar *dst,const FXchar *src) throw();
 
 /// Copy utf8 string of length n to narrow character string dst
-extern FXAPI FXint utf2ncs(FXnchar *dst,const FXchar *src,FXint n);
+extern FXAPI FXint utf2ncs(FXnchar *dst,const FXchar *src,FXint n) throw();
 
 /// Copy utf8 string to narrow character string dst
-extern FXAPI FXint utf2ncs(FXnchar *dst,const FXchar *src);
+extern FXAPI FXint utf2ncs(FXnchar *dst,const FXchar *src) throw();
 
 /// Copy wide character substring of length n to dst
-extern FXAPI FXint wc2utfs(FXchar* dst,const FXwchar *src,FXint n);
+extern FXAPI FXint wc2utfs(FXchar* dst,const FXwchar *src,FXint n) throw();
 
 /// Copy wide character string to dst
-extern FXAPI FXint wc2utfs(FXchar* dst,const FXwchar *src);
+extern FXAPI FXint wc2utfs(FXchar* dst,const FXwchar *src) throw();
 
 /// Copy narrow character substring of length n to dst
-extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src,FXint n);
+extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src,FXint n) throw();
 
 /// Copy narrow character string to dst
-extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src);
+extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src) throw();
 
 
 }

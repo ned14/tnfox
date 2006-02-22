@@ -725,7 +725,7 @@ FXString FXString::section(const FXString& delim,FXint start,FXint num) const {
 
 
 // Adopt string s, leaving s empty
-FXString& FXString::adopt(FXString& s){
+FXString& FXString::adopt(FXString& s) throw() {
   if(this!=&s){
     if(str!=EMPTY){ free(str-sizeof(FXint)); }
     str=s.str;
@@ -3019,7 +3019,7 @@ enum {
 // Compare S1 and S2 as strings holding indices/version numbers,
 // returning less than, equal to or greater than zero if S1 is less than,
 // equal to or greater than S2 (for more info, see the texinfo doc).
-FXint compareversion(const FXchar *s1,const FXchar *s2){
+FXint compareversion(const FXchar *s1,const FXchar *s2) throw() {
   register const FXuchar *p1=(const FXuchar*)s1;
   register const FXuchar *p2=(const FXuchar*)s2;
   register FXuchar c1,c2;
@@ -3071,17 +3071,17 @@ FXint compareversion(const FXchar *s1,const FXchar *s2){
   }
 
 
-FXint compareversion(const FXchar* s1,const FXString& s2){
+FXint compareversion(const FXchar* s1,const FXString& s2) throw() {
   return compareversion(s1,s2.str);
   }
 
 
-FXint compareversion(const FXString& s1,const FXchar* s2){
+FXint compareversion(const FXString& s1,const FXchar* s2) throw() {
   return compareversion(s1.str,s2);
   }
 
 
-FXint compareversion(const FXString& s1,const FXString& s2){
+FXint compareversion(const FXString& s1,const FXString& s2) throw() {
   return compareversion(s1.str,s2.str);
   }
 

@@ -25,7 +25,7 @@
 #ifdef FX_FOXCOMPAT
 
 #include "fxdefs.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "FXGZFileStream.h"
 #include "QGZipDevice.h"
 #include "FXException.h"
@@ -42,9 +42,9 @@ FXGZFileStream::FXGZFileStream(const FXObject* cont): myfile(0), FXStream(0, con
 
 
 // Try open file stream
-FXbool FXGZFileStream::open(const FXString& filename,FXStreamDirection save_or_load,unsigned long size)
+bool FXGZFileStream::open(const FXString& filename,FXStreamDirection save_or_load,FXuval size)
 {
-	FXERRHM(myfile=new FXFile(filename));
+	FXERRHM(myfile=new QFile(filename));
 	QGZipDevice *d;
 	FXERRHM(d=new QGZipDevice(myfile));
 	setDevice(d);
@@ -63,7 +63,7 @@ FXbool FXGZFileStream::open(const FXString& filename,FXStreamDirection save_or_l
 
 
 // Close file stream
-FXbool FXGZFileStream::close(){
+bool FXGZFileStream::close(){
   device()->close();
   myfile->close();
   return FXStream::close();

@@ -35,6 +35,7 @@
 #include "FXRollback.h"
 #include "FXTime.h"
 #include "FXPath.h"
+#include "FXStat.h"
 #include <stdlib.h>
 #include <qptrlist.h>
 #include <qvaluelist.h>
@@ -576,7 +577,7 @@ void FXProcess::init(int &argc, char *argv[])
 		}*/
 		{	// Ensure /proc is working
 			FXString myprocloc=FXString("/proc/%1").arg(id());
-			if(!QFile::exists(myprocloc))
+			if(!FXStat::exists(myprocloc))
 			{
 				fxerror("The /proc pseudo-filing system must be installed and mounted\nfor this application to run\n");
 				::exit(1);
@@ -1265,25 +1266,25 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	problem is that libraries can have "lib" on their front :( */
 	FXString path_=path;
 	bool hasLib=path_.left(3)=="lib", hasSO=path_.right(3)==".so";
-	while(!QFile::exists(path_) && !QFile::isAbsolute(path_))
+	while(!FXStat::exists(path_) && !FXPath::isAbsolute(path_))
 	{
-		if(!hasSO)  { path_+=".so";			if(QFile::exists(path_)) break; }
-		if(!hasLib) { path_="lib"+path_;	if(QFile::exists(path_)) break; }
+		if(!hasSO)  { path_+=".so";			if(FXStat::exists(path_)) break; }
+		if(!hasLib) { path_="lib"+path_;	if(FXStat::exists(path_)) break; }
 		// Try directory where my executable is
-		FXString inexecpath=QFile::directory(execpath())+PATHSEPSTRING;
+		FXString inexecpath=FXPath::directory(execpath())+PATHSEPSTRING;
 		path_=path;
-		if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(!hasSO)  { path_+=".so";			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		// Try current directory
 		inexecpath="." PATHSEPSTRING;
 		path_=path;
-		if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(QFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(!hasSO)  { path_+=".so";			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
 	}
-	path_=QFile::absolute(path_);
+	path_=FXPath::absolute(path_);
 	QValueList<MappedFileInfo> list=mappedFiles();
 	for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
 	{

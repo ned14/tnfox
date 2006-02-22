@@ -252,7 +252,7 @@ void FXCondition::wait(FXMutex& mtx){
 FXbool FXCondition::wait(FXMutex& mtx,FXuint ms){
   register int result;
   struct timespec ts;
-  struct timeval tv;
+  struct ::timeval tv;
   gettimeofday(&tv,NULL);
   ts.tv_nsec=((ms%1000)*1000+tv.tv_usec)*1000;
   ts.tv_sec=(ms/1000)+(ts.tv_nsec/1000000000)+tv.tv_sec;
@@ -504,7 +504,7 @@ FXbool FXThread::join(FXint& code){
   FXEXCEPTION_FOXCOMPAT1
   r->wait();
   ret=true;
-  code=(FXint) r->result();
+  code=(FXint)(FXuval) r->result();
   FXEXCEPTION_FOXCOMPAT2
   return ret;
   }

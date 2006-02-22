@@ -149,10 +149,10 @@ public:
   FXString& operator=(const FXString& s);
 
   /// Convert to lower case
-  FXString& lower() throw();
+  FXString& lower();
 
   /// Convert to upper case
-  FXString& upper() throw();
+  FXString& upper();
 
   /// Return num partition(s) beginning at start from a string separated by delimiters delim.
   FXString section(FXchar delim,FXint start,FXint num=1) const;
@@ -565,10 +565,10 @@ public:
   friend FXAPI FXint comparecase(const FXString& s1,const FXString& s2,FXint n) throw();
 
   /// Compare with numeric interpretation
-  friend FXAPI FXint compareversion(const FXchar* s1,const FXchar* s2);
-  friend FXAPI FXint compareversion(const FXchar* s1,const FXString& s2);
-  friend FXAPI FXint compareversion(const FXString& s1,const FXchar* s2);
-  friend FXAPI FXint compareversion(const FXString& s1,const FXString& s2);
+  friend FXAPI FXint compareversion(const FXchar* s1,const FXchar* s2) throw();
+  friend FXAPI FXint compareversion(const FXchar* s1,const FXString& s2) throw();
+  friend FXAPI FXint compareversion(const FXString& s1,const FXchar* s2) throw();
+  friend FXAPI FXint compareversion(const FXString& s1,const FXString& s2) throw();
 
   /// Comparison operators
   friend FXAPI bool operator==(const FXString& s1,const FXString& s2) throw();
@@ -698,54 +698,54 @@ public:
 
 inline void swap(FXString& a,FXString& b){ FXchar *t=a.str; a.str=b.str; b.str=t; }
 
-extern FXAPI FXint compare(const FXchar* s1,const FXchar* s2);
-extern FXAPI FXint compare(const FXchar* s1,const FXString& s2);
-extern FXAPI FXint compare(const FXString& s1,const FXchar* s2);
-extern FXAPI FXint compare(const FXString& s1,const FXString& s2);
+extern FXAPI FXint compare(const FXchar* s1,const FXchar* s2) throw();
+extern FXAPI FXint compare(const FXchar* s1,const FXString& s2) throw();
+extern FXAPI FXint compare(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI FXint compare(const FXString& s1,const FXString& s2) throw();
 
-extern FXAPI FXint compare(const FXchar* s1,const FXchar* s2,FXint n);
-extern FXAPI FXint compare(const FXchar* s1,const FXString& s2,FXint n);
-extern FXAPI FXint compare(const FXString& s1,const FXchar* s2,FXint n);
-extern FXAPI FXint compare(const FXString& s1,const FXString& s2,FXint n);
+extern FXAPI FXint compare(const FXchar* s1,const FXchar* s2,FXint n) throw();
+extern FXAPI FXint compare(const FXchar* s1,const FXString& s2,FXint n) throw();
+extern FXAPI FXint compare(const FXString& s1,const FXchar* s2,FXint n) throw();
+extern FXAPI FXint compare(const FXString& s1,const FXString& s2,FXint n) throw();
 
-extern FXAPI FXint comparecase(const FXchar* s1,const FXchar* s2);
-extern FXAPI FXint comparecase(const FXchar* s1,const FXString& s2);
-extern FXAPI FXint comparecase(const FXString& s1,const FXchar* s2);
-extern FXAPI FXint comparecase(const FXString& s1,const FXString& s2);
+extern FXAPI FXint comparecase(const FXchar* s1,const FXchar* s2) throw();
+extern FXAPI FXint comparecase(const FXchar* s1,const FXString& s2) throw();
+extern FXAPI FXint comparecase(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI FXint comparecase(const FXString& s1,const FXString& s2) throw();
 
-extern FXAPI FXint comparecase(const FXchar* s1,const FXchar* s2,FXint n);
-extern FXAPI FXint comparecase(const FXchar* s1,const FXString& s2,FXint n);
-extern FXAPI FXint comparecase(const FXString& s1,const FXchar* s2,FXint n);
-extern FXAPI FXint comparecase(const FXString& s1,const FXString& s2,FXint n);
+extern FXAPI FXint comparecase(const FXchar* s1,const FXchar* s2,FXint n) throw();
+extern FXAPI FXint comparecase(const FXchar* s1,const FXString& s2,FXint n) throw();
+extern FXAPI FXint comparecase(const FXString& s1,const FXchar* s2,FXint n) throw();
+extern FXAPI FXint comparecase(const FXString& s1,const FXString& s2,FXint n) throw();
 
-extern FXAPI FXint compareversion(const FXchar* s1,const FXchar* s2);
-extern FXAPI FXint compareversion(const FXchar* s1,const FXString& s2);
-extern FXAPI FXint compareversion(const FXString& s1,const FXchar* s2);
-extern FXAPI FXint compareversion(const FXString& s1,const FXString& s2);
+extern FXAPI FXint compareversion(const FXchar* s1,const FXchar* s2) throw();
+extern FXAPI FXint compareversion(const FXchar* s1,const FXString& s2) throw();
+extern FXAPI FXint compareversion(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI FXint compareversion(const FXString& s1,const FXString& s2) throw();
 
-extern FXAPI bool operator==(const FXString& s1,const FXString& s2);
-extern FXAPI bool operator==(const FXString& s1,const FXchar* s2);
-extern FXAPI bool operator==(const FXchar* s1,const FXString& s2);
+extern FXAPI bool operator==(const FXString& s1,const FXString& s2) throw();
+extern FXAPI bool operator==(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI bool operator==(const FXchar* s1,const FXString& s2) throw();
 
-extern FXAPI bool operator!=(const FXString& s1,const FXString& s2);
-extern FXAPI bool operator!=(const FXString& s1,const FXchar* s2);
-extern FXAPI bool operator!=(const FXchar* s1,const FXString& s2);
+extern FXAPI bool operator!=(const FXString& s1,const FXString& s2) throw();
+extern FXAPI bool operator!=(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI bool operator!=(const FXchar* s1,const FXString& s2) throw();
 
-extern FXAPI bool operator<(const FXString& s1,const FXString& s2);
-extern FXAPI bool operator<(const FXString& s1,const FXchar* s2);
-extern FXAPI bool operator<(const FXchar* s1,const FXString& s2);
+extern FXAPI bool operator<(const FXString& s1,const FXString& s2) throw();
+extern FXAPI bool operator<(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI bool operator<(const FXchar* s1,const FXString& s2) throw();
 
-extern FXAPI bool operator<=(const FXString& s1,const FXString& s2);
-extern FXAPI bool operator<=(const FXString& s1,const FXchar* s2);
-extern FXAPI bool operator<=(const FXchar* s1,const FXString& s2);
+extern FXAPI bool operator<=(const FXString& s1,const FXString& s2) throw();
+extern FXAPI bool operator<=(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI bool operator<=(const FXchar* s1,const FXString& s2) throw();
 
-extern FXAPI bool operator>(const FXString& s1,const FXString& s2);
-extern FXAPI bool operator>(const FXString& s1,const FXchar* s2);
-extern FXAPI bool operator>(const FXchar* s1,const FXString& s2);
+extern FXAPI bool operator>(const FXString& s1,const FXString& s2) throw();
+extern FXAPI bool operator>(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI bool operator>(const FXchar* s1,const FXString& s2) throw();
 
-extern FXAPI bool operator>=(const FXString& s1,const FXString& s2);
-extern FXAPI bool operator>=(const FXString& s1,const FXchar* s2);
-extern FXAPI bool operator>=(const FXchar* s1,const FXString& s2);
+extern FXAPI bool operator>=(const FXString& s1,const FXString& s2) throw();
+extern FXAPI bool operator>=(const FXString& s1,const FXchar* s2) throw();
+extern FXAPI bool operator>=(const FXchar* s1,const FXString& s2) throw();
 
 extern FXAPI FXString operator+(const FXString& s1,const FXString& s2);
 

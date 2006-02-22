@@ -34,11 +34,11 @@
 
 namespace FX {
 
-class FXFile;
+class QFile;
 
 //! \deprecated Use FX::QGZipDevice instead
 class FXAPI FXGZFileStream : public FXStream {
-	FXFile *myfile;
+	QFile *myfile;
 public:
 
   /// Create GZIP compressed file stream

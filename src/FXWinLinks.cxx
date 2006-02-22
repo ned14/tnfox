@@ -611,7 +611,7 @@ FXString FXWinJunctionPoint::read(const FXString &_path)
 	FXString ret=FXFile::symlink(_path);
 	if('/'!=ret[0])
 	{	// Partial path
-		ret=FXFile::absolute(FXFile::directory(_path), ret);
+		ret=FXPath::absolute(FXPath::directory(_path), ret);
 	}
 	return ret;
 #endif
@@ -684,7 +684,7 @@ void FXWinJunctionPoint::write(const FXString &_path, const QFileInfo &whereTo)
 	uncreatedir.dismiss();
 #endif
 #ifdef USE_POSIX
-	FXERRH(FXFile::symlink(whereTo.filePath(), _path, true), QTrans::tr("FXWinJunctionPoint", "Failed to link '%1' to '%2'").arg(whereTo.filePath()).arg(_path), FXEXCEPTION_NOTFOUND, 0);
+	FXERRH(FXFile::symlink(whereTo.filePath(), _path), QTrans::tr("FXWinJunctionPoint", "Failed to link '%1' to '%2'").arg(whereTo.filePath()).arg(_path), FXEXCEPTION_NOTFOUND, 0);
 #endif
 }
 
