@@ -23,6 +23,8 @@ init(globals())
 if "hgfs/D" in os.getcwd() or "kate/D" in os.getcwd():
     raise IOError, "You don't want to run me on the Windows share!"
 targetname="lib/"+architectureSpec()
+if not os.path.exists("lib"):
+    os.mkdir("lib")
 if not os.path.exists(targetname):
     os.mkdir(targetname)
 targetname+="/"+tnfoxname
