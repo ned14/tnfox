@@ -25,6 +25,7 @@
 #include "FXString.h"
 #include "FXPolicies.h"
 #include "FXException.h"
+//#include "FXPath.h"
 #include <typeinfo>
 #include <assert.h>
 
@@ -2298,23 +2299,21 @@ template<size_t fastlen=2048> class FXUnicodify
 	FXnchar stkbuff[fastlen], *mybuffer;
 	FXAutoPtr<FXnchar> membuff;
 	FXint bufflen;
-	void doConv(const FXString &str)
+	void doConv(const FXString &_str)
 	{
+		FXString str(_str);
+		if(myIsPath)
+		{
+			str=FXPath::absolute(str);
+			str.prepend("\\\\?\\");
+			// Also all \ must be /
+			str.substitute('/', '\\');
+		}
 		FXint strlen=str.length()+1;	// Outputted buffer will always be shorter than this
-		if(myIsPath) strlen+=4;
 		if(strlen>sizeof(stkbuff))
 			FXERRHM(membuff=mybuffer=new FXnchar[strlen]);
 		else mybuffer=stkbuff;
-		FXnchar *p=mybuffer;
-		if(myIsPath)
-		{	// First four chars are \\?\ to bypass 260 char limit
-			*p++='\\';
-			*p++='\\';
-			*p++='?';
-			*p++='\\';
-			strlen-=4;
-		}
-		bufflen=utf2ncs(p, str.text(), strlen)-sizeof(FXnchar);
+		bufflen=utf2ncs(mybuffer, str.text(), strlen)*sizeof(FXnchar);
 	}
 public:
 	//! Constructs an instance
@@ -2325,9 +2324,9 @@ public:
 	const FXnchar *buffer() const throw() { return mybuffer; }
 	//! Returns the converted string
 	const FXnchar *buffer(const FXString &str) { if(!mybuffer) doConv(str); return mybuffer; }
-	//! Returns the length of the converted string
+	//! Returns the length of the converted string in bytes
 	FXint length() const throw() { return bufflen; }
-	//! Returns the length of the converted string
+	//! Returns the length of the converted string in bytes
 	FXint length(const FXString &str) { if(!mybuffer) doConv(str); return bufflen; }
 };
 #else

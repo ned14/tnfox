@@ -207,7 +207,7 @@ FXuint FXExceptionDialog::execute(FXuint placement)
 		getApp()->exit(1);
 		FXProcess::exit(1);
 	}
-	return 0;
+	return ret;
 }
 
 } // namespace

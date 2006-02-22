@@ -684,6 +684,7 @@ static FXuchar *findColon(const FXuchar *buffer)
 
 void QTrans::addData(QTransEmbeddedFile &data)
 {
+#ifdef HAVE_ZLIB_H
 	DataInfo di=getData(data);
 	FXERRHM(di.gzipdev=new QGZipDevice(di.dev));
 	di.gzipdev->open(IO_ReadOnly|IO_Translate);
@@ -832,6 +833,7 @@ void QTrans::addData(QTransEmbeddedFile &data)
 		}
 		else break;
 	}
+#endif
 }
 
 void QTrans::removeData(const QTransEmbeddedFile &data)
