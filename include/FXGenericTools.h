@@ -2300,7 +2300,7 @@ template<size_t fastlen=2048> class FXUnicodify
 	FXint bufflen;
 	void doConv(const FXString &str)
 	{
-		FXint strlen=str.length()+1;
+		FXint strlen=str.length()+1;	// Outputted buffer will always be shorter than this
 		if(myIsPath) strlen+=4;
 		if(strlen>sizeof(stkbuff))
 			FXERRHM(membuff=mybuffer=new FXnchar[strlen]);
