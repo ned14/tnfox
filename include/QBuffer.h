@@ -59,8 +59,11 @@ class FXAPIR QBuffer : public QIODevice
 	QBuffer(const QBuffer &);
 	QBuffer &operator=(const QBuffer &);
 public:
-	//! Constructs a new instance using an internal QByteArray of length \em len
-	explicit QBuffer(FXuval len=0);
+	/*! Constructs a new instance using an internal QByteArray of length \em len.
+	Setting /em fastbuffer to true sets the internal QByteArray to use a directly
+	managed malloc() buffer which can offer superior performance at the cost of
+	the QByteArray no longer behaving correctly */
+	explicit QBuffer(FXuval len=0, bool fastbuffer=false);
 	//! Constructs a new instance using \em buffer as the memory array
 	explicit QBuffer(QByteArray &buffer);
 	~QBuffer();

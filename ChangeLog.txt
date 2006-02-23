@@ -184,6 +184,7 @@ iterator operators.
 R *** Issued snapshot 4
 * Now enables thread caching win32 allocator variant when available
 * Merged FOX v1.4.29
++ Added fastbuffer option to QBuffer
 
 
 v0.85 13th Feb 2005:
