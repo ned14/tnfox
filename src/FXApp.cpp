@@ -3715,6 +3715,10 @@ void FXApp::exit(FXint code){
 void FXApp::create(){
   FXTRACE((100,"%s::create\n",getClassName()));
 
+  // Make sure FXProcess has been defined
+  if(!FXProcess::instance())
+	  fxerror("FATAL ERROR: FXProcess has not been instantiated!\n");
+
   // Create visuals
   monoVisual->create();
   defaultVisual->create();
