@@ -187,6 +187,8 @@ R *** Issued snapshot 4
 * Merged FOX v1.4.29
 * Merged FOX v1.6.0 RC3. Extensive changes have been made.
 R *** Issued snapshot 5
++ Added fastbuffer option to QBuffer
++ Added QThread::processorAffinity() and setProcessorAffinity()
 
 
 v0.85 13th Feb 2005:

@@ -570,9 +570,10 @@ public:
 #endif
 	bool plsCancel;
 	bool autodelete;
+	bool recursiveProcessorAffinity;
 	FXuval stackSize;
 	QThread::ThreadScheduler threadLocation;
-	FXulong id;
+	FXulong id, processorAffinity;
 	QThread *creator;
 	QWaitCondition *startedwc, *stoppedwc;
 	struct CleanupCall
@@ -591,7 +592,9 @@ public:
 	static void cleanup(QThread *t);
 	static void forceCleanup(QThread *t);
 	QThreadPrivate(bool autodel, FXuval stksize, QThread::ThreadScheduler threadloc)
-		: autodelete(autodel), plsCancel(false), stackSize(stksize), threadLocation(threadloc), startedwc(0), stoppedwc(0), cleanupcalls(true), QMutex()
+		: autodelete(autodel), plsCancel(false), recursiveProcessorAffinity(false),
+		stackSize(stksize), threadLocation(threadloc), id(0), processorAffinity((1<<QMutexImpl::systemProcessors)-1),
+		creator(0), startedwc(0), stoppedwc(0), cleanupcalls(true), QMutex()
 #ifdef USE_POSIX
 		, threadh(0)
 #endif
@@ -600,6 +603,11 @@ public:
 #endif
 	{
 		creator=currentThread;
+		if(creator && creator->p->recursiveProcessorAffinity)
+		{
+			processorAffinity=creator->p->processorAffinity;
+			recursiveProcessorAffinity=true;
+		}
 #ifdef USE_WINAPI
 		FXERRHWIN(NULL!=(plsCancelWaiter=CreateEvent(NULL, FALSE, FALSE, NULL)));
 #endif
@@ -774,11 +782,18 @@ void QThreadPrivate::run(QThread *t)
 	FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)); 
 	FXERRHOS(pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL));
 #endif
+	// Before doing anything else, set my affinity and ensure I'm only on allowed processors
 	{
 #ifdef USE_WINAPI
+		DWORD_PTR _mask=(DWORD_PTR) t->p->processorAffinity;
+		FXERRHWIN(SetThreadAffinityMask(GetCurrentThread(), _mask));
 		t->p->id=QThread::id();
 #endif
 #ifdef USE_POSIX
+#ifdef __linux__
+		unsigned long _mask=(unsigned long) t->p->processorAffinity;
+		FXERRHOS(sched_setaffinity(gettid(), sizeof(_mask), &_mask));
+#endif
 #ifdef USE_OURTHREADID
 		static FXushort idt=0;
 		// Can't use a QMutex as idlistlock as QMutex depends on QThread::id()
@@ -795,11 +810,12 @@ void QThreadPrivate::run(QThread *t)
 		t->p->id=QThread::id();
 #endif
 #endif
+		QThread::yield();
 	}
 	FXASSERT(t->isValid());
 	QMtxHold h(t->p);
 #ifdef DEBUG
-	fxmessage("Thread %u (%s) started\n", (FXuint) QThread::id(), t->name());
+	fxmessage("Thread %u (%s) started with affinity=0x%x\n", (FXuint) QThread::id(), t->name(), (FXuint) t->p->processorAffinity);
 #endif
 #ifdef USE_POSIX
 #ifdef _MSC_VER
@@ -990,8 +1006,14 @@ bool QThread::wait(FXuint time)
 
 void QThread::start(bool waitTillStarted)
 {
-	static FXuint noOfProcessors=FXProcess::noOfProcessors();
 	QMtxHold h(p);
+#ifndef FX_SMPBUILD
+	if(QMutexImpl::systemProcessors!=1)
+	{	// Keep on processor 0 if not SMP build
+		fxmessage("WARNING: Running non-SMP build executable on SMP system, forcing thread to only use processor zero!\n");
+		p->processorAffinity=1;
+	}
+#endif
 	if(waitTillStarted && !p->startedwc)
 	{
 		FXERRHM(p->startedwc=new QWaitCondition(false, false));
@@ -1001,28 +1023,10 @@ void QThread::start(bool waitTillStarted)
 		DWORD threadId;
 		p->plsCancel=false;
 		FXERRHWIN(ResetEvent(p->plsCancelWaiter));
-#ifndef FX_SMPBUILD
-		if(noOfProcessors!=1)
-		{	// Keep on processor 0 if not SMP build
-			fxmessage("WARNING: Running non-SMP build executable on SMP system, forcing thread to only use processor zero!\n");
-			FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, CREATE_SUSPENDED, &threadId)));
-			FXERRHWIN(SetThreadAffinityMask(p->threadh, 1));
-			FXERRHWIN(ResumeThread(p->threadh));
-		}
-		else
-#endif
-		{
-			FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
-		}
+		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
 	}
 #endif
 #ifdef USE_POSIX
-#ifndef FX_SMPBUILD
-	if(noOfProcessors!=1)
-	{
-		fxerror("FATAL ERROR: You cannot run a non-SMP build executable on a SMP system!\n");
-	}
-#endif
 	pthread_attr_t attr;
 	FXERRHOS(pthread_attr_init(&attr));
 	int scope=0;
@@ -1208,6 +1212,52 @@ void QThread::setPriority(signed char pri)
 		FXERRHOS(pthread_setschedparam(p->threadh, SCHED_OTHER, &s));
 	}
 #endif
+}
+
+FXulong QThread::processorAffinity() const
+{
+	if(!p) return (FXulong)-1;
+#ifdef USE_WINAPI
+	return p->processorAffinity;
+#endif
+#ifdef USE_POSIX
+#ifdef __linux__
+	if(!p->threadh) return p->processorAffinity;
+	unsigned long mask=-1;
+	FXERRHOS(sched_getaffinity((pid_t) p->id, sizeof(mask), &mask));
+	return (p->processorAffinity=(FXulong) mask);
+#endif
+#ifdef __FreeBSD__
+	// Not supported as yet
+	return p->processorAffinity;
+#endif
+#endif
+}
+
+void QThread::setProcessorAffinity(FXulong mask, bool recursive)
+{
+	if(p)
+	{
+		mask&=(1<<QMutexImpl::systemProcessors)-1;
+		p->processorAffinity=mask;
+		p->recursiveProcessorAffinity=recursive;
+		if(p->threadh)
+		{
+#ifdef USE_WINAPI
+			DWORD_PTR _mask=(DWORD_PTR) mask;
+			FXERRHWIN(SetThreadAffinityMask(p->threadh, _mask));
+#endif
+#ifdef USE_POSIX
+#ifdef __linux__
+			unsigned long _mask=(unsigned long) mask;
+			FXERRHOS(sched_setaffinity((pid_t) p->id, sizeof(_mask), &_mask));
+#endif
+#ifdef __FreeBSD__
+			// Not supported as yet
+#endif
+#endif
+		}
+	}
 }
 
 void QThread::sleep(FXuint t)

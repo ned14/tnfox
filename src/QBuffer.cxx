@@ -37,16 +37,38 @@ struct FXDLLLOCAL QBufferPrivate : public QMutex
 {
 	bool mine;
 	QByteArray *buffer;
-	QBufferPrivate() : mine(false), buffer(0), QMutex() { }
+	char *fastbuffer;
+	QBufferPrivate() : mine(false), buffer(0), fastbuffer(0), QMutex() { }
+	void resizeFastbuffer(FXuval newsize)
+	{
+		if(fastbuffer)
+		{
+			char *n;
+			FXuval buffersize=buffer->size();
+			FXERRHM(n=realloc(fastbuffer, newsize));
+			if(newsize>buffersize)
+				memset(n+buffersize, 0, newsize-buffersize);
+			fastbuffer=n;
+			buffer->setRawData((FXuchar *) fastbuffer, newsize, true);
+		}
+	}
 };
 
-QBuffer::QBuffer(FXuval len) : p(0), QIODevice()
+QBuffer::QBuffer(FXuval len, bool fastbuffer) : p(0), QIODevice()
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QBufferPrivate);
 	if(len)
 	{
-		FXERRHM(p->buffer=new QByteArray(len));
+		if(!fastbuffer)
+		{
+			FXERRHM(p->buffer=new QByteArray(len));
+		}
+		else
+		{
+			FXERRHM(p->fastbuffer=(char *) calloc(len, 1));
+			FXERRHM(p->buffer=new QByteArray((FXuchar *) p->fastbuffer, len, true));
+		}
 		p->mine=true;
 	}
 	unconstr.dismiss();
@@ -66,6 +88,11 @@ QBuffer::~QBuffer()
 	{
 		close();
 		if(p->mine) FXDELETE(p->buffer);
+		if(p->fastbuffer)
+		{
+			free(p->fastbuffer);
+			p->fastbuffer=0;
+		}
 		FXDELETE(p);
 	}
 } FXEXCEPTIONDESTRUCT2; }
@@ -93,6 +120,11 @@ void QBuffer::setBuffer(QByteArray &buffer)
 {
 	QMtxHold h(p);
 	if(p->mine) FXDELETE(p->buffer);
+	if(p->fastbuffer)
+	{
+		free(p->fastbuffer);
+		p->fastbuffer=0;
+	}
 	p->mine=false;
 	p->buffer=&buffer;
 }
@@ -116,7 +148,11 @@ bool QBuffer::open(FXuint mode)
 			FXERRHM(p->buffer=new QByteArray);
 			p->mine=true;
 		}
-		if(mode & IO_Truncate) p->buffer->resize(0);
+		if(mode & IO_Truncate)
+		{
+			p->buffer->resize(0);
+			p->resizeFastbuffer(0);
+		}
 		setFlags((mode & IO_ModeMask)|IO_Open);
 		ioIndex=(mode & IO_Append) ? p->buffer->size() : 0;
 	}
@@ -152,7 +188,10 @@ void QBuffer::truncate(FXfval size)
 		if((mode() & IO_ShredTruncate) && size<p->buffer->size())
 			shredData(size);
 		if(ioIndex>size) at(size);
-		p->buffer->truncate((FXuint) size);
+		if(p->fastbuffer)
+			p->resizeFastbuffer((FXuval) size);
+		else
+			p->buffer->truncate((FXuint) size);
 	}
 }
 
@@ -180,7 +219,12 @@ FXuval QBuffer::writeBlock(const char *data, FXuval maxlen)
 		FXuval buffersize=p->buffer->size();
 		FXuval left=(FXuval)(buffersize-ioIndex);
 		if(left<maxlen || ioIndex>buffersize)
-			p->buffer->resize(buffersize+maxlen-left);
+		{
+			if(p->fastbuffer)
+				p->resizeFastbuffer(buffersize+maxlen-left);
+			else
+				p->buffer->resize(buffersize+maxlen-left);
+		}
 		memcpy(&p->buffer->data()[ioIndex], data, maxlen);
 		ioIndex+=maxlen;
 		return maxlen;
@@ -224,7 +268,12 @@ int QBuffer::putch(int c)
 		FXuval buffersize=p->buffer->size();
 		FXuval left=(FXuval)(buffersize-ioIndex);
 		if(left<1 || ioIndex>buffersize)
-			p->buffer->resize(buffersize+1-left);
+		{
+			if(p->fastbuffer)
+				p->resizeFastbuffer(buffersize+1-left);
+			else
+				p->buffer->resize(buffersize+1-left);
+		}
 		p->buffer->data()[ioIndex++]=(char) c;
 		return c;
 	}

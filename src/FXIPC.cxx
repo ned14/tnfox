@@ -138,7 +138,7 @@ struct FXDLLLOCAL FXIPCChannelPrivate
 	bool unreliable, compressed, errorTrans, quit, noquitmsg, peerUntrusted, printstats;
 	FXIPCChannel::EndianConversionKinds endianConversion;
 	FXuint maxMsgSize, garbageMessageCount, sendMsgSize;
-	QBuffer buffer, sendBuffer;
+	QBuffer buffer;
 	QGZipDevice *compressedbuffer;
 	FXStream endianiser;
 	QPtrList<QWaitCondition> wcsFree;
@@ -161,7 +161,7 @@ struct FXDLLLOCAL FXIPCChannelPrivate
 	FXIPCChannelPrivate(FXIPCMsgRegistry *_registry, QIODeviceS *_dev, bool _peerUntrusted, QThreadPool *_threadPool)
 		: registry(_registry), dev(_dev), unreliable(false), compressed(false), errorTrans(true),
 		quit(false), noquitmsg(false), peerUntrusted(_peerUntrusted), printstats(false), endianConversion(FXIPCChannel::AutoEndian),
-		maxMsgSize(65536), garbageMessageCount(0), sendMsgSize(pageSize), buffer(pageSize), sendBuffer(pageSize), compressedbuffer(0), endianiser(&buffer),
+		maxMsgSize(65536), garbageMessageCount(0), sendMsgSize(pageSize), buffer(pageSize), compressedbuffer(0), endianiser(&buffer),
 		wcsFree(true), msgs(1, true), msgidcount(0), monitorThreadId(0), premsgfilters(true), threadPool(_threadPool), msgHandlings(true)
 	{
 		buffer.open(IO_ReadWrite);
@@ -667,8 +667,6 @@ bool FXIPCChannel::removePreMsgReceivedFilter(FXIPCChannel::MsgFilterSpec filter
 	return false;
 }
 
-//#pragma optimize("gaw", off)
-//#pragma inline_depth(0)
 inline void FXIPCChannel::removeAck(void *_ae)
 {	// Lock is held on entry
 	if(!_ae) return;
@@ -717,11 +715,8 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 			}
 		}
 		FXRBOp unackentry=FXRBObj(*this, &FXIPCChannel::removeAck, ae);
-		// Turns out constructing a QByteArray is slow on MSVC's STL implementation, so reuse
-		QBuffer &buffer=p->sendBuffer;
-		//QBuffer buffer(p->sendMsgSize);
+		QBuffer buffer(p->sendMsgSize, true);
 		buffer.open(IO_ReadWrite);
-		FXRBOp unopensendbuffer=FXRBObj(p->sendBuffer, &QBuffer::close);
 		p->endianiser.setDevice(&buffer);
 		switch(p->endianConversion)
 		{
@@ -774,7 +769,8 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		{
 			FXERRG(QTrans::tr("FXIPCChannel", "Maximum message size exceeded (%1 with limit of %2)").arg(msg->length()).arg(p->maxMsgSize), FXIPCCHANNEL_MSGTOOBIG, 0);
 		}
-		if(msg->length()>p->sendMsgSize) p->sendMsgSize=msg->length();
+		if(msg->length()>p->sendMsgSize)
+			p->sendMsgSize=msg->length();
 		if(p->garbageMessageCount && (msg->myid % p->garbageMessageCount)==0)
 		{	// Trash the message
 			FXuint seed=*(FXuint *)(data.data()+msg->headerLength());
