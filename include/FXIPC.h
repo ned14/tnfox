@@ -670,6 +670,8 @@ public:
 	using QThread::creator;
 	using QThread::priority;
 	using QThread::setPriority;
+	using QThread::processorAffinity;
+	using QThread::setProcessorAffinity;
 	using QThread::addCleanupCall;
 	using QThread::removeCleanupCall;
 

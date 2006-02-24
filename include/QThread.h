@@ -1039,6 +1039,12 @@ public:
 	particular system isn't sufficient - and on some systems there are as little as three priorities
 	*/
 	void setPriority(signed char pri);
+	//! Returns the processor affinity of the thread
+	FXulong processorAffinity() const;
+	/*! Sets the processor affinity of the thread with \em recursive meaning to set
+	the same for all threads this thread starts. (FXulong)-1 means all processors.
+	*/
+	void setProcessorAffinity(FXulong mask=(FXulong)-1, bool recursive=false);
 	//! Makes the current thread sleep for \em secs seconds
 	static void sleep(FXuint secs);
 	//! Makes the current thread sleep for \em millisecs milliseconds
