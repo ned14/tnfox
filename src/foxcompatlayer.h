@@ -21,6 +21,8 @@
 
 #include "QThread.h"
 #include "FXException.h"
+#include "FXIO.h"
+#include "QIODevice.h"
 
 /* When calling TnFOX code as part of implementing the FOX emulations, we must
 catch all exceptions thrown as FOX code does not return exceptions. It's up to
