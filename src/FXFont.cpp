@@ -2177,10 +2177,10 @@ FXbool FXFont::listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& fac
   numfonts=0;
 
   // Need to have application
-  if(!FXApp::instance()){ fxerror("FXFont::listFonts: no application object.\n"); }
+  //if(!FXApp::instance()){ fxerror("FXFont::listFonts: no application object.\n"); }
 
   // Need to have display open
-  if(!DISPLAY(FXApp::instance())){ fxerror("FXFont::listFonts: trying to list fonts before opening display.\n"); }
+  //if(!DISPLAY(FXApp::instance())){ fxerror("FXFont::listFonts: trying to list fonts before opening display.\n"); }
 
   // Get family part of name
   family=face.before('[').trimEnd();
@@ -2191,7 +2191,7 @@ FXbool FXFont::listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& fac
   FXTRACE((150,"FXFont::listFonts: family=\"%s\" foundry=\"%s\" weight=%d slant=%d setwidth=%d encoding=%d hints=%x\n",family.text(),foundry.text(),wt,sl,sw,en,h));
 
   // Screen resolution may be overidden by registry
-  res=FXApp::instance()->reg().readUnsignedEntry("SETTINGS","screenres",100);
+  res=100; //FXApp::instance()->reg().readUnsignedEntry("SETTINGS","screenres",100);
 
   // Build object set
   objset=FcObjectSetBuild(FC_FAMILY,FC_FOUNDRY,FC_SPACING,FC_SCALABLE,FC_WIDTH,FC_SIZE,FC_WEIGHT,FC_SLANT,NULL);
