@@ -98,13 +98,25 @@ def CheckGCCHasVisibility(cc):
 conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
 nothreads=True                # NOTE: Needs to be first to force use of kse over c_r on FreeBSD
 if conf.CheckCHeader("pthread.h"):
-    if conf.CheckLib("pthread", "pthread_create", "pthread.h") or conf.CheckLib("kse", "pthread_create", "pthread.h"):
-        conf.env['CPPDEFINES']+=[("XTHREADS",1)]
-        conf.env['CPPDEFINES']+=[("FOX_THREAD_SAFE",1)]
+    oldcpppath=conf.env['CPPPATH']
+    oldlibpath=conf.env['LIBPATH']
+    conf.env['CPPPATH'][0:0]=["/usr/include/nptl"]
+    conf.env['LIBPATH'][0:0]=["/usr/"+libPathSpec(make64bit)+"/nptl"]
+    if conf.CheckLib("pthread", "pthread_setaffinity_np", "pthread.h"):
         nothreads=False
+        conf.env['CPPDEFINES']+=[("HAVE_NPTL",1)]
+    else:
+        conf.env['CPPPATH']=oldcpppath
+        conf.env['LIBPATH']=oldlibpath
+        if conf.CheckLib("pthread", "pthread_create", "pthread.h") or conf.CheckLib("kse", "pthread_create", "pthread.h"):
+            nothreads=False
+            print "Note that thread processor affinity functionality will not be present!"
 if nothreads:
     conf.env['CPPDEFINES']+=["FXDISABLE_THREADS"]
     print "Disabling thread support"
+else:
+    conf.env['CPPDEFINES']+=[("XTHREADS",1)]
+    conf.env['CPPDEFINES']+=[("FOX_THREAD_SAFE",1)]
 del nothreads
 
 if not disableGUI:

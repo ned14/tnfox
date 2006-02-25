@@ -44,10 +44,10 @@ FXuint systemProcessors;
 #include "FXProcess.h"
 #include "FXPtrHold.h"
 #ifdef USE_POSIX
-#include <unistd.h>
-#include <sched.h>
-#include <signal.h>
-#include <errno.h>
+ #include <unistd.h>
+ #include <sched.h>
+ #include <signal.h>
+ #include <errno.h>
 #endif
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
@@ -790,9 +790,12 @@ void QThreadPrivate::run(QThread *t)
 		t->p->id=QThread::id();
 #endif
 #ifdef USE_POSIX
-#ifdef __linux__
-		unsigned long _mask=(unsigned long) t->p->processorAffinity;
-		FXERRHOS(sched_setaffinity(gettid(), sizeof(_mask), &_mask));
+#ifdef HAVE_NPTL
+		cpu_set_t _mask;
+		CPU_ZERO(&_mask);
+		for(int n=0; n<64; n++)
+			if(t->p->processorAffinity & (1<<n)) CPU_SET(n, &_mask);
+		FXERRHOS(pthread_setaffinity_np(pthread_self(), sizeof(_mask), &_mask));
 #endif
 #ifdef USE_OURTHREADID
 		static FXushort idt=0;
@@ -1221,11 +1224,14 @@ FXulong QThread::processorAffinity() const
 	return p->processorAffinity;
 #endif
 #ifdef USE_POSIX
-#ifdef __linux__
+#ifdef HAVE_NPTL
 	if(!p->threadh) return p->processorAffinity;
-	unsigned long mask=-1;
-	FXERRHOS(sched_getaffinity((pid_t) p->id, sizeof(mask), &mask));
-	return (p->processorAffinity=(FXulong) mask);
+	cpu_set_t mask;
+	FXERRHOS(pthread_getaffinity_np(p->threadh, sizeof(mask), &mask));
+	FXulong processorAffinity=0;
+	for(int n=0; n<64; n++)
+		if(CPU_ISSET(n, &mask)) processorAffinity|=1<<n;
+	return p->processorAffinity=processorAffinity;
 #endif
 #ifdef __FreeBSD__
 	// Not supported as yet
@@ -1248,9 +1254,12 @@ void QThread::setProcessorAffinity(FXulong mask, bool recursive)
 			FXERRHWIN(SetThreadAffinityMask(p->threadh, _mask));
 #endif
 #ifdef USE_POSIX
-#ifdef __linux__
-			unsigned long _mask=(unsigned long) mask;
-			FXERRHOS(sched_setaffinity((pid_t) p->id, sizeof(_mask), &_mask));
+#ifdef HAVE_NPTL
+			cpu_set_t _mask;
+			CPU_ZERO(&_mask);
+			for(int n=0; n<64; n++)
+				if(mask & (1<<n)) CPU_SET(n, &_mask);
+			FXERRHOS(pthread_setaffinity_np(p->threadh, sizeof(_mask), &_mask));
 #endif
 #ifdef __FreeBSD__
 			// Not supported as yet
