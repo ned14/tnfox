@@ -9,14 +9,10 @@ else:
     env['CPPDEFINES']+=["NDEBUG"]
 
 # Include the standard library locations (scons gets these wrong on mixed 32/64 bit)
-env['LIBPATH']+=["/usr/"+libPathSpec(make64bit)]
-env['LIBPATH']+=["/usr/local/"+libPathSpec(make64bit)]
 # Include Kerberos
 env['CPPPATH']+=["/usr/kerberos/include"]
 # Include X11
 env['CPPPATH']+=["/usr/X11R6/include"]
-env['LIBPATH']+=["/usr/X11R6/"+libPathSpec(make64bit)]
-env['LIBS']+=["Xext", "X11", "stdc++"]
 
 # Warnings
 cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')

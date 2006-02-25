@@ -79,6 +79,8 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
             oh.write("old_library='"+basetarget[lpos+1:sopos]+".a'\n\n")
             oh.write("# Libraries that this one depends upon.\n")
             oh.write("dependency_libs='")
+            for libpath in env['LIBPATH']:
+                oh.write(" -L"+libpath)
             for lib in env['LIBS']:
                 oh.write(" -l"+lib)
             oh.write("'\n\n")
