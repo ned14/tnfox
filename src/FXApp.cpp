@@ -72,6 +72,7 @@
 #include "FXMessageBox.h"
 //#include "FXTranslator.h"
 #include "FXComposeContext.h"
+#include "QThread.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
 static const char *_fxmemdbg_current_file_ = __FILE__;
@@ -1144,7 +1145,7 @@ static int xerrorhandler(Display* dpy,XErrorEvent* eev){
   XGetErrorText(dpy,eev->error_code,buf,sizeof(buf));
 
   // Print out meaningful warning
-  fxwarning("X Error thread %d: code %d major %d minor %d: %s.\n",(FXint)FXThread::current(),eev->error_code,eev->request_code,eev->minor_code,buf);
+  fxwarning("X Error thread %d: code %d major %d minor %d: %s.\n",(FXint)QThread::id(),eev->error_code,eev->request_code,eev->minor_code,buf);
   return 1;
   }
 
