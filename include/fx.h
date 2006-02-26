@@ -291,12 +291,6 @@
 
 #ifndef FX_NO_GLOBAL_NAMESPACE
 using namespace FX;
-using FX::timeval;
-using FX::malloc;
-using FX::calloc;
-using FX::realloc;
-using FX::free;
-using FX::strdup;
 #endif
 
 
