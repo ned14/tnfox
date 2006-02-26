@@ -29,7 +29,9 @@
 namespace FX { namespace QMutexImpl {
 
 // Globals
+#ifndef FXDISABLE_THREADS
 KernelWaitObjectCache waitObjectCache;
+#endif
 bool yieldAfterLock=false;
 FXuint systemProcessors;
 

@@ -345,6 +345,7 @@ QMUTEX_INLINEP bool QShrdMemMutex::tryLock()
 
 /**************************************************************************************************************/
 
+#ifndef FXDISABLE_THREADS
 namespace QMutexImpl {
 
 /* On POSIX, a more efficient mutex is one which avoids calling the kernel.
@@ -441,9 +442,11 @@ extern QMUTEX_GLOBALS_FXAPI bool yieldAfterLock;
 extern QMUTEX_GLOBALS_FXAPI FXuint systemProcessors;
 
 } // namespace QMutexImpl
+#endif
 
 struct FXDLLLOCAL QMutexPrivate
 {
+#ifndef FXDISABLE_THREADS
 #ifdef USE_OURMUTEX
 	FXAtomicInt lockCount, wakeSema;
 	FXulong threadId;
@@ -457,12 +460,14 @@ struct FXDLLLOCAL QMutexPrivate
 #elif defined(USE_POSIX)
 	QMutexImpl::KernelWaitObjectCache::Entry *m;
 #endif
+#endif
 };
 
 QMUTEX_INLINEP QMutex::QMutex(FXuint spinc) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QMutexPrivate);
+#ifndef FXDISABLE_THREADS
 #ifdef USE_OURMUTEX
 	p->lockCount.set(-1);
 	p->wakeSema.set(0);
@@ -511,6 +516,7 @@ QMUTEX_INLINEP QMutex::QMutex(FXuint spinc) : p(0)
 	}
 	FXERRHOS(pthread_mutexattr_destroy(&mattr));
 #endif
+#endif
 	unconstr.dismiss();
 }
 
@@ -520,6 +526,7 @@ QMUTEX_INLINEP QMutex::~QMutex()
 	{	// Force exception if something else uses us after now
 		QMutexPrivate *_p=p;
 		p=0;
+#ifndef FXDISABLE_THREADS
 #ifdef USE_OURMUTEX
 #ifdef USE_WINAPI
 		if(_p->wc && _p->wc->wo)
@@ -543,23 +550,40 @@ QMUTEX_INLINEP QMutex::~QMutex()
 			p->m=0;
 		}
 #endif
+#endif
 		FXDELETE(_p);
 	}
 } FXEXCEPTIONDESTRUCT2; }
 
 QMUTEX_INLINEP bool QMutex::isLocked() const
 {
+#ifndef FXDISABLE_THREADS
 	return p->lockCount>=0;
+#else
+	return false;
+#endif
 }
 
 QMUTEX_INLINEP FXuint QMutex::spinCount() const
 {
+#ifndef FXDISABLE_THREADS
+#ifdef USE_OURMUTEX
 	return p->spinCount;
+#else
+	return 0;
+#endif
+#else
+	return 0;
+#endif
 }
 
 QMUTEX_INLINEP void QMutex::setSpinCount(FXuint c)
 {
+#ifndef FXDISABLE_THREADS
+#ifdef USE_OURMUTEX
 	p->spinCount=c;
+#endif
+#endif
 }
 
 QMUTEX_INLINEI void QMutex::int_lock()
@@ -567,6 +591,7 @@ QMUTEX_INLINEI void QMutex::int_lock()
 	assert(this);
 	assert(p);
 	if(!p) return;
+#ifndef FXDISABLE_THREADS
 #ifdef USE_OURMUTEX
 	FXulong myid=QThread::id();
 	if(!p->lockCount.finc())
@@ -643,6 +668,7 @@ QMUTEX_INLINEI void QMutex::int_lock()
 	FXERRHOS(pthread_mutex_lock(&p->m->wo));
 #endif
 	if(QMutexImpl::yieldAfterLock) QThread::yield();
+#endif
 }
 QMUTEX_INLINEP void QMutex::lock() { int_lock(); }
 
@@ -651,6 +677,7 @@ QMUTEX_INLINEI void QMutex::int_unlock()
 	assert(this);
 	assert(p);
 	if(!p) return;
+#ifndef FXDISABLE_THREADS
 #ifdef USE_OURMUTEX
 	if(--p->recurseCount>0)
 	{
@@ -683,11 +710,13 @@ QMUTEX_INLINEI void QMutex::int_unlock()
 #elif defined(USE_POSIX)
 	FXERRHOS(pthread_mutex_unlock(&p->m->wo));
 #endif
+#endif
 }
 QMUTEX_INLINEP void QMutex::unlock() { int_unlock(); }
 
 QMUTEX_INLINEP bool QMutex::tryLock()
 {
+#ifndef FXDISABLE_THREADS
 #ifdef USE_OURMUTEX
 	FXulong myid=QThread::id();
 	if(!p->lockCount.finc())
@@ -715,13 +744,16 @@ QMUTEX_INLINEP bool QMutex::tryLock()
 	else
 		return false;
 #endif
+#endif
 }
 
 QMUTEX_INLINEP bool QMutex::setMutexDebugYield(bool v)
 {
+#ifndef FXDISABLE_THREADS
 	bool old=QMutexImpl::yieldAfterLock;
 	QMutexImpl::yieldAfterLock=v;
 	return old;
+#endif
 }
 
 }
