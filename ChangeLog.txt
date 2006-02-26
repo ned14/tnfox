@@ -57,6 +57,7 @@ B Fixed deadlock when creating thread during thread creation upcall
 R *** Issued snapshot 4
 B Fixed some compilation errors in QPtrVector
 R *** Issued snapshot 5
+B Fixed assertion failure in FXDebugTarget
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -191,6 +192,8 @@ R *** Issued snapshot 5
 + Added QThread::processorAffinity() and setProcessorAffinity()
 * Added some ambiguity busters for when including fx.h and misc headers.
 Changed None to NoEncryption for QSSLKey and QSSLPKey
++ Added the FOX test suite provided kindly by jayn <at> io <dot> com
+
 
 
 v0.85 13th Feb 2005:
