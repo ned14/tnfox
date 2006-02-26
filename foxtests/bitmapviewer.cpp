@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <signal.h>
+#define WIN32_LEAN_AND_MEAN
 #ifdef HAVE_TIFF_H
 #include <tiffio.h>
 #endif

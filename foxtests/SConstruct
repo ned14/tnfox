@@ -58,6 +58,7 @@ try:
             env['LIBS']+=[ "util" ]
             env['LINKFLAGS']+=[ os.path.abspath(dir+"/lib/"+architectureSpec()+"/TnFOX.so") ]
 except: pass
+doConfTests(env, "../")
 assert os.path.exists("../include/fxdefs.h")
 
 filelist=os.listdir(".")
