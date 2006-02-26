@@ -87,13 +87,13 @@ public:
 	//! Types of asymmetric key
 	enum KeyType
 	{
-		None=0,			//!< No encryption is performed
+		NoEncryption=0,	//!< No encryption is performed
 		RSA,			//!< A RSA key to any bit length
 		DH				//!< Unsupported at present
 	};
 	/*! Constructs an asymmetric key of size \em bitsize and type \em type. Calls
 	generate() if type has been set */
-	explicit FXSSLPKey(FXuint bitsize=0, KeyType type=None);
+	explicit FXSSLPKey(FXuint bitsize=0, KeyType type=NoEncryption);
 	~FXSSLPKey();
 	FXSSLPKey(const FXSSLPKey &other);
 	FXSSLPKey &operator=(const FXSSLPKey &other);
@@ -223,7 +223,7 @@ public:
 	//! Types of symmetric key
 	enum KeyType
 	{
-		None=0,			//!< No encryption is performed OR type will be set by private key decryption
+		NoEncryption=0,	//!< No encryption is performed OR type will be set by private key decryption
 		Blowfish,		//!< A Blowfish key between 64 and 448 bits which must be a multiple of 64
 		AES,			//!< An AES key of 128, 192 or 256 bits
 		Encrypted=0xffff //!< A key encrypted by a FX::FXSSLPKey
@@ -232,7 +232,7 @@ public:
 	text is null, generates a cryptographically sound random key of the specified type
 	(generate()) otherwise uses generateFromText()
 	*/
-	explicit FXSSLKey(FXuint bitsize=0, KeyType type=None, const FXString &text=(const char *) 0);
+	explicit FXSSLKey(FXuint bitsize=0, KeyType type=NoEncryption, const FXString &text=(const char *) 0);
 	~FXSSLKey();
 	FXSSLKey(const FXSSLKey &other);
 	FXSSLKey &operator=(const FXSSLKey &other);

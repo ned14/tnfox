@@ -186,6 +186,8 @@ R *** Issued snapshot 4
 * Merged FOX v1.4.29
 + Added fastbuffer option to QBuffer
 + Added QThread::processorAffinity() and setProcessorAffinity()
+* Added some ambiguity busters for when including fx.h and misc headers.
+Changed None to NoEncryption for QSSLKey and QSSLPKey
 
 
 v0.85 13th Feb 2005:

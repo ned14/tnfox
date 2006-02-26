@@ -909,7 +909,7 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 			RequestKey *i=(RequestKey *) msg;
 			if(i->wantsAck())
 			{
-				if(FXSSLPKey::None==p->passwordKey.type())
+				if(FXSSLPKey::NoEncryption==p->passwordKey.type())
 				{
 					p->passwordKey.setType(FXSSLPKey::RSA);
 					p->passwordKey.setBitsLen(1024);
