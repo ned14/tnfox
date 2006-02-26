@@ -30,14 +30,10 @@
 
 namespace FX {
 
-
-/// File Store Definition
+/*! \class FXFileStream
+\deprecated For compatibility with FOX code only
+*/
 class FXAPI FXFileStream : public FXStream {
-protected:
-  FXFile file;
-protected:
-  virtual FXuval writeBuffer(FXuval count);
-  virtual FXuval readBuffer(FXuval count);
 public:
 
   /// Create file store
@@ -51,12 +47,6 @@ public:
 
   /// Close file store
   virtual bool close();
-
-  /// Get position
-  FXlong position() const { return FXStream::position(); }
-
-  /// Move to position
-  virtual bool position(FXlong offset,FXWhence whence=FXFromStart);
 
   /// Destructor
   virtual ~FXFileStream();
