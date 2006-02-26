@@ -534,7 +534,7 @@ FXSSLPKey::FXSSLPKey(FXuint bitsize, FXSSLPKey::KeyType type) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new FXSSLPKeyPrivate(bitsize, type));
-	if(None!=type) generate();
+	if(NoEncryption!=type) generate();
 	unconstr.dismiss();
 }
 
@@ -618,7 +618,7 @@ FXString FXSSLPKey::typeAsString() const
 {
 	switch(p->type)
 	{
-	case None:
+	case NoEncryption:
 		return FXString("None");
 	case RSA:
 		return FXString("RSA");
@@ -754,7 +754,7 @@ void FXSSLPKey::generate()
 	}
 	switch(p->type)
 	{
-	case None:
+	case NoEncryption:
 		break;
 	case RSA:
 		{
@@ -1108,7 +1108,7 @@ FXString FXSSLKey::typeAsString() const
 {
 	switch(p->type)
 	{
-	case None:
+	case NoEncryption:
 		return FXString("None");
 	case Blowfish:
 		return FXString("Blowfish");
@@ -1179,7 +1179,7 @@ void FXSSLKey::generate()
 		FXuval randsize=Secure::Randomness::readBlock(buffer, FXMIN(p->size, Secure::Randomness::size()));
 		RAND_seed(buffer, (FXuint) randsize);
 	}
-	if(None!=p->type)
+	if(NoEncryption!=p->type)
 	{
 		p->verifyBitsize();
 		if(p->key) Secure::free(p->key);
@@ -1191,7 +1191,7 @@ void FXSSLKey::generate()
 
 void FXSSLKey::generateFromText(const FXString &text, int rounds)
 {
-	if(None==p->type) return;
+	if(NoEncryption==p->type) return;
 #ifdef HAVE_OPENSSL
 	p->verifyBitsize();
 	if(p->key) Secure::free(p->key);
@@ -1878,7 +1878,7 @@ bool QSSLDevice::open(FXuint mode)
 			const EVP_CIPHER *cipher=0;
 			switch(key.type())
 			{
-			case FXSSLKey::None:
+			case FXSSLKey::NoEncryption:
 				cipher=EVP_enc_null();
 				break;
 			case FXSSLKey::Blowfish:
