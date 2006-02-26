@@ -19,7 +19,7 @@
 #include <fx.h>
 #include "controlpanelicon.h"
 struct Display;
-extern "C" FXuint XGetDefault(Display *, const char *, const char *);
+extern "C" const char *XGetDefault(Display *, const char *, const char *);
 
 #undef DEFAULT_SPACING
 #define DEFAULT_SPACING 6
