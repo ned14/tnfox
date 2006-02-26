@@ -265,7 +265,14 @@ FXfval FXStream::rewind(FXint amount)
 
 void FXStream::int_throwPrematureEOF()
 {
-	FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
+	if(hash)
+	{	// FOX did this, so don't throw an exception
+		code=FXStreamEnd;
+	}
+	else
+	{
+		FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
+	}
 }
 
 
