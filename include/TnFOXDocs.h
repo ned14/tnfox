@@ -3,7 +3,7 @@
 *                          Differences documentation                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2005 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -38,7 +38,7 @@ TnFOX-specific acknowledgements here
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
 from v1.6.0), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
-is (C) 2001-2005 Niall Douglas and all code rests under the same licence as FOX but with
+is (C) 2001-2006 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
 so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b>. If you want to know more
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the
@@ -136,7 +136,7 @@ processes rather than portions of it being statically bound to each. If the extr
 is not acceptable to you, don't use TnFOX (note that the bloat has no effect on speed with a good
 optimiser - TnFOX pounds a lot of competitors into dust on the benchmarks).
 \note However, all of this said, as of v0.86 there is an option to build just the extensions with no
-GUI support at all!
+GUI support at all! Furthermore, see FAQ entry \ref LotsOfBloat
 
 \section whouse Who should use TnFOX?
 \li Heavy multithreaded applications. TnFOX's multithreading support is second to none and is heavily
@@ -177,7 +177,7 @@ A FXfval now holds a file pointer or size, ready for the transition to 128 bit d
 2025. The i/o structure is now based around a Qt-compatible QIODevice which is much much
 more flexible than the old FOX structure and for backwards compatibility
 FOX's FX::FXFileStream, FX::FXMemoryStream & FX::FXGZStream have been rewritten to use
-FX::FXFile + FX::FXStream, FX::QBuffer + FX::FXStream & FX::QGZipDevice + FX::FXStream
+FX::QFile + FX::FXStream, FX::QBuffer + FX::FXStream & FX::QGZipDevice + FX::FXStream
 combinations respectively (note that their use in new code is deprecated).
 
 <li><b>Enhanced i/o facilities</b><br>
@@ -335,7 +335,7 @@ General questions:
 <li>\ref BuildingNoFOXCompatDiffs
 <li>\ref BuildingTnDiffs
 <li>\ref BuildingNoGUIDiffs
-<li>\ref HowEfficient
+<li>\ref LotsOfBloat
 </ol>
 
 Build questions:
@@ -416,7 +416,7 @@ FreeBSD questions:
 
 	Internal linkage:
 	\li FX::FXACL, FX::FXACLEntity, FX::FXACLIterator
-	\li FX::QBlkSocket, FX::QBuffer, FX::FXFile, FX::QGZipDevice, FX::QLocalPipe,
+	\li FX::QBlkSocket, FX::QBuffer, FX::QFile, FX::QGZipDevice, FX::QLocalPipe,
 	FX::QMemMap, FX::QPipe, FX::QSSLDevice
 	\li FX::QDir, FX::QFileInfo, FX::FXFSMonitor
 	\li FX::QHostAddress, FX::FXNetwork
@@ -448,7 +448,8 @@ FreeBSD questions:
 	\li All the FX::FXSQLDB classes
 	\li All the stuff in FX::Secure
 	\li FX::FXACL, FX::FXFSMonitor, FX::FXRollback, FX::FXProcess, FX::FXNetwork
-	\li And from FOX, FX::fxfilematch(), FX::FXString and FX::FXStream (the FOX
+	\li And from FOX, FX::FXDir, FX::QFile, FX::fxfilematch(), FX::FXIO, FX::FXPath,
+	FX::FXStat, FX::FXSystem, FX::FXString and FX::FXStream (the FOX
 	compatibility API does nothing however). You also get the contents of fxutils
 	(which is all the misc functions in fxdefs.h)
 
@@ -462,68 +463,31 @@ FreeBSD questions:
 	executables less than 1.5Mb (not bad considering the clib is in there too)
 
   <li>
-    \subsection HowEfficient How efficient are TnFOX's facilities?
+    \subsection LotsOfBloat TnFOX has a far bigger binary than FOX!
 
-	TnFOX is designed to maximise the performance of your code. As of v0.80, sufficient
-	facilities have been both finished and optimised that I can finally provide you with
-	some statistics. All statistics are for a dual Athlon 1700 running Microsoft Windows
-	2000 with a release build by MSVC:
+	Well, TnFOX also comes with a lot of extra stuff! There is about a third extra code in TnFOX
+	over normal FOX, and much of it is template heavy. Here are some figures:
 	\code
-TestDeviceIO with 128Mb test file:
-
-Reading test file and writing into a FXFile ...
-That took 3.969000 seconds, average speed=33023Kb/sec
-Reading test file and writing into a QMemMap ...
-That took 1.125000 seconds, average speed=116508Kb/sec
-Reading test file and writing into a QBuffer ...
-That took 0.812000 seconds, average speed=161418Kb/sec
-Writing lots of data to a QLocalPipe ...
-That took 1.203000 seconds, average speed=108954Kb/sec
-Writing lots of data to a QPipe ...
-That took 1.328000 seconds, average speed=98698Kb/sec
-Writing lots of data to a FXSocket ...
-That took 1.609000 seconds, average speed=81461Kb/sec
-
-
-
-TestSSL with 128Mb test file:
-
-Reading test file and writing into a FXFile ...
-Encryption took 1.312000 seconds, average speed=12487Kb/sec
-Decryption took 0.782000 seconds, average speed=20951Kb/sec
-Reading test file and writing into a QMemMap ...
-Encryption took 0.860000 seconds, average speed=19051Kb/sec
-Decryption took 0.906000 seconds, average speed=18083Kb/sec
-Reading test file and writing into a QBuffer ...
-Encryption took 0.594000 seconds, average speed=27582Kb/sec
-Decryption took 0.766000 seconds, average speed=21389Kb/sec
-Writing lots of data to a QPipe ...
-SSL used ADH-AES256-SHA at 256 bits (ADH-AES256-SHA          SSLv3 Kx=DH       Au=None Enc=AES(256)  Mac=SHA1)
-That took 0.875000 seconds, average speed=18724Kb/sec
-Writing lots of data to a FXSocket ...
-SSL used ADH-AES256-SHA at 256 bits (ADH-AES256-SHA          SSLv3 Kx=DH       Au=None Enc=AES(256)  Mac=SHA1)
-That took 1.110000 seconds, average speed=14760Kb/sec
-
-
-
-TestIPC:
-Wrote raw file at 36469.671675Kb/sec
-Read raw file at 51807.114625Kb/sec
-
-Pipe
-Read through TFileBySyncDev at 37449.142857Kb/sec
-Wrote through TFileBySyncDev at 39936.624010Kb/sec
-
-Socket
-Read through TFileBySyncDev at 6842.347045Kb/sec
-Wrote through TFileBySyncDev at 20660.781841Kb/sec
-
-Encrypted socket
-Read through TFileBySyncDev at 7811.203814Kb/sec
-Wrote through TFileBySyncDev at 10538.028622Kb/sec
+	                          msvc7.1 (x86)    gcc4.0.2 (x64)
+	FOX v1.6 [1]            : 2.59Mb           4.1Mb
+	TnFOX v0.86 (no GUI)    : 0.95Mb           1.6Mb
+	TnFOX v0.86 (minimal)   : 2.97Mb (+15%)    5.7Mb (+39%)
+	TnFOX v0.86 (everything): 4.40Mb (+70%)    6.3Mb (+54%)
 	\endcode
-	Linux and FreeBSD statistics are likely to be better or similar to this,
-	however as I run mine inside VMWare it's pointless to quote them here.
+	[1]: This is FOX compiled with the same options on both platforms
+
+	As you can see, GCC produces code between 68% and 91% larger for the same source.
+	Newer versions of GCC should catch up with MSVC over time (indeed, it's already
+	50-60% better than with v3.3!)
+
+	The optional parts are as follows:
+	<ul>
+	 <li>Embedded copy of OpenSSL. To remove, edit sconslib.py
+	 <li>Embedded copies of zlib, libpng, libjpeg, libtiff. To remove, edit sconslib.py
+	 <li>Embedded copy of sqlite3. To remove, edit sconslib.py or delete \c src/sqlite3
+	 <li>FOX compatibility layer. To remove, edit config.py
+	 <li>All the GUI code. To remove, edit config.py
+    </ul>
 </ol>
 
 \section buildqs Build Questions:
@@ -560,7 +524,7 @@ Wrote through TFileBySyncDev at 10538.028622Kb/sec
 	write access only to the owner of the file. On POSIX \c umask() is completely ignored
 	and on NT this is very different to the default of granting Everyone full control.
 	Quite simply, this behaviour is by default much more secure for both you and your
-	users. If it's a problem, you can always use the FXFile::setPermissions() method to
+	users. If it's a problem, you can always use the QFile::setPermissions() method to
 	alter the permissions of a created file or indeed via the static method any arbitrary
 	file.
 
@@ -1085,7 +1049,7 @@ something like this:
 	ES: "El modo de operacion no es iqual que antes"
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
-	srcfile="FXFile.cxx":class="FXFile":
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
@@ -1974,7 +1938,7 @@ as well as the documentation for FX::FXException.
 
 Managing access control is tough to do across systems portably as they vary so
 much. Yet TnFOX's FX::FXACL and FX::FXACLEntity enable most of the native access control
-security features available on both Windows NT and POSIX Unix for files (FX::FXFile),
+security features available on both Windows NT and POSIX Unix for files (FX::QFile),
 directories, named pipes (FX::QPipe) and memory mapped sections (FX::QMemMap).
 
 Via the OpenSSL library, TnFOX also provides a range of strong encryption
@@ -2025,7 +1989,7 @@ Firstly, there exist API compatible classes for the following Qt classes:
 
 <table>
 <tr><td>FX::QBuffer (QBuffer)		<td>FX::QBlkSocket (QSocketDevice)	<td>FX::QDir (QDir)
-<tr><td>FX::FXFile (QFile)			<td>FX::QFileInfo (QFileInfo)	<td>FX::QHostAddress (QHostAddress)
+<tr><td>FX::QFile (QFile)			<td>FX::QFileInfo (QFileInfo)	<td>FX::QHostAddress (QHostAddress)
 <tr><td>FX::QIODevice (QIODevice)	<td>FX::QMutex (QMutex)		<td>FX::FXStream (QDataStream)
 <tr><td>FX::FXString (QString)		<td>FX::QThread (QThread)		<td>FX::QTrans (tr())
 <tr><td>FX::QWaitCondition (QWaitCondition)<td>FX::QByteArray		<td>FX::QCache
@@ -2100,7 +2064,7 @@ doesn't know any better and so neither should your code.
 than FOX's which is only per-second granularity. This can cause some trivial
 compile errors which were deliberately caused as often you must slightly
 adjust your code to use FX::FXTime::as_time_t().
-\li All the file metadata functions in FX::FXFile return metadata for symbolic
+\li All the file metadata functions in FX::QFile return metadata for symbolic
 links, not for what the link points to. This can subtly break some FOX code (but
 it was necessary to add NTFS junction support).
 \li FOX's threading support was added substantially after TnFOX's and are not
