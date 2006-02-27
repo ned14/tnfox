@@ -79,6 +79,8 @@ static const char *messageTypeName_[]={
   "SEL_MAXIMIZE",
   "SEL_UPDATE",
   "SEL_COMMAND",
+  "SEL_APPLY",
+  "SEL_RESET",
   "SEL_CLICKED",
   "SEL_DOUBLECLICKED",
   "SEL_TRIPLECLICKED",
@@ -148,7 +150,7 @@ FXDebugTarget::FXDebugTarget(){
 long FXDebugTarget::onMessage(FXObject* sender,FXSelector sel,void* ptr){
   FXuint type=FXSELTYPE(sel);
   FXuint msid=FXSELID(sel);
-  FXASSERT(ARRAYNUMBER(messageTypeName)==SEL_LAST);
+  FXASSERT(ARRAYNUMBER(messageTypeName_)==SEL_LAST);
   if(sender!=lastsender || sel!=lastsel){
     fxmessage("\nTYPE:%-23s ID:%-5d SENDER: %-15s PTR: 0x%08lx #%-4d",type<SEL_LAST?messageTypeName[type]:"ILLEGAL",msid,sender?sender->getClassName():"NULL",(unsigned long)ptr,1);
     lastsender=sender;

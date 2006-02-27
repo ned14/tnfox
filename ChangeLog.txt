@@ -56,6 +56,7 @@ B QMemMap wasn't opening existing shared memory with read ACL access
 B Fixed deadlock when creating thread during thread creation upcall
 R *** Issued snapshot 4
 B Fixed some compilation errors in QPtrVector
+B Fixed assertion failure in FXDebugTarget
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been

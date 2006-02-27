@@ -193,7 +193,7 @@ public:
   //! Reads preformatted byte data into the specified buffer
   FXStream &readRawBytes(char *buffer, FXuval len)
   {
-	if(len!=dev->readBlock(buffer, len)) FXStream::int_throwPrematureEOF();
+	if(len!=dev->readBlock(buffer, len)) int_throwPrematureEOF();
 	return *this;
   }
 
@@ -307,9 +307,9 @@ public:
   * Return TRUE if big endian mode.
   */
   FXbool isBigEndian() const { return (swap^FOX_BIGENDIAN); }
-
-  static void int_throwPrematureEOF();
-
+private:
+  void int_throwPrematureEOF();
+public:
   /// Save single items to stream
   friend inline FXStream& operator<<(FXStream& s, const FXuchar& v)
   {
@@ -387,40 +387,40 @@ public:
   {
     int _v=s.dev->getch();
     v=(FXuchar) _v;
-    if(-1==_v) FXStream::int_throwPrematureEOF();
+    if(-1==_v) s.int_throwPrematureEOF();
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXchar& v){ return s >> reinterpret_cast<FXuchar&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXushort& v)
   {
-    if(2!=s.dev->readBlock((char *) &v,2)) FXStream::int_throwPrematureEOF();
+    if(2!=s.dev->readBlock((char *) &v,2)) s.int_throwPrematureEOF();
     if(s.swap){fxendianswap2(&v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXshort& v){ return s >> reinterpret_cast<FXushort&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXuint& v)
   {
-    if(4!=s.dev->readBlock((char *) &v,4)) FXStream::int_throwPrematureEOF();
+    if(4!=s.dev->readBlock((char *) &v,4)) s.int_throwPrematureEOF();
     if(s.swap){fxendianswap4(&v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXint& v){ return s >> reinterpret_cast<FXuint&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXfloat& v)
   {
-    if(4!=s.dev->readBlock((char *) &v,4)) FXStream::int_throwPrematureEOF();
+    if(4!=s.dev->readBlock((char *) &v,4)) s.int_throwPrematureEOF();
     if(s.swap){fxendianswap4(&v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXdouble& v)
   {
-    if(8!=s.dev->readBlock((char *) &v,8)) FXStream::int_throwPrematureEOF();
+    if(8!=s.dev->readBlock((char *) &v,8)) s.int_throwPrematureEOF();
     if(s.swap){fxendianswap8(&v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXlong& v){ return s >> reinterpret_cast<FXulong&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXulong& v)
   {
-    if(8!=s.dev->readBlock((char *) &v,8)) FXStream::int_throwPrematureEOF();
+    if(8!=s.dev->readBlock((char *) &v,8)) s.int_throwPrematureEOF();
     if(s.swap){fxendianswap8(&v);}
     return s;
   }
@@ -428,7 +428,7 @@ public:
   {
     int _v=s.dev->getch();
     v=(_v!=0);
-    if(-1==_v) FXStream::int_throwPrematureEOF();
+    if(-1==_v) s.int_throwPrematureEOF();
     return s;
   }
 
@@ -436,7 +436,7 @@ public:
   /// Load arrays of items from stream
   FXStream& load(FXuchar* p,unsigned long n){	// inlined as FXString uses it
     FXASSERT(n==0 || (n>0 && p!=NULL));
-    if(n!=dev->readBlock((char *) p,n)) FXStream::int_throwPrematureEOF();
+    if(n!=dev->readBlock((char *) p,n)) int_throwPrematureEOF();
     return *this;
   }
   FXStream& load(FXchar* p,unsigned long n){ return load(reinterpret_cast<FXuchar*>(p),n); }
