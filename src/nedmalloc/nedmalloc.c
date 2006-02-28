@@ -44,6 +44,7 @@ DEALINGS IN THE SOFTWARE.
 #endif
 /* The default of 64Kb means we spend too much time kernel-side */
 #define DEFAULT_GRANULARITY (1*1024*1024)
+#define MAX_RELEASE_CHECK_FREQUENCY 4095
 #include "malloc.c.h"
 
 /* The maximum concurrent threads in a pool possible */
@@ -420,7 +421,7 @@ static NOINLINE int InitPool(nedpool *p, size_t capacity, int threads) THROWSPEC
 	p->threads=(threads<1 || threads>MAXTHREADSINPOOL) ? MAXTHREADSINPOOL : threads;
 	if(TLSALLOC(&p->mycache)) goto err;
 	if(!(p->m[0]=(mstate) create_mspace(capacity, 1))) goto err;
-	p->m[0]->nedpool=p;
+	p->m[0]->extp=p;
 	if(InitCaches(p, 0, 4)) goto err;
 	RELEASE_LOCK(&p->mutex);
 	return 1;
@@ -539,8 +540,8 @@ void *nedgetvalue(nedpool **p, void *mem) THROWSPEC
 	fm=get_mstate_for(mcp);
 	if(!ok_magic(fm)) return 0;
 	if(!ok_address(fm, mcp)) return 0;
-	if(!fm->nedpool) return 0;
-	np=(nedpool *) fm->nedpool;
+	if(!fm->extp) return 0;
+	np=(nedpool *) fm->extp;
 	if(p) *p=np;
 	return np->uservalue;
 }
