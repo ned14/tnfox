@@ -128,7 +128,7 @@ namespace FXSQLDBImpl
 	{	// Called when type is as big as it can be
 		static bool Do(const FXulong *v) throw()
 		{
-			if(v && *v>Generic::BiggestValue<FXlong>::value)
+			if(v && *v>(FXulong) Generic::BiggestValue<FXlong>::value)
 			{	// Best we can do is print a message
 #ifdef DEBUG
 				fxmessage("WARNING: Unsigned 64 bit value overflows signed 64 bit database type!\n");

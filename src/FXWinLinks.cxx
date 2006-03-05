@@ -47,7 +47,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::Header &i)
 {
 	s << i.length;
 	s.writeRawBytes(i.guid, sizeof(i.guid));
-	s << *(FXuint *)&i.flags << *(FXuint *)&i.fileattribs << i.creation << i.modified << i.lastAccess;
+	s << i.flags.raw << i.fileattribs.raw << i.creation << i.modified << i.lastAccess;
 	s << i.filelength << i.iconno << (FXuint) i.showWnd << i.hotkey;
 	s << i.unknown1 << i.unknown2;
 	return s;
@@ -56,7 +56,7 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::Header &i)
 {
 	s >> i.length;
 	s.readRawBytes(i.guid, sizeof(i.guid));
-	s >> *(FXuint *)&i.flags >> *(FXuint *)&i.fileattribs >> i.creation >> i.modified >> i.lastAccess;
+	s >> i.flags.raw >> i.fileattribs.raw >> i.creation >> i.modified >> i.lastAccess;
 	FXuint showWnd;
 	s >> i.filelength >> i.iconno >> showWnd >> i.hotkey;
 	i.showWnd=(FXWinShellLink::Header::ShowWnd) showWnd;
@@ -294,7 +294,7 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::FileLocationTag::NetworkVolume
 FXStream &operator<<(FXStream &s, const FXWinShellLink::FileLocationTag &i)
 {
 	FXfval mypos=s.device()->at();
-	s << i.length << i.firstOffset << *(FXuint *)&i.flags;
+	s << i.length << i.firstOffset << i.flags.raw;
 	// Ok all offsets start at firstOffset
 	FXuint lvOffset=i.firstOffset, bpOffset=0, nvOffset=0, rpOffset=0;
 	s << lvOffset << bpOffset << nvOffset << rpOffset;
@@ -314,7 +314,7 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::FileLocationTag &i)
 	FXuint length=(FXuint)(s.device()->at()-mypos);
 	// Ok rewrite the offsets we've calculated
 	s.device()->at(mypos);
-	s << length << i.firstOffset << *(FXuint *)&i.flags;
+	s << length << i.firstOffset << i.flags.raw;
 	s << lvOffset << bpOffset << nvOffset << rpOffset;
 	s.device()->at(mypos+length);
 	return s;
@@ -325,7 +325,7 @@ FXStream &operator>>(FXStream &s, FXWinShellLink::FileLocationTag &i)
 	s >> i.length;
 	if(i.length>sizeof(FXuint))
 	{
-		s >> i.firstOffset >> *(FXuint *)&i.flags;
+		s >> i.firstOffset >> i.flags.raw;
 		/* Next comes three offsets:
 				Local Volume Table	(=garbage if bit 0 clear)
 				Base pathname		(=garbage if bit 0 clear)

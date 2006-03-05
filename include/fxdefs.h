@@ -644,6 +644,12 @@ inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rg
 #define FXTRACE(arguments) ((void)0)
 #endif
 
+template<typename type> inline void **fxtypeptrptrtovoidptrptr(type **d) throw()
+{ // Aliasing safe pointer conversion
+  union { type **t; void **p; } temp;
+  temp.t=d;
+  return temp.p;
+}
 
 /**
 * Allocate a memory block of no elements of type and store a pointer
@@ -651,7 +657,7 @@ inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rg
 * Return FALSE if size!=0 and allocation fails, TRUE otherwise.
 * An allocation of a zero size block returns a NULL pointer.
 */
-#define FXMALLOC(ptr,type,no)     (FX::fxmalloc((void **)(ptr),sizeof(type)*(no)))
+#define FXMALLOC(ptr,type,no)     (FX::fxmalloc(fxtypeptrptrtovoidptrptr(ptr),sizeof(type)*(no)))
 
 /**
 * Allocate a zero-filled memory block no elements of type and store a pointer
@@ -659,7 +665,7 @@ inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rg
 * Return FALSE if size!=0 and allocation fails, TRUE otherwise.
 * An allocation of a zero size block returns a NULL pointer.
 */
-#define FXCALLOC(ptr,type,no)     (FX::fxcalloc((void **)(ptr),sizeof(type)*(no)))
+#define FXCALLOC(ptr,type,no)     (FX::fxcalloc(fxtypeptrptrtovoidptrptr(ptr),sizeof(type)*(no)))
 
 /**
 * Resize the memory block referred to by the pointer at the address ptr, to a
@@ -670,7 +676,7 @@ inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rg
 * The ptr argument must be the address where the pointer to the allocated
 * block is to be stored.
 */
-#define FXRESIZE(ptr,type,no)     (FX::fxresize((void **)(ptr),sizeof(type)*(no)))
+#define FXRESIZE(ptr,type,no)     (FX::fxresize(fxtypeptrptrtovoidptrptr(ptr),sizeof(type)*(no)))
 
 /**
 * Allocate and initialize memory from another block.
@@ -679,7 +685,7 @@ inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rg
 * The ptr argument must be the address where the pointer to the allocated
 * block is to be stored.
 */
-#define FXMEMDUP(ptr,src,type,no) (FX::fxmemdup((void **)(ptr),(const void*)(src),sizeof(type)*(no)))
+#define FXMEMDUP(ptr,src,type,no) (FX::fxmemdup(fxtypeptrptrtovoidptrptr(ptr),(const void*)(src),sizeof(type)*(no)))
 
 /**
 * Free a block of memory allocated with either FXMALLOC, FXCALLOC, FXRESIZE, or FXMEMDUP.
@@ -687,7 +693,7 @@ inline FXuchar FXRGBACOMPVAL(FXuint rgba, int comp) { return ((FX::FXuchar)(((rg
 * pointer to the block to be released.  The pointer is set to NULL to prevent
 * any further references to the block after releasing it.
 */
-#define FXFREE(ptr)               (FX::fxfree((void **)(ptr)))
+#define FXFREE(ptr)               (FX::fxfree(fxtypeptrptrtovoidptrptr(ptr)))
 
 
 /**********************************  Globals  **********************************/

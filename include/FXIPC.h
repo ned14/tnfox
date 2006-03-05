@@ -209,9 +209,9 @@ public:
 	//! True if this message is not identical to the other message
 	bool operator!=(const FXIPCMsg &o) const throw() { return !(*this==o); }
 	//! The minimum possible size of a header
-	static const int minHeaderLength=18;
+	static const FXuint minHeaderLength=18;
 	//! The maximum possible size of a header
-	static const int maxHeaderLength=22;
+	static const FXuint maxHeaderLength=22;
 	//! Length of the header only when serialised
 	int headerLength() const throw() { return minHeaderLength+((myflags & FlagsHasRouting) ? sizeof(FXuint) : 0); }
 	//! Returns the length of the message in bytes. Unset until sent or received.

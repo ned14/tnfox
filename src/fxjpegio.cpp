@@ -303,7 +303,7 @@ bool fxsaveJPG(FXStream& store,const FXColor* data,FXint width,FXint height,FXin
   if(!data || width<=0 || height<=0 || quality<=0 || 100<quality) return false;
 
   // Row buffer
-  if(!FXMALLOC(&buffer,JSAMPLE,width*3)) return false;
+  if(!FXMALLOC(&buffer[0],JSAMPLE,width*3)) return false;
 
   // Specify the error manager
   memset(&dstinfo,0,sizeof(dstinfo));

@@ -160,7 +160,7 @@ struct FXDLLLOCAL FXACLEntityPrivate
 	gid_t groupId;	// 0=root, -1=public, -2=owner
 	bool amGroup, amOwner, amPublic;
 	FXACLEntityPrivate(uid_t _userId, gid_t _groupId, bool _amGroup, const FXString &_machine)
-		: userId(_userId), groupId(_groupId), amGroup(_amGroup), amOwner(-2==_userId), amPublic(-1==_userId), machine(_machine) { }
+		: userId(_userId), groupId(_groupId), amGroup(_amGroup), amOwner((uid_t) -2==_userId), amPublic((gid_t) -1==_userId), machine(_machine) { }
 #endif
 private:
 	FXACLEntityPrivate &operator=(const FXACLEntityPrivate &);
@@ -600,7 +600,6 @@ FXString FXACLEntity::homeDirectory(bool filesdir) const
 	int ret;
 	QByteArray store(1024);
 	struct passwd *_userinfo=0, userinfo={0};
-	struct group *_groupinfo=0, groupinfo={0};
 	for(;;)
 	{
 		if(!(ret=getpwuid_r(p->userId, &userinfo, (char *) store.data(), store.size(), &_userinfo))) break;
@@ -619,8 +618,8 @@ const FXACLEntity &FXACLEntity::currentUser()
 	if(ret.p) return ret;
 	QMtxHold lh(staticmethodlock);
 	if(ret.p) return ret;
-	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
+	FXACLEntityPrivate *p;
 	HANDLE token;
 	DWORD userinfolen=0, groupinfolen=0;
 	if(&(*fxaclinit))
@@ -692,8 +691,8 @@ const FXACLEntity &FXACLEntity::root()
 	if(ret.p) return ret;
 	QMtxHold lh(staticmethodlock);
 	if(ret.p) return ret;
-	FXACLEntityPrivate *p;
 #ifdef USE_WINAPI
+	FXACLEntityPrivate *p;
 	SID_IDENTIFIER_AUTHORITY SIDAuth=SECURITY_NT_AUTHORITY;
 	SID *_root, *_rootgroup;
 	FXERRHM(p=new FXACLEntityPrivate(true, 0, 0, FXString::nullStr()));

@@ -97,34 +97,42 @@ struct FXAPI FXWinShellLink
 	{
 		FXuint length;
 		char guid[16];
-		struct Flags
+		union Flags
 		{
-			FXuint hasItemIdList : 1;
-			FXuint pointsToFileOrDir : 1;
-			FXuint hasDescription : 1;
-			FXuint hasRelativePath : 1;
-			FXuint hasWorkingDir : 1;
-			FXuint hasCmdLineArgs : 1;
-			FXuint hasCustomIcon : 1;
-			FXuint useWorkingDir : 1;		// Seems to need to be set to enable working dir
-			FXuint unused : 24;
+			struct
+			{
+				FXuint hasItemIdList : 1;
+				FXuint pointsToFileOrDir : 1;
+				FXuint hasDescription : 1;
+				FXuint hasRelativePath : 1;
+				FXuint hasWorkingDir : 1;
+				FXuint hasCmdLineArgs : 1;
+				FXuint hasCustomIcon : 1;
+				FXuint useWorkingDir : 1;		// Seems to need to be set to enable working dir
+				FXuint unused : 24;
+			};
+			FXuint raw;
 		} flags;
-		struct FileAttribs
+		union FileAttribs
 		{	// = return from GetFileAttributes()
-			FXuint isReadOnly : 1;
-			FXuint isHidden : 1;
-			FXuint isSystem : 1;
-			FXuint isVolumeLabel : 1;
-			FXuint isDir : 1;
-			FXuint isModified : 1;	// =archive bit set, ie; is a file normally
-			FXuint isEncrypted : 1;
-			FXuint isNormal : 1;	// Doesn't seem to get set
-			FXuint isTemporary : 1;
-			FXuint isSparse : 1;
-			FXuint hasReparsePoint : 1;
-			FXuint isCompressed : 1;
-			FXuint isOffline : 1;
-			FXuint unused : 19;
+			struct
+			{
+				FXuint isReadOnly : 1;
+				FXuint isHidden : 1;
+				FXuint isSystem : 1;
+				FXuint isVolumeLabel : 1;
+				FXuint isDir : 1;
+				FXuint isModified : 1;	// =archive bit set, ie; is a file normally
+				FXuint isEncrypted : 1;
+				FXuint isNormal : 1;	// Doesn't seem to get set
+				FXuint isTemporary : 1;
+				FXuint isSparse : 1;
+				FXuint hasReparsePoint : 1;
+				FXuint isCompressed : 1;
+				FXuint isOffline : 1;
+				FXuint unused : 19;
+			};
+			FXuint raw;
 		} fileattribs;		// in GetFileAttributes() format
 		FXulong creation, modified, lastAccess;	// in FILETIME format
 		FXuint filelength;
@@ -203,11 +211,15 @@ struct FXAPI FXWinShellLink
 	{
 		FXuint length;			// to end of whole tag
 		FXuint firstOffset;		// to end of this tag header
-		struct FXAPI Flags
+		union Flags
 		{
-			FXuint onLocalVolume : 1;
-			FXuint onNetworkShare : 1;
-			FXuint unused : 30;
+			struct
+			{
+				FXuint onLocalVolume : 1;
+				FXuint onNetworkShare : 1;
+				FXuint unused : 30;
+			};
+			FXuint raw;
 		} flags;
 		struct FXAPI LocalVolume
 		{

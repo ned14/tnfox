@@ -30,18 +30,27 @@ if architecture=="x86":
         else: cppflags+=["-msse"]
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
-    cppflags+=["-m64"] #, "-march="+cppflagsopts[architecture_version] ]
+    cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
 else:
     raise IOError, "Unknown architecture type"
 cppflags+=["-fexceptions",              # Enable exceptions
+           "-fstrict-aliasing",         # Always enable strict aliasing
+           "-fargument-noalias",        # Arguments may alias globals but not each other
+           "-Wstrict-aliasing",         # Warn about bad aliasing
+           "-ffast-math",               # Lose FP precision in favour of speed
            "-pipe"                      # Use faster pipes
            ]
 if debugmode:
     cppflags+=["-O0",                   # No optimisation
+               "-fmudflapth",           # Do memory access checking
                "-g"                     # Debug info
                ]
 else:
     cppflags+=["-O2",                   # Optimise for fast code
+               "-ftree-vectorize",      # Use vectorisation
+               "-ftree-loop-linear",    # Further optimise loops
+               "-ftree-loop-im",        # Remove loop invariant code
+               "-fivopts",              # Tree induction variable optimisation
                #"-fno-default-inline",
                #"-fno-inline-functions",
                #"-fno-inline",
@@ -59,7 +68,7 @@ env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when
 if debugmode:
     env['LINKFLAGS']+=[]
 else:
-    env['LINKFLAGS']+=["-O2"            # Optimise
+    env['LINKFLAGS']+=["-O3"            # Optimise
                        ]
 
 # Include system libs (mandatory)

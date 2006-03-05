@@ -332,7 +332,7 @@ public:
     s.dev->putch(v);
     return s;
   }
-  friend inline FXStream& operator<<(FXStream& s, const FXchar& v){ return s << reinterpret_cast<const FXuchar&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXchar& v){ return s << reinterpret_cast<const FXuchar&>(v); }
   friend inline FXStream& operator<<(FXStream& s, const FXushort& _v)
   {
     FXushort v=_v;
@@ -340,7 +340,7 @@ public:
     s.dev->writeBlock((char *) &v,2);
     return s;
   }
-  friend inline FXStream& operator<<(FXStream& s, const FXshort& v){ return s << reinterpret_cast<const FXushort&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXshort& v){ return s << reinterpret_cast<const FXushort&>(v); }
   friend inline FXStream& operator<<(FXStream& s, const FXuint& _v)
   {
     FXuint v=_v;
@@ -348,7 +348,7 @@ public:
     s.dev->writeBlock((char *) &v,4);
     return s;
   }
-  friend inline FXStream& operator<<(FXStream& s, const FXint& v){ return s << reinterpret_cast<const FXuint&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXint& v){ return s << reinterpret_cast<const FXuint&>(v); }
   friend inline FXStream& operator<<(FXStream& s, const FXfloat& _v)
   {
     FXfloat v=_v;
@@ -363,7 +363,7 @@ public:
     s.dev->writeBlock((char *) &v,8);
     return s;
   }
-  friend inline FXStream& operator<<(FXStream& s, const FXlong& v){ return s << reinterpret_cast<const FXulong&>(s, v); }
+  friend inline FXStream& operator<<(FXStream& s, const FXlong& v){ return s << reinterpret_cast<const FXulong&>(v); }
   friend inline FXStream& operator<<(FXStream& s, const FXulong& _v)
   {
     FXulong v=_v;

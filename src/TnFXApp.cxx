@@ -204,6 +204,10 @@ bool EventLoopP::dispatchEvent(FXRawEvent& ev)
 #endif
 			return FXEventLoop::dispatchEvent(ev);
 		}
+#ifdef DEBUG
+		if(KeymapNotify!=ev.xany.type)
+			fxmessage("WARNING: Failed to find event loop for msg %d to window %d, repaints=%p, refresher=%p\n", ev.xany.type, ev.xany.window, repaints, refresher);
+#endif
 		return true;
 #endif
 	} FXEXCEPTION_FOXCALLING2;
@@ -270,7 +274,7 @@ bool EventLoopC::getNextEventI(FXRawEvent& ev,bool blocking)
 			newevent.reset();
 			h.unlock();
 			if(getApp()->isInitialized())
-				XFlush((Display*) display);			// We appear to need this on X11
+				XFlush((Display*) display);			// Need to do this manually as it's async from XNextEvent()
 			if(timers)
 			{
 				struct ::timeval now;
