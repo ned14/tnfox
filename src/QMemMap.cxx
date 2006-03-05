@@ -524,7 +524,7 @@ void QMemMap::winopen(int mode)
 					p->mappingh=OpenFileMapping(p->pageaccess, FALSE, FXUnicodify<>(name).buffer());
 			}
 			else
-			{	// Not allowed create Global\ objects, so try opening and if not create in Local\ 
+			{	// Not allowed create Global\ objects, so try opening and if not create in Local\.
 				if(!(p->mappingh=OpenFileMapping(p->pageaccess, FALSE, FXUnicodify<>(name).buffer())))
 				{
 					name.replace(0, 6, "Local");

@@ -2137,7 +2137,7 @@ FXuval QSSLDevice::writeBlock(const char *data, FXuval maxlen)
 		}
 		else
 		{
-			static const int blockSize=65536;
+			static const FXuval blockSize=65536;
 			FXuval count=maxlen;
 			char _buffer[blockSize+4];	// aligns to a 4 byte boundary
 			char *buffer=_buffer;

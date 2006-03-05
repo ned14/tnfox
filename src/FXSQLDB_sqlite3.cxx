@@ -576,7 +576,7 @@ namespace FXSQLDB_sqlite3Impl
 			FXSQLDB_sqlite3Impl::Cursor *c=0;
 			for(FXuint n=0; n<stmths.count(); n++)
 			{
-				if(mainstmth==n)
+				if((FXuint) mainstmth==n)
 				{
 					FXERRHM(c=new FXSQLDB_sqlite3Impl::Cursor(stmths[mainstmth].h, flags, this, latch, stmths[mainstmth].columns));
 					stmths[n].needsReset=true;

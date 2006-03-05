@@ -431,15 +431,15 @@ const FXString &QDir::operator[](int idx) const
 }
 QStringList QDir::entryList(const FXString &regex, int filter, int sorting)
 {
-	if(DefaultFilter!=filter) setFilter(filter);
-	if(DefaultSort!=sorting) setSorting(sorting);
+	if((int) DefaultFilter!=filter) setFilter(filter);
+	if((int) DefaultSort!=sorting) setSorting(sorting);
 	p->read();
 	return p->leafs;
 }
 const QFileInfoList *QDir::entryInfoList(const FXString &regex, int filter, int sorting)
 {
-	if(DefaultFilter!=filter) setFilter(filter);
-	if(DefaultSort!=sorting) setSorting(sorting);
+	if((int) DefaultFilter!=filter) setFilter(filter);
+	if((int) DefaultSort!=sorting) setSorting(sorting);
 	p->read();
 	p->doLeafInfos();
 	return p->leafinfos;

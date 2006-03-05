@@ -80,7 +80,7 @@ const char *FXSQLDB::sql92TypeAsString(SQLDataType type)
 		"TIME",
 		"VARBINARY"
 	};
-	if(type<sizeof(strs)/sizeof(const char *))
+	if((FXuint) type<sizeof(strs)/sizeof(const char *))
 		return strs[type];
 	else
 		return 0;

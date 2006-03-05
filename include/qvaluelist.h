@@ -323,13 +323,13 @@ private:
 		{
 			iterator prev=it;
 			if(++it==ub) break;
-			if(compare(mylist, it, prev))
+			if(comparePolicy<type>::compare(mylist, it, prev))
 			{
 				bool found=false;
 				iterator find=lb;
 				for(; find!=ub; ++find)
 				{
-					if(find!=it && compare(mylist, it, find))
+					if(find!=it && comparePolicy<type>::compare(mylist, it, find))
 					{
 						bool atStart=(find==lb);
 						move(mylist, find, it);
@@ -338,7 +338,7 @@ private:
 						break;
 					}
 				}
-				if(!found) move(mylist, find, it);
+				if(!found) movePolicy<type>::move(mylist, find, it);
 			}
 		}
 	}
@@ -371,15 +371,15 @@ private:
 		iterator lb(_lb.second), ub(_ub.second);
 		while(true)
 		{
-			while(lbidx<ubidx && compare(mylist, _lb.second, (--ubidx, --ub)));
-			while(lbidx<ubidx && compare(mylist, (updlb=false, ++lbidx, ++lb), _lb.second));
+			while(lbidx<ubidx && comparePolicy<type>::compare(mylist, _lb.second, (--ubidx, --ub)));
+			while(lbidx<ubidx && comparePolicy<type>::compare(mylist, (updlb=false, ++lbidx, ++lb), _lb.second));
 			if(lbidx>=ubidx) break;
-			swap(mylist, lb, ub);
+			swapPolicy<type>::swap(mylist, lb, ub);
 			if(updlb) _lb.second=lb;
 		}
 		if(_lb.second!=ub)
 		{
-			swap(mylist, _lb.second, ub);
+			swapPolicy<type>::swap(mylist, _lb.second, ub);
 		}
 		return std::make_pair(ubidx, ub);
 	}

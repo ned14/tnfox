@@ -1939,6 +1939,7 @@ void FXEventLoop::enterWindow(FXWindow *window,FXWindow *ancestor){
 void FXEventLoop::addRepaint(FXID win,FXint x,FXint y,FXint w,FXint h,FXbool synth){
   register FXint px,py,pw,ph,hint,area;
   register FXRepaint *r,**pr;
+  //fxmessage("Adding repaint %d (%d,%d,%d,%d)\n", win, x, y, w, h);
   hint=w*h;
   w+=x;
   h+=y;
@@ -2447,6 +2448,8 @@ FXbool FXEventLoop::dispatchEvent(FXRawEvent& ev){
 
   // Get window
   window=findWindowWithId(ev.xany.window);
+  //if(GraphicsExpose==ev.xany.type || Expose==ev.xany.type)
+  //  fxmessage("Dispatching repaint %d=%p (%d,%d,%d,%d)\n", ev.xexpose.window, window, ev.xexpose.x, ev.xexpose.y, ev.xexpose.width, ev.xexpose.height);
 
   // Was one of our windows, so dispatch
   if(window){
