@@ -160,7 +160,7 @@ GLSettingsDialog::GLSettingsDialog(FXWindow* owner,FXGLVisual *vis):FXDialogBox(
   // Get OpenGL extensions
   tmp=(const char*)glGetString(GL_EXTENSIONS);
   if(tmp){
-    text=strdup(tmp);
+    text=FX::strdup(tmp);
     token=strtok(text," ");
     while(token){
       extensionList->appendItem(FXStringFormat("[GL] %s",token));
@@ -173,7 +173,7 @@ GLSettingsDialog::GLSettingsDialog(FXWindow* owner,FXGLVisual *vis):FXDialogBox(
 #ifdef GLU_VERSION_1_1
   tmp=(const char*)gluGetString(GLU_EXTENSIONS);
   if(tmp){
-    text=strdup(tmp);
+    text=FX::strdup(tmp);
     token=strtok(text," ");
     while(token!=NULL){
       extensionList->appendItem(FXStringFormat("[GLU] %s",token));

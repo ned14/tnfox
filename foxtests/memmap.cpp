@@ -1,3 +1,6 @@
+#ifndef FX_FOXCOMPAT
+#error This test will not compile without the FOX compatibility layer enabled!
+#else
 /********************************************************************************
 *                                                                               *
 *                          M e m o r y   M a p   T e s t                        *
@@ -148,4 +151,4 @@ int main(int argc,char** argv){
   return 1;
   }
 
-
+#endif

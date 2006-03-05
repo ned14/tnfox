@@ -40,9 +40,14 @@
 // FOX classes
 #include "FXHash.h"
 #include "FXException.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXIO.h"
 #include "FXFile.h"
+#include "FXPipe.h"
+#include "FXSocket.h"
+#include "FXFileStream.h"
+#include "FXMemoryStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
@@ -265,15 +270,6 @@
 #include "QThread.h"
 #include "QTrans.h"
 #include "TnFXApp.h"
-
-#ifdef FX_FOXCOMPAT
-// FOX compatibility layer
-#include "FXThread.h"
-#include "FXPipe.h"
-#include "FXSocket.h"
-#include "FXFileStream.h"
-#include "FXMemoryStream.h"
-#endif
 
 #ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
 // The stuff normally not included
