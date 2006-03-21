@@ -4,7 +4,7 @@
   http://creativecommons.org/licenses/publicdomain.  Send questions,
   comments, complaints, performance data, etc to dl@cs.oswego.edu
 
-* Version pre-2.8.4 Tue Feb 28 07:40:11 2006    (dl at gee)
+* Version pre-2.8.4 Wed Mar  1 08:34:55 2006    (dl at gee)
 
    Note: There may be an updated version of this malloc obtainable at
            ftp://gee.cs.oswego.edu/pub/misc/malloc.c
@@ -456,18 +456,19 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
   empirically derived value that works well in most systems. You can
   disable mmap by setting to MAX_SIZE_T.
 
-MAX_RELEASE_CHECK_FREQUENCY          default: 255 unless not HAVE_MMAP
-   The number of consolidated frees between checks to release unused
-   segments when freeing. When using non-contiguous segments,
-   especially with multiple mspaces, checking only for topmost space
-   doesn't always suffice to trigger trimming. To compensate for this,
-   free() will, with a period of MAX_RELEASE_CHECK_FREQUENCY, try to
-   release unused segments to the OS when freeing chunks that result
-   in consolidation. The best value for this parameter is a compromise
-   between slowing down frees with relatively costly checks that
-   rarely trigger versus holding on to unused memory. To effectively
-   disable, set to MAX_SIZE_T. This may lead to a very slight speed
-   improvement at the expense of carrying around more memory.
+MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
+  The number of consolidated frees between checks to release
+  unused segments when freeing. When using non-contiguous segments,
+  especially with multiple mspaces, checking only for topmost space
+  doesn't always suffice to trigger trimming. To compensate for this,
+  free() will, with a period of MAX_RELEASE_CHECK_RATE (or the
+  current number of segments, if greater) try to release unused
+  segments to the OS when freeing chunks that result in
+  consolidation. The best value for this parameter is a compromise
+  between slowing down frees with relatively costly checks that
+  rarely trigger versus holding on to unused memory. To effectively
+  disable, set to MAX_SIZE_T. This may lead to a very slight speed
+  improvement at the expense of carrying around more memory.
 */
 
 #ifndef WIN32
@@ -602,13 +603,13 @@ MAX_RELEASE_CHECK_FREQUENCY          default: 255 unless not HAVE_MMAP
 #define DEFAULT_MMAP_THRESHOLD MAX_SIZE_T
 #endif  /* HAVE_MMAP */
 #endif  /* DEFAULT_MMAP_THRESHOLD */
-#ifndef MAX_RELEASE_CHECK_FREQUENCY
+#ifndef MAX_RELEASE_CHECK_RATE
 #if HAVE_MMAP
-#define MAX_RELEASE_CHECK_FREQUENCY 255
+#define MAX_RELEASE_CHECK_RATE 4095
 #else
-#define MAX_RELEASE_CHECK_FREQUENCY MAX_SIZE_T
+#define MAX_RELEASE_CHECK_RATE MAX_SIZE_T
 #endif /* HAVE_MMAP */
-#endif /* MAX_RELEASE_CHECK_FREQUENCY */
+#endif /* MAX_RELEASE_CHECK_RATE */
 #ifndef USE_BUILTIN_FFS
 #define USE_BUILTIN_FFS 0
 #endif  /* USE_BUILTIN_FFS */
@@ -1275,6 +1276,9 @@ extern void*     sbrk(ptrdiff_t);
 #if USE_LOCKS
 #ifndef WIN32
 #include <pthread.h>
+#if defined (__SVR4) && defined (__sun)  /* solaris */
+#include <thread.h>
+#endif /* solaris */
 #else
 #ifndef _M_AMD64
 /* These are already defined on AMD64 builds */
@@ -1510,13 +1514,17 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
   * magic_init_mutex ensures that mparams.magic and other
     unique mparams values are initialized only once.
 
-   Because lock-protected regions have bounded times, we can use
-   simple spinlocks in the custom versions for x86.
+   To enable use in layered extensions, locks are reentrant.
+
+   Because lock-protected regions generally have bounded times, we use
+   the supplied simple spinlocks in the custom versions for x86. 
 
    If USE_LOCKS is > 1, the definitions of lock routines here are
    bypassed, in which case you will need to define at least
    INITIAL_LOCK, ACQUIRE_LOCK, RELEASE_LOCK, and
    NULL_LOCK_INITIALIZER, and possibly TRY_LOCK and IS_LOCKED
+   (The latter two are not used in this malloc, but are
+   commonly needed in extensions.)
 */
 
 #if USE_LOCKS == 1 
@@ -1532,11 +1540,12 @@ struct pthread_mlock_t
 };
 #define MLOCK_T struct pthread_mlock_t
 #define CURRENT_THREAD        pthread_self()
-
+#define SPINS_PER_YIELD       63
 static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
   if(CURRENT_THREAD==sl->threadid)
     ++sl->c;
   else {
+    int spins = 0;
     for (;;) {
       int ret;
       __asm__ __volatile__ ("lock cmpxchgl %2,(%1)" : "=a" (ret) : "r" (&sl->l), "r" (1), "a" (0));
@@ -1546,7 +1555,17 @@ static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
         sl->c=1;
         break;
       }
-      sched_yield();
+      if ((++spins & SPINS_PER_YIELD) == 0) {
+#if defined (__SVR4) && defined (__sun) /* solaris */
+        thr_yield();
+#else 
+#if defined(__linux__) || defined(__FreeBSD__)
+        sched_yield();
+#else  /* no-op yield on unknown systems */
+        ; 
+#endif /* __linux__ || __FreeBSD__ */
+#endif /* solaris */
+      }
     }
   }
 
@@ -1580,9 +1599,9 @@ static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
 #define TRY_LOCK(sl)          pthread_try_lock(sl)
 #define IS_LOCKED(sl)         ((sl)->l)
 
-static MLOCK_T magic_init_mutex = {0, 0 };
+static MLOCK_T magic_init_mutex = {0, 0, 0 };
 #if HAVE_MORECORE
-static MLOCK_T morecore_mutex = {0, 0 };
+static MLOCK_T morecore_mutex = {0, 0, 0 };
 #endif /* HAVE_MORECORE */
 
 #else /* WIN32 */
@@ -1595,12 +1614,13 @@ struct win32_mlock_t
 };
 #define MLOCK_T struct win32_mlock_t
 #define CURRENT_THREAD        GetCurrentThreadId()
-
+#define SPINS_PER_YIELD       63
 static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
   long mythreadid=CURRENT_THREAD;
   if(mythreadid==sl->threadid)
     ++sl->c;
   else {
+    int spins = 0;
     for (;;) {
       if (!interlockedexchange(&sl->l, 1)) {
         assert(!sl->threadid);
@@ -1608,7 +1628,8 @@ static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
         sl->c=1;
         break;
       }
-      SleepEx(0, FALSE);
+      if ((++spins & SPINS_PER_YIELD) == 0)
+        SleepEx(0, FALSE);
     }
   }
   return 0;
@@ -3797,7 +3818,7 @@ static void* sys_alloc(mstate m, size_t nb) {
       m->seg.size = tsize;
       m->seg.sflags = mmap_flag;
       m->magic = mparams.magic;
-      m->release_checks = MAX_RELEASE_CHECK_FREQUENCY;
+      m->release_checks = MAX_RELEASE_CHECK_RATE;
       init_bins(m);
       if (is_global(m))
         init_top(m, (mchunkptr)tbase, tsize - TOP_FOOT_SIZE);
@@ -3901,7 +3922,8 @@ static size_t release_unused_segments(mstate m) {
     sp = next;
   }
   /* Reset check counter */
-  m->release_checks = nsegs | MAX_RELEASE_CHECK_FREQUENCY;
+  m->release_checks = ((nsegs > MAX_RELEASE_CHECK_RATE)? 
+                       nsegs : MAX_RELEASE_CHECK_RATE);
   return released;
 }
 
@@ -4739,7 +4761,7 @@ static mstate init_user_mstate(char* tbase, size_t tsize) {
   m->seg.base = m->least_addr = tbase;
   m->seg.size = m->footprint = m->max_footprint = tsize;
   m->magic = mparams.magic;
-  m->release_checks = MAX_RELEASE_CHECK_FREQUENCY;
+  m->release_checks = MAX_RELEASE_CHECK_RATE;
   m->mflags = mparams.default_mflags;
   m->extp = 0;
   m->exts = 0;
@@ -5263,9 +5285,9 @@ int mspace_mallopt(int param_number, int value) {
 History:
     V2.8.4 (not yet released)
       * Fix bad error check in mspace_footprint
-      * Faster locks and other Win32 improvements, courtesy of Niall
+      * Better locks and other Win32 improvements, courtesy of Niall
         Douglas and Earl Chew
-      * Add NO_SEGMENT_TRAVERSAL and RELEASE_CHECK_FREQUENCY options
+      * Add NO_SEGMENT_TRAVERSAL and MAX_RELEASE_CHECK_RATE options
       * Various small adjustments to reduce warnings on some compilers
       * Extension hook in malloc_state
 
@@ -5447,4 +5469,5 @@ History:
          structure of old version,  but most details differ.)
 
 */
+
 
