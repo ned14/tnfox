@@ -496,12 +496,14 @@ bool QGZipDevice::open(FXuint mode)
 				p->uncomp.buffer().resize(len-Z_BUFSIZE);
 				ZLib::gz_close(p->inh);
 				p->inh=0;
-				if(mode & IO_Translate)
+				if(!(mode & IO_NoAutoUTF) && isReadable() && isTranslated())
 				{
 					FXuchar *data=p->uncomp.buffer().data();
 					FXuval datasize=p->uncomp.buffer().size();
-					bool midNL;
-					p->uncomp.buffer().resize((FXuint) removeCRLF(midNL, data, data, datasize));
+					// Have a quick peek to see what kind of text it is
+					setUnicodeTranslation(determineUnicodeType(data, FXMIN(64, datasize)));
+					FXuval output=removeCRLF(data, data, datasize, datasize, unicodeTranslation());
+					p->uncomp.buffer().resize((FXuint) output);
 				}
 			}
 		}
@@ -544,8 +546,7 @@ void QGZipDevice::flush()
 			for(idx=0; idx<datalen; idx+=in)
 			{
 				in=sizeof(buffer);
-				bool midNL;
-				out=applyCRLF(midNL, buffer, data+idx, sizeof(buffer), in);
+				out=applyCRLF(buffer, data+idx, sizeof(buffer), in, crlfFormat(), unicodeTranslation());
 				ZLib::gz_write(p->outh, buffer, (FXuint) out);
 			}
 		}

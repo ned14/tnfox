@@ -44,7 +44,16 @@ is the same for both, so it probably doesn't help you much).
 
 Most likely you'll prefer to use FX::QMemMap all the time as it offers
 superior performance and facilities in most cases. Indeed, QFile does no
-internal buffering as it is expected it will only be used rarely.
+internal buffering as it is expected it will only be used rarely, mostly
+for small files with little i/o performed to them.
+
+Like all file type i/o classes, QFile can perform automatic CR/LF translation
+as well as UTF-8 to UTF-16 and UTF-32 conversion. If you enable \c IO_Translate,
+the file data is probed and its unicode type determined such that the file
+unicode type is transparently converted into UTF-8 and back into its original
+form. This allows your code to work exclusively in UTF-8 using the standard
+FX::FXString functions. You can set the type of output using
+setUnicodeTranslation().
 
 For speed, QFile maintains its own record of file length which it manages.
 This normally isn't a problem, but when multiple QFile's are working on the
@@ -57,9 +66,6 @@ all TnFOX sets very conservative permissions on all things it creates -
 see FX::FXACL::default_(). Note that until the file is opened, permissions()
 returns what will be applied to the file on open() rather than the file
 itself - if you want the latter, use the static method.
-
-\note I folded FOX's QFile namespace functions into this QFile as static
-methods. This should maintain compatibility with FOX applications
 
 \warning Try not to call atEnd() too much. Because of limitations in POSIX
 it works by reading a byte which if successful means not EOF and a ungetch()

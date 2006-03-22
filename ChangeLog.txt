@@ -195,6 +195,13 @@ Changed None to NoEncryption for QSSLKey and QSSLPKey
 + Added the FOX test suite provided kindly by jayn <at> io <dot> com
 * Added GCC 4.1 compatibility, specifically a number of aliasing constructs
 were made safe and warnings fixed
++ Added UTF-16 and UTF-32 to UTF-8 text translation by reworking
+QIODevice::applyCRLF() and QIODevice::removeCRLF() and all i/o classes
+using them via IO_Translate
++ Added auto-UTF detection code to QIODevice::determineUnicodeType() and
+added unicode type state to all QIODevice's. i/o devices now examine text
+data and set their unicode type on open
++ Added FXIO::TextTranslation to mirror IO_Translate and added to Adie
 
 
 v0.85 13th Feb 2005:

@@ -3,7 +3,7 @@
 *                           Mapped memory i/o device                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -133,12 +133,18 @@ be done automatically because the mapping address which you may be relying
 upon could change). There is a difference between writing off the end of the file
 and truncate()-ing it - only the latter extends the ability to map the new data.
 
-Lastly the mapOffset() method lets you see if any arbitrary file ptr offset
+The mapOffset() method lets you see if any arbitrary file ptr offset
 maps into the currently mapped sections. It returns the address of the
 corresponding location in memory or zero if that section is not mapped.
 
-\note Other minor thing is that if you access memory directly using the
-return from mapIn() no character translation has been performed (IO_Translate)
+Like all file type i/o classes, QMemMap can perform automatic CR/LF translation
+as well as UTF-8 to UTF-16 and UTF-32 conversion. If you enable \c IO_Translate,
+the file data is probed and its unicode type determined such that the file
+unicode type is transparently converted into UTF-8 and back into its original
+form. This allows your code to work exclusively in UTF-8 using the standard
+FX::FXString functions. You can set the type of output using
+setUnicodeTranslation(). Note that for obvious reasons if you access the data
+directly using mapIn(), no translation is performed.
 
 \note There is a bug on WinNT whereby if you map the same file in for write
 access using two or more QMemMap's, the second and thereafter will never allow
