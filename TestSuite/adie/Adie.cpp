@@ -112,7 +112,7 @@ Adie::Adie(const FXString& name):FXApp(name,FXString::null){
 
 
 // Initialize application
-void Adie::init(int& argc,char** argv,FXbool connect){
+void Adie::init(int& argc,char** argv,bool connect){
   FXString syntaxfile;
 
   // After init, the registry has been loaded

@@ -232,6 +232,10 @@ FXDEFMAP(TextWindow) TextWindowMap[]={
   FXMAPFUNCS(SEL_COMMAND,          TextWindow::ID_WINDOW_1,        TextWindow::ID_WINDOW_10,    TextWindow::onCmdWindow),
   FXMAPFUNCS(SEL_UPDATE,           TextWindow::ID_SYNTAX_FIRST,    TextWindow::ID_SYNTAX_LAST,  TextWindow::onUpdSyntaxSwitch),
   FXMAPFUNCS(SEL_COMMAND,          TextWindow::ID_SYNTAX_FIRST,    TextWindow::ID_SYNTAX_LAST,  TextWindow::onCmdSyntaxSwitch),
+  FXMAPFUNCS(SEL_UPDATE,           TextWindow::ID_TEXTFORMAT_LF,   TextWindow::ID_TEXTFORMAT_CRLF,    TextWindow::onUpdTextFormatCRLF),
+  FXMAPFUNCS(SEL_COMMAND,          TextWindow::ID_TEXTFORMAT_LF,   TextWindow::ID_TEXTFORMAT_CRLF,    TextWindow::onCmdTextFormatCRLF),
+  FXMAPFUNCS(SEL_UPDATE,           TextWindow::ID_TEXTFORMAT_UTF8, TextWindow::ID_TEXTFORMAT_UTF32BE, TextWindow::onUpdTextFormatUTF),
+  FXMAPFUNCS(SEL_COMMAND,          TextWindow::ID_TEXTFORMAT_UTF8, TextWindow::ID_TEXTFORMAT_UTF32BE, TextWindow::onCmdTextFormatUTF),
 
   FXMAPFUNC(SEL_UPDATE,            TextWindow::ID_STYLE_INDEX,     TextWindow::onUpdStyleIndex),
   FXMAPFUNC(SEL_COMMAND,           TextWindow::ID_STYLE_INDEX,     TextWindow::onCmdStyleIndex),
@@ -443,6 +447,18 @@ TextWindow::TextWindow(Adie* a,const FXString& file):FXMainWindow(a,"Adie",NULL,
   // Help
   new FXButton(toolbar,tr("\tDisplay help\tDisplay online help information."),getApp()->helpicon,this,ID_HELP,ICON_ABOVE_TEXT|BUTTON_TOOLBAR|FRAME_RAISED|LAYOUT_TOP|LAYOUT_RIGHT);
 
+  // Text format menu
+  textformatmenu=new FXMenuPane(this);
+  new FXMenuRadio(textformatmenu,tr("LF"),this,ID_TEXTFORMAT_LF);
+  new FXMenuRadio(textformatmenu,tr("CR"),this,ID_TEXTFORMAT_CR);
+  new FXMenuRadio(textformatmenu,tr("CR/LF"),this,ID_TEXTFORMAT_CRLF);
+  new FXMenuSeparator(textformatmenu);
+  new FXMenuRadio(textformatmenu,tr("UTF-8"),this,ID_TEXTFORMAT_UTF8);
+  new FXMenuRadio(textformatmenu,tr("UTF-16BE"),this,ID_TEXTFORMAT_UTF16BE);
+  new FXMenuRadio(textformatmenu,tr("UTF-16LE"),this,ID_TEXTFORMAT_UTF16LE);
+  new FXMenuRadio(textformatmenu,tr("UTF-32BE"),this,ID_TEXTFORMAT_UTF32BE);
+  new FXMenuRadio(textformatmenu,tr("UTF-32LE"),this,ID_TEXTFORMAT_UTF32LE);
+
   // File Menu entries
   new FXMenuCommand(filemenu,tr("&New...\tCtl-N\tCreate new document."),getApp()->newicon,this,ID_NEW);
   new FXMenuCommand(filemenu,tr("&Open...\tCtl-O\tOpen document file."),getApp()->openicon,this,ID_OPEN);
@@ -452,6 +468,7 @@ TextWindow::TextWindow(Adie* a,const FXString& file):FXMainWindow(a,"Adie",NULL,
   new FXMenuCommand(filemenu,tr("Save &As...\t\tSave document to another file."),getApp()->saveasicon,this,ID_SAVEAS);
   new FXMenuCommand(filemenu,tr("&Close\tCtl-W\tClose document."),NULL,this,ID_CLOSE);
   new FXMenuSeparator(filemenu);
+  new FXMenuCascade(filemenu,tr("&Text Format"),NULL,textformatmenu);
   new FXMenuCommand(filemenu,tr("Insert from file...\t\tInsert text from file."),NULL,this,ID_INSERT_FILE);
   new FXMenuCommand(filemenu,tr("Extract to file...\t\tExtract text to file."),NULL,this,ID_EXTRACT_FILE);
   new FXMenuCommand(filemenu,tr("&Print...\tCtl-P\tPrint document."),getApp()->printicon,this,ID_PRINT);
@@ -624,6 +641,14 @@ TextWindow::TextWindow(Adie* a,const FXString& file):FXMainWindow(a,"Adie",NULL,
   savemarks=FALSE;
   warnchanged=FALSE;
   undolist.mark();
+
+#ifdef WIN32
+  crlftype=QIODevice::MSDOS;
+#else
+  crlftype=QIODevice::Unix;
+#endif
+  unicodetype=QIODevice::UTF8;
+
   }
 
 
@@ -707,8 +732,9 @@ FXbool TextWindow::isEditable() const {
 
 // Load file
 FXbool TextWindow::loadFile(const FXString& file){
-  FXFile textfile(file,FXFile::Reading);
-  FXint size,n,i,j,k,c;
+  FXFile textfile(file,FXFile::Reading|FXFile::TextTranslate);
+  FXfval size;
+  FXint n,i,j,k,c;
   FXchar *text;
 
   FXTRACE((100,"loadFile(%s)\n",file.text()));
@@ -780,6 +806,7 @@ FXbool TextWindow::loadFile(const FXString& file){
   filetime=FXStat::modified(file);
   filenameset=TRUE;
   filename=file;
+  unicodetype=textfile.qfile().unicodeTranslation();
 
   // Determine language
   determineSyntax();
@@ -796,7 +823,8 @@ FXbool TextWindow::loadFile(const FXString& file){
 
 // Insert file
 FXbool TextWindow::insertFile(const FXString& file){
-  FXint size,n,i,j,k,c;
+  FXfval size;
+  FXint n,i,j,k,c;
   FXchar *text;
   FILE *fp;
 
@@ -869,11 +897,15 @@ FXbool TextWindow::insertFile(const FXString& file){
 
 // Save file
 FXbool TextWindow::saveFile(const FXString& file){
-  FXFile textfile(file,FXFile::Writing);
+  FXFile textfile(file,FXFile::Writing|FXFile::TextTranslate);
   FXint size,n;
   FXchar *text;
 
   FXTRACE((100,"saveFile(%s)\n",file.text()));
+
+  // Set CR/LF translation and UTF conversion
+  textfile.qfile().setCRLFFormat(crlftype);
+  textfile.qfile().setUnicodeTranslation(unicodetype);
 
   // Opened file?
   if(!textfile.isOpen()){
@@ -903,7 +935,7 @@ FXbool TextWindow::saveFile(const FXString& file){
 
   // Translate newlines
 #ifdef WIN32
-  fxtoDOS(text,size);
+  //fxtoDOS(text,size);
 #endif
 
   // Write the file
@@ -964,7 +996,7 @@ FXbool TextWindow::extractFile(const FXString& file){
 
   // Translate newlines
 #ifdef WIN32
-  fxtoDOS(text,size);
+  //fxtoDOS(text,size);
 #endif
 
   // Write the file
@@ -3175,4 +3207,29 @@ long TextWindow::onUpdRestyle(FXObject* sender,FXSelector,void*){
   }
 
 
+
+long TextWindow::onCmdTextFormatCRLF(FXObject* sender,FXSelector sel,void* ptr){
+  if(ptr)
+    crlftype=(QIODevice::CRLFType)(QIODevice::Unix+FXSELID(sel)-ID_TEXTFORMAT_LF);
+  return 1;
+  }
+
+
+long TextWindow::onUpdTextFormatCRLF(FXObject* sender,FXSelector sel,void*){
+  sender->handle(this, (crlftype-QIODevice::Unix==FXSELID(sel)-ID_TEXTFORMAT_LF) ? FXSEL(SEL_COMMAND,ID_CHECK) : FXSEL(SEL_COMMAND,ID_UNCHECK), NULL);
+  return 1;
+  }
+
+
+long TextWindow::onCmdTextFormatUTF(FXObject* sender,FXSelector sel,void* ptr){
+  if(ptr)
+    unicodetype=(QIODevice::UnicodeType)(QIODevice::UTF8+FXSELID(sel)-ID_TEXTFORMAT_UTF8);
+  return 1;
+  }
+
+
+long TextWindow::onUpdTextFormatUTF(FXObject* sender,FXSelector sel,void*){
+  sender->handle(this, (unicodetype-QIODevice::UTF8==FXSELID(sel)-ID_TEXTFORMAT_UTF8) ? FXSEL(SEL_COMMAND,ID_CHECK) : FXSEL(SEL_COMMAND,ID_UNCHECK), NULL);
+  return 1;
+  }
 

@@ -45,6 +45,7 @@ protected:
   FXDockSite          *bottomdock;              // Bottom dock area
   FXDockSite          *leftdock;                // Left dock area
   FXDockSite          *rightdock;               // Bottom dock area
+  FXMenuPane          *textformatmenu;          // Text format menu
   FXMenuPane          *filemenu;                // File menu
   FXMenuPane          *editmenu;                // Edit menu
   FXMenuPane          *gotomenu;                // Goto menu
@@ -83,6 +84,8 @@ protected:
   FXbool               saveviews;               // Save views of files
   FXbool               savemarks;               // Save bookmarks of files
   FXbool               warnchanged;             // Warn if changed by other program
+  QIODevice::CRLFType  crlftype;                // CR/LF type for output file
+  QIODevice::UnicodeType unicodetype;           // Unicode type for output file
 protected:
   void readRegistry();
   void writeRegistry();
@@ -237,6 +240,10 @@ public:
   long onUpdStyleColor(FXObject*,FXSelector,void*);
   long onCmdStyleIndex(FXObject*,FXSelector,void*);
   long onUpdStyleIndex(FXObject*,FXSelector,void*);
+  long onCmdTextFormatCRLF(FXObject*,FXSelector,void*);
+  long onUpdTextFormatCRLF(FXObject*,FXSelector,void*);
+  long onCmdTextFormatUTF(FXObject*,FXSelector,void*);
+  long onUpdTextFormatUTF(FXObject*,FXSelector,void*);
 public:
   enum{
     ID_ABOUT=FXMainWindow::ID_LAST,
@@ -325,6 +332,14 @@ public:
     ID_STYLE_UNDERLINE,
     ID_STYLE_STRIKEOUT,
     ID_STYLE_BOLD,
+	ID_TEXTFORMAT_LF,
+	ID_TEXTFORMAT_CR,
+	ID_TEXTFORMAT_CRLF,
+	ID_TEXTFORMAT_UTF8,
+	ID_TEXTFORMAT_UTF16BE,
+	ID_TEXTFORMAT_UTF16LE,
+	ID_TEXTFORMAT_UTF32BE,
+	ID_TEXTFORMAT_UTF32LE,
     ID_LAST
     };
 public:

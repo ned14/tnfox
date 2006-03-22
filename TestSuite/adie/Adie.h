@@ -88,7 +88,7 @@ public:
   Adie(const FXString& name);
 
   // Initialize application
-  virtual void init(int& argc,char** argv,FXbool connect=TRUE);
+  virtual void init(int& argc,char** argv,bool connect=TRUE);
 
   // Exit application
   virtual void exit(FXint code=0);
