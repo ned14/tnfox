@@ -297,6 +297,63 @@ int main(int argc, char *argv[])
 			fxmessage(FXString("File size is 0x%1 (should be two bytes above 4Gb)\n").arg(FXStat::size(largefile.name()), 0, 16).text());
 			FXFile::remove(largefile.name());
 		}
+
+		if(1)
+		{
+			fxmessage("\nUTF translation test:\n"
+						"-=-=-=-=-=-=-=-=-=-=-\n");
+			QFile utffile("../../UTF-16BE-demo.txt"), outfile("../BigFile.txt");
+			char buffer[32768], buffer2[32768];
+			FXuval read, written;
+			utffile.open(IO_ReadOnly|IO_Translate);
+			outfile.open(IO_ReadWrite|IO_Translate);
+			do
+			{
+				read=utffile.readBlock(buffer, 64);
+				written=outfile.writeBlock(buffer, read);
+				//fxmessage("Read %u bytes, written %u bytes\n", (FXuint) read, (FXuint) written);
+			} while(read);
+			utffile.at(0);
+			outfile.at(0);
+			read=utffile.readBlock(buffer, sizeof(buffer));
+			fxmessage("Read %u bytes from original\n", (FXuval) read);
+			written=outfile.readBlock(buffer2, sizeof(buffer2));
+			fxmessage("Read %u bytes from copy\n", (FXuval) written);
+			if(read!=written)
+				fxmessage("FAILED: Source is not same file size as copy!\n");
+			else if(memcmp(buffer, buffer2, read))
+				fxmessage("FAILED: Source is not same as copy!\n");
+			else
+			{	// Stipple it
+				FXuval r;
+				FXfval oldpos1, oldpos2;
+				fxmessage("Trying stipple i/o ...\n");
+				utffile.at(0);
+				outfile.at(0);
+				do
+				{
+					r=(FXuval)(16ULL*rand()/RAND_MAX);
+					oldpos1=utffile.at(); oldpos2=outfile.at();
+					r=utffile.readBlock(buffer, r);
+					outfile.writeBlock(buffer, r);
+					if(rand()>RAND_MAX/2)
+					{
+						//fxmessage("Rewinding to %u, %u\n", (FXuint) oldpos1, (FXuint) oldpos2);
+						utffile.at(oldpos1); outfile.at(oldpos2);
+					}
+				} while(oldpos1<read);
+				utffile.at(0);
+				outfile.at(0);
+				read=utffile.readBlock(buffer, sizeof(buffer));
+				written=outfile.readBlock(buffer2, sizeof(buffer2));
+				if(read!=written)
+					fxmessage("FAILED: Source is not same file size as copy!\n");
+				else if(memcmp(buffer, buffer2, read))
+					fxmessage("FAILED: Source is not same as copy!\n");
+				else
+					fxmessage("Test passed!\n");
+			}
+		}
 	}
 	FXERRH_CATCH(FXException &e)
 	{
