@@ -49,6 +49,8 @@ namespace FX
 			fxwarning("fxconvertfxiomode(): FXIO::Exclusive not supported\n");
 		if(mode & FXIO::NonBlocking)
 			fxwarning("fxconvertfxiomode(): FXIO::NonBlocking not supported\n");
+		if(mode & FXIO::TextTranslate)
+			ret|=IO_Translate;
 		return ret;
 	}
 }

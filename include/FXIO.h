@@ -96,6 +96,7 @@ public:
     Create      = 16,                           /// Create if it doesn't exist
     Exclusive   = 32,                           /// Fail if trying to create a file which already exists
     NonBlocking = 64,                           /// Non-blocking i/o
+	TextTranslate=65536,                        /// Perform text translation
 
     /// Convenience access options
     Reading     = ReadOnly,                     /// Normal options for reading
