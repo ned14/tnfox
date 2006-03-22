@@ -257,7 +257,7 @@ public:
 
   Close; return true if OK
   */
-  virtual FXDEPRECATEDEXT bool close();
+  virtual bool close();
 
   /** \deprecated For FOX compatibility only
 
