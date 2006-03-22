@@ -570,6 +570,7 @@ FXColor makeShadowColor(FXColor clr){
 
 /*******************************************************************************/
 
+#if 0
 // Convert to MSDOS clipboard format; we add a end
 // of string at the end of the entire buffer.
 bool fxtoDOS(FXchar*& string,FXint& len){
@@ -605,6 +606,7 @@ bool fxfromDOS(FXchar*& string,FXint& len){
   if(!FXRESIZE(&string,FXchar,len)) return false;
   return true;
   }
+#endif
 
 
 // Get process id

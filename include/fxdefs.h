@@ -763,10 +763,10 @@ extern FXAPI FXColor makeShadowColor(FXColor clr);
 extern FXAPI FXint fxgetpid();
 
 /// Convert to MSDOS
-extern FXAPI bool fxtoDOS(FXchar*& string,FXint& len);
+//extern FXAPI bool fxtoDOS(FXchar*& string,FXint& len);
 
 /// Convert from MSDOS format
-extern FXAPI bool fxfromDOS(FXchar*& string,FXint& len);
+//extern FXAPI bool fxfromDOS(FXchar*& string,FXint& len);
 
 /// Duplicate string
 extern FXAPI FXchar *fxstrdup(const FXchar* str);
@@ -843,6 +843,12 @@ extern FXAPI FXint wcdec(const FXchar* string,FXint pos) throw();
 
 /// Retreat to previous utf16 character start
 extern FXAPI FXint wcdec(const FXnchar *string,FXint pos) throw();
+
+// Return true if valid utf8 character sequence
+extern FXAPI bool isutfvalid(const FXchar* str) throw();
+
+// Return true if valid utf8 character sequence
+extern FXAPI bool isutfvalid(const FXnchar* str) throw();
 
 /// Length of utf8 representation of wide characters string str of length n
 extern FXAPI FXint utfslen(const FXwchar *str,FXint n) throw();

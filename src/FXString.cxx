@@ -218,6 +218,16 @@ bool isutfvalid(const FXchar* str) throw() {
   }
 
 
+// Return true if valid utf16 character sequence
+bool isutfvalid(const FXnchar* str) throw() {
+  if((FXushort)str[0]<0xD800) return true;
+  if((FXushort)str[0]>0xDFFF) return true;
+  if((FXushort)str[1]<0xDC00) return false;
+  if((FXushort)str[1]>0xDFFF) return false;
+  return true;
+  }
+
+
 // Length of utf8 representation of wide characters string str of length n
 FXint utfslen(const FXwchar *str,FXint n) throw() {
   register FXint len=0;
