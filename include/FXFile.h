@@ -52,6 +52,10 @@ public:
   /// Construct and open a file
   FXDEPRECATEDEXT FXFile(const FXString& file,FXuint mode=FXIO::Reading,FXuint perm=FXIO::OwnerReadWrite|FXIO::GroupReadWrite|FXIO::OtherReadWrite);
 
+  /// Returns the underlying FX::QFile
+  QFile &qfile() { return f; }
+  const QFile &qfile() const { return f; }
+
   /// Open file
   virtual bool open(const FXString& file,FXuint mode=FXIO::Reading,FXuint perm=FXIO::OwnerReadWrite|FXIO::GroupReadWrite|FXIO::OtherReadWrite);
 
