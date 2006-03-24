@@ -191,6 +191,8 @@ R *** Issued snapshot 4
 Changed None to NoEncryption for QSSLKey and QSSLPKey
 * Added GCC 4.1 compatibility, specifically a number of aliasing constructs
 were made safe and warnings fixed
+* Updated to doxygen 1.4.6
+* Integrated sqlite v3.3.4
 
 
 v0.85 13th Feb 2005:

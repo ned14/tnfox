@@ -9,5 +9,5 @@ This way, SQLite is standardised and doesn't require TCL or any of
 the many other tools its build system requires to generate some of
 the sources.
 
-util.c has been modified to use TnFOX's memory allocator instead of
-the standard one.
+os_common.h has been modified to use TnFOX's memory allocator instead
+of the standard one.
