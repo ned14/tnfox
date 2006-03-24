@@ -1,4 +1,3 @@
-Fix adie to not use FOX CR/LF translation. Maybe remove fxtoDOS etc.
 Add porting notes pointing out new translation semantics (need to loop until
 no bytes returned rather than assuming file size will always be bigger than
 loaded data. Point out atEnd() is not much use)

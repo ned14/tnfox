@@ -202,6 +202,9 @@ using them via IO_Translate
 added unicode type state to all QIODevice's. i/o devices now examine text
 data and set their unicode type on open
 + Added FXIO::TextTranslation to mirror IO_Translate and added to Adie
+* Updated to doxygen 1.4.6
+* Integrated sqlite v3.3.4
+* Updated to boost 1.33.1
 
 
 v0.85 13th Feb 2005:
