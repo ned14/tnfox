@@ -193,6 +193,7 @@ Changed None to NoEncryption for QSSLKey and QSSLPKey
 were made safe and warnings fixed
 * Updated to doxygen 1.4.6
 * Integrated sqlite v3.3.4
+* Updated to boost 1.33.1
 
 
 v0.85 13th Feb 2005:

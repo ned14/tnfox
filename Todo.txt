@@ -1,7 +1,3 @@
-Before v0.86 release:
-
-* Add new style polymorphism support to pyste
-
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
 NT v5.0 to v5.2 Failures:
