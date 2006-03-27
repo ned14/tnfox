@@ -62,6 +62,7 @@ enum QIODeviceFlags
 	IO_Raw=			0x0100,		//!< Causes immediate buffer flushes after every write operation
 	IO_QuietSocket=	0x0200,		//!< Prevents server sockets from listening (see FX::QBlkSocket)
 	IO_DontUnlink=  0x0400,		//!< Prevents creator deleting its entry on close()
+	IO_NoAutoUTF=   0x0800,		//!< Disables automatic UTF-x conversion
 	IO_Open=		0x1000,		//!< This is set if the device is currently open
 	IO_StateMask=   0xf000		//!< This can be used to mask out the state() flags
 };
@@ -127,14 +128,34 @@ class FXAPI QIODevice
 {
 public:
 	typedef FXfval Offset;
+	//! The type of CR/LF encoding you want
+	enum CRLFType
+	{
+		Default=0,			//!< Uses the host OS format
+		Unix=1,				//!< Uses ASCII 10 to delimit lines
+		MacOS=2,			//!< Uses ASCII 13 to delimit lines
+		MSDOS=3				//!< Uses ASCII 13,10 to delimit lines
+	};
+	//! The type of unicode translation you want
+	enum UnicodeType
+	{
+		NoTranslation=0,	//!< Performs no translation
+		UTF8=1,				//!< Outputs in native UTF-8
+		UTF16=2,			//!< Converts between native (UTF-8) and UTF-16 big endian
+		UTF16LE=3,			//!< Converts between native (UTF-8) and UTF-16 little endian
+		UTF32=4,			//!< Converts between native (UTF-8) and UTF-32 big endian
+		UTF32LE=5			//!< Converts between native (UTF-8) and UTF-32 little endian
+	};
 private:
 	FXuint mymode;
+	CRLFType myCRLFType;
+	UnicodeType myUnicodeType;
 protected:
-	QIODevice(const QIODevice &o) : mymode(o.mymode), ioIndex(o.ioIndex) { }
-	QIODevice &operator=(const QIODevice &o) { mymode=o.mymode; ioIndex=o.ioIndex; return *this; }
+	QIODevice(const QIODevice &o) : mymode(o.mymode), myCRLFType(Default), myUnicodeType(NoTranslation), ioIndex(o.ioIndex) { }
+	QIODevice &operator=(const QIODevice &o) { mymode=o.mymode; myCRLFType=o.myCRLFType; myUnicodeType=o.myUnicodeType; ioIndex=o.ioIndex; return *this; }
 	FXfval ioIndex;
 public:
-	QIODevice() : mymode(0), ioIndex(0) { }
+	QIODevice() : mymode(0), myCRLFType(Default), myUnicodeType(NoTranslation), ioIndex(0) { }
 	virtual ~QIODevice() { }
 
 	//! Returns the flags of this device
@@ -143,12 +164,24 @@ public:
 	FXuint mode() const { return mymode & IO_ModeMask; }
 	/*! Returns the state of this device \sa QIODeviceStateFlags */
 	FXuint state() const { return mymode & IO_StateMask; }
+	//! Returns the CR/LF format of this device
+	CRLFType crlfFormat() const { return myCRLFType; }
+	//! Sets the CR/LF format for output of this device
+	void setCRLFFormat(CRLFType type) { myCRLFType=type; }
+	//! Returns the unicode translation of this device
+	UnicodeType unicodeTranslation() const { return myUnicodeType; }
+	//! Sets the unicode translation of this device
+	void setUnicodeTranslation(UnicodeType type) { myUnicodeType=type; }
 	//! Returns true if the device is buffered
 	bool isBuffered() const { return IO_Raw!=(mymode & IO_Raw); }
 	//! Returns true if the device is unbuffered
 	bool isRaw() const { return IO_Raw==(mymode & IO_Raw); }
 	//! Returns true if the device is LR/CF translated
 	bool isTranslated() const { return IO_Translate==(mymode & IO_Translate); }
+	//! Returns true if the device is UTF-16 translated
+	bool isUTF16Translated() const { return isTranslated() && UTF16==(myUnicodeType & UTF16); }
+	//! Returns true if the device is UTF-32 translated
+	bool isUTF32Translated() const { return isTranslated() && UTF32==(myUnicodeType & UTF32); }
 	//! Returns true if the device is readable
 	bool isReadable() const { return IO_ReadOnly==(mymode & IO_ReadOnly); }
 	//! Returns true if the device is writeable
@@ -230,29 +263,26 @@ public:
 	//! Pushes back a byte to the read buffer
 	virtual int ungetch(int c)=0;
 public:
-	//! The type of CR/LF encoding you want
-	enum CRLFType
-	{
-		Default=0,			//!< Uses the host OS format
-		Unix=1,				//!< Uses ASCII 10 to delimit lines
-		MacOS=2,			//!< Uses ASCII 13 to delimit lines
-		MSDOS=3				//!< Uses ASCII 13,10 to delimit lines
-	};
-	/*! Applies CR/LF translation returning characters in output. Ensure
-	outputlen is bigger if translating to MSDOS. If outputlen runs out
-	just as an ASCII 10 is half way through being converted to a CR,LF
-	then midNL becomes true and you should restart the translation from
-	the last byte in this batch prepended onto the next batch. Whatever
-	the case inputlen is written back with the total input read.
+	/*! Looks at a sample of data and determines what kind of Unicode text
+	it is, returning UnicodeType::NoTranslation if it isn't text. This
+	routine isn't foolproof, but it's a good guess */
+	static UnicodeType determineUnicodeType(FXuchar *data, FXuval len) throw();
+	/*! Applies CR/LF and optional UTF-x translation returning bytes output.
+	If \em outputlen would run out before \em inputlen can be exhausted
+	it will return early (eg; if mid newline, or mid UTF-x sequence). You
+	should rewind processing to the difference between entrant \em inputlen and
+	returned \em inputlen.
 	*/
-	static FXuval applyCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, CRLFType type=Default);
+	static FXuval applyCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, CRLFType crlftype=Default, UnicodeType utftype=NoTranslation);
 	/*! Removes CR/LF translation intelligently (ie; self-adjusts to MS-DOS, Unix
-	and MacOS formats) returning output length. Safe for placement use ie; output=input.
-	Returns bytes output and if midNL goes true then the last byte in the input
-	could be half a newline - thus you should restart the translation from
-	the last byte in this batch prepended onto the next batch.
+	and MacOS formats or any mixture of these) and can perform optional UTF-x
+	translation, returning bytes output. 
+	If \em outputlen would run out before \em inputlen can be exhausted
+	it will return early (eg; if mid newline, or mid UTF-x sequence). You
+	should rewind processing to the difference between entrant \em inputlen and
+	returned \em inputlen.
 	*/
-	static FXuval removeCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval len);
+	static FXuval removeCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, UnicodeType utftype=NoTranslation);
 	/*! Destroys the \em len bytes of data from offset \em offset into the file.
 	Restores the file pointer afterwards and returns how much data was
 	shredded before end of file if encountered. You must have the device

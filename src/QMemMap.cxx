@@ -650,6 +650,14 @@ bool QMemMap::open(FXuint mode)
 		}
 #endif
 		setFlags((mode & IO_ModeMask)|IO_Open);
+		setIoIndex(0);
+		if(!(mode & IO_NoAutoUTF) && isReadable() && isTranslated())
+		{	// Have a quick peek to see what kind of text it is
+			FXuchar buffer[256];
+			FXuval read;
+			if((read=QMemMap::readBlock((char *) buffer, sizeof(buffer))))
+				setUnicodeTranslation(determineUnicodeType(buffer, read));
+		}
 		setIoIndex((mode & IO_Append) ? p->size : 0);
 	}
 	return true;
@@ -884,18 +892,13 @@ FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 		}
 		if(isTranslated())
 		{
-			bool midNL;
-			readed=removeCRLF(midNL, (FXuchar *) data, (FXuchar *) data, readed);
-			if(midNL)
-			{	// Ok, see what the next is
-				char buff=0;
-				if(readBlock(&buff, 1))
-				{
-					if(10!=buff) ungetch(buff);
-				}
-				data[readed]=10;
-				return readed+1;
-			}
+			QByteArray temp(maxlen);
+			FXuval inputlen=readed;
+			FXuval output=removeCRLF(temp.data(), (FXuchar *) data, maxlen, inputlen, unicodeTranslation());
+			// Adjust the file pointer to reprocess unprocessed input later
+			setIoIndex(ioIndex-(readed-inputlen));
+			memcpy(data, temp.data(), output);
+			readed=output;
 		}
 		return readed;
 	}
@@ -916,8 +919,7 @@ FXuval QMemMap::writeBlock(const char *data, FXuval maxlen)
 			FXuval writ=0, inptr=0, inlen=maxlen;
 			for(;;)
 			{
-				bool midNL;
-				writ+=applyCRLF(midNL, tmpmem->data()+writ, (const FXuchar *) data+inptr, tmpmem->size()-inptr, inlen);
+				writ+=applyCRLF(tmpmem->data()+writ, (const FXuchar *) data+inptr, tmpmem->size()-inptr, inlen, crlfFormat(), unicodeTranslation());
 				if(inlen+inptr<maxlen)
 				{	// Extend
 					tmpmem->resize((FXuint)(tmpmem->size()+4+maxlen/4));
@@ -1031,9 +1033,8 @@ int QMemMap::putch(int c)
 			if(isTranslated() && 10==val)
 			{
 				FXuchar buff[2];
-				bool midNL;
 				FXuval inputlen=1;
-				FXuval towrite=applyCRLF(midNL, buff, &val, 2, inputlen);
+				FXuval towrite=applyCRLF(buff, &val, 2, inputlen, crlfFormat(), unicodeTranslation());
 				if(2==towrite)
 				{
 					*(FXuchar *)(p->offsetToPtr(ioIndex))=buff[0];

@@ -26,6 +26,8 @@
 #include "QTrans.h"
 #include "QThread.h"
 #include "FXSecure.h"
+#include "QBuffer.h"
+#include <qcstring.h>
 #include <string.h>
 #include "FXErrCodes.h"
 #ifdef USE_POSIX
@@ -102,70 +104,246 @@ int QIODevice::putch(int c)
 		return -1;
 }
 
-FXuval QIODevice::applyCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, QIODevice::CRLFType type)
+
+
+QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len) throw()
 {
-	if(Default==type)
+#if 1
+	// Always returns NoTranslation on v1.4.x based versions
+	return NoTranslation;
+#else
+	QByteArray _data(data, len, true);
+	QBuffer dev(_data);
+	FXStream s(&dev);
+	char buffer[12];
+	int goods[6], bads[6];
+	dev.open(IO_ReadOnly);
+	for(int u=UTF32LE; u!=NoTranslation; u--)
+	{
+		int &good=goods[u], &bad=bads[u];
+		FXuval inc=u & 6;
+		if(!inc) inc=1;
+		good=bad=0;
+		s.setBigEndian(!(u & 1));
+		for(FXuval n=0; n<len-8; n+=inc)
+		{
+			dev.at(n);
+			if(4==inc)
+			{
+				FXwchar *c=(FXwchar *) buffer;
+				s >> c[0];
+				// By UTF-32 spec the top eleven bits must be clear
+				if(c[0] & 0xFFE00000) bad+=inc; else good+=inc;
+			}
+			else if(2==inc)
+			{
+				FXushort *c=(FXushort *) buffer;
+				s >> c[0] >> c[1];
+				if(!c[0] || !isutfvalid((FXnchar *) c))
+					bad+=inc;
+				else
+				{
+					FXint len=wcinc((FXnchar *)(data+n), 0);
+					good+=inc;
+					if(len>2)
+						good+=inc*4;
+					if(!(c[0] & 0xff00))	// Prefer high byte empty
+						good+=1;
+					n+=len-inc;
+				}
+			}
+			else
+			{
+				if(!data[n] || !isutfvalid((char *) data+n))
+					bad+=inc;
+				else
+				{
+					FXint len=wcinc((char *) data+n, 0);
+					good+=inc;
+					if(len>1)
+						good+=inc<<(1+len);
+					n+=len-inc;
+				}
+			}
+		}
+		//if(!bad) return (UnicodeType) u;
+	}
+	UnicodeType ret=NoTranslation;
+	goods[ret]=0;
+	bads[ret]=Generic::BiggestValue<int>::value;
+	// Choose that with the lowest bads
+	for(int n=0; n<=UTF32LE; n++)
+	{
+		if((double)bads[n]/(goods[n]+0.0000001)<0.1 && bads[n]<=bads[ret] && goods[n]>goods[ret]) ret=(QIODevice::UnicodeType) n;
+	}
+	return ret;
+#endif
+}
+
+FXuval QIODevice::applyCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, QIODevice::CRLFType crlftype, QIODevice::UnicodeType utftype)
+{
+	if(Default==crlftype)
 #ifdef WIN32
-		type=MSDOS;
+		crlftype=MSDOS;
 #elif defined(USE_MACOSX)
-		type=MacOS;
+		crlftype=MacOS;
 #elif defined(USE_POSIX)
-		type=Unix;
+		crlftype=Unix;
 #else
 #error Unknown system
 #endif
-	if(Unix==type)
+	if(Unix==crlftype && NoTranslation==utftype)
 	{
 		FXuval tocopy=FXMIN(outputlen, inputlen);
 		memcpy(output, input, tocopy);
 		return tocopy;
 	}
 	FXuval o=0, i=0;
-	midNL=false;
-	for(; o<outputlen && i<inputlen; o++, i++)
+	for(;;)
 	{
-		if(10==input[i])
+		FXint inlen=1, outlen=1;
+		/*if(UTF16 & utftype)
 		{
-			output[o]=13;
-			if(o+1==outputlen)
-			{
-				midNL=true;
-				inputlen=i;
-				return o;
-			}
-			if(MSDOS==type) output[++o]=10;
+			inlen=wclen((FXchar *) input+i);
+			outlen=ncslen((FXchar *) input+i, inlen);
 		}
+		else if(UTF32 & utftype)
+		{
+			inlen=wclen((FXchar *) input+i);
+			outlen=sizeof(FXwchar);
+		}*/
+		if(i+inlen>inputlen) break;
+		if(o+outlen>outputlen) break;
+		if(Unix!=crlftype && 10==input[i])
+		{
+			if(NoTranslation==utftype || UTF8==utftype)
+				output[o]=13;
+			/*else if(UTF16 & utftype)
+			{
+				FXnchar *t=(FXnchar *)(output+o);
+				*t=13;
+				if(FOX_BIGENDIAN==(utftype & 1))
+					fxendianswap2(t);
+			}
+			else if(UTF32==utftype)
+			{
+				FXwchar *t=(FXwchar *)(output+o);
+				*t=13;
+				if(FOX_BIGENDIAN==(utftype & 1))
+					fxendianswap4(t);
+			}*/
+			if(MSDOS==crlftype)
+			{
+				if(o+outlen+outlen>outputlen)
+					break;
+				o+=outlen;
+				if(NoTranslation==utftype || UTF8==utftype)
+					output[o]=10;
+				/*else if(UTF16 & utftype)
+				{
+					FXnchar *t=(FXnchar *)(output+o);
+					*t=10;
+					if(FOX_BIGENDIAN==(utftype & 1))
+						fxendianswap2(t);
+				}
+				else if(UTF32 & utftype)
+				{
+					FXwchar *t=(FXwchar *)(output+o);
+					*t=10;
+					if(FOX_BIGENDIAN==(utftype & 1))
+						fxendianswap4(t);
+				}*/
+			}
+		}
+		/*else if(UTF16 & utftype)
+		{
+			FXnchar *t=(FXnchar *)(output+o);
+			utf2ncs(t, (FXchar *) input+i, inlen);
+			if(FOX_BIGENDIAN==(utftype & 1))
+			{
+				fxendianswap2(t);
+				if(outlen>2)
+					fxendianswap2(t+1);
+			}
+		}
+		else if(UTF32 & utftype)
+		{
+			FXwchar *t=(FXwchar *)(output+o);
+			*t=wc((FXchar *) input+i);
+			if(FOX_BIGENDIAN==(utftype & 1))
+				fxendianswap4(t);
+		}*/
 		else output[o]=input[i];
+		i+=inlen; o+=outlen;
 	}
 	inputlen=i;
 	return o;
 }
 
-FXuval QIODevice::removeCRLF(bool &midNL, FXuchar *output, const FXuchar *input, FXuval len)
+FXuval QIODevice::removeCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, QIODevice::UnicodeType utftype)
 {
-	FXuval writeidx=0;
-	midNL=false;
-	for(FXuval n=0; n<len; n++, writeidx++)
+	FXuval o=0, i=0;
+	FXwchar thischar=0, nextchar=0;
+	assert(output!=input);		// No longer safe unlike previous versions of this function
+	for( ; o<outputlen && i<inputlen; )
 	{
-		if(13==input[n])
+		FXint thischarlen=0;
+		if(NoTranslation==utftype || UTF8==utftype)
 		{
-			if(n+1==len)
-			{
-				midNL=true;
-				return writeidx;
-			}
-			if(10==input[n+1])
-			{	// MS-DOS style
-				output[writeidx]=input[++n];
-			}
-			else
-			{	// Mac style
-				output[writeidx]=10;
-			}
+			thischarlen=1;
+			thischar=input[i];
+			nextchar=input[i+1];
 		}
-		else output[writeidx]=input[n];
+		/*else if(UTF16 & utftype)
+		{
+			FXnchar temp[2];
+			temp[0]=((FXnchar *)(input+i))[0];
+			temp[1]=((FXnchar *)(input+i))[1];
+			if(FOX_BIGENDIAN==(utftype & 1))
+			{
+				fxendianswap2(&temp[0]);
+				fxendianswap2(&temp[1]);
+			}
+			thischarlen=wclen(temp)*sizeof(FXnchar);
+			if(i+thischarlen>inputlen) break;
+			thischar=wc(temp);
+			nextchar=wc(temp+1);
+		}
+		else if(UTF32 & utftype)
+		{
+			thischar=((FXwchar *)(input+i))[0];
+			nextchar=((FXwchar *)(input+i))[1];
+			if(FOX_BIGENDIAN==(utftype & 1))
+			{
+				fxendianswap4(&thischar);
+				fxendianswap4(&nextchar);
+			}
+			thischarlen=sizeof(FXwchar);
+			if(i+thischarlen>inputlen) break;
+		}*/
+
+		if(13==thischar)
+		{
+			if(i+thischarlen>=inputlen)
+				break;
+			if(10==nextchar)
+			{	// Gobble the next char
+				i+=thischarlen;
+			}
+			output[o++]=10;
+		}
+		/*else if((UTF16|UTF32) & utftype)
+		{
+			FXint towrite=utfslen(&thischar, 1);
+			if(o+towrite>outputlen) break;
+			o+=wc2utfs((FXchar *) output+o, &thischar, 1);
+		}*/
+		else
+			output[o++]=thischar;
+		i+=thischarlen;
 	}
-	return writeidx;
+	inputlen=i;
+	return o;
 }
 
 FXfval QIODevice::shredData(FXfval offset, FXfval len)

@@ -44,14 +44,17 @@ in ICC).
 
 Coming shortly:
 -=-=-=-=-=-=-=-
-* Get FXTrans to run per-thread locales
+* Get QTrans to run per-thread locales
 * Have FXPacker dynamically cause horizontally packed items to go
 vertical if there isn't enough space (small screen support)
 * Add test of new sort function capability to TestPython
 * Add comprehensive test of all security facilities ensuring it very
 hard to compromise secure data
-* Have FXMutex spin only when current owner is on different processor
-to requester (hard as threads can shift processor suddenly)
+* Have QMutex spin only when up to N threads are waiting, where N is the
+number of processor cores in the system. It's far faster to give up your
+time slice when three threads wait on a two processor system due to round
+robin scheduler behaviour. Also fix QMutex to no longer use atomic instructions
+when recursing into the mutex (make more assumptions about cache coherency)
 
 Eventually:
 -=-=-=-=-=-

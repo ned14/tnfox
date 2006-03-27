@@ -83,9 +83,8 @@ public:
 		const FXString &txt=myowner->e->report();
 		FXuchar *buff;
 		FXMALLOC(&buff, FXuchar, (txt.length()+1)*2);
-		bool midNL;
 		FXuval inputlen=txt.length();
-		FXuval actuallen=QIODevice::applyCRLF(midNL, buff, (FXuchar *) txt.text(), (txt.length()+1)*2, inputlen);
+		FXuval actuallen=QIODevice::applyCRLF(buff, (FXuchar *) txt.text(), (txt.length()+1)*2, inputlen);
 		setDNDData(FROM_CLIPBOARD, stringType, (FXuchar *) buff, (FXuint) actuallen+1);
 		return 1;
 	}

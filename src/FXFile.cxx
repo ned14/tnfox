@@ -312,7 +312,15 @@ bool FXFile::open(FXuint mode)
 		setFlags((mode & IO_ModeMask)|IO_Open);
 		p->lastop=FXFilePrivate::NoOp;
 		reloadSize();
-		ioIndex=(mode & IO_Append) ? p->size : 0;
+		ioIndex=0;
+		if(!(mode & IO_NoAutoUTF) && QIODevice::isReadable() && isTranslated())
+		{	// Have a quick peek to see what kind of text it is
+			FXuchar buffer[256];
+			FXuval read;
+			if((read=QFile::readBlock((char *) buffer, sizeof(buffer))))
+				setUnicodeTranslation(determineUnicodeType(buffer, read));
+		}
+		QFile::at((mode & IO_Append) ? p->size : 0);
 	}
 	return true;
 }
@@ -473,18 +481,13 @@ FXuval FXFile::readBlock(char *data, FXuval maxlen)
 		p->lastop=FXFilePrivate::Read;
 		if(isTranslated())
 		{
-			bool midNL;
-			readed=removeCRLF(midNL, (FXuchar *) data, (FXuchar *) data, readed);
-			if(midNL)
-			{	// Ok, see what the next is
-				char buff=0;
-				if(readBlock(&buff, 1))
-				{
-					if(10!=buff) ungetch(buff);
-				}
-				data[readed]=10;
-				return readed+1;
-			}
+			QByteArray temp(maxlen);
+			FXuval inputlen=readed;
+			FXuval output=removeCRLF(temp.data(), (FXuchar *) data, maxlen, inputlen, unicodeTranslation());
+			// Adjust the file pointer to reprocess unprocessed input later
+			QFile::at(ioIndex-(readed-inputlen));
+			memcpy(data, temp.data(), output);
+			readed=output;
 		}
 		return readed;
 	}
@@ -512,14 +515,13 @@ FXuval FXFile::writeBlock(const char *data, FXuval maxlen)
 			FXuval writeidx;
 			for(writeidx=0; writeidx<maxlen;)
 			{
-				bool midNL;
 				FXuval inputlen=maxlen-writeidx;
 #ifdef WIN32
 				DWORD __written;
-				FXERRHWIN(WriteFile((HANDLE) _get_osfhandle(p->handle), buffer, (DWORD) applyCRLF(midNL, buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen), (LPDWORD) &__written, NULL));
+				FXERRHWIN(WriteFile((HANDLE) _get_osfhandle(p->handle), buffer, (DWORD) applyCRLF(buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen, crlfFormat(), unicodeTranslation()), (LPDWORD) &__written, NULL));
 				written=__written;
 #else
-				FXERRHIO(written=::write(p->handle, buffer, applyCRLF(midNL, buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen)));
+				FXERRHIO(written=::write(p->handle, buffer, applyCRLF(buffer, (FXuchar *) &data[writeidx], sizeof(buffer), inputlen, crlfFormat(), unicodeTranslation())));
 #endif
 				writeidx+=inputlen;
 				ioIndex+=written;
