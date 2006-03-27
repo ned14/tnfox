@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDLL.cpp,v 1.15 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXDLL.cpp,v 1.15.2.1 2006/03/01 01:23:37 fox Exp $                           *
 ********************************************************************************/
 #ifdef FX_FOXCOMPAT
 
@@ -75,7 +75,7 @@ FXString fxdllError(){
 #ifdef WIN32
   DWORD dw=GetLastError();
   FXchar buffer[512];
-  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,NULL,dw,MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),(LPTSTR)&buffer,sizeof(buffer),NULL);
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,NULL,dw,MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),(LPTSTR)buffer,sizeof(buffer),NULL);
   return buffer;
 #else
   return dlerror();

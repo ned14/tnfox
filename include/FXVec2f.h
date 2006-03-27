@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec2f.h,v 1.6 2005/01/20 07:14:03 fox Exp $                            *
+* $Id: FXVec2f.h,v 1.6.2.1 2006/03/21 07:08:29 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXVEC2F_H
 #define FXVEC2F_H
@@ -72,63 +72,63 @@ public:
   operator const FXfloat*() const {return &x;}
 
   /// Unary
-  friend FXAPI FXVec2f operator+(const FXVec2f& v){return v;}
-  friend FXAPI FXVec2f operator-(const FXVec2f& v){return FXVec2f(-v.x,-v.y);}
+  friend FXAPI FXVec2f operator+(const FXVec2f& v);
+  friend FXAPI FXVec2f operator-(const FXVec2f& v);
 
   /// Adding
-  friend FXAPI FXVec2f operator+(const FXVec2f& a,const FXVec2f& b){return FXVec2f(a.x+b.x,a.y+b.y);}
+  friend FXAPI FXVec2f operator+(const FXVec2f& a,const FXVec2f& b);
 
   /// Subtracting
-  friend FXAPI FXVec2f operator-(const FXVec2f& a,const FXVec2f& b){return FXVec2f(a.x-b.x,a.y-b.y);}
+  friend FXAPI FXVec2f operator-(const FXVec2f& a,const FXVec2f& b);
 
   /// Scaling
-  friend FXAPI FXVec2f operator*(const FXVec2f& a,FXfloat n){return FXVec2f(a.x*n,a.y*n);}
-  friend FXAPI FXVec2f operator*(FXfloat n,const FXVec2f& a){return FXVec2f(n*a.x,n*a.y);}
-  friend FXAPI FXVec2f operator/(const FXVec2f& a,FXfloat n){return FXVec2f(a.x/n,a.y/n);}
-  friend FXAPI FXVec2f operator/(FXfloat n,const FXVec2f& a){return FXVec2f(n/a.x,n/a.y);}
+  friend FXAPI FXVec2f operator*(const FXVec2f& a,FXfloat n);
+  friend FXAPI FXVec2f operator*(FXfloat n,const FXVec2f& a);
+  friend FXAPI FXVec2f operator/(const FXVec2f& a,FXfloat n);
+  friend FXAPI FXVec2f operator/(FXfloat n,const FXVec2f& a);
 
   /// Dot product
-  friend FXAPI FXfloat operator*(const FXVec2f& a,const FXVec2f& b){return a.x*b.x+a.y*b.y;}
+  friend FXAPI FXfloat operator*(const FXVec2f& a,const FXVec2f& b);
 
   /// Test if zero
-  friend FXAPI int operator!(const FXVec2f& a){return a.x==0.0f && a.y==0.0f;}
+  friend FXAPI int operator!(const FXVec2f& a);
 
   /// Equality tests
-  friend FXAPI int operator==(const FXVec2f& a,const FXVec2f& b){return a.x==b.x && a.y==b.y;}
-  friend FXAPI int operator!=(const FXVec2f& a,const FXVec2f& b){return a.x!=b.x || a.y!=b.y;}
+  friend FXAPI int operator==(const FXVec2f& a,const FXVec2f& b);
+  friend FXAPI int operator!=(const FXVec2f& a,const FXVec2f& b);
 
-  friend FXAPI int operator==(const FXVec2f& a,FXfloat n){return a.x==n && a.y==n;}
-  friend FXAPI int operator!=(const FXVec2f& a,FXfloat n){return a.x!=n || a.y!=n;}
+  friend FXAPI int operator==(const FXVec2f& a,FXfloat n);
+  friend FXAPI int operator!=(const FXVec2f& a,FXfloat n);
 
-  friend FXAPI int operator==(FXfloat n,const FXVec2f& a){return n==a.x && n==a.y;}
-  friend FXAPI int operator!=(FXfloat n,const FXVec2f& a){return n!=a.x || n!=a.y;}
+  friend FXAPI int operator==(FXfloat n,const FXVec2f& a);
+  friend FXAPI int operator!=(FXfloat n,const FXVec2f& a);
 
   /// Inequality tests
-  friend FXAPI int operator<(const FXVec2f& a,const FXVec2f& b){return a.x<b.x && a.y<b.y;}
-  friend FXAPI int operator<=(const FXVec2f& a,const FXVec2f& b){return a.x<=b.x && a.y<=b.y;}
-  friend FXAPI int operator>(const FXVec2f& a,const FXVec2f& b){return a.x>b.x && a.y>b.y;}
-  friend FXAPI int operator>=(const FXVec2f& a,const FXVec2f& b){return a.x>=b.x && a.y>=b.y;}
+  friend FXAPI int operator<(const FXVec2f& a,const FXVec2f& b);
+  friend FXAPI int operator<=(const FXVec2f& a,const FXVec2f& b);
+  friend FXAPI int operator>(const FXVec2f& a,const FXVec2f& b);
+  friend FXAPI int operator>=(const FXVec2f& a,const FXVec2f& b);
 
-  friend FXAPI int operator<(const FXVec2f& a,FXfloat n){return a.x<n && a.y<n;}
-  friend FXAPI int operator<=(const FXVec2f& a,FXfloat n){return a.x<=n && a.y<=n;}
-  friend FXAPI int operator>(const FXVec2f& a,FXfloat n){return a.x>n && a.y>n;}
-  friend FXAPI int operator>=(const FXVec2f& a,FXfloat n){return a.x>=n && a.y>=n;}
+  friend FXAPI int operator<(const FXVec2f& a,FXfloat n);
+  friend FXAPI int operator<=(const FXVec2f& a,FXfloat n);
+  friend FXAPI int operator>(const FXVec2f& a,FXfloat n);
+  friend FXAPI int operator>=(const FXVec2f& a,FXfloat n);
 
-  friend FXAPI int operator<(FXfloat n,const FXVec2f& a){return n<a.x && n<a.y;}
-  friend FXAPI int operator<=(FXfloat n,const FXVec2f& a){return n<=a.x && n<=a.y;}
-  friend FXAPI int operator>(FXfloat n,const FXVec2f& a){return n>a.x && n>a.y;}
-  friend FXAPI int operator>=(FXfloat n,const FXVec2f& a){return n>=a.x && n>=a.y;}
+  friend FXAPI int operator<(FXfloat n,const FXVec2f& a);
+  friend FXAPI int operator<=(FXfloat n,const FXVec2f& a);
+  friend FXAPI int operator>(FXfloat n,const FXVec2f& a);
+  friend FXAPI int operator>=(FXfloat n,const FXVec2f& a);
 
   /// Length and square of length
-  friend FXAPI FXfloat veclen2(const FXVec2f& a){ return a.x*a.x+a.y*a.y; }
-  friend FXAPI FXfloat veclen(const FXVec2f& a){ return sqrtf(veclen2(a)); }
+  friend FXAPI FXfloat veclen2(const FXVec2f& a);
+  friend FXAPI FXfloat veclen(const FXVec2f& a);
 
   /// Normalize vector
   friend FXAPI FXVec2f vecnormalize(const FXVec2f& a);
 
   /// Lowest or highest components
-  friend FXAPI FXVec2f veclo(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMIN(a.x,b.x),FXMIN(a.y,b.y));}
-  friend FXAPI FXVec2f vechi(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMAX(a.x,b.x),FXMAX(a.y,b.y));}
+  friend FXAPI FXVec2f veclo(const FXVec2f& a,const FXVec2f& b);
+  friend FXAPI FXVec2f vechi(const FXVec2f& a,const FXVec2f& b);
 
   /// Save vector to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec2f& v);
@@ -136,6 +136,57 @@ public:
   /// Load vector from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXVec2f& v);
   };
+
+
+inline FXVec2f operator+(const FXVec2f& v){return v;}
+inline FXVec2f operator-(const FXVec2f& v){return FXVec2f(-v.x,-v.y);}
+
+inline FXVec2f operator+(const FXVec2f& a,const FXVec2f& b){return FXVec2f(a.x+b.x,a.y+b.y);}
+inline FXVec2f operator-(const FXVec2f& a,const FXVec2f& b){return FXVec2f(a.x-b.x,a.y-b.y);}
+
+inline FXVec2f operator*(const FXVec2f& a,FXfloat n){return FXVec2f(a.x*n,a.y*n);}
+inline FXVec2f operator*(FXfloat n,const FXVec2f& a){return FXVec2f(n*a.x,n*a.y);}
+inline FXVec2f operator/(const FXVec2f& a,FXfloat n){return FXVec2f(a.x/n,a.y/n);}
+inline FXVec2f operator/(FXfloat n,const FXVec2f& a){return FXVec2f(n/a.x,n/a.y);}
+
+inline FXfloat operator*(const FXVec2f& a,const FXVec2f& b){return a.x*b.x+a.y*b.y;}
+
+inline int operator!(const FXVec2f& a){return a.x==0.0f && a.y==0.0f;}
+
+inline int operator==(const FXVec2f& a,const FXVec2f& b){return a.x==b.x && a.y==b.y;}
+inline int operator!=(const FXVec2f& a,const FXVec2f& b){return a.x!=b.x || a.y!=b.y;}
+
+inline int operator==(const FXVec2f& a,FXfloat n){return a.x==n && a.y==n;}
+inline int operator!=(const FXVec2f& a,FXfloat n){return a.x!=n || a.y!=n;}
+
+inline int operator==(FXfloat n,const FXVec2f& a){return n==a.x && n==a.y;}
+inline int operator!=(FXfloat n,const FXVec2f& a){return n!=a.x || n!=a.y;}
+
+inline int operator<(const FXVec2f& a,const FXVec2f& b){return a.x<b.x && a.y<b.y;}
+inline int operator<=(const FXVec2f& a,const FXVec2f& b){return a.x<=b.x && a.y<=b.y;}
+inline int operator>(const FXVec2f& a,const FXVec2f& b){return a.x>b.x && a.y>b.y;}
+inline int operator>=(const FXVec2f& a,const FXVec2f& b){return a.x>=b.x && a.y>=b.y;}
+
+inline int operator<(const FXVec2f& a,FXfloat n){return a.x<n && a.y<n;}
+inline int operator<=(const FXVec2f& a,FXfloat n){return a.x<=n && a.y<=n;}
+inline int operator>(const FXVec2f& a,FXfloat n){return a.x>n && a.y>n;}
+inline int operator>=(const FXVec2f& a,FXfloat n){return a.x>=n && a.y>=n;}
+
+inline int operator<(FXfloat n,const FXVec2f& a){return n<a.x && n<a.y;}
+inline int operator<=(FXfloat n,const FXVec2f& a){return n<=a.x && n<=a.y;}
+inline int operator>(FXfloat n,const FXVec2f& a){return n>a.x && n>a.y;}
+inline int operator>=(FXfloat n,const FXVec2f& a){return n>=a.x && n>=a.y;}
+
+inline FXfloat veclen2(const FXVec2f& a){ return a.x*a.x+a.y*a.y; }
+inline FXfloat veclen(const FXVec2f& a){ return sqrtf(len2(a)); }
+
+extern FXAPI FXVec2f vecnormalize(const FXVec2f& a);
+
+inline FXVec2f veclo(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMIN(a.x,b.x),FXMIN(a.y,b.y));}
+inline FXVec2f vechi(const FXVec2f& a,const FXVec2f& b){return FXVec2f(FXMAX(a.x,b.x),FXMAX(a.y,b.y));}
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXVec2f& v);
+extern FXAPI FXStream& operator>>(FXStream& store,FXVec2f& v);
 
 }
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.cpp,v 1.33.2.3 2005/11/05 11:12:03 fox Exp $                      *
+* $Id: FXSettings.cpp,v 1.33.2.4 2006/03/01 01:23:37 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -368,7 +368,7 @@ FXbool FXSettings::unparseValue(FXchar* buffer,const FXchar* value){
   register FXchar *ptr=buffer;
   register FXuchar v;
   FXASSERT(value);
-  while((v=*value++) && ptr<&buffer[MAXVALUE-5]){
+  while((v=*value++)!='\0' && ptr<&buffer[MAXVALUE-5]){
     switch(v){
       case '\n':
         *ptr++='\\';

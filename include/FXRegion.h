@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegion.h,v 1.16 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXRegion.h,v 1.16.2.1 2006/03/21 07:08:29 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXREGION_H
 #define FXREGION_H
@@ -109,6 +109,14 @@ public:
   /// Destroy region
  ~FXRegion();
   };
+
+
+extern FXAPI FXRegion operator+(const FXRegion& r1,const FXRegion& r2);
+extern FXAPI FXRegion operator*(const FXRegion& r1,const FXRegion& r2);
+extern FXAPI FXRegion operator-(const FXRegion& r1,const FXRegion& r2);
+extern FXAPI FXRegion operator^(const FXRegion& r1,const FXRegion& r2);
+extern FXAPI FXbool operator==(const FXRegion& r1,const FXRegion& r2);
+extern FXAPI FXbool operator!=(const FXRegion& r1,const FXRegion& r2);
 
 }
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollBar.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXScrollBar.cpp,v 1.22.2.1 2006/01/13 02:54:57 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"

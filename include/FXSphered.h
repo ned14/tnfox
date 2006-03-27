@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSphered.h,v 1.10 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXSphered.h,v 1.10.2.1 2006/03/21 07:08:29 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSPHERED_H
 #define FXSPHERED_H
@@ -108,6 +108,14 @@ public:
   /// Load object from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXSphered& sphere);
   };
+
+
+extern FXAPI FXbool overlap(const FXRanged& a,const FXSphered& b);
+extern FXAPI FXbool overlap(const FXSphered& a,const FXRanged& b);
+extern FXAPI FXbool overlap(const FXSphered& a,const FXSphered& b);
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXSphered& sphere);
+extern FXAPI FXStream& operator>>(FXStream& store,FXSphered& sphere);
 
 }
 

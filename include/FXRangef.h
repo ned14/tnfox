@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRangef.h,v 1.9 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXRangef.h,v 1.9.2.1 2006/03/21 07:08:29 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXRANGEF_H
 #define FXRANGEF_H
@@ -137,6 +137,13 @@ public:
   /// Load object from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXRangef& bounds);
   };
+
+
+extern FXAPI FXbool overlap(const FXRangef& a,const FXRangef& b);
+extern FXAPI FXRangef unite(const FXRangef& a,const FXRangef& b);
+extern FXAPI FXRangef intersect(const FXRangef& a,const FXRangef& b);
+extern FXAPI FXStream& operator<<(FXStream& store,const FXRangef& bounds);
+extern FXAPI FXStream& operator>>(FXStream& store,FXRangef& bounds);
 
 }
 

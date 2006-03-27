@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMat3d.h,v 1.5 2005/01/16 16:06:06 fox Exp $                            *
+* $Id: FXMat3d.h,v 1.5.2.1 2006/03/21 07:08:28 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXMAT3D_H
 #define FXMAT3D_H
@@ -123,6 +123,29 @@ public:
   /// Load from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXMat3d& m);
   };
+  
+
+extern FXAPI FXMat3d operator+(const FXMat3d& a,const FXMat3d& b);
+extern FXAPI FXMat3d operator-(const FXMat3d& a,const FXMat3d& b);
+extern FXAPI FXMat3d operator-(const FXMat3d& a);
+extern FXAPI FXMat3d operator*(const FXMat3d& a,const FXMat3d& b);
+extern FXAPI FXMat3d operator*(FXdouble x,const FXMat3d& a);
+extern FXAPI FXMat3d operator*(const FXMat3d& a,FXdouble x);
+extern FXAPI FXMat3d operator/(const FXMat3d& a,FXdouble x);
+extern FXAPI FXMat3d operator/(FXdouble x,const FXMat3d& a);
+
+extern FXAPI FXVec3d operator*(const FXVec3d& v,const FXMat3d& m);
+extern FXAPI FXVec3d operator*(const FXMat3d& a,const FXVec3d& v);
+
+extern FXAPI FXVec2d operator*(const FXVec2d& v,const FXMat3d& m);
+extern FXAPI FXVec2d operator*(const FXMat3d& a,const FXVec2d& v);
+
+extern FXAPI FXdouble det(const FXMat3d& m);
+extern FXAPI FXMat3d transpose(const FXMat3d& m);
+extern FXAPI FXMat3d invert(const FXMat3d& m);
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXMat3d& m);
+extern FXAPI FXStream& operator>>(FXStream& store,FXMat3d& m);
 
 }
 

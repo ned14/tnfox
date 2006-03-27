@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXString.h,v 1.74 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXString.h,v 1.74.2.1 2006/03/21 07:08:29 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSTRING_H
 #define FXSTRING_H
@@ -504,31 +504,31 @@ public:
   * Convert integer number to a string, using the given number
   * base, which must be between 2 and 16.
   */
-  friend FXAPI FXString FXStringVal(FXint num,FXint base=10);
-  friend FXAPI FXString FXStringVal(FXuint num,FXint base=10);
+  friend FXAPI FXString FXStringVal(FXint num,FXint base);
+  friend FXAPI FXString FXStringVal(FXuint num,FXint base);
 
   /**
   * Convert long integer number to a string, using the given number
   * base, which must be between 2 and 16.
   */
-  friend FXAPI FXString FXStringVal(FXlong num,FXint base=10);
-  friend FXAPI FXString FXStringVal(FXulong num,FXint base=10);
+  friend FXAPI FXString FXStringVal(FXlong num,FXint base);
+  friend FXAPI FXString FXStringVal(FXulong num,FXint base);
 
   /**
   * Convert real number to a string, using the given procision and
   * exponential notation mode, which may be FALSE (never), TRUE (always), or
   * MAYBE (when needed).
   */
-  friend FXAPI FXString FXStringVal(FXfloat num,FXint prec=6,FXbool exp=MAYBE);
-  friend FXAPI FXString FXStringVal(FXdouble num,FXint prec=6,FXbool exp=MAYBE);
+  friend FXAPI FXString FXStringVal(FXfloat num,FXint prec,FXbool exp);
+  friend FXAPI FXString FXStringVal(FXdouble num,FXint prec,FXbool exp);
 
   /// Convert string to a integer number, assuming given number base
-  friend FXAPI FXint FXIntVal(const FXString& s,FXint base=10);
-  friend FXAPI FXuint FXUIntVal(const FXString& s,FXint base=10);
+  friend FXAPI FXint FXIntVal(const FXString& s,FXint base);
+  friend FXAPI FXuint FXUIntVal(const FXString& s,FXint base);
 
   /// Convert string to long integer number, assuming given number base
-  friend FXAPI FXlong FXLongVal(const FXString& s,FXint base=10);
-  friend FXAPI FXulong FXULongVal(const FXString& s,FXint base=10);
+  friend FXAPI FXlong FXLongVal(const FXString& s,FXint base);
+  friend FXAPI FXulong FXULongVal(const FXString& s,FXint base);
 
   /// Convert string into real number
   friend FXAPI FXfloat FXFloatVal(const FXString& s);
@@ -541,12 +541,87 @@ public:
   friend FXAPI FXString unescape(const FXString& s);
 
   /// Swap two strings
-  friend FXAPI void swap(FXString& a,FXString& b) throw() { FXchar *t=a.str; a.str=b.str; b.str=t; }
+  friend inline void swap(FXString& a,FXString& b);
 
   /// Delete
  ~FXString();
   };
 
+inline void swap(FXString& a,FXString& b){ FXchar *t=a.str; a.str=b.str; b.str=t; }
+
+extern FXAPI FXint compare(const FXchar* s1,const FXchar* s2);
+extern FXAPI FXint compare(const FXchar* s1,const FXString& s2);
+extern FXAPI FXint compare(const FXString& s1,const FXchar* s2);
+extern FXAPI FXint compare(const FXString& s1,const FXString& s2);
+
+extern FXAPI FXint compare(const FXchar* s1,const FXchar* s2,FXint n);
+extern FXAPI FXint compare(const FXchar* s1,const FXString& s2,FXint n);
+extern FXAPI FXint compare(const FXString& s1,const FXchar* s2,FXint n);
+extern FXAPI FXint compare(const FXString& s1,const FXString& s2,FXint n);
+
+extern FXAPI FXint comparecase(const FXchar* s1,const FXchar* s2);
+extern FXAPI FXint comparecase(const FXchar* s1,const FXString& s2);
+extern FXAPI FXint comparecase(const FXString& s1,const FXchar* s2);
+extern FXAPI FXint comparecase(const FXString& s1,const FXString& s2);
+
+extern FXAPI FXint comparecase(const FXchar* s1,const FXchar* s2,FXint n);
+extern FXAPI FXint comparecase(const FXchar* s1,const FXString& s2,FXint n);
+extern FXAPI FXint comparecase(const FXString& s1,const FXchar* s2,FXint n);
+extern FXAPI FXint comparecase(const FXString& s1,const FXString& s2,FXint n);
+
+extern FXAPI FXbool operator==(const FXString& s1,const FXString& s2);
+extern FXAPI FXbool operator==(const FXString& s1,const FXchar* s2);
+extern FXAPI FXbool operator==(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXbool operator!=(const FXString& s1,const FXString& s2);
+extern FXAPI FXbool operator!=(const FXString& s1,const FXchar* s2);
+extern FXAPI FXbool operator!=(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXbool operator<(const FXString& s1,const FXString& s2);
+extern FXAPI FXbool operator<(const FXString& s1,const FXchar* s2);
+extern FXAPI FXbool operator<(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXbool operator<=(const FXString& s1,const FXString& s2);
+extern FXAPI FXbool operator<=(const FXString& s1,const FXchar* s2);
+extern FXAPI FXbool operator<=(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXbool operator>(const FXString& s1,const FXString& s2);
+extern FXAPI FXbool operator>(const FXString& s1,const FXchar* s2);
+extern FXAPI FXbool operator>(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXbool operator>=(const FXString& s1,const FXString& s2);
+extern FXAPI FXbool operator>=(const FXString& s1,const FXchar* s2);
+extern FXAPI FXbool operator>=(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXString operator+(const FXString& s1,const FXString& s2);
+extern FXAPI FXString operator+(const FXString& s1,const FXchar* s2);
+extern FXAPI FXString operator+(const FXchar* s1,const FXString& s2);
+
+extern FXAPI FXString operator+(const FXString& s,FXchar c);
+extern FXAPI FXString operator+(FXchar c,const FXString& s);
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXString& s);
+extern FXAPI FXStream& operator>>(FXStream& store,FXString& s);
+
+extern FXAPI FXString FXStringFormat(const FXchar* fmt,...) FX_PRINTF(1,2) ;
+extern FXAPI FXString FXStringVFormat(const FXchar* fmt,va_list args);
+
+extern FXAPI FXString FXStringVal(FXint num,FXint base=10);
+extern FXAPI FXString FXStringVal(FXuint num,FXint base=10);
+extern FXAPI FXString FXStringVal(FXlong num,FXint base=10);
+extern FXAPI FXString FXStringVal(FXulong num,FXint base=10);
+extern FXAPI FXString FXStringVal(FXfloat num,FXint prec=6,FXbool exp=MAYBE);
+extern FXAPI FXString FXStringVal(FXdouble num,FXint prec=6,FXbool exp=MAYBE);
+
+extern FXAPI FXint FXIntVal(const FXString& s,FXint base=10);
+extern FXAPI FXuint FXUIntVal(const FXString& s,FXint base=10);
+extern FXAPI FXlong FXLongVal(const FXString& s,FXint base=10);
+extern FXAPI FXulong FXULongVal(const FXString& s,FXint base=10);
+extern FXAPI FXfloat FXFloatVal(const FXString& s);
+extern FXAPI FXdouble FXDoubleVal(const FXString& s);
+
+extern FXAPI FXString escape(const FXString& s);
+extern FXAPI FXString unescape(const FXString& s);
 
 //! For Qt emulation
 typedef FXString QString;

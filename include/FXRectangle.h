@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRectangle.h,v 1.12 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXRectangle.h,v 1.12.2.1 2006/03/21 07:08:29 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXRECTANGLE_H
 #define FXRECTANGLE_H
@@ -60,7 +60,7 @@ public:
   FXbool contains(const FXRectangle& r) const { return x<=r.x && y<=r.y && r.x+r.w<=x+w && r.y+r.h<=y+h; }
 
   /// Rectangles overlap
-  friend FXAPI FXbool overlap(const FXRectangle& a,const FXRectangle& b){ return b.x<a.x+a.w && b.y<a.y+a.h && a.x<b.x+b.w && a.y<b.y+b.h; }
+  friend inline FXbool overlap(const FXRectangle& a,const FXRectangle& b);
 
   /// Return moved rectangle
   FXRectangle& move(FXshort dx,FXshort dy){ x+=dx; y+=dy; return *this; }
@@ -95,6 +95,14 @@ public:
   /// Load object from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXRectangle& r);
   };
+
+
+inline FXbool overlap(const FXRectangle& a,const FXRectangle& b){ return b.x<a.x+a.w && b.y<a.y+a.h && a.x<b.x+b.w && a.y<b.y+b.h; }
+
+extern FXAPI FXRectangle operator+(const FXRectangle& p,const FXRectangle& q);
+extern FXAPI FXRectangle operator*(const FXRectangle& p,const FXRectangle& q);
+extern FXAPI FXStream& operator<<(FXStream& store,const FXRectangle& r);
+extern FXAPI FXStream& operator>>(FXStream& store,FXRectangle& r);
 
 }
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRex.h,v 1.49 2005/01/16 16:06:06 fox Exp $                             *
+* $Id: FXRex.h,v 1.49.2.1 2006/03/21 07:08:29 fox Exp $                             *
 ********************************************************************************/
 #ifndef FXREX_H
 #define FXREX_H
@@ -171,6 +171,11 @@ public:
   /// Delete
  ~FXRex();
   };
+
+extern FXAPI FXbool operator==(const FXRex &r1,const FXRex &r2);
+extern FXAPI FXbool operator!=(const FXRex &r1,const FXRex &r2);
+extern FXAPI FXStream& operator<<(FXStream& store,const FXRex& s);
+extern FXAPI FXStream& operator>>(FXStream& store,FXRex& s);
 
 }
 

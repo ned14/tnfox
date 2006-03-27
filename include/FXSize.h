@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSize.h,v 1.9 2005/01/16 16:06:06 fox Exp $                             *
+* $Id: FXSize.h,v 1.9.2.1 2006/03/21 07:08:29 fox Exp $                             *
 ********************************************************************************/
 #ifndef FXSIZE_H
 #define FXSIZE_H
@@ -41,8 +41,8 @@ public:
   FXSize(FXshort ww,FXshort hh):w(ww),h(hh){ }
 
   /// Equality
-  friend FXAPI FXbool operator==(const FXSize& s,const FXSize& t){ return s.w==t.w && s.h==t.h; }
-  friend FXAPI FXbool operator!=(const FXSize& s,const FXSize& t){ return s.w!=t.w || s.h!=t.h; }
+  friend inline FXbool operator==(const FXSize& s,const FXSize& t);
+  friend inline FXbool operator!=(const FXSize& s,const FXSize& t);
 
   /// Assignment
   FXSize& operator=(const FXSize& s){ w=s.w; h=s.h; return *this; }
@@ -57,12 +57,12 @@ public:
   FXSize operator-(){ return FXSize(-w,-h); }
 
   /// Other operators
-  friend FXAPI FXSize operator+(const FXSize& s,const FXSize& t){ return FXSize(s.w+t.w,s.h+t.h); }
-  friend FXAPI FXSize operator-(const FXSize& s,const FXSize& t){ return FXSize(s.w-t.w,s.h-t.h); }
-  friend FXAPI FXSize operator*(const FXSize& s,FXshort c){ return FXSize(s.w*c,s.h*c); }
-  friend FXAPI FXSize operator*(FXshort c,const FXSize& s){ return FXSize(c*s.w,c*s.h); }
-  friend FXAPI FXSize operator/(const FXSize& s,FXshort c){ return FXSize(s.w/c,s.h/c); }
-  friend FXAPI FXSize operator/(FXshort c,const FXSize& s){ return FXSize(c/s.w,c/s.h); }
+  friend inline FXSize operator+(const FXSize& s,const FXSize& t);
+  friend inline FXSize operator-(const FXSize& s,const FXSize& t);
+  friend inline FXSize operator*(const FXSize& s,FXshort c);
+  friend inline FXSize operator*(FXshort c,const FXSize& s);
+  friend inline FXSize operator/(const FXSize& s,FXshort c);
+  friend inline FXSize operator/(FXshort c,const FXSize& s);
 
   /// Save object to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXSize& s);
@@ -70,6 +70,21 @@ public:
   /// Load object from a stream
   friend FXAPI FXStream& operator>>(FXStream& store,FXSize& s);
   };
+
+
+inline FXbool operator==(const FXSize& s,const FXSize& t){ return s.w==t.w && s.h==t.h; }
+inline FXbool operator!=(const FXSize& s,const FXSize& t){ return s.w!=t.w || s.h!=t.h; }
+
+inline FXSize operator+(const FXSize& s,const FXSize& t){ return FXSize(s.w+t.w,s.h+t.h); }
+inline FXSize operator-(const FXSize& s,const FXSize& t){ return FXSize(s.w-t.w,s.h-t.h); }
+
+inline FXSize operator*(const FXSize& s,FXshort c){ return FXSize(s.w*c,s.h*c); }
+inline FXSize operator*(FXshort c,const FXSize& s){ return FXSize(c*s.w,c*s.h); }
+inline FXSize operator/(const FXSize& s,FXshort c){ return FXSize(s.w/c,s.h/c); }
+inline FXSize operator/(FXshort c,const FXSize& s){ return FXSize(c/s.w,c/s.h); }
+
+extern FXAPI FXStream& operator<<(FXStream& store,const FXSize& s);
+extern FXAPI FXStream& operator>>(FXStream& store,FXSize& s);
 
 }
 

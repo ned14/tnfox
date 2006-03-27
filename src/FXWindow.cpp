@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.cpp,v 1.298 2005/02/02 16:37:40 fox Exp $                       *
+* $Id: FXWindow.cpp,v 1.298.2.1 2006/03/21 07:08:29 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -961,8 +961,8 @@ FXbool FXWindow::hasFocus() const {
 FXbool FXWindow::inFocusChain() const {
   return parent->focus==this;
   }
-  
-  
+
+
 // Set focus to this widget.
 // The chain of focus from shell down to a control is changed.
 // Widgets now in the chain may or may not gain real focus,
@@ -2346,27 +2346,27 @@ void FXWindow::reparent(FXWindow* father,FXWindow* other){
       parent=father;
       owner=father;
 
-    // Hook up to new window in server too
-    if(xid && parent->id()){
+      // Hook up to new window in server too
+      if(xid && parent->id()){
 #ifndef WIN32
         // See remarks in FXToolBarGrip
-      XReparentWindow(DISPLAY(getApp()),xid,parent->id(),0,0);
+        XReparentWindow(DISPLAY(getApp()),xid,parent->id(),0,0);
         XFlush(DISPLAY(getApp()));
 #else
-      SetParent((HWND)xid,(HWND)parent->id());
+        SetParent((HWND)xid,(HWND)parent->id());
 
-      // Are any of my children popups?
-      FXWindow *mytoplevelwin=this;
-      while(!mytoplevelwin->isShell() && mytoplevelwin->parent) mytoplevelwin=mytoplevelwin->parent;
-      for(FXWindow *child=mytoplevelwin->parent->getFirst(); child; child=child->getNext()){
-        if(child->isPopup() && isOwnerOf(child)){
-          // Reparent the popup
-          SetWindowLongPtr((HWND)child->xid, GWLP_HWNDPARENT, (LONG_PTR) mytoplevelwin->xid);
+        // Are any of my children popups?
+        FXWindow *mytoplevelwin=this;
+        while(!mytoplevelwin->isShell() && mytoplevelwin->parent) mytoplevelwin=mytoplevelwin->parent;
+        for(FXWindow *child=mytoplevelwin->parent->getFirst(); child; child=child->getNext()){
+          if(child->isPopup() && isOwnerOf(child)){
+            // Reparent the popup
+            SetWindowLongPtr((HWND)child->xid, GWLP_HWNDPARENT, (LONG_PTR) mytoplevelwin->xid);
+            }
           }
-        }
 #endif
+        }
       }
-    }
       
     // Set focus back if we had it
     if(hadfocus) setFocus();

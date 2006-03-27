@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatf.h,v 1.13 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXQuatf.h,v 1.13.2.1 2006/03/21 05:02:32 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXQUATF_H
 #define FXQUATF_H
@@ -125,7 +125,17 @@ public:
   friend FXAPI FXQuatf fromMatrix(const FXMat3f& mat);
   };
 
-
+extern FXAPI FXQuatf exp(const FXQuatf& q);
+extern FXAPI FXQuatf log(const FXQuatf& q);
+extern FXAPI FXQuatf invert(const FXQuatf& q);
+extern FXAPI FXQuatf unitinvert(const FXQuatf& q);
+extern FXAPI FXQuatf conj(const FXQuatf& q);
+extern FXAPI FXQuatf operator*(const FXQuatf& p,const FXQuatf& q);
+extern FXAPI FXVec3f operator*(const FXQuatf& quat,const FXVec3f& vec);
+extern FXAPI FXQuatf arc(const FXVec3f& a,const FXVec3f& b);
+extern FXAPI FXQuatf lerp(const FXQuatf& u,const FXQuatf& v,FXfloat f);
+extern FXAPI FXMat3f toMatrix(const FXQuatf& quat);
+extern FXAPI FXQuatf fromMatrix(const FXMat3f& mat);
 
 }
 
