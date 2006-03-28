@@ -3,7 +3,7 @@
 *                              Test of i/o classes                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -28,7 +28,8 @@ struct DevInfo
 	bool isSynch, amSocket;
 	FXString name;
 	QIODevice *rdev, *wdev;
-	DevInfo(const FXString &n, QIODevice *_rdev, QIODevice *_wdev=0) : isSynch(_wdev!=0), amSocket(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev) { }
+	FXuval maxchunk;
+	DevInfo(const FXString &n, QIODevice *_rdev, QIODevice *_wdev=0) : isSynch(_wdev!=0), amSocket(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev), maxchunk(65536) { }
 };
 
 class IOThread : public QThread
@@ -177,8 +178,17 @@ int main(int argc, char *argv[])
 				server->create(IO_ReadOnly);
 				w=new QBlkSocket(QHOSTADDRESS_LOCALHOST, server->port());
 				w->open(IO_WriteOnly);
-				DevInfo *di=new DevInfo("FXSocket", server, w);
+				DevInfo *di=new DevInfo("QBlkSocket(Stream)", server, w);
 				di->amSocket=true;
+				devs.append(di);
+			}
+			if(1) {
+				QBlkSocket *server=new QBlkSocket(QBlkSocket::Datagram),*w;
+				server->create(IO_ReadOnly);
+				w=new QBlkSocket(QHOSTADDRESS_LOCALHOST, server->port(), QBlkSocket::Datagram);
+				w->open(IO_WriteOnly);
+				DevInfo *di=new DevInfo("QBlkSocket(Datagram)", server, w);
+				di->maxchunk=w->maxDatagramSize();
 				devs.append(di);
 			}
 			QBuffer largefile;
@@ -209,10 +219,14 @@ int main(int argc, char *argv[])
 				{
 					QIODevice *dev=devi->wdev;
 					IOThread *t=new IOThread(devi, testsize);
+					QByteArray temp(devi->maxchunk);
 					t->start(true);
 					fxmessage("Writing lots of data to a %s ...\n", devi->name.text());
 					FXuint time=FXProcess::getMsCount();
-					s >> *dev;
+					for(FXuval n=0; n<testsize; n+=temp.size())
+					{
+						dev->writeBlock(temp.data(), largefile.readBlock((char *) temp.data(), temp.size()));
+					}
 					t->byteCount.wait();
 					taken=(FXProcess::getMsCount()-time)/1000.0;
 					t->requestTermination();

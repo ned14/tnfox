@@ -74,6 +74,7 @@ descriptions are entirely written by me.
 </ol>
 
 Extended documentation:
+\li \ref breakingchanges16
 \li \link FAQ
 Frequently Asked Questions about TnFOX
 \endlink
@@ -323,6 +324,23 @@ On Win32, the core process allocator is replaced with ptmalloc2 yielding a typic
 \section todo To do list:
 See the file <a target="_blank" href="../Todo.txt">Todo.txt</a>.
 
+*/
+
+
+
+/*! \page breakingchanges16 Breaking changes between v1.4.x and v1.6.x based versions of TnFOX
+
+v0.86 of TnFOX comes in two flavours - one based on v1.4.x of FOX and the other on
+v1.6.x of FOX. This is because unicode support is not complete in v1.6.x of FOX
+and if you support Latin1 character input, only v1.4.x will currently be of use.
+
+TnFOX remains almost identical between the two builds. The most important difference in the
+v1.6.x version is that unicode support is enabled, whereas in the v1.4.x version
+that functionality is disabled. However, some API's have changed:
+\li FX::FXFile is called FX::QFile in v1.6.x and later builds. FX::FXFile is a new
+FOX class in v1.6.x and later.
+\li No UTF conversion is implemented. Setting to either FX::QIODevice::NoTranslation
+or FX::QIODevice::UTF8 are the only supported options (and neither do anything).
 */
 
 
@@ -912,10 +930,8 @@ Bear in mind the number will then be reused, so you may wish to call it RESERVED
 something to avoid breaking binary compatibility.
 
 \li <b>Implementation of TnFOX's nested exception handling support</b><br>
-More about this can be found at the documentation page of \link FX::FXException
-FXException
-\endlink
-. Basically it wraps all your destructors (unless marked with \c throw() or
+More about this can be found at the documentation page of FX::FXException. Basically
+it wraps all your destructors (unless marked with \c throw() or
 \c FXERRH_NODESTRUCTORMOD) with the run-time support code necessary for nested exception handling.
 
 \li <b>Extraction of text literals delimited by \c tr() </b><br>

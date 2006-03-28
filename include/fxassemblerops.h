@@ -3,7 +3,7 @@
 *                        Assembler optimised operations                         *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -33,7 +33,7 @@ relatively expensive or impossible to do in C. For these situations, TnFOX provi
 a series of small inline functions capable of providing them written in assembler
 on x86 (i686 or later only) and x64 but with fallback generic implementations in C.
 
-Using these functions can \i seriously improve the speed of your code.
+Using these functions can \em seriously improve the speed of your code.
 */
 
 #if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=600) || defined(_M_AMD64))

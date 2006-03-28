@@ -309,29 +309,25 @@ QBlkSocket::~QBlkSocket()
 
 QBlkSocket::Type QBlkSocket::type() const
 {
-	QMtxHold h(p);
 	return p->type;
 }
 
 void QBlkSocket::setType(Type type)
 {
-	QMtxHold h(p);
 	p->type=type;
 }
 
 const QHostAddress &QBlkSocket::address() const
 {
-	QMtxHold h(p);
 	return p->mine.addr;
 }
 
 FXushort QBlkSocket::port() const
 {
-	QMtxHold h(p);
 	return p->mine.port;
 }
 
-const QHostAddress &QBlkSocket::peerAddress() const
+QHostAddress QBlkSocket::peerAddress() const
 {
 	QMtxHold h(p);
 	return p->peer.addr;
@@ -339,8 +335,24 @@ const QHostAddress &QBlkSocket::peerAddress() const
 
 FXushort QBlkSocket::peerPort() const
 {
-	QMtxHold h(p);
 	return p->peer.port;
+}
+
+const QHostAddress &QBlkSocket::requestedAddress() const
+{
+	return p->req.addr;
+}
+
+FXushort QBlkSocket::requestedPort() const
+{
+	return p->req.port;
+}
+
+void QBlkSocket::setRequestedAddressAndPort(const QHostAddress &reqAddr, FXushort port)
+{
+	QMtxHold h(p);
+	p->req.addr=reqAddr;
+	p->req.port=port;
 }
 
 bool QBlkSocket::isUnique() const
@@ -400,6 +412,19 @@ void QBlkSocket::setSendBufferSize(FXuval newsize)
 		int val=(int) newsize;
 		FXERRHSKT(::setsockopt(p->handle, SOL_SOCKET, SO_SNDBUF, (char *) &val, sizeof(val)));
 	}
+}
+
+FXuval QBlkSocket::maxDatagramSize() const
+{
+	QMtxHold h(p);
+	if(isOpen())
+	{
+		unsigned int val=0;
+		socklen_t valsize=sizeof(val);
+		FXERRHSKT(::getsockopt(p->handle, SOL_SOCKET, SO_MAX_MSG_SIZE, (char *) &val, &valsize));
+		return val;
+	}
+	return 0;
 }
 
 FXint QBlkSocket::maxPending() const
@@ -621,7 +646,7 @@ bool QBlkSocket::create(FXuint mode)
 	int salen;
 	sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
 	FXERRHSKT(::bind(p->handle, sa, salen));
-	if(!(mode & IO_QuietSocket))
+	if(Stream==p->type && !(mode & IO_QuietSocket))
 	{
 		FXERRHSKT(::listen(p->handle, p->maxPending));
 	}
@@ -660,15 +685,15 @@ bool QBlkSocket::open(FXuint mode)
 			l.l_onoff=1;
 			l.l_linger=5;
 			FXERRHSKT(::setsockopt(p->handle, SOL_SOCKET, SO_LINGER, (char *) &l, sizeof(l)));
+			sockaddr_in6 sa6={0};
+			int salen;
+			sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
+			h.unlock();
+			int ret=::connect(p->handle, sa, salen);
+			h.relock();
+			FXERRHSKT(ret);
+			fillInAddrs(true);
 		}
-		sockaddr_in6 sa6={0};
-		int salen;
-		sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
-		h.unlock();
-		int ret=::connect(p->handle, sa, salen);
-		h.relock();
-		FXERRHSKT(ret);
-		fillInAddrs(true);
 		p->amServer=false;
 		p->connected=true;
 #ifdef USE_WINAPI
@@ -784,17 +809,23 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 	if(!QIODevice::isReadable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for reading"));
 	if(isOpen())
 	{
-		FXuval readed;
+		FXuval readed=(FXuval) -1;
 #ifdef USE_WINAPI
 		{
 			WSABUF wsabuf; wsabuf.buf=data; wsabuf.len=(u_long) maxlen;
-			DWORD _readed, flags=0;
+			DWORD _readed=0, flags=0;
+			sockaddr_in6 sa6={0};
+			socklen_t salen=sizeof(sa6);
 			if(p->monitoring)
 			{
 				FXERRHWIN(CancelIo((HANDLE) p->handle));
 				p->monitoring=false;
 			}
-			int ret=WSARecv(p->handle, &wsabuf, 1, &_readed, &flags, &p->olr, NULL);
+			int ret=SOCKET_ERROR;
+			if(Stream==p->type)
+				ret=WSARecv(p->handle, &wsabuf, 1, &_readed, &flags, &p->olr, NULL);
+			else if(Datagram==p->type)
+				ret=WSARecvFrom(p->handle, &wsabuf, 1, &_readed, &flags, (sockaddr *) &sa6, &salen, &p->olr, NULL);
 			if(!ret && !_readed)
 			{	// Indicates graceful closure ie; connection lost
 				FXERRGCONLOST("Connection closed", 0);
@@ -818,22 +849,36 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 					}
 					else if(WAIT_OBJECT_0!=ret)
 					{ FXERRHSKT(ret); }
-					else if(!(ret=WSAGetOverlappedResult(p->handle, &p->olr, &_readed, FALSE, &flags)))
-					{ FXERRHSKT(ret); }
+					else if(!WSAGetOverlappedResult(p->handle, &p->olr, &_readed, FALSE, &flags))
+					{ FXERRHSKT(SOCKET_ERROR); }
 				}
 				else { FXERRHSKT(ret); }
 			}
+			if(Datagram==p->type && _readed)
+				readSockAddr(p->peer.addr, p->peer.port, &sa6);
 			readed=(FXuval) _readed;
 		}
 #endif
 #ifdef USE_POSIX
 		h.unlock();
-		/* 31st Jan 2005 ned: Finally fixed segfault on Linux 2.6 kernels when
-		library was being using dynamically. For some odd reason it doesn't like
-		being thread cancelled during a recv(), so I've moved permanently to
-		read() which FreeBSD needed anyway */
-		readed=::read(p->handle, data, maxlen);
-		h.relock();
+		if(Stream==p->type)
+		{
+			/* 31st Jan 2005 ned: Finally fixed segfault on Linux 2.6 kernels when
+			library was being using dynamically. For some odd reason it doesn't like
+			being thread cancelled during a recv(), so I've moved permanently to
+			read() which FreeBSD needed anyway */
+			readed=::read(p->handle, data, maxlen);
+			//h.relock();
+		}
+		else if(Datagram==p->type)
+		{
+			sockaddr_in6 sa6={0};
+			socklen_t salen=sizeof(sa6);
+			readed=::recvfrom(p->handle, data, maxlen, 0, (sockaddr *) &sa6, &salen);
+			h.relock();
+			if(SOCKET_ERROR!=readed)
+				readSockAddr(p->peer.addr, p->peer.port, &sa6);
+		}
 		FXERRHSKT(readed);
 #endif
 		return readed;
@@ -847,12 +892,21 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for writing"));
 	if(isOpen())
 	{
-		FXuval written;
+		FXuval written=(FXuval) -1;
 #ifdef USE_WINAPI
 		{
 			WSABUF wsabuf; wsabuf.buf=(char *) data; wsabuf.len=(u_long) maxlen;
-			DWORD _written, flags=0;
-			int ret=WSASend(p->handle, &wsabuf, 1, &_written, flags, &p->olw, NULL);
+			DWORD _written=0, flags=0;
+			int ret=SOCKET_ERROR;
+			if(Stream==p->type)
+				ret=WSASend(p->handle, &wsabuf, 1, &_written, flags, &p->olw, NULL);
+			else if(Datagram==p->type)
+			{
+				sockaddr_in6 sa6={0};
+				int salen;
+				sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
+				ret=WSASendTo(p->handle, &wsabuf, 1, &_written, flags, sa, salen, &p->olw, NULL);
+			}
 			if(SOCKET_ERROR==ret)
 			{
 				if(WSA_IO_PENDING==WSAGetLastError())
@@ -872,8 +926,8 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 					}
 					else if(WAIT_OBJECT_0!=ret)
 					{ FXERRHSKT(ret); }
-					else if(!(ret=WSAGetOverlappedResult(p->handle, &p->olw, &_written, FALSE, &flags)))
-					{ FXERRHSKT(ret); }
+					else if(!WSAGetOverlappedResult(p->handle, &p->olw, &_written, FALSE, &flags))
+					{ FXERRHSKT(SOCKET_ERROR); }
 				}
 				else { FXERRHSKT(ret); }
 			}
@@ -883,13 +937,29 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 #ifdef USE_POSIX
 		QIODeviceS_SignalHandler::lockWrite();
 		h.unlock();
+		if(Stream==p->type)
+		{
 #ifdef __linux__
-		// send() is a cancellable point on Linux
-		written=::send(p->handle, data, maxlen, MSG_NOSIGNAL);
+			// send() is a cancellable point on Linux
+			written=::send(p->handle, data, maxlen, MSG_NOSIGNAL);
 #else
-		// send() isn't a cancellable point on all platforms, so use write()
-		written=::write(p->handle, data, maxlen);
+			// send() isn't a cancellable point on all platforms, so use write()
+			written=::write(p->handle, data, maxlen);
 #endif
+		}
+		else if(Datagram==p->type)
+		{
+			sockaddr_in6 sa6={0};
+			int salen;
+			sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
+			written=::sendto(p->handle, data, maxlen,
+#ifdef __linux__
+				MSG_NOSIGNAL,
+#else
+				0,
+#endif
+				sa, salen);
+		}
 		h.relock();
 		FXERRHSKT(written);
 		if(QIODeviceS_SignalHandler::unlockWrite())		// Nasty this
@@ -903,7 +973,88 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 
 FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen, const QHostAddress &addr, FXushort port)
 {
-	FXERRG("Currently not implemented", 0, 0);
+	QMtxHold h(p);
+	if(Datagram!=p->type) FXERRGIO(QTrans::tr("QBlkSocket", "Not a datagram socket"));
+	if(!isWriteable()) FXERRGIO(QTrans::tr("QBlkSocket", "Not open for writing"));
+	if(isOpen())
+	{
+		FXuval written=(FXuval) -1;
+#ifdef USE_WINAPI
+		{
+			WSABUF wsabuf; wsabuf.buf=(char *) data; wsabuf.len=(u_long) maxlen;
+			DWORD _written=0, flags=0;
+			int ret=SOCKET_ERROR;
+			if(Stream==p->type)
+				ret=WSASend(p->handle, &wsabuf, 1, &_written, flags, &p->olw, NULL);
+			else if(Datagram==p->type)
+			{
+				sockaddr_in6 sa6={0};
+				int salen;
+				sockaddr *sa=makeSockAddr(salen, sa6, addr, port);
+				ret=WSASendTo(p->handle, &wsabuf, 1, &_written, flags, sa, salen, &p->olw, NULL);
+			}
+			if(SOCKET_ERROR==ret)
+			{
+				if(WSA_IO_PENDING==WSAGetLastError())
+				{
+					h.unlock();
+					HANDLE hs[2]; hs[0]=p->olw.hEvent; hs[1]=QThread::int_cancelWaiterHandle();
+					DWORD ret=WaitForMultipleObjects(2, hs, FALSE, INFINITE);
+					h.relock();
+					if(WAIT_OBJECT_0+1==ret)
+					{	// There appears to be no way to cancel overlapping i/o on sockets, so here's best attempt
+						FXERRHSKT(::shutdown(p->handle, SD_BOTH));
+						FXERRHSKT(::closesocket(p->handle));
+						p->handle=0;
+						p->connected=false;
+						h.unlock();
+						QThread::current()->checkForTerminate();
+					}
+					else if(WAIT_OBJECT_0!=ret)
+					{ FXERRHSKT(ret); }
+					else if(!WSAGetOverlappedResult(p->handle, &p->olw, &_written, FALSE, &flags))
+					{ FXERRHSKT(SOCKET_ERROR); }
+				}
+				else { FXERRHSKT(ret); }
+			}
+			written=(FXuval) _written;
+		}
+#endif
+#ifdef USE_POSIX
+		QIODeviceS_SignalHandler::lockWrite();
+		h.unlock();
+		if(Stream==p->type)
+		{
+#ifdef __linux__
+			// send() is a cancellable point on Linux
+			written=::send(p->handle, data, maxlen, MSG_NOSIGNAL);
+#else
+			// send() isn't a cancellable point on all platforms, so use write()
+			written=::write(p->handle, data, maxlen);
+#endif
+		}
+		else if(Datagram==p->type)
+		{
+			sockaddr_in6 sa6={0};
+			int salen;
+			sockaddr *sa=makeSockAddr(salen, sa6, addr, port);
+			written=::sendto(p->handle, data, maxlen,
+#ifdef __linux__
+				MSG_NOSIGNAL,
+#else
+				0,
+#endif
+				sa, salen);
+		}
+		h.relock();
+		FXERRHSKT(written);
+		if(QIODeviceS_SignalHandler::unlockWrite())		// Nasty this
+			FXERRGCONLOST("Broken socket", 0);
+#endif
+		if(isRaw()) flush();
+		return written;
+	}
+	return 0;
 }
 
 int QBlkSocket::ungetch(int c)
