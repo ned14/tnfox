@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -314,7 +314,8 @@ public:
 	QMUTEX_INLINEP ~QMutex();
 	//! Returns if the mutex is locked
 	QMUTEX_INLINEP bool isLocked() const;
-	/*! \overload For FOX compatibility
+	/*! \overload bool QMutex::isLocked()
+	For FOX compatibility
 	*/
 	QMUTEX_INLINEP FXbool locked() const { return (FXbool) isLocked(); }
 	//! Returns the current spin count
@@ -335,7 +336,8 @@ public:
 	returns false without waiting
 	*/
 	QMUTEX_INLINEP bool tryLock();
-	/*! \overload For FOX compatibility
+	/*! \overload bool QMutex::tryLock()
+	For FOX compatibility
 	*/
 	QMUTEX_INLINEP FXbool trylock() { return (FXbool) tryLock(); }
 	/*! Sets the debugging flag for mutexs in this process. See the main description

@@ -3,7 +3,7 @@
 *                            Via-IPC Database Support                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.                   *
+*       Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.        *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -763,7 +763,7 @@ class FXAPI FXSQLDB_ipc : public FXSQLDB, public FXIPCChannelIndirector
 	struct Statement;	friend struct Statement;
 public:
 	static const FXString MyName;
-	//! Instantiates a driver accessing \em dbspec of the form <driver>:<dbname>
+	//! Instantiates a driver accessing \em dbspec of the form &lt;driver&gt;:&lt;dbname&gt;
 	FXSQLDB_ipc(const FXString &dbspec, const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
 	~FXSQLDB_ipc();
 

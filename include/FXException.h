@@ -3,7 +3,7 @@
 *                     E x c e p t i o n  H a n d l i n g                        *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -147,7 +147,7 @@ MSVCRT which sets errno
 //! Catches a specific exception
 #define FXERRH_CATCH(e2)	catch(e2)
 /*! \param owner Either a FXApp or FXWindow
-\param e The FXException to report
+\param e2 The FXException to report
 Reports the exception \em e to the user
 \note You must <tt>#include "FXExceptionDialog.h"</tt> for this to compile
 \warning You must be within a FXERRH_TRY...FXERRH_ENDTRY

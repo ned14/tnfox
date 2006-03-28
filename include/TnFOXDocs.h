@@ -3,7 +3,7 @@
 *                          Differences documentation                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2005 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -36,9 +36,9 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.4.29), and the extensions listed below are designed to not interfere with that process where
+from v1.4.32), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
-is (C) 2001-2005 Niall Douglas and all code rests under the same licence as FOX but with
+is (C) 2001-2006 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
 so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b>. If you want to know more
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the
@@ -74,6 +74,7 @@ descriptions are entirely written by me.
 </ol>
 
 Extended documentation:
+\li \ref breakingchanges16
 \li \link FAQ
 Frequently Asked Questions about TnFOX
 \endlink
@@ -324,6 +325,23 @@ On Win32, the core process allocator is replaced with ptmalloc2 yielding a typic
 \section todo To do list:
 See the file <a target="_blank" href="../Todo.txt">Todo.txt</a>.
 
+*/
+
+
+
+/*! \page breakingchanges16 Breaking changes between v1.4.x and v1.6.x based versions of TnFOX
+
+v0.86 of TnFOX comes in two flavours - one based on v1.4.x of FOX and the other on
+v1.6.x of FOX. This is because unicode support is not complete in v1.6.x of FOX
+and if you support Latin1 character input, only v1.4.x will currently be of use.
+
+TnFOX remains almost identical between the two builds. The most important difference in the
+v1.6.x version is that unicode support is enabled, whereas in the v1.4.x version
+that functionality is disabled. However, some API's have changed:
+\li FX::FXFile is called FX::QFile in v1.6.x and later builds. FX::FXFile is a new
+FOX class in v1.6.x and later.
+\li No UTF conversion is implemented. Setting to either FX::QIODevice::NoTranslation
+or FX::QIODevice::UTF8 are the only supported options (and neither do anything).
 */
 
 
@@ -949,10 +967,8 @@ Bear in mind the number will then be reused, so you may wish to call it RESERVED
 something to avoid breaking binary compatibility.
 
 \li <b>Implementation of TnFOX's nested exception handling support</b><br>
-More about this can be found at the documentation page of \link FX::FXException
-FXException
-\endlink
-. Basically it wraps all your destructors (unless marked with \c throw() or
+More about this can be found at the documentation page of FX::FXException. Basically
+it wraps all your destructors (unless marked with \c throw() or
 \c FXERRH_NODESTRUCTORMOD) with the run-time support code necessary for nested exception handling.
 
 \li <b>Extraction of text literals delimited by \c tr() </b><br>

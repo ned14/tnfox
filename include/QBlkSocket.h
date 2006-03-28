@@ -3,7 +3,7 @@
 *                          Network socket i/o device                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -249,7 +249,7 @@ public:
 	FXuval readBlock(char *data, FXuval maxlen);
 	/*! \return The number of bytes written.
 	\param data Pointer to buffer of data to send
-	\param len Number of bytes to send
+	\param maxlen Number of bytes to send
 
 	Writes a block of data from the given buffer to the socket. Depending on the
 	size of the data being written and what's currently in the socket's output queue,

@@ -3,7 +3,7 @@
 *                 L a n g u a g e  T r a n s l a t i o n                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.                   *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -159,7 +159,7 @@ arguments when provided to the application have effect:
 language to override the locale-determined one. This is useful for testing.
 \li \c -fxtrans-country=&lt;cc&gt; where &lt;cc&gt; is a ISO3166 two letter code sets that
 region to override the locale-determined one. This is useful for testing.
-\li \c -fxtrans-dump&lt;n&gt; causes the zero-based embedded translation file number <n> to
+\li \c -fxtrans-dump&lt;n&gt; causes the zero-based embedded translation file number &lt;n&gt; to
 be dumped to stdout. You can save this, extend it and place it next to the
 shared library as usual. Unfortunately, there is no way to know which number
 is the library or application due to the vagaries of C++ static data

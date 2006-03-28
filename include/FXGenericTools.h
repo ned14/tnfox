@@ -3,7 +3,7 @@
 *                        Tools for generic programming                          *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -2277,7 +2277,7 @@ type *handle=foo(new type);
 \brief Converts a UTF-8 format FX::FXString into a unicode string suitable for the
 host operating system
 
-\parameter fastlen How much stack space to use before resorting to the allocator
+\param fastlen How much stack space to use before resorting to the allocator
 
 On POSIX, it is assumed that the host OS also uses UTF-8 and thus returns the FXString
 as-is. On Windows, if \c UNICODE is defined, then it converts to UTF-16 otherwise it

@@ -3,7 +3,7 @@
 *                    Debug monitoring of memory allocation                      *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002, 2003 by Niall Douglas.   All Rights Reserved.      *
+*        Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -38,7 +38,7 @@ amount of extra work from you you can get most of the functionality of valgrind
 with less than a 5% loss in performance.
 
 <h3>Usage:</h3>
-If you wish to trap memory leaks, include this code after all other #includes
+If you wish to trap memory leaks, include this code after all other #include's
 in your C++ file but before the main body:
 \code
 #include <FXMemDbg.h>
