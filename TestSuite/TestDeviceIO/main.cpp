@@ -54,6 +54,7 @@ public:
 		for(;;)
 		{
 			FXuval read=rdev->readBlock(buffer, sizeof(buffer));
+			//fxmessage("r%u\n", (FXuint) read);
 			crc=fxadler32(crc, (FXuchar *) buffer, read);
 			byteCount-=(int) read;
 		}
@@ -221,11 +222,14 @@ int main(int argc, char *argv[])
 					IOThread *t=new IOThread(devi, testsize);
 					QByteArray temp(devi->maxchunk);
 					t->start(true);
+					// Make definitely sure reader is ready
+					QThread::msleep(100);
 					fxmessage("Writing lots of data to a %s ...\n", devi->name.text());
 					FXuint time=FXProcess::getMsCount();
 					for(FXuval n=0; n<testsize; n+=temp.size())
 					{
 						dev->writeBlock(temp.data(), largefile.readBlock((char *) temp.data(), temp.size()));
+						//fxmessage("w%u\n", (FXuint) temp.size());
 					}
 					t->byteCount.wait();
 					taken=(FXProcess::getMsCount()-time)/1000.0;
