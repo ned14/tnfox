@@ -126,7 +126,7 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 			dev.at(n);
 			if(4==inc)
 			{
-				FXwchar *c=(FXwchar *) buffer;
+				FXuint *c=(FXuint *) buffer;
 				s >> c[0];
 				// By UTF-32 spec the top eleven bits must be clear
 				if(c[0] & 0xFFE00000) bad+=inc; else good+=inc;
