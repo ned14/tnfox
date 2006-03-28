@@ -57,6 +57,7 @@ B Fixed deadlock when creating thread during thread creation upcall
 R *** Issued snapshot 4
 B Fixed some compilation errors in QPtrVector
 B Fixed assertion failure in FXDebugTarget
+B QBlkSocket wasn't reporting read nor write errors on win32
 
 + Added ability to set external array directly in QMemArray and QByteArray
 + Added own definition of struct timeval to the FX namespace as had been
@@ -195,6 +196,7 @@ were made safe and warnings fixed
 * Integrated sqlite v3.3.4
 * Updated to boost 1.33.1
 * Merged fox v1.4.32
++ Added UDP support to QBlkSocket plus a UDP test to TestDeviceIO
 
 
 v0.85 13th Feb 2005:

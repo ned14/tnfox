@@ -86,6 +86,17 @@ connect, returns a new instance of the server socket with a connection
 to the client. You should at this stage launch another thread to handle
 monitoring that connection and return to waitForConnection() again.
 
+For datagram-based server sockets, you also call create() - however now
+you simply try reading from the socket, or else call FX::QIODeviceS::waitForData()
+if you'd like to poll it. When the read succeeds, peerAddress() and peerPort()
+will return the source of the datagram until the next read is performed.
+
+Sending data via a datagram-based socket uses the destination address and
+port as specified in the constructor or to whatever setRequestedAddressAndPort().
+If you would like to send data to an arbitrary address and port, use the other
+writeBlock() overload. Note that you can neither send nor receive any datagrams
+larger than maxDatagramSize().
+
 A full discussion of the issues surrounding TCP, UDP, IPv4 and IPv6 is
 beyond the scope of this class documentation, but there are plenty of
 man pages, MSVC help files, books and RFC's available. Note that by default
@@ -176,9 +187,15 @@ public:
 	//! The port of the socket. This will be null until a connection is made.
 	FXushort port() const;
 	//! The address of what's connected to the socket. This will be null until a connection is made.
-	const QHostAddress &peerAddress() const;
+	QHostAddress peerAddress() const;
 	//! The port of what's connected to the socket. This will be null until a connection is made.
 	FXushort peerPort() const;
+	//! The address which shall be requested on open() or create() or the next writeBlock() if the socket type is Datagram
+	const QHostAddress &requestedAddress() const;
+	//! The port which shall be requested on open() or create() or the next writeBlock() if the socket type is Datagram
+	FXushort requestedPort() const;
+	//! Sets the address and port which shall be requested on open() or create() or the next writeBlock() if the socket type is Datagram
+	void setRequestedAddressAndPort(const QHostAddress &reqAddr, FXushort port);
 	//! Returns true if this socket uses a unique port
 	bool isUnique() const;
 	//! Set if you want a socket created using a unique port
@@ -191,6 +208,10 @@ public:
 	FXuval sendBufferSize() const;
 	//! Sets the send buffer size. Use only after opening.
 	void setSendBufferSize(FXuval newsize);
+	/*! Returns the maximum permitted size of a datagram. Any attempt to send or receive
+	more than this amount will fail. Use only after opening.
+	*/
+	FXuval maxDatagramSize() const;
 	//! Returns the maximum number of pending connections permitted. Defaults to 50.
 	FXint maxPending() const;
 	//! Sets the maximum number of pending connections
@@ -270,6 +291,7 @@ public:
 	call waitForConnection() upon) is unaffected.
 	*/
 	QBlkSocket *waitForConnection(FXuint waitfor=FXINFINITE);
+
 public:
 	//! \deprecated For Qt compatibility only
 	FXDEPRECATEDEXT bool blocking() const { return true; }

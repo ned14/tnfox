@@ -32,7 +32,7 @@ Known bugs:
 like the marker test FXMemoryPool's global allocator operators perform to detect
 which blocks belong to the system allocator.
 * TestGeneric fails to compile with GCC
-* FXLocalPipe has some problem when running under FXSSLDevice. Will investigate
+* QLocalPipe has some problem when running under QSSLDevice. Will investigate
 later.
 * TestPython on exit fails with a segfault on all platforms. This appears to be
 due to a bad memory block free.
@@ -58,7 +58,6 @@ when recursing into the mutex (make more assumptions about cache coherency)
 
 Eventually:
 -=-=-=-=-=-
-* FXBlkSocket::writeBlock() for UDP
 * Temp string additions to FXString (use templates?)
 * Currency and time formatting extensions to FXTrans (needs more std support
 though - maybe those extended GNU functions or <locale>?)
