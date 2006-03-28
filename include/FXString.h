@@ -600,9 +600,6 @@ extern FXAPI FXString operator+(const FXchar* s1,const FXString& s2);
 extern FXAPI FXString operator+(const FXString& s,FXchar c);
 extern FXAPI FXString operator+(FXchar c,const FXString& s);
 
-extern FXAPI FXStream& operator<<(FXStream& store,const FXString& s);
-extern FXAPI FXStream& operator>>(FXStream& store,FXString& s);
-
 extern FXAPI FXString FXStringFormat(const FXchar* fmt,...) FX_PRINTF(1,2) ;
 extern FXAPI FXString FXStringVFormat(const FXchar* fmt,va_list args);
 
