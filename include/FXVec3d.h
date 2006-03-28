@@ -202,7 +202,7 @@ inline int operator>(FXdouble n,const FXVec3d& a){return n>a.x && n>a.y && n>a.z
 inline int operator>=(FXdouble n,const FXVec3d& a){return n>=a.x && n>=a.y && n>=a.z;}
 
 inline FXdouble veclen2(const FXVec3d& a){ return a.x*a.x+a.y*a.y+a.z*a.z; }
-inline FXdouble veclen(const FXVec3d& a){ return sqrt(len2(a)); }
+inline FXdouble veclen(const FXVec3d& a){ return sqrt(veclen2(a)); }
 
 extern FXAPI FXVec3d vecnormalize(const FXVec3d& a);
 

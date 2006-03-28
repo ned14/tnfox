@@ -178,7 +178,7 @@ inline int operator>(FXdouble n,const FXVec2d& a){return n>a.x && n>a.y;}
 inline int operator>=(FXdouble n,const FXVec2d& a){return n>=a.x && n>=a.y;}
 
 inline FXdouble veclen2(const FXVec2d& a){ return a.x*a.x+a.y*a.y; }
-inline FXdouble veclen(const FXVec2d& a){ return sqrt(len2(a)); }
+inline FXdouble veclen(const FXVec2d& a){ return sqrt(veclen2(a)); }
 
 extern FXAPI FXVec2d vecnormalize(const FXVec2d& a);
 
