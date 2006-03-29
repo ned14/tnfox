@@ -26,7 +26,9 @@
 #include "FXCodeToPythonCode.h"
 #include "../include/qptrdict.h"
 #include "../include/qptrlist.h"
+#ifndef FX_DISABLEGUI
 #include "../include/FXGLViewer.h"
+#endif
 #include "CArrays.h"
 #include "../include/FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
@@ -456,6 +458,7 @@ template<typename fnspec> struct FOXSortFunc
 		}
 	};
 };
+#ifndef FX_DISABLEGUI
 typedef FXCodeToPythonCode<FOXSortFunc<FXFoldingListSortFunc>::vector, SORTFUNCVECTORS> FXFoldingListVectorsType;
 typedef FXCodeToPythonCode<FOXSortFunc<FXIconListSortFunc	>::vector, SORTFUNCVECTORS> FXIconListVectorsType;
 typedef FXCodeToPythonCode<FOXSortFunc<FXListSortFunc		>::vector, SORTFUNCVECTORS> FXListVectorsType;
@@ -464,6 +467,7 @@ static FXFoldingListVectorsType	FXFoldingListVectors;
 static FXIconListVectorsType	FXIconListVectors;
 static FXListVectorsType		FXListVectors;
 static FXTreeListVectorsType	FXTreeListVectors;
+#endif
 
 static void checkIsPythonFunc(object *code, int pars)
 {
@@ -472,6 +476,7 @@ static void checkIsPythonFunc(object *code, int pars)
 	FXERRH(extract<int>((*code).attr("func_code").attr("co_argcount"))==pars, "Python code object has an incorrect number of parameters", 0, FXERRH_ISDEBUG);
 }
 
+#ifndef FX_DISABLEGUI
 void FXPython::setSortFunc(FXFoldingList &list, boost::python::api::object *code)
 {
 	checkIsPythonFunc(code, 2);
@@ -511,6 +516,7 @@ void FXPython::setSortFunc(FXGLViewer &list, boost::python::api::object *code)
 	checkIsPythonFunc(code, 3);
 	list.setZSortFunc(FXGLViewerVectors.allocate(code));
 }
+#endif
 
 void FXPython::int_throwPythonException()
 {

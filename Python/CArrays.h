@@ -34,7 +34,7 @@ advice of Raoul Gough, the author of the Boost.Python indexing_suite
 */
 #define DEFINE_MAKECARRAYITER(contType, memberType, getArrayFunction, getArrayFunctionPars, getArrayLengthFunction) \
 	static boost::python::indexing::iterator_range<memberType *> \
-		contType##_##getArrayFunction (contType &c) \
+	contType##_##getArrayFunction (::FX::##contType &c) \
 	{ \
 		typedef boost::python::indexing::iterator_range<memberType *> IterPair; \
 		boost::python::class_<IterPair>( #contType "_" #getArrayFunction "Indirect", \
