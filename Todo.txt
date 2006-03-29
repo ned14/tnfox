@@ -1,6 +1,8 @@
-Finish UDP support and get FXIPCChannel to use it when necessary (fix TestIPC)
-Fixup categorised class defs to show new APIs
 Fixup python bindings + add understanding of noGUI build (handy for testing)
+Update python docs, adding Roman to acknowledgements
+Test python bindings on Linux
+Fixup categorised class defs to show new APIs
+Run full test suite on all platforms
 Update Readme.txt
 
 

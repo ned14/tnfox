@@ -3,7 +3,7 @@
 *                        Main TnFOX application object                          *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -19,8 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-
-#ifndef TNFXAPP_H
+#if !defined(TNFXAPP_H) && !defined(FX_DISABLEGUI)
 #define TNFXAPP_H
 
 #include "FXApp.h"

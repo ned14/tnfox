@@ -207,6 +207,11 @@ data and set their unicode type on open
 * Integrated sqlite v3.3.4
 * Updated to boost 1.33.1
 + Added UDP support to QBlkSocket plus a UDP test to TestDeviceIO
++ Added script for installing TnFOX docs into Visual Studio
++ Added noGUI support to python bindings (very useful for debugging)
++ Replaced python bindings generator (pyste) with pyplusplus. Thanks to Roman
+Yakovenko for doing most of the work!
+
 
 
 v0.85 13th Feb 2005:

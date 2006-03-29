@@ -3,7 +3,7 @@
 *                                  Functor Target                               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2004-2006 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXFUNCTORTARGET_H
+#if !defined(FXFUNCTORTARGET_H) && !defined(FX_DISABLEGUI)
 #define FXFUNCTORTARGET_H
 
 #include "FXObject.h"

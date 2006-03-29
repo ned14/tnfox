@@ -37,6 +37,9 @@
 #include "fxascii.h"
 #include "fxunicode.h"
 
+
+#ifndef FX_DISABLEGUI
+
 // FOX classes
 #include "FXHash.h"
 #include "FXException.h"
@@ -231,7 +234,10 @@
 #include "FXDebugTarget.h"
 #include "FXSplashWindow.h"
 
-// TnFOX includes
+#endif
+
+
+// TnFOX classes
 #include "FXACL.h"
 #include "FXErrCodes.h"
 #include "FXExceptionDialog.h"
@@ -252,13 +258,14 @@
 #include "FXRollback.h"
 #include "FXSecure.h"
 #include "FXSQLDB.h"
-#include "QSSLDevice.h"
+#include "FXSQLDB_ipc.h"
+#include "FXSQLDB_sqlite3.h"
 #include "FXTime.h"
 #include "FXWinLinks.h"
-
 #include "QBlkSocket.h"
 #include "QBuffer.h"
 #include "QDir.h"
+#include "QFile.h"
 #include "QFileInfo.h"
 #include "QGZipDevice.h"
 #include "QHostAddress.h"
@@ -267,13 +274,16 @@
 #include "QLocalPipe.h"
 #include "QMemMap.h"
 #include "QPipe.h"
+#include "QSSLDevice.h"
 #include "QThread.h"
 #include "QTrans.h"
 #include "TnFXApp.h"
 
 #ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
 // The stuff normally not included
+#ifndef FX_DISABLEGUI
 #include "fx3d.h"
+#endif
 
 #include "qdict.h"
 #include "qmemarray.h"

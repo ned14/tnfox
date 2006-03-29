@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXObject.h,v 1.35 2006/01/22 17:58:06 fox Exp $                          *
 ********************************************************************************/
-#ifndef FXOBJECT_H
+#if !defined(FXOBJECT_H) && !defined(FX_DISABLEGUI)
 #define FXOBJECT_H
 
 #include "QTrans.h"

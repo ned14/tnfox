@@ -202,7 +202,12 @@ protected:
 	FXIPCMsg(FXuint _type, FXuchar _msgrev=0) : len(0), crc(0), type(_type), myid(0), mymsgrev(_msgrev), myflags(FOX_BIGENDIAN*FlagsIsBigEndian), myrouting(0), myoriginaldata(0) { }
 	FXIPCMsg(FXuint _type, FXuint _id, FXuchar _msgrev=0) : len(0), crc(0), type(_type), myid(_id), mymsgrev(_msgrev), myflags(FOX_BIGENDIAN*FlagsIsBigEndian), myrouting(0), myoriginaldata(0) { }
 	FXIPCMsg(const FXIPCMsg &o, FXuint _type=0) : len(o.len), crc(o.crc), type(_type!=0 ? _type : o.type), myid(o.myid), mymsgrev(o.mymsgrev), myflags(o.myflags), myrouting(o.myrouting), myoriginaldata(o.myoriginaldata) { }
+#ifdef FOXPYTHONDLL
+public:
+	virtual ~FXIPCMsg() { }
+#else
 	~FXIPCMsg() { } // stops sliced destructs
+#endif
 public:
 	//! True if this message is identical to the other message
 	bool operator==(const FXIPCMsg &o) const throw() { return len==o.len && crc==o.crc && type==o.type && myid==o.myid && mymsgrev==o.mymsgrev && myflags==o.myflags && myrouting==o.myrouting; }
