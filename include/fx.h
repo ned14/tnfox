@@ -268,7 +268,9 @@
 
 #ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
 // The stuff normally not included
+#ifndef FX_DISABLEGUI
 #include "fx3d.h"
+#endif
 
 #include "qdict.h"
 #include "qmemarray.h"
