@@ -3,7 +3,7 @@
 #                      TnFOX Python bindings make file                          *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -23,27 +23,32 @@ import sys
 from types import *
 execfile("../sconslib.py")
 init(globals(), "../")
-targetname="../lib/TnFOX"
+targetname="../lib/"+architectureSpec()
+if not os.path.exists(targetname):
+    os.mkdir(targetname)
+targetname+="/TnFOX"
 
 def getSources():
-    filelist=os.listdir(".")
+    filelist=os.listdir("generated")
     idx=0
     while idx<len(filelist):
-        if filelist[idx][0]!="_" or filelist[idx][-4:]!=".cpp": # or filelist[idx]=="_FXFile.cpp":
+        if filelist[idx][-4:]!=".cpp": # or filelist[idx]=="FXGLContext.pypp.cpp":
             del filelist[idx]
         else: idx+=1
-    return filelist #+["converters.cpp", "FXPython.cxx" ]
+    return ["generated/"+x for x in filelist ] #+["converters.cpp", "FXPython.cxx"]
 def getIncludes():
-    filelist=os.listdir("../include")
+    filelist=os.listdir("generated")
     idx=0
     while idx<len(filelist):
         type=filelist[idx][-2:]
-        if type!=".h":
+        if type!=".hpp":
             del filelist[idx]
         else: idx+=1
     return filelist
 
-env['CPPDEFINES']+=[ "FOXDLL",
+env['CPPDEFINES']+=["FOXDLL",
+                    "FX_INCLUDE_ABSOLUTELY_EVERYTHING",
+                    "FX_NO_GLOBAL_NAMESPACE",
                     "BOOST_PYTHON_DYNAMIC_LIB",
                     "BOOST_PYTHON_SOURCE",
                     ("BOOST_PYTHON_MAX_ARITY", 19),
@@ -58,7 +63,7 @@ env['LIBS']=[ ]
 env['SHLIBPREFIX']="" # Force non-use of "lib" prefix
 
 if onWindows:
-    env['LIBPATH']+=[ "../lib" ]
+    env['LIBPATH']+=[ "../lib/"+architectureSpec() ]
     env['LIBS']+=[ libtnfox ]
 else:
     env['LINKFLAGS'].append(os.path.abspath("../lib/lib"+libtnfox+libtnfoxsuffix))
@@ -79,9 +84,10 @@ if onWindows:
 
 #geninterfaces=env.Command("dont exist", None, ternary(onWindows, "", "python ")+"GenInterfaces.py")
 objects=[]
-#objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="-c -Os -DGCC_HASCLASSVISIBILITY -D_DEBUG -DUSE_POSIX -fexceptions")]
-objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Zc:wchar_t /vmb /vmm /Od /Zi /MDd")]
-objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS="/c /nologo /W3 /EHsc /GR /Zc:wchar_t /vmb /vmm /Od /Zi /MDd")]
+#objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS=env['CPPFLAGS']+['-Os', '-D_DEBUG'])]
+objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Zi'])]
+objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Zi'])]
+#objects+=[env.SharedObject(builddir+"/"+"FXGLContext.pypp", "generated/FXGLContext.pypp.cpp", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Zi'])]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), x) for x in getSources()]
 #for object in objects:
 #    env.Depends(object, geninterfaces)
@@ -89,7 +95,7 @@ BPLObjects=["aix_init_module", "arg_to_python_base", "builtin_converters", "clas
           "enum", "errors", "from_python", "function", "inheritance", "indexing_slice", "iterator",
           "life_support", "list", "long", "module", "numeric", "object_operators",
           "object_protocol", "pickle_support", "python_iterator", "registry", "slice",
-          "str", "tuple", "type_id"]
+          "str", "tuple", "type_id", "wrapper"]
 # Prevent scons from complaining that the BPL files are not shared object files
 env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME']=True
 BPLObjects=[BPLObjectsHome+"/"+obj+env['OBJSUFFIX'] for obj in BPLObjects]

@@ -3,7 +3,7 @@
 *                           Python embedding support                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -152,7 +152,9 @@ public:
 	static void int_runPythonThread(PyObject *self, QThread *cthread);
 	static void int_pythonObjectCreated(Generic::BoundFunctorV *detach);
 	static void int_pythonObjectDeleted(Generic::BoundFunctorV *detach);
+#ifndef FX_DISABLEGUI
 	static bool int_FXObjectHandle(long *ret, FXObject *self, FXObject *sender, FXSelector sel, void *ptr);
+#endif
 };
 inline PyObject *fxerrhpy(PyObject *ptr)
 {
