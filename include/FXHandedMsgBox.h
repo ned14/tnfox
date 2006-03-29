@@ -3,7 +3,7 @@
 *                            User handed message box                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXHANDEDMSGBOX_H
+#if !defined(FXHANDEDMSGBOX_H) && !defined(FX_DISABLEGUI)
 #define FXHANDEDMSGBOX_H
 
 #include "FXHandedInterface.h"

@@ -3,7 +3,7 @@
 *              E x c e p t i o n  H a n d l i n g  D i a l o g                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -19,7 +19,7 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXEXCEPTIONBOX_H
+#if !defined(FXEXCEPTIONBOX_H) && !defined(FX_DISABLEGUI)
 #define FXEXCEPTIONBOX_H
 
 #include "FXHandedInterface.h"

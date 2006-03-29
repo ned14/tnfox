@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXObject.h,v 1.33 2005/01/22 21:55:40 fox Exp $                          *
 ********************************************************************************/
-#ifndef FXOBJECT_H
+#if !defined(FXOBJECT_H) && !defined(FX_DISABLEGUI)
 #define FXOBJECT_H
 
 #include "FXStream.h"

@@ -35,10 +35,13 @@
 #include "fxver.h"
 #include "fxdefs.h"
 
+
+#ifndef FX_DISABLEGUI
+
 // FOX classes
 #include "FXHash.h"
 #include "FXException.h"
-#include "QThread.h"
+//#include "FXThread.h"
 #include "FXStream.h"
 //#include "FXFileStream.h"
 //#include "FXMemoryStream.h"
@@ -218,29 +221,22 @@
 #include "FXDebugTarget.h"
 #include "FXSplashWindow.h"
 
+#endif
+
+
+// TnFOX classes
 #include "FXACL.h"
-#include "QBlkSocket.h"
-#include "QBuffer.h"
-#include "QDir.h"
 #include "FXErrCodes.h"
 #include "FXExceptionDialog.h"
-#include "QFileInfo.h"
 #include "FXFSMonitor.h"
 #include "FXFunctorTarget.h"
 #include "FXGenericTools.h"
-#include "QGZipDevice.h"
 #include "FXHandedInterface.h"
 #include "FXHandedMsgBox.h"
-#include "QHostAddress.h"
-#include "QIODevice.h"
-#include "QIODeviceS.h"
 #include "FXIPC.h"
-#include "QLocalPipe.h"
 #include "FXLRUCache.h"
-#include "QMemMap.h"
 #include "FXMemoryPool.h"
 #include "FXNetwork.h"
-#include "QPipe.h"
 #include "FXPolicies.h"
 #include "FXPrimaryButton.h"
 #include "FXProcess.h"
@@ -249,11 +245,25 @@
 #include "FXRollback.h"
 #include "FXSecure.h"
 #include "FXSQLDB.h"
+#include "FXSQLDB_ipc.h"
+#include "FXSQLDB_sqlite3.h"
+#include "FXTime.h"
+#include "FXWinLinks.h"
+#include "QBlkSocket.h"
+#include "QBuffer.h"
+#include "QDir.h"
+#include "QFile.h"
+#include "QFileInfo.h"
+#include "QGZipDevice.h"
+#include "QHostAddress.h"
+#include "QIODevice.h"
+#include "QIODeviceS.h"
+#include "QLocalPipe.h"
+#include "QMemMap.h"
+#include "QPipe.h"
 #include "QSSLDevice.h"
 #include "QThread.h"
-#include "FXTime.h"
 #include "QTrans.h"
-#include "FXWinLinks.h"
 #include "TnFXApp.h"
 
 #ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
