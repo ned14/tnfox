@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 						"-=-=-=-=-=-=-=-=-=-=-=-=-\n");
 			FXFile fh("../../ReadMe.txt");
 			QBuffer bufferh;
-			fh.open(IO_ReadOnly);
+			fh.open(IO_ReadOnly|IO_Translate);
 			bufferh.open(IO_ReadWrite);
 			FXStream sbufferh(&bufferh);
 			char buffer[32];
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 			fh.close();
 			int i;
 			for(i=5; i<32 && !buffer[i]; i++);
-			if(32!=i) fxmessage("Buffer overwrite occurred (failure)\n");
+			if(32!=i) fxerror("Buffer overwrite occurred (failure)\n");
 
 			fxmessage("\nEndian conversion & mixed read-writes test:\n"
 					  "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
@@ -115,29 +115,81 @@ int main(int argc, char *argv[])
 				sbuffer2h << c;
 			}
 			if(buffer2h.size()!=bufferh.size()*2)
-				fxmessage("Endian conversion and mixed read-writes test failed\n");
+				fxerror("Endian conversion and mixed read-writes test failed\n");
 
-			fxmessage("\nGZip device test:\n"
-					  "-=-=-=-=-=-=-=-=-=-\n");
-			FXFile zipped("../IOTestOutput.gz");
-			QGZipDevice gzipdev(&zipped);
-			gzipdev.open(IO_WriteOnly);
+			QBuffer temp;
+			temp.open(IO_ReadWrite);
+			FXStream stemp(&temp);
 			bufferh.at(0);
 			buffer2h.at(0);
+			stemp << FXString("The original main.cpp:\n") << bufferh;
+			stemp << FXString("\nNow the mangled copy:\n") << buffer2h;
+			for(int n=0; n<100000; n++)
+			{
+				stemp << FXString("I am a happy cow %1\n").arg(n);
+				if(n % 10000==0)
+					fxmessage("Generating test text (%d) ...\n", n);
+			}
+			stemp << FXString("\nAnd the end is right NOW");
+			fxmessage("Uncompressed data is %u bytes long\n", (FXuint) temp.size());
+
+			fxmessage("\nGZip device test:\n"
+					    "-=-=-=-=-=-=-=-=-\n");
+			FXFile zipped("../IOTestOutput.gz");
+			QGZipDevice gzipdev(&zipped);
+			gzipdev.open(IO_WriteOnly|IO_Translate);
 			FXStream sgzip(&gzipdev);
-			sgzip << FXString("The original main.cpp:\n") << bufferh;
-			sgzip << FXString("\nNow the mangled copy:\n") << buffer2h;
-			sgzip << FXString("\nAnd the end is right NOW");
-			fxmessage("Uncompressed data is %ld bytes long\n", gzipdev.size());
+			temp.at(0);
+			sgzip << temp;
 			gzipdev.close();
-			fxmessage("Data gzipped is %ld bytes long\n", zipped.size());
+			fxmessage("Data gzipped is %u bytes long\n", (FXuint) zipped.size());
 			zipped.close();
 			fxmessage("Test file saved out as '%s' - try testing it with your favourite decompression utility\n", zipped.name().text());
-			gzipdev.open(IO_ReadOnly);
-			fxmessage("Loaded in and decompressed file (it's %ld bytes), first 256 bytes are:\n", zipped.size());
-			for(int i2=0; i2<256; i2++)
+			gzipdev.open(IO_ReadOnly|IO_Translate);
+			fxmessage("Loaded in and decompressed file (it's %u bytes)\n", gzipdev.size());
+			if(gzipdev.size()!=temp.size())
+				fxwarning("FAILED, original size is not same as decompressed size!\n");
 			{
-				fxmessage("%c",gzipdev.getch());
+				char buffer[16384];
+				FXuval idx=0, read;
+				do
+				{
+					if(memcmp(buffer, temp.buffer().data()+idx, read=gzipdev.readBlock(buffer, sizeof(buffer))))
+						fxerror("FAILED, original data is not same as decompressed data at %u!\n", (FXuint) idx);
+					idx+=read;
+				} while(read);
+			}
+
+			fxmessage("\nBZip2 device test:\n"
+					    "-=-=-=-=-=-=-=-=-\n");
+			FXFile bzipped("../IOTestOutput.bz2");
+			QBZip2Device bzip2dev(&bzipped);
+			bzip2dev.open(IO_WriteOnly|IO_Translate);
+			FXStream sbzip(&bzip2dev);
+			temp.at(0);
+			sbzip << temp;
+			bzip2dev.close();
+			fxmessage("Data bzip2ed is %u bytes long\n", (FXuint) bzipped.size());
+			bzipped.close();
+			fxmessage("Test file saved out as '%s' - try testing it with your favourite decompression utility\n", bzipped.name().text());
+			bzip2dev.open(IO_ReadOnly|IO_Translate);
+			fxmessage("Loaded in and decompressed file (it's %u bytes)\n", bzip2dev.size());
+			if(bzip2dev.size()!=temp.size())
+				fxwarning("FAILED, original size is not same as decompressed size!\n");
+			{
+				char buffer[1024];
+				FXuval idx=0, read;
+				do
+				{
+					char *orig=(char *) temp.buffer().data()+idx;
+					read=bzip2dev.readBlock(buffer, sizeof(buffer));
+					for(FXuval n=0; n<read; n++)
+					{
+						if(orig[n]!=buffer[n])
+							fxerror("FAILED, original data is not same as decompressed data at %u!\n", (FXuint) idx+n);
+					}
+					idx+=read;
+				} while(read);
 			}
 		}
 
@@ -235,7 +287,7 @@ int main(int argc, char *argv[])
 					taken=(FXProcess::getMsCount()-time)/1000.0;
 					t->requestTermination();
 					t->wait();
-					if(t->crc!=origCRC) fxmessage("WARNING: Data read was corrupted!\n");
+					if(t->crc!=origCRC) fxerror("WARNING: Data read was corrupted!\n");
 					delete t;
 				}
 				else
@@ -286,10 +338,10 @@ int main(int argc, char *argv[])
 			} while(!src.atEnd());
 			src.close(); dest.close();
 			src.open(IO_ReadOnly); dest.open(IO_ReadOnly);
-			if(src.size()!=dest.size()) fxmessage("Error: File sizes are not the same!\n");
+			if(src.size()!=dest.size()) fxerror("Error: File sizes are not the same!\n");
 			void *a=src.mapIn(), *b=dest.mapIn();
 			if(memcmp(a, b, (size_t) src.size()))
-				fxmessage("Error: Files are different!\n");
+				fxerror("Error: Files are different!\n");
 			else
 				fxmessage("Test passed!\n");
 		}

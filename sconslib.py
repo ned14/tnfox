@@ -3,7 +3,7 @@
 #                              TnFOX scons library                              *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -328,6 +328,15 @@ def doConfTests(env, prefixpath=""):
         checkLib(conf, "jpeg", "jpeglib.h")
         checkLib(conf, "png", "png.h")
         checkLib(conf, "tiff", "tiff.h", "libtiff/")
+    if os.path.exists(prefixpath+"windows/libbzip2/libbzip2"+ternary(make64bit, "64", "32")+".lib"):
+        print "Found BZip2 library"
+        conf.env['CPPDEFINES']+=["HAVE_BZ2LIB_H"]
+        conf.env['CPPPATH']+=[prefixpath+"windows/libbzip2"]
+        conf.env['LIBS']+=[prefixpath+"windows/libbzip2/libbzip2"+ternary(make64bit, "64", "32")]
+    elif conf.CheckLibWithHeader("bzip2", "bzlib.h", "c"):
+        conf.env['CPPDEFINES']+=["HAVE_BZ2LIB_H"]
+    else:
+        print "BZip2 library not found, disabling support"
 
     if os.path.exists(prefixpath+"../openssl/inc32/openssl"):
         print "Found OpenSSL library"
