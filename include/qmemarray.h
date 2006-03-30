@@ -115,6 +115,20 @@ public:
 	bool resize(uint size, QGArray::Optimization optim) { std::vector<type>::resize(size); return true; }
 	//! \overload
 	bool truncate(uint pos) { FXEXCEPTION_STL1 { std::vector<type>::resize(pos); } FXEXCEPTION_STL2; return true; }
+	//! Swaps the contents of two arrays
+	void swap(QMemArray<type> &o)
+	{
+		std::vector<type>::swap(o);
+		type *_extArray=o.extArray;
+		uint _extArrayLen=o.extArrayLen;
+		bool _noDeleteExtArray=o.noDeleteExtArray;
+		o.extArray=extArray;
+		o.extArrayLen=extArrayLen;
+		o.noDeleteExtArray=noDeleteExtArray;
+		extArray=_extArray;
+		extArrayLen=_extArrayLen;
+		noDeleteExtArray=_noDeleteExtArray;
+	}
 	//! Fills the array with value \em val
 	bool fill(const type &val, int newsize=-1)
 	{
