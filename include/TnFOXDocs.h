@@ -186,7 +186,8 @@ FX::QPipe provides a feature-rich portable named pipe across all platforms and
 FX::QLocalPipe provides an intra-process pipe. FX::QBlkSocket and
 FX::QHostAddress provide Qt-compatible network access including full IPv4 and IPv6 support.
 FX::QGZipDevice provides a transparent gzip format compressor and decompressor which uses LZW
-compression to substantially decrease data size.
+compression to substantially decrease data size. FX::QBZip2Device provides a transparent bzip2
+format compressor and decompressor which decreases data size even further.
 
 <li><b>Improved Time facilities</b><br>
 FX::FXTime provides an enhanced portable, microsecond granularity date & time system from the
@@ -314,11 +315,11 @@ performing simple interactions with the user.
 
 <li><b>Custom memory pools</b><br>
 Through FX::FXMemoryPool, TnFOX allows your code to create as many separate memory
-pools as your heart desires! Based upon ptmalloc2, one of the fastest and least
+pools as your heart desires! Based upon dlmalloc, one of the fastest and least
 fragmentary general purpose dynamic memory allocators known, you can realise all the
 benefits of custom memory pools with ease: additional speed, security and robustness.
-On Win32, the core process allocator is replaced with ptmalloc2 yielding a typical
-\b 6x speed improvement for heavily multithreaded code!
+On Win32, the core process allocator is replaced with nedmalloc (a dlmalloc derivative)
+yielding a typical \b 6x speed improvement for heavily multithreaded code!
 </ol>
 
 \section todo To do list:
@@ -2084,8 +2085,9 @@ adjust your code to use FX::FXTime::as_time_t().
 links, not for what the link points to. This can subtly break some FOX code (but
 it was necessary to add NTFS junction support).
 \li FOX's threading support was added substantially after TnFOX's and are not
-compatible. You must \b either use the Q-prefixed classes such as FX::QThread
-OR the FX-prefixed classes such as FX::FXThread (which is deprecated).
+compatible. Through the FOX compatibility layer, a FOX compatible API is provided
+which thunks through to TnFOX's threading code. Note however that thread cancellation
+is not supported when using this emulation.
 \li The exception types FX::FXWindowException, FX::FXImageException and FX::FXFontException
 are FOR COMPATIBILITY WITH FOX ONLY. They are NOT LIKE NORMAL TNFOX EXCEPTIONS
 in that they are thrown from within FOX code which is not exception safe. While
@@ -2138,15 +2140,9 @@ stack going through FOX code (eg; a GUI event handler) then you must surround
 that code with the FXEXCEPTION_FOXCALLING1 and FXEXCEPTION_FOXCALLING2 macros.
 These trap any exceptions thrown and show a FX::FXExceptionDialog.
 
-Summary of what is not supported from FOX v1.4.x:
+Summary of what is not supported from FOX v1.6.x:
 \li Some FX::FXStream methods. You'll never normally notice these
 \li The application wide mutex. It's a bad idea anyway.
-\li FXCondition (rewrite your code to use FX::QWaitCondition, it's more
-useful anyway)
-\li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
-FX::QWaitCondition. Also consider FX::FXZeroedWait)
-\li FXMemMap (rewrite your code to use TnFOX's FX::QMemMap, it's also superior
-anyway)
 
 You should also see \ref BuildingNoFOXCompatDiffs
 */
@@ -2278,16 +2274,6 @@ MSVC's (especially the famous one where \c realloc() in the debug library corrup
 memory), but when compared to \c ptmalloc2 (the glibc standard allocator) it sucks major
 monkey balls.
 
-To give you some idea, the test "TestMemoryPool" in the TestSuite directory allocates runs in
-13.5 seconds on my system - around 5.8m memory ops per second. The Win32 allocator
-with the exact same test takes no less than <b>15.8 minutes</b> which is only 83,000
-memory ops per second - making \c ptmalloc2 some 6888% faster. Admittedly this
-is a worst case scenario - working with 1 to 512 byte blocks in a multiprocessor
-environment. However as anyone who has profiled C++ knows, C++ uses a hell of a lot
-of small object allocation - especially TnFOX due to it abstracting away implementation
-via the "pointer to private structure" method which means to the outside world,
-\c sizeof(obj) is always four or eight bytes.
-
 \note Since v0.80, the allocator is replaced within any DLL or EXE which includes a TnFOX
 header file. This comes with certain caveats, see the documentation for \link fxmemoryops
 that particular feature
@@ -2309,12 +2295,15 @@ custom load address too) and run-time memory usage for the majority of cases. No
 that prebinding only speeds loading when loading onto your local system (your application's
 installer should do this).
 
-TnFOX is able to use >2Gb address spaces and so has the IMAGE_FILE_LARGE_ADDRESS_AWARE
+TnFOX is able to use >2Gb address spaces and so has the \c IMAGE_FILE_LARGE_ADDRESS_AWARE
 bit set in its executable header. You should set the same bit in your applications
 if you are also able to handle such addresses (ie; you don't use signed pointer comparisons).
 While you never see the advantage of this on most 32 bit Windows, you do when running
 in an emulated 32 bit environment on Windows x64. You can produce binaries customised
 for your processor by adjusting the \c config.py file.
+
+TnFOX is also no-execute compatible, meaning that its stacks can be marked as no-execute.
+This is specified to the MSVC linker (where supported) using the \c /NXCOMPAT switch.
 
 The only thing remaining which shall be fixed later is working set optimisation (WSO)
 which I can't do until I have a serious client application for TnFOX to profile against.
@@ -2333,13 +2322,13 @@ at least the problems will be minor.
 TnFOX was developed against:
 \li A RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
 tested, but there is no reason why it shouldn't continue to work.
-\li A SuSE Linux 9.2 (2.6 kernel) installation with GCC v4.1.
-\li A FreeBSD v5.4 installation with GCC v4.1.
+\li A SuSE Linux 10.0 (2.6 kernel) installation with GCC v4.1.
+\li A FreeBSD v6.0 installation with GCC v4.1.
 
 GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
 Everything must have been built with threads enabled (X11, glibc, python). This
-is default on recent RedHat's, it may not be so with your installation.
+is default on recent Linuces, it may not be so with your installation.
 
 On FreeBSD, the defaults aren't quite enough to compile out of the box. The generic
 kernel has the \c /proc filing system support compiled in but it isn't mounted by default -

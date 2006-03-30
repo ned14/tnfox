@@ -211,6 +211,8 @@ data and set their unicode type on open
 + Added noGUI support to python bindings (very useful for debugging)
 + Replaced python bindings generator (pyste) with pyplusplus. Thanks to Roman
 Yakovenko for doing most of the work!
++ Added QMemArray::swap()
++ Added class QBZip2Device
 
 
 
