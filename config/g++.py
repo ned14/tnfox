@@ -47,10 +47,10 @@ if debugmode:
                ]
 else:
     cppflags+=["-O2",                   # Optimise for fast code
-               "-ftree-vectorize",      # Use vectorisation
-               "-ftree-loop-linear",    # Further optimise loops
-               "-ftree-loop-im",        # Remove loop invariant code
-               "-fivopts",              # Tree induction variable optimisation
+               #"-ftree-vectorize",      # Use vectorisation
+               #"-ftree-loop-linear",    # Further optimise loops
+               #"-ftree-loop-im",        # Remove loop invariant code
+               #"-fivopts",              # Tree induction variable optimisation
                #"-fno-default-inline",
                #"-fno-inline-functions",
                #"-fno-inline",

@@ -333,7 +333,7 @@ def doConfTests(env, prefixpath=""):
         conf.env['CPPDEFINES']+=["HAVE_BZ2LIB_H"]
         conf.env['CPPPATH']+=[prefixpath+"windows/libbzip2"]
         conf.env['LIBS']+=[prefixpath+"windows/libbzip2/libbzip2"+ternary(make64bit, "64", "32")]
-    elif conf.CheckLibWithHeader("bzip2", "bzlib.h", "c"):
+    elif conf.CheckLibWithHeader("bz2", "bzlib.h", "c"):
         conf.env['CPPDEFINES']+=["HAVE_BZ2LIB_H"]
     else:
         print "BZip2 library not found, disabling support"
