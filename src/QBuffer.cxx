@@ -49,7 +49,7 @@ struct FXDLLLOCAL QBufferPrivate : public QMutex
 			if(newsize>buffersize)
 				memset(n+buffersize, 0, newsize-buffersize);
 			fastbuffer=n;
-			buffer->setRawData((FXuchar *) fastbuffer, newsize, true);
+			buffer->setRawData((FXuchar *) fastbuffer, (FXuint) newsize, true);
 		}
 	}
 };
@@ -67,7 +67,7 @@ QBuffer::QBuffer(FXuval len, bool fastbuffer) : p(0), QIODevice()
 		else
 		{
 			FXERRHM(p->fastbuffer=(char *) calloc(len, 1));
-			FXERRHM(p->buffer=new QByteArray((FXuchar *) p->fastbuffer, len, true));
+			FXERRHM(p->buffer=new QByteArray((FXuchar *) p->fastbuffer, (FXuint) len, true));
 		}
 		p->mine=true;
 	}
@@ -223,7 +223,7 @@ FXuval QBuffer::writeBlock(const char *data, FXuval maxlen)
 			if(p->fastbuffer)
 				p->resizeFastbuffer(buffersize+maxlen-left);
 			else
-				p->buffer->resize(buffersize+maxlen-left);
+				p->buffer->resize((FXuint)(buffersize+maxlen-left));
 		}
 		memcpy(&p->buffer->data()[ioIndex], data, maxlen);
 		ioIndex+=maxlen;
@@ -272,7 +272,7 @@ int QBuffer::putch(int c)
 			if(p->fastbuffer)
 				p->resizeFastbuffer(buffersize+1-left);
 			else
-				p->buffer->resize(buffersize+1-left);
+				p->buffer->resize((FXuint)(buffersize+1-left));
 		}
 		p->buffer->data()[ioIndex++]=(char) c;
 		return c;

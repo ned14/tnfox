@@ -515,9 +515,9 @@ bool QGZipDevice::open(FXuint mode)
 						out+=removeCRLF(p->uncomp.buffer().data()+out, temp.data()+idx, p->uncomp.buffer().size()-out, in, unicodeTranslation());
 						idx+=in;
 						if(p->uncomp.buffer().size()==out)
-							p->uncomp.buffer().resize(out+16384);
+							p->uncomp.buffer().resize((FXuint)(out+16384));
 					}
-					p->uncomp.buffer().resize(out);
+					p->uncomp.buffer().resize((FXuint) out);
 				}
 			}
 		}
