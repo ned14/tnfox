@@ -13,11 +13,12 @@ Linux Kernel v2.4.20 (RH9) Failures:
 in Tn (see the cleanup() in FXIPCChannel). NOTE THAT THIS HAS NOT BEEN TESTED
 SINCE THE v0.80 RELEASE!
 
-Linux Kernel v2.6.10 Failures:
-  1. TestMultithreading, there is a segfault as the threads quit in sem_post()
-in glibc but ONLY when being used as a shared library. As this doesn't happen
-on other platforms or when built statically, it's likely an OS bug.
-  2. TestMemoryPool, there is a clash between glibc's memory allocator and
+Linux Kernel v2.6.13 Failures:
+  1. TestDeviceIO, there is an out of memory exception at the start. This is
+due to an optimisation bug in GCC v4.1.
+  2. TestSQLDB, there is a segfault in the linker on load. This is due to a
+bug in the linker.
+  3. TestMemoryPool, there is a clash between glibc's memory allocator and
 TnFOX's. This will get fixed soon.
 
 FreeBSD v5.3 Failures:
