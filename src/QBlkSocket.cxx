@@ -143,7 +143,7 @@ static const char *decodeWinsockErr(int code)
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
-#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <netdb.h>
 
 #define FXERRHSKT(exp) { int __res=(exp); if(__res<0) { \
@@ -419,10 +419,16 @@ FXuval QBlkSocket::maxDatagramSize() const
 	QMtxHold h(p);
 	if(isOpen())
 	{
+#ifdef USE_WINAPI
 		unsigned int val=0;
 		socklen_t valsize=sizeof(val);
 		FXERRHSKT(::getsockopt(p->handle, SOL_SOCKET, SO_MAX_MSG_SIZE, (char *) &val, &valsize));
 		return val;
+#endif
+#ifdef USE_POSIX
+		// Determined by trial and error
+		return 65507;
+#endif
 	}
 	return 0;
 }
@@ -876,7 +882,7 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 			socklen_t salen=sizeof(sa6);
 			readed=::recvfrom(p->handle, data, maxlen, 0, (sockaddr *) &sa6, &salen);
 			h.relock();
-			if(SOCKET_ERROR!=readed)
+			if(-1!=readed)
 				readSockAddr(p->peer.addr, p->peer.port, &sa6);
 		}
 		FXERRHSKT(readed);

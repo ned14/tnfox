@@ -25,11 +25,11 @@
 
 struct DevInfo
 {
-	bool isSynch, amSocket;
+	bool isSynch, amSocket, isUnreliable;
 	FXString name;
 	QIODevice *rdev, *wdev;
 	FXuval maxchunk;
-	DevInfo(const FXString &n, QIODevice *_rdev, QIODevice *_wdev=0) : isSynch(_wdev!=0), amSocket(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev), maxchunk(65536) { }
+	DevInfo(const FXString &n, QIODevice *_rdev, QIODevice *_wdev=0) : isSynch(_wdev!=0), amSocket(false), isUnreliable(false), name(n), rdev(_rdev), wdev((_wdev) ? _wdev : _rdev), maxchunk(65536) { }
 };
 
 class IOThread : public QThread
@@ -54,9 +54,9 @@ public:
 		for(;;)
 		{
 			FXuval read=rdev->readBlock(buffer, sizeof(buffer));
-			//fxmessage("r%u\n", (FXuint) read);
 			crc=fxadler32(crc, (FXuchar *) buffer, read);
 			byteCount-=(int) read;
+			//fxmessage("r%u, togo=%u\n", (FXuint) read, (FXuint) byteCount);
 		}
 	}
 	virtual void *cleanup()
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 			zipped.close();
 			fxmessage("Test file saved out as '%s' - try testing it with your favourite decompression utility\n", zipped.name().text());
 			gzipdev.open(IO_ReadOnly|IO_Translate);
-			fxmessage("Loaded in and decompressed file (it's %u bytes)\n", gzipdev.size());
+			fxmessage("Loaded in and decompressed file (it's %u bytes)\n", (FXuint) gzipdev.size());
 			if(gzipdev.size()!=temp.size())
 				fxwarning("FAILED, original size is not same as decompressed size!\n");
 			{
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
 			bzipped.close();
 			fxmessage("Test file saved out as '%s' - try testing it with your favourite decompression utility\n", bzipped.name().text());
 			bzip2dev.open(IO_ReadOnly|IO_Translate);
-			fxmessage("Loaded in and decompressed file (it's %u bytes)\n", bzip2dev.size());
+			fxmessage("Loaded in and decompressed file (it's %u bytes)\n", (FXuint) bzip2dev.size());
 			if(bzip2dev.size()!=temp.size())
 				fxwarning("FAILED, original size is not same as decompressed size!\n");
 			{
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 					for(FXuval n=0; n<read; n++)
 					{
 						if(orig[n]!=buffer[n])
-							fxerror("FAILED, original data is not same as decompressed data at %u!\n", (FXuint) idx+n);
+							fxerror("FAILED, original data is not same as decompressed data at %u!\n", (FXuint)(idx+n));
 					}
 					idx+=read;
 				} while(read);
@@ -241,6 +241,7 @@ int main(int argc, char *argv[])
 				w=new QBlkSocket(QHOSTADDRESS_LOCALHOST, server->port(), QBlkSocket::Datagram);
 				w->open(IO_WriteOnly);
 				DevInfo *di=new DevInfo("QBlkSocket(Datagram)", server, w);
+				di->isUnreliable=true;
 				di->maxchunk=w->maxDatagramSize();
 				devs.append(di);
 			}
@@ -282,6 +283,8 @@ int main(int argc, char *argv[])
 					{
 						dev->writeBlock(temp.data(), largefile.readBlock((char *) temp.data(), temp.size()));
 						//fxmessage("w%u\n", (FXuint) temp.size());
+						if(devi->isUnreliable)
+							QThread::yield();
 					}
 					t->byteCount.wait();
 					taken=(FXProcess::getMsCount()-time)/1000.0;
