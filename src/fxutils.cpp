@@ -126,7 +126,7 @@ FXuint fxadler32(FXuint c, const FXuchar *buff, FXuval len) throw()
 	FXuint p1=c & 0xffff, p2=(c>>16) & 0xffff;
 	while(len>0)
 	{
-		int chunk=(len<NMAX) ? len : NMAX;
+		FXint chunk=(FXint)((len<NMAX) ? len : NMAX);
 		len-=chunk;
 		while(chunk>=16)
 		{

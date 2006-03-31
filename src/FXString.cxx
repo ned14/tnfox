@@ -3151,7 +3151,7 @@ inline void FXString::shiftInserts(FXint pos, FXint diff)
 {	// Adjust all subsequent inserts by diff
 	if(!inserts) return;
 	FXchar *percent=strchr(str+pos, '%');
-	FXint len=length(), ppos=!percent ? -1 : percent-str;
+	FXint len=length(), ppos=!percent ? -1 : (FXint)(percent-str);
 	if(-1!=inserts[0])
 	{
 		for(FXint n=inserts[0]; -1!=inserts[2*n+1]; n++)
@@ -3231,8 +3231,8 @@ void FXString::calcInserts()
 			insertscnt+=aboveEnd*2;
 			assert(v-(insertscnt-3)/2<0);
 		}
-		inserts[2*v+1]=p-str;		// position
-		inserts[2*v+2]=i;			// length
+		inserts[2*v+1]=(FXint)(p-str);	// position
+		inserts[2*v+2]=i;				// length
 		//FXMEMDBG_TESTHEAP;
 		if(-1==lowest || v<lowest) lowest=v;
 		if(v+1>highest) highest=v+1;

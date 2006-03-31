@@ -206,7 +206,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 			if(allocated+size>maxsize) return 0;
 		}
 		void *ret=nedalloc::nedpmalloc(heap, size);
-		if(ret && (FXuval)-1!=maxsize) allocated+=nedalloc::nedblksize(ret);
+		if(ret && (FXuval)-1!=maxsize) allocated+=(int) nedalloc::nedblksize(ret);
 		return ret;
 	}
 	void *calloc(FXuint no, FXuval esize) throw()
@@ -217,13 +217,13 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 			if(allocated+size>maxsize) return 0;
 		}
 		void *ret=nedalloc::nedpcalloc(heap, no, esize);
-		if(ret && (FXuval)-1!=maxsize) allocated+=nedalloc::nedblksize(ret);
+		if(ret && (FXuval)-1!=maxsize) allocated+=(int) nedalloc::nedblksize(ret);
 		return ret;
 	}
 	void free(void *blk) throw()
 	{
 		if((FXuval)-1!=maxsize)
-			allocated-=nedalloc::nedblksize(blk);
+			allocated-=(int) nedalloc::nedblksize(blk);
 		nedalloc::nedpfree(heap, blk);
 	}
 	void *realloc(void *blk, FXuval size) throw()
@@ -235,7 +235,7 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 			if(allocated+(size-oldsize)>maxsize) return 0;
 		}
 		void *ret=nedalloc::nedprealloc(heap, blk, size);
-		if(ret && (FXuval)-1!=maxsize) allocated+=nedalloc::nedblksize(ret)-oldsize;
+		if(ret && (FXuval)-1!=maxsize) allocated+=(int)(nedalloc::nedblksize(ret)-oldsize);
 		return ret;
 	}
 	static FXMemoryPoolPrivate *poolFromBlk(void *blk) throw()

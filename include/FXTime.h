@@ -104,9 +104,9 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 	mean 0.999999 or 0.000001 of a second */
 	FXString asString(const FXString &fmt="%Y/%m/%d %H:%M:%S.%F %Z") const;
 	//! Converts time to local time if it isn't already
-	FXTime &toLocalTime() { if(!isLocalTime) { value+=localTimeDiff(); isLocalTime=true; } return *this; }
+	FXTime &toLocalTime() { if(!isLocalTime) { if(value) value+=localTimeDiff(); isLocalTime=true; } return *this; }
 	//! Converts time from local time to UTC if it isn't already
-	FXTime &toUTC() { if(isLocalTime) { value-=localTimeDiff(); isLocalTime=false; } return *this; }
+	FXTime &toUTC() { if(isLocalTime) { if(value) value-=localTimeDiff(); isLocalTime=false; } return *this; }
 
 	//! Returns this present moment
 	static FXTime now(bool inLocalTime=false);
