@@ -1052,7 +1052,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 #ifdef __linux__
 	FXString procpath=FXString("/proc/%1/maps").arg(FXProcess::id());
 	FXFile fh(procpath, FXFile::WantLightFXFile());
-	fh.open(IO_ReadOnly|IO_Translate);
+	fh.open(IO_ReadOnly|IO_Translate|IO_NoAutoUTF);
 	char rawbuffer[4096];
 	while(fh.readLine(rawbuffer, sizeof(rawbuffer)))
 	{	// Format is hexstart-_hexend_ rwxp hexofset dd:dd _inode     /path...
@@ -1096,7 +1096,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 		FXFile fh(procpath, FXFile::WantLightFXFile());
 		if(!fh.exists()) // Probably /proc isn't mounted - let FXProcess take care of that
 			return list;
-		fh.open(IO_ReadOnly|IO_Translate);
+		fh.open(IO_ReadOnly|IO_Translate|IO_NoAutoUTF);
 		FXuval read=fh.readBlock(rawbuffer, sizeof(rawbuffer)-2);
 		assert(read>0 && read<sizeof(rawbuffer)-2);
 		end=ptr+read; end[0]=10; end[1]=0;
@@ -1532,7 +1532,7 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 #ifdef USE_POSIX
 #ifdef __linux__
 	FXFile fh("/proc/meminfo", FXFile::WantLightFXFile());
-	fh.open(IO_ReadOnly|IO_Translate);
+	fh.open(IO_ReadOnly|IO_Translate|IO_NoAutoUTF);
 	char rawbuffer[4096];
 	rawbuffer[fh.readBlock(rawbuffer, sizeof(rawbuffer)+1)]=0;
 	fh.close();

@@ -1140,7 +1140,7 @@ FXulong QThread::id() throw()
 	};
 	FreeBSD_pthread *pt=(FreeBSD_pthread *) pthread_self();
 	assert(0xd09ba115==pt->magic);
-	return pt->uniqueid;
+	return 1000000+pt->uniqueid;
   #else
    #error Unknown POSIX architecture, don't know how to convert pthread_self()
   #endif
