@@ -85,7 +85,7 @@ static void stippledTransfer(QIODevice *dest, QIODevice *src)
 	char buffer[256];
 	do
 	{
-		r=32*rand()/RAND_MAX;
+		r=(FXuval)(32.0*rand()/RAND_MAX);
 		oldpos=src->at();
 		//fxmessage("Reading %u from offset %u\n", r, (FXuint) oldpos);
 		r=src->readBlock(buffer, r);

@@ -189,9 +189,9 @@ FXuval QIODevice::applyCRLF(FXuchar *output, const FXuchar *input, FXuval output
 #endif
 	if(Unix==crlftype && NoTranslation==utftype)
 	{
-		FXuval tocopy=FXMIN(outputlen, inputlen);
-		memcpy(output, input, tocopy);
-		return tocopy;
+		inputlen=FXMIN(outputlen, inputlen);
+		memcpy(output, input, inputlen);
+		return inputlen;
 	}
 	FXuval o=0, i=0;
 	for(;;)

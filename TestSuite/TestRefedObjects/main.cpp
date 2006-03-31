@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	FXERRHM(foos.c=new Foo(3));
 	foos.print();
 
-	FXLRUCacheIterator<FooCache> it(cache);
+	//FXLRUCacheIterator<FooCache> it(cache);
 	{
 		FooHold a(foos.a), b(foos.b), c(foos.c);
 		FooHold n(a);
