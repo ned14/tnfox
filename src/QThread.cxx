@@ -1300,7 +1300,12 @@ void QThread::yield()
 	Sleep(0);
 #endif
 #ifdef USE_POSIX
+#ifdef __FreeBSD__
+	// sched_yield() appears to be a noop on FreeBSD
+	::usleep(0);
+#else
 	FXERRHOS(sched_yield());
+#endif
 #endif
 }
 

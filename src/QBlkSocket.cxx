@@ -891,7 +891,14 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 		{
 			sockaddr_in6 sa6={0};
 			socklen_t salen=sizeof(sa6);
-			// Unfortunately this is not a thread cancellation point on FreeBSD. This is a problem!
+#ifdef __FreeBSD__
+			// Unfortunately recvfrom is not a thread cancellation point on FreeBSD, so
+			// we use select() to do it for us
+			fd_set fds;
+			FD_ZERO(&fds);
+			FD_SET(p->handle, &fds);
+			::select(p->handle+1, &fds, 0, 0, NULL);
+#endif
 			readed=::recvfrom(p->handle, data, maxlen, 0, (sockaddr *) &sa6, &salen);
 			h.relock();
 			if(-1!=readed)
