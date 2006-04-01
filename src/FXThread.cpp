@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXThread.cpp,v 1.53 2006/03/18 01:05:58 fox Exp $                        *
+* $Id: FXThread.cpp,v 1.53.2.1 2006/03/28 12:56:24 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -562,7 +562,7 @@ FXlong FXThread::time(){
 #else
   const FXlong seconds=1000000000;
   const FXlong microseconds=1000;
-  struct timeval now;
+  struct timeval tv;
   gettimeofday(&tv,NULL);
   return tv.tv_sec*seconds+tv.tv_usec*microseconds;
 #endif

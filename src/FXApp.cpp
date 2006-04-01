@@ -4934,7 +4934,7 @@ FXlong FXApp::time(){
 #else
   const FXlong seconds=1000000000;
   const FXlong microseconds=1000;
-  struct timeval now;
+  struct timeval tv;
   gettimeofday(&tv,NULL);
   return tv.tv_sec*seconds+tv.tv_usec*microseconds;
 #endif

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRealSpinner.cpp,v 1.38 2006/02/14 03:32:42 fox Exp $                   *
+* $Id: FXRealSpinner.cpp,v 1.38.2.1 2006/03/31 21:25:59 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -390,10 +390,10 @@ void FXRealSpinner::increment(FXbool notify){
   }
 
 
-#ifdef WIN32
+#if defined(WIN32) || defined(__sgi) || defined(__sun) || defined(__alpha)
 double round(double x){
   return (x >= 0) ? floor(x+0.5) : ceil(x-0.5);
-  } 
+  }
 #endif
 
 

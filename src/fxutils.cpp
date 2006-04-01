@@ -895,12 +895,12 @@ FXlong fxgetticks(){
 /*
 * Return clock ticks from performance counter [GCC PPC version].
 */
-#if defined(__GNUC__) && defined(__powerpc__) || defined(__ppc__)
+#if defined(__GNUC__) && ( defined(__powerpc__) || defined(__ppc__) )
 extern FXAPI FXlong fxgetticks();
 FXlong fxgetticks(){
   unsigned int tbl, tbu0, tbu1;
   do{
-    asm volatile("mftbu %0" : "=r"(tbu0));              // FIXME not tested!
+    asm volatile("mftbu %0" : "=r"(tbu0));
     asm volatile("mftb %0" : "=r"(tbl));
     asm volatile("mftbu %0" : "=r"(tbu1));
     }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpriv.h,v 1.36 2006/01/22 17:58:54 fox Exp $                            *
+* $Id: fxpriv.h,v 1.36.2.1 2006/03/28 13:02:54 fox Exp $                            *
 ********************************************************************************/
 
 namespace FX {
@@ -98,6 +98,7 @@ extern FXAPI FXuint fxmodifierkeys();
 extern UINT wkbGetCodePage();
 extern FXuint wkbMapKeyCode(UINT iMsg, WPARAM uVirtKey, LPARAM lParam);
 extern FXAPI FXbool wkbTranslateMessage(HWND hWnd, UINT iMsg, WPARAM wParam,LPARAM lParam);
+extern int (WINAPI *ToUnicodeEx)(UINT, UINT, const BYTE*, LPWSTR, int, UINT, HKL);
 #endif
 
 }

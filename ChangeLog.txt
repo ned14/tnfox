@@ -214,7 +214,7 @@ Yakovenko for doing most of the work!
 + Added QMemArray::swap()
 + Added class QBZip2Device
 * Updated embedded translation file
-* Merged FOX v1.6.0 RELEASE
+* Merged FOX v1.6.1
 
 
 
