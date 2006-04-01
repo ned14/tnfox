@@ -323,7 +323,7 @@ yielding a typical \b 6x speed improvement for heavily multithreaded code!
 </ol>
 
 \section todo To do list:
-See the file <a target="_blank" href="../Todo.txt">Todo.txt</a>.
+See the file <a target="_blank" href="../Todo.txt">Todo.txt</a>. <a href="tornado_wm.png"></a>
 
 */
 
@@ -623,6 +623,12 @@ FreeBSD questions:
 
 
 /*! \defgroup python Python Support
+
+\warning For the v0.86 release, the entire Python bindings generation infrastructure was
+replaced with a pyplusplus based solution. The documentation below still refers to the
+previous pyste based solution. As this new solution still has a few issues, the documentation
+has not yet been updated even though bindings can be generated. You are recommended to use
+TnFOX from SVN if you are going to use the python bindings.
 
 As I type here, I've just sent pyste off to generate for the very first time a full set
 of .cpp files for Boost.Python to compile (having finally completed full three days of
@@ -2222,10 +2228,10 @@ compatible - though there are quite a few unsupported calls.
 \section supported Supported configuration:
 <u>Win32</u><br>
 MSVC6 is \b not supported, nor is MSVC7.0 (Visual Studio .NET). You need MSVC7.1 minimum
-(Visual Studio .NET 2003). GCC v3.2.2 to v4.0 is known to compile working binaries on Linux
+(Visual Studio .NET 2003). GCC v3.2.2 to v4.1 is known to compile working binaries on Linux
 but is untested on Windows. The Digital Mars compiler has config files but currently the
 compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ compiler
-v8 for Windows works fine.
+v8 for Windows works fine, though its config is very out of date nowadays.
 
 <u>Win64</u><br>
 Currently only AMD64/EM64T (ie; x64) is supported. The only official compiler supporting x64
@@ -2253,8 +2259,8 @@ file manually looks in the directory in which the TnFOX directory is placed for 
 <a href="http://www.boost.org/">Boost library</a> and the <a
 href="http://www.openssl.org/">OpenSSL library</a>. The standard system-provided libraries on Unix
 must be placed in the \c TnFOX/Windows directory - these include the ZLib library (as
-\c zlib), the graphics libraries for JPEG (as \c libjpeg), PNG (as \c libpng) and TIFF
-(as \c libtiff). In all cases any version information is not used so openssl-0.9.8
+\c zlib), the graphics libraries for JPEG (as \c libjpeg), PNG (as \c libpng), TIFF
+(as \c libtiff) and BZip2 (as \c libbzip2). In all cases any version information is not used so openssl-0.9.8
 must be renamed to simply "openssl". Note that all libraries are linked in \b statically
 so don't go building DLL versions! (eg; use \c nt.mak instead of \c ntdll.mak when building
 OpenSSL).
@@ -2323,7 +2329,7 @@ TnFOX was developed against:
 \li A RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
 tested, but there is no reason why it shouldn't continue to work.
 \li A SuSE Linux 10.0 (2.6 kernel) installation with GCC v4.1.
-\li A FreeBSD v6.0 installation with GCC v4.1.
+\li A FreeBSD v6.0 installation with GCC v4.0.2.
 
 GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
@@ -2528,6 +2534,7 @@ file.
   <li>FX::FXExceptionDialog, reports an FX::FXException to the user
   <li>FX::FXFileDialog, asks the user for a file
   <li>FX::FXFontDialog, asks the user for a font
+  <li>FX::FXHandedMsgBox, reports a message to the user
   <li>FX::FXInputDialog, asks the user for a simple value
   <li>FX::FXMessageBox, reports a simple message to the user
   <li>FX::FXPrintDialog, asks the user for a printer
@@ -2640,6 +2647,7 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXEvent, an event within the GUI
 <li>FX::FXEventLoop, the base class of an event dispatch loop
 <li>FX::FXEventLoop_Static, a per-event loop static variable
+<li>FX::FXTime, microsecond accurate locale-capable time
 
 <li>FX::FXRex, regular expression support
 
@@ -2675,15 +2683,19 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXZeroedWait, an event which signals when its count becomes zero
 <li>FX::QThreadPool, a pool of worker threads
 
+<li>FX::FXSQLDB, a generic SQL database accessor
+<li>FX::FXSQLDB_sqlite3, a driver for SQLite3 databases
+
+<li>FX::QBZip2Device, accesses bzip2 compressed files
+<li>FX::QGZipDevice, accesses zlib compressed files
+
 <li>FX::FXPython, miscellaneous python-related facilities
 <li>FX::FXPythonInterp, a python interpreter instance
 <li>FX::FXPythonException, an error caused by executing python code
 <li>FX::FXCodeToPythonCode, provides dynamic unique C++ code points
 
-<li>FX::FXTextCodec, the base class for a text codec
-<li>FX::FXUTF8Codec
-<li>FX::FXUTF16Codec
-<li>FX::FXUTF32Codec
+<li>FX::FXWinShellLink, a portable reader & writer of Windows Shell link files
+<li>FX::FXWinJunctionPoint, a portable reader & writer of NTFS junction points
 </ol>
 */
 
@@ -2692,7 +2704,6 @@ for connecting many things to and you can change all their connections with one 
 
 <ol>
 <li>FX::FXArc, holds an arc (part of an ellipse)
-<li>FX::FXCharset, holds a character set
 <li>FX::FXPoint, holds a 2d point
 <li>FX::FXRegion, a 2d box
 <li>FX::FXRectangle, holds a rectangle
@@ -2719,7 +2730,6 @@ for connecting many things to and you can change all their connections with one 
   <li>FX::FXVec4d, a 4 element vector
   </ol>
 <li>FX::FXString, a string container
-<li>FX::FXWString, a unicode string container
 </ol>
 */
 

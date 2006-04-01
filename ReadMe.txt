@@ -1,5 +1,5 @@
-TnFOX v0.86 ?:
--=-=-=-=-=-=-=-=-=-=-=-=-=
+TnFOX v0.86 2nd April 2006:
+-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas
 
@@ -7,22 +7,14 @@ For full documentation, please consult the index.html file.
 
 Issues:
 -=-=-=-
-1: THE PYTHON BINDINGS ARE NOT OF RELEASE QUALITY
-The least tested part of TnFOX is the python bindings. Some issues include
-policies not being set correctly on some items (you'll recognise this by
-a return from a method vanishing when its parent vanishes when it shouldn't).
-Also, on POSIX exceptions won't traverse shared object boundaries due to a
-problem with typeinfo and so the problems v0.75 had with the python bindings
-module on POSIX remain. Interestingly, debug builds let exceptions traverse
-just fine :(
-
-Note that on Windows, you need a *minimum* of 1Gb of RAM as that's what the
-MSVC linker requires to link. Anything less results in unacceptably slow
-link times
-
+1: THE PYTHON BINDINGS WERE RECENTLY REIMPLEMENTED
+The new pyplusplus solution will be far superior in the long run, but as
+yet it's still not quite working. Hence the bindings have NOT been supplied
+with this release.
 
 2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
 See Todo.txt for a list of known bugs.
+
 
 Installation:
 -=-=-=-=-=-=-
@@ -39,9 +31,9 @@ installation).
 
 Extract the archive. Open a command box, change directory to the TnFOX one
 and type "scons -h" to get a list of make targets. Support for JPEG, PNG,
-TIFF, ZLib and OpenSSL are optional - most POSIX users will already have these
-installed and scons will just find them. Alter config.py to set debug mode
-and other options.
+TIFF, ZLib, BZip2 and OpenSSL are optional - most POSIX users will already
+have these installed and scons will just find them. Alter config.py to set
+debug mode and other options.
 
 You should at this stage read the Windows-specific and Unix-specific notes
 in the TnFOX HTML documentation. These cover platform-specific third-party
@@ -90,9 +82,9 @@ Before this release, every program in the TestSuite was compiled and tested
 in both debug and release modes on:
 
 1. Microsoft Windows XP SP2 with MSVC7.1 (Visual Studio .NET 2003)
-2. Microsoft Windows XP x64 with AMD64SDK
-3. SuSE 9.2 with GCC & libstdc++ 4.0
-4. FreeBSD v5.4 with GCC & libstdc++ 4.0
+2. Microsoft Windows XP x64 with MSVC8.0 (Visual Studio .NET 2005)
+3. SuSE 10.0 with GCC & libstdc++ 4.1
+4. FreeBSD v6.0 with GCC & libstdc++ 4.0
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings
 in its compiler have forced me to drop it.

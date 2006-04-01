@@ -143,8 +143,11 @@ static const char *decodeWinsockErr(int code)
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
-#include <netinet/ip.h>
+#include <netinet/in.h>
 #include <netdb.h>
+#ifdef __FreeBSD__
+#include <sys/sysctl.h>
+#endif
 
 #define FXERRHSKT(exp) { int __res=(exp); if(__res<0) { \
 	if(EPIPE==errno) \
@@ -426,8 +429,16 @@ FXuval QBlkSocket::maxDatagramSize() const
 		return val;
 #endif
 #ifdef USE_POSIX
-		// Determined by trial and error
+#ifdef __linux__
+		// Couldn't find any other way, so determined by trial and error
 		return 65507;
+#endif
+#ifdef __FreeBSD__
+		int val;
+		size_t vallen=sizeof(val);
+		FXERRHOS(sysctlbyname("net.inet.udp.maxdgram", &val, &vallen, NULL, 0));
+		return val;
+#endif
 #endif
 	}
 	return 0;
@@ -880,6 +891,14 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 		{
 			sockaddr_in6 sa6={0};
 			socklen_t salen=sizeof(sa6);
+#ifdef __FreeBSD__
+			// Unfortunately recvfrom is not a thread cancellation point on FreeBSD, so
+			// we use select() to do it for us
+			fd_set fds;
+			FD_ZERO(&fds);
+			FD_SET(p->handle, &fds);
+			::select(p->handle+1, &fds, 0, 0, NULL);
+#endif
 			readed=::recvfrom(p->handle, data, maxlen, 0, (sockaddr *) &sa6, &salen);
 			h.relock();
 			if(-1!=readed)
@@ -958,13 +977,7 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 			sockaddr_in6 sa6={0};
 			int salen;
 			sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
-			written=::sendto(p->handle, data, maxlen,
-#ifdef __linux__
-				MSG_NOSIGNAL,
-#else
-				0,
-#endif
-				sa, salen);
+			written=::sendto(p->handle, data, maxlen, MSG_NOSIGNAL, sa, salen);
 		}
 		h.relock();
 		FXERRHSKT(written);
@@ -1044,13 +1057,7 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen, const QHostAddres
 			sockaddr_in6 sa6={0};
 			int salen;
 			sockaddr *sa=makeSockAddr(salen, sa6, addr, port);
-			written=::sendto(p->handle, data, maxlen,
-#ifdef __linux__
-				MSG_NOSIGNAL,
-#else
-				0,
-#endif
-				sa, salen);
+			written=::sendto(p->handle, data, maxlen, MSG_NOSIGNAL, sa, salen);
 		}
 		h.relock();
 		FXERRHSKT(written);

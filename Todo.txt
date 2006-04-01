@@ -1,9 +1,4 @@
-Fixup python bindings + add understanding of noGUI build (handy for testing)
-Update python docs, adding Roman to acknowledgements
-Test python bindings on Linux
-Fixup categorised class defs to show new APIs
-Run full test suite on all platforms
-Update Readme.txt
+GZip and reswrap translation file
 
 
 Platform-specific issues:
@@ -21,26 +16,23 @@ Linux Kernel v2.4.20 (RH9) Failures:
 in Tn (see the cleanup() in FXIPCChannel). NOTE THAT THIS HAS NOT BEEN TESTED
 SINCE THE v0.80 RELEASE!
 
-Linux Kernel v2.6.13 Failures:
+SuSE 10 Failures: (linux kernel v2.6.13):
   1. TestDeviceIO, there is an out of memory exception at the start. This is
 due to an optimisation bug in GCC v4.1.
   2. TestSQLDB, there is a segfault in the linker on load. This is due to a
-bug in the linker.
+bug in the linker. Load it bypassing libtool via .libs/TestSQLDB.
   3. TestMemoryPool, there is a clash between glibc's memory allocator and
 TnFOX's. This will get fixed soon.
 
-FreeBSD v5.3 Failures:
+FreeBSD v6.0 Failures:
   1. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
 timings are off - therefore the events don't open as they should.
-  2. TestEmbedPython, dies due to BSD memory allocator and TnFOX's clashing.
-This will get fixed soon.
 
 Known bugs:
 -=-=-=-=-=-
 * Valgrind complains about how we fake a primary thread object. It also doesn't
 like the marker test FXMemoryPool's global allocator operators perform to detect
 which blocks belong to the system allocator.
-* TestGeneric fails to compile with GCC
 * QLocalPipe has some problem when running under QSSLDevice. Will investigate
 later.
 * TestPython on exit fails with a segfault on all platforms. This appears to be

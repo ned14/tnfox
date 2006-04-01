@@ -1,4 +1,4 @@
-v0.86 ?
+v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=
 B FXMemMap was unintentially broken on Linux for shared memory usage
 B FXMemMap wasn't detecting mmap() failures at all on POSIX!
@@ -213,6 +213,7 @@ data and set their unicode type on open
 Yakovenko for doing most of the work!
 + Added QMemArray::swap()
 + Added class QBZip2Device
+* Updated embedded translation file
 
 
 
