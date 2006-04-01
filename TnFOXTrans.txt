@@ -1,12 +1,12 @@
 # TnFOX human language string literal translation file
-# Last updated: Thu, 11 Aug 2005 23:56:37 +0000
+# Last updated: Sat, 01 Apr 2006 13:47:57 +0000
 
 version=1:
 
 # If the line below says =Yes, then there are still text literals in here
 # which have not been translated yet. Search for "!TODO!" to find them
 
-needsupdating=Yes:
+needsupdating=No:
 
 # Enter the list of all language ids used in the file
 
@@ -107,6 +107,11 @@ langids="ES":
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
 
+"&No":
+	ES: "&No"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
+		ES: up
+
 "&Ok":
 	ES: "&Vale"
 	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
@@ -122,7 +127,17 @@ langids="ES":
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
 	srcfile="FXHandedMsgBox.cxx":class="FXHandedMsgBox":
-		ES: "!TODO! enter translation here"
+		ES: up
+
+"&Yes":
+	ES: "&Si"
+	srcfile="FXHandedInterface.cxx":class="FXHandedInterface":
+		ES: up
+
+"'%1' is not a junction point":
+	ES: "'%1' no es un siteo de junction"
+	srcfile="FXWinLinks.cxx":class="FXWinJunctionPoint":
+		ES: up
 
 "0x%1:%2%3\n                                 (file %4 line no %5)\n":
 	ES: "0x%1:%2%3\n                                 (archivo %4 linea %5)\n"
@@ -145,30 +160,61 @@ langids="ES":
 		ES: up
 
 "Access to '%1' denied [Host OS Error: %2]":
+	ES: "No es permite acessar '%1' [Error de sistema: %2]"
 	srcfile="FXException.cxx":class="FXException":
-		ES: "!TODO! enter translation here"
-
-"Blowfish needs a key between 32 and 448 bits":
-	ES: "Blowfish necesita una llave entre 32 y 448 bites"
-	srcfile="QSSLDevice.cxx":class="FXSSLKey":
 		ES: up
 
 "Blowfish needs a key between 64 and 448 bits":
+	ES: "Blowfish necesita una llave entre 64 y 448 bites"
 	srcfile="QSSLDevice.cxx":class="FXSSLKey":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "Buffer does not exist":
 	ES: "No se pueda encontrar el buffer"
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 
+"Column does not exist":
+	ES: "No se pueda encontrar el columno"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":
+		ES: up
+
+"Connection handle not found":
+	ES: "No se pueda encontrar el conneccion"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+		ES: up
+
+"Couldn't find drive name translation for '%1'":
+	ES: "No se pueda encontrar un traduccion de nombre de disco duro de '%1'"
+	srcfile="FXWinLinks.cxx":class="FXWinShellLink":
+		ES: up
+
+"Cursor handle not found":
+	ES: "No se pueda encontrar el cursor"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+		ES: up
+
+"Database is not open":
+	ES: "El database no esta abierto"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":
+		ES: up
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+		ES: up
+
+"Destination '%1' must exist":
+	ES: "El destino '%1' necesita ser"
+	srcfile="FXWinLinks.cxx":class="FXWinShellLink":
+		ES: up
+
 "Device reopen has different mode":
 	ES: "El modo de operacion no es iqual que antes"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
+	srcfile="QBZip2Device.cxx":class="QBZip2Device":
+		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
 	srcfile="QBuffer.cxx":class="QBuffer":
-		ES: up
-	srcfile="FXFile.cxx":class="FXFile":
 		ES: up
 	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
@@ -206,6 +252,11 @@ langids="ES":
 	srcfile="FXException.cxx":class="FXException":
 		ES: up
 
+"Failed to link '%1' to '%2'":
+	ES: "Hay fracaso para connectar '%1' con '%2'"
+	srcfile="FXWinLinks.cxx":class="FXWinJunctionPoint":
+		ES: up
+
 "Failed to read /dev/urandom":
 	ES: "Hay fracaso para leer /dev/urandom"
 	srcfile="FXSecure.cxx":class="FX::Secure::Randomness":
@@ -214,6 +265,16 @@ langids="ES":
 "Failed to read RSA public or private key from PEM file":
 	ES: "Hay fracaso para leer una llave RSA privada ni publica de archivo PEM"
 	srcfile="QSSLDevice.cxx":class="FXSSLKey":
+		ES: up
+
+"Failed to retrive column header":
+	ES: "Hay fracaso para leer el columno"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+		ES: up
+
+"Failed to retrive column type":
+	ES: "Hay fracaso para leer el tipo de columno"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
 		ES: up
 
 "Failed to start thread":
@@ -226,15 +287,12 @@ langids="ES":
 		ES: "Error Mortal de %1"
 
 "File '%1' not found [Host OS Error: %2]":
+	ES: "El archivo '%1' no se encontrado [Error de sistema: %2]"
 	srcfile="FXException.cxx":class="FXException":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "File '%1' not found":
-	srcfile="FXFile.cxx":class="FXFile":
-		ES: "!TODO! enter translation here"
-
-"File not found":
-	ES: "El archivo no se encontrado"
+	ES: "El archivo '%1' no se encontrado"
 	srcfile="FXFile.cxx":class="FXFile":
 		ES: up
 
@@ -263,23 +321,30 @@ langids="ES":
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
+"Header does not exist":
+	ES: "No se pueda encontrar el header"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":
+		ES: up
+
 "Incorrect key":
 	ES: "Llave mala"
 	srcfile="QSSLDevice.cxx":class="QSSLDevice":
 		ES: up
 
-"Invalid Security Descriptor":
-	srcfile="FXACL.cxx":class="FXACL":
-		ES: "!TODO! enter translation here"
+"Index is invalid":
+	ES: "Index mala"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+		ES: up
 
-"Key length must be a multiple of eight":
-	ES: "La longitud de llave necesita estar un multiplo de ocho"
-	srcfile="QSSLDevice.cxx":class="FXSSLKey":
+"Invalid Security Descriptor":
+	ES: "Referencia de seguridad mala"
+	srcfile="FXACL.cxx":class="FXACL":
 		ES: up
 
 "Key length must be a multiple of sixty-four":
+	ES: "La longitud de llave necesita estar un multiplo de seisenta y quatro"
 	srcfile="QSSLDevice.cxx":class="FXSSLKey":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "Key of unknown encryption type":
 	ES: "El tipo de llave cryptographia no es conocido"
@@ -341,13 +406,18 @@ langids="ES":
 	srcfile="QSSLDevice.cxx":class="QSSLDevice":
 		ES: up
 
+"Not a datagram socket":
+	ES: "No es un socket de datagram"
+	srcfile="QBlkSocket.cxx":class="QBlkSocket":
+		ES: up
+
 "Not open for reading":
 	ES: "No esta abierto para leer"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
 	srcfile="QBuffer.cxx":class="QBuffer":
-		ES: up
-	srcfile="FXFile.cxx":class="FXFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
@@ -360,11 +430,11 @@ langids="ES":
 
 "Not open for writing":
 	ES: "No esta abierto para escribir"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
 	srcfile="QBuffer.cxx":class="QBuffer":
-		ES: up
-	srcfile="FXFile.cxx":class="FXFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
@@ -420,7 +490,7 @@ langids="ES":
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
 	srcfile="FXHandedMsgBox.cxx":class="FXHandedMsgBox":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "Press to cancel the operation and return to the program":
 	ES: "Apriete para cancelar la operacion y volver a la programa"
@@ -430,6 +500,21 @@ langids="ES":
 "Press to immediately quit the program":
 	ES: "Apriete para salir directo la programa"
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
+		ES: up
+
+"Requested database '%1' via driver '%2' not permitted":
+	ES: "El database solicitado '%1' con driver '%2' no es permitado"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+		ES: up
+
+"SQLite3 cursors cannot be copied":
+	ES: "Cursores de SQLite3 no puedan estar copiado"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+		ES: up
+
+"SQLite3 does not support static or non-forwards cursors":
+	ES: "SQLite3 no tiene cursores staticos ni cursores retrasados"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
 		ES: up
 
 "Salt length must be a multiple of eight":
@@ -450,6 +535,11 @@ langids="ES":
 "Secure file missing symmetric key":
 	ES: "El archivo seguro no tiene su llave symetrica"
 	srcfile="QSSLDevice.cxx":class="QSSLDevice":
+		ES: up
+
+"Seeking not enabled":
+	ES: "Buscar no esta disponible"
+	srcfile="QBZip2Device.cxx":class="QBZip2Device":
 		ES: up
 
 "Select this to cancel the action. Alt-select merely resets the dialog to its initial state":
@@ -480,6 +570,16 @@ langids="ES":
 "Sockets are not enabled on this machine":
 	ES: "Los sockets no estan disponibles en este machina"
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
+		ES: up
+
+"Statement handle not found":
+	ES: "No se pueda encontrar el statement"
+	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+		ES: up
+
+"Statement has expired":
+	ES: "El statement es invalido"
+	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
 		ES: up
 
 "System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n":
@@ -517,9 +617,15 @@ langids="ES":
 	srcfile="FXExceptionDialog.cxx":class="FXExceptionDialog":
 		ES: up
 
+"This driver does not support moving cursors backwards":
+	ES: "Este driver no supporta cursores retrasados"
+	srcfile="FXSQLDB.cxx":class="FXSQLDB::Statement::Cursor":
+		ES: up
+
 "This is a window either informing you of something or asking you a question":
+	ES: "Este es un ventana que dice algo a ti o pregunta te algo"
 	srcfile="FXHandedMsgBox.cxx":class="FXHandedMsgBox":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "This is an absolute path":
 	ES: "Ese es un direccion absoluta"
@@ -588,6 +694,11 @@ langids="ES":
 
 "Unknown user":
 	ES: "El usuario no esta conocido"
+	srcfile="FXACL.cxx":class="FXACLEntity":
+		ES: up
+
+"Unknown":
+	ES: "Sin conocido"
 	srcfile="FXACL.cxx":class="FXACLEntity":
 		ES: up
 
