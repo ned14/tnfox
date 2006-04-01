@@ -208,7 +208,7 @@ langids="ES":
 
 "Device reopen has different mode":
 	ES: "El modo de operacion no es iqual que antes"
-	srcfile="FXFile.cxx":class="FXFile":
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QBZip2Device.cxx":class="QBZip2Device":
 		ES: up
@@ -293,7 +293,7 @@ langids="ES":
 
 "File '%1' not found":
 	ES: "El archivo '%1' no se encontrado"
-	srcfile="FXFile.cxx":class="FXFile":
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 
 "File type devices not supported":
@@ -413,7 +413,7 @@ langids="ES":
 
 "Not open for reading":
 	ES: "No esta abierto para leer"
-	srcfile="FXFile.cxx":class="FXFile":
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
@@ -430,7 +430,7 @@ langids="ES":
 
 "Not open for writing":
 	ES: "No esta abierto para escribir"
-	srcfile="FXFile.cxx":class="FXFile":
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
