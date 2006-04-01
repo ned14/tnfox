@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX7Segment.h,v 1.11 2006/01/22 17:57:58 fox Exp $                        *
+* $Id: FX7Segment.h,v 1.12 2006/03/01 02:13:21 fox Exp $                        *
 ********************************************************************************/
 #ifndef FX7SEGMENT_H
 #define FX7SEGMENT_H
@@ -51,6 +51,8 @@ protected:
   FXint    thickness;   // Segment thickness
   FXint    cellwidth;   // Width of cell
   FXint    cellheight;  // height of cell
+  FXString tip;         // Tooltip
+  FXString help;        // Help message
 protected:
   FX7Segment();
 private:
@@ -67,6 +69,12 @@ public:
   long onCmdGetIntValue(FXObject*,FXSelector,void*);
   long onCmdGetRealValue(FXObject*,FXSelector,void*);
   long onCmdGetStringValue(FXObject*,FXSelector,void*);
+  long onCmdSetHelp(FXObject*,FXSelector,void*);
+  long onCmdGetHelp(FXObject*,FXSelector,void*);
+  long onCmdSetTip(FXObject*,FXSelector,void*);
+  long onCmdGetTip(FXObject*,FXSelector,void*);
+  long onQueryHelp(FXObject*,FXSelector,void*);
+  long onQueryTip(FXObject*,FXSelector,void*);
 public:
 
   /// Create a seven segment display
@@ -113,6 +121,18 @@ public:
 
   /// Get the current text-justification mode.
   FXuint getJustify() const;
+
+  /// Set the status line help text 
+  void setHelpText(const FXString& text){ help=text; }
+
+  /// Get the status line help text 
+  const FXString& getHelpText() const { return help; }
+
+  /// Set the tool tip message 
+  void setTipText(const FXString& text){ tip=text; }
+
+  /// Get the tool tip message 
+  const FXString& getTipText() const { return tip; }
 
   /// Save to a stream
   virtual void save(FXStream &store) const;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSplitter.cpp,v 1.54 2006/01/22 17:58:42 fox Exp $                      *
+* $Id: FXSplitter.cpp,v 1.55 2006/02/20 03:32:13 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -663,7 +663,7 @@ long FXSplitter::onFocusRight(FXObject*,FXSelector,void* ptr){
 void FXSplitter::drawHSplit(FXint pos){
   FXDCWindow dc(this);
   dc.clipChildren(FALSE);
-  dc.setFunction(BLT_NOT_DST);     // Does this always show up?
+  dc.setFunction(BLT_NOT_DST);   
   dc.fillRectangle(pos,0,barsize,height);
   }
 
@@ -672,7 +672,7 @@ void FXSplitter::drawHSplit(FXint pos){
 void FXSplitter::drawVSplit(FXint pos){
   FXDCWindow dc(this);
   dc.clipChildren(FALSE);
-  dc.setFunction(BLT_NOT_DST);     // Does this always show up?
+  dc.setFunction(BLT_NOT_DST);  
   dc.fillRectangle(0,pos,width,barsize);
   }
 

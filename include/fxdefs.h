@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxdefs.h,v 1.177 2006/01/22 17:58:13 fox Exp $                           *
+* $Id: fxdefs.h,v 1.178 2006/03/21 01:41:43 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXDEFS_H
 #define FXDEFS_H
@@ -762,10 +762,10 @@ extern FXAPI FXColor makeShadowColor(FXColor clr);
 /// Get process id
 extern FXAPI FXint fxgetpid();
 
-/// Convert to MSDOS
+/// Convert string of length len to MSDOS; return new string and new length
 //extern FXAPI bool fxtoDOS(FXchar*& string,FXint& len);
 
-/// Convert from MSDOS format
+/// Convert string of length len from MSDOS; return new string and new length
 //extern FXAPI bool fxfromDOS(FXchar*& string,FXint& len);
 
 /// Duplicate string

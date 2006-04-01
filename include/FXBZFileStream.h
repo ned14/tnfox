@@ -27,29 +27,22 @@
 #ifndef FXBZFILESTREAM_H
 #define FXBZFILESTREAM_H
 
-#ifndef FXFILESTREAM_H
-#include "FXFileStream.h"
+#ifndef FXSTREAM_H
+#include "FXStream.h"
 #endif
 
 
 namespace FX {
 
+class QFile;
 
-struct BZBlock;
-
-
-/// BZIP2 compressed file stream
-class FXAPI FXBZFileStream : public FXFileStream {
-private:
-  BZBlock *bz;
-  int      ac;
-protected:
-  virtual FXuval writeBuffer(FXuval count);
-  virtual FXuval readBuffer(FXuval count);
+//! \deprecated Use FX::QBZip2Device instead
+class FXAPI FXBZFileStream : public FXStream {
+	QFile *myfile;
 public:
 
   /// Create BZIP2 file stream
-  FXBZFileStream(const FXObject* cont=NULL);
+  FXDEPRECATEDEXT FXBZFileStream(const FXObject* cont=NULL);
 
   /// Open file stream
   bool open(const FXString& filename,FXStreamDirection save_or_load,FXuval size=8192);
@@ -57,72 +50,12 @@ public:
   /// Close file stream
   virtual bool close();
 
-  /// Get position
-  FXlong position() const { return FXStream::position(); }
-
-  /// Move to position
-  virtual bool position(FXlong,FXWhence){ return FALSE; }
-
-  /// Save single items to stream
-  FXBZFileStream& operator<<(const FXuchar& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXchar& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXushort& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXshort& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXuint& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXint& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXfloat& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXdouble& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXlong& v){ FXStream::operator<<(v); return *this; }
-  FXBZFileStream& operator<<(const FXulong& v){ FXStream::operator<<(v); return *this; }
-
-  /// Save arrays of items to stream
-  FXBZFileStream& save(const FXuchar* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXchar* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXushort* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXshort* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXuint* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXint* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXfloat* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXdouble* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXlong* p,FXuval n){ FXStream::save(p,n); return *this; }
-  FXBZFileStream& save(const FXulong* p,FXuval n){ FXStream::save(p,n); return *this; }
-
-  /// Load single items from stream
-  FXBZFileStream& operator>>(FXuchar& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXchar& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXushort& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXshort& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXuint& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXint& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXfloat& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXdouble& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXlong& v){ FXStream::operator>>(v); return *this; }
-  FXBZFileStream& operator>>(FXulong& v){ FXStream::operator>>(v); return *this; }
-
-  /// Load arrays of items from stream
-  FXBZFileStream& load(FXuchar* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXchar* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXushort* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXshort* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXuint* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXint* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXfloat* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXdouble* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXlong* p,FXuval n){ FXStream::load(p,n); return *this; }
-  FXBZFileStream& load(FXulong* p,FXuval n){ FXStream::load(p,n); return *this; }
-
-  /// Save object
-  FXBZFileStream& saveObject(const FXObject* v){ FXStream::saveObject(v); return *this; }
-
-  /// Load object
-  FXBZFileStream& loadObject(FXObject*& v){ FXStream::loadObject(v); return *this; }
-
   /// Clean up
   virtual ~FXBZFileStream();
   };
 
-
 }
+
 
 #endif
 #endif

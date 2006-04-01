@@ -1048,6 +1048,11 @@ specifying translations. The file format is basically as follows:
 "<next literal>":
 	...
 \endcode
+As of v0.86 of TnFOX (v1.6 FOX based builds only), you can write this file in
+UTF-8, UTF-16 or UTF-32 and TnFOX will automatically detect which format it is
+in. Therefore, you can use any text editor you like (including the special TnFOX
+edition of Adie which can save out in any of these formats).
+
 More powerful operators are the <tt>%1, %2, %3 ...</tt> which let you specialise
 a translation based on parameter insert value eg;
 \code
@@ -2503,6 +2508,7 @@ file.
   <li>FX::FXComboBox, chooses from a drop down menu
   <li>FX::FXDial, chooses a number by rotation of a dial
   <li>FX::FXFontSelector, chooses a font
+  <li>FX::FXKnob, chooses a number via a rotatable knob
   <li>FX::FXListBox, chooses from a drop down list
   <li>FX::FXOptionMenu, chooses from a drop down menu of options
   <li>FX::FXPicker, chooses an arbitrary location on the screen
@@ -2513,6 +2519,8 @@ file.
   <li>FX::FXTreeListBox, chooses from a tree organised drop down list
 
   <li>FX::FXColorSelector, chooses a colour
+  <li>FX::FXColorList, chooses a colour from a list
+  <li>FX::FXColorRing, chooses a colour using an intuitive ring & triangle device
   <li>FX::FXColorBar, chooses by slider a colour by HSV
   <li>FX::FXColorWell, chooses from a list of settable colours
   <li>FX::FXColorWheel, chooses a colour by HSV from a disc
@@ -2557,6 +2565,7 @@ file.
 <li>FX::FXMatrix, places its children in a grid
 <li>FX::FXMDIChild, maintains its children within a "work area"
 <li>FX::FXPacker, places its children against the sides
+<li>FX::FXRulerView, manages its children whilst showing a ruler
 <li>FX::FXSplitter, splits its children into two areas
 <li>FX::FXSpring, allows springy distance between siblings
 <li>FX::FXSwitcher, places its children all on top of each other (thus
@@ -2628,6 +2637,7 @@ describes such a font.
 <li>FX::FXAccelTable, maps key combinations to targets & messages
 <li>FX::FXCommand, a command and undoable action
 <li>FX::FXCommandGroup, a group of FX::FXCommand
+<li>FX::FXComposeContext, used to permit use of input methods
 <li>FX::FXMenuCommand, a command in a menu
 <li>FX::FXUndoList, a list of undoable actions
 
@@ -2647,9 +2657,12 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXEvent, an event within the GUI
 <li>FX::FXEventLoop, the base class of an event dispatch loop
 <li>FX::FXEventLoop_Static, a per-event loop static variable
+
+<li>FX::FXDate, a gregorian date container
 <li>FX::FXTime, microsecond accurate locale-capable time
 
 <li>FX::FXRex, regular expression support
+<li>FX::FXExpression, mathematical expression parser
 
 <li>FX::FXACL, an access control list for a securable entity
 <li>FX::FXACLEntity, an entity who can have permissions set for them
@@ -2711,6 +2724,7 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXSize, a 2d size
 <li>Single precision:
   <ol>
+  <li>FX::FXExtentf, a 2d box
   <li>FX::FXMat3f, a 3x3 matrix
   <li>FX::FXMat4f, a 4x4 matrix
   <li>FX::FXRangef, a 3d box
@@ -2721,6 +2735,7 @@ for connecting many things to and you can change all their connections with one 
   </ol>
 <li>Double precision:
   <ol>
+  <li>FX::FXExtentd, a 2d box
   <li>FX::FXMat3d, a 3x3 matrix
   <li>FX::FXMat4d, a 4x4 matrix
   <li>FX::FXRanged, a 3d box

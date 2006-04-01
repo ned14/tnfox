@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX4Splitter.cpp,v 1.51 2006/02/09 03:51:43 fox Exp $                     *
+* $Id: FX4Splitter.cpp,v 1.52 2006/02/20 03:32:13 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -51,9 +51,6 @@
 
 // Splitter styles
 #define FOURSPLITTER_MASK     FOURSPLITTER_TRACKING
-
-// Fudge
-#define FUDGE    10
 
 // Modes
 #define NOWHERE      0
@@ -102,8 +99,7 @@ FX4Splitter::FX4Splitter(){
 
 
 // Make a splitter; it has no interior padding, and no borders
-FX4Splitter::FX4Splitter(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h):
-  FXComposite(p,opts,x,y,w,h){
+FX4Splitter::FX4Splitter(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h):FXComposite(p,opts,x,y,w,h){
   defaultCursor=getApp()->getDefaultCursor(DEF_ARROW_CURSOR);
   dragCursor=defaultCursor;
   flags|=FLAG_ENABLED|FLAG_SHOWN;
@@ -119,8 +115,7 @@ FX4Splitter::FX4Splitter(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXin
 
 
 // Make a splitter; it has no interior padding, and no borders
-FX4Splitter::FX4Splitter(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
-  FXComposite(p,opts,x,y,w,h){
+FX4Splitter::FX4Splitter(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):FXComposite(p,opts,x,y,w,h){
   defaultCursor=getApp()->getDefaultCursor(DEF_ARROW_CURSOR);
   dragCursor=defaultCursor;
   flags|=FLAG_ENABLED|FLAG_SHOWN;
@@ -291,10 +286,10 @@ void FX4Splitter::layout(){
 // Determine split mode
 FXuchar FX4Splitter::getMode(FXint x,FXint y){
   register FXuchar mm=ONCENTER;
-  if(x<splitx-FUDGE) mm&=~ONVERTICAL;
-  if(y<splity-FUDGE) mm&=~ONHORIZONTAL;
-  if(x>=splitx+barsize+FUDGE) mm&=~ONVERTICAL;
-  if(y>=splity+barsize+FUDGE) mm&=~ONHORIZONTAL;
+  if(x<splitx) mm&=~ONVERTICAL;
+  if(y<splity) mm&=~ONHORIZONTAL;
+  if(x>=splitx+barsize) mm&=~ONVERTICAL;
+  if(y>=splity+barsize) mm&=~ONHORIZONTAL;
   return mm;
   }
 
@@ -307,6 +302,20 @@ void FX4Splitter::moveSplit(FXint x,FXint y){
   if(y>height-barsize) y=height-barsize;
   splitx=x;
   splity=y;
+  }
+
+
+// Draw the horizontal split
+void FX4Splitter::drawSplit(FXint x,FXint y,FXuint m){
+  FXDCWindow dc(this);
+  dc.clipChildren(FALSE);
+  dc.setFunction(BLT_NOT_DST);
+  if(m&ONVERTICAL){
+    dc.fillRectangle(x,0,barsize,height);
+    }
+  if(m&ONHORIZONTAL){
+    dc.fillRectangle(0,y,width,barsize);
+    }
   }
 
 
@@ -329,10 +338,9 @@ long FX4Splitter::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
       offx=ev->win_x-splitx;
       offy=ev->win_y-splity;
       if(!(options&FOURSPLITTER_TRACKING)){
-        drawSplit(splitx,splity);
+        drawSplit(splitx,splity,mode);
         }
       flags&=~FLAG_UPDATE;
-      flags|=FLAG_PRESSED;
       }
     return 1;
     }
@@ -342,23 +350,23 @@ long FX4Splitter::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 
 // Button being released
 long FX4Splitter::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
-  FXuint flgs=flags;
+  FXuint f=flags;
+  FXuint m=mode;
   if(isEnabled()){
     ungrab();
     flags|=FLAG_UPDATE;
     flags&=~FLAG_CHANGED;
-    flags&=~FLAG_PRESSED;
     mode=NOWHERE;
     if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
-    if(flgs&FLAG_PRESSED){
+    if(m){
       if(!(options&FOURSPLITTER_TRACKING)){
-        drawSplit(splitx,splity);
+        drawSplit(splitx,splity,m);
         adjustLayout();
-        if(flgs&FLAG_CHANGED){
+        if(f&FLAG_CHANGED){
           if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
           }
         }
-      if(flgs&FLAG_CHANGED){
+      if(f&FLAG_CHANGED){
         if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),NULL);
         }
       }
@@ -371,54 +379,51 @@ long FX4Splitter::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
 // Button being released
 long FX4Splitter::onMotion(FXObject*,FXSelector,void* ptr){
   FXEvent* ev=(FXEvent*)ptr;
-  FXuchar ff;
-
-  // Moving split
-  if(flags&FLAG_PRESSED){
-    FXint oldsplitx=splitx;
-    FXint oldsplity=splity;
-    if(mode==ONCENTER){
+  FXint oldsplitx=splitx;
+  FXint oldsplity=splity;
+  switch(mode){
+    case ONCENTER:
       moveSplit(ev->win_x-offx,ev->win_y-offy);
-      }
-    else if(mode==ONVERTICAL){
+      break;
+    case ONVERTICAL:
       moveSplit(ev->win_x-offx,splity);
-      }
-    else if(mode==ONHORIZONTAL){
+      break;
+    case ONHORIZONTAL:
       moveSplit(splitx,ev->win_y-offy);
-      }
-    if((oldsplitx!=splitx) || (oldsplity!=splity)){
-      if(!(options&FOURSPLITTER_TRACKING)){
-        drawSplit(oldsplitx,oldsplity);
-        drawSplit(splitx,splity);
+      break;
+    default:
+      switch(getMode(ev->win_x,ev->win_y)){
+        case ONCENTER:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
+          break;
+        case ONVERTICAL:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
+          break;
+        case ONHORIZONTAL:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
+          break;
+        default:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+          break;
         }
-      else{
-        adjustLayout();
-        if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
-        }
-      flags|=FLAG_CHANGED;
+      return 1;
+    }
+  if((oldsplitx!=splitx) || (oldsplity!=splity)){
+    flags|=FLAG_CHANGED;
+    if(!(options&FOURSPLITTER_TRACKING)){
+      drawSplit(oldsplitx,oldsplity,mode);
+      drawSplit(splitx,splity,mode);
       }
-    return 1;
+    else{
+      adjustLayout();
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
+      }
     }
-
-  // Change cursor based on position
-  ff=getMode(ev->win_x,ev->win_y);
-  if(ff==ONCENTER){
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
-    }
-  else if(ff==ONVERTICAL){
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
-    }
-  else if(ff==ONHORIZONTAL){
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
-    }
-  else{
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
-    }
-  return 0;
+  return 1;
   }
 
 
@@ -518,20 +523,6 @@ long FX4Splitter::onUpdExpand(FXObject* sender,FXSelector sel,void*){
   }
 
 
-// Draw the horizontal split
-void FX4Splitter::drawSplit(FXint x,FXint y){
-  FXDCWindow dc(this);
-  dc.clipChildren(FALSE);
-  dc.setFunction(BLT_NOT_DST);
-  if(mode&ONVERTICAL){
-    dc.fillRectangle(x,0,barsize,height);
-    }
-  if(mode&ONHORIZONTAL){
-    dc.fillRectangle(0,y,width,barsize);
-    }
-  }
-
-
 // Change horizontal split [fraction*10000]
 void FX4Splitter::setHSplit(FXint s){
   if(s<0) s=0;
@@ -616,6 +607,7 @@ FXuint FX4Splitter::getExpanded() const {
 
 // Change bar size
 void FX4Splitter::setBarSize(FXint bs){
+  if(bs<1) bs=1;
   if(bs!=barsize){
     barsize=bs;
     recalc();

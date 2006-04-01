@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.cpp,v 1.243 2006/01/31 22:35:20 fox Exp $                        *
+* $Id: FXTable.cpp,v 1.245 2006/02/16 04:20:32 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -663,10 +663,15 @@ FXDEFMAP(FXTable) FXTableMap[]={
 
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_SELECT_ROW_INDEX,FXTable::onCmdSelectRowIndex),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_SELECT_COLUMN_INDEX,FXTable::onCmdSelectColumnIndex),
+  FXMAPFUNC(SEL_UPDATE,FXTable::ID_SELECT_COLUMN,FXTable::onUpdSelectColumn),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_SELECT_COLUMN,FXTable::onCmdSelectColumn),
+  FXMAPFUNC(SEL_UPDATE,FXTable::ID_SELECT_ROW,FXTable::onUpdSelectRow),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_SELECT_ROW,FXTable::onCmdSelectRow),
+  FXMAPFUNC(SEL_UPDATE,FXTable::ID_SELECT_CELL,FXTable::onUpdSelectCell),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_SELECT_CELL,FXTable::onCmdSelectCell),
+  FXMAPFUNC(SEL_UPDATE,FXTable::ID_SELECT_ALL,FXTable::onUpdSelectAll),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_SELECT_ALL,FXTable::onCmdSelectAll),
+  FXMAPFUNC(SEL_UPDATE,FXTable::ID_DESELECT_ALL,FXTable::onUpdDeselectAll),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_DESELECT_ALL,FXTable::onCmdDeselectAll),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_MARK,FXTable::onCmdMark),
   FXMAPFUNC(SEL_COMMAND,FXTable::ID_EXTEND,FXTable::onCmdExtend),
@@ -1741,15 +1746,19 @@ FXbool FXTable::isAnythingSelected() const {
 
 // Select a row
 FXbool FXTable::selectRow(FXint row,FXbool notify){
-  selectRange(row,row,0,ncols-1,notify);
-  return TRUE;
+  return selectRange(row,row,0,ncols-1,notify);
   }
 
 
 // Select a column
 FXbool FXTable::selectColumn(FXint col,FXbool notify){
-  selectRange(0,nrows-1,col,col,notify);
-  return TRUE;
+  return selectRange(0,nrows-1,col,col,notify);
+  }
+
+
+// Extend selection
+FXbool FXTable::extendSelection(FXint r,FXint c,FXbool notify){
+  return selectRange(anchor.row,r,anchor.col,c,notify);
   }
 
 
@@ -1759,70 +1768,66 @@ FXbool FXTable::selectRange(FXint startrow,FXint endrow,FXint startcol,FXint end
   FXTablePos tablepos;
   FXTableItem *item;
 
-  // Determine new selection rectangle
-  spanningRange(nrlo,nrhi,nclo,nchi,startrow,startcol,endrow,endcol);
+  // Verify arguments
+  if(0<=startrow && 0<=startcol && 0<=endrow && 0<=endcol && startrow<nrows && startcol<ncols && endrow<nrows && endcol<ncols){
 
-  // Rectangle
-  rlo=nrlo;
-  rhi=nrhi;
-  clo=nclo;
-  chi=nchi;
+    // Determine new selection rectangle
+    spanningRange(nrlo,nrhi,nclo,nchi,startrow,startcol,endrow,endcol);
 
-  // Just to be safe
-  orlo=orhi=oclo=ochi=-1;
+    // Rectangle
+    rlo=nrlo;
+    rhi=nrhi;
+    clo=nclo;
+    chi=nchi;
 
-  // Did have old selection
-  if(isAnythingSelected()){
+    // Just to be safe
+    orlo=orhi=oclo=ochi=-1;
 
-    // Old selection rectangle
-    orlo=selection.fm.row;
-    oclo=selection.fm.col;
-    ochi=selection.to.col;
-    orhi=selection.to.row;
+    // Did have old selection
+    if(isAnythingSelected()){
 
-    // Maximum of old and new rectangle
-    if(orlo<rlo) rlo=orlo;
-    if(orhi>rhi) rhi=orhi;
-    if(oclo<clo) clo=oclo;
-    if(ochi>chi) chi=ochi;
-    }
+      // Old selection rectangle
+      orlo=selection.fm.row;
+      oclo=selection.fm.col;
+      ochi=selection.to.col;
+      orhi=selection.to.row;
 
-  // Hopefully
-  FXASSERT(0<=rlo && rlo<=rhi && rhi<nrows);
-  FXASSERT(0<=clo && clo<=chi && chi<ncols);
+      // Maximum of old and new rectangle
+      if(orlo<rlo) rlo=orlo;
+      if(orhi>rhi) rhi=orhi;
+      if(oclo<clo) clo=oclo;
+      if(ochi>chi) chi=ochi;
+      }
 
-  // New selection rectangle
-  selection.fm.row=nrlo;
-  selection.fm.col=nclo;
-  selection.to.row=nrhi;
-  selection.to.col=nchi;
+    // Hopefully
+    FXASSERT(0<=rlo && rlo<=rhi && rhi<nrows);
+    FXASSERT(0<=clo && clo<=chi && chi<ncols);
 
-  // Change items
-  for(tablepos.row=rlo; tablepos.row<=rhi; tablepos.row++){
-    for(tablepos.col=clo; tablepos.col<=chi; tablepos.col++){
-      item=cells[tablepos.row*ncols+tablepos.col];
-      inold=(orlo<=tablepos.row && tablepos.row<=orhi && oclo<=tablepos.col && tablepos.col<=ochi);
-      innew=(nrlo<=tablepos.row && tablepos.row<=nrhi && nclo<=tablepos.col && tablepos.col<=nchi);
-      if(inold && !innew){
-        if(item){ item->setSelected(FALSE); }
-        updateItem(tablepos.row,tablepos.col);
-        if(notify && target) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)&tablepos);
-        }
-      else if(!inold && innew){
-        if(item){ item->setSelected(TRUE); }
-        updateItem(tablepos.row,tablepos.col);
-        if(notify && target) target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)&tablepos);
+    // New selection rectangle
+    selection.fm.row=nrlo;
+    selection.fm.col=nclo;
+    selection.to.row=nrhi;
+    selection.to.col=nchi;
+
+    // Change items
+    for(tablepos.row=rlo; tablepos.row<=rhi; tablepos.row++){
+      for(tablepos.col=clo; tablepos.col<=chi; tablepos.col++){
+        item=cells[tablepos.row*ncols+tablepos.col];
+        inold=(orlo<=tablepos.row && tablepos.row<=orhi && oclo<=tablepos.col && tablepos.col<=ochi);
+        innew=(nrlo<=tablepos.row && tablepos.row<=nrhi && nclo<=tablepos.col && tablepos.col<=nchi);
+        if(inold && !innew){
+          if(item){ item->setSelected(FALSE); }
+          updateItem(tablepos.row,tablepos.col);
+          if(notify && target) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),(void*)&tablepos);
+          }
+        else if(!inold && innew){
+          if(item){ item->setSelected(TRUE); }
+          updateItem(tablepos.row,tablepos.col);
+          if(notify && target) target->tryHandle(this,FXSEL(SEL_SELECTED,message),(void*)&tablepos);
+          }
         }
       }
-    }
-  return TRUE;
-  }
-
-
-// Extend selection
-FXbool FXTable::extendSelection(FXint r,FXint c,FXbool notify){
-  if(0<=r && 0<=c && 0<=anchor.row && 0<=anchor.col){
-    return selectRange(anchor.row,r,anchor.col,c,notify);
+    return TRUE;
     }
   return FALSE;
   }
@@ -3150,10 +3155,24 @@ long FXTable::onCmdMovePageUp(FXObject*,FXSelector,void*){
   }
 
 
+// Update select cell
+long FXTable::onUpdSelectCell(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(0<=current.row && 0<=current.col && current.row<nrows && current.col<ncols) ? FXSEL(SEL_COMMAND,ID_ENABLE) : FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
 // Select cell
 long FXTable::onCmdSelectCell(FXObject*,FXSelector,void*){
   setAnchorItem(current.row,current.col);
   extendSelection(current.row,current.col,TRUE);
+  return 1;
+  }
+
+
+// Update select row
+long FXTable::onUpdSelectRow(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(0<=current.row && current.row<nrows) ? FXSEL(SEL_COMMAND,ID_ENABLE) : FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
   return 1;
   }
 
@@ -3163,6 +3182,13 @@ long FXTable::onCmdSelectRow(FXObject*,FXSelector,void*){
   if(!(options&TABLE_NO_ROWSELECT)){
     selectRow(current.row,TRUE);
     }
+  return 1;
+  }
+
+
+// Update select column
+long FXTable::onUpdSelectColumn(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(0<=current.col && current.col<ncols) ? FXSEL(SEL_COMMAND,ID_ENABLE) : FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
   return 1;
   }
 
@@ -3194,6 +3220,13 @@ long FXTable::onCmdSelectColumnIndex(FXObject*,FXSelector,void* ptr){
   }
 
 
+// Update select all
+long FXTable::onUpdSelectAll(FXObject* sender,FXSelector,void*){
+  sender->handle(this,(0<ncols && 0<nrows) ? FXSEL(SEL_COMMAND,ID_ENABLE) : FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
+
+
 // Select all cells
 long FXTable::onCmdSelectAll(FXObject*,FXSelector,void*){
   setAnchorItem(0,0);
@@ -3201,6 +3234,12 @@ long FXTable::onCmdSelectAll(FXObject*,FXSelector,void*){
   return 1;
   }
 
+
+// Update deselect all
+long FXTable::onUpdDeselectAll(FXObject* sender,FXSelector,void*){
+  sender->handle(this,isAnythingSelected() ? FXSEL(SEL_COMMAND,ID_ENABLE) : FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  return 1;
+  }
 
 // Deselect all cells
 long FXTable::onCmdDeselectAll(FXObject*,FXSelector,void*){

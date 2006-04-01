@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxrgbio.cpp,v 1.27 2006/01/22 17:58:54 fox Exp $                         *
+* $Id: fxrgbio.cpp,v 1.28 2006/03/18 04:57:03 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -76,7 +76,7 @@ bool fxcheckRGB(FXStream& store){
   FXuchar signature[2];
   store.load(signature,2);
   store.position(-2,FXFromCurrent);
-  return signature[0]=0x01 && signature[1]==0xDA;
+  return signature[0]==0x01 && signature[1]==0xDA;
   }
 
 

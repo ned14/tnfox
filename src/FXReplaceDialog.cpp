@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXReplaceDialog.cpp,v 1.48 2006/01/22 17:58:40 fox Exp $                 *
+* $Id: FXReplaceDialog.cpp,v 1.49 2006/03/01 02:13:21 fox Exp $                 *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -236,9 +236,9 @@ void FXReplaceDialog::appendHistory(const FXString& search,const FXString& repla
   if(!search.empty()){
     if(search!=getApp()->reg().readStringEntry(searchgroup,skey[0],FXString::null)){
       for(i=19; i>0; i--){
-        if((val=getApp()->reg().readStringEntry(searchgroup,skey[i-1],NULL))) getApp()->reg().writeStringEntry(searchgroup,skey[i],val);
-        if((val=getApp()->reg().readStringEntry(searchgroup,rkey[i-1],NULL))) getApp()->reg().writeStringEntry(searchgroup,rkey[i],val);
-        if((val=getApp()->reg().readStringEntry(searchgroup,mkey[i-1],NULL))) getApp()->reg().writeStringEntry(searchgroup,mkey[i],val);
+        if((val=getApp()->reg().readStringEntry(searchgroup,skey[i-1],NULL))!=NULL) getApp()->reg().writeStringEntry(searchgroup,skey[i],val);
+        if((val=getApp()->reg().readStringEntry(searchgroup,rkey[i-1],NULL))!=NULL) getApp()->reg().writeStringEntry(searchgroup,rkey[i],val);
+        if((val=getApp()->reg().readStringEntry(searchgroup,mkey[i-1],NULL))!=NULL) getApp()->reg().writeStringEntry(searchgroup,mkey[i],val);
         }
       }
     getApp()->reg().writeStringEntry(searchgroup,skey[0],search.text());

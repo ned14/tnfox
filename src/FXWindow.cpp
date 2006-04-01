@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.cpp,v 1.339 2006/01/22 17:58:51 fox Exp $                       *
+* $Id: FXWindow.cpp,v 1.341 2006/03/16 04:41:36 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -435,7 +435,7 @@ void FXWindow::load(FXStream& store){
 FXWindow* FXWindow::getShell() const {
   register FXWindow *win=(FXWindow*)this;
   register FXWindow *p;
-  while((p=win->parent) && p->parent) win=p;
+  while((p=win->parent)!=NULL && p->parent) win=p;
   return win;
   }
 

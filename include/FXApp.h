@@ -1043,6 +1043,11 @@ public:
   /// Error beep
   void errorBeep();
 
+  /**
+  * Return time in nanoseconds since Epoch (Jan 1, 1970).
+  */
+  static FXlong time();
+
   /// Return application instance
   static inline FXApp* instance(){ return app; }
 

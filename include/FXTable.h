@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.h,v 1.165 2006/01/27 02:07:44 fox Exp $                          *
+* $Id: FXTable.h,v 1.166 2006/02/16 04:08:11 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABLE_H
 #define FXTABLE_H
@@ -235,10 +235,10 @@ public:
 
   /// Set value from input control
   virtual void setFromControl(FXWindow *control);
-  
+
   /// Set selections as newline-separated strings
   void setSelections(const FXString& strings);
-  
+
   /// Return selections
   const FXString& getSelections() const { return selections; }
   };
@@ -379,12 +379,17 @@ public:
   long onCmdExtend(FXObject*,FXSelector,void*);
 
   // Changing Selection
+  long onUpdSelectCell(FXObject*,FXSelector,void*);
   long onCmdSelectCell(FXObject*,FXSelector,void*);
+  long onUpdSelectRow(FXObject*,FXSelector,void*);
   long onCmdSelectRow(FXObject*,FXSelector,void*);
+  long onUpdSelectColumn(FXObject*,FXSelector,void*);
   long onCmdSelectColumn(FXObject*,FXSelector,void*);
   long onCmdSelectRowIndex(FXObject*,FXSelector,void*);
   long onCmdSelectColumnIndex(FXObject*,FXSelector,void*);
+  long onUpdSelectAll(FXObject*,FXSelector,void*);
   long onCmdSelectAll(FXObject*,FXSelector,void*);
+  long onUpdDeselectAll(FXObject*,FXSelector,void*);
   long onCmdDeselectAll(FXObject*,FXSelector,void*);
 
   // Manipulation Selection

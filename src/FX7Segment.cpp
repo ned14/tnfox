@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX7Segment.cpp,v 1.17 2006/01/22 17:58:16 fox Exp $                      *
+* $Id: FX7Segment.cpp,v 1.19 2006/03/16 03:19:10 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -177,6 +177,8 @@ const FXuint segm[]={
 // map
 FXDEFMAP(FX7Segment) FX7SegmentMap[]={
   FXMAPFUNC(SEL_PAINT,0,FX7Segment::onPaint),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FX7Segment::onQueryTip),
+  FXMAPFUNC(SEL_QUERY_HELP,0,FX7Segment::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_SETVALUE,FX7Segment::onCmdSetValue),
   FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_SETINTVALUE,FX7Segment::onCmdSetIntValue),
   FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_SETREALVALUE,FX7Segment::onCmdSetRealValue),
@@ -184,6 +186,10 @@ FXDEFMAP(FX7Segment) FX7SegmentMap[]={
   FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_GETINTVALUE,FX7Segment::onCmdGetIntValue),
   FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_GETREALVALUE,FX7Segment::onCmdGetRealValue),
   FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_GETSTRINGVALUE,FX7Segment::onCmdGetStringValue),
+  FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_SETHELPSTRING,FX7Segment::onCmdSetHelp),
+  FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_GETHELPSTRING,FX7Segment::onCmdGetHelp),
+  FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_SETTIPSTRING,FX7Segment::onCmdSetTip),
+  FXMAPFUNC(SEL_COMMAND,FX7Segment::ID_GETTIPSTRING,FX7Segment::onCmdGetTip),
   };
 
 
@@ -273,6 +279,56 @@ long FX7Segment::onCmdSetStringValue(FXObject*,FXSelector,void *ptr){
   }
 
 
+// Set help using a message
+long FX7Segment::onCmdSetHelp(FXObject*,FXSelector,void* ptr){
+  setHelpText(*((FXString*)ptr));
+  return 1;
+  }
+
+
+// Get help using a message
+long FX7Segment::onCmdGetHelp(FXObject*,FXSelector,void* ptr){
+  *((FXString*)ptr)=getHelpText();
+  return 1;
+  }
+
+
+// Set tip using a message
+long FX7Segment::onCmdSetTip(FXObject*,FXSelector,void* ptr){
+  setTipText(*((FXString*)ptr));
+  return 1;
+  }
+
+
+// Get tip using a message
+long FX7Segment::onCmdGetTip(FXObject*,FXSelector,void* ptr){
+  *((FXString*)ptr)=getTipText();
+  return 1;
+  }
+
+
+// We were asked about tip text
+long FX7Segment::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+    return 1;
+    }
+  return 0;
+  }
+
+
+// We were asked about status text
+long FX7Segment::onQueryHelp(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryHelp(sender,sel,ptr)) return 1;
+  if((flags&FLAG_HELP) && !help.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&help);
+    return 1;
+    }
+  return 0;
+  }
+
+
 // draw/redraw object
 long FX7Segment::onPaint(FXObject*,FXSelector,void *ptr){
   register FXEvent *event=(FXEvent*)ptr;
@@ -346,7 +402,6 @@ void FX7Segment::drawCells(FXDCWindow &dc,FXint x,FXint y,FXint cw,FXint ch){
   for(c=0; c<label.length(); c++){
     t=(FXuchar)label[c];
     if(' '<=t && t<127){
-      //drawSegments(dc,tx+(c*tw+label.length()-1)/label.length(),ty,cw,th,segm[ch-' ']);
       drawSegments(dc,x+c*(cellwidth+2),y,cw,ch,segm[t-' ']);
       }
     }
@@ -537,6 +592,8 @@ void FX7Segment::save(FXStream &store) const {
   store << thickness;
   store << cellwidth;
   store << cellheight;
+  store << tip;
+  store << help;
   }
 
 
@@ -548,6 +605,8 @@ void FX7Segment::load(FXStream &store) {
   store >> thickness;
   store >> cellwidth;
   store >> cellheight;
+  store >> tip;
+  store >> help;
   }
 
 }

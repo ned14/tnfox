@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX4Splitter.h,v 1.29 2006/02/09 03:42:07 fox Exp $                       *
+* $Id: FX4Splitter.h,v 1.30 2006/02/20 03:32:12 fox Exp $                       *
 ********************************************************************************/
 #ifndef FX4SPLITTER_H
 #define FX4SPLITTER_H
@@ -67,7 +67,7 @@ protected:
   FX4Splitter();
   FXuchar getMode(FXint x,FXint y);
   void moveSplit(FXint x,FXint y);
-  void drawSplit(FXint x,FXint y);
+  void drawSplit(FXint x,FXint y,FXuint m);
   void adjustLayout();
 private:
   FX4Splitter(const FX4Splitter&);

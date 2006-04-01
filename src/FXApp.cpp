@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.612 2006/01/22 17:58:16 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.617 2006/03/16 22:22:43 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -192,7 +192,7 @@ extern "C" int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif
 
 // Default maximum number of colors to allocate
-#define MAXCOLORS 125
+#define MAXCOLORS  125
 
 // Largest number of signals on this system
 #define MAXSIGNALS 64
@@ -298,11 +298,7 @@ struct FXTimer {
   FXObject      *target;            // Receiver object
   void          *data;              // User data
   FXSelector     message;           // Message sent to receiver
-#ifndef WIN32
-  struct timeval due;               // When timer is due
-#else
-  FXlong         due;               // When timer is due (ms)
-#endif
+  FXlong         due;               // When timer is due (ns)
   };
 
 
@@ -1432,7 +1428,6 @@ bool FXApp::openDisplay(const FXchar* dpyname){
 
     // Set to HINSTANCE on Windows
     display=GetOwnModuleHandle();
-    //display=GetModuleHandle(NULL);
 
     // TARGETS
     ddeTargets=GlobalAddAtomA("TARGETS");
@@ -1654,30 +1649,11 @@ FXEventLoop* FXApp::getEventLoop() const {
 /*******************************************************************************/
 
 
-#ifndef WIN32
-
-// Compare times
-static inline int operator<(const struct timeval& a,const struct timeval& b){
-  return (a.tv_sec<b.tv_sec) || (a.tv_sec==b.tv_sec && a.tv_usec<b.tv_usec);
-  }
-
-#endif
-
-#ifdef WIN32
-
-// Return 64-bit tick count (ms)
-static inline FXlong getticktime(){
-  FXlong now;
-  GetSystemTimeAsFileTime((FILETIME*)&now);
-  return now/10000;
-  }
-
-#endif
-
-
 // Add timeout, sorted by time
 void FXEventLoop::addTimeout(FXObject* tgt,FXSelector sel,FXuint ms,void* ptr){
   FXLockHold h(this);
+  const FXlong milliseconds=1000000;
+  register FXlong nsec=ms*milliseconds;
   register FXTimer *t,**tt;
   for(tt=&timers; (t=*tt)!=NULL; tt=&t->next){
     if(t->target==tgt && t->message==sel){ *tt=t->next; goto a; }
@@ -1691,18 +1667,7 @@ void FXEventLoop::addTimeout(FXObject* tgt,FXSelector sel,FXuint ms,void* ptr){
     }
 a:t->data=ptr;
   t->target=tgt;
-#ifndef WIN32
-  gettimeofday(&t->due,NULL);
-  t->due.tv_sec+=ms/1000;
-  t->due.tv_usec+=(ms%1000)*1000;
-  if(t->due.tv_usec>=1000000){
-    t->due.tv_usec-=1000000;
-    t->due.tv_sec+=1;
-    }
-#else
-  t->due=getticktime();
-  t->due+=ms;
-#endif
+  t->due=FXApp::time()+nsec;
   t->message=sel;
   for(tt=&timers; *tt && ((*tt)->due < t->due); tt=&(*tt)->next);
   t->next=*tt;
@@ -1739,25 +1704,11 @@ FXuint FXEventLoop::remainingTimeout(FXObject *tgt,FXSelector sel) {
   register FXuint remaining=4294967295U;
   for(register FXTimer *t=timers; t; t=t->next){
     if(t->target==tgt && t->message==sel){
+      register FXlong now=FXApp::time();
       remaining=0;
-#ifndef WIN32
-      struct timeval now;
-      gettimeofday(&now,NULL);
-      if(now < t->due){
-        now.tv_sec=t->due.tv_sec-now.tv_sec;
-        now.tv_usec=t->due.tv_usec-now.tv_usec;
-        if(now.tv_usec<0){
-          now.tv_usec+=1000000;
-          now.tv_sec-=1;
-          }
-        remaining=now.tv_sec*1000+now.tv_usec/1000;
-        }
-#else
-      FXlong now=getticktime();
-      if(now < t->due){
+      if(now<t->due){
         remaining=(FXuint)(t->due-now);
         }
-#endif
       break;
       }
     }
@@ -1768,13 +1719,8 @@ FXuint FXEventLoop::remainingTimeout(FXObject *tgt,FXSelector sel) {
 // Handle any outstanding timers
 void FXEventLoop::handleTimeouts(){
   FXLockHold h(this);
+  register FXlong now=FXApp::time();
   register FXTimer* t;
-#ifndef WIN32
-  struct timeval now;
-  gettimeofday(&now,NULL);
-#else
-  FXlong now=getticktime();
-#endif
   while(timers){
     if(now < timers->due) break;
     t=timers;
@@ -2234,16 +2180,11 @@ FXbool FXEventLoop::doIdleProcessing()
 void FXEventLoop::doTimers()
 {
   // Handle all past due timers
-#ifndef WIN32
-  struct timeval now;
-  gettimeofday(&now,NULL);
-#else
-  FXlong now;
-  now=getticktime();
-#endif
+  register FXlong now=FXApp::time();
+  register FXTimer* t;
   while(timers){
-    register FXTimer* t=timers;
-    if(now < t->due) break;
+    if(now < timers->due) break;
+    t=timers;
     timers=t->next;
     if(t->target && t->target->tryHandle(this,FXSEL(SEL_TIMEOUT,t->message),t->data)) refresh();
     t->next=timerrecs;
@@ -2386,7 +2327,6 @@ void FXEventLoop::resetLoopLatch() {
 
 // Implementation of fetching an event. Returns false if no event
 bool FXEventLoop::getNextEventI(FXRawEvent& ev,bool blocking){
-  register int ticks;
   XEvent e;
   struct timeval delta, *deltaaddr; deltaaddr=&delta;
 
@@ -2395,11 +2335,11 @@ bool FXEventLoop::getNextEventI(FXRawEvent& ev,bool blocking){
 
   // Are there no events already queued up?
   if(!initialized || !XEventsQueued((Display*)display,QueuedAfterFlush)){
-    register int maxfds;
-    register int nfds;
     fd_set readfds;
     fd_set writefds;
     fd_set exceptfds;
+    int    maxfds;
+    int    nfds;
 
     // Prepare fd's to check
     maxfds=maxinput;
@@ -2421,19 +2361,16 @@ bool FXEventLoop::getNextEventI(FXRawEvent& ev,bool blocking){
 
       // If there are timers, we block only for a little while.
       if(timers){
-        struct timeval now;
-        gettimeofday(&now,NULL);
 
-        // Compute how long to wait
-        delta.tv_usec=timers->due.tv_usec-now.tv_usec;
-        delta.tv_sec=timers->due.tv_sec-now.tv_sec;
-        while(delta.tv_usec<0){
-          delta.tv_usec+=1000000;
-          delta.tv_sec-=1;
-          }
+        // All that testing above may have taken some time...
+        FXlong interval=timers->due-FXApp::time();
 
         // Some timers are already due; do them right away!
-        if(delta.tv_sec<0 || (delta.tv_sec==0 && delta.tv_usec==0)) return false;
+        if(interval<=0) return false;
+
+        // Compute how long to wait
+        delta.tv_usec=(interval/1000)%1000000;
+        delta.tv_sec=interval/1000000000;
         }
       else{
         deltaaddr=NULL;
@@ -2508,7 +2445,7 @@ bool FXEventLoop::getNextEventI(FXRawEvent& ev,bool blocking){
 
   // Compress wheel events
   else if((ev.xany.type==ButtonPress) && (ev.xbutton.button==Button4 || ev.xbutton.button==Button5)){
-    ticks=1;
+    FXint ticks=1;
     while(XPending((Display*)display)){
       XPeekEvent((Display*)display,&e);
       if((e.xany.type!=ButtonPress && e.xany.type!=ButtonRelease) || (ev.xany.window!=e.xany.window) || (ev.xbutton.button != e.xbutton.button)) break;
@@ -3324,8 +3261,8 @@ void FXEventLoop::resetLoopLatch() {
 // Implementation of fetching an event. Returns false if no event
 bool FXEventLoop::getNextEventI(FXRawEvent& msg,bool blocking){
   register FXint allinputs;
-  register DWORD  signalled;
-  FXlong now,delta;
+  register DWORD signaled;
+  DWORD delta;
 
   // Set to no-op just in case
   msg.message=0;
@@ -3334,7 +3271,7 @@ bool FXEventLoop::getNextEventI(FXRawEvent& msg,bool blocking){
   // MsgWaitForMultipleObjects would block even if there are unhandled events;
   // the fix is to call MsgWaitForMultipleObjects only AFTER having ascertained
   // that there are NO unhandled events queued up.
-  if(PeekMessage(&msg,NULL,0,0,PM_REMOVE)) return TRUE;
+  if(PeekMessage(&msg,NULL,0,0,PM_REMOVE)) return true;
 
   allinputs=maxinput+1;
   if(blocking){
@@ -3342,14 +3279,13 @@ bool FXEventLoop::getNextEventI(FXRawEvent& msg,bool blocking){
     // If there are timers, block only a little time
     if(timers){
 
-      // Read the clock again
-      now=getticktime();
+      // All that testing above may have taken some time...
+      FXlong interval=timers->due-FXApp::time();
 
-      // How long to wait
-      delta=timers->due-now;
+      // Some timers are already due; do them right away!
+      if(interval<=0) return false;
 
-      // Some timers are already due, so go do them now
-      if(delta<=0) return FALSE;
+      delta=(DWORD)(interval/1000000);
       }
     else{
       delta=INFINITE;
@@ -3361,23 +3297,23 @@ bool FXEventLoop::getNextEventI(FXRawEvent& msg,bool blocking){
 
   // Poll to see if any waitable objects are signalled
   handles[maxinput+1]=latch;
-  signalled=MsgWaitForMultipleObjects(allinputs+1,handles,FALSE,(DWORD)delta,QS_ALLINPUT);
+  signaled=MsgWaitForMultipleObjects(allinputs+1,handles,FALSE,(DWORD)delta,QS_ALLINPUT);
 
   // No objects were signalled, so perform background tasks now
-  if(signalled==WAIT_TIMEOUT) return FALSE;
+  if(signaled==WAIT_TIMEOUT) return false;
 
   // If was only the latch return to process
-  if(signalled==WAIT_OBJECT_0+maxinput+1) return FALSE;
+  if(signaled==WAIT_OBJECT_0+maxinput+1) return FALSE;
 
   // Signallable object was signalled
-  if(WAIT_OBJECT_0<=signalled && signalled<WAIT_OBJECT_0+allinputs){
+  if(WAIT_OBJECT_0<=signaled && signaled<WAIT_OBJECT_0+allinputs){
 
     // Process ALL objects which are signalled after returning from
     // MsgWaitForMultipleObjects. We copy the stuff out of the arrays
     // before issueing callbacks, in case an entry is removed.
     for(FXuint i=0; i<=(FXuint) maxinput; i++){
       register FXInputHandle fff=handles[i];
-      if((i==signalled-WAIT_OBJECT_0) || (WaitForSingleObject(fff,0)==WAIT_OBJECT_0)){
+      if((i==signaled-WAIT_OBJECT_0) || (WaitForSingleObject(fff,0)==WAIT_OBJECT_0)){
         FXInput in=inputs[i];
         if(in.read.target)  postAsyncMessage(in.read.target, FXSEL(SEL_IO_READ,in.read.message),   (void*)(FXival)fff,this);
         if(in.write.target) postAsyncMessage(in.write.target,FXSEL(SEL_IO_WRITE,in.write.message), (void*)(FXival)fff,this);
@@ -3387,7 +3323,7 @@ bool FXEventLoop::getNextEventI(FXRawEvent& msg,bool blocking){
     }
 
   // Got message from the GUI?
-  if(signalled!=WAIT_OBJECT_0+allinputs+1) return false;
+  if(signaled!=WAIT_OBJECT_0+allinputs+1) return false;
 
   // Get the event; this used to be GetMessage(&msg,NULL,0,0),
   // but for some reason, this occasionally blocks even though we
@@ -3433,14 +3369,7 @@ bool FXEventLoop::peekEvent(){
 
     // Timers are due?
     if(timers){
-#ifndef WIN32
-      struct timeval now;
-      gettimeofday(&now,NULL);
-#else
-      FXlong now;
-      now=getticktime();
-#endif
-      if(timers->due < now) return true;
+      if(timers->due <= FXApp::time()) return true;
       }
 
     // Async messages waiting?
@@ -4171,7 +4100,6 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
   FXWindow *window,*ancestor,*win;
   POINT ptRoot, pt;
   DWORD dwpts;
-  RECT rect;
   PAINTSTRUCT ps;
   FXuint state;
   HANDLE hMap;
@@ -4191,20 +4119,15 @@ long FXEventLoop::dispatchEvent(FXID hwnd,unsigned int iMsg,unsigned int wParam,
 
     // Repaint event
     case WM_PAINT:
-      // An application should call the GetUpdateRect function to determine
-      // whether the window has an update region. If GetUpdateRect returns zero,
-      // the application should not call the BeginPaint and EndPaint functions.
-      if(GetUpdateRect((HWND)hwnd,&rect,FALSE)){
-        event.type=SEL_PAINT;
-        event.synthetic=1;              // FIXME when is it non-synthetic?
-        BeginPaint((HWND)hwnd,&ps);
-        event.rect.x=(FXshort)rect.left;
-        event.rect.y=(FXshort)rect.top;
-        event.rect.w=(FXshort)(rect.right-rect.left);
-        event.rect.h=(FXshort)(rect.bottom-rect.top);
-        window->handle(this,FXSEL(SEL_PAINT,0),&event);
-        EndPaint((HWND)hwnd,&ps);
-        }
+      event.type=SEL_PAINT;
+      event.synthetic=1;              // FIXME when is it non-synthetic?
+      BeginPaint((HWND)hwnd,&ps);
+      event.rect.x=(FXshort)ps.rcPaint.left;
+      event.rect.y=(FXshort)ps.rcPaint.top;
+      event.rect.w=(FXshort)(ps.rcPaint.right-ps.rcPaint.left);
+      event.rect.h=(FXshort)(ps.rcPaint.bottom-ps.rcPaint.top);
+      window->handle(this,FXSEL(SEL_PAINT,0),&event);
+      EndPaint((HWND)hwnd,&ps);
       return 0;
 
 /*
@@ -4997,6 +4920,33 @@ void FXApp::errorBeep(){
     MessageBeep(MB_ICONHAND);
 #endif
     }
+  }
+
+
+// Get time in nanoseconds since Epoch
+FXlong FXApp::time(){
+#ifndef WIN32
+#ifdef __USE_POSIX199309
+  const FXlong seconds=1000000000;
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME,&ts);
+  return ts.tv_sec*seconds+ts.tv_nsec;
+#else
+  const FXlong seconds=1000000000;
+  const FXlong microseconds=1000;
+  struct timeval now;
+  gettimeofday(&tv,NULL);
+  return tv.tv_sec*seconds+tv.tv_usec*microseconds;
+#endif
+#else
+  FXlong now;
+  GetSystemTimeAsFileTime((FILETIME*)&now);
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(__SC__)
+  return (now-116444736000000000LL)*100LL;
+#else
+  return (now-116444736000000000L)*100L;
+#endif
+#endif
   }
 
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFoldingList.cpp,v 1.64 2006/01/22 17:58:26 fox Exp $                   *
+* $Id: FXFoldingList.cpp,v 1.66 2006/02/17 03:06:59 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1381,6 +1381,8 @@ long FXFoldingList::onLookupTimer(FXObject*,FXSelector,void*){
 long FXFoldingList::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXFoldingItem *item=currentitem;
+  FXFoldingItem *succ;
+  FXint page;
   flags&=~FLAG_TIP;
   if(!isEnabled()) return 0;
   if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
@@ -1396,14 +1398,32 @@ long FXFoldingList::onKeyPress(FXObject*,FXSelector,void* ptr){
       return 1;
     case KEY_Page_Up:
     case KEY_KP_Page_Up:
-      lookup=FXString::null;
-      setPosition(pos_x,pos_y+verticalScrollBar()->getPage());
-      return 1;
+      for(succ=item,page=verticalScrollBar()->getPage(); succ && 0<page; ){
+        item=succ;
+        page-=succ->getHeight(this);
+        if(succ->prev){
+          succ=succ->prev;
+          while(succ->last && ((options&FOLDINGLIST_AUTOSELECT) || succ->isExpanded())) succ=succ->last;
+          }
+        else if(succ->parent){
+          succ=succ->parent;
+          }
+        }
+      goto hop;
     case KEY_Page_Down:
     case KEY_KP_Page_Down:
-      lookup=FXString::null;
-      setPosition(pos_x,pos_y-verticalScrollBar()->getPage());
-      return 1;
+      for(succ=item,page=verticalScrollBar()->getPage(); succ && 0<page; ){
+        item=succ;
+        page-=succ->getHeight(this);
+        if(succ->first && ((options&FOLDINGLIST_AUTOSELECT) || succ->isExpanded())){
+          succ=succ->first;
+          }
+        else{
+          while(!succ->next && succ->parent) succ=succ->parent;
+          succ=succ->next;
+          }
+        }
+      goto hop;
     case KEY_Up:                          // Move up
     case KEY_KP_Up:
       if(item){

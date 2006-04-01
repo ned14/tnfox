@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxkeys.h,v 1.13 2006/01/22 17:58:13 fox Exp $                            *
+* $Id: fxkeys.h,v 1.14 2006/03/07 05:30:46 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXKEYS_H
 #define FXKEYS_H
@@ -29,7 +29,7 @@ namespace FX {
 enum {
 
   // Void symbol
-  KEY_VoidSymbol                    = 0xFFFFFF,
+  KEY_VoidSymbol                    = 0,
 
   // Miscellaneous
   KEY_BackSpace                     = 0xFF08,

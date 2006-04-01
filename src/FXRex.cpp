@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRex.cpp,v 1.95 2006/01/22 17:58:40 fox Exp $                           *
+* $Id: FXRex.cpp,v 1.98 2006/03/18 01:05:58 fox Exp $                           *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -947,7 +947,6 @@ x:fxmessage("end\n");
   }
 
 #endif
-
 
 /*******************************************************************************/
 
@@ -2665,7 +2664,6 @@ FXRexError FXRex::parse(const FXString& pattern,FXint mode){
 
 
 /*******************************************************************************/
-
 
 
 // Match subject string, returning number of matches found

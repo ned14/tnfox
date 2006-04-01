@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.cpp,v 1.162 2006/01/22 17:58:21 fox Exp $                     *
+* $Id: FXDCWindow.cpp,v 1.163 2006/02/20 20:21:42 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -2159,7 +2159,9 @@ void FXDCWindow::updatePen(){
       lb.lbHatch=0;
       break;
     case FILL_TILED:
-      FXASSERT(FALSE);
+      lb.lbStyle=BS_SOLID;
+      lb.lbColor=devfg;
+      lb.lbHatch=0;
       break;
     case FILL_STIPPLED:
       if(stipple){
@@ -2268,10 +2270,18 @@ void FXDCWindow::updateBrush(){
       lb.lbStyle=BS_SOLID;
       lb.lbColor=devfg;
       lb.lbHatch=0;
+      DeleteObject(SelectObject((HDC)ctx,CreateBrushIndirect(&lb)));
       break;
     case FILL_TILED:
-      FXASSERT(FALSE);
-      lb.lbColor=devfg;
+      if(tile){
+        DeleteObject(SelectObject((HDC)ctx,CreatePatternBrush((HBITMAP)tile->id())));
+        }
+      else{
+        lb.lbStyle=BS_SOLID;
+        lb.lbColor=devfg;
+        lb.lbHatch=0;
+        DeleteObject(SelectObject((HDC)ctx,CreateBrushIndirect(&lb)));
+        }
       break;
     case FILL_STIPPLED:
       if(stipple){
@@ -2289,6 +2299,7 @@ void FXDCWindow::updateBrush(){
         lb.lbColor=devfg;
         lb.lbHatch=FXStipplePattern2Hatch(pattern);
         }
+      DeleteObject(SelectObject((HDC)ctx,CreateBrushIndirect(&lb)));
       break;
     case FILL_OPAQUESTIPPLED:
       if(stipple){
@@ -2306,9 +2317,9 @@ void FXDCWindow::updateBrush(){
         lb.lbColor=devfg;
         lb.lbHatch=FXStipplePattern2Hatch(pattern);
         }
+      DeleteObject(SelectObject((HDC)ctx,CreateBrushIndirect(&lb)));
       break;
     }
-  DeleteObject(SelectObject((HDC)ctx,CreateBrushIndirect(&lb)));
   if(fill==FILL_STIPPLED){
     SetBkMode((HDC)ctx,TRANSPARENT);         // Alas, only works for BS_HATCHED...
     }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeList.cpp,v 1.165 2006/01/22 17:58:50 fox Exp $                     *
+* $Id: FXTreeList.cpp,v 1.167 2006/02/17 03:07:00 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1258,6 +1258,8 @@ long FXTreeList::onLookupTimer(FXObject*,FXSelector,void*){
 long FXTreeList::onKeyPress(FXObject*,FXSelector,void* ptr){
   FXEvent* event=(FXEvent*)ptr;
   FXTreeItem *item=currentitem;
+  FXTreeItem *succ;
+  FXint page;
   flags&=~FLAG_TIP;
   if(!isEnabled()) return 0;
   if(target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
@@ -1273,20 +1275,38 @@ long FXTreeList::onKeyPress(FXObject*,FXSelector,void* ptr){
       return 1;
     case KEY_Page_Up:
     case KEY_KP_Page_Up:
-      lookup=FXString::null;
-      setPosition(pos_x,pos_y+verticalScrollBar()->getPage());
-      return 1;
+      for(succ=item,page=verticalScrollBar()->getPage(); succ && 0<page; ){
+        item=succ;
+        page-=succ->getHeight(this);
+        if(succ->prev){
+          succ=succ->prev;
+          while(succ->last && ((options&TREELIST_AUTOSELECT) || succ->isExpanded())) succ=succ->last;
+          }
+        else if(succ->parent){
+          succ=succ->parent;
+          }
+        }
+      goto hop;
     case KEY_Page_Down:
     case KEY_KP_Page_Down:
-      lookup=FXString::null;
-      setPosition(pos_x,pos_y-verticalScrollBar()->getPage());
-      return 1;
+      for(succ=item,page=verticalScrollBar()->getPage(); succ && 0<page; ){
+        item=succ;
+        page-=succ->getHeight(this);
+        if(succ->first && ((options&TREELIST_AUTOSELECT) || succ->isExpanded())){
+          succ=succ->first;
+          }
+        else{
+          while(!succ->next && succ->parent) succ=succ->parent;
+          succ=succ->next;
+          }
+        }
+      goto hop;
     case KEY_Up:                          // Move up
     case KEY_KP_Up:
       if(item){
         if(item->prev){
           item=item->prev;
-          while(item->first && ((options&TREELIST_AUTOSELECT) || item->isExpanded())) item=item->last;
+          while(item->last && ((options&TREELIST_AUTOSELECT) || item->isExpanded())) item=item->last;
           }
         else if(item->parent){
           item=item->parent;

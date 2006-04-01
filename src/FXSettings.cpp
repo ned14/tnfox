@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSettings.cpp,v 1.52 2006/01/22 17:58:41 fox Exp $                      *
+* $Id: FXSettings.cpp,v 1.54 2006/03/01 02:15:22 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -145,9 +145,9 @@ bool FXSettings::parseFile(const FXString& filename,bool mark){
     FXint bol,eol,end,section,name,value,p,lineno;
     FXStringDict *group=NULL;
 
-    FXTRACE((100,"Reading settings file: %s\n",filename.text()));
-
     lineno=bol=eol=end=0;
+
+    // Read lines
     while(readString(file,line,bol,eol,end)){
       lineno++;
 
@@ -229,8 +229,6 @@ bool FXSettings::unparseFile(const FXString& filename){
   FXFile file(filename,FXIO::Writing);
   FXchar line[MAXVALUE];
   if(file.isOpen()){
-
-    FXTRACE((100,"Writing settings file: %s\n",filename.text()));
 
     // Loop over all sections
     for(FXint s=first(); s<size(); s=next(s)){
@@ -366,7 +364,7 @@ FXchar* FXSettings::enquote(FXchar* result,const FXchar* text){
   register FXuchar c;
   if(needquotes(text)){
     *ptr++='"';
-    while((c=*text++) && ptr<end){
+    while((c=*text++)!='\0' && ptr<end){
       switch(c){
         case '\n':
           *ptr++='\\';
@@ -424,7 +422,7 @@ FXchar* FXSettings::enquote(FXchar* result,const FXchar* text){
     *ptr++='"';
     }
   else{
-    while((c=*text++) && ptr<end){
+    while((c=*text++)!='\0' && ptr<end){
       *ptr++=c;
       }
     }

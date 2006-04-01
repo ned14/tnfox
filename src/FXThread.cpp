@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXThread.cpp,v 1.47 2006/01/22 17:58:47 fox Exp $                        *
+* $Id: FXThread.cpp,v 1.53 2006/03/18 01:05:58 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -249,14 +249,11 @@ void FXCondition::wait(FXMutex& mtx){
 
 
 // Wait for condition but fall through after timeout
-FXbool FXCondition::wait(FXMutex& mtx,FXuint ms){
+FXbool FXCondition::wait(FXMutex& mtx,FXlong nsec){
   register int result;
   struct timespec ts;
-  struct ::timeval tv;
-  gettimeofday(&tv,NULL);
-  ts.tv_nsec=((ms%1000)*1000+tv.tv_usec)*1000;
-  ts.tv_sec=(ms/1000)+(ts.tv_nsec/1000000000)+tv.tv_sec;
-  ts.tv_nsec=ts.tv_nsec%1000000000;
+  ts.tv_sec=nsec/1000000000;
+  ts.tv_nsec=nsec%1000000000;
 x:result=pthread_cond_timedwait((pthread_cond_t*)data,(pthread_mutex_t*)&mtx.data,&ts);
   if(result==EINTR) goto x;
   return result!=ETIMEDOUT;
@@ -417,12 +414,13 @@ void FXCondition::wait(FXMutex& mtx){
 
 
 // Wait using single global mutex
-FXbool FXCondition::wait(FXMutex& mtx,FXuint ms){
+FXbool FXCondition::wait(FXMutex& mtx,FXlong nsec){
   EnterCriticalSection((CRITICAL_SECTION*)&data[3]);
   data[2]++;
   LeaveCriticalSection((CRITICAL_SECTION*)&data[3]);
   mtx.unlock();
-  DWORD result=WaitForMultipleObjects(2,(HANDLE*)data,0,ms);
+  nsec-=FXThread::time();
+  DWORD result=WaitForMultipleObjects(2,(HANDLE*)data,0,nsec/1000000);
   EnterCriticalSection((CRITICAL_SECTION*)&data[3]);
   data[2]--;
   int last_waiter=(result==WAIT_OBJECT_0+1)&&(data[2]==0);      // Unblocked by broadcast & no other blocked threads
@@ -553,11 +551,79 @@ void FXThread::yield(){
   }
 
 
+// Get time in nanoseconds since Epoch
+FXlong FXThread::time(){
+#ifndef WIN32
+#ifdef __USE_POSIX199309
+  const FXlong seconds=1000000000;
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME,&ts);
+  return ts.tv_sec*seconds+ts.tv_nsec;
+#else
+  const FXlong seconds=1000000000;
+  const FXlong microseconds=1000;
+  struct timeval now;
+  gettimeofday(&tv,NULL);
+  return tv.tv_sec*seconds+tv.tv_usec*microseconds;
+#endif
+#else
+  FXlong now;
+  GetSystemTimeAsFileTime((FILETIME*)&now);
+#if defined(__CYGWIN__) || defined(__MINGW32__) || defined(__SC__)
+  return (now-116444736000000000LL)*100LL;
+#else
+  return (now-116444736000000000L)*100L;
+#endif
+#endif
+  }
+
+
 // Sleep for some time
-void FXThread::sleep(unsigned long sec,unsigned long nsec){
+void FXThread::sleep(FXlong nsec){
   FXEXCEPTION_FOXCOMPAT1
-  QThread::msleep(sec*1000+nsec/1000000);
+  QThread::msleep(nsec/1000000);
   FXEXCEPTION_FOXCOMPAT2
+  }
+
+
+// Wake at appointed time
+void FXThread::wakeat(FXlong nsec){
+#ifndef WIN32
+#ifdef __USE_POSIX199309
+  const FXlong seconds=1000000000;
+  struct timespec value;
+#ifdef __USE_XOPEN2K
+  value.tv_sec=nsec/seconds;
+  value.tv_nsec=nsec%seconds;
+  clock_nanosleep(CLOCK_REALTIME,TIMER_ABSTIME,&value,NULL);
+#else
+  nsec-=FXThread::time();
+  if(nsec<0) nsec=0;
+  value.tv_sec=nsec/seconds;
+  value.tv_nsec=nsec%seconds;
+  nanosleep(&value,NULL);
+#endif
+#else
+  const FXlong seconds=1000000000;
+  const FXlong microseconds=1000;
+  const FXlong milliseconds=1000000;
+  struct timeval value;
+  if(nsec<0) nsec=0;
+  value.tv_usec=(nsec/microseconds)%milliseconds;
+  value.tv_sec=nsec/seconds;
+  select(1,0,0,0,&value);
+#endif
+#else
+  nsec-=FXThread::time();
+  if(nsec<0) nsec=0;
+  Sleep(nsec/1000000);
+#endif
+  }
+
+
+// Return thread id of caller
+FXThreadID FXThread::current(){
+  return (FXThreadID) QThread::current();
   }
 
 
@@ -571,12 +637,6 @@ FXThread* FXThread::self(){
     return ret->parent;
   else
     return 0;
-  }
-
-
-// Return thread id of caller
-FXThreadID FXThread::current(){
-  return (FXThreadID) QThread::current();
   }
 
 

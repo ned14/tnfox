@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxutils.cpp,v 1.128 2006/01/22 17:58:58 fox Exp $                        *
+* $Id: fxutils.cpp,v 1.129 2006/03/21 01:41:43 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -571,39 +571,31 @@ FXColor makeShadowColor(FXColor clr){
 /*******************************************************************************/
 
 #if 0
-// Convert to MSDOS clipboard format; we add a end
-// of string at the end of the entire buffer.
+// Convert string of length len to MSDOS; return new string and new length
 bool fxtoDOS(FXchar*& string,FXint& len){
   register FXint f=0,t=0,c;
-  while(f<len){
-    if(string[f++]=='\n') t++;
-    t++;
+  while(f<len && string[f]!='\0'){
+    if(string[f++]=='\n') t++; t++;
     }
-  t++;
   len=t;
-  if(!FXRESIZE(&string,FXchar,len)) return false;
-  string[--t]='\0';
+  if(!FXRESIZE(&string,FXchar,len+1)) return false;
   while(0<t){
-    c=string[--f];
-    string[--t]=c;
-    if(c=='\n') string[--t]='\r';
+    if((string[--t]=string[--f])=='\n') string[--t]='\r';
     }
-  FXASSERT(f==0);
-  FXASSERT(t==0);
+  string[len]='\0';
   return true;
   }
 
 
-// Convert from MSDOS clipboard format; the length passed
-// in is potentially larger than the actual string length,
-// so we scan until the end of string character or the end.
+// Convert string of length len from MSDOS; return new string and new length
 bool fxfromDOS(FXchar*& string,FXint& len){
   register FXint f=0,t=0,c;
   while(f<len && string[f]!='\0'){
     if((c=string[f++])!='\r') string[t++]=c;
     }
   len=t;
-  if(!FXRESIZE(&string,FXchar,len)) return false;
+  if(!FXRESIZE(&string,FXchar,len+1)) return false;
+  string[len]='\0';
   return true;
   }
 #endif

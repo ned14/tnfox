@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxkeyboard.cpp,v 1.13 2006/02/02 01:59:54 fox Exp $                      *
+* $Id: fxkeyboard.cpp,v 1.14 2006/03/11 01:48:08 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -221,7 +221,7 @@ UINT wkbGetCodePage(){
   if(hklOld!=hkl || uCPID==0){
     hklOld=hkl;
     char lpLCData[256];
-    if(GetLocaleInfoA(LANGIDFROMLCID(hkl),LOCALE_IDEFAULTANSICODEPAGE,lpLCData,sizeof(lpLCData))==0) return CP_ACP;
+    if(GetLocaleInfoA(LANGIDFROMLCID(LOWORD(hkl)),LOCALE_IDEFAULTANSICODEPAGE,lpLCData,sizeof(lpLCData))==0) return CP_ACP;
     uCPID=atoi(lpLCData);
     }
   return uCPID;
@@ -236,7 +236,7 @@ static FXbool wkbAltGrDown(PBYTE ks){
   if(hklOld!=hkl){
     hklOld=hkl;
     bHasAltGr=FALSE;
-    for(TCHAR ch=0x20; ch<=0xff && ch!=0x00; ++ch){
+    for(FXuint ch=0x20; ch<=0xff ; ++ch){
       // <MSDN>
       // For keyboard layouts that use the right-hand ALT key as a shift key
       // (for example, the French keyboard layout), the shift state is
