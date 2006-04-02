@@ -32,37 +32,23 @@ namespace FX {
 \brief Defines macros and classes used in implementation of FOX exception generation & handling
 */
 
-/*! \defgroup FXExceptionFlags FXERRHMAKE() bitwise flags
+/*!
 A bitwise combination of these flags is passed to anything using FXERRHMAKE()
 */
-/*! \ingroup FXExceptionFlags
-This specifies that the exception is fatal and program exit will happen immediately
-*/
-#define FXERRH_ISFATAL				1
-/*! \ingroup FXExceptionFlags
-This specifies that it should not be possible to retry the operation causing the exception
-*/
-#define FXERRH_ISNORETRY			2
-/*! \ingroup FXExceptionFlags
-This specifies that the exception is an informational message (changes the presentation)
-*/
-#define FXERRH_ISINFORMATIONAL		4
-/*! \ingroup FXExceptionFlags
-This specifies that the exception originated from the other side of a message connection
-*/
-#define FXERRH_ISFROMOTHER			8
-/*! \ingroup FXExceptionFlags
-This specified that during the throwing of the exception, further exceptions were thrown.
-When this occurs, generally at the very least memory and/or resource leaks have happened
-and you should take action where possible (eg; retrying the stack unwind). Note that this
-flag being set usually implies FXERRH_ISFATAL.
-*/
-#define FXERRH_HASNESTED			16
-/*! \ingroup FXExceptionFlags
-This specifies that the exception is part of run time checks and should only be fatal in
-release versions
-*/
-#define FXERRH_ISDEBUG				32
+enum FXExceptionFlags
+{
+	FXERRH_ISFATAL=1,			//!< This specifies that the exception is fatal and program exit will happen immediately
+	FXERRH_ISNORETRY=2,			//!< This specifies that it should not be possible to retry the operation causing the exception
+	FXERRH_ISINFORMATIONAL=4,	//!< This specifies that the exception is an informational message (changes the presentation)
+	FXERRH_ISFROMOTHER=8,		//!< This specifies that the exception originated from the other side of a message connection
+	/*! This specified that during the throwing of the exception, further exceptions were thrown.
+	When this occurs, generally at the very least memory and/or resource leaks have happened
+	and you should take action where possible (eg; retrying the stack unwind). Note that this
+	flag being set usually implies FXERRH_ISFATAL. */
+	FXERRH_HASNESTED=16,
+	FXERRH_ISDEBUG=32,			//!< This specifies that the exception is part of run time checks and should only be fatal in release versions
+	FXERRH_ISFOXEXCEPTION=64	//!< This specifies that the exception is a FOX exception, which implies printing it to stderr and fatally exiting the process
+};
 
 /*!
 \def FXEXCEPTION_DISABLESOURCEINFO
@@ -80,7 +66,7 @@ of a FXException
 /*!
 The preferred way to create a FXException, this constructs one into \em e2
 with message \em msg, code \em code and \em flags being the usual exception flags
-\sa FXExceptionFlags
+\sa FX::FXExceptionFlags
 */
 #define FXERRMAKE(e2, msg, code, flags)		FX::FXException e2(FXEXCEPTION_FILE(e2), FXEXCEPTION_LINE(e2), msg, code, flags);
 
@@ -508,7 +494,7 @@ public:
 		: FXException(_filename, _lineno, _msg, FXEXCEPTION_BADRANGE, 0) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXRangeException(const FXchar *msg)
-		: FXException(0, 0, msg, FXEXCEPTION_BADRANGE, 0) { }
+		: FXException(0, 0, msg, FXEXCEPTION_BADRANGE, FXERRH_ISFOXEXCEPTION) { }
 };
 /*! \return A FX::FXRangeException
 
@@ -529,7 +515,7 @@ public:
 		: FXException(_filename, _lineno, "Null pointer", FXEXCEPTION_NULLPOINTER, _flags) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXPointerException(const FXchar *msg)
-		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, 0) { }
+		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, FXERRH_ISFOXEXCEPTION) { }
 };
 #define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXPointerException
@@ -554,7 +540,7 @@ public:
 		: FXException(_filename, _lineno, _msg, _code, _flags) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXResourceException(const FXchar *msg)
-		: FXException(0, 0, msg, FXEXCEPTION_NORESOURCE, 0) { }
+		: FXException(0, 0, msg, FXEXCEPTION_NORESOURCE, FXERRH_ISFOXEXCEPTION) { }
 };
 
 /*! \class FXMemoryException
@@ -568,7 +554,7 @@ public:
 		: FXResourceException(_filename, _lineno, "Out of memory", FXEXCEPTION_NOMEMORY, 0) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXMemoryException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, 0) { }
+		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, FXERRH_ISFOXEXCEPTION) { }
 };
 #define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXMemoryException
@@ -679,7 +665,7 @@ class FXEXCEPTIONAPI(FXAPI) FXWindowException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXWindowException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFATAL) { }
+		: FXResourceException(0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFOXEXCEPTION) { }
 };
 
 /*! \class FXImageException
@@ -693,7 +679,7 @@ class FXEXCEPTIONAPI(FXAPI) FXImageException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXImageException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFATAL) { }
+		: FXResourceException(0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFOXEXCEPTION) { }
 };
 
 /*! \class FXFontException
@@ -707,7 +693,7 @@ class FXEXCEPTIONAPI(FXAPI) FXFontException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXFontException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFATAL) { }
+		: FXResourceException(0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFOXEXCEPTION) { }
 };
 
 
