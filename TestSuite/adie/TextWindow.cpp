@@ -707,6 +707,7 @@ TextWindow::~TextWindow(){
   delete viewmenu;
   delete windowmenu;
   delete helpmenu;
+  delete textformatmenu;
   delete popupmenu;
   delete syntaxmenu;
   }
