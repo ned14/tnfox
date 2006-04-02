@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 
 			fxmessage("\nBZip2 device test:\n"
 					    "-=-=-=-=-=-=-=-=-\n");
-			FXFile bzipped("../IOTestOutput.bz2");
+			QFile bzipped("../IOTestOutput.bz2");
 			QBZip2Device bzip2dev(&bzipped);
 			bzip2dev.open(IO_WriteOnly|IO_Translate);
 			FXStream sbzip(&bzip2dev);
