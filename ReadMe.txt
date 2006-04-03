@@ -1,4 +1,4 @@
-TnFOX v0.86 2nd April 2006:
+TnFOX v0.86 3rd April 2006:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas

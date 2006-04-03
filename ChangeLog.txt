@@ -1,4 +1,4 @@
-v0.86 2nd April 2006
+v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=
 B FXMemMap was unintentially broken on Linux for shared memory usage
 B FXMemMap wasn't detecting mmap() failures at all on POSIX!
@@ -215,6 +215,8 @@ Yakovenko for doing most of the work!
 + Added class QBZip2Device
 * Updated embedded translation file
 * Merged FOX v1.6.1
+* Added FXERRH_ISFOXEXCEPTION and made all FOX exceptions print to stderr
+and call abort()
 
 
 
