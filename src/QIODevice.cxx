@@ -172,6 +172,10 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 	{
 		if((double)bads[n]/(goods[n]+0.0000001)<0.1 && bads[n]<=bads[ret] && goods[n]>goods[ret]) ret=(QIODevice::UnicodeType) n;
 	}
+#ifdef DEBUG
+	static const char *utfs[]={ "NoTranslation", "UTF8", "UTF16BE", "UTF16LE", "UTF32BE", "UTF32LE" };
+	fxmessage("QIODevice::determineUnicodeType(%p, %u) returns %s\n", data, (FXuint) len, utfs[ret]);
+#endif
 	return ret;
 }
 
