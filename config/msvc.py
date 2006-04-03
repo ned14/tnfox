@@ -105,10 +105,8 @@ if debugmode:
 else:
     env['LINKFLAGS']+=["/OPT:REF",
                        "/OPT:ICF",
-                       "/RELEASE",
                        "/PDBSTRIPPED:"+builddir+"\\..\\TnFOXMiniSymbols.pdb",
-                       "/DELAYLOAD:opengl32.dll",
-                       "/DELAYLOAD:glu32.dll"
+                       "/RELEASE"
                        ]
 env['LIBS']+=["kernel32", "user32", "advapi32", "shell32", "gdi32",
               "winspool",
