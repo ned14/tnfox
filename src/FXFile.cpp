@@ -517,7 +517,7 @@ bool FXFile::copyFiles(const FXString& srcfile,const FXString& dstfile,bool over
       if(srcstat.isFifo()){
         FXTRACE((1,"FXPipe::create(%s)\n",dstfile.text()));
 
-#ifdef FX_FOXCOMPAT
+#if defined(FX_FOXCOMPAT) && !defined(FX_DISABLEGUI)
         // Make named pipe
         if(!FXPipe::create(dstfile,srcstat.mode())) return false;
 #endif
