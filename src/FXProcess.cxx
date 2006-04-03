@@ -1133,13 +1133,13 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 		// Start
 		assert('0'==ptr[0] && 'x'==ptr[1]);
 		if((sp=strchr(ptr, ' '))) *sp=0; assert(sp);
-		bi.startaddr=FXString(ptr+2, sp).toULong(&ok, 16); assert(ok);
+		bi.startaddr=FXString(ptr+2, sp-ptr-2).toULong(&ok, 16); assert(ok);
 		if(sp) ptr=sp+1;
 		
 		// End
 		assert('0'==ptr[0] && 'x'==ptr[1]);
 		if((sp=strchr(ptr, ' '))) *sp=0; assert(sp);
-		bi.endaddr=FXString(ptr+2, sp).toULong(&ok, 16); assert(ok);
+		bi.endaddr=FXString(ptr+2, sp-ptr-2).toULong(&ok, 16); assert(ok);
 		if(sp) ptr=sp+1;
 		
 		bi.length=bi.endaddr-bi.startaddr;
