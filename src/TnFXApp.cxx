@@ -50,12 +50,7 @@ struct FXTimer {
   FXObject      *target;            // Receiver object
   void          *data;              // User data
   FXSelector     message;           // Message sent to receiver
-#ifndef WIN32
-  struct timeval due;               // When timer is due
-#else
-//  long           due;               // When timer is due (ms)
-  FXlong         due;               // When timer is due (ms)
-#endif
+  FXlong         due;               // When timer is due (ns)
   };
 
 // Input record from FXApp
@@ -277,11 +272,7 @@ bool EventLoopC::getNextEventI(FXRawEvent& ev,bool blocking)
 				XFlush((Display*) display);			// Need to do this manually as it's async from XNextEvent()
 			if(timers)
 			{
-				struct ::timeval now;
-				gettimeofday(&now,NULL);
-				FXint togo;
-				togo=(timers->due.tv_sec-now.tv_sec)*1000;
-				togo+=(500+timers->due.tv_usec-now.tv_usec)/1000;
+				FXint togo=(FXint)((timers->due-FXApp::time())/1000000);
 				if(togo<=0) return false;
 				wait=togo;
 			}
