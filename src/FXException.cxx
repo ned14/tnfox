@@ -264,6 +264,14 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 #endif
 #endif
 	stacklevel=-1;
+	if(_flags & FXERRH_ISFOXEXCEPTION)
+	{	// If it's a FOX exception, exit the application now as there's no way
+		// FOX can be in a continuable state. If you don't like this, think about
+		// how Jeroen has implemented exceptions and you'll realise there is no
+		// other choice.
+		fxerror("%s\n", report().text());
+		abort();
+	}
 	unconstr.dismiss();
 }
 
@@ -382,7 +390,7 @@ const FXString &FXException::report() const
 		{
 			if(!srcfilename || (_flags & FXERRH_ISINFORMATIONAL)!=0)
 			{
-				if(_flags & FXERRH_ISFATAL)
+				if(_flags & (FXERRH_ISFATAL|FXERRH_ISFOXEXCEPTION))
 					reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2)").arg(_message).arg(_code,0,16));
 				else if(_flags & FXERRH_ISFROMOTHER)
 					reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2)").arg(_message).arg(_code,0,16));
@@ -391,7 +399,7 @@ const FXString &FXException::report() const
 			}
 			else
 			{
-				if(_flags & FXERRH_ISFATAL)
+				if(_flags & (FXERRH_ISFATAL|FXERRH_ISFOXEXCEPTION))
 					reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
 				else if(_flags & FXERRH_ISFROMOTHER)
 					reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));

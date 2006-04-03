@@ -297,6 +297,10 @@ def CheckCompilerPtr64(cc):
 
 def doConfTests(env, prefixpath=""):
     conf=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64 } )
+    # Very rarely, scons won't create the object file output directory and
+    # thus causes both the following tests to fail. Hence preempt the problem
+    if not os.path.exists(builddir):
+        os.mkdir(builddir)
     if make64bit:
         assert conf.CheckCompilerPtr64()
     else:

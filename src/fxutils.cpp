@@ -432,7 +432,6 @@ void fxerror(const char* format,...){
   va_start(arguments,format);
   vfprintf(stderr,format,arguments);
   va_end(arguments);
-  abort();
 #else
 #ifdef _WINDOWS
   char msg[MAXMESSAGESIZE];
@@ -449,9 +448,9 @@ void fxerror(const char* format,...){
   va_start(arguments,format);
   vfprintf(stderr,format,arguments);
   va_end(arguments);
+#endif
+#endif
   abort();
-#endif
-#endif
   }
 
 

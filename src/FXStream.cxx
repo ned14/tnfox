@@ -127,7 +127,7 @@ unsigned long FXStream::getSpace() const
 }
 
 
-void FXStream::setSpace(unsigned long)
+void FXStream::setSpace(FXuval)
 {
 	// Do nothing
 }

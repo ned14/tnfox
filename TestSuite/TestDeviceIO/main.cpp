@@ -83,10 +83,10 @@ int main(int argc, char *argv[])
 			FXStream sbufferh(&bufferh);
 			char buffer[32];
 			memset(buffer, 0, 32);
-			int count=0;
-			while(!fh.atEnd())
+			int count=0, read;
+			for(;;)
 			{	// Obviously there are much more efficient ways than this
-				int read=(int) fh.readBlock(buffer, 5);
+				if(!(read=(int) fh.readBlock(buffer, 5))) break;
 				sbufferh << buffer[0]; count++;
 				fh.at(fh.at()-read+1);
 			}
@@ -122,15 +122,16 @@ int main(int argc, char *argv[])
 			FXStream stemp(&temp);
 			bufferh.at(0);
 			buffer2h.at(0);
-			stemp << FXString("The original main.cpp:\n") << bufferh;
-			stemp << FXString("\nNow the mangled copy:\n") << buffer2h;
+			stemp.writeRawBytes("The original main.cpp:\n", 22) << bufferh;
+			stemp.writeRawBytes("\nNow the mangled copy:\n", 23) << buffer2h;
 			for(int n=0; n<100000; n++)
 			{
-				stemp << FXString("I am a happy cow %1\n").arg(n);
+				FXString t("I am a happy cow %1\n"); t.arg(n);
+				stemp.writeRawBytes(t.text(), t.length());
 				if(n % 10000==0)
 					fxmessage("Generating test text (%d) ...\n", n);
 			}
-			stemp << FXString("\nAnd the end is right NOW");
+			stemp.writeRawBytes("\nAnd the end is right NOW", 25);
 			fxmessage("Uncompressed data is %u bytes long\n", (FXuint) temp.size());
 
 			fxmessage("\nGZip device test:\n"

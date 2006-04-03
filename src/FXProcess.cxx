@@ -548,6 +548,25 @@ void FXProcess::init(int &argc, char *argv[])
 		SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
 		SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER) MyUnhandledExceptionFilter);
 		SetErrorMode(SEM_FAILCRITICALERRORS);
+		{	/* Try to give ourselves the SE_LOCK_MEMORY_PRIVILEGE privilege */
+			HANDLE adjh;
+			if(OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &adjh))
+			{
+				DWORD retlen=0;
+				TOKEN_PRIVILEGES tp={ 1 };
+				if(LookupPrivilegeValue(0, SE_LOCK_MEMORY_NAME, &tp.Privileges[0].Luid))
+				{
+					tp.Privileges[0].Attributes=SE_PRIVILEGE_ENABLED;
+					AdjustTokenPrivileges(adjh, FALSE, &tp, sizeof(tp), NULL, &retlen);
+					{
+						DWORD errcode=GetLastError();
+						if(errcode!=S_OK)
+							fxmessage("WARNING: Failed to enable SeLockMemoryPrivilege - secure data in this process will not be protected!\n");
+					}
+				}
+				CloseHandle(adjh);
+			}
+		}
 #endif
 #ifdef USE_POSIX
 		{	// Point all process terminate signals to our handler.
