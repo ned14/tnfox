@@ -40,7 +40,7 @@ FXFileStream::FXFileStream(const FXObject* cont):FXStream(0, cont)
 }
 
 // Try open file stream
-bool FXFileStream::open(const FXString& filename,FXStreamDirection save_or_load,unsigned long size){
+bool FXFileStream::open(const FXString& filename,FXStreamDirection save_or_load,FXuval size){
 
   // Stream should not yet be open
   if(dir!=FXStreamDead){ fxerror("FXFileStream::open: stream is already open.\n"); }
