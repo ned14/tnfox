@@ -234,6 +234,13 @@
 #include "FXDebugTarget.h"
 #include "FXSplashWindow.h"
 
+#else
+#include "FXIO.h"
+#include "FXFile.h"
+#include "FXPath.h"
+#include "FXSystem.h"
+#include "FXStat.h"
+#include "FXDir.h"
 #endif
 
 
