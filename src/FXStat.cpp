@@ -419,7 +419,11 @@ bool FXStat::statLink(const FXString& file,FXStat& info){
 	// Easy way of determining access. Using a FXACL would be better (QFileInfo does this)
     if(access(file.text(),R_OK)==0) info.modeFlags|=FXIO::OwnerRead;
     if(access(file.text(),W_OK)==0) info.modeFlags|=FXIO::OwnerWrite;
-    /* Fails on MSVC8 */ //if(access(file.text(),X_OK)==0) info.modeFlags|=FXIO::OwnerExec;
+#ifndef WIN32
+    if(access(file.text(),X_OK)==0) info.modeFlags|=FXIO::OwnerExec;
+#else
+	if(SHGetFileInfo(file.text(),0,&sfi,sizeof(SHFILEINFO),SHGFI_EXETYPE)!=0) info.modeFlags|=FXIO::OwnerExec;
+#endif
     return true;
     }
   return false;
