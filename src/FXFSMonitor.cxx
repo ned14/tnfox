@@ -312,7 +312,6 @@ FXFSMon::Watcher::Path::Handler::~Handler()
 void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, QThreadPool::handle callv)
 {
 	//fxmessage("FXFSMonitor dispatch %p\n", callv);
-	QMtxHold h(fxfsmon);
 	for(QValueList<Change>::const_iterator it=changes.begin(); it!=changes.end(); ++it)
 	{
 		const Change &ch=*it;
@@ -330,7 +329,9 @@ void FXFSMon::Watcher::Path::Handler::invoke(const QValueList<Change> &changes, 
 			fxmessage("FXFSMonitor: File %s had changes: %s at %s\n", file.text(), chs.text(), (ch.newfi ? *ch.newfi : *ch.oldfi).lastModified().asString().text());
 		}
 #endif
+		QMtxHold h(fxfsmon);
 		callvs.removeRef(callv);
+		h.unlock();
 		handler(ch.change, oldfi, newfi);
 	}
 }

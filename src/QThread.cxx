@@ -814,6 +814,11 @@ void QThreadPrivate::run(QThread *t)
 #else
 		t->p->id=QThread::id();
 #endif
+		// Only allow signals we like
+		sigset_t sigmask;
+		FXERRHOS(sigfillset(&sigmask));
+		//FXERRHOS(sigaddset(&sigmask, SIGPIPE));
+		FXERRHOS(pthread_sigmask(SIG_SETMASK, &sigmask, NULL));
 #endif
 		QThread::yield();
 	}

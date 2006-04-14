@@ -1,3 +1,14 @@
+v0.87 ?
+-=-=-=-=-=-=-=-=-=-=
+B Fixed deadlock in FXFSMonitor
+
+* Removed many unnecessary fetches of per-thread data (slow on POSIX) in
+FXException
+* Made FXProcess::mappedFiles() cached
+* Fixed up memory locking code to lock per VirtualAlloc region
+* Disabled signals to threads (without it, gprof won't run)
+
+
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=
 B FXMemMap was unintentially broken on Linux for shared memory usage
@@ -217,7 +228,6 @@ Yakovenko for doing most of the work!
 * Merged FOX v1.6.1
 * Added FXERRH_ISFOXEXCEPTION and made all FOX exceptions print to stderr
 and call abort()
-
 
 
 v0.85 13th Feb 2005:
