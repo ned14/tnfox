@@ -77,16 +77,17 @@ static void DestroyTIB()
 	delete mytib;
 	mytib=(FXException_TIB *)((FXuval)-1);
 }
-static inline bool CheckTIB()
+static inline bool CheckTIB(FXException_TIB **_mytib=0)
 {
 	QThread *c=QThread::current();
 	if(!mytibenabled || !c) return false;
-	if(!mytib)
+	FXException_TIB *tib=mytib;
+	if(!tib)
 	{
-		FXERRHM(mytib=new FXException_TIB);
+		FXERRHM(mytib=tib=new FXException_TIB);
 		c->addCleanupCall(Generic::BindFuncN(DestroyTIB), true);
 	}
-	FXException_TIB *tib=mytib;
+	if(_mytib) *_mytib=tib;
 	return tib!=0 && tib!=(FXException_TIB *)((FXuval)-1);
 }
 
@@ -295,9 +296,9 @@ FXException::FXException(const FXException &o)
 		stack[n]=o.stack[n];
 #endif
 #endif
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		FXException_TIB *tib=mytib;
 		FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 		if(stacklevel>=0 && le->uniqueId==uniqueId)
 		{
@@ -347,9 +348,9 @@ FXException::~FXException()
 { FXEXCEPTIONDESTRUCT1 {
 	if(uniqueId)
 	{
-		if(CheckTIB() && stacklevel>=0)
+		FXException_TIB *tib=0;
+		if(CheckTIB(&tib) && stacklevel>=0)
 		{
-			FXException_TIB *tib=mytib;
 			assert(stacklevel<(int) tib->stack.count());
 			FXException_TIB::LevelEntry *le=tib->stack.at(stacklevel);
 			if(le && le->uniqueId==uniqueId)
@@ -468,11 +469,11 @@ FXException &FXException::nested(FXint idx) const
 
 void FXException::int_setThrownException(FXException &e)
 {
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
 		if(e.code()!=FXEXCEPTION_INTTHREADCANCEL)
 		{
-			FXException_TIB *tib=mytib;
 			assert(tib);
 			// Set this exception's stack level to the current level
 			e.stacklevel=tib->stack.count()-1;
@@ -531,9 +532,9 @@ void FXException::int_setThrownException(FXException &e)
 
 void FXException::int_enterTryHandler(const char *srcfile, int lineno)
 {	// Called by FXERRH_TRY before each iteration of the tryable code
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		FXException_TIB *tib=mytib;
 		FXException_TIB::LevelEntry *le;
 		FXERRHM(le=new FXException_TIB::LevelEntry(srcfile, lineno));
 		FXRBOp unle=FXRBNew(le);
@@ -546,9 +547,9 @@ void FXException::int_enterTryHandler(const char *srcfile, int lineno)
 
 void FXException::int_exitTryHandler() throw()
 {	// Called by FXERRH_TRY at the end of each iteration of the tryable code
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		FXException_TIB *tib=mytib;
 		assert(tib);
 		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		FXuint stackcount=tib->stack.count();
@@ -590,21 +591,22 @@ void FXException::int_exitTryHandler() throw()
 
 void FXException::int_incDestructorCnt()
 {
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		assert(mytib);
-		FXException_TIB::LevelEntry *le=mytib->stack.getLast();
-		//assert(mytib->nestingCount>=0);
+		assert(tib);
+		FXException_TIB::LevelEntry *le=tib->stack.getLast();
+		//assert(tib->nestingCount>=0);
 		if(le) le->nestingCount++;
 	}
 }
 
 bool FXException::int_nestedException(FXException &e)
 {	// Returns true if exception should be rethrown
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		FXException_TIB *tib=mytib;
-		assert(mytib);
+		assert(tib);
 		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		//fxmessage("Thread %u destructor caught exception %d in stack level %d, throwing already=%d, nestingCount=%d\n",
 		//	(FXuint) QThread::id(), e.uniqueId, e.stacklevel, !!(le->currentExceptions.getFirst()->_flags & FXERRH_HASNESTED), le->nestingCount);
@@ -623,12 +625,13 @@ bool FXException::int_nestedException(FXException &e)
 
 void FXException::int_decDestructorCnt()
 {
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		assert(mytib);
-		FXException_TIB::LevelEntry *le=mytib->stack.getLast();
+		assert(tib);
+		FXException_TIB::LevelEntry *le=tib->stack.getLast();
 		if(le) le->nestingCount--;
-		//assert(mytib->nestingCount>=0);
+		//assert(tib->nestingCount>=0);
 	}
 }
 
@@ -650,9 +653,9 @@ bool FXException::int_testCondition()
 FXint FXException::setGlobalErrorCreationCount(FXint no)
 {
 #ifdef DEBUG
-	if(CheckTIB())
+	FXException_TIB *tib=0;
+	if(CheckTIB(&tib))
 	{
-		FXException_TIB *tib=mytib;
 		FXint ret=tib->GECC.master;
 		tib->GECC.master=no;
 		tib->GECC.latch=(no<0) ? ((FXint) (rand()*abs(no)/RAND_MAX)) : abs(no);
