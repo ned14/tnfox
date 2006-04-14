@@ -43,7 +43,7 @@ public:
   * Open binary data file stream; allocate a buffer of the given size
   * for the file I/O; the buffer must be at least 16 bytes.
   */
-  FXbool open(const FXString& filename,FXStreamDirection save_or_load,unsigned long size=8192);
+  FXbool open(const FXString& filename,FXStreamDirection save_or_load,FXuval size=8192);
 
   /// Close file store
   virtual FXbool close();

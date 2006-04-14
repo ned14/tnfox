@@ -121,7 +121,7 @@ void FXStream::setError(FXStreamStatus err)
 	code=err;
 }
 
-unsigned long FXStream::getSpace() const
+FXuval FXStream::getSpace() const
 {
 	return 102400;	// dummy value to keep code happy
 }

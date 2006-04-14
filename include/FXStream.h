@@ -249,13 +249,13 @@ public:
 
   Get available buffer space
   */
-  FXDEPRECATEDEXT unsigned long getSpace() const;
+  FXDEPRECATEDEXT FXuval getSpace() const;
 
   /** \deprecated For FOX compatibility only
 
   Set available buffer space
   */
-  FXDEPRECATEDEXT void setSpace(unsigned long sp);
+  FXDEPRECATEDEXT void setSpace(FXuval sp);
 
   /** \deprecated For FOX compatibility only
   
