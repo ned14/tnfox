@@ -266,6 +266,9 @@ FXStream &operator>>(FXStream &s, FXTime &i)
 static FXProcess *myprocess;
 static QList<FXProcess_StaticInitBase> *SIlist;
 static QList<FXProcess_StaticDepend> *SIdepend;
+// FXProcess::mappedFiles() is not quick especially on POSIX, so cache it
+static QMutex MappedFilesCacheLock;
+static FXAutoPtr< QValueList<FXProcess::MappedFileInfo> > MappedFilesCache;
 static struct ExitUpcalls
 {
 	QMutex lock;
@@ -575,7 +578,7 @@ void FXProcess::init(int &argc, char *argv[])
 			sigemptyset(&act.sa_mask);
 			act.sa_flags=SA_SIGINFO;
 			static int sigs[]={ SIGABRT, SIGALRM, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, /*SIGKILL,*/ SIGPIPE,
-				SIGPROF, SIGQUIT, SIGSEGV, /*SIGSTOP,*/ SIGSYS, SIGTERM, /*SIGTRAP,*/ SIGXCPU, SIGXFSZ };
+				/*SIGPROF,*/ SIGQUIT, SIGSEGV, /*SIGSTOP,*/ SIGSYS, SIGTERM, /*SIGTRAP,*/ SIGXCPU, SIGXFSZ };
 			for(uint n=0; n<sizeof(sigs)/sizeof(int); n++)
 			{
 				sigaction(sigs[n], &act, NULL);
@@ -1010,9 +1013,15 @@ FXuint FXProcess::pageSize()
 #endif
 }
 
-QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
+QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles(bool forceRefresh)
 {
-	QValueList<MappedFileInfo> list;
+	QMtxHold h(MappedFilesCacheLock);
+	if(forceRefresh)
+		PtrReset(MappedFilesCache, 0);
+	if(MappedFilesCache)
+		return *MappedFilesCache;
+	FXERRHM(MappedFilesCache=new QValueList<MappedFileInfo>);
+	QValueList<MappedFileInfo> &list=*MappedFilesCache;
 	MappedFileInfo bi;
 #ifdef USE_WINAPI
 	TCHAR rawbuffer[4096];
@@ -1071,38 +1080,48 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 #ifdef __linux__
 	FXString procpath=FXString("/proc/%1/maps").arg(FXProcess::id());
 	FXFile fh(procpath, FXFile::WantLightFXFile());
-	fh.open(IO_ReadOnly|IO_Translate|IO_NoAutoUTF);
-	char rawbuffer[4096];
-	while(fh.readLine(rawbuffer, sizeof(rawbuffer)))
-	{	// Format is hexstart-_hexend_ rwxp hexofset dd:dd _inode     /path...
-		unsigned long startaddr, endaddr, offset;
-		char _r, _w, _x, _p;
-		int t1, t2;
-		unsigned int pid;
-		char *path=rawbuffer+2048;
-		int len=sscanf(rawbuffer, "%lx-%lx %c%c%c%c %lx %d:%d %u %s", &startaddr, &endaddr,
-			&_r, &_w, &_x, &_p, &offset, &t1, &t2, &pid, path);
-		bi.startaddr=(FXulong) startaddr;
-		bi.endaddr=(FXulong) endaddr;
-		bi.length=bi.endaddr-bi.startaddr;
-		bi.read=('r'==_r);
-		bi.write=('w'==_w);
-		bi.execute=('x'==_x);
-		bi.copyonwrite=('p'==_p);
-		bi.offset=(FXulong) offset;
-		bi.path=path;
-		bi.path.trim();
-		if(!list.empty())
-		{	// Linux doesn't say RAM sections belong to DLL
-			MappedFileInfo &bbi=list.back();
-			if(bbi.endaddr==bi.startaddr && bi.path.empty()
-				&& bi.read==bbi.read && bi.write==bbi.write && bi.execute==bbi.execute && bi.copyonwrite==bbi.copyonwrite)
-			{	// Collapse
-				bbi.endaddr=bi.endaddr;
-				continue;
+	fh.open(IO_ReadOnly);
+	char rawbuffer[16384];
+	FXuval read=0;
+	while((read=fh.readBlock(rawbuffer+read, sizeof(rawbuffer)-read)))
+	{
+		char *end=rawbuffer+read;
+		*end=0;
+		for(; *end!=10; --end);
+		for(char *ptr=rawbuffer; ptr<end; ptr=strchr(ptr, 10)+1)
+		{	// Format is hexstart-_hexend_ rwxp hexofset dd:dd _inode     /path...
+			unsigned long startaddr, endaddr, offset;
+			char _r, _w, _x, _p;
+			int t1, t2;
+			unsigned int pid;
+			char path[2048];
+			int len=sscanf(ptr, "%lx-%lx %c%c%c%c %lx %d:%d %u %s", &startaddr, &endaddr,
+				&_r, &_w, &_x, &_p, &offset, &t1, &t2, &pid, path);
+			bi.startaddr=(FXulong) startaddr;
+			bi.endaddr=(FXulong) endaddr;
+			bi.length=bi.endaddr-bi.startaddr;
+			bi.read=('r'==_r);
+			bi.write=('w'==_w);
+			bi.execute=('x'==_x);
+			bi.copyonwrite=('p'==_p);
+			bi.offset=(FXulong) offset;
+			bi.path=path;
+			bi.path.trim();
+			if(!list.empty())
+			{	// Linux doesn't say RAM sections belong to DLL
+				MappedFileInfo &bbi=list.back();
+				if(bbi.endaddr==bi.startaddr && bi.path.empty()
+					&& bi.read==bbi.read && bi.write==bbi.write && bi.execute==bbi.execute && bi.copyonwrite==bbi.copyonwrite)
+				{	// Collapse
+					bbi.endaddr=bi.endaddr;
+					continue;
+				}
 			}
+			list.append(bi);
 		}
-		list.append(bi);
+		end++;
+		read-=end-rawbuffer;
+		memmove(rawbuffer, end, read);
 	}
 	fh.close();
 #endif
@@ -1115,7 +1134,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles()
 		FXFile fh(procpath, FXFile::WantLightFXFile());
 		if(!fh.exists()) // Probably /proc isn't mounted - let FXProcess take care of that
 			return list;
-		fh.open(IO_ReadOnly|IO_Translate|IO_NoAutoUTF);
+		fh.open(IO_ReadOnly);
 		FXuval read=fh.readBlock(rawbuffer, sizeof(rawbuffer)-2);
 		assert(read>0 && read<sizeof(rawbuffer)-2);
 		end=ptr+read; end[0]=10; end[1]=0;
@@ -1301,8 +1320,10 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 		break;
 	}
 	path_=FXFile::absolute(path_);
-	QValueList<MappedFileInfo> list=mappedFiles();
-	for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
+	QMtxHold lh(MappedFilesCacheLock);
+	if(!MappedFilesCache)
+		mappedFiles();
+	for(QValueList<MappedFileInfo>::iterator it=MappedFilesCache->begin(); it!=MappedFilesCache->end(); ++it)
 	{
 		MappedFileInfo &mfi=*it;
 		if(mfi.path==path_)
@@ -1311,6 +1332,7 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 			break;
 		}
 	}
+	lh.unlock();
 #ifdef DEBUG
 	fxmessage("dlopening %s (firstLoad=%d) ...\n", path_.text(), firstLoad);
 #endif
@@ -1324,7 +1346,10 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	}
 #endif
 	if(firstLoad)
-	{
+	{	// Flush the cache
+		QMtxHold lh(MappedFilesCacheLock);
+		PtrReset(MappedFilesCache, 0);
+		lh.unlock();
 		QBuffer txtholder;
 		txtholder.open(IO_ReadWrite);
 		FXStream stxtholder(&txtholder);
@@ -1361,6 +1386,10 @@ void FXProcess::dllUnload(FXProcess::dllHandle &h)
 	}
 #endif
 	h.h=0;
+	// Flush the cache
+	QMtxHold lh(MappedFilesCacheLock);
+	PtrReset(MappedFilesCache, 0);
+	lh.unlock();
 }
 
 FXString FXProcess::hostOS()
@@ -2073,6 +2102,7 @@ void FXProcess::int_addStaticDepend(FXProcess_StaticDepend *d)
 
 void *FXProcess::int_lockMem(void *addr, FXuval len)
 {
+	static bool hadError;
 	if(!lockedMem)
 	{
 		FXERRHM(lockedMem=new LockedMem);
@@ -2088,26 +2118,35 @@ void *FXProcess::int_lockMem(void *addr, FXuval len)
 			FXuval start=(FXuval) addr, end=((FXuval) addr)+len;
 			start&=~p->pageSizeM1;
 			end=(end+p->pageSizeM1) & ~p->pageSizeM1;
-			QSortedListIterator<void> pit=p->lockedPages.findIter((void *) start);
-			for(void *page=(void *) start; page<(void *) end; page=FXOFFSETPTR(page, p->pageSizeM1+1))
+			if(!hadError)
 			{
-				for(;pit.current() && pit.current()<page; ++pit);
-				if(pit.current()!=page)
-				{	// Lock (likely to fail if not root/administrator)
-					static bool hadError;
-					bool wasError=false;
+				QSortedListIterator<void> pit=p->lockedPages.findIter((void *) start);
+				for(void *page=(void *) start; page<(void *) end; page=FXOFFSETPTR(page, p->pageSizeM1+1))
+				{
+					for(;pit.current() && pit.current()<page; ++pit);
+					if(pit.current()!=page)
+					{	// Lock (likely to fail if not root/administrator)
+						FXERRH_TRY
+						{
 #ifdef USE_WINAPI
-					if(!VirtualLock(page, p->pageSizeM1)) wasError=true;
+							// Windows seems to want us to lock pages as they were allocated
+							//MEMORY_BASIC_INFORMATION mbi;
+							//FXERRHWIN(VirtualQuery(page, &mbi, sizeof(mbi)));
+							FXERRHWIN(VirtualLock(page, p->pageSizeM1)); //mbi.RegionSize));
+							//page=FXOFFSETPTR(page, mbi.RegionSize-p->pageSizeM1-1);
 #endif
 #ifdef USE_POSIX
-					if(-1==mlock(page, p->pageSizeM1)) wasError=true;
+							FXERRHOS(mlock(page, p->pageSizeM1));
 #endif
-					if(wasError && !hadError)
-					{
-						hadError=true;
-						fxwarning("WARNING: Unable to lock memory pages, does this process have sufficient privilege?\n");
+							p->lockedPages.insert(page);
+						}
+						FXERRH_CATCH(FXException &e)
+						{
+							hadError=true;
+							fxmessage("WARNING: Unable to lock memory pages (system error was: %s)?\n", e.message().text());
+						}
+						FXERRH_ENDTRY
 					}
-					p->lockedPages.insert(page);
 				}
 			}
 			it=p->lockedRegions.insert(it, LockedMem::MemLockEntry(addr, len, start, end));
@@ -2152,6 +2191,7 @@ void FXProcess::int_unlockMem(void *handle)
 				QSortedListIterator<void> it=p->lockedPages.findIter(start);
 				for(FXuval n=0; n<len; n+=p->pageSizeM1+1)
 				{
+					if(!it.current()) break;
 					assert(it.current()==FXOFFSETPTR(start, n));
 					QSortedListIterator<void> pit(it); ++it;
 					p->lockedPages.removeByIter(pit);

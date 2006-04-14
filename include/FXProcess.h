@@ -179,8 +179,10 @@ public:
 	};
 	//! Defines a list of FXProcess::MappedFileInfo
 	typedef QValueList<MappedFileInfo> MappedFileInfoList;
-	//! Returns a list of files currently mapped into this process
-	static MappedFileInfoList mappedFiles();
+	/*! Returns a list of files currently mapped into this process. As this call is slow, a cache is
+	maintained and updated accordingly when dllLoad() and dllUnload() are used. If however you wish
+	to bypass the cache, call with \em forceRefresh set to true */
+	static MappedFileInfoList mappedFiles(bool forceRefresh=false);
 	//! Returns a full path to the currently running executable
 	static const FXString &execpath();
 	/*! Returns a full path to the binary containing the specified address with
