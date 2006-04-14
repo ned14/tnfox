@@ -38,6 +38,7 @@ cppflags+=["-fexceptions",              # Enable exceptions
            "-fargument-noalias",        # Arguments may alias globals but not each other
            "-Wstrict-aliasing",         # Warn about bad aliasing
            "-ffast-math",               # Lose FP precision in favour of speed
+           #"-pg",                       # Perform profiling
            "-pipe"                      # Use faster pipes
            ]
 if debugmode:
@@ -62,6 +63,7 @@ env['CPPFLAGS']+=cppflags
 
 # Linkage
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
+                   #"-pg",                             # Profile
                    ternary(make64bit, "-m64", "-m32")
                   ]
 
@@ -90,7 +92,7 @@ env['CPPDEFINES']+=[("STDC_HEADERS",1),
                     ("HAVE_SYS_PARAM_H",1),
                     ("HAVE_SYS_SELECT_H",1)
                     ]
-env['LIBS']+=["m", "stdc++", "crypt" ]
+env['LIBS']+=[ "m", "stdc++", "crypt" ]
 
 
 def CheckGCCHasVisibility(cc):

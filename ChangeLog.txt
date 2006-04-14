@@ -1,3 +1,14 @@
+v0.87 ?
+-=-=-=-=-=-=-=-=-=-=
+B Fixed deadlock in FXFSMonitor
+
+* Removed many unnecessary fetches of per-thread data (slow on POSIX) in
+FXException
+* Made FXProcess::mappedFiles() cached
+* Fixed up memory locking code to lock per VirtualAlloc region
+* Disabled signals to threads (without it, gprof won't run)
+
+
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=
 B FXMemMap was unintentially broken on Linux for shared memory usage
@@ -204,7 +215,6 @@ Yakovenko for doing most of the work!
 + Added QMemArray::swap()
 + Added class QBZip2Device
 * Updated embedded translation file
-
 
 
 v0.85 13th Feb 2005:
