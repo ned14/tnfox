@@ -74,7 +74,8 @@ struct FXDLLLOCAL QPipePrivate : public QMutex
 		// PIPE_BUF lies on FreeBSD :(
 		bufferLength(16384),	// =PIPE_SIZE from sys/pipe.h, could even go to 64Kb (BIG_PIPE_SIZE)
 #else
-		bufferLength(PIPE_BUF),
+		// It seems Linux can make use of feeding it big packets
+		bufferLength(deepPipe ? 65536 : PIPE_BUF),
 #endif
 		readh(0), writeh(0), QMutex() { }
 #endif
