@@ -422,7 +422,8 @@ bool FXStat::statLink(const FXString& file,FXStat& info){
 #ifndef WIN32
     if(access(file.text(),X_OK)==0) info.modeFlags|=FXIO::OwnerExec;
 #else
-	if(SHGetFileInfo(file.text(),0,&sfi,sizeof(SHFILEINFO),SHGFI_EXETYPE)!=0) info.modeFlags|=FXIO::OwnerExec;
+	SHFILEINFO sfi;
+	if(SHGetFileInfo(FXUnicodify<>(file, true).buffer(),0,&sfi,sizeof(SHFILEINFO),SHGFI_EXETYPE)!=0) info.modeFlags|=FXIO::OwnerExec;
 #endif
     return true;
     }
