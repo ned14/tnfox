@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.cpp,v 1.245 2006/02/16 04:20:32 fox Exp $                        *
+* $Id: FXTable.cpp,v 1.245.2.1 2006/04/18 00:22:44 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1213,7 +1213,7 @@ void FXTable::setItemText(FXint r,FXint c,const FXString& text,FXbool notify){
       tablerange.fm.row=startRow(r,c);
       tablerange.fm.col=startCol(r,c);
       tablerange.to.row=endRow(r,c);
-      tablerange.to.col=endRow(r,c);
+      tablerange.to.col=endCol(r,c);
       target->tryHandle(this,FXSEL(SEL_REPLACED,message),(void*)&tablerange);
       }
     item->setText(text);
@@ -1244,7 +1244,7 @@ void FXTable::setItemIcon(FXint r,FXint c,FXIcon* icon,FXbool owned,FXbool notif
       tablerange.fm.row=startRow(r,c);
       tablerange.fm.col=startCol(r,c);
       tablerange.to.row=endRow(r,c);
-      tablerange.to.col=endRow(r,c);
+      tablerange.to.col=endCol(r,c);
       target->tryHandle(this,FXSEL(SEL_REPLACED,message),(void*)&tablerange);
       }
     updateItem(r,c);

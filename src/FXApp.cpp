@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.617 2006/03/16 22:22:43 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.617.2.1 2006/04/15 14:35:54 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -1577,13 +1577,6 @@ bool FXApp::closeDisplay(){
     XFreePixmap((Display*)display,stipples[STIPPLE_DIAG]);
     XFreePixmap((Display*)display,stipples[STIPPLE_REVDIAG]);
     XFreePixmap((Display*)display,stipples[STIPPLE_CROSSDIAG]);
-
-    // Close down Xft and fontconfig
-#ifdef HAVE_XFT_H
-#if (FC_VERSION >= 20300)
-    FcFini();
-#endif
-#endif
 
     // Close input method
 #ifndef NO_XIM

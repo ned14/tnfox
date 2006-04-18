@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSphered.cpp,v 1.19 2006/01/22 17:58:41 fox Exp $                       *
+* $Id: FXSphered.cpp,v 1.19.2.2 2006/04/05 15:21:08 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -80,7 +80,7 @@ bool FXSphered::contains(const FXSphered& sphere) const {
     register FXdouble dx=center.x-sphere.center.x;
     register FXdouble dy=center.y-sphere.center.y;
     register FXdouble dz=center.z-sphere.center.z;
-    return sphere.radius+sqrt(dx*dx+dx*dy+dz*dz)<=radius;
+    return sphere.radius+sqrt(dx*dx+dy*dy+dz*dz)<=radius;
     }
   return FALSE;
   }
@@ -90,10 +90,10 @@ bool FXSphered::contains(const FXSphered& sphere) const {
 FXSphered& FXSphered::include(FXdouble x,FXdouble y,FXdouble z){
   register FXdouble dx,dy,dz,dist,delta,newradius;
   if(0.0<=radius){
-    dx=center.x-x;
-    dy=center.y-y;
-    dz=center.z-z;
-    dist=sqrt(dx*dx+dx*dy+dz*dz);
+    dx=x-center.x;
+    dy=y-center.y;
+    dz=z-center.z;
+    dist=sqrt(dx*dx+dy*dy+dz*dz);
     if(radius<dist){
       newradius=0.5*(radius+dist);
       delta=(newradius-radius);
@@ -122,10 +122,10 @@ FXSphered& FXSphered::include(const FXVec3d& p){
 FXSphered& FXSphered::includeInRadius(FXdouble x,FXdouble y,FXdouble z){
   register FXdouble dx,dy,dz,dist;
   if(0.0<=radius){
-    dx=center.x-x;
-    dy=center.y-y;
-    dz=center.z-z;
-    dist=sqrt(dx*dx+dx*dy+dz*dz);
+    dx=x-center.x;
+    dy=y-center.y;
+    dz=z-center.z;
+    dist=sqrt(dx*dx+dy*dy+dz*dz);
     if(radius<dist) radius=dist;
     return *this;
     }

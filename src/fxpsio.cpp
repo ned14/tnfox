@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpsio.cpp,v 1.11 2006/01/22 17:58:54 fox Exp $                          *
+* $Id: fxpsio.cpp,v 1.11.2.1 2006/04/14 01:21:01 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -84,7 +84,7 @@ bool fxsavePS(FXStream& store,const FXColor* data,FXint width,FXint height,FXint
   output(store,"%%!PS-Adobe-2.0 EPSF-2.0\n");
   output(store,"%%%%Title: Image\n");
   output(store,"%%%%Creator: FOX Toolkit\n");
-  output(store,"%%%%BoundingBox: %i %i %i %i\n",bx,by,bxx,byy);
+  output(store,"%%%%BoundingBox: %i %i %i %i\n",bx,by,bx+bxx,by+byy);
   output(store,"%%%%Pages: 1\n");
   output(store,"%%%%DocumentFonts:\n");
   output(store,"%%%%EndComments\n");

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImage.cpp,v 1.148 2006/01/22 17:58:32 fox Exp $                        *
+* $Id: FXImage.cpp,v 1.148.2.1 2006/04/14 01:21:00 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -554,7 +554,9 @@ void FXImage::restore(){
       bmi.bmiHeader.biClrImportant=0;
 
       // DIB format pads to multiples of 4 bytes...
-      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXImageException("unable to restore image"); }
+//      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXImageException("unable to restore image"); }
+      pixels=(FXuchar*)VirtualAlloc(0,bytes_per_line*height,MEM_COMMIT,PAGE_READWRITE);
+      if(!pixels){ throw FXMemoryException("unable to restore image"); }
 
       // Make device context
       hdcmem=::CreateCompatibleDC(NULL);
@@ -574,7 +576,8 @@ void FXImage::restore(){
           }
         pix+=skip;
         }
-      FXFREE(&pixels);
+//      FXFREE(&pixels);
+      VirtualFree(pixels,0,MEM_RELEASE);
       ::DeleteDC(hdcmem);
       }
     }
@@ -1433,7 +1436,9 @@ void FXImage::render(){
 
       // DIB format pads to multiples of 4 bytes...
       bytes_per_line=(width*3+3)&~3;
-      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXMemoryException("unable to render image"); }
+//      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXMemoryException("unable to render image"); }
+      pixels=(FXuchar*)VirtualAlloc(0,bytes_per_line*height,MEM_COMMIT,PAGE_READWRITE);
+      if(!pixels){ throw FXMemoryException("unable to render image"); }
       skip=-bytes_per_line-width*3;
       src=(FXuchar*)data;
       dst=pixels+height*bytes_per_line+width*3;
@@ -1463,7 +1468,8 @@ void FXImage::render(){
         throw FXImageException("unable to render image");
         }
       GdiFlush();
-      FXFREE(&pixels);
+      VirtualFree(pixels,0,MEM_RELEASE);
+//      FXFREE(&pixels);
       ::DeleteDC(hdcmem);
       }
     }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.cpp,v 1.91 2006/01/22 17:58:37 fox Exp $                         *
+* $Id: FXPopup.cpp,v 1.91.2.1 2006/04/05 18:56:22 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -725,8 +725,8 @@ void FXPopup::popup(FXWindow* grabto,FXint x,FXint y,FXint w,FXint h){
   grabowner=grabto;
   if((options&POPUP_SHRINKWRAP) || w<=1) w=getDefaultWidth();
   if((options&POPUP_SHRINKWRAP) || h<=1) h=getDefaultHeight();
-  if(x+w>rw) x=rw-w;
-  if(y+h>rh) y=rh-h;
+  if(x+w>rx+rw) x=rx+rw-w;
+  if(y+h>ry+rh) y=ry+rh-h;
   if(x<rx) x=rx;
   if(y<ry) y=ry;
   position(x,y,w,h);

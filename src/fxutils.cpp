@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxutils.cpp,v 1.129 2006/03/21 01:41:43 fox Exp $                        *
+* $Id: fxutils.cpp,v 1.129.2.2 2006/04/02 00:59:57 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -572,7 +572,7 @@ FXColor makeShadowColor(FXColor clr){
 #if 0
 // Convert string of length len to MSDOS; return new string and new length
 bool fxtoDOS(FXchar*& string,FXint& len){
-  register FXint f=0,t=0,c;
+  register FXint f=0,t=0;
   while(f<len && string[f]!='\0'){
     if(string[f++]=='\n') t++; t++;
     }

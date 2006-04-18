@@ -7,6 +7,7 @@ FXException
 * Made FXProcess::mappedFiles() cached
 * Fixed up memory locking code to lock per VirtualAlloc region
 * Disabled signals to threads (without it, gprof won't run)
+* Merged FOX v1.6.4
 
 
 v0.86 3rd April 2006

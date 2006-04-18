@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxkeyboard.cpp,v 1.14.2.1 2006/03/28 13:02:54 fox Exp $                      *
+* $Id: fxkeyboard.cpp,v 1.14.2.2 2006/04/14 01:21:01 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -379,54 +379,38 @@ FXuint wkbMapKeyCode(UINT iMsg,WPARAM uVirtKey,LPARAM lParam){
 // as a no-op from User32.DLL. The following code determines upon the first call
 // to fxToUnicodeEx if the OS supports ToUnicodeEx and fixes the function pointer
 // to send subsequent calls directly to the OS. Otherwise, a stub is used.
-int WINAPI wkbToUnicodeExStub(UINT, UINT, const BYTE*, LPWSTR, int, UINT, HKL);
-int WINAPI wkbToUnicodeExWin9x(UINT, UINT, const BYTE*, LPWSTR, int, UINT, HKL);
-typedef int (WINAPI *PFN_TOUNICODEEX)(UINT, UINT, const BYTE*, LPWSTR, int, UINT, HKL);
-PFN_TOUNICODEEX ToUnicodeEx = wkbToUnicodeExStub;
+int WINAPI wkbToUnicodeExStub(UINT,UINT,const BYTE*,LPWSTR,int,UINT,HKL);
+int WINAPI wkbToUnicodeExWin9x(UINT,UINT,const BYTE*,LPWSTR,int,UINT,HKL);
+
+typedef int (WINAPI *PFN_TOUNICODEEX)(UINT,UINT,const BYTE*,LPWSTR,int,UINT,HKL);
+
+PFN_TOUNICODEEX ToUnicodeEx=wkbToUnicodeExStub;
 
 // Stub function for first call to fxToUnicodeEx()
-int WINAPI wkbToUnicodeExStub(UINT uVirtKey,
-                              UINT uScanCode,
-                              const BYTE* lpKeyState,
-                              LPWSTR pwszBuff,
-                              int cchBuff,
-                              UINT wFlags,
-                              HKL dwhkl)
-{
-    OSVERSIONINFOA osinfo = { sizeof OSVERSIONINFOA };
-    GetVersionExA(&osinfo);
-    if (osinfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) {
-        // Windows 9x/Me => use stub
-        ToUnicodeEx = wkbToUnicodeExWin9x;
+int WINAPI wkbToUnicodeExStub(UINT uVirtKey,UINT uScanCode,const BYTE* lpKeyState,LPWSTR pwszBuff,int cchBuff,UINT wFlags,HKL dwhkl){
+  OSVERSIONINFOA osinfo={sizeof(OSVERSIONINFOA)};
+  GetVersionExA(&osinfo);
+  if(osinfo.dwPlatformId==VER_PLATFORM_WIN32_WINDOWS){
+    // Windows 9x/Me => use stub
+    ToUnicodeEx = wkbToUnicodeExWin9x;
     }
-    else {
-        // Windows NT => forward to OS
-        HMODULE user32Dll = LoadLibraryA("user32");
-        ToUnicodeEx = (PFN_TOUNICODEEX)GetProcAddress(user32Dll, "ToUnicodeEx");
-        if (!ToUnicodeEx) {
-            ToUnicodeEx = wkbToUnicodeExWin9x;
-        }
+  else{
+    // Windows NT => forward to OS
+    HMODULE user32Dll=LoadLibraryA("user32");
+    ToUnicodeEx=(PFN_TOUNICODEEX)GetProcAddress(user32Dll,"ToUnicodeEx");
+    if(!ToUnicodeEx){ToUnicodeEx=wkbToUnicodeExWin9x;}
     }
-    return ToUnicodeEx(uVirtKey, uScanCode, lpKeyState, pwszBuff, cchBuff, wFlags, dwhkl);
-}
+  return ToUnicodeEx(uVirtKey, uScanCode, lpKeyState, pwszBuff, cchBuff, wFlags, dwhkl);
+  }
 
 
 // Adapter function for Windows 9x/Me
-int WINAPI wkbToUnicodeExWin9x(UINT uVirtKey,
-                               UINT uScanCode,
-                               const BYTE* lpKeyState,
-                               LPWSTR pwszBuff,
-                               int cchBuff,
-                               UINT wFlags,
-                               HKL dwhkl)
-{
-    WORD c;
-    int cnt = ToAsciiEx(uVirtKey, uScanCode, lpKeyState, &c, wFlags, dwhkl);
-    if (cnt <= 0)
-        return cnt;
-    else
-        return MultiByteToWideChar(CP_ACP, 0, (LPCSTR)&c, cnt, pwszBuff, cchBuff);
-}
+int WINAPI wkbToUnicodeExWin9x(UINT uVirtKey,UINT uScanCode,const BYTE* lpKeyState,LPWSTR pwszBuff,int cchBuff,UINT wFlags,HKL dwhkl){
+  WORD c;
+  int cnt=ToAsciiEx(uVirtKey,uScanCode,(BYTE*)lpKeyState,&c,wFlags,dwhkl);
+  if(cnt<=0) return cnt;
+  return MultiByteToWideChar(CP_ACP,0,(LPCSTR)&c,cnt,pwszBuff,cchBuff);
+  }
 
 
 #endif
