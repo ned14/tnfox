@@ -3,6 +3,7 @@ v0.87 ?
 B Fixed deadlock in FXFSMonitor
 B FXINLINE_MUTEX_IMPLEMENTATION was broken
 B Fixed critical section nedmalloc miscompile
+B nedmalloc wasn't locking mspace if all mspaces were locked
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException
