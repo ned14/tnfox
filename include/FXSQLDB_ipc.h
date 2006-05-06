@@ -26,6 +26,9 @@
 #include "FXIPC.h"
 #include "QSSLDevice.h"
 
+// Stop CopyCursor macro from WinUser.h mucking up the code
+#undef CopyCursor
+
 namespace FX {
 
 /*! \file FXSQLDB_ipc.h
