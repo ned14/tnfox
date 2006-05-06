@@ -47,19 +47,13 @@ increases code bloat.
  #define QMUTEX_GLOBALS_FXAPI FXAPI
  // Testing has found that force inlining public declarations makes
  // the code go slower so we leave it up to the compiler
- #define QMUTEX_INLINEI FXFORCEINLINE
+ #define QMUTEX_INLINEI inline FXFORCEINLINE
  #define QMUTEX_INLINEP inline
 #else
  #define QMUTEX_FXAPI FXAPI
  #define QMUTEX_GLOBALS_FXAPI
  #define QMUTEX_INLINEI FXFORCEINLINE	// internally inlined inside QThread.cxx
  #define QMUTEX_INLINEP				// publicly inlined
-#endif
-#ifdef DEBUG				// No inlining when debugging
- #undef QMUTEX_INLINEI
- #undef QMUTEX_INLINEP
- #define QMUTEX_INLINEI
- #define QMUTEX_INLINEP
 #endif
 
 /*! \class FXAtomicInt
