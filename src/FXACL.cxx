@@ -50,7 +50,11 @@
 #include <pwd.h>
 #include <grp.h>
 #ifdef HAVE_PAM
-#include <security/pam_appl.h>
+ #if HAVE_PAM==1
+  #include <security/pam_appl.h>
+ #else
+  #include <pam/pam_appl.h>
+ #endif
 #endif
 //#include <shadow.h>
 #endif

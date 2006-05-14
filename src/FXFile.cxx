@@ -607,6 +607,8 @@ bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 			{
 #if defined(__linux__)
 				// Unsupported at present
+#elif defined(__APPLE__)
+				// Unsupported at present
 #elif defined(__FreeBSD__)
 				created->set_time_t(st.st_birthtimespec.tv_sec);
 				created->value+=st.st_birthtimespec.tv_nsec/1000;
@@ -619,7 +621,7 @@ bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 #if defined(__linux__)
 				lastModified->set_time_t(st.st_mtim.tv_sec);
 				lastModified->value+=st.st_mtim.tv_nsec/1000;
-#elif defined(__FreeBSD__)
+#elif defined(__APPLE__) || defined(__FreeBSD__)
 				lastModified->set_time_t(st.st_mtimespec.tv_sec);
 				lastModified->value+=st.st_mtimespec.tv_nsec/1000;
 #else
@@ -631,7 +633,7 @@ bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXT
 #if defined(__linux__)
 				lastAccessed->set_time_t(st.st_atim.tv_sec);
 				lastAccessed->value+=st.st_atim.tv_nsec/1000;
-#elif defined(__FreeBSD__)
+#elif defined(__APPLE__) || defined(__FreeBSD__)
 				lastAccessed->set_time_t(st.st_atimespec.tv_sec);
 				lastAccessed->value+=st.st_atimespec.tv_nsec/1000;
 #else
@@ -718,7 +720,7 @@ void FXFile::writeMetadata(const FXString &path, const FXTime *created, const FX
 			times[0].tv_usec=orig.st_atim.tv_nsec/1000;
 			times[1].tv_sec =orig.st_mtim.tv_sec;
 			times[1].tv_usec=orig.st_mtim.tv_nsec/1000;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__APPLE__)
 			times[0].tv_sec =orig.st_atimespec.tv_sec;
 			times[0].tv_usec=orig.st_atimespec.tv_nsec/1000;
 			times[1].tv_sec =orig.st_mtimespec.tv_sec;

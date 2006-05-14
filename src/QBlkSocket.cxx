@@ -977,7 +977,13 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen)
 			sockaddr_in6 sa6={0};
 			int salen;
 			sockaddr *sa=makeSockAddr(salen, sa6, p->req.addr, p->req.port);
-			written=::sendto(p->handle, data, maxlen, MSG_NOSIGNAL, sa, salen);
+			written=::sendto(p->handle, data, maxlen,
+#ifdef __linux__
+				MSG_NOSIGNAL,
+#else
+				0,
+#endif
+				sa, salen);
 		}
 		h.relock();
 		FXERRHSKT(written);
@@ -1057,7 +1063,13 @@ FXuval QBlkSocket::writeBlock(const char *data, FXuval maxlen, const QHostAddres
 			sockaddr_in6 sa6={0};
 			int salen;
 			sockaddr *sa=makeSockAddr(salen, sa6, addr, port);
-			written=::sendto(p->handle, data, maxlen, MSG_NOSIGNAL, sa, salen);
+			written=::sendto(p->handle, data, maxlen,
+#ifdef __linux__
+							 MSG_NOSIGNAL,
+#else
+							 0,
+#endif
+							 sa, salen);
 		}
 		h.relock();
 		FXERRHSKT(written);

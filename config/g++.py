@@ -43,7 +43,7 @@ cppflags+=["-fexceptions",              # Enable exceptions
            ]
 if debugmode:
     cppflags+=["-O0",                   # No optimisation
-               "-fmudflapth",           # Do memory access checking
+               #"-fmudflapth",           # Do memory access checking (doesn't work on Apple MacOS X)
                "-g"                     # Debug info
                ]
 else:
@@ -66,6 +66,10 @@ env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when
                    #"-pg",                             # Profile
                    ternary(make64bit, "-m64", "-m32")
                   ]
+if onDarwin:
+    env['LINKFLAGS']+=["--Wl,-dylib_compatibility_version --Wl,"+targetversion,
+                       "--Wl,-dylib_current_version --Wl,"+targetversion
+                      ]
 
 if debugmode:
     env['LINKFLAGS']+=[]
@@ -92,7 +96,7 @@ env['CPPDEFINES']+=[("STDC_HEADERS",1),
                     ("HAVE_SYS_PARAM_H",1),
                     ("HAVE_SYS_SELECT_H",1)
                     ]
-env['LIBS']+=[ "m", "stdc++", "crypt" ]
+env['LIBS']+=[ "m", "stdc++" ]
 
 
 def CheckGCCHasVisibility(cc):
@@ -109,8 +113,8 @@ def CheckGCCHasVisibility(cc):
 conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
 nothreads=True                # NOTE: Needs to be first to force use of kse over c_r on FreeBSD
 if conf.CheckCHeader("pthread.h"):
-    oldcpppath=conf.env['CPPPATH']
-    oldlibpath=conf.env['LIBPATH']
+    oldcpppath=conf.env['CPPPATH'][:]
+    oldlibpath=conf.env['LIBPATH'][:]
     conf.env['CPPPATH'][0:0]=["/usr/include/nptl"]
     conf.env['LIBPATH'][0:0]=["/usr/"+libPathSpec(make64bit)+"/nptl"]
     if conf.CheckLib("pthread", "pthread_setaffinity_np", "pthread.h"):
@@ -142,18 +146,28 @@ if not disableGUI:
     else:
         print "Disabling 32 bit colour cursor support"
     
-    conf.env.ParseConfig("freetype-config --cflags --libs")
+    conf.env.ParseConfig("/usr/X11R6/bin/xft-config --cflags --libs")
     if not make64bit:
-        # Annoyingly freetype-config adds lib64 on 64 bit platforms
+        # Annoyingly xft-config adds lib64 on 64 bit platforms
         for n in range(0, len(conf.env['LIBPATH'])):
             if "lib64" in conf.env['LIBPATH'][n]:
                 print "   NOTE: Removing unneccessary library path", conf.env['LIBPATH'][n]
                 del conf.env['LIBPATH'][n]
     if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
-        conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
-        conf.env['LIBS']+=["Xft"]
+        if onDarwin:
+            print "*** Xft is present but doesn't appear to work on Apple's X11 implementation!"
+        else:
+            conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
     else:
-        print "Disabling anti-aliased fonts support"
+        # If freetype-config failed, try a boilerplate location
+        oldcpppath=conf.env['CPPPATH'][:]
+        conf.env['CPPPATH']+=["/usr/X11R6/include/freetype2"]
+        if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
+            conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
+            conf.env['LIBS']+=["Xft", "fontconfig", "freetype"]
+        else:
+            conf.env['CPPPATH']=oldcpppath
+            print "Disabling anti-aliased fonts support"
 
 if not conf.CheckLib("rt", "shm_open") and not conf.CheckLib("c", "shm_open"):
     raise AssertionError, "TnFOX requires POSIX shared memory support"
@@ -175,8 +189,13 @@ else:
     
 if conf.CheckLibWithHeader("pam", "security/pam_appl.h", "c"):
     conf.env['CPPDEFINES']+=[("HAVE_PAM",1)]
+elif conf.CheckLibWithHeader("pam", "pam/pam_appl.h", "c"):
+    conf.env['CPPDEFINES']+=[("HAVE_PAM",2)]
 else:
     print "Disabling PAM support"
+
+# Linux and FreeBSD get crypt() from libcrypt
+conf.CheckLib("crypt", "crypt")
 
 if conf.CheckGCCHasVisibility():
     if not debugmode:
@@ -188,8 +207,8 @@ else:
     print "Disabling -fvisibility support"
 
 if conf.CheckLibWithHeader("fam", "fam.h", "c"):
-    pass
+    conf.env['CPPDEFINES']+=[("HAVE_FAM",1)]
 else:
-    raise "TnFOX::FXFSMonitor needs the FAM library"
+    print "Disabling FAM support"
 
 env=conf.Finish()

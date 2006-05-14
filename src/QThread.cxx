@@ -1129,8 +1129,8 @@ FXulong QThread::id() throw()
 		return 0;
 	}
  #else
-  #if defined(__linux__)
-	// On Linux pthread_t is already an uint, so recast
+  #if defined(__linux__) || defined(__APPLE__)
+	// On Linux and MacOS X pthread_t is already an uint, so recast
 	return (FXulong) pthread_self();
   #elif defined(__FreeBSD__)
 	/* On FreeBSD pthread_t is a pointer, so dereference. Unfortunately right now

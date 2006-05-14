@@ -104,6 +104,7 @@ Generic programming tools provided by TnFOX
 \endlink
 \li \ref debugging
 
+\li \ref applemacosnotes
 \li \ref windowsnotes
 \li \ref unixnotes
 
@@ -2260,6 +2261,37 @@ Use valgrind instead on Linux.
 */
 
 
+
+/*! \page applemacosnotes Apple MacOS X specific notes
+
+This covers the rather special Unix variant that is Apple MacOS X. You'll need
+XCode installed along with the Apple X11 implementation plus at least scons
+v0.96.1 (which added MacOS X support).
+
+This page doesn't duplicate what's already said in \ref unixnotes so you should
+also read that.
+
+\section supported Supported configuration:
+TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.2.1 on Intel x86
+only. It hasn't been tested on PowerPC architectures, but there is no reason it
+shouldn't work apart from the x86 only assembler in int_QMutexImpl.h.
+
+You MUST set architecture_version=7, x86_SSE=2 and x86_3dnow=0 in config.py as the
+Apple GCC won't output valid code for other architecture configurations.
+
+\section config Directory configuration:
+Unlike most Unices, MacOS X is missing libraries for JPEG, PNG and TIFF. You can
+download a \c /usr/local tree containing these from the TnFOX homepage after which
+these libraries will be found and used.
+
+\section problems Problems:
+\li Apple's X11 implementation provides Xft support, but I couldn't get it working
+correctly on the Apple Mac I have access to. Therefore it is disabled in \c config/g++.py
+but please do try reenabling it and trying it on your machine.
+\li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
+is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
+
+*/
 
 /*! \page windowsnotes Windows-specific notes
 

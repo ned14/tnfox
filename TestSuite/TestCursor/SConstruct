@@ -1,1 +1,4 @@
 execfile("../CommonSConstruct.py")
+# Need this for Darwin
+env['LIBPATH']+=["/usr/X11R6/lib"]
+env['LIBS']+=["X11"]
