@@ -3,7 +3,7 @@
 *                            Filing system monitor                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -21,12 +21,21 @@
 
 #include "QThread.h"		// May undefine USE_WINAPI and USE_POSIX
 #ifndef USE_POSIX
-#define USE_WINAPI
-#include "WindowsGubbins.h"
+ #define USE_WINAPI
+ #include "WindowsGubbins.h"
 #else
-#include <unistd.h>
-#include <fam.h>
-#define FXERRHFAM(ret) if(ret<0) { FXERRG(FXString("FAM Error: %1 (code %2)").arg(FXString(FamErrlist[FAMErrno])).arg(FAMErrno), FXEXCEPTION_OSSPECIFIC, 0); }
+ #ifdef HAVE_FAM
+  #include <fam.h>
+  #define USE_FAM
+  #define FXERRHFAM(ret) if(ret<0) { FXERRG(FXString("FAM Error: %1 (code %2)").arg(FXString(FamErrlist[FAMErrno])).arg(FAMErrno), FXEXCEPTION_OSSPECIFIC, 0); }
+ #elif defined(__APPLE__) || defined(__FreeBSD__)
+  #include <xincs.h>
+  #include <sys/event.h>
+  #define USE_KQUEUES
+  #warning Using BSD kqueue's as FAM is not available - NOTE THAT THIS PROVIDES REDUCED FUNCTIONALITY!
+ #else
+  #error FAM is not available and no alternative found!
+ #endif
 #endif
 
 #include "FXFSMonitor.h"
@@ -40,6 +49,8 @@
 #include "FXErrCodes.h"
 #include <qptrlist.h>
 #include <qdict.h>
+#include <qptrdict.h>
+#include <qintdict.h>
 #include <qptrvector.h>
 #include <assert.h>
 #include "FXMemDbg.h"
@@ -60,7 +71,10 @@ struct FXFSMon : public QMutex
 #ifdef USE_WINAPI
 			HANDLE h;
 #endif
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+			struct kevent h;
+#endif
+#ifdef USE_FAM
 			FAMRequest h;
 #endif
 			struct Change
@@ -114,6 +128,9 @@ struct FXFSMon : public QMutex
 				, h(0)
 #endif
 			{
+#if defined(USE_KQUEUES) || defined(USE_FAM)
+				memset(&h, 0, sizeof(h));
+#endif
 				FXERRHM(pathdir=new QDir(_path, "*", QDir::Unsorted, QDir::All|QDir::Hidden));
 				pathdir->entryInfoList();
 			}
@@ -128,13 +145,19 @@ struct FXFSMon : public QMutex
 		QDict<Path> paths;
 #ifdef USE_WINAPI
 		HANDLE latch;
+		QPtrDict<Path> pathByHandle;
+#else
+		QIntDict<Path> pathByHandle;
 #endif
 		Watcher();
 		~Watcher();
 		void run();
 		void *cleanup();
 	};
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+	int kqueueh;
+#endif
+#ifdef USE_FAM
 	bool nofam, fambroken;
 	FAMConnection fc;
 #endif
@@ -148,7 +171,10 @@ static FXProcess_StaticInit<FXFSMon> fxfsmon("FXFSMonitor");
 
 FXFSMon::FXFSMon() : watchers(true)
 {
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+	FXERRHOS(kqueueh=kqueue());
+#endif
+#ifdef USE_FAM
 	nofam=true;
 	fambroken=false;
 	int ret=FAMOpen(&fc);
@@ -173,7 +199,14 @@ FXFSMon::~FXFSMon()
 		w->wait();
 	}
 	watchers.clear();
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+	if(kqueueh)
+	{
+		FXERRHOS(::close(kqueueh));
+		kqueueh=0;
+	}
+#endif
+#ifdef USE_FAM
 	if(!nofam)
 	{
 		FXERRHFAM(FAMClose(&fc));
@@ -238,7 +271,39 @@ void FXFSMon::Watcher::run()
 	}
 }
 #endif
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+void FXFSMon::Watcher::run()
+{
+	int ret;
+	struct kevent kevs[16];
+	for(;;)
+	{
+		FXERRH_TRY
+		{
+			while((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent), NULL)))
+			{
+				FXERRHOS(ret);
+				for(int n=0; n<ret; n++)
+				{
+					struct kevent *kev=&kevs[n];
+					QMtxHold h(fxfsmon);
+					Path *p=pathByHandle.find(kev->ident);
+					assert(p);
+					if(p)
+						p->callHandlers();
+				}
+			}
+		}
+		FXERRH_CATCH(FXException &e)
+		{
+			fxwarning("FXFSMonitor Error: %s\n", e.report().text());
+			return;
+		}
+		FXERRH_ENDTRY
+	}
+}
+#endif
+#ifdef USE_FAM
 void FXFSMon::Watcher::run()
 {
 	int ret;
@@ -253,11 +318,8 @@ void FXFSMon::Watcher::run()
 				if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
 					|| FAMAcknowledge==fe.code) continue;
 				QMtxHold h(fxfsmon);
-				Path *p;
-				for(QDictIterator<Path> it(paths); (p=it.current()); ++it)
-				{
-					if(p->h.reqnum==fe.fr.reqnum) break;
-				}
+				Path *p=pathByHandle.find(fe.fr.reqnum);
+				assert(p);
 				if(p)
 					p->callHandlers();
 			}
@@ -285,11 +347,19 @@ FXFSMon::Watcher::Path::~Path()
 #ifdef USE_WINAPI
 	if(h)
 	{
+		parent->pathByHandle.remove(h);
 		FXERRHWIN(FindCloseChangeNotification(h));
 		h=0;
 	}
 #endif
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+	h.flags=EV_DELETE;
+	FXERRHOS(kevent(fxfsmon->kqueueh, &h, 1, NULL, 0, NULL));
+	parent->pathByHandle.remove(h.ident);
+	FXERRHOS(::close(h.ident));
+	h.ident=0;
+#endif
+#ifdef USE_FAM
 	if(!fxfsmon->fambroken)
 	{
 		FXERRHFAM(FAMCancelMonitor(&fxfsmon->fc, &h));
@@ -411,6 +481,15 @@ void FXFSMon::Watcher::Path::callHandlers()
 			if(ch1.oldfi && ch2.newfi) { a=ch1.oldfi; b=ch2.newfi; }
 			else if(ch1.newfi && ch2.oldfi) { a=ch2.oldfi; b=ch1.newfi; }
 			else continue;
+#ifdef DEBUG
+			fxmessage("FXFSMonitor: Rename candidate %s, %s (%llu==%llu, %llu==%llu, %llu==%llu, %llu==%llu) candidate=%p\n",
+					  a->fileName().text(), b->fileName().text(),
+					  a->size(), b->size(),
+					  a->created().value, b->created().value,
+					  a->lastModified().value, b->lastModified().value,
+					  a->lastRead().value, b->lastRead().value,
+					  candidate);
+#endif
 			if(a->size()==b->size() && a->created()==b->created()
 				&& a->lastModified()==b->lastModified()
 				&& a->lastRead()==b->lastRead())
@@ -508,11 +587,25 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 			/*|FILE_NOTIFY_CHANGE_LAST_WRITE*/|FILE_NOTIFY_CHANGE_SECURITY)));
 		p->h=h;
 		FXERRHWIN(SetEvent(w->latch));
+		w->pathByHandle.insert(h, p);
 #endif
-#ifdef USE_POSIX
+#ifdef USE_KQUEUES
+		int h;
+		FXERRHOS(h=::open(path.text(),
+#ifdef __APPLE__
+			O_RDONLY|O_EVTONLY));		// Stop unmounts being prevented by open handle
+#else
+			O_RDONLY));
+#endif
+		EV_SET(&p->h, h, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_WRITE, 0, 0);
+		FXERRHOS(kevent(fxfsmon->kqueueh, &p->h, 1, NULL, 0, NULL));
+		w->pathByHandle.insert(h, p);
+#endif
+#ifdef USE_FAM
 		if(!fambroken)
 		{
 			FXERRHFAM(FAMMonitorDirectory(&fc, path.text(), &p->h, 0));
+			p->pathByHandle.insert(p->h.reqnum, p);
 		}
 #endif
 		w->paths.insert(path, p);
@@ -566,7 +659,7 @@ bool FXFSMon::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
 void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 {
 	FXString path=FXFile::absolute(_path);
-#ifdef USE_POSIX
+#ifdef USE_FAM
 	FXERRH(FXFile::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)
 	{	// Try starting it again
@@ -579,7 +672,7 @@ void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 
 bool FXFSMonitor::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
 {
-#ifdef USE_POSIX
+#ifdef USE_FAM
 	if(fxfsmon->nofam) return false;
 #endif
 	return fxfsmon->remove(path, handler);
