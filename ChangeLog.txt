@@ -4,6 +4,8 @@ B Fixed deadlock in FXFSMonitor
 B FXINLINE_MUTEX_IMPLEMENTATION was broken
 B Fixed critical section nedmalloc miscompile
 B nedmalloc wasn't locking mspace if all mspaces were locked
+B FXApp was failing on init when trying to list fonts when Xft wasn't
+enabled
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException
@@ -11,7 +13,8 @@ FXException
 * Fixed up memory locking code to lock per VirtualAlloc region
 * Disabled signals to threads (without it, gprof won't run)
 * Merged FOX v1.6.4
-
++ Added kqueue implementation to FXFSMonitor
++ Ported TnFOX to Apple MacOS X (Intel only)
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=

@@ -112,7 +112,7 @@ QMUTEX_INLINEI int FXAtomicInt::incp() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xaddl %2,(%1)"
+		"lock/xaddl %2,(%1)"
 #else
 		"xaddl %2,(%1)"
 #endif
@@ -131,7 +131,7 @@ QMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xaddl %2,(%1)\n\tinc %%eax"
+		"lock/xaddl %2,(%1)\n\tinc %%eax"
 #else
 		"xaddl %2,(%1)\n\tinc %%eax"
 #endif
@@ -150,7 +150,7 @@ QMUTEX_INLINEI int FXAtomicInt::finc() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock incl (%1)\n"
+		"lock/incl (%1)\n"
 #else
 		"incl (%1)\n"
 #endif
@@ -174,7 +174,7 @@ QMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xaddl %2,(%1)"
+		"lock/xaddl %2,(%1)"
 #else
 		"xaddl %2,(%1)"
 #endif
@@ -193,7 +193,7 @@ QMUTEX_INLINEI int FXAtomicInt::decp() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xaddl %2,(%1)"
+		"lock/xaddl %2,(%1)"
 #else
 		"xaddl %2,(%1)"
 #endif
@@ -212,7 +212,7 @@ QMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xaddl %2,(%1)\n\tdec %%eax"
+		"lock/xaddl %2,(%1)\n\tdec %%eax"
 #else
 		"xaddl %2,(%1)\n\tdec %%eax"
 #endif
@@ -231,7 +231,7 @@ QMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock decl (%1)\n"
+		"lock/decl (%1)\n"
 #else
 		"decl (%1)\n"
 #endif
@@ -256,7 +256,7 @@ QMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"lock xaddl %2,(%1)"
+		"lock/xaddl %2,(%1)"
 #else
 		"xaddl %2,(%1)"
 #endif
@@ -288,7 +288,7 @@ QMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 #ifdef __GNUC__
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"pause\n\tlock cmpxchgl %2,(%1)"
+		"pause\n\tlock/cmpxchgl %2,(%1)"
 #else
 		"pause\n\tcmpxchgl %2,(%1)"
 #endif
@@ -312,7 +312,7 @@ QMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
 #error todo
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
-		"pause\n\tlock cmpxchgl %2,(%1)"
+		"pause\n\tlock/cmpxchgl %2,(%1)"
 #else
 		"pause\n\tcmpxchgl %2,(%1)"
 #endif
@@ -355,7 +355,7 @@ is legal from a cleanup/signal handler, not sem_wait(). Linux is happy with
 this, FreeBSD is not and must use a real POSIX mutex - nevertheless, we still
 save on recursion overheads and get spin counts.
 */
-#ifndef __FreeBSD__
+#if !defined(__FreeBSD__) && !defined(__APPLE__)
 #define MUTEX_USESEMA
 #endif
 

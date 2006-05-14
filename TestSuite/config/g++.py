@@ -50,9 +50,10 @@ env['CPPFLAGS']+=cppflags
 
 
 # Use libtool for linking
-if "freebsd" in sys.platform:
-    env['LINK']="libtool --tag=CXX --mode=link g++"
-else: env['LINK']="libtool --mode=link g++"
+if not onDarwin:
+    if "freebsd" in sys.platform:
+        env['LINK']="libtool --tag=CXX --mode=link g++"
+    else: env['LINK']="libtool --mode=link g++"
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    ternary(make64bit, "-m64", "-m32")
                   ]

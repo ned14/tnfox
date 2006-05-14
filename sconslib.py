@@ -28,6 +28,12 @@ def libAsLA(leaf=False):
     if leaf: ret=ret[string.rfind(ret, '/')+1:]
     return ret
 
+def repositionLibrary(target, source, env):
+    # On Darwin must rewrite shared library header with full path
+    fullpath=os.path.abspath(str(target[0]))
+    print "Repositioning library to "+fullpath
+    os.system("install_name_tool -id "+fullpath+" "+fullpath)
+
 def VersionedSharedLibraryName(env, target, version, debug=False):
     ABIversion, interface, sourcev, backwards=version
     if ABIversion: target+="-"+ABIversion
@@ -36,6 +42,8 @@ def VersionedSharedLibraryName(env, target, version, debug=False):
     # Hack for scons misinterpreting '.' in target name
     if sys.platform=="win32":
         suffix+=".dll"
+    elif sys.platform=="darwin":
+        suffix+=".dylib"
     else:
         suffix+=".so"
         suffix+=".%d.%d.%d" % (interface, sourcev, backwards)
@@ -50,7 +58,7 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
     targetorig=target
     ABIversion, interface, sourcev, backwards=version
     target,suffix=VersionedSharedLibraryName(env, target, version, debug)
-    libtool=sys.platform!="win32"
+    libtool=sys.platform!="win32" and sys.platform!="darwin"
     DLL=env.SharedLibrary(target+suffix, sources, SHLIBSUFFIX=suffix, **args)
     basetarget=str(DLL[0])
     print "basetarget=",basetarget
@@ -140,6 +148,8 @@ def VersionedSharedLibrary(env, target, version, installpath, sources, debug=Fal
         AddPostAction(DLL, Action(dupLibrary))
         AddPostAction(DLL, Action(dupLibrary2))
         Clean(DLL, os.path.join(stem, ".libs"))
+    if onDarwin:
+        AddPostAction(DLL, Action(repositionLibrary))
     return DLL
 
 
@@ -192,6 +202,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         raise IOError, "No platform config file for any of "+repr(env['TOOLS'])+" was found"
     print "Using platform configuration",platformconfig,"..."
     onWindows=(env['PLATFORM']=="win32" or env['PLATFORM']=="win64")
+    onDarwin=(env['PLATFORM']=="darwin")
     if tcommonopts:
         libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
         libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn"+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
@@ -329,9 +340,10 @@ def doConfTests(env, prefixpath=""):
     else:
         print "ZLib library not found, disabling support"
     if haveZLib:
-        checkLib(conf, "jpeg", "jpeglib.h")
-        checkLib(conf, "png", "png.h")
         checkLib(conf, "tiff", "tiff.h", "libtiff/")
+        checkLib(conf, "png", "png.h")
+        # Keep jpeg BELOW tiff and png as on some systems they include the jpeg routines
+        checkLib(conf, "jpeg", "jpeglib.h")
     if os.path.exists(prefixpath+"windows/libbzip2/libbzip2"+ternary(make64bit, "64", "32")+".lib"):
         print "Found BZip2 library"
         conf.env['CPPDEFINES']+=["HAVE_BZ2LIB_H"]

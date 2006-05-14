@@ -47,9 +47,16 @@ Until v0.72, this class was implemented using the Linux-only \c dmonitor kernel
 facility but as BSD support was required, it was rewritten to use SGI's FAM
 daemon which all modern Unices should provide. FAM is significantly easier
 to use than doing it manually and also can use kernel monitoring facilities
-as so to avoiding polling - currently FreeBSD's \c kqueue is not quite up to
-the job but it would be easy to extend. Whatever the case, it's better for one
-thing to poll a directory that lots of things.
+as so to avoid polling.
+
+As of v0.87 when TnFOX was ported to Apple MacOS X, the problem emerged that there
+was no FAM implementation for MacOS X. This meant having to write an implementation
+based on BSD kqueue's which aren't entirely up to the job - in particular, only
+creations and deletions within a directory are reported and at that point, and
+only that point, will size and metadata changes etc. be found and reported. kqueue's
+\b can provide all the functionality we need, but they require an open file handle
+on each and every file in a directory being monitored which quickly causes the
+process to run out of available file handles.
 
 As Tn especially does a lot of file system monitoring, it has been designed
 to work around system limits - the limit of 64 maximum waitable objects on

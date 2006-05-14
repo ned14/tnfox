@@ -77,15 +77,131 @@
  #include <signal.h>
  #include <dlfcn.h>
  #include <sys/mman.h>
+ #if !defined(__linux__) && !defined(__FreeBSD__) && !defined(__APPLE__)
+  #error Unknown POSIX architecture
+ #endif
  #ifdef __linux__
   #include <sys/fsuid.h>
   #include <sys/mount.h>
  #endif
- #ifdef __FreeBSD__
+ #if defined(__FreeBSD__)
   #include <sys/sysctl.h>
   #include <sys/vmmeter.h>
   #include <sys/param.h>
   #include <sys/mount.h>
+ #endif
+ #ifdef __APPLE__
+  #include <sys/sysctl.h>
+  #include <sys/vmmeter.h>
+  #include <sys/param.h>
+  #include <sys/mount.h>
+  #include <mach/mach.h>
+  #include <mach/vm_map.h>
+static const char *MachErrorToString(kern_return_t code) throw()
+{
+	switch(code)
+	{
+		case KERN_SUCCESS:
+			return "Success";
+		case KERN_PROTECTION_FAILURE:
+			return "Memory access not permitted";
+		case KERN_NO_SPACE:
+			return "Insufficient space";
+		case KERN_INVALID_ARGUMENT:
+			return "Invalid argument";
+		case KERN_FAILURE:
+			return "Generic failure";
+		case KERN_RESOURCE_SHORTAGE:
+			return "Failed to allocate resource";
+		case KERN_NOT_RECEIVER:
+			return "Insufficient rights for port";
+		case KERN_NO_ACCESS:
+			return "No access";
+		case KERN_MEMORY_FAILURE:
+			return "Memory failure";
+		case KERN_ALREADY_IN_SET:
+			return "Already in set";
+		case KERN_NOT_IN_SET:
+			return "Not in set";
+		case KERN_NAME_EXISTS:
+			return "Name already exists";
+		case KERN_ABORTED:
+			return "Operation aborted";
+		case KERN_INVALID_NAME:
+			return "Invalid name";
+		case KERN_INVALID_TASK:
+			return "Invalid task";
+		case KERN_INVALID_RIGHT:
+			return "Invalid right";
+		case KERN_INVALID_VALUE:
+			return "Invalid value";
+		case KERN_UREFS_OVERFLOW:
+			return "User refs quota reached";
+		case KERN_INVALID_CAPABILITY:
+			return "Invalid capability";
+		case KERN_RIGHT_EXISTS:
+			return "Right already exists";
+		case KERN_INVALID_HOST:
+			return "Invalid host";
+		case KERN_MEMORY_PRESENT:
+			return "Memory already present";
+		case KERN_MEMORY_DATA_MOVED:
+			return "Memory data already moved";
+		case KERN_MEMORY_RESTART_COPY:
+			return "Memory restart copy";
+		case KERN_INVALID_PROCESSOR_SET:
+			return "Invalid processor set";
+		case KERN_POLICY_LIMIT:
+			return "Reached policy limit";
+		case KERN_INVALID_POLICY:
+			return "Invalid policy";
+		case KERN_INVALID_OBJECT:
+			return "Invalid object";
+		case KERN_ALREADY_WAITING:
+			return "Already waiting";
+		case KERN_DEFAULT_SET:
+			return "Can't destroy default set";
+		case KERN_EXCEPTION_PROTECTED:
+			return "Protected Exception";
+		case KERN_INVALID_LEDGER:
+			return "Invalid ledger";
+		case KERN_INVALID_MEMORY_CONTROL:
+			return "Invalid memory control";
+		case KERN_INVALID_SECURITY:
+			return "Invalid security";
+		case KERN_NOT_DEPRESSED:
+			return "Thread not depressed";
+		case KERN_TERMINATED:
+			return "Object terminated";
+		case KERN_LOCK_SET_DESTROYED:
+			return "Lock set destroyed";
+		case KERN_LOCK_UNSTABLE:
+			return "Lock unstable";
+		case KERN_LOCK_OWNED:
+			return "Lock already owned";
+		case KERN_LOCK_OWNED_SELF:
+			return "Lock already owned by self";
+		case KERN_SEMAPHORE_DESTROYED:
+			return "Semaphore destroyed";
+		case KERN_RPC_SERVER_TERMINATED:
+			return "RPC server terminated";
+		case KERN_RPC_TERMINATE_ORPHAN:
+			return "RPC orphan terminate";
+		case KERN_RPC_CONTINUE_ORPHAN:
+			return "RPC orphan continue";
+		case KERN_NOT_SUPPORTED:
+			return "Not supported";
+		case KERN_NODE_DOWN:
+			return "Remote node down";
+		case KERN_NOT_WAITING:
+			return "Thread not waiting";
+		case KERN_OPERATION_TIMED_OUT:
+			return "Operation timed out";
+	}
+	return mach_error_string(code);
+}
+  #define FXERRGMACH(code, flags) { FXERRG(MachErrorToString(code), code, flags); }
+  #define FXERRHMACH(exp) { int __errcode=(exp); if(__errcode!=KERN_SUCCESS) FXERRGMACH(__errcode, 0); }
  #endif
  // GCC lets us know what it's compiling
  #if defined(__x86_64__)
@@ -597,6 +713,7 @@ void FXProcess::init(int &argc, char *argv[])
 			getresuid(&uid, &euid, &suid);
 			fxmessage("uid=%d, euid=%d, suid=%d\n", uid, euid, suid);
 		}*/
+#ifndef __APPLE__
 		{	// Ensure /proc is working
 			FXString myprocloc=FXString("/proc/%1").arg(id());
 			if(!FXStat::exists(myprocloc))
@@ -605,6 +722,7 @@ void FXProcess::init(int &argc, char *argv[])
 				::exit(1);
 			}
 		}
+#endif
 #endif
 		atexit(atexitRunFatalExitCalls);
 		FXERRHM(p=new FXProcessPrivate);
@@ -663,16 +781,38 @@ void FXProcess::init(int &argc, char *argv[])
 				sstdio << temp.text();
 				temp=QTrans::tr("FXProcess", "There are the following files mapped into this process' memory:\n");
 				sstdio << temp.text();
-				QValueList<MappedFileInfo> list=FXProcess::mappedFiles();
-				for(QValueList<MappedFileInfo>::iterator it=list.begin(); it!=list.end(); ++it)
 				{
-					static const int addrwidth=sizeof(void *)*2;
-					QTransString temp2(QTrans::tr("FXProcess", "  %1 to %2 %3%4%5%6 %7\n"));
-					temp2.arg((FXulong) (*it).startaddr,-addrwidth,16).arg((FXulong) (*it).endaddr,-addrwidth,16);
-					temp2.arg(((*it).read) ? 'r' : '-').arg(((*it).write) ? 'w' : '-').arg(((*it).execute) ? 'x' : '-').arg(((*it).copyonwrite) ? 'c' : '-');
-					temp2.arg((*it).path);
-					temp=temp2;
-					sstdio << temp.text();
+					QValueList<MappedFileInfo> list=FXProcess::mappedFiles();
+					for(QValueList<MappedFileInfo>::const_iterator it=list.begin(); it!=list.end(); ++it)
+					{
+						static const int addrwidth=sizeof(void *)*2;
+						QTransString temp2(QTrans::tr("FXProcess", "  %1 to %2 %3%4%5%6 %7:%8\n"));
+						temp2.arg((FXulong) (*it).startaddr,-addrwidth,16).arg((FXulong) (*it).endaddr,-addrwidth,16);
+						temp2.arg(((*it).read) ? 'r' : '-').arg(((*it).write) ? 'w' : '-').arg(((*it).execute) ? 'x' : '-').arg(((*it).copyonwrite) ? 'c' : '-');
+						temp2.arg((FXulong) (*it).offset,-addrwidth,16).arg((*it).path);
+						temp=temp2;
+						sstdio << temp.text();
+					}
+				}
+				temp=QTrans::tr("FXProcess", "The following partitions can be mounted:\n");
+				sstdio << temp.text();
+				{
+					QValueList<MountablePartition> list=FXProcess::mountablePartitions();
+					FXString drv("x");
+					int n=0;
+					for(QValueList<MountablePartition>::const_iterator it=list.begin(); it!=list.end(); ++it)
+					{
+						QTransString temp2(QTrans::tr("FXProcess", "  %1. %2 at %3, %4, %5, %6, %7, windows drive=%8\n"));
+						temp2.arg(++n);
+						temp2.arg(it->name).arg(it->location).arg(it->fstype);
+						temp2.arg(it->mounted ? "mounted" : "unmounted");
+						temp2.arg(it->mountable ? "mountable" : "unmountable");
+						temp2.arg(it->readWrite ? "rw" : "ro");
+						drv[0]=it->driveLetter ? it->driveLetter : '?';
+						temp2.arg(drv);
+						temp=temp2;
+						sstdio << temp.text();
+					}
 				}
 			}
 			else if(0==strncmp(argv[argi], "-fxhanded=", 10))
@@ -994,7 +1134,7 @@ FXuint FXProcess::noOfProcessors()
 	processors=cpuinfo.contains("processor");
 	return processors;
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	int command[2]={CTL_HW, HW_NCPU };
 	int processors;
 	size_t processorslen=sizeof(processors);
@@ -1128,7 +1268,7 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles(bool forceRefresh)
 	}
 	fh.close();
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__)
 	FXString procpath=FXString("/proc/%1/map").arg(FXProcess::id());
 	// FreeBSD doesn't like incremental reads according to kernel sources
 	char rawbuffer[131072 /* WARNING: This value derived by experimentation */ ];
@@ -1198,6 +1338,53 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles(bool forceRefresh)
 	}
 	assert(end-ptr<2);
 #endif
+#ifdef __APPLE__
+	mach_port_t self=mach_task_self();
+	vm_address_t addr=0;
+	vm_size_t size=0;
+	vm_region_basic_info_data_64_t basicinfo;
+	vm_region_top_info_data_t topinfo;
+	mach_msg_type_number_t len=VM_REGION_BASIC_INFO_COUNT_64;
+	memory_object_name_t object=0;
+	while(KERN_SUCCESS==vm_region_64(self, &addr, &size, VM_REGION_BASIC_INFO_64, (vm_region_info_t) &basicinfo, &len, &object))
+	{
+		if(object)
+			mach_port_deallocate(mach_task_self(), object);
+		bi.startaddr=addr;
+		bi.length=size;
+		bi.endaddr=bi.startaddr+bi.length;
+		bi.read=(basicinfo.protection & VM_PROT_READ)!=0;
+		bi.write=(basicinfo.protection & VM_PROT_WRITE)!=0;
+		bi.execute=(basicinfo.protection & VM_PROT_EXECUTE)!=0;
+		bi.offset=basicinfo.offset;
+		// Now pull extended attrs
+		len=VM_REGION_TOP_INFO_COUNT;
+		if(KERN_SUCCESS==vm_region_64(self, &addr, &size, VM_REGION_TOP_INFO, (vm_region_info_t) &topinfo, &len, &object))
+		{
+			dl_info info;
+			if(object)
+				mach_port_deallocate(mach_task_self(), object);
+			bi.copyonwrite=(topinfo.share_mode==SM_COW);
+			if(dladdr((void *) bi.startaddr, &info))
+				bi.path=info.dli_fname;
+			else
+			{
+				bi.path.truncate(0);
+				if(SM_PRIVATE==topinfo.share_mode)
+					bi.path="{ Private region (malloc?) }";
+				else if(SM_EMPTY==topinfo.share_mode)
+					bi.path="{ Empty region }";
+				else if(SM_COW==topinfo.share_mode)
+					bi.path="{ Memory mapped file }";
+				if(topinfo.obj_id)
+					bi.path.append(FXString(" [mach obj_id=0x%1]").arg(topinfo.obj_id, 0, 16));
+			}
+			list.append(bi);
+		}
+		addr+=size;
+		len=VM_REGION_BASIC_INFO_COUNT_64;
+	}
+#endif
 #endif
 	return list;
 }
@@ -1225,6 +1412,9 @@ const FXString &FXProcess::execpath()
 #endif
 #ifdef __FreeBSD__
 	static const FXuval addr=0x08000000;
+#endif
+#ifdef __APPLE__
+	static const FXuval addr=0x00001000;
 #endif
 	FXuval diff=(FXuval) -1;
 	QValueList<MappedFileInfo> list=mappedFiles();
@@ -1436,7 +1626,7 @@ FXString FXProcess::hostOS()
 	desc=buffer;
 	return desc+"/"+ARCHITECTURE;
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	int command[2]={ CTL_KERN, KERN_OSTYPE };
 	char type[256];
 	size_t typelen=sizeof(type);
@@ -1501,7 +1691,7 @@ FXString FXProcess::hostOSDescription()
 	fclose(ih);
 	desc+=" ["; desc+=buffer;
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	int command[2]={ CTL_KERN, KERN_OSTYPE };
 	char buffer[256];
 	size_t bufflen=sizeof(buffer);
@@ -1645,6 +1835,15 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 	if(totalPhysMem)
 		*totalPhysMem=(FXuval) pm;
 #endif
+#ifdef __APPLE__
+	vm_statistics_data_t stats;
+	mach_msg_type_number_t count=HOST_VM_INFO_COUNT;
+	FXERRHMACH(host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t) &stats, &count));
+	FXuval pm=(FXuval)(stats.wire_count+stats.active_count+stats.inactive_count+stats.free_count)*getpagesize();
+	lastret=static_cast<FXfloat>(((FXuval) stats.wire_count+stats.active_count+stats.inactive_count)*getpagesize())/pm;
+	if(totalPhysMem)
+		*totalPhysMem=pm;
+#endif
 #endif
 	lastcheck=now;
 	return lastret;
@@ -1711,7 +1910,7 @@ FXuval FXProcess::virtualAddrSpaceLeft(FXuval chunk)
 #ifdef __linux__
 	flags|=MAP_ANONYMOUS;
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	flags|=MAP_ANON;
 #endif
 	// Some POSIX systems allocate memory downwards rather than upwards (eg; x86 Linux 2.6)
@@ -1763,6 +1962,10 @@ static inline FXProcess::MountablePartition readfstabentry(const char *&t)
 	return ret;
 }
 #endif
+static bool operator<(const FXProcess::MountablePartition &a, const FXProcess::MountablePartition &b)
+{
+	return comparecase(a.name, b.name)<0;
+}
 QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
 {
 	QValueList<MountablePartition> ret;
@@ -1853,13 +2056,16 @@ QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
 	return ret;
 #endif
 #ifdef USE_POSIX
+	MountablePartition mp;
+#ifndef __APPLE__
+	// Apple's don't maintain a fstab file
 	FXString fstab, mtab;
 	{
 		QFile l("/etc/fstab", QFile::WantLightQFile());
 		l.open(IO_ReadOnly);
 		fstab.length((FXuint) l.size());
 		l.readBlock((char *) fstab.text(), fstab.length());
-		// FreeBSD doesn't maintain /etc/mtab, and doesn't appear to have an equivalent :(
+		// FreeBSD doesn't maintain /etc/mtab, but does have getfsstat()
 #ifndef __FreeBSD__
 		QFile m("/etc/mtab", QFile::WantLightQFile());
 		m.open(IO_ReadOnly);
@@ -1868,7 +2074,6 @@ QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
 #endif
 	}
 	const char *fstabp=fstab.text(), *mtabp=mtab.text();
-	MountablePartition mp;
 	while(*fstabp)
 	{
 		mp=readfstabentry(fstabp);
@@ -1894,22 +2099,50 @@ QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
 			ret.push_back(mp);
 	}
 #endif
+#endif
+#if defined(__FreeBSD__) || defined(__APPLE__)
+	QMemArray<struct statfs> mountedfs(getfsstat(NULL, 0, MNT_WAIT));
+	FXERRHOS(getfsstat(mountedfs.data(), mountedfs.count()*sizeof(struct statfs), MNT_WAIT));
+	for(int n=0; n<mountedfs.count(); n++)
+	{
+		bool found=false;
+		// Mark any existing entries as mounted
+		for(QValueList<MountablePartition>::iterator it=ret.begin(); it!=ret.end(); ++it)
+		{
+			if(!comparecase(it->name, mountedfs[n].f_mntfromname) && !comparecase(it->location, mountedfs[n].f_mntonname))
+			{
+				it->mounted=true;
+				found=true;
+				break;
+			}
+		}
+		if(!found)
+		{
+			mp.name=mountedfs[n].f_mntfromname;
+			mp.location=mountedfs[n].f_mntonname;
+			mp.fstype=mountedfs[n].f_fstypename;
+			mp.mounted=true;
+			mp.mountable=true;
+			mp.readWrite=!(mountedfs[n].f_flags & MNT_RDONLY);
+			ret.push_back(mp);
+		}
+	}
+#endif
+	ret.sort();
 	// Attempt to guess drive letters
 	char driveLetter='C';
+	int lastpartition=1;
 	for(QValueList<MountablePartition>::iterator it=ret.begin(); it!=ret.end(); ++it)
 	{
 		MountablePartition &mp=*it;
 		mp.driveLetter=0;
-#ifdef __FreeBSD__
-		mp.mounted=true;	// Mark all as mounted on FreeBSD
-#endif
-		if(!comparecase(mp.fstype, "vfat") || !comparecase(mp.fstype, "msdosfs") || !comparecase(mp.fstype, "ntfs"))
+		if(!comparecase(mp.fstype, "vfat") || !comparecase(mp.fstype, "msdosfs") || !comparecase(mp.fstype, "ntfs") || !comparecase(mp.fstype, "msdos"))
 		{
 			FXString location(mp.location); location.upper();
-			if(-1!=location.find("WIN"))
-				mp.driveLetter=driveLetter++;
+			//if(-1!=location.find("WIN"))
+			//	mp.driveLetter=driveLetter++;
 			for(const char *t=location.text(); *t; t++)
-			{
+			{	// Scan for a drive letter tag of "[ /(]C[ /)]"
 				if(' '==*t || '/'==*t || '('==*t)
 				{
 					if(t[1]>='C' && t[1]<='Z' && (!t[2] || '/'==t[2] || ' '==t[2] || ')'==t[2]))
@@ -1919,6 +2152,14 @@ QValueList<FXProcess::MountablePartition> FXProcess::mountablePartitions()
 						break;
 					}
 				}
+			}
+			if(!mp.driveLetter && (!comparecase(mp.name, "/dev/hd", 7) || !comparecase(mp.name, "/dev/disk", 9)))
+			{	// Try the DOS naming scheme
+				int thispartition=(mp.name[mp.name.length()-1]-'0');
+				if(thispartition>4) thispartition--;		// Partition 4 is extended and doesn't count
+				driveLetter+=thispartition-lastpartition;
+				mp.driveLetter=driveLetter;
+				lastpartition=thispartition;
 			}
 		}
 	}
@@ -1937,7 +2178,7 @@ void FXProcess::mountPartition(const FXString &partitionName, const FXString &lo
 	unsigned long flags=readWrite ? 0 : MS_RDONLY;
 	FXERRHOS(mount(partitionName.text(), location.text(), fstype.text(), flags, "defaults"));
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	int flags=readWrite ? 0 : MNT_RDONLY;
 	FXERRHOS(mount(fstype.text(), location.text(), flags, (void *) "defaults"));
 #endif
@@ -1952,7 +2193,7 @@ void FXProcess::unmountPartition(const FXString &location)
 #ifdef __linux__
 	FXERRHOS(umount(location.text()));
 #endif
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	FXERRHOS(unmount(location.text(), 0));
 #endif
 #endif
