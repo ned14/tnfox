@@ -605,7 +605,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 		if(!fambroken)
 		{
 			FXERRHFAM(FAMMonitorDirectory(&fc, path.text(), &p->h, 0));
-			p->pathByHandle.insert(p->h.reqnum, p);
+			w->pathByHandle.insert(p->h.reqnum, p);
 		}
 #endif
 		w->paths.insert(path, p);
