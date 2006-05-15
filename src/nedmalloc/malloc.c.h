@@ -1708,7 +1708,13 @@ static FORCEINLINE int pthread_init_lock (MLOCK_T *sl) {
   pthread_mutexattr_t attr;
   sl->c=0;
   if(pthread_mutexattr_init(&attr)) return 1;
-  if(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE)) return 1;
+  if(pthread_mutexattr_settype(&attr,
+#ifdef __linux__
+    PTHREAD_MUTEX_RECURSIVE_NP
+#else
+    PTHREAD_MUTEX_RECURSIVE
+#endif
+    )) return 1;
   if(pthread_mutex_init(&sl->l, &attr)) return 1;
   pthread_mutexattr_destroy(&attr);
   return 0;
@@ -1717,7 +1723,7 @@ static FORCEINLINE int pthread_init_lock (MLOCK_T *sl) {
 static FORCEINLINE int pthread_islocked (MLOCK_T *sl) {
   if(!pthread_try_lock(sl)){
     int ret = (sl->c != 0);
-    pthread_mutex_unlock(sl);
+    pthread_mutex_unlock(&(sl)->l);
     return ret;
   }
   return 0;
