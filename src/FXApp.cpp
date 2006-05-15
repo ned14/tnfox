@@ -3621,7 +3621,10 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
   // Get font face and metrics
   FXFontDesc fontdesc;
   getSystemFont(fontdesc);
-  normalFont->setFontDesc(fontdesc);
+  if(!normalFont)
+    stockFont=normalFont=new FXFont(this, fontdesc);
+  else
+    normalFont->setFontDesc(fontdesc);
 
   // Read colors from system
   baseColor=getSystemColor(COLOR_3DFACE);
