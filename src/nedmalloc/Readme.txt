@@ -80,10 +80,13 @@ ChangeLog:
 -=-=-=-=-=
 v1.02 15th May 2006:
  * Integrated dlmalloc v2.8.4, fixing the win32 memory release problem and
-improving performance still further
- * Fixed win32 critical section implementation
- * Wasn't locking mspace if all mspaces were locked
- * Added Apple Mac OS X support
+improving performance still further. Speed is now up to twice the speed of
+v1.01 (average is 67% faster).
+ * Fixed win32 critical section implementation. Thanks to Pavel Kuznetsov
+for reporting this.
+ * Wasn't locking mspace if all mspaces were locked. Thanks to Pavel Kuznetsov
+for reporting this.
+ * Added Apple Mac OS X support.
 
 v1.01 24th February 2006:
  * Fixed multiprocessor scaling problems by removing sources of cache sloshing

@@ -2855,6 +2855,7 @@ static int init_mparams(void) {
       mparams.page_size = system_info.dwPageSize;
       mparams.granularity = ((DEFAULT_GRANULARITY != 0)?
                            DEFAULT_GRANULARITY : system_info.dwAllocationGranularity);
+#if 0
       if(!win32largepagesize)
       { /* Do we have large page support? */
         SIZE_T (*GetLargePageMinimum)(void);
@@ -2882,6 +2883,7 @@ static int init_mparams(void) {
           }
         }
       }
+#endif
     }
 #endif /* WIN32 */
 
