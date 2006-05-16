@@ -36,7 +36,7 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.6.1), and the extensions listed below are designed to not interfere with that process where
+from v1.6.4), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
 is (C) 2001-2006 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
@@ -2250,7 +2250,8 @@ these libraries will be found and used.
 \section problems Problems:
 \li Apple's X11 implementation provides Xft support, but I couldn't get it working
 correctly on the Apple Mac I have access to. Therefore it is disabled in \c config/g++.py
-but please do try reenabling it and trying it on your machine.
+but please do try reenabling it and trying it on your machine. Note that because of
+the lack of Xft, unicode text does not display properly on Mac OS X.
 \li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
 is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
 

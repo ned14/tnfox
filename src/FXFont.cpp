@@ -465,6 +465,53 @@ static int CALLBACK EnumFontFamExProc(const LOGFONTA *lf,const TEXTMETRICA *lptm
 // Access to display
 #define DISPLAY(app)      ((Display*)((app)->display))
 
+// Define missing constants for older fontconfig's
+#ifndef FC_WEIGHT_THIN
+#define FC_WEIGHT_THIN 0
+#undef FC_WEIGHT_LIGHT
+#define FC_WEIGHT_LIGHT 50
+#endif
+#ifndef FC_WEIGHT_EXTRALIGHT
+#define FC_WEIGHT_EXTRALIGHT 40
+#endif
+#ifndef FC_WEIGHT_NORMAL
+#define FC_WEIGHT_NORMAL 80
+#endif
+#ifndef FC_WEIGHT_EXTRABOLD
+#define FC_WEIGHT_EXTRABOLD 205
+#endif
+#ifndef FC_WIDTH_ULTRACONDENSED
+#define FC_WIDTH_ULTRACONDENSED 0
+#endif
+#ifndef FC_WIDTH_EXTRACONDENSED
+#define FC_WIDTH_EXTRACONDENSED 63
+#endif
+#ifndef FC_WIDTH_CONDENSED
+#define FC_WIDTH_CONDENSED 75
+#endif
+#ifndef FC_WIDTH_SEMICONDENSED
+#define FC_WIDTH_SEMICONDENSED 87
+#endif
+#ifndef FC_WIDTH_NORMAL
+#define FC_WIDTH_NORMAL 100
+#endif
+#ifndef FC_WIDTH_SEMIEXPANDED
+#define FC_WIDTH_SEMIEXPANDED 113
+#endif
+#ifndef FC_WIDTH_EXPANDED
+#define FC_WIDTH_EXPANDED 125
+#endif
+#ifndef FC_WIDTH_EXTRAEXPANDED
+#define FC_WIDTH_EXTRAEXPANDED 150
+#endif
+#ifndef FC_WIDTH_ULTRAEXPANDED
+#define FC_WIDTH_ULTRAEXPANDED 200
+#endif
+#ifndef FC_WIDTH
+#define FC_WIDTH "width"
+#endif
+
+
 
 // From FOX weight to fontconfig weight
 static FXint weight2FcWeight(FXint weight){

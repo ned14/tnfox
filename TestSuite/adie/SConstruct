@@ -23,6 +23,9 @@ dir,name=os.path.split(os.getcwd())
 if "windows" in dir:
     # Replace with Unix equiv
     dir="/home/ned/"+dir[dir.find("Tn"):]
+if "/Volumes/DATA" in dir:
+    # Replace with MacOS X equiv
+    dir="/Users/ned/Documents/"+dir[dir.find("Tn"):]
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
@@ -46,7 +49,9 @@ else:
     except:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
-if not onWindows: # Can't put in g++.py as dir isn't defined there
+if onDarwin:
+    env['LIBS']+=[libtnfox]
+elif not onWindows: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
 else:
     env['LINKFLAGS']+=['/SUBSYSTEM:WINDOWS', '/ENTRY:mainCRTStartup']

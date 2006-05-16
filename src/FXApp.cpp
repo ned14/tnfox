@@ -1491,15 +1491,15 @@ bool FXApp::openDisplay(const FXchar* dpyname){
 #ifndef __APPLE__		// helvetica is the best available on Apple's X11 implementation
 		FXFontDesc *fonts=0;
 		FXuint numfonts, f;
-		if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
-							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SWISS|FONTHINT_SCALABLE))
+		if(FXFont::listFonts(fonts, numfonts, "", 0, FXFont::Straight,
+							 0, FONTENCODING_UNICODE, FXFont::Swiss|FXFont::Scalable))
 		{
 			int bestscore=32;
 			for(f=0; f<numfonts; f++)
 			{
-				if(fonts[f].flags & FONTPITCH_VARIABLE)
+				if(fonts[f].flags & FXFont::Variable)
 				{
-					fxmessage("Candidate font: face=%s, size=%u, weight=%u, slant=%u, width=%u, encoding=%u, flags=%u\n", fonts[f].face, fonts[f].size, fonts[f].weight, fonts[f].slant, fonts[f].setwidth, fonts[f].encoding, fonts[f].flags);
+					//fxmessage("Candidate font: face=%s, size=%u, weight=%u, slant=%u, width=%u, encoding=%u, flags=%u\n", fonts[f].face, fonts[f].size, fonts[f].weight, fonts[f].slant, fonts[f].setwidth, fonts[f].encoding, fonts[f].flags);
 					FXString face(fonts[f].face);
 					if(bestscore>0 && !comparecase(face, "tahoma", 6))
 					{	// Best of the lot as it looks just like Windows
