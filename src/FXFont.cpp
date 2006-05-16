@@ -1389,23 +1389,24 @@ void FXFont::create(){
 
       // Find pattern matching a font
       p=FcFontMatch(0,pattern,&result);
+      if(FcResultMatch==result){
+        // Get back the matched font properties
+        FXFontDesc desc;
+        pattern2FontDescXft(p, &desc);
+        actualName = desc.face;
+        actualSize = desc.size;
+        actualWeight = desc.weight;
+        actualSlant = desc.slant;
+        actualSetwidth = desc.setwidth;
+        actualEncoding = desc.encoding;
 
-      // Get back the matched font properties
-      FXFontDesc desc;
-      pattern2FontDescXft(p, &desc);
-      actualName = desc.face;
-      actualSize = desc.size;
-      actualWeight = desc.weight;
-      actualSlant = desc.slant;
-      actualSetwidth = desc.setwidth;
-      actualEncoding = desc.encoding;
+        // Create font
+        font=XftFontOpenPattern(DISPLAY(getApp()),p);
+        xid=(unsigned long)font;
 
-      // Create font
-      font=XftFontOpenPattern(DISPLAY(getApp()),p);
-      xid=(unsigned long)font;
-
-      // Destroy pattern
-      FcPatternDestroy(pattern);
+        // Destroy pattern
+        FcPatternDestroy(pattern);
+        }
 
       // Uh-oh, we failed
       if(!xid){ throw FXFontException("unable to create font"); }

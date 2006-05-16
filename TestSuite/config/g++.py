@@ -19,7 +19,7 @@ cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
 if architecture=="x86":
     if x86_3dnow!=0:
           cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
-    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4" ]
+    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium-m" ]
     cppflags+=["-m32", "-march="+cppflagsopts[architecture_version-4] ]
     if x86_SSE!=0:
         cppflags+=["-mfpmath="+ ["387", "sse"][x86_SSE!=0] ]

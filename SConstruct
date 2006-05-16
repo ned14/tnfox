@@ -30,6 +30,11 @@ if not os.path.exists(targetname):
 targetname+="/"+tnfoxname
 env['CPPDEFINES']+=[ "FOXDLL_EXPORTS" ]
 doConfTests(env)
+# This must go after all the conf tests as it's DLL only
+if onDarwin:
+    env['LINKFLAGS']+=["-compatibility_version", targetversion,
+                       "-current_version", targetversion
+                      ]
 
 updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
 objects=[]
