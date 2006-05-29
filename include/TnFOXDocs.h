@@ -2290,6 +2290,12 @@ correctly on the Apple Mac I have access to. Therefore it is disabled in \c conf
 but please do try reenabling it and trying it on your machine.
 \li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
 is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
+\li MacOS X does not support thread cancellation during select(). This is a major
+problem for TnFOX as the POSIX threads spec says it should be. As there wasn't any
+choice, a per-quarter second poll of thread cancellation status is performed which means that
+thread cancellation can take up to a quarter second to complete depending on the i/o device
+you're currently in. This reasonably approximates correct behaviour, though shutting
+down your application can take quite a lot longer than on other systems.
 
 */
 

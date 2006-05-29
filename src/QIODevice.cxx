@@ -29,6 +29,7 @@
 #include "QBuffer.h"
 #include <qcstring.h>
 #include <string.h>
+#include "tnfxselect.h"
 #include "FXErrCodes.h"
 #ifdef USE_POSIX
 #include <unistd.h>
@@ -479,7 +480,7 @@ bool QIODeviceS::waitForData(QIODeviceS **signalled, FXuint no, QIODeviceS **lis
 		FD_SET(fd, &fds);
 		if(fd>maxfd) maxfd=fd;
 	}
-	int ret=::select(maxfd+1, &fds, 0, 0, tv);
+	int ret=tnfxselect(maxfd+1, &fds, 0, 0, tv);
 	if(ret<0) { FXERRHOS(ret); return false; }
 	if(!ret) return false;
 	if(signalled)

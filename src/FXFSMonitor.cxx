@@ -280,7 +280,14 @@ void FXFSMon::Watcher::run()
 	{
 		FXERRH_TRY
 		{
-			while((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent), NULL)))
+			struct timespec *timeout=0;
+#ifdef __APPLE__
+			// Stupid Apple didn't make this a thread cancellation point :(
+			struct timespec tv={ 0, 250000000 };
+			timeout=&tv;
+			QThread::current()->checkForTerminate();
+#endif
+			if((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent), timeout)))
 			{
 				FXERRHOS(ret);
 				for(int n=0; n<ret; n++)
@@ -354,10 +361,13 @@ FXFSMon::Watcher::Path::~Path()
 #endif
 #ifdef USE_KQUEUES
 	h.flags=EV_DELETE;
-	FXERRHOS(kevent(fxfsmon->kqueueh, &h, 1, NULL, 0, NULL));
+	kevent(fxfsmon->kqueueh, &h, 1, NULL, 0, NULL);
 	parent->pathByHandle.remove(h.ident);
-	FXERRHOS(::close(h.ident));
-	h.ident=0;
+	if(h.ident)
+	{
+		FXERRHOS(::close(h.ident));
+		h.ident=0;
+	}
 #endif
 #ifdef USE_FAM
 	if(!fxfsmon->fambroken)

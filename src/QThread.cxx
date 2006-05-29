@@ -871,8 +871,9 @@ void QThreadPrivate::cleanup(QThread *t)
 {
 	bool doAutoDelete=false;
 	QWaitCondition *stoppedwc=0;
-	{
-		QThread_DTHold dth;
+	{	// Permanently disable termination from this point in. On some broken pthreads
+		// implementations not doing so causes this code to get recalled next cancellation point
+		t->disableTermination();
 		QMtxHold h(t->p);
 		FXERRH(t->p, "Possibly a 'delete this' was called during thread cleanup?", QTHREAD_DELETETHIS, FXERRH_ISFATAL);
 		FXERRH(!t->isInCleanup, "Exception occured during thread cleanup", QTHREAD_CLEANUPEXCEPTION, FXERRH_ISFATAL);

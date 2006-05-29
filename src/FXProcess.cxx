@@ -1490,23 +1490,30 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	on POSIX. Thus we emulate the Windows behaviour. Another minor
 	problem is that libraries can have "lib" on their front :( */
 	FXString path_=path;
-	bool hasLib=path_.left(3)=="lib", hasSO=path_.right(3)==".so";
+#ifdef __APPLE__
+#define SHAREDOBJECTSUFFIX ".dylib"
+	bool hasSO=path_.right(6)==".dylib";
+#else
+#define SHAREDOBJECTSUFFIX ".so"
+	bool hasSO=path_.right(3)==".so";
+#endif
+	bool hasLib=path_.left(3)=="lib";
 	while(!FXFile::exists(path_) && !FXFile::isAbsolute(path_))
 	{
-		if(!hasSO)  { path_+=".so";			if(FXFile::exists(path_)) break; }
-		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(path_)) break; }
+		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXFile::exists(path_)) break; }
+		if(!hasLib) { path_="lib"+path_;			if(FXFile::exists(path_)) break; }
 		// Try directory where my executable is
 		FXString inexecpath=FXFile::directory(execpath())+PATHSEPSTRING;
 		path_=path;
 		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;			if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		// Try current directory
 		inexecpath="." PATHSEPSTRING;
 		path_=path;
 		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;			if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
 	}
 	path_=FXFile::absolute(path_);

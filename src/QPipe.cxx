@@ -45,6 +45,7 @@
 #endif
 #ifdef USE_POSIX
 #include <sys/poll.h>
+#include "tnfxselect.h"
 #endif
 
 #include "FXMemDbg.h"
@@ -591,7 +592,7 @@ doread:
 		FD_SET(p->readh, &rfds);
 		FD_SET(p->readh, &efds);
 		h.unlock();
-		FXERRHIO(::select(p->readh+1, &rfds, 0, &efds, NULL));
+		FXERRHIO(tnfxselect(p->readh+1, &rfds, 0, &efds, NULL));
 		if(FD_ISSET(p->readh, &efds))	// error occurred (eg; widowed pipe)
 			return 0;
 		assert(FD_ISSET(p->readh, &rfds));
