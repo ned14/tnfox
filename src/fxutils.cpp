@@ -402,6 +402,7 @@ void fxassert(const char* expression,const char* filename,unsigned int lineno){
 // Log message to [typically] stderr
 void fxmessage(const char* format,...){
 #ifndef WIN32                         // Unix
+  QThread_DTHold dthold;
   va_list arguments;
   va_start(arguments,format);
   vfprintf(stderr,format,arguments);
@@ -428,6 +429,7 @@ void fxmessage(const char* format,...){
 // Error routine
 void fxerror(const char* format,...){
 #ifndef WIN32
+  QThread_DTHold dthold;
   va_list arguments;
   va_start(arguments,format);
   vfprintf(stderr,format,arguments);
@@ -457,6 +459,7 @@ void fxerror(const char* format,...){
 // Warning routine
 void fxwarning(const char* format,...){
 #ifndef WIN32
+  QThread_DTHold dthold;
   va_list arguments;
   va_start(arguments,format);
   vfprintf(stderr,format,arguments);
