@@ -3,6 +3,9 @@
 env['CPPDEFINES']+=["USE_POSIX",
                     "HAVE_CONSTTEMPORARIES"    # Workaround lack of non-const temporaries
                     ]
+if onDarwin:
+    # You only get the thread cancelling pthread implementation this way
+    env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
 if debugmode:
     env['CPPDEFINES']+=["_DEBUG"]
 else:
