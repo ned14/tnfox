@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=False
+debugmode=True
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
@@ -20,7 +20,7 @@ inlineMutex=False  # not debugmode
 
 # What to generate as the library
 # 0=generate just the DLL, 1=also generate a static library, 2=only generate a static library
-GenStaticLib=(sys.platform!="win32")
+GenStaticLib=not (sys.platform=="win32" or sys.platform=="darwin")
 
 # Set to include FOX compatibility layer
 FOXCompatLayer=False
@@ -28,7 +28,7 @@ FOXCompatLayer=False
 # Set to disable inclusion of GUI ie; no FXObject, no FXApp etc
 disableGUI=False
 
-SeparateTnLibs=(sys.platform=="win32")
+SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 ######## End Global build options ########
 
