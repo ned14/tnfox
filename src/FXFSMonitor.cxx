@@ -148,6 +148,9 @@ struct FXFSMon : public QMutex
 		QPtrDict<Path> pathByHandle;
 #else
 		QIntDict<Path> pathByHandle;
+#ifdef USE_KQUEUES
+		struct kevent cancelWaiter;
+#endif
 #endif
 		Watcher();
 		~Watcher();
@@ -276,23 +279,26 @@ void FXFSMon::Watcher::run()
 {
 	int ret;
 	struct kevent kevs[16];
+#ifdef __APPLE__
+	// Register magic thread termination waiter handle with kqueue
+	int cancelWaiterHandle=(int)(FXuval) QThread::int_cancelWaiterHandle();
+	EV_SET(&cancelWaiter, cancelWaiterHandle, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, 0);
+	FXERRHOS(kevent(fxfsmon->kqueueh, &cancelWaiter, 1, NULL, 0, NULL));
+#endif
 	for(;;)
 	{
 		FXERRH_TRY
 		{
-			struct timespec *timeout=0;
-#ifdef __APPLE__
-			// Stupid Apple didn't make this a thread cancellation point :(
-			struct timespec tv={ 0, 250000000 };
-			timeout=&tv;
-			QThread::current()->checkForTerminate();
-#endif
-			if((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent), timeout)))
+			if((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent), NULL)))
 			{
 				FXERRHOS(ret);
 				for(int n=0; n<ret; n++)
 				{
 					struct kevent *kev=&kevs[n];
+#ifdef __APPLE__
+					if(cancelWaiterHandle==kev->ident)
+						QThread::current()->checkForTerminate();
+#endif
 					QMtxHold h(fxfsmon);
 					Path *p=pathByHandle.find(kev->ident);
 					assert(p);
@@ -346,6 +352,11 @@ void FXFSMon::Watcher::run()
 #endif
 void *FXFSMon::Watcher::cleanup()
 {
+#ifdef __APPLE__
+	// Deregister magic thread termination waiter handle with kqueue
+	cancelWaiter.flags=EV_DELETE;
+	FXERRHOS(kevent(fxfsmon->kqueueh, &cancelWaiter, 1, NULL, 0, NULL));
+#endif
 	return 0;
 }
 

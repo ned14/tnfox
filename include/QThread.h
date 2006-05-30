@@ -820,9 +820,9 @@ capable of displaying GUI stuff where it is then FXERRH_REPORT()'ed
 \li You can have code called on thread creation plus thread death
 
 <h3>Writing easily cancellable thread code</h3>
-On POSIX Unix, \b any operation which waits on the kernel except for mutexes can never return and
-instead jump directly to the
-cleanup() routine (precisely which calls are subject to this vary between Unices but it's best to assume
+On POSIX Unix, operations which waits on the kernel except for mutexes can never return and
+instead jump directly to the cleanup() routine (precisely which calls are subject to this vary
+substantially between Unices but it's best to assume
 that all wait operations are vulnerable - this includes printing things to \c stdio like using
 \c fxmessage). Because of this, stack-constructed objects will not be unwound and hence there
 will be memory and resource leaks.
@@ -854,6 +854,11 @@ by various other classes such as QWaitCondition, QPipe and QBlkSocket. Some FOX 
 do not have this special support, so it is strongly recommended that for identical cross-platform
 behaviour you regularly call checkForTerminate() which on Win32 is implemented rather brutally
 by calling the cleanup handler and immediately exiting the thread.
+
+\note On Apple MacOS X, curiously the select() call does not permit thread cancellation despite
+being required to do so by the POSIX threads spec. Hence special support code is compiled in
+on MacOS X to emulate a similar behaviour. This comes with a cost of an extra two file handles
+open per thread object.
 
 \warning Cleanup handlers are invoked on most POSIX platforms via a synchronous signal. This
 implies that all the restrictions placed on signal handling code also apply to cleanup code -

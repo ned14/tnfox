@@ -24,40 +24,24 @@ static inline int tnfxselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set
 #ifndef __APPLE__
 	return ::select(nfds, readfds, writefds, exceptfds, timeout);
 #else
+	using namespace FX;
 	// For some unfathomable reason, Apple have not made select() always a thread cancellation
 	// point despite the POSIX standard requiring it. This thoroughly breaks most parts
 	// of TnFOX which *requires* it to be a cancellation point as it should be
 	//
-	// This emulation simply uses polling to emulate the same. It's rotten, it's very
-	// inefficient, I dislike it strongly but I can't see an alternative :(
+	// With assistance of QThread, this cancellable select relies on a magic waiter pipe
+	// to get signalled when cancellation is wanted.
 
-	int ret;
-	struct timeval tv;
-	using namespace FX;
-	FXulong waitfor=0, end=0;
-	if(timeout)
+	int ret, h=0;
+	if(readfds)
 	{
-		waitfor=timeout->tv_sec*1000000000ULL+timeout->tv_usec*1000;
-		end=FXProcess::getNsCount()+waitfor;
+		h=(int)(FXuval) QThread::int_cancelWaiterHandle();
+		FD_SET(h, readfds);
+		if(h>=nfds) nfds=h+1;
 	}
-	do
-	{
-		FXulong now=timeout ? FXProcess::getNsCount() : 0;
-		FXlong diff=timeout ? (FXlong)(end-now) : 10000000000ULL;
-		if(diff<0)
-			return 0;
-		else if(diff<250000000)
-		{
-			tv.tv_sec =diff/1000000000;
-			tv.tv_usec=((diff/1000) % 1000000);
-		}
-		else
-		{
-			tv.tv_sec=0;
-			tv.tv_usec=250000000;
-		}
+	ret=::select(nfds, readfds, writefds, exceptfds, timeout);
+	if(ret>0 && readfds && FD_ISSET(h, readfds))
 		QThread::current()->checkForTerminate();
-	} while(!(ret=::select(nfds, readfds, writefds, exceptfds, &tv)));
 	return ret;
 #endif
 }

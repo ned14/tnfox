@@ -68,7 +68,51 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
 namespace FX {
-
+	
+#ifdef __APPLE__
+static inline void LatchWaiter(int *waiter)
+{	// Mustn't overfill the pipe
+	struct ::timeval delta;
+	fd_set readfds;
+	fd_set writefds;
+	fd_set exceptfds;
+	FD_ZERO(&readfds);
+	FD_ZERO(&writefds);
+	FD_ZERO(&exceptfds);
+	delta.tv_usec=0;
+	delta.tv_sec=0;
+	
+	// poll() would be easier here, but it's non-standard
+	FD_SET(waiter[0], &readfds);
+	if(::select(waiter[0]+1,&readfds,&writefds,&exceptfds,&delta)) return;
+	
+	char c=0;
+	FXERRHOS(::write(waiter[1], &c, 1));
+}
+static inline void ResetWaiter(int *waiter)
+{	// Mustn't read if pipe is empty
+	for(;;)
+	{
+		struct ::timeval delta;
+		fd_set readfds;
+		fd_set writefds;
+		fd_set exceptfds;
+		FD_ZERO(&readfds);
+		FD_ZERO(&writefds);
+		FD_ZERO(&exceptfds);
+		delta.tv_usec=0;
+		delta.tv_sec=0;
+		
+		// poll() would be easier here, but it's non-standard
+		FD_SET(waiter[0], &readfds);
+		if(!::select(waiter[0]+1,&readfds,&writefds,&exceptfds,&delta)) break;
+		
+		char buffer[4];
+		FXERRHOS(::read(waiter[0], buffer, 4));
+	}
+}
+#endif
+	
 class QWaitConditionPrivate : public QMutex
 {
 public:
@@ -568,6 +612,10 @@ public:
 	bool plsCancelDisabled;
 #endif
 #ifdef USE_POSIX
+#ifdef __APPLE__
+	int plsCancelWaiter[2];
+	bool plsCancelDisabled;
+#endif
 	pthread_t threadh;
 #endif
 	bool plsCancel;
@@ -604,6 +652,11 @@ public:
 		, threadh(0), plsCancelDisabled(false), plsCancelWaiter(0)
 #endif
 	{
+#ifdef __APPLE__
+		plsCancelWaiter[0]=plsCancelWaiter[1]=0;
+		plsCancelDisabled=false;
+		FXERRHOS(pipe(plsCancelWaiter));
+#endif
 		creator=currentThread;
 		if(creator && creator->p->recursiveProcessorAffinity)
 		{
@@ -635,6 +688,18 @@ public:
 			FXERRHOS(pthread_join(threadh, &result));
 			threadh=0;
 		}
+#ifdef __APPLE__
+		if(plsCancelWaiter[1])
+		{
+			FXERRHOS(::close(plsCancelWaiter[1]));
+			plsCancelWaiter[1]=0;
+		}
+		if(plsCancelWaiter[0])
+		{
+			FXERRHOS(::close(plsCancelWaiter[0]));
+			plsCancelWaiter[0]=0;
+		}
+#endif
 #endif
 		FXDELETE(stoppedwc);
 	}
@@ -701,9 +766,6 @@ public:
 static void cleanup_thread(void *t)
 {
 	QThread *tt=(QThread *) t;
-#ifdef DEBUG
-	fxmessage("Thread %u (%s) cleanup\n", (FXuint) QThread::id(), tt->name());
-#endif
 	QThreadPrivate::cleanup(tt);
 }
 static void *start_thread(void *t)
@@ -815,10 +877,10 @@ void QThreadPrivate::run(QThread *t)
 		t->p->id=QThread::id();
 #endif
 		// Only allow signals we like
-		sigset_t sigmask;
-		FXERRHOS(sigfillset(&sigmask));
+		//sigset_t sigmask;
+		//FXERRHOS(sigfillset(&sigmask));
 		//FXERRHOS(sigaddset(&sigmask, SIGPIPE));
-		FXERRHOS(pthread_sigmask(SIG_SETMASK, &sigmask, NULL));
+		//FXERRHOS(pthread_sigmask(SIG_SETMASK, &sigmask, NULL));
 #endif
 		QThread::yield();
 	}
@@ -871,9 +933,17 @@ void QThreadPrivate::cleanup(QThread *t)
 {
 	bool doAutoDelete=false;
 	QWaitCondition *stoppedwc=0;
-	{	// Permanently disable termination from this point in. On some broken pthreads
-		// implementations not doing so causes this code to get recalled next cancellation point
-		t->disableTermination();
+	if(t->isInCleanup)
+	{	// You have to be careful here - some broken pthreads implementations will recall cleanup()
+		// as soon as you reenable termination below
+		fxwarning("WARNING: QThread: cleanup() handler for thread %u reentered!\n", (FXuint) QThread::id());
+		return;
+	}
+	{
+		QThread_DTHold dth;
+#ifdef DEBUG
+		fxmessage("Thread %u (%s) cleanup\n", (FXuint) QThread::id(), t->name());
+#endif
 		QMtxHold h(t->p);
 		FXERRH(t->p, "Possibly a 'delete this' was called during thread cleanup?", QTHREAD_DELETETHIS, FXERRH_ISFATAL);
 		FXERRH(!t->isInCleanup, "Exception occured during thread cleanup", QTHREAD_CLEANUPEXCEPTION, FXERRH_ISFATAL);
@@ -1038,6 +1108,9 @@ void QThread::start(bool waitTillStarted)
 	}
 #endif
 #ifdef USE_POSIX
+#ifdef __APPLE__
+	ResetWaiter(p->plsCancelWaiter);
+#endif
 	pthread_attr_t attr;
 	FXERRHOS(pthread_attr_init(&attr));
 	int scope=0;
@@ -1110,6 +1183,9 @@ void QThread::requestTermination()
 		if(!p->plsCancelDisabled) FXERRHWIN(SetEvent(p->plsCancelWaiter)); 
 #endif
 #ifdef USE_POSIX
+#ifdef __APPLE__
+		if(!p->plsCancelDisabled) LatchWaiter(p->plsCancelWaiter);
+#endif
 		FXERRHOS(pthread_cancel(p->threadh));
 #endif
 	}
@@ -1347,6 +1423,10 @@ void QThread::disableTermination()
 			FXERRHWIN(ResetEvent(p->plsCancelWaiter)); 
 #endif
 #ifdef USE_POSIX
+#ifdef __APPLE__
+			p->plsCancelDisabled=true;
+			ResetWaiter(p->plsCancelWaiter);
+#endif
 			FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL));
 #endif
 		}
@@ -1388,6 +1468,10 @@ void QThread::enableTermination()
 #endif
 #ifdef USE_POSIX
 			FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL));
+#ifdef __APPLE__
+			p->plsCancelDisabled=false;
+			if(p->plsCancel) LatchWaiter(p->plsCancelWaiter);
+#endif
 #endif
 		}
 		if(termdisablecnt<0) termdisablecnt=0;
@@ -1399,6 +1483,8 @@ void *QThread::int_cancelWaiterHandle()
 {
 #ifdef USE_WINAPI
 	return (void *) QThread::current()->p->plsCancelWaiter;
+#elif defined(__APPLE__)
+	return (void *)(FXuval) QThread::current()->p->plsCancelWaiter[0];
 #else
 	return 0;
 #endif
