@@ -1493,23 +1493,30 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 	on POSIX. Thus we emulate the Windows behaviour. Another minor
 	problem is that libraries can have "lib" on their front :( */
 	FXString path_=path;
-	bool hasLib=path_.left(3)=="lib", hasSO=path_.right(3)==".so";
+#ifdef __APPLE__
+#define SHAREDOBJECTSUFFIX ".dylib"
+	bool hasSO=path_.right(6)==".dylib";
+#else
+#define SHAREDOBJECTSUFFIX ".so"
+	bool hasSO=path_.right(3)==".so";
+#endif
+	bool hasLib=path_.left(3)=="lib";
 	while(!FXStat::exists(path_) && !FXPath::isAbsolute(path_))
 	{
-		if(!hasSO)  { path_+=".so";			if(FXStat::exists(path_)) break; }
-		if(!hasLib) { path_="lib"+path_;	if(FXStat::exists(path_)) break; }
+		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXStat::exists(path_)) break; }
+		if(!hasLib) { path_="lib"+path_;			if(FXStat::exists(path_)) break; }
 		// Try directory where my executable is
 		FXString inexecpath=FXPath::directory(execpath())+PATHSEPSTRING;
 		path_=path;
-		if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		// Try current directory
 		inexecpath="." PATHSEPSTRING;
 		path_=path;
-		if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
-		if(!hasSO)  { path_+=".so";			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
-		if(!hasLib) { path_="lib"+path_;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
+		if(!hasLib) { path_="lib"+path_;			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
 	}
 	path_=FXPath::absolute(path_);

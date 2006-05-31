@@ -231,6 +231,9 @@ semantics everywhere. Note however that NT is not POSIX Unix and you can
 introduce subtle security holes if you're not careful - for example, the
 inheritability of ACL's in NT can cause any permissions you set to be
 totally ignored.
+
+Note that on Apple MacOS X, setting permissions on Shared Memory Objects
+is not possible. The call is a no-op on this system.
 */
 class FXAPIR FXACL
 {

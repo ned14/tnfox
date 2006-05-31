@@ -148,6 +148,7 @@ static const char *decodeWinsockErr(int code)
 #ifdef __FreeBSD__
 #include <sys/sysctl.h>
 #endif
+#include "tnfxselect.h"
 
 #define FXERRHSKT(exp) { int __res=(exp); if(__res<0) { \
 	if(EPIPE==errno) \
@@ -1183,7 +1184,7 @@ QBlkSocket *QBlkSocket::waitForConnection(FXuint waitfor)
 	fd_set fds;
 	FD_ZERO(&fds);
 	FD_SET(p->handle, &fds);
-	if(!::select(p->handle+1, &fds, 0, 0, tv)) return 0;
+	if(!tnfxselect(p->handle+1, &fds, 0, 0, tv)) return 0;
 	int newskt=::accept(p->handle, (sockaddr *) sa6addr, &salen);
 	h.relock();
 	FXERRHSKT(newskt);
@@ -1210,7 +1211,7 @@ FXuval QBlkSocket::waitForMore(int msecs, bool *timeout)
 		FD_ZERO(&fds);
 		FD_SET(p->handle, &fds);
 		h.unlock();
-		int ret=::select((int) p->handle+1, &fds, 0, 0, &tv); 
+		int ret=tnfxselect((int) p->handle+1, &fds, 0, 0, &tv); 
 		h.relock();
 		if(timeout) *timeout=(!ret) ? true : false;
 		return (FXuval) size();

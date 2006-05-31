@@ -1580,15 +1580,21 @@ void FXACL::writeTo(int fd) const
 	writeTo((void *) h);
 #endif
 #ifdef USE_POSIX
-	struct stat s={0};
-	FXERRHOS(fstat(fd, &s));
-	FXACLEntity fileowner;
-	FXERRHM(fileowner.p=new FXACLEntityPrivate(s.st_uid, s.st_gid, false, FXString::nullStr()));
-	if(fileowner!=p->owner)
-	{	// Try to change file owner (need superuser)
-		FXERRHOS(fchown(fd, p->owner.p->userId, p->owner.p->groupId));
+#ifdef __APPLE__
+	// Setting permissions on shared memory is not supported by MacOS X
+	if(MemMap!=p->type)
+#endif
+	{
+		struct stat s={0};
+		FXERRHOS(fstat(fd, &s));
+		FXACLEntity fileowner;
+		FXERRHM(fileowner.p=new FXACLEntityPrivate(s.st_uid, s.st_gid, false, FXString::nullStr()));
+		if(fileowner!=p->owner)
+		{	// Try to change file owner (need superuser)
+			FXERRHOS(fchown(fd, p->owner.p->userId, p->owner.p->groupId));
+		}
+		FXERRHOS(fchmod(fd, p->fromACL(fileowner, s)));
 	}
-	FXERRHOS(fchmod(fd, p->fromACL(fileowner, s)));
 #endif
 }
 

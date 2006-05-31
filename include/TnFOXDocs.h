@@ -2254,6 +2254,13 @@ but please do try reenabling it and trying it on your machine. Note that because
 the lack of Xft, unicode text does not display properly on Mac OS X.
 \li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
 is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
+\li MacOS X does not support thread cancellation during select(). This is a major
+problem for TnFOX as the POSIX threads spec says it should be, so TnFOX emulates
+correct behaviour using an internal per-thread pipe to signal cancellation. You
+shouldn't notice any difference generally speaking.
+\li Colour cursors (XCursor) are broken on Apple's X11 implementation. I've patched
+FXCursor to at least give the right colours, but as you'll see it ignores the alpha
+channel when you move the mouse.
 
 */
 
