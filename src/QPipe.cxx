@@ -46,6 +46,9 @@
 #ifdef USE_POSIX
 #include <sys/poll.h>
 #include "tnfxselect.h"
+#if defined(__FreeBSD__) || defined(__APPLE__)
+#include <sys/pipe.h>		// For PIPE_SIZE et al
+#endif
 #endif
 
 #include "FXMemDbg.h"
@@ -70,9 +73,9 @@ struct FXDLLLOCAL QPipePrivate : public QMutex
 #ifdef USE_POSIX
 	int readh, writeh;
 	QPipePrivate(bool deepPipe) : acl(FXACL::Pipe),
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__APPLE__)
 		// PIPE_BUF lies on FreeBSD :(
-		bufferLength(16384),	// =PIPE_SIZE from sys/pipe.h, could even go to 64Kb (BIG_PIPE_SIZE)
+		bufferLength(deepPipe ? BIG_PIPE_SIZE : PIPE_SIZE),	// =PIPE_SIZE from sys/pipe.h, could even go to 64Kb (BIG_PIPE_SIZE)
 #else
 		// It seems Linux can make use of feeding it big packets
 		bufferLength(deepPipe ? 65536 : PIPE_BUF),
