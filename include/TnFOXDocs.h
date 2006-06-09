@@ -2235,7 +2235,7 @@ This page doesn't duplicate what's already said in \ref unixnotes so you should
 also read that.
 
 \section supported Supported configuration:
-TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.2.1 on Intel x86
+TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
 only. It hasn't been tested on PowerPC architectures, but there is no reason it
 shouldn't work apart from the x86 only assembler in int_QMutexImpl.h.
 
@@ -2261,6 +2261,11 @@ shouldn't notice any difference generally speaking.
 \li Colour cursors (XCursor) are broken on Apple's X11 implementation. I've patched
 FXCursor to at least give the right colours, but as you'll see it ignores the alpha
 channel when you move the mouse.
+\li You MUST define \c _APPLE_C_SOURCE when compiling any code using TnFOX. This
+causes alternative (and improved) implementations of many C library functions to
+be used instead of the defaults. Failing to do this will cause random crashes and
+other weird behaviour. Personally, I just don't get why they don't enable the
+improved versions by default and have the macro enable the older crappy ones instead :(
 
 */
 
