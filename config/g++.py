@@ -47,7 +47,7 @@ cppflags+=["-fexceptions",              # Enable exceptions
 if debugmode:
     cppflags+=["-O0",                   # No optimisation
                #"-fmudflapth",           # Do memory access checking (doesn't work on Apple MacOS X)
-               "-g"                     # Debug info
+               "-ggdb"                  # Best debug info (better than -g on MacOS X)
                ]
 else:
     cppflags+=["-O2",                   # Optimise for fast code
@@ -59,7 +59,7 @@ else:
                #"-fno-inline-functions",
                #"-fno-inline",
                #"-finline-limit=0",
-               #"-g",
+               #"-ggdb",
                "-fomit-frame-pointer"   # No frame pointer
                ]
 env['CPPFLAGS']+=cppflags
