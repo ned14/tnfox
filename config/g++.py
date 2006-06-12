@@ -42,6 +42,7 @@ cppflags+=["-fexceptions",              # Enable exceptions
            "-Wstrict-aliasing",         # Warn about bad aliasing
            "-ffast-math",               # Lose FP precision in favour of speed
            #"-pg",                       # Perform profiling
+           #"-finstrument-functions",    # Other form of profiling
            "-pipe"                      # Use faster pipes
            ]
 if debugmode:
@@ -59,7 +60,7 @@ else:
                #"-fno-inline-functions",
                #"-fno-inline",
                #"-finline-limit=0",
-               #"-ggdb",
+               #"-ggdb"
                "-fomit-frame-pointer"   # No frame pointer
                ]
 env['CPPFLAGS']+=cppflags
@@ -75,6 +76,12 @@ if debugmode:
 else:
     env['LINKFLAGS']+=["-O3"            # Optimise
                        ]
+
+
+#if onDarwin:
+    # Link against Saturn profiling library
+    #env['LIBS']+=[ "Saturn" ]
+
 
 # Include system libs (mandatory)
 env['CPPDEFINES']+=[("STDC_HEADERS",1),

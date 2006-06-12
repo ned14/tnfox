@@ -29,10 +29,10 @@
 #include "QBuffer.h"
 #include <qcstring.h>
 #include <string.h>
-#include "tnfxselect.h"
 #include "FXErrCodes.h"
 #ifdef USE_POSIX
 #include <unistd.h>
+#include "tnfxselect.h"
 #else
 #include "WindowsGubbins.h"
 #endif

@@ -386,7 +386,7 @@ static FXProcess *myprocess;
 static QList<FXProcess_StaticInitBase> *SIlist;
 static QList<FXProcess_StaticDepend> *SIdepend;
 // FXProcess::mappedFiles() is not quick especially on POSIX, so cache it
-static QMutex MappedFilesCacheLock;
+static FXAutoPtr<QMutex> MappedFilesCacheLock;
 static FXAutoPtr< QValueList<FXProcess::MappedFileInfo> > MappedFilesCache;
 static struct ExitUpcalls
 {
@@ -1158,7 +1158,8 @@ FXuint FXProcess::pageSize()
 
 QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles(bool forceRefresh)
 {
-	QMtxHold h(MappedFilesCacheLock);
+	if(!MappedFilesCacheLock) { FXERRHM(MappedFilesCacheLock=new QMutex); }
+	QMtxHold h(*MappedFilesCacheLock);
 	if(forceRefresh)
 		PtrReset(MappedFilesCache, 0);
 	if(MappedFilesCache)
@@ -1451,6 +1452,7 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 {
 	bool firstLoad=true;
 	dllHandle h;
+	if(!MappedFilesCacheLock) { FXERRHM(MappedFilesCacheLock=new QMutex); }
 #ifdef USE_WINAPI
 	/* Rather annoyingly, LoadLibraryEx() won't try file extensions for us like LoadLibrary()
 	so we must do this ourselves */
@@ -1520,7 +1522,7 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 		break;
 	}
 	path_=FXPath::absolute(path_);
-	QMtxHold lh(MappedFilesCacheLock);
+	QMtxHold lh(*MappedFilesCacheLock);
 	if(!MappedFilesCache)
 		mappedFiles();
 	for(QValueList<MappedFileInfo>::iterator it=MappedFilesCache->begin(); it!=MappedFilesCache->end(); ++it)
@@ -1547,7 +1549,7 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 #endif
 	if(firstLoad)
 	{	// Flush the cache
-		QMtxHold lh(MappedFilesCacheLock);
+		QMtxHold lh(*MappedFilesCacheLock);
 		PtrReset(MappedFilesCache, 0);
 		lh.unlock();
 		QBuffer txtholder;
@@ -1587,7 +1589,7 @@ void FXProcess::dllUnload(FXProcess::dllHandle &h)
 #endif
 	h.h=0;
 	// Flush the cache
-	QMtxHold lh(MappedFilesCacheLock);
+	QMtxHold lh(*MappedFilesCacheLock);
 	PtrReset(MappedFilesCache, 0);
 	lh.unlock();
 }

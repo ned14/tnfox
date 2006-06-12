@@ -288,9 +288,18 @@ void FXFSMon::Watcher::run()
 #endif
 	for(;;)
 	{
+#ifndef __APPLE__
+		QThread::current()->checkForTerminate();
+#endif
 		FXERRH_TRY
-		{
-			if((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent), NULL)))
+		{	// Have it kick out once a second as it's not a cancellation point on FreeBSD
+			struct timespec timeout={1, 0};
+			if((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent),
+#ifdef __APPLE__
+				NULL)))
+#else
+				&timeout)))
+#endif
 			{
 				FXERRHOS(ret);
 				for(int n=0; n<ret; n++)
@@ -384,6 +393,7 @@ FXFSMon::Watcher::Path::~Path()
 #ifdef USE_FAM
 	if(!fxfsmon->fambroken)
 	{
+		parent->pathByHandle.remove(h.reqnum);
 		FXERRHFAM(FAMCancelMonitor(&fxfsmon->fc, &h));
 	}
 #endif
