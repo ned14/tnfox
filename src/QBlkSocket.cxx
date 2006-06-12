@@ -148,13 +148,13 @@ static const char *decodeWinsockErr(int code)
 #ifdef __FreeBSD__
 #include <sys/sysctl.h>
 #endif
-#include "tnfxselect.h"
 
 #define FXERRHSKT(exp) { int __res=(exp); if(__res<0) { \
 	if(EPIPE==errno) \
 		{ FXERRGCONLOST("Connection Lost", 0); } \
 	else { FXERRGIO(strerror(errno)); } } }
 #endif
+#include "tnfxselect.h"
 
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
