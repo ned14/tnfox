@@ -1377,7 +1377,7 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 			{
 				if(fonts[f].flags & FONTPITCH_VARIABLE)
 				{
-					fxmessage("Candidate font: face=%s, size=%u, weight=%u, slant=%u, width=%u, encoding=%u, flags=%u\n", fonts[f].face, fonts[f].size, fonts[f].weight, fonts[f].slant, fonts[f].setwidth, fonts[f].encoding, fonts[f].flags);
+					//fxmessage("Candidate font: face=%s, size=%u, weight=%u, slant=%u, width=%u, encoding=%u, flags=%u\n", fonts[f].face, fonts[f].size, fonts[f].weight, fonts[f].slant, fonts[f].setwidth, fonts[f].encoding, fonts[f].flags);
 					FXString face(fonts[f].face);
 					if(bestscore>0 && !comparecase(face, "tahoma", 6))
 					{	// Best of the lot as it looks just like Windows
