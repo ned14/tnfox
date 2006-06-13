@@ -46,6 +46,7 @@ if architecture=="x86":
     elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=["/O1",        # Optimise for small code (code is very, very big otherwise)
+               "/Zd",        # Line number debug info
                "/MDd"        # Select MSVCRTD.dll
                ]
 else:

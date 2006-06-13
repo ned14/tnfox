@@ -184,9 +184,6 @@ static void DeinitialiseTnFOXPython()
 
 void InitialiseTnFOXPython()
 {
-	// Register the void_ structure so pointers to it can be passed around
-	class_<void_, boost::noncopyable>("voidptr");
-
 	RegisterConvFXException();
 	RegisterConvFXString();
 	def("DeinitTnFOX", &DeinitialiseTnFOXPython);
@@ -237,7 +234,7 @@ bool FXPython::int_FXObjectHandle(long *ret, FXObject *self, FXObject *sender, F
 				FXString methodname;
 				object handlerfunc(msgmap[2].attr("im_func"));
 				methodname=extract<const char *>(handlerfunc.attr("__name__"));
-				*ret=call_method<long>(me.ptr(), methodname.text(), ptr(sender), sel, ptr((void_ *) ptrval));
+				*ret=call_method<long>(me.ptr(), methodname.text(), ptr(sender), sel, ptrval);
 #ifdef DEBUG
 				fxmessage("int_FXObjectHandle(%p, %p, %u, %p) returns %lu\n", self, sender, sel, ptrval, *ret);
 #endif
