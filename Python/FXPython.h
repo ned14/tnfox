@@ -54,9 +54,6 @@
   #define FXPYTHONAPI
 #endif
 
-// Define a type for representing void *. Type is defined in converters.cpp
-struct void_ {};
-
 
 namespace FX {
 

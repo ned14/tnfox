@@ -28,7 +28,7 @@ class settings:
                         , "FOXPYTHONDLL_EXPORTS"
                         , "FX_NO_GLOBAL_NAMESPACE" ]
     # For debugging purposes to get far smaller bindings, you can define FX_DISABLEGUI
-    defined_symbols.append("FX_DISABLEGUI=1")
+    #defined_symbols.append("FX_DISABLEGUI=1")
     
     if 'big'==sys.byteorder:
         defined_symbols.append("FOX_BIGENDIAN=1")

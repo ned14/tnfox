@@ -34,6 +34,7 @@ def filter_decls(mb):
     fx_ns.namespace( 'Pol' ).exclude()
     fx_ns.decls( files_to_exclude.is_excluded ).exclude()
     fx_ns.class_( 'QValueList<FX::Pol::knowReferrers::ReferrerEntry>').exclude()
+    fx_ns.variables( 'metaClass').exclude()
     try:
         fx_ns.class_( 'QPtrVector<FX::Generic::BoundFunctorV>').exclude()
     except: pass
@@ -52,7 +53,7 @@ def filter_decls(mb):
             temp = declarations.remove_pointer( temp )
             if declarations.is_pointer( temp ):
                 func.exclude()
-
+                
     #decls = fx_ns.decls( lambda decl: decl.alias in declarations_to_exclude.declarations_aliases )
     #decls.exclude()
 
@@ -65,7 +66,7 @@ def set_call_policies(mb):
 
     #first of all call policies defined within data base
     for fname, call_pol in call_policies.db.items():
-        print fname
+        #print fname
         try:
             if fname.startswith( '::FX::FX' ):
                 mb.member_functions( fname ).call_policies = call_pol
@@ -115,7 +116,7 @@ def set_call_policies(mb):
     #~ for type_, policy in system_wide.items():
         #~ mb.calldefs( return_type=type_ ).call_policies = policy
 
-    for name in 'FXVec4d', 'FXVec4f', 'FXVec3d', 'FXVec3f', 'QMemArray<unsigned char>':
+    for name in ['::FX::FXVec4d', '::FX::FXVec4f', '::FX::FXVec3d', '::FX::FXVec3f', '::FX::FXVec2d', '::FX::FXVec2f', '::FX::QMemArray<unsigned char>']:
         try:
             mb.casting_operators( name ).call_policies = return_internal_ref
         except:
@@ -150,6 +151,8 @@ def customize_module( mb ):
     extmodule.adopt_creator( code_creators.namespace_using_t('::FX'), position )
     extmodule.user_defined_directories.append( settings.generated_files_dir )
    
+    mb.calldefs().use_keywords = False
+
 def create_module():
     parser_config = parser.config_t( )
 

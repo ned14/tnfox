@@ -176,7 +176,7 @@ You can use this structure yourself - or more likely let FX::FXIPCChannel do it
 all for you. There is an optional routing field which isn't used unless you set
 it to something.
 */
-struct FXAPI FXIPCMsg
+struct FXIPCMsg
 {	// This gets memcpy()'ed so don't add objects
 	friend class FXIPCChannel;
 	friend class FXIPCChannelIndirector;
@@ -369,7 +369,7 @@ typedef FXIPCMsgChunkCodeAlloc<0, true> FXIPCMsgChunkStandardBegin;
 You should also trap FX::FXException_ConnectionLost for unexpected connection
 losses. Indeed you should probably call similar code in both circumstances.
 */
-struct FXAPI FXIPCMsg_Disconnect : public FXIPCMsg
+struct FXIPCMsg_Disconnect : public FXIPCMsg
 {
 	typedef FXIPCMsgChunkCodeAlloc<FXIPCMsgChunkStandardBegin::code, false> id;
 	typedef FXIPCMsgRegister<id, FXIPCMsg_Disconnect> regtype;
@@ -385,7 +385,7 @@ Messages without acks are silently ignored - however messages with acks not
 handled by the channel (eg; because they are not recognised) are replied to
 with this message
 */
-struct FXAPI FXIPCMsg_Unhandled : public FXIPCMsg
+struct FXIPCMsg_Unhandled : public FXIPCMsg
 {
 	typedef FXIPCMsgChunkCodeAlloc<FXIPCMsg_Disconnect::id::nextcode, false> id;
 	typedef FXIPCMsgRegister<id, FXIPCMsg_Unhandled> regtype;
@@ -401,7 +401,7 @@ struct FXAPI FXIPCMsg_Unhandled : public FXIPCMsg
 Normally speaking FX::FXIPCChannel silently throws a FX::FXException this
 end with the same contents as the remote exception. This behaviour can be disabled.
 */
-struct FXAPI FXIPCMsg_ErrorOccurred : public FXIPCMsg
+struct FXIPCMsg_ErrorOccurred : public FXIPCMsg
 {
 	typedef FXIPCMsgChunkCodeAlloc<FXIPCMsg_Unhandled::id::nextcode, false> id;
 	typedef FXIPCMsgRegister<id, FXIPCMsg_ErrorOccurred> regtype;

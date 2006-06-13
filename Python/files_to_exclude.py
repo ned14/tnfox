@@ -33,6 +33,7 @@ files = [
     , "FXUTF16Codec.h"
     , "FXUTF32Codec.h"
     , "FXUTF8Codec.h"
+    , "FXWinLinks.h"
     , "FXWString.h"
     #Niall?
     , "QThread.h"
