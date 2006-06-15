@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComposite.cpp,v 1.54 2006/01/22 17:58:21 fox Exp $                     *
+* $Id: FXComposite.cpp,v 1.54.2.1 2006/05/10 13:18:13 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -249,7 +249,7 @@ long FXComposite::onKeyPress(FXObject* sender,FXSelector sel,void* ptr){
   if(getFocus() && getFocus()->handle(sender,sel,ptr)) return 1;
 
   // Try target first
-  if(isEnabled() && target && message && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
+  if(isEnabled() && target && target->tryHandle(this,FXSEL(SEL_KEYPRESS,message),ptr)) return 1;
 
   // Check the accelerators
   if(getAccelTable() && getAccelTable()->handle(this,sel,ptr)) return 1;
@@ -289,7 +289,7 @@ long FXComposite::onKeyRelease(FXObject* sender,FXSelector sel,void* ptr){
   if(getFocus() && getFocus()->handle(sender,sel,ptr)) return 1;
 
   // Try target first
-  if(isEnabled() && target && message && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
+  if(isEnabled() && target && target->tryHandle(this,FXSEL(SEL_KEYRELEASE,message),ptr)) return 1;
 
   // Check the accelerators
   if(getAccelTable() && getAccelTable()->handle(this,sel,ptr)) return 1;

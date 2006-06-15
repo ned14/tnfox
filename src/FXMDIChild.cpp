@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.cpp,v 1.96 2006/03/16 04:41:36 fox Exp $                      *
+* $Id: FXMDIChild.cpp,v 1.96.2.1 2006/05/10 13:18:13 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -314,7 +314,7 @@ FXbool FXMDIChild::maximize(FXbool notify){
     options|=MDI_MAXIMIZED;
     options&=~MDI_MINIMIZED;
     recalc();
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
     }
   return TRUE;
   }
@@ -336,7 +336,7 @@ FXbool FXMDIChild::minimize(FXbool notify){
     options|=MDI_MINIMIZED;
     options&=~MDI_MAXIMIZED;
     recalc();
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
     }
   return TRUE;
   }
@@ -357,7 +357,7 @@ FXbool FXMDIChild::restore(FXbool notify){
     height=normalHeight;
     options&=~(MDI_MINIMIZED|MDI_MAXIMIZED);
     recalc();
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
     }
   return TRUE;
   }
@@ -919,7 +919,7 @@ long FXMDIChild::onCmdGetIconValue(FXObject*,FXSelector,void* ptr){
 // Window was selected
 long FXMDIChild::onSelected(FXObject*,FXSelector,void* ptr){    // FIXME
   if(!(flags&FLAG_ACTIVE)){
-    if(target && message) target->tryHandle(this,FXSEL(SEL_SELECTED,message),ptr);
+    if(target) target->tryHandle(this,FXSEL(SEL_SELECTED,message),ptr);
     windowbtn->setBackColor(hasFocus() ? titleBackColor : shadowColor);
     flags|=FLAG_ACTIVE;
     recalc();
@@ -932,7 +932,7 @@ long FXMDIChild::onSelected(FXObject*,FXSelector,void* ptr){    // FIXME
 // Window was deselected
 long FXMDIChild::onDeselected(FXObject*,FXSelector,void* ptr){    // FIXME
   if(flags&FLAG_ACTIVE){
-    if(target && message) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),ptr);
+    if(target) target->tryHandle(this,FXSEL(SEL_DESELECTED,message),ptr);
     windowbtn->setBackColor(backColor);
     flags&=~FLAG_ACTIVE;
     recalc();
@@ -1132,7 +1132,7 @@ void FXMDIChild::setTitle(const FXString& name){
 long FXMDIChild::onDefault(FXObject* sender,FXSelector sel,void* ptr){
   if(FXMDIChild::ID_LAST<=FXSELID(sel)){
     if(contentWindow() && contentWindow()->tryHandle(sender,sel,ptr)) return 1;
-    return target && message && target->tryHandle(sender,sel,ptr);
+    return target && target->tryHandle(sender,sel,ptr);
     }
   return 0;
   }

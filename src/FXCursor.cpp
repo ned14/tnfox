@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCursor.cpp,v 1.62 2006/01/22 17:58:21 fox Exp $                        *
+* $Id: FXCursor.cpp,v 1.62.2.1 2006/06/09 00:50:16 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -206,12 +206,13 @@ void FXCursor::create(){
             dst[2]=src[0];      // R
             dst[3]=src[3];      // A
 #else
-            // A bug in Apple's X11 implementation has alpha on the wrong end and BGR wrong way round
+            // A bug in Apple's X11 implementation has alpha on
+            // the wrong end and BGR wrong way round
             dst[0]=src[3];      // A
             dst[3]=src[2];      // B
             dst[2]=src[1];      // G
             dst[1]=src[0];      // R
-#endif
+#endif   
             dst+=4;
             src+=4;
             }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.175 2006/01/22 17:58:48 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.175.2.1 2006/05/10 13:18:13 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -836,7 +836,7 @@ FXbool FXTopWindow::maximize(FXbool notify){
       ShowWindow((HWND)xid,SW_MAXIMIZE);
 #endif
       }
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MAXIMIZE,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -853,7 +853,7 @@ FXbool FXTopWindow::minimize(FXbool notify){
       ShowWindow((HWND)xid,SW_MINIMIZE);
 #endif
       }
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_MINIMIZE,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -886,7 +886,7 @@ FXbool FXTopWindow::restore(FXbool notify){
       ShowWindow((HWND)xid,SW_RESTORE);
 #endif
       }
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_RESTORE,message),NULL);}
     return TRUE;
     }
   return FALSE;
@@ -1286,13 +1286,13 @@ long FXTopWindow::onCmdClose(FXObject*,FXSelector,void*){
 
 // Session is about to close, give opportunity to save data
 long FXTopWindow::onSessionNotify(FXObject*,FXSelector,void* ptr){
-  return target && message && target->tryHandle(this,FXSEL(SEL_SESSION_NOTIFY,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_SESSION_NOTIFY,message),ptr);
   }
 
 
 // Session has closed, close the window with prejudice
 long FXTopWindow::onSessionClosed(FXObject*,FXSelector,void* ptr){
-  if(target && message) target->tryHandle(this,FXSEL(SEL_SESSION_CLOSED,message),ptr);
+  if(target) target->tryHandle(this,FXSEL(SEL_SESSION_CLOSED,message),ptr);
   close(FALSE);
   return 1;
   }

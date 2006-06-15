@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockBar.cpp,v 1.37 2006/01/22 17:58:23 fox Exp $                       *
+* $Id: FXDockBar.cpp,v 1.37.2.1 2006/05/10 13:18:13 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -243,7 +243,7 @@ void FXDockBar::dock(FXDockSite* docksite,FXWindow* before,FXbool notify){
     reparent(docksite,before);
     wetdock->hide();
     docksite->dockToolBar(this,before);
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_DOCKED,message),docksite);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_DOCKED,message),docksite);}
     }
   }
 
@@ -255,7 +255,7 @@ void FXDockBar::dock(FXDockSite* docksite,FXint localx,FXint localy,FXbool notif
     reparent(docksite,NULL);
     wetdock->hide();
     docksite->dockToolBar(this,localx,localy);
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_DOCKED,message),docksite);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_DOCKED,message),docksite);}
     }
   }
 
@@ -268,7 +268,7 @@ void FXDockBar::undock(FXint rootx,FXint rooty,FXbool notify){
     reparent(wetdock);
     wetdock->position(rootx,rooty,wetdock->getDefaultWidth(),wetdock->getDefaultHeight());
     wetdock->show();
-    if(notify && target && message){target->tryHandle(this,FXSEL(SEL_FLOATED,message),docksite);}
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_FLOATED,message),docksite);}
     }
   }
 

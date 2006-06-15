@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.cpp,v 1.341 2006/03/16 04:41:36 fox Exp $                       *
+* $Id: FXWindow.cpp,v 1.341.2.1 2006/05/10 13:18:13 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -633,7 +633,7 @@ long FXWindow::onPaint(FXObject*,FXSelector,void* ptr){
 // Window was mapped to screen
 long FXWindow::onMap(FXObject*,FXSelector,void* ptr){
   FXTRACE((250,"%s::onMap %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_MAP,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_MAP,message),ptr);
   }
 
 
@@ -642,14 +642,14 @@ long FXWindow::onUnmap(FXObject*,FXSelector,void* ptr){
   FXTRACE((250,"%s::onUnmap %p\n",getClassName(),this));
   if(getEventLoop()->mouseGrabWindow==this) getEventLoop()->mouseGrabWindow=NULL;
   if(getEventLoop()->keyboardGrabWindow==this) getEventLoop()->keyboardGrabWindow=NULL;
-  return target && message && target->tryHandle(this,FXSEL(SEL_UNMAP,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_UNMAP,message),ptr);
   }
 
 
 // Handle configure notify
 long FXWindow::onConfigure(FXObject*,FXSelector,void* ptr){
   FXTRACE((250,"%s::onConfigure %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_CONFIGURE,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_CONFIGURE,message),ptr);
   }
 
 
@@ -761,19 +761,19 @@ long FXWindow::onKeyRelease(FXObject*,FXSelector,void* ptr){
 
 // Start a drag operation
 long FXWindow::onBeginDrag(FXObject*,FXSelector,void* ptr){
-  return target && message && target->tryHandle(this,FXSEL(SEL_BEGINDRAG,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_BEGINDRAG,message),ptr);
   }
 
 
 // End drag operation
 long FXWindow::onEndDrag(FXObject*,FXSelector,void* ptr){
-  return target && message && target->tryHandle(this,FXSEL(SEL_ENDDRAG,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_ENDDRAG,message),ptr);
   }
 
 
 // Dragged stuff around
 long FXWindow::onDragged(FXObject*,FXSelector,void* ptr){
-  return target && message && target->tryHandle(this,FXSEL(SEL_DRAGGED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DRAGGED,message),ptr);
   }
 
 
@@ -785,7 +785,7 @@ long FXWindow::onEnter(FXObject*,FXSelector,void* ptr){
     if(!(event->state&(SHIFTMASK|CONTROLMASK|METAMASK|LEFTBUTTONMASK|MIDDLEBUTTONMASK|RIGHTBUTTONMASK))) flags|=FLAG_TIP;
     flags|=FLAG_HELP;
     }
-  if(isEnabled() && target && message){ target->tryHandle(this,FXSEL(SEL_ENTER,message),ptr); }
+  if(isEnabled() && target){ target->tryHandle(this,FXSEL(SEL_ENTER,message),ptr); }
   return 1;
   }
 
@@ -797,7 +797,7 @@ long FXWindow::onLeave(FXObject*,FXSelector,void* ptr){
   if(event->code!=CROSSINGUNGRAB){
     flags&=~(FLAG_TIP|FLAG_HELP);
     }
-  if(isEnabled() && target && message){ target->tryHandle(this,FXSEL(SEL_LEAVE,message),ptr); }
+  if(isEnabled() && target){ target->tryHandle(this,FXSEL(SEL_LEAVE,message),ptr); }
   return 1;
   }
 
@@ -823,35 +823,35 @@ bool FXWindow::underCursor() const {
 // Handle drag-and-drop enter
 long FXWindow::onDNDEnter(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onDNDEnter %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_DND_ENTER,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DND_ENTER,message),ptr);
   }
 
 
 // Handle drag-and-drop leave
 long FXWindow::onDNDLeave(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onDNDLeave %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_DND_LEAVE,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DND_LEAVE,message),ptr);
   }
 
 
 // Handle drag-and-drop motion
 long FXWindow::onDNDMotion(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onDNDMotion %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_DND_MOTION,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DND_MOTION,message),ptr);
   }
 
 
 // Handle drag-and-drop drop
 long FXWindow::onDNDDrop(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onDNDDrop %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_DND_DROP,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DND_DROP,message),ptr);
   }
 
 
 // Request for DND data
 long FXWindow::onDNDRequest(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onDNDRequest %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_DND_REQUEST,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_DND_REQUEST,message),ptr);
   }
 
 
@@ -959,7 +959,7 @@ long FXWindow::onCmdUpdate(FXObject*,FXSelector,void*){
 long FXWindow::onFocusIn(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onFocusIn %p\n",getClassName(),this));
   flags|=FLAG_FOCUSED;
-  if(target && message){ target->tryHandle(this,FXSEL(SEL_FOCUSIN,message),ptr); }
+  if(target){ target->tryHandle(this,FXSEL(SEL_FOCUSIN,message),ptr); }
   if(composeContext){ composeContext->focusIn(); }
   if(focus){ focus->handle(focus,FXSEL(SEL_FOCUSIN,0),NULL); }
   return 1;
@@ -971,7 +971,7 @@ long FXWindow::onFocusOut(FXObject*,FXSelector,void* ptr){
   FXTRACE((150,"%s::onFocusOut %p\n",getClassName(),this));
   if(focus){ focus->handle(focus,FXSEL(SEL_FOCUSOUT,0),NULL); }
   if(composeContext){ composeContext->focusOut(); }
-  if(target && message){ target->tryHandle(this,FXSEL(SEL_FOCUSOUT,message),ptr); }
+  if(target){ target->tryHandle(this,FXSEL(SEL_FOCUSOUT,message),ptr); }
   flags&=~FLAG_FOCUSED;
   return 1;
   }
@@ -1803,21 +1803,21 @@ void FXWindow::setBackColor(FXColor clr){
 // Lost the selection
 long FXWindow::onSelectionLost(FXObject*,FXSelector,void* ptr){
   FXTRACE((100,"%s::onSelectionLost %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_SELECTION_LOST,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_SELECTION_LOST,message),ptr);
   }
 
 
 // Gained the selection
 long FXWindow::onSelectionGained(FXObject*,FXSelector,void* ptr){
   FXTRACE((100,"%s::onSelectionGained %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_SELECTION_GAINED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_SELECTION_GAINED,message),ptr);
   }
 
 
 // Somebody wants our the selection
 long FXWindow::onSelectionRequest(FXObject*,FXSelector,void* ptr){
   FXTRACE((100,"%s::onSelectionRequest %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_SELECTION_REQUEST,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_SELECTION_REQUEST,message),ptr);
   }
 
 
@@ -1880,21 +1880,21 @@ bool FXWindow::releaseSelection(){
 // Lost the selection
 long FXWindow::onClipboardLost(FXObject*,FXSelector,void* ptr){
   FXTRACE((100,"%s::onClipboardLost %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_CLIPBOARD_LOST,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_CLIPBOARD_LOST,message),ptr);
   }
 
 
 // Gained the selection
 long FXWindow::onClipboardGained(FXObject*,FXSelector,void* ptr){
   FXTRACE((100,"%s::onClipboardGained %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_CLIPBOARD_GAINED,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_CLIPBOARD_GAINED,message),ptr);
   }
 
 
 // Somebody wants our the selection
 long FXWindow::onClipboardRequest(FXObject*,FXSelector,void* ptr){
   FXTRACE((100,"%s::onClipboardRequest %p\n",getClassName(),this));
-  return target && message && target->tryHandle(this,FXSEL(SEL_CLIPBOARD_REQUEST,message),ptr);
+  return target && target->tryHandle(this,FXSEL(SEL_CLIPBOARD_REQUEST,message),ptr);
   }
 
 
@@ -2016,7 +2016,7 @@ FXint FXWindow::setCursorPosition(FXint x,FXint y){
 // Otherwise, onUpdate returns the value returned by the SEL_UPDATE
 // callback to the target.
 long FXWindow::onUpdate(FXObject*,FXSelector,void*){
-  return target && message && (!(flags&FLAG_UPDATE) || target->tryHandle(this,FXSEL(SEL_UPDATE,message),NULL));
+  return target && (!(flags&FLAG_UPDATE) || target->tryHandle(this,FXSEL(SEL_UPDATE,message),NULL));
   }
 
 

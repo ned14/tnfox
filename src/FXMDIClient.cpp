@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIClient.cpp,v 1.62 2006/01/22 17:58:35 fox Exp $                     *
+* $Id: FXMDIClient.cpp,v 1.62.2.1 2006/05/10 13:18:13 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -461,7 +461,7 @@ FXbool FXMDIClient::setActiveChild(FXMDIChild* child,FXbool notify){
     getApp()->refresh();
 
     // Notify target
-    if(notify && target && message){ target->tryHandle(this,FXSEL(SEL_CHANGED,message),child); }
+    if(notify && target){ target->tryHandle(this,FXSEL(SEL_CHANGED,message),child); }
 
     return TRUE;
     }
