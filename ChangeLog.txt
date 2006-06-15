@@ -14,6 +14,7 @@ FXException
 * Disabled signals to threads (without it, gprof won't run)
 + Added kqueue implementation to FXFSMonitor
 + Ported TnFOX to Apple MacOS X (Intel only)
+* Merged FOX v1.4.34
 
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=
