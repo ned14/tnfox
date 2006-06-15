@@ -414,6 +414,7 @@ void FXPythonInterp::int_enterCPP()
 	{
 		PyEval_ReleaseThread(td->callstack.getFirst()->p->ts);
 	}
+	assert(td->GILcnt>=0);
 }
 
 // Called whenever C++ crosses into Python land

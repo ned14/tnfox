@@ -29,12 +29,13 @@ def filter_decls(mb):
     fx_ns = mb.namespace( 'FX' )
     fx_ns.include()
     fx_ns.decls( declarations_to_exclude.is_excluded ).exclude()
-    #fx_ns.decls( lambda decl: decl.name.startswith('FXIPCMsg') ).exclude()
     fx_ns.decls( lambda decl: decl.name.startswith('FXIPCMsgHolder') ).exclude()
     fx_ns.namespace( 'Pol' ).exclude()
     fx_ns.decls( files_to_exclude.is_excluded ).exclude()
     fx_ns.class_( 'QValueList<FX::Pol::knowReferrers::ReferrerEntry>').exclude()
-    fx_ns.variables( 'metaClass').exclude()
+    try:
+        fx_ns.variables( 'metaClass').exclude()
+    except: pass
     try:
         fx_ns.class_( 'QPtrVector<FX::Generic::BoundFunctorV>').exclude()
     except: pass
@@ -141,6 +142,10 @@ def customize_decls( mb ):
 def customize_module( mb ):   
     extmodule = mb.code_creator
     extmodule.license = customization_data.license
+
+    # Insert a custom init call
+    extmodule.adopt_creator( code_creators.custom_text_t('extern void InitialiseTnFOXPython();\n\n'), len(extmodule.creators)-1)
+    extmodule.body.adopt_creator( code_creators.custom_text_t('    InitialiseTnFOXPython();\n\n'), 0)
         
     includes = filter( lambda creator: isinstance( creator, code_creators.include_t )
                         , extmodule.creators )
@@ -150,8 +155,18 @@ def customize_module( mb ):
     position = extmodule.last_include_index() + 1
     extmodule.adopt_creator( code_creators.namespace_using_t('::FX'), position )
     extmodule.user_defined_directories.append( settings.generated_files_dir )
-   
+
+    # Stop using keywords as BPL will fault when they use an undeclared enum   
     mb.calldefs().use_keywords = False
+    
+    # Fix bug in gccxml where default args with function as value gain an extra ()
+    try:
+        constr = mb.constructor( 'FXPrimaryButton', arg_types=[None]*15 )
+        constr.arguments[10].default_value = '(FX::FXWindow::defaultPadding() * 4)'
+        constr.arguments[11].default_value = '(FX::FXWindow::defaultPadding() * 4)'
+    except: pass
+
+        
 
 def create_module():
     parser_config = parser.config_t( )

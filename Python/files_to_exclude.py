@@ -25,7 +25,6 @@ files = [
     , "FXPtrHold.h"
     , "FXRefedObject.h"
     , "FXRollback.h"
-    , "FXSecure.h"
     , "FXStringDict.h"
     , "FXString.h"
     , "FXTextCodec.h"
@@ -33,10 +32,13 @@ files = [
     , "FXUTF16Codec.h"
     , "FXUTF32Codec.h"
     , "FXUTF8Codec.h"
-    , "FXWinLinks.h"
     , "FXWString.h"
-    #Niall?
     , "QThread.h"
+
+    # Temporary until pyplusplus gets fixed
+    , "FXWinLinks.h"
+    , "QIODevice.h"
+    , "QIODeviceS.h"
 ]
 
 def is_excluded( decl ):
