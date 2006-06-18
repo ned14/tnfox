@@ -62,11 +62,14 @@ namespace FX {
 */
 
 class QThread;
+class FXComboBox;
 class FXFoldingList;
 class FXGLViewer;
 class FXIconList;
 class FXList;
+class FXListBox;
 class FXTreeList;
+class FXTreeListBox;
 class FXComposite;
 
 /*! \class FXPythonException
@@ -134,15 +137,21 @@ public:
 	*/
 	static boost::python::handle<> evaluate(const FXString &code, boost::python::handle<> context=globals());
 	//! Sets a C++ callable sorting function for python function \em code
-	static void setSortFunc(FXFoldingList &list, boost::python::api::object *code);
+	static void setFXComboBoxSortFunc(FXComboBox &list, boost::python::api::object *code);
 	//! Sets a C++ callable sorting function for python function \em code
-	static void setSortFunc(FXIconList &list, boost::python::api::object *code);
+	static void setFXFoldingListSortFunc(FXFoldingList &list, boost::python::api::object *code);
 	//! Sets a C++ callable sorting function for python function \em code
-	static void setSortFunc(FXList &list, boost::python::api::object *code);
+	static void setFXGLViewerSortFunc(FXGLViewer &list, boost::python::api::object *code);
 	//! Sets a C++ callable sorting function for python function \em code
-	static void setSortFunc(FXTreeList &list, boost::python::api::object *code);
+	static void setFXIconListSortFunc(FXIconList &list, boost::python::api::object *code);
 	//! Sets a C++ callable sorting function for python function \em code
-	static void setSortFunc(FXGLViewer &list, boost::python::api::object *code);
+	static void setFXListSortFunc(FXList &list, boost::python::api::object *code);
+	//! Sets a C++ callable sorting function for python function \em code
+	static void setFXListBoxSortFunc(FXListBox &list, boost::python::api::object *code);
+	//! Sets a C++ callable sorting function for python function \em code
+	static void setFXTreeListSortFunc(FXTreeList &list, boost::python::api::object *code);
+	//! Sets a C++ callable sorting function for python function \em code
+	static void setFXTreeListBoxSortFunc(FXTreeListBox &list, boost::python::api::object *code);
 
 	static void int_throwPythonException();
 	static void int_initEmbeddedEnv();

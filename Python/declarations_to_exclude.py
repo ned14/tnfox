@@ -9,71 +9,49 @@ from environment import settings
 from pygccxml import declarations
 
 to_be_excluded = [
-      "::FX::FXACL::int_toWin32SecurityDescriptor"
-    , "::FX::FXApp::dispatchEvent"
-    , "::FX::FXApp::getDisplay"
-    , "::FX::FXApp::getNextEvent"
-    , "::FX::FXComboBox::getSortFunc"
-    , "::FX::FXComboBox::setSortFunc"
-    , "::FX::FXDataTarget::addUpcall"
-    , "::FX::FXDC::context"
-    , "::FX::FXDCPrint::outf"
-    , "::FX::FXDCPrint::outhex"
-    , "::FX::FXException::int_enableNestedExceptionFramework"
-    , "::FX::FXFile::info"
-    , "::FX::FXFile::linkinfo"
-    , "::FX::FXFunctorTarget::functor"
-    , "::FX::FXFunctorTarget::setFunctor"
-    , "::FX::FXGLCanvas::getContext"
-    , "::FX::FXGLViewer::getZSortFunc"
-    , "::FX::FXGLViewer::setZSortFunc"
-    , "::FX::FXIconList::getSortFunc"
-    , "::FX::FXIconList::setSortFunc"
-    , "::FX::FXId::id"
-    , "::FX::FXImage::setData"
-    , "::FX::FXImage::getData" #Niall?
-    , "::FX::FXIPCMsg::originalData"
-    , "::FX::FXListBox::getSortFunc"
-    , "::FX::FXListBox::setSortFunc"
-    , "::FX::FXList::getSortFunc"
-    , "::FX::FXList::setSortFunc"
+      "::FX::FXACL::int_toWin32SecurityDescriptor"            # internal
+    , "::FX::FXDataTarget::addUpcall"                         # uses functor
+    , "::FX::FXDCPrint::outf"                                 # internal
+    , "::FX::FXDCPrint::outhex"                               # internal
+    , "::FX::FXException::int_enableNestedExceptionFramework" # internal
+    , "::FX::FXFile::info"                                    # Uses unstable struct stat
+    , "::FX::FXFile::linkinfo"                                # Uses unstable struct stat
+    , "::FX::FXFunctorTarget::functor"                        # uses functor
+    , "::FX::FXFunctorTarget::setFunctor"                     # uses functor
+    , "::FX::FXImage::setData"                                # Can't allow setting image data to external data
+    , "::FX::FXIPCMsg::originalData"                          # Returns a byte array
     , "::FX::FXMat3d::operator ::FX::FXdouble const *"
     , "::FX::FXMat3f::operator ::FX::FXfloat const *"
     , "::FX::FXMat4d::operator ::FX::FXdouble const *"
     , "::FX::FXMat4f::operator ::FX::FXfloat const *"
-    , "::FX::FXMessageBox::error"
-    , "::FX::FXMessageBox::information"
-    , "::FX::FXMessageBox::question"
-    , "::FX::FXMessageBox::warning"
-    , "::FX::FXMetaClass::FXMetaClass"
-    , "::FX::FXMetaClass::search"
-    , "::FX::FXObject::decouplePythonObject"
-    , "::FX::FXObject::FXMapEntry::func"
-    , "::FX::FXObject::getPythonObject"
-    , "::FX::FXProcess::dllResolveBase"
-    , "::FX::FXSettings::readFormatEntry"
-    , "::FX::FXSettings::writeFormatEntry"
-    , "::FX::FXSQLDBCursor::resultsLatch"
+    , "::FX::FXMessageBox::error"                             # Uses ...
+    , "::FX::FXMessageBox::information"                       # Uses ...
+    , "::FX::FXMessageBox::question"                          # Uses ...
+    , "::FX::FXMessageBox::warning"                           # Uses ...
+    , "::FX::FXMetaClass::FXMetaClass"                        # Uses function pointer
+    , "::FX::FXObject::decouplePythonObject"                  # internal
+    , "::FX::FXObject::FXMapEntry::func"                      # Uses function pointer
+    , "::FX::FXObject::getPythonObject"                       # internal
+    , "::FX::FXSettings::readFormatEntry"                     # Uses ...
+    , "::FX::FXSettings::writeFormatEntry"                    # Uses ...
+    , "::FX::FXSQLDBCursor::resultsLatch"                     # internal
     , "::FX::FXStream::readBytes"
     , "::FX::FXStream::readRawBytes"
     , "::FX::FXStream::writeBytes"
     , "::FX::FXStream::writeRawBytes"
-    , "::FX::FXTreeListBox::getSortFunc"
-    , "::FX::FXTreeListBox::setSortFunc"
-    , "::FX::FXTreeList::getSortFunc"
-    , "::FX::FXTreeList::setSortFunc"
     , "::FX::FXVec2d::operator ::FX::FXdouble const *"
     , "::FX::FXVec2f::operator ::FX::FXfloat const *"
     , "::FX::FXVec3d::operator ::FX::FXdouble const *"
     , "::FX::FXVec3f::operator ::FX::FXfloat const *"
     , "::FX::FXVec4d::operator ::FX::FXdouble const *"
     , "::FX::FXVec4f::operator ::FX::FXfloat const *"
-    , "::FX::FXWindow::addColormapWindows"
-    , "::FX::FXWindow::GetClass"
-    , "::FX::FXWindow::GetDC"
-    , "::FX::FXWindow::ReleaseDC"
-    , "::FX::FXWindow::remColormapWindows"
-    , "::FX::QHostAddress::ip6Addr"
+    , "::FX::FXWindow::addColormapWindows"                    # internal
+    , "::FX::FXWindow::remColormapWindows"                    # internal
+    , "::FX::QHostAddress::ip6Addr"                           # Returns array
+    , "::FX::QIODevice::readBlock"
+    , "::FX::QIODevice::readBlockFrom"
+    , "::FX::QIODevice::writeBlock"
+    , "::FX::QIODevice::writeBlockTo"
     , "::FX::QIODevice::readLine"
     , "::FX::QMemArray::begin"
     , "::FX::QMemArray::data"
@@ -82,61 +60,25 @@ to_be_excluded = [
     , "::FX::QMemArray<unsigned char>::data"
     , "::FX::QMemArray<unsigned char>::operator unsigned char const *"
     , "::FX::QMemArray<unsigned char>::end"
-    , "::FX::QMemMap::mapOffset"
     , "::FX::QPtrVector::data"
-    , "::FX::QThread::addCleanupCall"
-    , "::FX::QThread::int_cancelWaiterHandle"
-    , "::FX::QThread::removeCleanupCall"
-    , "::FX::QTransString::langIdFunc"
+    , "::FX::QThread::addCleanupCall"                         # uses functor
+    , "::FX::QThread::int_cancelWaiterHandle"                 # internal
+    , "::FX::QThread::removeCleanupCall"                      # uses functor
+    , "::FX::QTransString::langIdFunc"                        # uses function pointer
+    , "::FX::Secure::TigerHash"
+    , "::FX::Secure::TigerHashValue"                          # uses union
+    , "::FX::TnFXAppEventLoop::executeRetCode"                # returns void *&
     , "::FX::strdup"
-    , "::FX::fxtrace"
-    , "::FX::fxmessage"
-    , "::FX::fxwarning"
-    , "::FX::fxerror"
-    
-    #Will be replaced with custom function
-    , "::FX::FXApp::getArgv" 
-    , "::FX::FXBitmap::getData"
-    , "::FX::FXGLTriangleMesh::getVertexBuffer"
-    , "::FX::FXGLTriangleMesh::getColorBuffer"
-    , "::FX::FXGLTriangleMesh::getNormalBuffer"
-    , "::FX::FXGLTriangleMesh::getTextureCoordBuffer"
-    , "::FX::FXObjectList::list"
-    , "::FX::FXBMPIcon::getData"
-    , "::FX::FXBMPImage::getData"
-    , "::FX::FXGIFIcon::getData"
-    , "::FX::FXGIFImage::getData"
-    , "::FX::FXICOIcon::getData"
-    , "::FX::FXICOImage::getData"
-    , "::FX::FXIcon::getData"
-    , "::FX::FXIFFIcon::getData"
-    , "::FX::FXIFFImage::getData"
-    , "::FX::FXImage::getData"
-    , "::FX::FXJPGIcon::getData"
-    , "::FX::FXJPGImage::getData"
-    , "::FX::FXPCXIcon::getData"
-    , "::FX::FXPCXImage::getData"
-    , "::FX::FXPNGIcon::getData"
-    , "::FX::FXPNGImage::getData"
-    , "::FX::FXPPMIcon::getData"
-    , "::FX::FXPPMImage::getData"
-    , "::FX::FXRASIcon::getData"
-    , "::FX::FXRASImage::getData"
-    , "::FX::FXRGBIcon::getData"
-    , "::FX::FXRGBImage::getData"
-    , "::FX::FXTGAIcon::getData"
-    , "::FX::FXTGAImage::getData"
-    , "::FX::FXTIFIcon::getData"
-    , "::FX::FXTIFImage::getData"
-    , "::FX::FXXBMIcon::getData"
-    , "::FX::FXXBMImage::getData"
-    , "::FX::FXXPMIcon::getData"
-    , "::FX::FXXPMImage::getData"
-    #Niall?
-    , "::FX::FXEventLoop"
-    , "::FX::TnFXAppEventLoop::executeRetCode" 
-    , "::FX::QIODevice"
-    , "::FX::QIODeviceS"
+    , "::FX::fxstrdup"
+    , "::FX::fxnamefromcolor"                                 # Modifies passed string
+    , "::FX::fxtrace"                                         # uses ...
+    , "::FX::fxmessage"                                       # uses ...
+    , "::FX::fxwarning"                                       # uses ...
+    , "::FX::fxerror"                                         # uses ...
+
+    , "::FX::FXGLTriangleMesh::getColorBuffer"                # to be fixed
+    , "::FX::FXGLTriangleMesh::getNormalBuffer"               # to be fixed
+    , "::FX::FXGLTriangleMesh::getVertexBuffer"               # to be fixed
 ]
 
 declarations_aliases = [
@@ -173,4 +115,5 @@ def is_deprecated( decl ):
     return deprecated.has_key( file_name ) and decl.location.line in deprecated[ file_name ]
         
 def is_excluded( decl ):
-    return declarations.full_name( decl ) in to_be_excluded or is_deprecated( decl )
+    fullname = declarations.full_name( decl )
+    return fullname in to_be_excluded or is_deprecated( decl )

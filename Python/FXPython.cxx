@@ -414,6 +414,7 @@ void FXPythonInterp::int_enterCPP()
 	{
 		PyEval_ReleaseThread(td->callstack.getFirst()->p->ts);
 	}
+	assert(td->GILcnt>=0);
 }
 
 // Called whenever C++ crosses into Python land
@@ -463,10 +464,13 @@ typedef FXCodeToPythonCode<FOXSortFunc<FXFoldingListSortFunc>::vector, SORTFUNCV
 typedef FXCodeToPythonCode<FOXSortFunc<FXIconListSortFunc	>::vector, SORTFUNCVECTORS> FXIconListVectorsType;
 typedef FXCodeToPythonCode<FOXSortFunc<FXListSortFunc		>::vector, SORTFUNCVECTORS> FXListVectorsType;
 typedef FXCodeToPythonCode<FOXSortFunc<FXTreeListSortFunc	>::vector, SORTFUNCVECTORS> FXTreeListVectorsType;
+static FXListVectorsType		FXComboBoxVectors;
 static FXFoldingListVectorsType	FXFoldingListVectors;
 static FXIconListVectorsType	FXIconListVectors;
 static FXListVectorsType		FXListVectors;
+static FXListVectorsType		FXListBoxVectors;
 static FXTreeListVectorsType	FXTreeListVectors;
+static FXTreeListVectorsType	FXTreeListBoxVectors;
 #endif
 
 static void checkIsPythonFunc(object *code, int pars)
@@ -477,25 +481,40 @@ static void checkIsPythonFunc(object *code, int pars)
 }
 
 #ifndef FX_DISABLEGUI
-void FXPython::setSortFunc(FXFoldingList &list, boost::python::api::object *code)
+void FXPython::setFXComboBoxSortFunc(FXComboBox &list, boost::python::api::object *code)
+{
+	checkIsPythonFunc(code, 2);
+	list.setSortFunc(FXComboBoxVectors.allocate(code));
+}
+void FXPython::setFXFoldingListSortFunc(FXFoldingList &list, boost::python::api::object *code)
 {
 	checkIsPythonFunc(code, 2);
 	list.setSortFunc(FXFoldingListVectors.allocate(code));
 }
-void FXPython::setSortFunc(FXIconList &list, boost::python::api::object *code)
+void FXPython::setFXIconListSortFunc(FXIconList &list, boost::python::api::object *code)
 {
 	checkIsPythonFunc(code, 2);
 	list.setSortFunc(FXIconListVectors.allocate(code));
 }
-void FXPython::setSortFunc(FXList &list, boost::python::api::object *code)
+void FXPython::setFXListSortFunc(FXList &list, boost::python::api::object *code)
 {
 	checkIsPythonFunc(code, 2);
 	list.setSortFunc(FXListVectors.allocate(code));
 }
-void FXPython::setSortFunc(FXTreeList &list, boost::python::api::object *code)
+void FXPython::setFXListBoxSortFunc(FXListBox &list, boost::python::api::object *code)
+{
+	checkIsPythonFunc(code, 2);
+	list.setSortFunc(FXListBoxVectors.allocate(code));
+}
+void FXPython::setFXTreeListSortFunc(FXTreeList &list, boost::python::api::object *code)
 {
 	checkIsPythonFunc(code, 2);
 	list.setSortFunc(FXTreeListVectors.allocate(code));
+}
+void FXPython::setFXTreeListBoxSortFunc(FXTreeListBox &list, boost::python::api::object *code)
+{
+	checkIsPythonFunc(code, 2);
+	list.setSortFunc(FXTreeListBoxVectors.allocate(code));
 }
 
 template<typename base, int no> struct FXGLViewerVector : public base
@@ -511,7 +530,7 @@ template<typename base, int no> struct FXGLViewerVector : public base
 	}
 };
 static FXCodeToPythonCode<FXGLViewerVector, SORTFUNCVECTORS> FXGLViewerVectors;
-void FXPython::setSortFunc(FXGLViewer &list, boost::python::api::object *code)
+void FXPython::setFXGLViewerSortFunc(FXGLViewer &list, boost::python::api::object *code)
 {
 	checkIsPythonFunc(code, 3);
 	list.setZSortFunc(FXGLViewerVectors.allocate(code));

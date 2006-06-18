@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import os, sys
-sys.path=[os.path.abspath("../../lib")]+sys.path # In case TnFOX isn't installed
+sys.path=[os.path.abspath("../../lib/x86_7")]+sys.path # In case TnFOX isn't installed
 from TnFOX import *
 
 class ImageWindow(FXMainWindow):
