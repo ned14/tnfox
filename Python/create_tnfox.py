@@ -134,10 +134,145 @@ def customize_decls( mb ):
             class_.alias = aliases.db[ class_.name ]
             class_.wrapper_alias = class_.alias + '_wrapper'
 
+    # Fix up default parameter use of null strings
     for func in mb.calldefs():
         for arg in func.arguments:
             if arg.default_value == 'FX::FXString::null':
                 arg.default_value = 'FX::FXString::nullStr()'
+
+    # Insert custom code into wrappers for FXObject subclasses
+    fxobject = mb.class_( 'FXObject' )
+    fxobjectclasses = mb.classes( lambda decl: decl==fxobject or declarations.is_base_and_derived( fxobject, decl ) )
+    for fxobjectclass in fxobjectclasses:
+        # Redirect handle() to point to python dispatcher
+        fxobjectclass.member_function( 'handle' ).exclude()
+        fxobjectclass.add_code( 'def("handle", &::FX::'+fxobjectclass.name+'::handle, &'+fxobjectclass.name+'_wrapper::default_handle, bp::default_call_policies() )' )
+
+        # Make it so TnFOX objects and their python mirrors can be detached
+        fxobjectclass.held_type = 'std::auto_ptr<'+fxobjectclass.name+'_wrapper>'
+
+        # Add in runtime support for detaching and msg handling
+        fxobjectclass.set_constructors_body( '    FX::FXPython::int_pythonObjectCreated((int_decouplingFunctor=FX::Generic::BindObjN(*this, &FX::'+fxobjectclass.name+'::decouplePythonObject)));' )
+        fxobjectclass.add_wrapper_code("""    // TnFOX runtime support
+    virtual long int handle( ::FX::FXObject * sender, ::FX::FXSelector sel, void * ptr ) {
+        if( bp::override func_handle = this->get_override( "handle" ) )
+            return func_handle( boost::python::ptr(sender), sel, ptr );
+        else
+            return default_handle( sender, sel, ptr );
+    }
+    
+    long int default_handle( ::FX::FXObject * sender, ::FX::FXSelector sel, void * ptr ) {
+        long ret=0;
+        if( FX::FXPython::int_FXObjectHandle( &ret, this, sender, sel, ptr ) )
+            return ret;
+        return FX::"""+fxobjectclass.name+"""::handle( sender, sel, ptr );
+    }
+
+
+    ~"""+fxobjectclass.name+"""_wrapper( ) {
+        FX::FXPython::int_pythonObjectDeleted(int_decouplingFunctor);
+        using namespace boost::python;
+        using namespace std;
+        PyObject *py_self=get_owner(*this);
+        // We must be careful not to reinvoke object destruction!
+        py_self->ob_refcnt=1<<16;
+        {
+            object me(boost::python::handle<>(borrowed(py_self)));
+            auto_ptr<"""+fxobjectclass.name+"""_wrapper> &autoptr=extract<auto_ptr<"""+fxobjectclass.name+"""_wrapper> &>(me);
+            autoptr.release();
+        }
+        py_self->ob_refcnt=0;
+    }
+
+    virtual void *getPythonObject() const {
+        return (void *) get_owner(*this);
+    }
+    virtual void decouplePythonObject() const {
+        using namespace boost::python;
+        using namespace std;
+        PyObject *py_self=get_owner(*this);
+        object me(boost::python::handle<>(borrowed(py_self)));
+        auto_ptr<"""+fxobjectclass.name+"""_wrapper> &autoptr=extract<auto_ptr<"""+fxobjectclass.name+"""_wrapper> &>(me);
+        autoptr.reset(0);
+    }
+private:
+    Generic::BoundFunctorV *int_decouplingFunctor;""")
+
+    # Patch in custom FXApp::init() implementation
+    fxapp = mb.class_( 'FXApp' )
+    # Awaiting custom text inserter
+    foo = """static void FXApp_init(FXApp &app, int argc, bp::list argv, unsigned char connect=TRUE)
+{
+    int n, size=PyList_Size(argv.ptr());
+    static QMemArray<const char *> array;
+    array.resize(size+1);
+    for(n=0; n<size; n++)
+    {
+        array[n]=PyString_AsString(PyList_GetItem(argv.ptr(), n));
+    }
+    array[n]=0;
+    app.init(argc, (char **)(array.data()), connect);
+}
+static void FXApp_init2(FXApp &app, int argc, bp::list argv)
+{
+    FXApp_init(app, argc, argv);
+}"""
+    fxapp.member_functions( 'init' ).exclude()
+    fxapp.add_code( 'def("init", &FXApp_init)' )
+    fxapp.add_code( 'def("init", &FXApp_init2)' )
+
+    # Patch image & bitmap getData() functions
+    getdatafuncs = mb.calldefs( lambda decl: decl.name == 'getData' and ('Icon' in decl.parent.name or 'Image' in decl.parent.name or 'Bitmap' in decl.parent.name) )
+    getdatafuncs.exclude()
+    #for getdatafunc in getdatafuncs:
+        # Awaiting custom text inserter
+        #declaration_code("DEFINE_MAKECARRAYITER(FXIcon, FX::FXColor, getData, (), (c.getWidth()*c.getHeight()))")
+        #declaration_code("DEFINE_MAKECARRAYITER(FXBitmap, FX::FXuchar, getData, (), (c.getWidth()*c.getHeight()/8))")
+        #getdatafunc.parent.add_code( 'def("getData", &'+getdatafunc.parent.name+'_getData)' )
+    
+    # Patch sort functions
+    sortfuncs = mb.calldefs( lambda decl: 'SortFunc' in decl.name and 'set' in decl.name )
+    for sortfunc in sortfuncs:
+        sortfunc.parent.add_code( 'def("'+sortfunc.name+'", &FX::FXPython::set'+sortfunc.parent.name+'SortFunc)' )
+    
+    # Patch QIODevice wrapper with missing pure virtual functions
+    qiodevice = mb.class_( 'QIODevice' )
+    qiodevice.add_wrapper_code("""    virtual ::FX::FXuval readBlock( char * data, ::FX::FXuval maxlen ){
+        bp::override func_readBlock = this->get_override( "readBlock" );
+        return func_readBlock( data, maxlen );
+    }
+
+    virtual ::FX::FXuval writeBlock( char const * data, ::FX::FXuval maxlen ){
+        bp::override func_writeBlock = this->get_override( "writeBlock" );
+        return func_writeBlock( data, maxlen );
+    }
+
+    virtual ::FX::FXuval readBlockFrom( char * data, ::FX::FXuval maxlen, ::FX::FXfval pos ){
+        bp::override func_readBlockFrom = this->get_override( "readBlockFrom" );
+        return func_readBlockFrom( data, maxlen, pos );
+    }
+
+    virtual ::FX::FXuval writeBlockTo( ::FX::FXfval pos, char const * data, ::FX::FXuval maxlen ){
+        bp::override func_writeBlockTo = this->get_override( "writeBlockTo" );
+        return func_writeBlockTo( pos, data, maxlen );
+    }
+""")
+    qiodevices = mb.class_( 'QIODeviceS' )
+    qiodevices.add_wrapper_code("""    virtual ::FX::FXuval readBlock( char * data, ::FX::FXuval maxlen ){
+        bp::override func_readBlock = this->get_override( "readBlock" );
+        return func_readBlock( data, maxlen );
+    }
+
+    virtual ::FX::FXuval writeBlock( char const * data, ::FX::FXuval maxlen ){
+        bp::override func_writeBlock = this->get_override( "writeBlock" );
+        return func_writeBlock( data, maxlen );
+    }
+
+    virtual void *int_getOSHandle() const{
+        return 0;
+    }
+""")
+
 
 def customize_module( mb ):   
     extmodule = mb.code_creator
@@ -165,8 +300,6 @@ def customize_module( mb ):
         constr.arguments[10].default_value = '(FX::FXWindow::defaultPadding() * 4)'
         constr.arguments[11].default_value = '(FX::FXWindow::defaultPadding() * 4)'
     except: pass
-
-        
 
 def create_module():
     parser_config = parser.config_t( )

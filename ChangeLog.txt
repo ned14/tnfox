@@ -15,6 +15,7 @@ FXException
 + Added kqueue implementation to FXFSMonitor
 + Ported TnFOX to Apple MacOS X (Intel only)
 * Merged FOX v1.4.34
+* Substantially improved python bindings
 
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=

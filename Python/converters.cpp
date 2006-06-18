@@ -19,6 +19,7 @@
 
 #include <boost/python.hpp>
 #include "../include/fxdefs.h"
+#include "../include/fxver.h"
 #include "../include/FXString.h"
 #include "../include/FXException.h"
 #include "../include/FXPtrHold.h"
@@ -73,7 +74,11 @@ struct FXString_to_python_str : public to_python_converter<FX::FXString, FXStrin
 {
 	static PyObject *convert(const FX::FXString &str)
 	{
+#if FOX_MAJOR>1 || (FOX_MAJOR==1 && FOX_MINOR>4)
+		return PyUnicode_DecodeUTF8(str.text(), str.length(), "replace");
+#else
 		return PyString_FromStringAndSize(str.text(), str.length());
+#endif
 		//return incref(boost::python::object(str).ptr());
 	}
 };
@@ -98,11 +103,36 @@ struct FXString_from_python_str
 	}
 };
 
+#if FOX_MAJOR>1 || (FOX_MAJOR==1 && FOX_MINOR>4)
+struct FXString_from_unicode_str
+{
+	FXString_from_unicode_str()
+	{
+		converter::registry::push_back(&convertible, &construct, type_id<FX::FXString>());
+	}
+	static void *convertible(PyObject *obj)
+	{
+		return PyUnicode_Check(obj) ? obj : 0;
+	}
+	static void construct(PyObject *obj, converter::rvalue_from_python_stage1_data *data)
+	{
+		FXnchar *value=(FXnchar *) PyUnicode_AS_UNICODE(obj);
+		if(!value) throw_error_already_set();
+		void *storage=((converter::rvalue_from_python_storage<FX::FXString> *) data)->storage.bytes;
+		new(storage) FX::FXString(value, PyUnicode_Size(obj));
+		data->convertible = storage;
+	}
+};
+#endif
+
 static void RegisterConvFXString()
 {
 	//class_< FX::FXString >("FXString", init< >());
 	FXString_to_python_str();
 	FXString_from_python_str();
+#if FOX_MAJOR>1 || (FOX_MAJOR==1 && FOX_MINOR>4)
+	FXString_from_unicode_str();
+#endif
 }
 
 //*******************************************************************************
@@ -234,7 +264,11 @@ bool FXPython::int_FXObjectHandle(long *ret, FXObject *self, FXObject *sender, F
 				FXString methodname;
 				object handlerfunc(msgmap[2].attr("im_func"));
 				methodname=extract<const char *>(handlerfunc.attr("__name__"));
-				*ret=call_method<long>(me.ptr(), methodname.text(), ptr(sender), sel, ptrval);
+				if(ptrval)
+				{
+					int a=1;
+				}
+				*ret=call_method<long>(me.ptr(), methodname.text(), ptr(sender), sel, handle<>(opaque_pointer_converter<void *>::convert(ptrval)));
 #ifdef DEBUG
 				fxmessage("int_FXObjectHandle(%p, %p, %u, %p) returns %lu\n", self, sender, sel, ptrval, *ret);
 #endif

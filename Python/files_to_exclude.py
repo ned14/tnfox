@@ -37,8 +37,6 @@ files = [
 
     # Temporary until pyplusplus gets fixed
     , "FXWinLinks.h"
-    , "QIODevice.h"
-    , "QIODeviceS.h"
 ]
 
 def is_excluded( decl ):

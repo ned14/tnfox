@@ -1,58 +1,27 @@
 diff -u generated2/FXApp.pypp.cpp generated/FXApp.pypp.cpp
---- generated2/FXApp.pypp.cpp	2006-06-14 02:02:34.000000000 +0100
-+++ generated/FXApp.pypp.cpp	2006-06-14 02:05:28.000000000 +0100
+--- generated2/FXApp.pypp.cpp	2006-06-16 19:25:20.000000000 +0100
++++ generated/FXApp.pypp.cpp	2006-06-16 19:28:50.000000000 +0100
 @@ -30,6 +30,23 @@
  using namespace FX;
  namespace bp = boost::python;
  
 +static void FXApp_init(FXApp &app, int argc, bp::list argv, unsigned char connect=TRUE)
 +{
-+	int n, size=PyList_Size(argv.ptr());
-+	static QMemArray<const char *> array;
-+	array.resize(size+1);
-+	for(n=0; n<size; n++)
-+	{
-+		array[n]=PyString_AsString(PyList_GetItem(argv.ptr(), n));
-+	}
-+	array[n]=0;
-+	app.init(argc, (char **)(array.data()), connect);
++    int n, size=PyList_Size(argv.ptr());
++    static QMemArray<const char *> array;
++    array.resize(size+1);
++    for(n=0; n<size; n++)
++    {
++        array[n]=PyString_AsString(PyList_GetItem(argv.ptr(), n));
++    }
++    array[n]=0;
++    app.init(argc, (char **)(array.data()), connect);
 +}
 +static void FXApp_init2(FXApp &app, int argc, bp::list argv)
 +{
-+	FXApp_init(app, argc, argv);
++    FXApp_init(app, argc, argv);
 +}
 +
  struct FXApp_wrapper : FX::FXApp, bp::wrapper< FX::FXApp > {
  
      virtual long int handle( ::FX::FXObject * sender, ::FX::FXSelector sel, void * ptr ) {
-@@ -109,17 +126,6 @@
-         FX::FXApp::detach( );
-     }
- 
--    virtual void init( int & argc, char * * argv, ::FX::FXbool connect ) {
--        if( bp::override func_init = this->get_override( "init" ) )
--            func_init( argc, argv, connect );
--        else
--            FX::FXApp::init( argc, argv, connect );
--    }
--    
--    
--    virtual void default_init( int & argc, char * * argv, ::FX::FXbool connect ) {
--        FX::FXApp::init( argc, argv, connect );
--    }
- 
-     virtual void exit( ::FX::FXint code ) {
-         if( bp::override func_exit = this->get_override( "exit" ) )
-@@ -361,10 +367,8 @@
-         FXApp_exposer.def("repaint"
-                 , &::FX::FXApp::repaint
-                 , bp::default_call_policies() );
--        FXApp_exposer.def("init"
--                , &::FX::FXApp::init
--                , &FXApp_wrapper::default_init
--                , bp::default_call_policies() );
-+        FXApp_exposer.def("init", &FXApp_init);
-+        FXApp_exposer.def("init", &FXApp_init2);
-         FXApp_exposer.def("exit"
-                 , &::FX::FXApp::exit
-                 , &FXApp_wrapper::default_exit

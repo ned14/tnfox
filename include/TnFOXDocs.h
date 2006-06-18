@@ -36,7 +36,7 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.4.32), and the extensions listed below are designed to not interfere with that process where
+from v1.4.34), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
 is (C) 2001-2006 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
@@ -662,46 +662,40 @@ Wrote through TFileBySyncDev at 10538.028622Kb/sec
 
 /*! \defgroup python Python Support
 
-\warning For the v0.86 release, the entire Python bindings generation infrastructure was
-replaced with a pyplusplus based solution. The documentation below still refers to the
-previous pyste based solution. As this new solution still has a few issues, the documentation
-has not yet been updated even though bindings can be generated. You are recommended to use
-TnFOX from SVN if you are going to use the python bindings.
+As of v0.86, the python bindings moved from a pyste based generator to a pyplusplus based
+generator. This has meant a significant improvement in bindings quality as pyste required
+substantial patching to get it to generate suitable output for TnFOX, but also that pyplusplus
+generates better quality output anyway. Nevertheless, it took till v0.87 to get both the bindings
+and pyplusplus itself up to a reasonable state - my thanks to Roman Yakovenko for the tireless
+work he has put into pyplusplus, most especially that he has spent so much time on getting
+the TnFOX bindings up to scratch.
 
-As I type here, I've just sent pyste off to generate for the very first time a full set
-of .cpp files for Boost.Python to compile (having finally completed full three days of
-writing policies). It has taken me the best part of six weeks just on the bindings alone
-which is far more than I had expected. And hence, I'm going to bore you here now and
-for eternity with its history! :)
+One of the big advantages of pyplusplus over pyste is that you can programmatically set
+call policies and patch in code. The many days of manually writing policies that pyste required were effectively
+wasted time when viewed from this context - however, it also means that the pyplusplus bindings
+are far more maintainable than pyste ones. And the pyste ones were already far more maintainable
+than any SWIG based solution.
 
-I had evaluated <a href="http://swig.sourceforge.net/">SWIG</a> and
-<a href="http://www.boost.org/">Boost.Python</a> to the extent of wrapping some small test files
-some months ago but I knew an entire C++ library was a completely different matter.
-While SWIG has improved in leaps and bounds and can now understand most C++, my
-testing showed that anything particularly complex (eg; metaprogramming constructs)
-made SWIG barf. This is totally understandable - SWIG is not a C++ compiler and
-should never be one. But it meant I'd have to either #ifdef in simplified code or
-use seperate interface files. This said to me "maintanance nightmare" and a substantial
-removal of future Tn development productivity.
+Current issues with the python bindings which will hopefully get fixed soon:
+\li Most annoyingly, currently BPL doesn't
+support specifying the parameter names when the type of the parameter is
+as yet unregistered. This means you can't use python's named parameter feature eg;
+\code
+foo(x=5, y=7)
+\endcode
+This problem can be fixed if BPL delayed type lookup. If you'd like to
+contribute a patch to Boost.Python, I am sure it would be accepted.
+\li pyplusplus generates wrong code for FX::FXWinShellLink (misinterprets unions).
+Currently the entire class is excluded.
+\li Array access eg; to FX::FXImage::getData() is currently not implemented. We
+are waiting on pyplusplus support for custom per-class body text insertion to fix this.
 
-Ideally one wanted a totally automated solution. Pyste was going that way as it uses
-GCC which is very good at understanding fully complex C++. Furthermore Boost.Python
-uses C++ compile-time metaprogramming techniques to inspect the interface being wrapped
-and correctly spit out Python code which means I don't have to bother. So I joined c++-sig on
-python.org and it quickly became clear that TnFOX pushed not only pyste to new places,
-but also Boost.Python itself. My thanks to David Abrahams, Bruno de Silvio and
-Raoul Gough for putting up with my constant questions and suggestions for new features.
-
-I should add that I don't wish to imply that SWIG is inferior. SWIG is an
-excellent tool, as good a general-purpose bindings generator could be and if you
-are generating bindings for anything other than Python it's the only real choice.
-It also has many advantages Boost.Python does not such as being much, much quicker
-and running on older C++ compilers.
-\section detail Nuff history, to the detail!
+\section detail How to build the bindings
 
 TnFOX's Python bindings are almost entirely automatically generated and you can
-find the necessary files in the Python directory. You will also need Python v2.3
-or later and the Boost library v1.31 or later.
+find the necessary files in the Python directory. You will also need Python v2.4
+or later and the Boost library v1.34 or later (or else patch in my <tt>void *</tt>
+support patch into an earlier version).
 
 You'll also need a modern compiler such as MSVC7.1 or later or GCC v3.22 or later
 (GCC v3.4 or later is far faster, so you should use that instead. GCC v4.0 or later
@@ -712,65 +706,44 @@ takes an age but you can rest easy knowing that for every two years hence
 compilation speed should double. In only a few years, it'll take no more than five
 minutes or so. Until then, distributed compilation is very useful as are
 multi-processor machines - and you can tell scons to use as many processors as you
-have using the -j switch.
+have using the -j switch. You should always run one more build than there are processors
+in your system eg; two for a uniprocessor system, three for a dual core system etc.
 
-If you have a new enough GCC (v3.4), with precompiled headers enabled building the python
-bindings on POSIX actually becomes less than a day long operation (I go from six
-hours to only two on my machine). You will need to precompile \c common.h
-whereafter GCC will automatically use it to avoid about half the compile time per
-compilee, sometimes more. To do this, run scons first hitting Ctrl-C after it tries
-to compile the first file and then copy and paste the command changing the end to
-"-o common.h.gch common.h" like so:
-\code
-g++ -fPIC -Wformat -Wno-reorder -Wno-non-virtual-dtor -march=athlon-4 -mfpmath=sse
--msse -fexceptions -fkeep-inline-functions -Winvalid-pch -pipe -DFOXDLL
--DBOOST_PYTHON_DYNAMIC_LIB -DBOOST_PYTHON_SOURCE -DBOOST_PYTHON_MAX_ARITY=19
--DFOXPYTHONDLL -DFOXPYTHONDLL_EXPORTS -DUSE_POSIX -DHAVE_CONSTTEMPORARIES
--D_DEBUG -I. -I/home/ned/Tornado/TClient/TnFOX/include -I/home/ned/Tornado/TClient/boost
--I/usr/local/include/python2.3 -o common.h.gch common.h
-\endcode
-(Don't use this directly, it'll be different on your machine. It'll also change
-between debug and release builds)
-\note At the time of writing (July 2004), using precompiled headers in GCC v3.4.0
-caused fatal errors at link time due to symbols clashes of unnamed namespaces defined
-within the Boost headers.
+You also need a \b minimum of 1Gb RAM. This is for linking the bindings, which takes a
+huge amount of RAM. Anything less swaps to hell and takes forever.
 
-\subsection build To build:
-
-Firstly, on Windows you need a \b minimum of 1Gb RAM. This is for linking the
-bindings, which takes a huge amount of RAM.
-
-Place Boost into a directory called "boost" next to the TnFOX directory.
+Place <a href="http://www.boost.org/">Boost</a> into a directory called "boost" next to the TnFOX directory.
 Overwrite the files in Boost.Python with the contents of BoostPatches.zip. Get a
 \c bjam from somewhere (see boost docs). Run <tt>bjam "-sBUILD=release"</tt> in
 \c boost/libs/python/build (use debug if you're building a debug version). This
 should build a TnFOX customised boost.python library - no compile errors should
 occur, but it should refuse to link (this is deliberate).
 
-Run GenInterfaces.py. This generates a set of .pyste files for each header file
-in the TnFOX include directory. It also compares the datestamp of the output .cpp
-file with its header file and if out of date, invokes pyste on each. You will
-now have a set of .cpp files wrapping the interfaces specified in the .h files.
-\note This process is compatible with the FOX library which TnFOX forks from.
-You can generate bindings for FOX only and GenInterfaces.py is intelligent
-enough to call the package FOX instead of TnFOX. This said however, FXPython.cpp
-which provides run-time support uses a number of TnFOX-only facilities which
-need either replacing or removing.
+Install <a href="http://www.gccxml.org/">gccxml</a>,
+<a href="http://www.language-binding.net/pygccxml/pygccxml.html">pygccxml</a>
+and <a href="http://www.language-binding.net/pyplusplus/pyplusplus.html">pyplusplus</a>.
 
-Once you have the .cpp files (all ones with a _ before them),
-apply the diff file PatchWrappers.txt and then run scons which eventually
-will spit out TnFOX.dll (or TnFOX.so).
-My computer (dual Athlon 1700) takes about 35 mins on MSVC7.1 to do this
-for a debug build though with precompiled headers enabled (not currently
-as bugs in MSVC7.1 make it not work) it shrinks to about 20 minutes. On GCC
-v3.4 with a uniprocessor Athon 1700, it takes about six hours (less than
-two with precompiled headers enabled).
+Open a command window and go into the <tt>TnFOX/Python</tt> directory. If you have
+changed the header files of TnFOX (eg; through upgrading the version), make VERY
+sure you delete the fx.xml file first - this is the cache of parsing the TnFOX headers -
+and also delete the generated directory as pyplusplus uses the existing output to
+speed up its operation.
 
-\note You \b really want to use a \c -fvisibility enabled version of GCC
+Run '<tt>python create_tnfox.py</tt>'. After a few minutes it should return. If there
+is a file called <tt>patch.diff</tt> in the Python directory then apply this using:
+\code
+cd generated
+patch -p1 < ../patch.diff
+\endcode
+As pyplusplus improves, the requirement to do this patch will disappear.
+
+Run scons. This part takes between an hour and six hours depending on how fast
+your machine is.
+
+\note If using GCC, you \b really want to use a \c -fvisibility enabled version (>=v4.x) of GCC
 if possible as it will reduce the size of the TnFOX shared object by around
 20Mb and you will reduce load times for anything linked against TnFOX.so from
-six minutes to four seconds :). Suitable versions include v3.4.2 and v4.0 and
-you will also need v1.3.2 or later of Boost.
+six minutes to four seconds :). You will also need v1.3.2 or later of Boost.
 
 Afterwards, it's as simple as
 \code
@@ -785,7 +758,8 @@ does which is the overriding quantity - but off the top of my head:
 all members (nested classes, enums, data etc) therein including a full
 duplication of the class inheritance structure, except for those
 retired for reasons of deprecation or where it doesn't make sense
-to include them. See the top of GenInterfaces.py for a list.
+to include them. See declarations_to_exclude.py and files_to_exclude.py.
+Most of these are sensible.
 \li Apart from one virtual method in FXApp,
 every virtual thing can be overriden by python code.
 \li All method & function overloads are available.
@@ -798,7 +772,10 @@ C++ plus embedding of python mini-scripts and python expression evaluations.
 
 Furthermore I've implemented a number of automatic conversions
 where TnFOX classes transparently become Python ones and vice versa:
-\li FXString with python strings.
+\li FX::FXString with python strings. On v1.6 FOX based builds, FX::FXString
+always converts to a python
+unicode object. String and Unicode objects convert to FX::FXString. On
+v1.4 FOX based builds, python unicode object conversion is not supported.
 \li FX::FXuchar, FX::FXchar, FX::FXushort, FX::FXshort, FX::FXuint
 and possibly FX::FXint & FX::FXulong (depending on host long integer
 size) all automatically translate to/from a python integer. FX::FXulong and
@@ -825,8 +802,6 @@ expected to be managed entirely by \c new - if this isn't the case,
 do not modify the list - use the QPtrList methods directly. If you
 take references from a QPtrList, their lifetime is set to expire
 with the list reference.
-\li When FOX implements unicode fully, I'll add a map to unicode
-python strings where the contents contain at least one unicode character.
 \li The same method for managing FXWindow message dispatching as FXPy
 was chosen for aiding compatibility. For each instance of the window
 class, in its constructor you should call the member functions FXMAPFUNC(),
@@ -857,15 +832,6 @@ you don't tie something to a reference lasting the length of the parent
 instance (eg; by setting \c self.something to it), python will delete it.
 This is a major difference from FXPy and code will need to be adjusted
 to support it - see \c imageviewer.py ported from FXPy to see what I mean.
-\li Lastly, and probably the most annoyingly, currently pyste doesn't
-support specifying the parameter names to BPL and thus you can't use
-python's named parameter feature eg;
-\code
-foo(x=5, y=7)
-\endcode
-This could probably be fixed if GCCXML exports the necessary information,
-which I haven't investigated. For now, work around by always specifying
-the full list of parameters without names
 
 \subsection caveats Caveats:
 
@@ -896,33 +862,14 @@ is ignored by the default python run() call code).
 
 And then also there's a long list of things which will be added or
 fixed with time:
-\li FXBZStream and FXGZStream are missing because pyste barfs on them
-\li We depend heavily on Pyste's AllFromHeader() function which in
-the current CVS is broken. Therefore all ancillory interfaces eg;
-FXListItem, enums etc. aren't present to the python world ie;
-anything not named after a header file isn't there. This means
-FXDLL, FXElement and FXMDIButton are all completely missing.<br>
-<br>
-<b>This obviously renders large parts of TnFOX currently unavailable
-and so is high on the list of things to fix.</b>
 \li None of the TnFOX docs are reflected into python doc strings
-even though Boost.Python supports this. This is a limitation
-of pyste and will be fixed at some stage.
-\li The << & >> operator overloads on FXStream are currently
-unsupported because Boost.Python barfs on them. I need to write
-a test case and try and find the cause.
+even though Boost.Python supports this. This is one of the future
+features which should be added to pyplusplus in time.
 \li BPL gets confused where overloads have a static member function
 and a normal member function. It will default to the static version -
 therefore you'll need to pass the instance as the first parameter
 to the non-static version. This may get fixed in some future version
 of BPL.
-\li There is a nasty interaction between FOX's FXObject child object
-management and python ie; you delete a parent and FOX will delete
-its children. This is a problem if Python then later goes on to
-decrement that object's reference count to zero (which happens
-especially just as a program is quitting) and tries to delete
-it. To solve this, you must ensure that python deletes anything it
-wants to before FOX gets a chance.
 
 Finally, there is the issue of lifetime management. Boost.Python
 allows you to tie the lifetime of things together to prevent
@@ -1057,6 +1004,9 @@ TnFOX provides.
 \li Fellow graduates from my class year 2000 at the <a href="http://www.hull.ac.uk/">University
 of Hull</a> in the UK who have tirelessly put up with my constant
 questions about tiny details.
+\li Roman Yakovenko for the tireless work he has put into pyplusplus, most
+especially that he has specifically spent so much time on getting the TnFOX
+bindings up to scratch.
 */
 
 
