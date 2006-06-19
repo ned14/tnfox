@@ -73,10 +73,21 @@ synchronisation classes are overkill and inefficient eg; a thread-safe
 incrementing counter. In these cases, FXAtomicInt can provide
 substantially improved performance. Indeed, QMutex is implemented using it.
 
-On all Intel x86 architectures, FXAtomicInt is written directly in assembler
-which due to the 80486 and later's full support, requires only one core instruction.
-On all non-x86 MS Windows builds, it is written using the Interlocked*
-functions. On other architectures for POSIX, it requires FXAtomicInt to be modified.
+With modern compiler help, direct assembler is mostly avoided. On MSVC and GCC,
+compiler intrinsics are used to access processor-specific locking instructions.
+As GCC has very limited intrinsics in this area requiring a separate lock variable,
+on x86 or x64 direct assembler is used on that compiler - however, on other
+platforms the operation is simply more inefficient than if native instructions are
+used:
+\code
+3400 Athlon64 uniprocessor on Apple MacOS X with GCC v4.0.1:
+                 FXAtomicInt      QMutex
+GCC intrinsics:      9159606     2654350
+Direct assembler:   47438330     7844367
+                      (5.2x)        (3x)
+\endcode	
+If performance becomes a problem on non x86 platforms, think about adding a
+native implementation to this class.
 
 As of v0.85, the macro FX_SMPBUILD when defined causes the CPU to take exclusive
 control of the memory bus during the operation which is correct for SMP but overkill
@@ -91,8 +102,9 @@ improvement at the cost of code size.
 */
 class QMUTEX_FXAPI FXAtomicInt
 {
-	volatile int lock;		// Unused on systems with atomic increment/decrement/exchange-compare
+	volatile long lock;		// Unused on systems with atomic increment/decrement/exchange-compare
 	volatile int value;
+	volatile int value2;    // Used for padding
 	friend class QMutex;
 	friend class QShrdMemMutex;
 	QMUTEX_INLINEI FXDLLLOCAL int get() const throw();
@@ -110,8 +122,8 @@ class QMUTEX_FXAPI FXAtomicInt
 	QMUTEX_INLINEI FXDLLLOCAL int spinI(int count) throw();
 public:
 	//! Constructs an atomic int with the specified initial value
-	QMUTEX_INLINEP FXAtomicInt(int i=0) throw() : lock(0), value(i) { }
-	QMUTEX_INLINEP FXAtomicInt(const FXAtomicInt &o) throw() : lock(0), value(o.value) { }
+	QMUTEX_INLINEP FXAtomicInt(int i=0) throw() : lock(0), value(i), value2(0) { }
+	QMUTEX_INLINEP FXAtomicInt(const FXAtomicInt &o) throw() : lock(0), value(o.value), value2(0) { }
 	QMUTEX_INLINEP FXAtomicInt &operator=(const FXAtomicInt &o) throw() { lock=0; value=o.value; return *this; }
 	//! Returns the current value
 	QMUTEX_INLINEP operator int() const throw();
