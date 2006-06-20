@@ -20,16 +20,13 @@
 ********************************************************************************/
 
 #include "common.h"
-#ifdef _MSC_VER
-#pragma hdrstop
-#endif
+
 #include "FXCodeToPythonCode.h"
 #include "../include/qptrdict.h"
 #include "../include/qptrlist.h"
 #ifndef FX_DISABLEGUI
 #include "../include/FXGLViewer.h"
 #endif
-#include "CArrays.h"
 #include "../include/FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
 static const char *_fxmemdbg_current_file_ = __FILE__;

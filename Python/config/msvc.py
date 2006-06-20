@@ -30,23 +30,28 @@ env['CPPPATH']+=[prefixpath+"windows"]
 if not os.path.exists(builddir):
     os.mkdir(builddir)
 
-# Warnings, Synchronous exceptions, enable RTTI, smallest inlining,
+# Warnings, synchronous exceptions, enable RTTI, smallest inlining,
 # wchar_t native, types defined before pointers to members used
 cppflags=Split('/c /nologo /W3 /EHsc /GR /Ob1 /Ow /Zc:wchar_t /vmb /vmm')
 assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
-    cppflags+=[ "/Ow",                        # Only functions may alias
+    cppflags+=[ "/Ow",                         # Only functions may alias
                 "/G%d" % architecture_version # Optimise for given processor revision
               ]
 else:
     # Stop the stupid STDC function deprecated warnings
-    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
+    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1), ("_SECURE_SCL_THROWS", 1)]
+    if not debugmode:
+        # Prevent checked iterators on release builds
+        env['CPPDEFINES']+=[("_SECURE_SCL",0)]
+        cppflags+=["/GS-",       # Disable buffer overrun check
+                   ]
 if architecture=="x86":
     if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
     elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
 if debugmode:
     cppflags+=["/O1",        # Optimise for small code (code is very, very big otherwise)
-               "/Zd",        # Line number debug info
+               #"/Zd",        # Line number debug info
                "/MDd"        # Select MSVCRTD.dll
                ]
 else:
@@ -60,21 +65,19 @@ env['CPPFLAGS']=cppflags
 env['LINKFLAGS']=["/version:"+targetversion,
                   "/SUBSYSTEM:WINDOWS",
                   "/DLL",
+                  "/DEBUG",
                   "/OPT:NOWIN98",
+                  "/INCREMENTAL:NO",      # Incremental linking is just broken on all versions of MSVC
                   "/STACK:524288,65536"
                   ]
+if MSVCVersion>=800:
+    env['LINKFLAGS']+=["/NXCOMPAT"]
 if make64bit:
-    # This seems to be missing
-    env['LINKFLAGS']+=["/FORCE:UNRESOLVED"]
+    env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
 else:
-    env['LINKFLAGS']+=["/BASE:0x52000000", "/LARGEADDRESSAWARE"]
+    env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x52000000", "/LARGEADDRESSAWARE"]
 if debugmode:
-    if MSVCVersion==710:
-        env['LINKFLAGS']+=["/INCREMENTAL:NO"]
-    else:
-        env['LINKFLAGS']+=["/INCREMENTAL"]
-    env['LINKFLAGS']+=["/DEBUG",
-                       "/OPT:NOREF",
+    env['LINKFLAGS']+=["/OPT:NOREF",
                        "/OPT:NOICF"
                        ]
 else:

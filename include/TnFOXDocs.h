@@ -677,18 +677,8 @@ are far more maintainable than pyste ones. And the pyste ones were already far m
 than any SWIG based solution.
 
 Current issues with the python bindings which will hopefully get fixed soon:
-\li Most annoyingly, currently BPL doesn't
-support specifying the parameter names when the type of the parameter is
-as yet unregistered. This means you can't use python's named parameter feature eg;
-\code
-foo(x=5, y=7)
-\endcode
-This problem can be fixed if BPL delayed type lookup. If you'd like to
-contribute a patch to Boost.Python, I am sure it would be accepted.
 \li pyplusplus generates wrong code for FX::FXWinShellLink (misinterprets unions).
 Currently the entire class is excluded.
-\li Array access eg; to FX::FXImage::getData() is currently not implemented. We
-are waiting on pyplusplus support for custom per-class body text insertion to fix this.
 
 \section detail How to build the bindings
 
@@ -763,7 +753,7 @@ Most of these are sensible.
 \li Apart from one virtual method in FXApp,
 every virtual thing can be overriden by python code.
 \li All method & function overloads are available.
-\li Default parameters work as expected.
+\li Default parameters work as expected, and you can name your parameters
 \li Complex number support
 \li Provision for simple invocation of python code
 \li Multiple python interpreters, plus multiple threads therein.

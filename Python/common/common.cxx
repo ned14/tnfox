@@ -17,13 +17,4 @@
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 ********************************************************************************/
 
-/* Note that this file includes all common headers so it can be precompiled
-portably with GCC and MSVC */
-
-#include <math.h> // Stop python from disabling math.h float ops on FreeBSD
-#include <fx.h>
-#include <boost/python.hpp>
-#include "generated/__array_1.pypp.hpp"
-#include <boost/cstdint.hpp>
-#include "patches.cpp.h"
-#include "boost/python/suite/indexing/vector_indexing_suite.hpp"
+#include "../common.h"

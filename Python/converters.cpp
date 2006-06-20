@@ -17,15 +17,9 @@
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 ********************************************************************************/
 
-#include <boost/python.hpp>
-#include "../include/fxdefs.h"
+#include "common.h"
+
 #include "../include/fxver.h"
-#include "../include/FXString.h"
-#include "../include/FXException.h"
-#include "../include/FXPtrHold.h"
-#include "../include/FXProcess.h"
-#include "FXPython.h"
-#include "CArrays.h"
 #include "../include/qvaluelist.h"
 #include "../include/qptrlist.h"
 #include "../include/qptrdict.h"
