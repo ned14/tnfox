@@ -3,7 +3,7 @@
 *                        Boost.python C Array converter                         *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -17,32 +17,13 @@
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 ********************************************************************************/
 
-#include <boost/python.hpp>
-#include <boost/python/suite/indexing/container_suite.hpp>
-#include <boost/python/suite/indexing/iterator_range.hpp>
 #include <boost/python/suite/indexing/container_proxy.hpp>
 #include <boost/python/suite/indexing/list.hpp>
 #include <boost/python/suite/indexing/vector.hpp>
-#include "../include/FXGenericTools.h"
-#include "../include/FXString.h"
 #include "../include/qvaluelist.h"
 #include "../include/qptrlist.h"
 #include "../include/qmemarray.h"
 
-/* This truly evil looking macro would have been impossible without the invaluable
-advice of Raoul Gough, the author of the Boost.Python indexing_suite
-*/
-#define DEFINE_MAKECARRAYITER(contType, memberType, getArrayFunction, getArrayFunctionPars, getArrayLengthFunction) \
-	static inline boost::python::indexing::iterator_range<memberType *> \
-	contType##_##getArrayFunction (::FX::##contType &c) \
-	{ \
-		typedef boost::python::indexing::iterator_range<memberType *> IterPair; \
-		boost::python::class_<IterPair>( #contType "_" #getArrayFunction "Indirect", \
-			boost::python::init<memberType *, memberType *>()) \
-			.def(boost::python::indexing::container_suite<IterPair>()); \
-		memberType *data=(&c)->getArrayFunction getArrayFunctionPars; \
-		return IterPair(data, data+getArrayLengthFunction); \
-	}
 
 /* Holder which can dispose of a FXMALLOC when Python garbage collects.
 It offers an extremely simplified container interface with only read-only

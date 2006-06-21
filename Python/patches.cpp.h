@@ -19,9 +19,31 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#include "FXApp.h"
-#include <qmemarray.h>
-#include "CArrays.h"
+#if defined(PYPP_BUILDING_FXAPP) || defined(PYPP_BUILDING_FXIMAGE) || defined(PYPP_BUILDING_FXBITMAP) || defined(PYPP_BUILDING_FXGLTRIANGLEMESH) || defined(PYPP_BUILDING_FXGLVIEWER)
+
+#include <boost/python/suite/indexing/iterator_range.hpp>
+#include <boost/python/suite/indexing/container_suite.hpp>
+
+/* This truly evil looking macro would have been impossible without the invaluable
+advice of Raoul Gough, the author of the Boost.Python indexing_suite
+*/
+#define DEFINE_MAKECARRAYITER(contType, memberType, getArrayFunction, getArrayFunctionPars, getArrayLengthFunction) \
+	static inline boost::python::indexing::iterator_range<memberType *> \
+	contType##_##getArrayFunction (::FX::##contType &c) \
+	{ \
+		using namespace boost::python; \
+		typedef indexing::iterator_range<memberType *> IterPair; \
+		class_<IterPair>( #contType "_" #getArrayFunction "Indirect", \
+			init<memberType *, memberType *>()) \
+			.def(indexing::container_suite<IterPair>()); \
+		memberType *data=(&c)->getArrayFunction getArrayFunctionPars; \
+		return IterPair(data, data+getArrayLengthFunction); \
+	}
+
+
+#if defined(PYPP_BUILDING_FXAPP)
+
+DEFINE_MAKECARRAYITER(FXApp, const FX::FXchar *, getArgv, (), c.getArgc())
 
 static inline void FXApp_init(FX::FXApp &app, int argc, boost::python::list argv, unsigned char connect=TRUE)
 {
@@ -41,9 +63,35 @@ static inline void FXApp_init2(FX::FXApp &app, int argc, boost::python::list arg
 	FXApp_init(app, argc, argv);
 }
 
-DEFINE_MAKECARRAYITER(FXApp, const FX::FXchar *, getArgv, (), c.getArgc())
+#endif // defined(PYPP_BUILDING_FXAPP)
 
+#if defined(PYPP_BUILDING_FXIMAGE)
 DEFINE_MAKECARRAYITER(FXImage, FX::FXColor, getData, (), (c.getWidth()*c.getHeight()))
+#endif
 
+#if defined(PYPP_BUILDING_FXBITMAP)
 DEFINE_MAKECARRAYITER(FXBitmap, FX::FXuchar, getData, (), (c.getWidth()*c.getHeight()/8))
+#endif
 
+#if defined(PYPP_BUILDING_FXGLTRIANGLEMESH)
+DEFINE_MAKECARRAYITER(FXGLTriangleMesh, FX::FXfloat, getVertexBuffer, (), 3*c.getVertexNumber())
+DEFINE_MAKECARRAYITER(FXGLTriangleMesh, FX::FXfloat, getColorBuffer, (), 4*c.getVertexNumber())
+DEFINE_MAKECARRAYITER(FXGLTriangleMesh, FX::FXfloat, getNormalBuffer, (), 3*c.getVertexNumber())
+DEFINE_MAKECARRAYITER(FXGLTriangleMesh, FX::FXfloat, getTextureCoordBuffer, (), 2*c.getVertexNumber())
+#endif
+
+// To be fixed later
+// DEFINE_MAKECARRAYITER(FXObjectList, FX::FXObject *, list, (), c.no())
+
+#if defined(PYPP_BUILDING_FXGLVIEWER)
+static inline FXMallocHolder<FX::FXGLObject *> *FXGLViewer_lasso(FX::FXGLViewer &c, FX::FXint x1,FX::FXint y1,FX::FXint x2,FX::FXint y2)
+{
+	return new FXMallocHolder<FX::FXGLObject *>(c.lasso(x1,y1,x2,y2));
+}
+static inline FXMallocHolder<FX::FXGLObject *> *FXGLViewer_select(FX::FXGLViewer &c, FX::FXint x,FX::FXint y,FX::FXint w,FX::FXint h)
+{
+	return new FXMallocHolder<FX::FXGLObject *>(c.select(x,y,w,h));
+}
+#endif
+
+#endif // defined(PYPP_BUILDING_FXAPP) || defined(PYPP_BUILDING_FXIMAGE) || defined(PYPP_BUILDING_FXBITMAP) || defined(PYPP_BUILDING_FXGLTRIANGLEMESH) || defined(PYPP_BUILDING_FXGLVIEWER)

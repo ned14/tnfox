@@ -3,7 +3,7 @@
 *                           Python embedding support                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -22,8 +22,6 @@
 #include "common.h"
 
 #include "FXCodeToPythonCode.h"
-#include "../include/qptrdict.h"
-#include "../include/qptrlist.h"
 #ifndef FX_DISABLEGUI
 #include "../include/FXGLViewer.h"
 #endif

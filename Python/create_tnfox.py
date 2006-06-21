@@ -203,6 +203,25 @@ private:
     fxapp.member_functions( 'init' ).exclude()
     fxapp.add_code( 'def("init", &FXApp_init)' )
     fxapp.add_code( 'def("init", &FXApp_init2)' )
+    fxapp.add_code( 'def("getArgv", &FXApp_getArgv)' )
+
+    # Patch in custom FXGLTriangleMesh implementations
+    fxgltrianglemesh = mb.class_( 'FXGLTriangleMesh' )
+    fxgltrianglemesh.member_functions( 'getVertexBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getVertexBuffer",       &FXGLTriangleMesh_getVertexBuffer)' )
+    fxgltrianglemesh.member_functions( 'getColorBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getColorBuffer",        &FXGLTriangleMesh_getColorBuffer)' )
+    fxgltrianglemesh.member_functions( 'getNormalBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getNormalBuffer",       &FXGLTriangleMesh_getNormalBuffer)' )
+    fxgltrianglemesh.member_functions( 'getTextureCoordBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getTextureCoordBuffer", &FXGLTriangleMesh_getTextureCoordBuffer)' )
+
+    # Patch in custom FXGLViewer implementations
+    fxglviewer = mb.class_( 'FXGLViewer' )
+    fxglviewer.member_functions( 'lasso' ).exclude()
+    fxglviewer.add_code   ( 'def("lasso",  &FXGLViewer_lasso, bp::return_value_policy< bp::manage_new_object, bp::default_call_policies >() )' )
+    fxglviewer.member_functions( 'select' ).exclude()
+    fxglviewer.add_code   ( 'def("select", &FXGLViewer_select, bp::return_value_policy< bp::manage_new_object, bp::default_call_policies >() )' )
 
     # Patch image & bitmap getData() functions
     getdatafuncs = mb.calldefs( lambda decl: decl.name == 'getData' and not declarations.is_void_pointer( decl.return_type ) and ('Icon' in decl.parent.name or 'Image' in decl.parent.name or 'Bitmap' in decl.parent.name) )
@@ -271,6 +290,7 @@ def customize_module( mb ):
     extmodule.user_defined_directories.append( settings.generated_files_dir )
     extmodule.adopt_include( code_creators.include_t( header='../common.h' ) )    
     extmodule.precompiled_header = '../common.h'
+    extmodule.adopt_include( code_creators.include_t( header='../patches.cpp.h' ) )    
 
     # Fix bug in gccxml where default args with function as value gain an extra ()
     try:
