@@ -21,7 +21,7 @@
 
 
 #include "QFileInfo.h"
-#include "FXSQLDB_ipc.h"
+#include "TnFXSQLDB_ipc.h"
 #include "QFile.h"
 #include "FXFile.h"
 #include "QPipe.h"
@@ -35,10 +35,10 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 using namespace FX;
 
 #if defined(USE_POSIX)
-#include "FXSQLDB_sqlite3.h"
+#include "TnFXSQLDB_sqlite3.h"
 extern void pullSQLite3IntoEXE()
 {
-	FXSQLDB_sqlite3 foo("Hello");
+	TnFXSQLDB_sqlite3 foo("Hello");
 }
 #endif
 
@@ -123,7 +123,7 @@ static FXString NumDescr(FXuint no)
 	return ret;
 }
 
-typedef FXSQLDBIPCMsgs<100>::Chunk MyMsgChunk;
+typedef TnFXSQLDBIPCMsgs<100>::Chunk MyMsgChunk;
 static class MyRegistry : public FXIPCMsgRegistry
 {
 	MyMsgChunk mychunk;
@@ -156,7 +156,7 @@ public:
 class MyServer : public MyChannel
 {
 public:
-	FXSQLDBServer server;
+	TnFXSQLDBServer server;
 	MyServer(QIODeviceS *dev) : MyChannel(dev, "TestSQLDB server")
 	{
 		setPrintStatistics(false);
@@ -178,9 +178,9 @@ static void printdbsize()
 	fxmessage("SQLite3 database is now %s long\n", mydbinfo.sizeAsString().text());
 }
 
-static void insert(FXSQLDB *db, FXuint no)
+static void insert(TnFXSQLDB *db, FXuint no)
 {
-	FXSQLDBStatementRef s=db->prepare("INSERT INTO 'test' ('value', 'text') VALUES(:value, :text);");
+	TnFXSQLDBStatementRef s=db->prepare("INSERT INTO 'test' ('value', 'text') VALUES(:value, :text);");
 	for(FXuint n=0; n<no; n++)
 	{
 		s->bind(":value", n);
@@ -278,10 +278,10 @@ int main( int argc, char** argv)
 		QPipe mypipeS("TestSQLDBPipe"), mypipeC("TestSQLDBPipe");
 		MyServer myserver(&mypipeS);
 		MyChannel mychannel(&mypipeC);
-		FXAutoPtr<FXSQLDB> mydb;
+		FXAutoPtr<TnFXSQLDB> mydb;
 		if(0)	// Testing IPC tests SQLite!
 		{
-			mydb=FXSQLDBRegistry::make("SQLite3", dbname);
+			mydb=TnFXSQLDBRegistry::make("SQLite3", dbname);
 			FXERRH(mydb, "Couldn't make a SQLite3 driver!!", 0, FXERRH_ISDEBUG);
 		}
 		else
@@ -290,9 +290,9 @@ int main( int argc, char** argv)
 			mypipeC.open();
 			myserver.start();
 			mychannel.start();
-			mydb=FXSQLDBRegistry::make("IPC", FXString("SQLite3:")+dbname);
+			mydb=TnFXSQLDBRegistry::make("IPC", FXString("SQLite3:")+dbname);
 			FXERRH(mydb, "Couldn't make an IPC driver!!", 0, FXERRH_ISDEBUG);
-			FXSQLDB_ipc *db=dynamic_cast<FXSQLDB_ipc *>(PtrPtr(mydb));
+			TnFXSQLDB_ipc *db=dynamic_cast<TnFXSQLDB_ipc *>(PtrPtr(mydb));
 			db->setIPCChannel<MyMsgChunk>(&mychannel);
 			//db->setIsAsynchronous();
 			myserver.server.setIPCChannel<MyMsgChunk>(&myserver);
@@ -304,7 +304,7 @@ int main( int argc, char** argv)
 		printdbsize();
 
 		FXulong begin, end;
-		FXSQLDBStatementRef s;
+		TnFXSQLDBStatementRef s;
 
 		fxmessage("\nInserting 1000 records without a transaction ...\n");
 		begin=FXProcess::getNsCount();
@@ -335,14 +335,14 @@ int main( int argc, char** argv)
 		fxmessage("\nSelecting all records with 'twenty' in them ...\n");
 		begin=FXProcess::getNsCount();
 		int n=0;
-		for(FXSQLDBCursorRef c=mydb->execute("SELECT text FROM 'test' WHERE text LIKE '%twenty%';"); !c->atEnd(); c->next(), n++)
+		for(TnFXSQLDBCursorRef c=mydb->execute("SELECT text FROM 'test' WHERE text LIKE '%twenty%';"); !c->atEnd(); c->next(), n++)
 		{
 			if(!n)
 				end=FXProcess::getNsCount();
-			FXSQLDB::SQLDataType datatype;
+			TnFXSQLDB::SQLDataType datatype;
 			FXint size;
 			c->type(datatype, size, 0);
-			fxmessage("Entry %d (header type %s(%d), colname=%s): %s\n", c->at(), FXSQLDB::sql92TypeAsString(datatype), size, c->header(0)->get<const char *>(), c->data(0)->get<const char *>());
+			fxmessage("Entry %d (header type %s(%d), colname=%s): %s\n", c->at(), TnFXSQLDB::sql92TypeAsString(datatype), size, c->header(0)->get<const char *>(), c->data(0)->get<const char *>());
 		}
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, n/((end-begin)/1000000000.0));
 		printdbsize();
@@ -352,7 +352,7 @@ int main( int argc, char** argv)
 		QFile fh("../../ReadMe.txt");
 		fh.open(IO_ReadOnly);
 		begin=FXProcess::getNsCount();
-		FXSQLDBStatementRef stmt=mydb->prepare("INSERT INTO 'test' ('value', 'text') VALUES(?2, ?1);");
+		TnFXSQLDBStatementRef stmt=mydb->prepare("INSERT INTO 'test' ('value', 'text') VALUES(?2, ?1);");
 		stmt->bind(1, 0xdeadbeef);		// Test a top bit set value to test overflow upcasting
 		stmt->bind(0, fh);
 		stmt->immediate();
@@ -366,7 +366,7 @@ int main( int argc, char** argv)
 		fh.at(0);
 		{
 			begin=FXProcess::getNsCount();
-			FXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'test' WHERE value=3735928559;");
+			TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'test' WHERE value=3735928559;");
 			end=FXProcess::getNsCount();
 			fxmessage("SELECT took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 1/((end-begin)/1000000000.0));
 			FXERRH(!c->atEnd(), "There should be some records returned!", 0, FXERRH_ISDEBUG);
@@ -374,25 +374,25 @@ int main( int argc, char** argv)
 			for(FXuint n=0; n<c->columns(); n++)
 			{
 				begin=FXProcess::getNsCount();
-				FXSQLDBColumnRef header=c->header(n);
-				FXSQLDBColumnRef data=c->data(n);
+				TnFXSQLDBColumnRef header=c->header(n);
+				TnFXSQLDBColumnRef data=c->data(n);
 				end=FXProcess::getNsCount();
 				fxmessage("\nGetting header & data took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 1/((end-begin)/1000000000.0));
 				fxmessage("Column %u,%d is called '%s' SQL type %s size=%d\n    C++ type=", header->column(), header->row(),
-					header->get<const char *>(), FXSQLDB::sql92TypeAsString(data->type()), data->size());
-				FXSQLDB::toCPPType<PrintCPPType>(data->type());
+					header->get<const char *>(), TnFXSQLDB::sql92TypeAsString(data->type()), data->size());
+				TnFXSQLDB::toCPPType<PrintCPPType>(data->type());
 				switch(data->type())
 				{
-				case FXSQLDB::VarChar:
+				case TnFXSQLDB::VarChar:
 					fxmessage(" contents=%s\n", data->get<const char *>());
 					break;
-				case FXSQLDB::BigInt:
+				case TnFXSQLDB::BigInt:
 					fxmessage(FXString(" contents=%1 (0x%2)\n").arg(data->get<FXint>()).arg(data->get<FXint>(), 0, 16).text());
 					break;
-				case FXSQLDB::Timestamp:
+				case TnFXSQLDB::Timestamp:
 					fxmessage(" contents=%s\n", data->get<FXTime>().asString().text());
 					break;
-				case FXSQLDB::BLOB:
+				case TnFXSQLDB::BLOB:
 					{
 						QBuffer b;
 						b.open(IO_ReadWrite);

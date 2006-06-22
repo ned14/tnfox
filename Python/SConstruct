@@ -28,6 +28,11 @@ if not os.path.exists(targetname):
     os.mkdir(targetname)
 targetname+="/TnFOX"
 
+# This must go after all the conf tests as it's DLL only
+if onDarwin:
+    env['LINKFLAGS']+=["-compatibility_version", targetversion,
+                       "-current_version", targetversion
+                      ]
 def getSources():
     filelist=os.listdir("generated")
     idx=0
@@ -35,7 +40,7 @@ def getSources():
         if filelist[idx][-4:]!=".cpp": # or filelist[idx]=="FXGLContext.pypp.cpp":
             del filelist[idx]
         else: idx+=1
-    return ["generated/"+x for x in filelist ] #+["converters.cpp", "FXPython.cxx"]
+    return ["generated/"+x for x in filelist ] +["converters.cpp", "FXPython.cxx"]
 def getIncludes():
     filelist=os.listdir("generated")
     idx=0
@@ -84,9 +89,13 @@ if onWindows:
 
 #geninterfaces=env.Command("dont exist", None, ternary(onWindows, "", "python ")+"GenInterfaces.py")
 objects=[]
+if 0: #usePrecompiledHeaders:
+    env['CPPFLAGS']+=[ '/Zm1000' ]
+    env['PCH'] = env.PCH('common/common.cxx')[0]
+    env['PCHSTOP'] = '../common.h'
 #objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS=env['CPPFLAGS']+['-Os', '-D_DEBUG'])]
-objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Z7'])]
-objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Z7'])]
+#objects+=[env.SharedObject(builddir+"/"+"FXPython", "FXPython.cxx", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Z7'])]
+#objects+=[env.SharedObject(builddir+"/"+"converters", "converters.cpp", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Z7'])]
 #objects+=[env.SharedObject(builddir+"/"+"FXGLContext.pypp", "generated/FXGLContext.pypp.cpp", CPPFLAGS=env['CPPFLAGS']+['/Od', '/Zi'])]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), x) for x in getSources()]
 #for object in objects:

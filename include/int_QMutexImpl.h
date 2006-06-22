@@ -73,15 +73,19 @@ extern "C"
   #pragma intrinsic (_InterlockedDecrement)
  #endif
 #else
- // On GCC, if it's x86 or x64, use our mutex implementation with inline assembler
- #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
-  #define USE_X86 FX_X86PROCESSOR
+ // On GCC, always use our mutex implementation
+ #if defined(__GNUC__)
   #define USE_OURMUTEX
+  #if (defined(__i386__) || defined(__x86_64__))
+   #define USE_X86 FX_X86PROCESSOR					// On x86 or x64, use inline assembler
+  #else
+   #include <bits/atomicity.h>
+  #endif
  #endif
 #endif
 
 #ifndef USE_OURMUTEX
-#error Unsupported architecture, please add atomic int support to QThread.cxx
+ #error Unsupported compiler, please add atomic int support to QThread.cxx
 #endif
 
 namespace FX {
@@ -93,11 +97,14 @@ QMUTEX_INLINEI int FXAtomicInt::get() const throw()
 QMUTEX_INLINEP FXAtomicInt::operator int() const throw() { return get(); }
 QMUTEX_INLINEI int FXAtomicInt::set(int i) throw()
 {	// value=i; is write-buffered out and we need it immediate
-#ifdef USE_X86
 #ifdef __GNUC__
 	int d;
-
+#ifdef USE_X86
 	__asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (d) : "r" (&value), "0" (i));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	value=i;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 #elif defined(USE_WINAPI)
 	_InterlockedExchange((PLONG) &value, i);
@@ -107,9 +114,9 @@ QMUTEX_INLINEI int FXAtomicInt::set(int i) throw()
 QMUTEX_INLINEP int FXAtomicInt::operator=(int i) throw() { return set(i); }
 QMUTEX_INLINEI int FXAtomicInt::incp() throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/xaddl %2,(%1)"
@@ -117,6 +124,10 @@ QMUTEX_INLINEI int FXAtomicInt::incp() throw()
 		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (1));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=value++;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -126,9 +137,9 @@ QMUTEX_INLINEI int FXAtomicInt::incp() throw()
 QMUTEX_INLINEP int FXAtomicInt::operator++(int) throw() { return incp(); }
 QMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/xaddl %2,(%1)\n\tinc %%eax"
@@ -136,6 +147,10 @@ QMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 		"xaddl %2,(%1)\n\tinc %%eax"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (1));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=++value;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -145,9 +160,9 @@ QMUTEX_INLINEI int FXAtomicInt::pinc() throw()
 QMUTEX_INLINEP int FXAtomicInt::operator++() throw() { return pinc(); }
 QMUTEX_INLINEI int FXAtomicInt::finc() throw()
 {	// Returns -1, 0, +1 on value AFTER inc
-#if defined(USE_X86)
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#if defined(USE_X86)
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/incl (%1)\n"
@@ -160,6 +175,8 @@ QMUTEX_INLINEI int FXAtomicInt::finc() throw()
 		"2:\tmov $1, %%eax\n"
 		"3:\n"
 		: "=a" (myret) : "r" (&value));
+#else
+	return pinc();
 #endif
 	return myret;
 #else
@@ -169,9 +186,9 @@ QMUTEX_INLINEI int FXAtomicInt::finc() throw()
 QMUTEX_INLINEP int FXAtomicInt::fastinc() throw() { return finc(); }
 QMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/xaddl %2,(%1)"
@@ -179,6 +196,10 @@ QMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (i));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=(value+=i);
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret+i;
 #elif defined(USE_WINAPI)
@@ -188,9 +209,9 @@ QMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 QMUTEX_INLINEP int FXAtomicInt::operator+=(int i) throw() { return inc(i); }
 QMUTEX_INLINEI int FXAtomicInt::decp() throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/xaddl %2,(%1)"
@@ -198,6 +219,10 @@ QMUTEX_INLINEI int FXAtomicInt::decp() throw()
 		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (-1));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=value--;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -207,9 +232,9 @@ QMUTEX_INLINEI int FXAtomicInt::decp() throw()
 QMUTEX_INLINEP int FXAtomicInt::operator--(int) throw() { return decp(); }
 QMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/xaddl %2,(%1)\n\tdec %%eax"
@@ -217,6 +242,10 @@ QMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 		"xaddl %2,(%1)\n\tdec %%eax"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (-1));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=--value;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -226,9 +255,9 @@ QMUTEX_INLINEI int FXAtomicInt::pdec() throw()
 QMUTEX_INLINEP int FXAtomicInt::operator--() throw() { return pdec(); }
 QMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 {	// Returns -1, 0, +1 on value AFTER inc
-#if defined(USE_X86)
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#if defined(USE_X86)
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/decl (%1)\n"
@@ -241,6 +270,8 @@ QMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 		"2:\tmov $1, %%eax\n"
 		"3:\n"
 		: "=a" (myret) : "r" (&value));
+#else
+	return pdec();
 #endif
 	return myret;
 #else
@@ -250,10 +281,10 @@ QMUTEX_INLINEI int FXAtomicInt::fdec() throw()
 QMUTEX_INLINEP int FXAtomicInt::fastdec() throw() { return fdec(); }
 QMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 {
-#ifdef USE_X86
+#ifdef __GNUC__
 	int myret;
 	i=-i;
-#ifdef __GNUC__
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"lock/xaddl %2,(%1)"
@@ -261,6 +292,10 @@ QMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 		"xaddl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "a" (i));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=(value-=i);
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret+i;
 #elif defined(USE_WINAPI)
@@ -270,10 +305,15 @@ QMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 QMUTEX_INLINEP int FXAtomicInt::operator-=(int i) throw() { return dec(i); }
 QMUTEX_INLINEI int FXAtomicInt::swapI(int i) throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (myret) : "r" (&value), "0" (i));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=value;
+	value=i;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret;
 #elif defined(USE_WINAPI)
@@ -283,9 +323,9 @@ QMUTEX_INLINEI int FXAtomicInt::swapI(int i) throw()
 QMUTEX_INLINEP int FXAtomicInt::swap(int i) throw() { return swapI(i); }
 QMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 {
-#ifdef USE_X86
-	int myret;
 #ifdef __GNUC__
+	int myret;
+#ifdef USE_X86
 	__asm__ __volatile__ (
 #ifdef FX_SMPBUILD
 		"pause\n\tlock/cmpxchgl %2,(%1)"
@@ -293,6 +333,12 @@ QMUTEX_INLINEI int FXAtomicInt::cmpXI(int compare, int newval) throw()
 		"pause\n\tcmpxchgl %2,(%1)"
 #endif
 		: "=a" (myret) : "r" (&value), "r" (newval), "a" (compare));
+#else
+	while(__gnu_cxx::__exchange_and_add((_Atomic_word *) &lock, 1)) __gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
+	myret=value;
+	if(value==compare)
+		value=newval;
+	__gnu_cxx::__atomic_add((_Atomic_word *) &lock, -1);
 #endif
 	return myret;
 #elif defined(USE_WINAPI)

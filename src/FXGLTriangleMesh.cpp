@@ -23,6 +23,8 @@
 *********************************************************************************
 * $Id: FXGLTriangleMesh.cpp,v 1.30 2006/01/22 17:58:28 fox Exp $                *
 ********************************************************************************/
+#ifndef FX_DISABLEGL
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -278,3 +280,5 @@ FXGLTriangleMesh::~FXGLTriangleMesh(){
   }
 
 }
+
+#endif

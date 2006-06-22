@@ -23,6 +23,8 @@
 *********************************************************************************
 * $Id: FXReplaceDialog.cpp,v 1.49 2006/03/01 02:13:21 fox Exp $                 *
 ********************************************************************************/
+#ifndef FX_DISABLEFINDREPLACEDIALOGS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"

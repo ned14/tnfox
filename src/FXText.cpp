@@ -4151,7 +4151,7 @@ long FXText::onCmdSearchNext(FXObject*,FXSelector sel,void*){
 
 // Search text
 long FXText::onCmdSearch(FXObject*,FXSelector,void*){
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFINDREPLACEDIALOGS
   FXGIFIcon icon(getApp(),searchicon);
   FXSearchDialog searchdialog(this,"Search",&icon);
   FXint beg[10];
@@ -4183,7 +4183,7 @@ long FXText::onCmdSearch(FXObject*,FXSelector,void*){
 
 // Replace text; we assume that findText has called squeezegap()!
 long FXText::onCmdReplace(FXObject*,FXSelector,void*){
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFINDREPLACEDIALOGS
   FXGIFIcon icon(getApp(),searchicon);
   FXReplaceDialog replacedialog(this,tr("Replace"),&icon);
   FXint beg[10],end[10],fm,to,len,pos;

@@ -18,11 +18,12 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
+#ifndef FX_DISABLESQL
 
-#ifndef FXSQLDB_IPC_H
-#define FXSQLDB_IPC_H
+#ifndef TnFXSQLDB_IPC_H
+#define TnFXSQLDB_IPC_H
 
-#include "FXSQLDB.h"
+#include "TnFXSQLDB.h"
 #include "FXIPC.h"
 #include "QSSLDevice.h"
 
@@ -31,20 +32,20 @@
 
 namespace FX {
 
-/*! \file FXSQLDB_ipc.h
+/*! \file TnFXSQLDB_ipc.h
 \brief Defines classes used to access databases over a FX::FXIPCChannel
 */
 
 #if !defined(__GCCXML__)
-namespace FXSQLDBIPCMsgsI
+namespace TnFXSQLDBIPCMsgsI
 {	/* We have a slight problem in that the chunk code which is normally static
 	is user-definable here. Unfortunately this means we must take a chunk parameter
 	in every constructor :( */
 	struct ColType
 	{
-		FXSQLDB::SQLDataType datatype;
+		TnFXSQLDB::SQLDataType datatype;
 		FXint size;
-		ColType(FXSQLDB::SQLDataType _datatype=FXSQLDB::Null, FXint _size=0) : datatype(_datatype), size(_size) { }
+		ColType(TnFXSQLDB::SQLDataType _datatype=TnFXSQLDB::Null, FXint _size=0) : datatype(_datatype), size(_size) { }
 		friend FXStream &operator<<(FXStream &s, const ColType &i)
 		{
 			s << (FXuchar) i.datatype << i.size;
@@ -54,13 +55,13 @@ namespace FXSQLDBIPCMsgsI
 		{
 			FXuchar v;
 			s >> v >> i.size;
-			i.datatype=(FXSQLDB::SQLDataType) v;
+			i.datatype=(TnFXSQLDB::SQLDataType) v;
 			return s;
 		}
 	};
 	struct DataContainer
 	{	// Holds a parameter being bound or a column being fetched
-		FXuchar type;		// A FXSQLDB::SQLDataType
+		FXuchar type;		// A TnFXSQLDB::SQLDataType
 		struct Data
 		{
 			FXuint length;
@@ -78,12 +79,12 @@ namespace FXSQLDBIPCMsgsI
 			};
 		} data;
 		bool mydata;
-		DataContainer(FXSQLDB::SQLDataType datatype=FXSQLDB::Null) : type((FXuchar) datatype), mydata(false) { }
+		DataContainer(TnFXSQLDB::SQLDataType datatype=TnFXSQLDB::Null) : type((FXuchar) datatype), mydata(false) { }
 		void copy(const DataContainer &o)
 		{
 			type=o.type;
 			data=o.data;
-			if(FXSQLDB::BLOB==type || (type>=FXSQLDB::VarChar && type<=FXSQLDB::WChar))
+			if(TnFXSQLDB::BLOB==type || (type>=TnFXSQLDB::VarChar && type<=TnFXSQLDB::WChar))
 			{
 				data.blob=malloc(data.length);
 				mydata=true;
@@ -126,45 +127,45 @@ public:
 			s << i.type << i.data.length;
 			switch(i.type)
 			{
-			case FXSQLDB::Null:
+			case TnFXSQLDB::Null:
 				break;
-			case FXSQLDB::VarChar:
-			case FXSQLDB::Char:
-			case FXSQLDB::WVarChar:
-			case FXSQLDB::WChar:
+			case TnFXSQLDB::VarChar:
+			case TnFXSQLDB::Char:
+			case TnFXSQLDB::WVarChar:
+			case TnFXSQLDB::WChar:
 				s.writeRawBytes(i.data.text, i.data.length+1);
 				break;
 
-			case FXSQLDB::TinyInt:
+			case TnFXSQLDB::TinyInt:
 				s << i.data.tinyint;
 				break;
-			case FXSQLDB::SmallInt:
+			case TnFXSQLDB::SmallInt:
 				s << i.data.smallint;
 				break;
-			case FXSQLDB::Integer:
+			case TnFXSQLDB::Integer:
 				s << i.data.integer;
 				break;
-			case FXSQLDB::BigInt:
-			case FXSQLDB::Decimal:
-			case FXSQLDB::Numeric:
+			case TnFXSQLDB::BigInt:
+			case TnFXSQLDB::Decimal:
+			case TnFXSQLDB::Numeric:
 				s << i.data.bigint;
 				break;
 
-			case FXSQLDB::Real:
+			case TnFXSQLDB::Real:
 				s << i.data.real;
 				break;
-			case FXSQLDB::Double:
-			case FXSQLDB::Float:
+			case TnFXSQLDB::Double:
+			case TnFXSQLDB::Float:
 				s << i.data.double_;
 				break;
 
-			case FXSQLDB::Timestamp:
-			case FXSQLDB::Date:
-			case FXSQLDB::Time:
+			case TnFXSQLDB::Timestamp:
+			case TnFXSQLDB::Date:
+			case TnFXSQLDB::Time:
 				s << *(FXTime *) i.data.timestamp;
 				break;
 
-			case FXSQLDB::BLOB:
+			case TnFXSQLDB::BLOB:
 				{
 					s.writeRawBytes((const char *) i.data.blob, i.data.length);
 					break;
@@ -177,48 +178,48 @@ public:
 			s >> i.type >> i.data.length;
 			switch(i.type)
 			{
-			case FXSQLDB::Null:
+			case TnFXSQLDB::Null:
 				break;
-			case FXSQLDB::VarChar:
-			case FXSQLDB::Char:
-			case FXSQLDB::WVarChar:
-			case FXSQLDB::WChar:
+			case TnFXSQLDB::VarChar:
+			case TnFXSQLDB::Char:
+			case TnFXSQLDB::WVarChar:
+			case TnFXSQLDB::WChar:
 				{
 					FXERRHM(i.data.text=(FXchar *) malloc(i.data.length+1));
 					i.mydata=true;
 					s.readRawBytes(i.data.text, i.data.length+1);
 					break;
 				}
-			case FXSQLDB::TinyInt:
+			case TnFXSQLDB::TinyInt:
 				s >> i.data.tinyint;
 				break;
-			case FXSQLDB::SmallInt:
+			case TnFXSQLDB::SmallInt:
 				s >> i.data.smallint;
 				break;
-			case FXSQLDB::Integer:
+			case TnFXSQLDB::Integer:
 				s >> i.data.integer;
 				break;
-			case FXSQLDB::BigInt:
-			case FXSQLDB::Decimal:
-			case FXSQLDB::Numeric:
+			case TnFXSQLDB::BigInt:
+			case TnFXSQLDB::Decimal:
+			case TnFXSQLDB::Numeric:
 				s >> i.data.bigint;
 				break;
 
-			case FXSQLDB::Real:
+			case TnFXSQLDB::Real:
 				s >> i.data.real;
 				break;
-			case FXSQLDB::Double:
-			case FXSQLDB::Float:
+			case TnFXSQLDB::Double:
+			case TnFXSQLDB::Float:
 				s >> i.data.double_;
 				break;
 
-			case FXSQLDB::Timestamp:
-			case FXSQLDB::Date:
-			case FXSQLDB::Time:
+			case TnFXSQLDB::Timestamp:
+			case TnFXSQLDB::Date:
+			case TnFXSQLDB::Time:
 				s >> *(FXTime *) i.data.timestamp;
 				break;
 
-			case FXSQLDB::BLOB:
+			case TnFXSQLDB::BLOB:
 				{
 					FXERRHM(i.data.blob=malloc(i.data.length));
 					i.mydata=true;
@@ -233,7 +234,7 @@ public:
 	{	// Holds a column's worth of data
 		FXuint flags;
 		DataContainer data;
-		ColumnData(FXuint _flags=0, FXSQLDB::SQLDataType datatype=FXSQLDB::Null)
+		ColumnData(FXuint _flags=0, TnFXSQLDB::SQLDataType datatype=TnFXSQLDB::Null)
 			: flags(_flags), data(datatype) { }
 		void copy(const ColumnData &o)
 		{
@@ -373,7 +374,7 @@ public:
 		FXint paridx;
 		DataContainer par;
 		BindParameter() : FXIPCMsg(0), stmth(0), paridx(0) { }
-		BindParameter(FXuint _stmth, FXint _paridx, FXSQLDB::SQLDataType datatype)
+		BindParameter(FXuint _stmth, FXint _paridx, TnFXSQLDB::SQLDataType datatype)
 			: FXIPCMsg(id::code), stmth(_stmth), paridx(_paridx), par(datatype) { }
 		void   endianise(FXStream &s) const { s << stmth << paridx << par; }
 		void deendianise(FXStream &s)       { s >> stmth >> paridx >> par; }
@@ -524,126 +525,126 @@ public:
 	};
 }
 
-/*! \struct FXSQLDBIPCMsgs
-\brief Defines the IPC messages used to implement FX::FXSQLDBServer and FX::FXSQLDBDriver_ipc
+/*! \struct TnFXSQLDBIPCMsgs
+\brief Defines the IPC messages used to implement FX::TnFXSQLDBServer and FX::TnFXSQLDBDriver_ipc
 
 Normally these would live inside a namespace, but as the message chunk you wish to use may
 vary, I've made it parameterised. You may wish to use typedefing to make for easier
 accessing eg;
 \code
-typedef FXSQLDBIPCMsgs<4000> MySQLDBIPCMsgs;
+typedef TnFXSQLDBIPCMsgs<4000> MySQLDBIPCMsgs;
 \endcode
 */
-template<unsigned int chunkno> struct FXSQLDBIPCMsgs
+template<unsigned int chunkno> struct TnFXSQLDBIPCMsgs
 {
 	typedef FXIPCMsgChunkCodeAlloc<chunkno, true> ChunkBegin;
 
-	struct RequestKey : public FXSQLDBIPCMsgsI::RequestKey
+	struct RequestKey : public TnFXSQLDBIPCMsgsI::RequestKey
 	{
 		typedef FXIPCMsgChunkCodeAlloc<ChunkBegin::code, true> id;
 		typedef FXIPCMsgRegister<id, RequestKey> regtype;
 	};
-	struct RequestKeyAck : public FXSQLDBIPCMsgsI::RequestKeyAck
+	struct RequestKeyAck : public TnFXSQLDBIPCMsgsI::RequestKeyAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<ChunkBegin::code, false> id;
 		typedef FXIPCMsgRegister<id, RequestKeyAck> regtype;
 	};
-	struct Open : public FXSQLDBIPCMsgsI::Open
+	struct Open : public TnFXSQLDBIPCMsgsI::Open
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestKey::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, Open> regtype;
 	};
-	struct OpenAck : public FXSQLDBIPCMsgsI::OpenAck
+	struct OpenAck : public TnFXSQLDBIPCMsgsI::OpenAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestKey::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, OpenAck> regtype;
 	};
-	struct Close : public FXSQLDBIPCMsgsI::Close
+	struct Close : public TnFXSQLDBIPCMsgsI::Close
 	{
 		typedef FXIPCMsgChunkCodeAlloc<Open::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, Close> regtype;
 	};
-	struct CloseAck : public FXSQLDBIPCMsgsI::CloseAck
+	struct CloseAck : public TnFXSQLDBIPCMsgsI::CloseAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<Open::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, CloseAck> regtype;
 	};
-	struct PrepareStatement : public FXSQLDBIPCMsgsI::PrepareStatement
+	struct PrepareStatement : public TnFXSQLDBIPCMsgsI::PrepareStatement
 	{
 		typedef FXIPCMsgChunkCodeAlloc<Close::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, PrepareStatement> regtype;
 	};
-	struct PrepareStatementAck : public FXSQLDBIPCMsgsI::PrepareStatementAck
+	struct PrepareStatementAck : public TnFXSQLDBIPCMsgsI::PrepareStatementAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<Close::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, PrepareStatementAck> regtype;
 	};
-	struct UnprepareStatement : public FXSQLDBIPCMsgsI::UnprepareStatement
+	struct UnprepareStatement : public TnFXSQLDBIPCMsgsI::UnprepareStatement
 	{
 		typedef FXIPCMsgChunkCodeAlloc<PrepareStatement::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, UnprepareStatement> regtype;
 	};
-	struct BindParameter : public FXSQLDBIPCMsgsI::BindParameter
+	struct BindParameter : public TnFXSQLDBIPCMsgsI::BindParameter
 	{
 		typedef FXIPCMsgChunkCodeAlloc<UnprepareStatement::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, BindParameter> regtype;
 	};
-	struct BindParameterAck : public FXSQLDBIPCMsgsI::BindParameterAck
+	struct BindParameterAck : public TnFXSQLDBIPCMsgsI::BindParameterAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<UnprepareStatement::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, BindParameterAck> regtype;
 	};
-	struct Execute : public FXSQLDBIPCMsgsI::Execute
+	struct Execute : public TnFXSQLDBIPCMsgsI::Execute
 	{
 		typedef FXIPCMsgChunkCodeAlloc<BindParameter::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, Execute> regtype;
 	};
-	struct ExecuteAck : public FXSQLDBIPCMsgsI::ExecuteAck
+	struct ExecuteAck : public TnFXSQLDBIPCMsgsI::ExecuteAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<BindParameter::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, ExecuteAck> regtype;
 	};
-	struct CloseCursor : public FXSQLDBIPCMsgsI::CloseCursor
+	struct CloseCursor : public TnFXSQLDBIPCMsgsI::CloseCursor
 	{
 		typedef FXIPCMsgChunkCodeAlloc<Execute::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, CloseCursor> regtype;
 	};
-	struct RequestRows : public FXSQLDBIPCMsgsI::RequestRows
+	struct RequestRows : public TnFXSQLDBIPCMsgsI::RequestRows
 	{
 		typedef FXIPCMsgChunkCodeAlloc<CloseCursor::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, RequestRows> regtype;
 	};
-	struct RequestRowsAck : public FXSQLDBIPCMsgsI::RequestRowsAck
+	struct RequestRowsAck : public TnFXSQLDBIPCMsgsI::RequestRowsAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<CloseCursor::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, RequestRowsAck> regtype;
 	};
-	struct RequestColTypes : public FXSQLDBIPCMsgsI::RequestColTypes
+	struct RequestColTypes : public TnFXSQLDBIPCMsgsI::RequestColTypes
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestRows::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, RequestColTypes> regtype;
 	};
-	struct RequestColTypesAck : public FXSQLDBIPCMsgsI::RequestColTypesAck
+	struct RequestColTypesAck : public TnFXSQLDBIPCMsgsI::RequestColTypesAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestRows::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, RequestColTypesAck> regtype;
 	};
-	struct RequestColHeaders : public FXSQLDBIPCMsgsI::RequestColHeaders
+	struct RequestColHeaders : public TnFXSQLDBIPCMsgsI::RequestColHeaders
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestColTypes::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, RequestColHeaders> regtype;
 	};
-	struct RequestColHeadersAck : public FXSQLDBIPCMsgsI::RequestColHeadersAck
+	struct RequestColHeadersAck : public TnFXSQLDBIPCMsgsI::RequestColHeadersAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestColTypes::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, RequestColHeadersAck> regtype;
 	};
-	struct CopyCursor : public FXSQLDBIPCMsgsI::CopyCursor
+	struct CopyCursor : public TnFXSQLDBIPCMsgsI::CopyCursor
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestColHeaders::id::nextcode, true> id;
 		typedef FXIPCMsgRegister<id, CopyCursor> regtype;
 	};
-	struct CopyCursorAck : public FXSQLDBIPCMsgsI::CopyCursorAck
+	struct CopyCursorAck : public TnFXSQLDBIPCMsgsI::CopyCursorAck
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestColHeaders::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, CopyCursorAck> regtype;
@@ -682,14 +683,14 @@ template<unsigned int chunkno> struct FXSQLDBIPCMsgs
 #pragma warning(disable : 4275) // non dll interface use as base
 #endif
 
-/*! \class FXSQLDB_ipc
+/*! \class TnFXSQLDB_ipc
 \ingroup sqldb
 \brief A SQL database driver for a FX::FXIPCChannel
 
-This driver accesses a remote FX::FXSQLDBDriver instantiation over a FX::FXIPCChannel.
-To make the remote FX::FXSQLDBDriver instantiation available on the server end, you
-must create a FX::FXSQLDBServer and populate both your client and server ends of
-FX::FXIPCChannel with a FX::FXSQLDBIPCMsgs<>::ChunkTypeList, setting the message
+This driver accesses a remote FX::TnFXSQLDBDriver instantiation over a FX::FXIPCChannel.
+To make the remote FX::TnFXSQLDBDriver instantiation available on the server end, you
+must create a FX::TnFXSQLDBServer and populate both your client and server ends of
+FX::FXIPCChannel with a FX::TnFXSQLDBIPCMsgs<>::ChunkTypeList, setting the message
 chunk on both to the same as the chunk typelist.
 
 Note that if you are opening a password protected database, the password is sent
@@ -697,7 +698,7 @@ encrypted using RSA asymmetric encryption. This adds extra time to opening the
 database and it is always a synchronous operation.
 
 The big feature of this driver is that it can work asynchronously ie; the local
-end can do things while concurrently the FX::FXSQLDBDriver performs the
+end can do things while concurrently the FX::TnFXSQLDBDriver performs the
 operation. The big advantage of this is speed - high-latency connections have
 less effect on performance, but the big disadvantage of this is that errors
 get thrown by calls after the one which caused the exception. This means that
@@ -714,7 +715,7 @@ records you may wish to increase or reduce this amount, especially given that
 FX::FXIPCChannel imposes a maximum message size which you may exceed otherwise.
 Note that prefetched records are held per-cursor, so if you're likely to move
 backwards it's more efficient to copy the cursor at the point you are at and use
-it later. If you disable prefetching, FX::FXSQLDBCursor::next() works synchronously
+it later. If you disable prefetching, FX::TnFXSQLDBCursor::next() works synchronously
 (which you may need if you need the absolute newest records).
 
 Note that an execute() or immediate() has a faster code path than a prepare() as
@@ -723,12 +724,12 @@ it can skip the possibility of binding parameters and move immediately to execut
 If you want to truly maximise your speed, enable asynchronous mode and observe the
 following:
 \li If you use prepared statements, leave as much time as possible between
-preparing a statement and binding the first parameter to it. FXSQLDB_ipc must wait
+preparing a statement and binding the first parameter to it. TnFXSQLDB_ipc must wait
 to bind if the statement has not yet been prepared.
 \li Similarly, leave as much time as possible between getting your cursor ref
 and using it. Note that some values from the cursor ref may be initially invalid
 (eg; no of columns) until the call has been actually processed. Calling any of
-the virtual methods of FX::FXSQLDBCursor will block until this time.
+the virtual methods of FX::TnFXSQLDBCursor will block until this time.
 \li The cursor implementation is only optimised for moving forwards ie; prefetching
 is always done in a forwards direction.
 \li header() and type() are not prefetched and must be always executed synchronously.
@@ -736,15 +737,15 @@ However once executed, they are known for the entire dataset.
 \li If you are storing data, it is a very good idea to execute synchronise()
 after all the INSERT's or else data could get lost
 
-\sa FX::FXSQLDB, FX::FXSQLDBServer
+\sa FX::TnFXSQLDB, FX::TnFXSQLDBServer
 */
-struct FXSQLDB_ipcPrivate;
-class FXAPI FXSQLDB_ipc : public FXSQLDB, public FXIPCChannelIndirector
+struct TnFXSQLDB_ipcPrivate;
+class FXAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndirector
 {
-	friend struct FXSQLDB_ipcPrivate;
-	FXSQLDB_ipcPrivate *p;
-	FXSQLDB_ipc(const FXSQLDB_ipc &);
-	FXSQLDB_ipc &operator=(const FXSQLDB_ipc &);
+	friend struct TnFXSQLDB_ipcPrivate;
+	TnFXSQLDB_ipcPrivate *p;
+	TnFXSQLDB_ipc(const TnFXSQLDB_ipc &);
+	TnFXSQLDB_ipc &operator=(const TnFXSQLDB_ipc &);
 	typedef Generic::Functor<Generic::TL::create<bool, FXIPCMsg *, FXIPCMsg *>::value> AckHandler;
 	typedef void (*delMsgSpec)(FXIPCMsg *m);
 	inline void FXDLLLOCAL addAsyncMsg(FXIPCMsg *ia, FXIPCMsg *i, void *ref, void (*refdel)(void *), AckHandler handler, delMsgSpec iadel, delMsgSpec idel);
@@ -767,8 +768,8 @@ class FXAPI FXSQLDB_ipc : public FXSQLDB, public FXIPCChannelIndirector
 public:
 	static const FXString MyName;
 	//! Instantiates a driver accessing \em dbspec of the form &lt;driver&gt;:&lt;dbname&gt;
-	FXSQLDB_ipc(const FXString &dbspec, const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
-	~FXSQLDB_ipc();
+	TnFXSQLDB_ipc(const FXString &dbspec, const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
+	~TnFXSQLDB_ipc();
 
 	using FXIPCChannelIndirector::channel;
 	using FXIPCChannelIndirector::msgChunk;
@@ -778,45 +779,45 @@ public:
 	//! Returns if the connection is being operated asynchronously
 	bool isAsynchronous() const throw();
 	//! Sets if the connection is being operated asynchronously
-	FXSQLDB_ipc &setIsAsynchronous(bool v=true) throw();
+	TnFXSQLDB_ipc &setIsAsynchronous(bool v=true) throw();
 	//! Returns how much prefetching shall be performed
 	void prefetching(FXuint &no, FXuint &askForMore) const throw();
 	//! Sets how much prefetching shall be performed (=0 for none)
-	FXSQLDB_ipc &setPrefetching(FXuint no, FXuint askForMore) throw();
+	TnFXSQLDB_ipc &setPrefetching(FXuint no, FXuint askForMore) throw();
 
 	virtual const FXString &versionInfo() const;
 
 	virtual void open(const FXString &password=FXString::nullStr());
 	virtual void close();
-	virtual FXSQLDBStatementRef prepare(const FXString &text);
+	virtual TnFXSQLDBStatementRef prepare(const FXString &text);
 
-	virtual FXSQLDBCursorRef execute(const FXString &text, FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0);
+	virtual TnFXSQLDBCursorRef execute(const FXString &text, FXuint flags=TnFXSQLDBCursor::IsDynamic|TnFXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0);
 	virtual void immediate(const FXString &text);
 
 	virtual void synchronise();
 };
 
-/*! \class FXSQLDBServer
+/*! \class TnFXSQLDBServer
 \brief Serves a database over an IPC channel
 
 The implementation of this class is trickier than it might be due to needing
 to be compatible with Tn's capability infrastructure, but the bonus is that
 it makes it very flexible.
 
-By default, FXSQLDBServer refuses to serve everything FX::FXSQLDB_ipc requests
+By default, TnFXSQLDBServer refuses to serve everything FX::TnFXSQLDB_ipc requests
 for security. You must add databases which can be served using addDatabase()
 which accepts patterns. If the pattern matches, the database is served.
 */
-struct FXSQLDBServerPrivate;
-class FXAPI FXSQLDBServer : public FXIPCChannelIndirector
+struct TnFXSQLDBServerPrivate;
+class FXAPI TnFXSQLDBServer : public FXIPCChannelIndirector
 {
-	FXSQLDBServerPrivate *p;
-	FXSQLDBServer(const FXSQLDBServer &);
-	FXSQLDBServer &operator=(const FXSQLDBServer &);
+	TnFXSQLDBServerPrivate *p;
+	TnFXSQLDBServer(const TnFXSQLDBServer &);
+	TnFXSQLDBServer &operator=(const TnFXSQLDBServer &);
 public:
 	/*! Instantiates a server of databases */
-	FXSQLDBServer();
-	~FXSQLDBServer();
+	TnFXSQLDBServer();
+	~TnFXSQLDBServer();
 
 	using FXIPCChannelIndirector::channel;
 	using FXIPCChannelIndirector::msgChunk;
@@ -826,7 +827,7 @@ public:
 	/*! Adds a database which is allowed to be served. You can use wildcards
 	in the driver name, database name and user according to fxfilematch() -
 	see FX::QDir for more. A null host and port means match anything. */
-	FXSQLDBServer &addDatabase(const FXString &driverName, const FXString &dbname, const FXString &user="*", const QHostAddress &host=QHostAddress(), FXushort port=0);
+	TnFXSQLDBServer &addDatabase(const FXString &driverName, const FXString &dbname, const FXString &user="*", const QHostAddress &host=QHostAddress(), FXushort port=0);
 	//! Removes a previously added database
 	bool removeDatabase(const FXString &driverName, const FXString &dbname, const FXString &user="*", const QHostAddress &host=QHostAddress(), FXushort port=0);
 
@@ -842,4 +843,5 @@ public:
 
 }
 
+#endif
 #endif

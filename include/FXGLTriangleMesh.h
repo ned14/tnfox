@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXGLTriangleMesh.h,v 1.15 2006/01/22 17:58:04 fox Exp $                  *
 ********************************************************************************/
+#ifndef FX_DISABLEGL
+
 #ifndef FXGLTRIANGLEMESH_H
 #define FXGLTRIANGLEMESH_H
 
@@ -111,4 +113,5 @@ public:
 
 }
 
+#endif
 #endif

@@ -23,6 +23,8 @@
 *********************************************************************************
 * $Id: FXSearchDialog.h,v 1.23 2006/01/22 17:58:09 fox Exp $                    *
 ********************************************************************************/
+#ifndef FX_DISABLEFINDREPLACEDIALOGS
+
 #ifndef FXSEARCHDIALOG_H
 #define FXSEARCHDIALOG_H
 

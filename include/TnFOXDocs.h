@@ -103,6 +103,7 @@ Porting from FOX to TnFOX
 Generic programming tools provided by TnFOX
 \endlink
 \li \ref debugging
+\li \ref modularbuilding
 
 \li \ref applemacosnotes
 \li \ref windowsnotes
@@ -125,20 +126,12 @@ many compilers don't fully support all the constructs TnFOX uses - hence TnFOX s
 have build system support eg; Intel's). If you don't use those compilers
 on those platforms, expect to do some minor porting work (noting that I will never support using GCC for
 building Windows binaries until it becomes properly compatible with the PE binary format - hence, there is
-no mingw or cygwin support). Furthermore, due to a lack of access to alternatives to x86 and x64, only those two
-architectures are supported (though it is very, very easy to add others - simply fix the assembler in
-FX::FXAtomicInt - and I'll gladly add alternative architecture support).
+no mingw or cygwin support).
 
 \li Also ancillory to the above, TnFOX is not as "lightweight" as FOX - but then TnFOX is a solution
 framework (primarily it's Tn's portability layer) whereas FOX still remains mostly a GUI toolkit. All
-the metaprogramming adds a fair bit of extra bulk to generated binaries though far more so on GCC than
-MSVC as GCC's optimiser is nowhere near as good with a lot of templates (though it's made leaps & bounds recently).
-TnFOX is designed to be used as a shared library, accepting a large shareable binary reused by many
-processes rather than portions of it being statically bound to each. If the extra bloat in binary size
-is not acceptable to you, don't use TnFOX (note that the bloat has no effect on speed with a good
-optimiser - TnFOX pounds a lot of competitors into dust on the benchmarks).
-\note However, all of this said, as of v0.86 there is an option to build just the extensions with no
-GUI support at all! Furthermore, see FAQ entry \ref LotsOfBloat
+the metaprogramming adds a fair bit of extra bulk to generated binaries. As of v0.87, TnFOX can be built
+with optional components left out - see \ref modularbuilding
 
 \section whouse Who should use TnFOX?
 \li Heavy multithreaded applications. TnFOX's multithreading support is second to none and is heavily
@@ -298,11 +291,11 @@ the page about Inter Process Communication
 SQL Database support
 \endlink
 </b><br>
-FX::FXSQLDB is the primary class for accessing SQL databases but unlike other implementations,
+FX::TnFXSQLDB is the primary class for accessing SQL databases but unlike other implementations,
 it has transparent BLOB support for storing & retrieving arbitrary C++ object instances
 via metaprogramming. It is easy to write your own driver, and prewritten drivers come for
 SQLite3 (of which there is a customised copy built into TnFOX) and using an IPC connection
-to remotely work with another database via FX::FXSQLDBServer.
+to remotely work with another database via FX::TnFXSQLDBServer.
 
 <li><b>Threads can now run their own event loops</b><br>
 Through a small implementational change to FX::FXApp, threads can now run their own
@@ -422,41 +415,6 @@ FreeBSD questions:
 	\li FX::FXGZStream
 
   <li>
-	\subsection BuildingTnDiffs What are the differences when \c BUILDING_TCOMMON is defined?
-
-	When the macro \c BUILDING_TCOMMON is defined, TnFOX turns on certain code and doesn't
-	compile or hides other code. This is because under Tn, quite a lot of stuff is obsolete. In
-	particular, anything to do with files and directories is pointless as these no longer
-	exist under Tn. A whole pile of other stuff become internal linkage only in order to
-	enforce Tn's security model (eg; Tn code has no business knowing anything about
-	sockets). A summary of the changes:
-
-	Enabled:
-	\li FX::FXPrimaryButton gets coloured borders
-
-	Internal linkage:
-	\li FX::FXACL, FX::FXACLEntity, FX::FXACLIterator
-	\li FX::QBlkSocket, FX::QBuffer, FX::QFile, FX::QGZipDevice, FX::QLocalPipe,
-	FX::QMemMap, FX::QPipe, FX::QSSLDevice
-	\li FX::QDir, FX::QFileInfo, FX::FXFSMonitor
-	\li FX::QHostAddress, FX::FXNetwork
-	\li FX::FXRegistry
-
-	Not compiled:
-	\li FX::FXDirBox
-	\li FX::FXDirDialog
-	\li FX::FXDirList
-	\li FX::FXDirSelector
-	\li FX::FXDLL
-	\li FX::FXDriveBox
-	\li FX::FXFileDialog
-	\li FX::FXFileList
-	\li FX::FXFileSelector
-	\li FX::FXPrintDialog
-	\li FX::FXReplaceDialog
-	\li FX::FXSearchDialog
-
-  <li>
 	\subsection BuildingNoGUIDiffs What are the differences in a no-GUI build?
 
 	As of v0.86, a no-GUI build can be set by editing \c config.py and setting the
@@ -465,7 +423,7 @@ FreeBSD questions:
 
 	\li All the FX::QIODevice classes
 	\li All the QTL thunk classes and all classes starting with 'Q'
-	\li All the FX::FXSQLDB classes
+	\li All the FX::TnFXSQLDB classes
 	\li All the stuff in FX::Secure
 	\li FX::FXACL, FX::FXFSMonitor, FX::FXRollback, FX::FXProcess, FX::FXNetwork
 	\li And from FOX, FX::FXDir, FX::QFile, FX::fxfilematch(), FX::FXIO, FX::FXPath,
@@ -640,18 +598,8 @@ are far more maintainable than pyste ones. And the pyste ones were already far m
 than any SWIG based solution.
 
 Current issues with the python bindings which will hopefully get fixed soon:
-\li Most annoyingly, currently BPL doesn't
-support specifying the parameter names when the type of the parameter is
-as yet unregistered. This means you can't use python's named parameter feature eg;
-\code
-foo(x=5, y=7)
-\endcode
-This problem can be fixed if BPL delayed type lookup. If you'd like to
-contribute a patch to Boost.Python, I am sure it would be accepted.
 \li pyplusplus generates wrong code for FX::FXWinShellLink (misinterprets unions).
 Currently the entire class is excluded.
-\li Array access eg; to FX::FXImage::getData() is currently not implemented. We
-are waiting on pyplusplus support for custom per-class body text insertion to fix this.
 
 \section detail How to build the bindings
 
@@ -726,7 +674,7 @@ Most of these are sensible.
 \li Apart from one virtual method in FXApp,
 every virtual thing can be overriden by python code.
 \li All method & function overloads are available.
-\li Default parameters work as expected.
+\li Default parameters work as expected, and you can name your parameters
 \li Complex number support
 \li Provision for simple invocation of python code
 \li Multiple python interpreters, plus multiple threads therein.
@@ -2175,6 +2123,78 @@ Use valgrind instead on Linux.
 
 
 
+/*! \page modularbuilding Modular building of TnFOX
+
+In config.py, there are a series of variables you can set to exclude certain
+portions of TnFOX. Remember you can exclude the entire GUI using \c disableGUI:
+
+\subsection configDisableGL disableGL:
+\li FX::FXGLCanvas
+\li FX::FXGLCone
+\li FX::FXGLContext
+\li FX::FXGLCube
+\li FX::FXGLCylinder
+\li FX::FXGLGroup
+\li FX::FXGLLine
+\li FX::FXGLObject
+\li FX::FXGLPoint
+\li FX::FXGLShape
+\li FX::FXGLSphere
+\li FX::FXGLTriangleMesh
+\li FX::FXGLViewer
+\li FX::FXGLVisual
+
+\subsection configDisableFileDirDialogs disableFileDirDialogs (if False, sets disableMenus to False):
+\li FX::FXDirBox
+\li FX::FXDirDialog
+\li FX::FXDirList
+\li FX::FXDirSelector
+\li FX::FXDriveBox
+\li FX::FXFileDialog
+\li FX::FXFileList
+\li FX::FXFileSelector
+
+\subsection configDisablePrintDialogs disablePrintDialogs:
+\li FX::FXPrintDialog
+
+\subsection configDisableFindReplaceDialogs disableFindReplaceDialogs:
+\li FX::FXReplaceDialog
+\li FX::FXSearchDialog
+
+\subsection configDisableMenus disableMenus:
+\li FX::FXMenuBar
+\li FX::FXMenuCaption
+\li FX::FXMenuCascade
+\li FX::FXMenuCheck
+\li FX::FXMenuCommand
+\li FX::FXMenuRadio
+\li FX::FXMenuSeparator
+\li FX::FXMenuTitle
+\li FX::FXScrollPane
+
+But NOT FX::FXMenuButton nor FX::FXMenuPane
+
+\subsection configDisableMDI disableMDI:
+\li FX::FXMDIChild
+\li FX::FXMDIClient
+\li FX::FXMDIDeleteButton
+\li FX::FXMDIMaximizeButton
+\li FX::FXMDIMenu
+\li FX::FXMDIMinimizeButton
+\li FX::FXMDIRestoreButton
+\li FX::FXMDIWindowButton
+
+\subsection configDisableSQL disableSQL:
+\li FX::TnFXSQLDB
+\li FX::TnFXSQLDB_ipc
+\li FX::TnFXSQLDB_sqlite3
+
+Also the embedded copy of SQLite3 is not compiled in.
+
+*/
+
+
+
 /*! \page applemacosnotes Apple MacOS X specific notes
 
 This covers the rather special Unix variant that is Apple MacOS X. You'll need
@@ -2187,7 +2207,7 @@ also read that.
 \section supported Supported configuration:
 TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
 only. It hasn't been tested on PowerPC architectures, but there is no reason it
-shouldn't work apart from the x86 only assembler in int_QMutexImpl.h.
+shouldn't work now that TnFOX is compatible across all GCC supported architectures.
 
 You MUST set architecture_version=7, x86_SSE=2 and x86_3dnow=0 in config.py as the
 Apple GCC won't output valid code for other architecture configurations.
@@ -2691,8 +2711,8 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXZeroedWait, an event which signals when its count becomes zero
 <li>FX::QThreadPool, a pool of worker threads
 
-<li>FX::FXSQLDB, a generic SQL database accessor
-<li>FX::FXSQLDB_sqlite3, a driver for SQLite3 databases
+<li>FX::TnFXSQLDB, a generic SQL database accessor
+<li>FX::TnFXSQLDB_sqlite3, a driver for SQLite3 databases
 
 <li>FX::QBZip2Device, accesses bzip2 compressed files
 <li>FX::QGZipDevice, accesses zlib compressed files

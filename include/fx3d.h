@@ -26,11 +26,9 @@
 
 // OpenGL includes
 #ifdef WIN32
-#ifndef STRICT
-#define STRICT
-#endif
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+// Avoid hauling in all of windows.h just for these
+#define WINGDIAPI __declspec(dllimport)
+#define APIENTRY __stdcall
 #endif
 #ifdef HAVE_GL_H
 #include <GL/gl.h>

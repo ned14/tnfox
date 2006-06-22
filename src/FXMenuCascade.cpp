@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXMenuCascade.cpp,v 1.55 2006/01/22 17:58:35 fox Exp $                   *
 ********************************************************************************/
+#ifndef FX_DISABLEMENUS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -405,3 +407,5 @@ FXMenuCascade::~FXMenuCascade(){
   }
 
 }
+
+#endif

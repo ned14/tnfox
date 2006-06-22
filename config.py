@@ -25,8 +25,32 @@ GenStaticLib=not (sys.platform=="win32" or sys.platform=="darwin")
 # Set to include FOX compatibility layer
 FOXCompatLayer=False
 
-# Set to disable inclusion of GUI ie; no FXObject, no FXApp etc
+# Set to disable inclusion of GUI ie; no FXObject, no FXApp etc. Disables all of the below.
 disableGUI=False
+
+# Set to disable inclusion of OpenGL support (required by the graphing functionality)
+disableGL=False
+
+# Set to disable inclusion of file and directory dialogs
+disableFileDirDialogs=False
+
+# Set to disable inclusion of print dialogs
+disablePrintDialogs=False
+
+# Set to disable inclusion of find and replace dialogs
+disableFindReplaceDialogs=False
+
+# Set to disable inclusion of menu functionality (required by file & directory dialogs and MDI interface)
+disableMenus=False
+
+# Set to disable the MDI interface
+disableMDI=False
+
+# Set to disable SQL functionality
+disableSQL=False
+
+# Set to disable the graphing functionality
+disableGraphing=False
 
 SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
@@ -37,14 +61,18 @@ SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 ######## Processor architecture ########
 
+# Define for a "generic" build
+#architecture="generic"
+#architecture_version=0
+
 architecture="x86"       # Can be "x86" or "x64"
 # For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
-architecture_version=4           
-x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
-x86_3dnow=0             # =0 (disable), =1 (3dnow)
-#architecture_version=7
-#x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
-#x86_3dnow=1             # =0 (disable), =1 (3dnow)
+#architecture_version=4           
+#x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+#x86_3dnow=0             # =0 (disable), =1 (3dnow)
+architecture_version=7
+x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
+x86_3dnow=1             # =0 (disable), =1 (3dnow)
 
 #architecture="x64"
 # For x64: =0 for AMD64/EM64T

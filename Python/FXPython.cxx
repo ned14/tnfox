@@ -3,7 +3,7 @@
 *                           Python embedding support                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -20,16 +20,12 @@
 ********************************************************************************/
 
 #include "common.h"
-#ifdef _MSC_VER
-#pragma hdrstop
-#endif
+#include <boost/python/suite/indexing/iterator_range.hpp>
+
 #include "FXCodeToPythonCode.h"
-#include "../include/qptrdict.h"
-#include "../include/qptrlist.h"
 #ifndef FX_DISABLEGUI
 #include "../include/FXGLViewer.h"
 #endif
-#include "CArrays.h"
 #include "../include/FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)
 static const char *_fxmemdbg_current_file_ = __FILE__;

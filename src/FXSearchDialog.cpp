@@ -23,6 +23,8 @@
 *********************************************************************************
 * $Id: FXSearchDialog.cpp,v 1.33 2006/01/22 17:58:41 fox Exp $                  *
 ********************************************************************************/
+#ifndef FX_DISABLEFINDREPLACEDIALOGS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"

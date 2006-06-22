@@ -23,6 +23,8 @@
 *********************************************************************************
 * $Id: FXGLShape.cpp,v 1.42 2006/01/22 17:58:28 fox Exp $                       *
 ********************************************************************************/
+#ifndef FX_DISABLEGL
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -567,3 +569,5 @@ void FXGLShape::load(FXStream& store){
   }
 
 }
+
+#endif

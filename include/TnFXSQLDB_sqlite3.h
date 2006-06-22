@@ -18,19 +18,20 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
+#ifndef FX_DISABLESQL
 
-#ifndef FXSQLDB_SQLITE3_H
-#define FXSQLDB_SQLITE3_H
+#ifndef TnFXSQLDB_SQLITE3_H
+#define TnFXSQLDB_SQLITE3_H
 
-#include "FXSQLDB.h"
+#include "TnFXSQLDB.h"
 
 namespace FX {
 
-/*! \file FXSQLDB_sqlite3.h
+/*! \file TnFXSQLDB_sqlite3.h
 \brief Defines classes used to work with SQLite3 databases
 */
 
-/*! \class FXSQLDB_sqlite3
+/*! \class TnFXSQLDB_sqlite3
 \ingroup sqldb
 \brief A SQL database driver for SQLite3
 
@@ -43,7 +44,7 @@ SQLite3 provides the basic functionality of a database, so cursors are
 always dynamic and forward-only. Furthermore, you cannot know how many
 rows are in result set except by iterating through all of them. Lastly,
 you cannot copy cursors except by executing again and iterating to where
-you want (which FX::FXSQLDBCursor::at() will do).
+you want (which FX::TnFXSQLDBCursor::at() will do).
 
 SQLite3 provides a much reduced set of SQL datatypes: namely, \c NULL,
 \c VARCHAR, \c INTEGER, \c DOUBLE and \c BLOB. If you try to bind any
@@ -72,29 +73,29 @@ You shouldn't need it as UTF-8 support (the same as TnFOX) remains.
 
 SQLite3 can read concurrently with other processes, but must modify
 the entire database exclusively. This can make it unsuitable for certain
-kinds of application. If FXSQLDB_sqlite3 is told that the database file
+kinds of application. If TnFXSQLDB_sqlite3 is told that the database file
 is locked, it waits on that file until the lock clears. This implies
 that operations may block for a while. This driver knows to wait on the
 underlying file rather spin, wasting processor time.
 */
-struct FXSQLDB_sqlite3Private;
-class FXAPI FXSQLDB_sqlite3 : public FXSQLDB
+struct TnFXSQLDB_sqlite3Private;
+class FXAPI TnFXSQLDB_sqlite3 : public TnFXSQLDB
 {
-	FXSQLDB_sqlite3Private *p;
-	FXSQLDB_sqlite3(const FXSQLDB_sqlite3 &);
-	FXSQLDB_sqlite3 &operator=(const FXSQLDB_sqlite3 &);
+	TnFXSQLDB_sqlite3Private *p;
+	TnFXSQLDB_sqlite3(const TnFXSQLDB_sqlite3 &);
+	TnFXSQLDB_sqlite3 &operator=(const TnFXSQLDB_sqlite3 &);
 	inline FXDLLLOCAL bool fxerrhsqlite3(int retcode, const char *file, int lineno);
 public:
 	static const FXString MyName;
 	//! Instantiates a driver accessing \em dbpath
-	FXSQLDB_sqlite3(const FXString &dbpath, const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
-	~FXSQLDB_sqlite3();
+	TnFXSQLDB_sqlite3(const FXString &dbpath, const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
+	~TnFXSQLDB_sqlite3();
 
 	virtual const FXString &versionInfo() const;
 
 	virtual void open(const FXString &password=FXString::nullStr());
 	virtual void close();
-	virtual FXSQLDBStatementRef prepare(const FXString &text);
+	virtual TnFXSQLDBStatementRef prepare(const FXString &text);
 
 	void FXDLLLOCAL int_throwSQLite3Error(int errcode, const char *file, int lineno);
 	void FXDLLLOCAL int_waitOnSQLite3File();
@@ -103,4 +104,5 @@ public:
 
 }
 
+#endif
 #endif

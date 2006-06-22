@@ -3,6 +3,9 @@
 env['CPPDEFINES']+=["USE_POSIX",
                     "HAVE_CONSTTEMPORARIES"    # Workaround lack of non-const temporaries
                     ]
+if onDarwin:
+    # You only get the thread cancelling pthread implementation this way
+    env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
 if debugmode:
     env['CPPDEFINES']+=["_DEBUG"]
 else:
@@ -27,23 +30,33 @@ if architecture=="x86":
         else: cppflags+=["-msse"]
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
-    cppflags+=["-m64"] #, "-march="+cppflagsopts[architecture_version] ]
-else:
-    raise IOError, "Unknown architecture type"
+    cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
+
 cppflags+=["-fexceptions",              # Enable exceptions
+           "-fstrict-aliasing",         # Always enable strict aliasing
+           "-fargument-noalias",        # Arguments may alias globals but not each other
+           "-Wstrict-aliasing",         # Warn about bad aliasing
+           "-ffast-math",               # Lose FP precision in favour of speed
+           #"-pg",                       # Perform profiling
+           #"-finstrument-functions",    # Other form of profiling
            "-pipe"                      # Use faster pipes
            ]
 if debugmode:
     cppflags+=["-O0",                   # No optimisation
+               #"-fmudflapth",           # Do memory access checking (doesn't work on Apple MacOS X)
                "-ggdb"                  # Best debug info (better than -g on MacOS X)
                ]
 else:
     cppflags+=["-O2",                   # Optimise for fast code
+               #"-ftree-vectorize",      # Use vectorisation
+               #"-ftree-loop-linear",    # Further optimise loops
+               #"-ftree-loop-im",        # Remove loop invariant code
+               #"-fivopts",              # Tree induction variable optimisation
                #"-fno-default-inline",
                #"-fno-inline-functions",
                #"-fno-inline",
                #"-finline-limit=0",
-               #"-ggdb",
+               #"-ggdb"
                "-fomit-frame-pointer"   # No frame pointer
                ]
 env['CPPFLAGS']+=cppflags
@@ -55,6 +68,7 @@ if not onDarwin:
         env['LINK']="libtool --tag=CXX --mode=link g++"
     else: env['LINK']="libtool --mode=link g++"
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
+                   #"-pg",                             # Profile
                    ternary(make64bit, "-m64", "-m32")
                   ]
 
@@ -62,31 +76,29 @@ if debugmode:
     env['LINKFLAGS']+=[ # "-static"        # Don't use shared objects
                        ]
 else:
-    env['LINKFLAGS']+=[ # "-O"             # Optimise
+    env['LINKFLAGS']+=["-O3"            # Optimise
                        ]
+
+
+#if onDarwin:
+    # Link against Saturn profiling library
+    #env['LIBS']+=[ "Saturn" ]
+
 
 # Include system libs (mandatory)
 env['CPPDEFINES']+=[("STDC_HEADERS",1),
                     ("HAVE_SYS_TYPES_H",1),
-                    ("HAVE_SYS_STAT_H",1),
                     ("HAVE_STDLIB_H",1),
                     ("HAVE_STRING_H",1),
-                    ("HAVE_MEMORY_H",1),
                     ("HAVE_STRINGS_H",1),
-                    ("HAVE_INTTYPES_H",1),
-                    ("HAVE_STDINT_H",1),
                     ("HAVE_UNISTD_H",1),
-                    ("HAVE_DLFCN_H",1),
                     ("TIME_WITH_SYS_TIME",1),
                     ("HAVE_SYS_WAIT_H",1),
                     ("HAVE_DIRENT_H",1),
-                    ("HAVE_UNISTD_H",1),
                     ("HAVE_SYS_PARAM_H",1),
                     ("HAVE_SYS_SELECT_H",1)
                     ]
 env['LIBS']+=["m"]
-
-
 
 
 def CheckGCCHasVisibility(cc):

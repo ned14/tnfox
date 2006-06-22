@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXMenuSeparator.cpp,v 1.31 2006/01/22 17:58:36 fox Exp $                 *
 ********************************************************************************/
+#ifndef FX_DISABLEMENUS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -145,3 +147,4 @@ void FXMenuSeparator::load(FXStream& store){
 
 }
 
+#endif

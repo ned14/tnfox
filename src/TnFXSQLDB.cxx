@@ -18,8 +18,9 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
+#ifndef FX_DISABLESQL
 
-#include "FXSQLDB.h"
+#include "TnFXSQLDB.h"
 #include <qdict.h>
 #include <qstringlist.h>
 #include <qptrvector.h>
@@ -58,7 +59,7 @@ enum SQLDataType
 
 	LastSQLDataTypeEntry
 };
-const char *FXSQLDB::sql92TypeAsString(SQLDataType type)
+const char *TnFXSQLDB::sql92TypeAsString(SQLDataType type)
 {
 	static const char *strs[]={
 		"NULL",
@@ -86,80 +87,80 @@ const char *FXSQLDB::sql92TypeAsString(SQLDataType type)
 		return 0;
 }
 
-struct FXSQLDBPrivate
+struct TnFXSQLDBPrivate
 {
-	FXSQLDB::Capabilities caps;
+	TnFXSQLDB::Capabilities caps;
 	const FXString &driverName;		// stored statically
 	FXString dbname, user;
 	QHostAddress host;
 	FXushort port;
 
-	FXSQLDBPrivate(FXSQLDB::Capabilities _caps, const FXString &_driverName, const FXString &_dbname, const FXString &_user, const QHostAddress &_host, FXushort _port)
+	TnFXSQLDBPrivate(TnFXSQLDB::Capabilities _caps, const FXString &_driverName, const FXString &_dbname, const FXString &_user, const QHostAddress &_host, FXushort _port)
 		: caps(_caps), driverName(_driverName), dbname(_dbname), user(_user), host(_host), port(_port) { }
 };
 
-FXSQLDB::FXSQLDB(FXSQLDB::Capabilities caps, const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port) : p(0)
+TnFXSQLDB::TnFXSQLDB(TnFXSQLDB::Capabilities caps, const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port) : p(0)
 {
-	FXERRHM(p=new FXSQLDBPrivate(caps, driverName, dbname, user, host, port));
+	FXERRHM(p=new TnFXSQLDBPrivate(caps, driverName, dbname, user, host, port));
 }
-FXSQLDB::~FXSQLDB()
+TnFXSQLDB::~TnFXSQLDB()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-const FXString &FXSQLDB::driverName() const throw()
+const FXString &TnFXSQLDB::driverName() const throw()
 {
 	return p->driverName;
 }
-FXSQLDB::Capabilities FXSQLDB::capabilities() const throw()
+TnFXSQLDB::Capabilities TnFXSQLDB::capabilities() const throw()
 {
 	return p->caps;
 }
-const FXString &FXSQLDB::dbName() const throw()
+const FXString &TnFXSQLDB::dbName() const throw()
 {
 	return p->dbname;
 }
-void FXSQLDB::setDBName(const FXString &dbname)
+void TnFXSQLDB::setDBName(const FXString &dbname)
 {
 	p->dbname=dbname;
 }
-const FXString &FXSQLDB::user() const throw()
+const FXString &TnFXSQLDB::user() const throw()
 {
 	return p->user;
 }
-void FXSQLDB::setUser(const FXString &user)
+void TnFXSQLDB::setUser(const FXString &user)
 {
 	p->user=user;
 }
-const QHostAddress &FXSQLDB::host() const throw()
+const QHostAddress &TnFXSQLDB::host() const throw()
 {
 	return p->host;
 }
-void FXSQLDB::setHost(const QHostAddress &addr)
+void TnFXSQLDB::setHost(const QHostAddress &addr)
 {
 	p->host=addr;
 }
-FXushort FXSQLDB::port() const throw()
+FXushort TnFXSQLDB::port() const throw()
 {
 	return p->port;
 }
-void FXSQLDB::setPort(FXushort port)
+void TnFXSQLDB::setPort(FXushort port)
 {
 	p->port=port;
 }
 
-FXSQLDBCursorRef FXSQLDB::execute(const FXString &text, FXuint flags, QWaitCondition *latch)
+TnFXSQLDBCursorRef TnFXSQLDB::execute(const FXString &text, FXuint flags, QWaitCondition *latch)
 {
-	FXSQLDBStatementRef ret=prepare(text);
+	TnFXSQLDBStatementRef ret=prepare(text);
 	return ret->execute(flags, latch);
 }
-void FXSQLDB::immediate(const FXString &text)
+void TnFXSQLDB::immediate(const FXString &text)
 {
-	FXSQLDBStatementRef ret=prepare(text);
+	TnFXSQLDBStatementRef ret=prepare(text);
 	ret->immediate();
 }
 
-void FXSQLDB::synchronise()
+void TnFXSQLDB::synchronise()
 {
 
 }
@@ -167,81 +168,81 @@ void FXSQLDB::synchronise()
 
 //*******************************************************************************
 
-struct FXSQLDBStatementPrivate
+struct TnFXSQLDBStatementPrivate
 {
-	FXSQLDB *parent;
+	TnFXSQLDB *parent;
 	FXString text;
 	QPtrVector<QBuffer> unknownBLOBs;
 
-	FXSQLDBStatementPrivate(FXSQLDB *_parent, const FXString &_text) : parent(_parent), text(_text), unknownBLOBs(true) { }
+	TnFXSQLDBStatementPrivate(TnFXSQLDB *_parent, const FXString &_text) : parent(_parent), text(_text), unknownBLOBs(true) { }
 };
 
-FXSQLDBStatement::FXSQLDBStatement(FXSQLDB *parent, const FXString &text)
+TnFXSQLDBStatement::TnFXSQLDBStatement(TnFXSQLDB *parent, const FXString &text)
 {
-	FXERRHM(p=new FXSQLDBStatementPrivate(parent, text));
+	FXERRHM(p=new TnFXSQLDBStatementPrivate(parent, text));
 }
-FXSQLDBStatement::FXSQLDBStatement(const FXSQLDBStatement &o) : p(0)
+TnFXSQLDBStatement::TnFXSQLDBStatement(const TnFXSQLDBStatement &o) : p(0)
 {
-	FXERRHM(p=new FXSQLDBStatementPrivate(*o.p));
+	FXERRHM(p=new TnFXSQLDBStatementPrivate(*o.p));
 }
-FXSQLDBStatement::~FXSQLDBStatement()
+TnFXSQLDBStatement::~TnFXSQLDBStatement()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXSQLDB *FXSQLDBStatement::driver() const throw()
+TnFXSQLDB *TnFXSQLDBStatement::driver() const throw()
 {
 	return p->parent;
 }
-const FXString &FXSQLDBStatement::text() const throw()
+const FXString &TnFXSQLDBStatement::text() const throw()
 {
 	return p->text;
 }
 
-FXSQLDBStatement &FXSQLDBStatement::bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data)
+TnFXSQLDBStatement &TnFXSQLDBStatement::bind(FXint idx, TnFXSQLDB::SQLDataType datatype, void *data)
 {
 	if((FXuint) idx<p->unknownBLOBs.count())
 		p->unknownBLOBs.replace(idx, 0);
 	return *this;
 }
-void FXSQLDBStatement::int_bindUnknownBLOB(FXint idx, FXAutoPtr<QBuffer> buff)
+void TnFXSQLDBStatement::int_bindUnknownBLOB(FXint idx, FXAutoPtr<QBuffer> buff)
 {
 	if((FXuint) idx>=p->unknownBLOBs.count())
 		p->unknownBLOBs.extend(idx+1);
-	bind(idx, FXSQLDB::BLOB, (void *) &PtrPtr(buff)->buffer());
+	bind(idx, TnFXSQLDB::BLOB, (void *) &PtrPtr(buff)->buffer());
 	p->unknownBLOBs.replace(idx, PtrRelease(buff));
 }
 
 //*******************************************************************************
 
-struct FXSQLDBCursorPrivate
+struct TnFXSQLDBCursorPrivate
 {
 	FXuint flags;
-	FXSQLDBStatementRef parent;
+	TnFXSQLDBStatementRef parent;
 	QWaitCondition *latch;
 	FXuint columns;
 
 	FXint rows, readyBegin, readyEnd;
 	bool atEnd;
 	FXint crow;
-	FXSQLDBCursorPrivate(FXuint _flags, FXSQLDBStatement *_parent, QWaitCondition *_latch, FXuint _columns)
+	TnFXSQLDBCursorPrivate(FXuint _flags, TnFXSQLDBStatement *_parent, QWaitCondition *_latch, FXuint _columns)
 		: flags(_flags), parent(_parent), latch(_latch), columns(_columns),
 		rows(0), readyBegin(0), readyEnd(0), atEnd(false), crow(-1) { }
 };
 
-FXSQLDBCursor::FXSQLDBCursor(FXuint flags, FXSQLDBStatement *parent, QWaitCondition *latch, FXuint columns) : p(0)
+TnFXSQLDBCursor::TnFXSQLDBCursor(FXuint flags, TnFXSQLDBStatement *parent, QWaitCondition *latch, FXuint columns) : p(0)
 {
-	FXERRHM(p=new FXSQLDBCursorPrivate(flags, parent, latch, columns));
+	FXERRHM(p=new TnFXSQLDBCursorPrivate(flags, parent, latch, columns));
 }
-FXSQLDBCursor::FXSQLDBCursor(const FXSQLDBCursor &o) : p(0)
+TnFXSQLDBCursor::TnFXSQLDBCursor(const TnFXSQLDBCursor &o) : p(0)
 {
-	FXERRHM(p=new FXSQLDBCursorPrivate(*o.p));
+	FXERRHM(p=new TnFXSQLDBCursorPrivate(*o.p));
 }
-FXSQLDBCursor::~FXSQLDBCursor()
+TnFXSQLDBCursor::~TnFXSQLDBCursor()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
-void FXSQLDBCursor::int_setInternals(FXint *rows, FXuint *flags, FXuint *columns, QWaitCondition *latch)
+void TnFXSQLDBCursor::int_setInternals(FXint *rows, FXuint *flags, FXuint *columns, QWaitCondition *latch)
 {
 	if(rows)
 	{
@@ -252,53 +253,53 @@ void FXSQLDBCursor::int_setInternals(FXint *rows, FXuint *flags, FXuint *columns
 	if(columns) p->columns=*columns;
 	if(latch) p->latch=latch;
 }
-void FXSQLDBCursor::int_setRowsReady(FXint start, FXint end)
+void TnFXSQLDBCursor::int_setRowsReady(FXint start, FXint end)
 {
 	p->readyBegin=start; p->readyEnd=end;
 }
-void FXSQLDBCursor::int_setAtEnd(bool atend)
+void TnFXSQLDBCursor::int_setAtEnd(bool atend)
 {
 	p->atEnd=atend;
 }
 
-FXuint FXSQLDBCursor::flags() const throw()
+FXuint TnFXSQLDBCursor::flags() const throw()
 {
 	return p->flags;
 }
-FXSQLDBStatement *FXSQLDBCursor::statement() const throw()
+TnFXSQLDBStatement *TnFXSQLDBCursor::statement() const throw()
 {
 	return PtrPtr(p->parent);
 }
-QWaitCondition *FXSQLDBCursor::resultsLatch() const throw()
+QWaitCondition *TnFXSQLDBCursor::resultsLatch() const throw()
 {
 	return p->latch;
 }
-FXuint FXSQLDBCursor::columns() const throw()
+FXuint TnFXSQLDBCursor::columns() const throw()
 {
 	return p->columns;
 }
-FXint FXSQLDBCursor::rows() const throw()
+FXint TnFXSQLDBCursor::rows() const throw()
 {
 	return p->rows;
 }
-bool FXSQLDBCursor::rowsReady(FXint &start, FXint &end) const throw()
+bool TnFXSQLDBCursor::rowsReady(FXint &start, FXint &end) const throw()
 {
 	if(start==end) return false;
 	start=p->readyBegin; end=p->readyEnd;
 	return true;
 }
 
-bool FXSQLDBCursor::atEnd() const throw()
+bool TnFXSQLDBCursor::atEnd() const throw()
 {
 	return p->atEnd;
 }
-FXint FXSQLDBCursor::at() const throw()
+FXint TnFXSQLDBCursor::at() const throw()
 {
 	return p->crow;
 }
-FXint FXSQLDBCursor::at(FXint newrow)
+FXint TnFXSQLDBCursor::at(FXint newrow)
 {
-	FXSQLDB::Capabilities caps=statement()->driver()->capabilities();
+	TnFXSQLDB::Capabilities caps=statement()->driver()->capabilities();
 	if(!caps.HasSettableCursor)
 	{	// Emulate using forwards() and backwards()
 		FXint crow;
@@ -310,16 +311,16 @@ FXint FXSQLDBCursor::at(FXint newrow)
 	if(p->rows>=0 && newrow>p->rows) newrow=p->rows;
 	return (p->crow=newrow);
 }
-FXint FXSQLDBCursor::backwards()
+FXint TnFXSQLDBCursor::backwards()
 {
 	if(!statement()->driver()->capabilities().HasBackwardsCursor)
 	{
-		FXERRGNOTSUPP(QTrans::tr("FXSQLDB::Statement::Cursor", "This driver does not support moving cursors backwards"));
+		FXERRGNOTSUPP(QTrans::tr("TnFXSQLDB::Statement::Cursor", "This driver does not support moving cursors backwards"));
 	}
 	if(p->crow<=-1) return p->crow;
 	return --p->crow;
 }
-FXint FXSQLDBCursor::forwards()
+FXint TnFXSQLDBCursor::forwards()
 {
 	if(p->rows>=0 && p->crow>=p->rows) return p->crow;
 	return ++p->crow;
@@ -327,17 +328,17 @@ FXint FXSQLDBCursor::forwards()
 
 //*******************************************************************************
 
-struct FXSQLDBRegistryPrivate
+struct TnFXSQLDBRegistryPrivate
 {
 	QDict<void> drivers;
 };
-static FXSQLDBRegistry *registry;
+static TnFXSQLDBRegistry *registry;
 
-void FXSQLDBRegistry::int_register(const FXString &name, createSpec create)
+void TnFXSQLDBRegistry::int_register(const FXString &name, createSpec create)
 {
 	p->drivers.insert(name, (void *) create);
 }
-void FXSQLDBRegistry::int_deregister(const FXString &name, createSpec create)
+void TnFXSQLDBRegistry::int_deregister(const FXString &name, createSpec create)
 {
 	p->drivers.remove(name);
 	if(registry==this && p->drivers.isEmpty())
@@ -345,25 +346,25 @@ void FXSQLDBRegistry::int_deregister(const FXString &name, createSpec create)
 		FXDELETE(registry);
 	}
 }
-FXSQLDBRegistry::FXSQLDBRegistry() : p(0)
+TnFXSQLDBRegistry::TnFXSQLDBRegistry() : p(0)
 {
-	FXERRHM(p=new FXSQLDBRegistryPrivate);
+	FXERRHM(p=new TnFXSQLDBRegistryPrivate);
 }
-FXSQLDBRegistry::~FXSQLDBRegistry()
+TnFXSQLDBRegistry::~TnFXSQLDBRegistry()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXSQLDBRegistry *FXSQLDBRegistry::processRegistry()
+TnFXSQLDBRegistry *TnFXSQLDBRegistry::processRegistry()
 {
 	if(!registry)
 	{
-		FXERRHM(registry=new FXSQLDBRegistry);
+		FXERRHM(registry=new TnFXSQLDBRegistry);
 	}
 	return registry;
 }
 
-QStringList FXSQLDBRegistry::drivers() const
+QStringList TnFXSQLDBRegistry::drivers() const
 {
 	QStringList ret;
 	for(QDictIterator<void> it(p->drivers); it.current(); ++it)
@@ -371,13 +372,14 @@ QStringList FXSQLDBRegistry::drivers() const
 	return ret;
 }
 
-FXAutoPtr<FXSQLDB> FXSQLDBRegistry::instantiate(const FXString &name, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port) const
+FXAutoPtr<TnFXSQLDB> TnFXSQLDBRegistry::instantiate(const FXString &name, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port) const
 {
 	createSpec c=(createSpec) p->drivers.find(name);
-	if(!c) return FXAutoPtr<FXSQLDB>(0);
+	if(!c) return FXAutoPtr<TnFXSQLDB>(0);
 	return c(dbname, user, host, port);
 }
 
 
 }
 
+#endif

@@ -3,6 +3,9 @@
 env['CPPDEFINES']+=["USE_POSIX",
                     "HAVE_CONSTTEMPORARIES"    # Workaround lack of non-const temporaries
                     ]
+if onDarwin:
+    # You only get the thread cancelling pthread implementation this way
+    env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
 if debugmode:
     env['CPPDEFINES']+=["_DEBUG"]
 else:
@@ -33,18 +36,19 @@ env=conf.Finish()
 
 # Warnings
 cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
-if architecture=="i486":
-    if i486_3dnow!=0:
-          cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4", "athlon64" ]
-    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium4", None ]
-    cppflags+=["-march="+cppflagsopts[i486_version-4] ]
-    if i486_SSE!=0:
-        cppflags+=["-mfpmath="+ ["387", "sse"][i486_SSE!=0] ]
-        if i486_SSE>1: cppflags+=["-msse%d" % i486_SSE]
+if architecture=="x86":
+    if x86_3dnow!=0:
+          cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
+    else: cppflagsopts=["i486", "pentium", "pentiumpro", "pentium-m" ]
+    cppflags+=["-m32", "-march="+cppflagsopts[architecture_version-4] ]
+    if x86_SSE!=0:
+        cppflags+=["-mfpmath="+ ["387", "sse"][x86_SSE!=0] ]
+        if x86_SSE>1: cppflags+=["-msse%d" % x86_SSE]
         else: cppflags+=["-msse"]
-    if make64bit: cppflags+=["-m64"]
-else:
-    cppflags+=[ "-march="+architecture ]
+elif architecture=="x64":
+    #cppflagsopts=["athlon64"]
+    cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
+
 cppflags+=["-fexceptions",              # Enable exceptions
            #"-Winvalid-pch",             # Warning if PCH files can't be used
            "-pipe"                      # Use faster pipes
@@ -59,16 +63,16 @@ else:
                ]
 env['CPPFLAGS']+=cppflags
 
-
 # Linkage
-env['LINKFLAGS']=["-fPIC",              # Link shared
-                  "-pthread"            # Ensure no libc on BSD
+env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
+                   #"-pg",                             # Profile
+                   ternary(make64bit, "-m64", "-m32")
                   ]
 
 if debugmode:
     env['LINKFLAGS']+=[]
 else:
-    env['LINKFLAGS']+=[ #"-O"             # Optimise
+    env['LINKFLAGS']+=["-O3"            # Optimise
                        ]
 
 # Set where the BPL *objects* live (which is platform dependent)

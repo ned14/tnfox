@@ -18,7 +18,9 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
-#include "FXSQLDB_ipc.h"
+#ifndef FX_DISABLESQL
+
+#include "TnFXSQLDB_ipc.h"
 #include "FXRollback.h"
 #include "FXSecure.h"
 #include <qintdict.h>
@@ -30,10 +32,10 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
-struct FXSQLDB_ipcPrivate
+struct TnFXSQLDB_ipcPrivate
 {
-	typedef FXSQLDB_ipc::AckHandler AckHandler;
-	typedef FXSQLDB_ipc::delMsgSpec delMsgSpec;
+	typedef TnFXSQLDB_ipc::AckHandler AckHandler;
+	typedef TnFXSQLDB_ipc::delMsgSpec delMsgSpec;
 	bool asynchronous;
 	FXuint prefetchNo, askForMore;
 	struct Ack
@@ -85,37 +87,37 @@ public:
 	QValueList<Ack> acksPending, acks;
 	FXuint connh;
 
-	FXSQLDB_ipcPrivate() : asynchronous(false), prefetchNo(20), askForMore(15), connh(0) { }
+	TnFXSQLDB_ipcPrivate() : asynchronous(false), prefetchNo(20), askForMore(15), connh(0) { }
 
 	bool openAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		OpenAck *ia=(OpenAck *) _ia;
 		connh=ia->connh;
 		return true;
 	}
 };
-const FXString FXSQLDB_ipc::MyName("IPC");
-static FXSQLDBRegistry::Register<FXSQLDB_ipc> ipcdbregister;
+const FXString TnFXSQLDB_ipc::MyName("IPC");
+static TnFXSQLDBRegistry::Register<TnFXSQLDB_ipc> ipcdbregister;
 
-FXSQLDB_ipc::FXSQLDB_ipc(const FXString &dbspec, const FXString &user, const QHostAddress &host, FXushort port)
-: FXSQLDB(FXSQLDB::Capabilities().setTransactions().setQueryRows().setNoTypeConstraints().setHasBackwardsCursor().setHasSettableCursor().setHasStaticCursor().setAsynchronous(), FXSQLDB_ipc::MyName, dbspec, user, host, port), p(0)
+TnFXSQLDB_ipc::TnFXSQLDB_ipc(const FXString &dbspec, const FXString &user, const QHostAddress &host, FXushort port)
+: TnFXSQLDB(TnFXSQLDB::Capabilities().setTransactions().setQueryRows().setNoTypeConstraints().setHasBackwardsCursor().setHasSettableCursor().setHasStaticCursor().setAsynchronous(), TnFXSQLDB_ipc::MyName, dbspec, user, host, port), p(0)
 {
-	FXERRHM(p=new FXSQLDB_ipcPrivate);
+	FXERRHM(p=new TnFXSQLDB_ipcPrivate);
 }
-FXSQLDB_ipc::~FXSQLDB_ipc()
+TnFXSQLDB_ipc::~TnFXSQLDB_ipc()
 { FXEXCEPTIONDESTRUCT1 {
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
-inline void FXSQLDB_ipc::addAsyncMsg(FXIPCMsg *ia, FXIPCMsg *i, void *ref, void (*refdel)(void *), FXSQLDB_ipc::AckHandler handler, FXSQLDB_ipc::delMsgSpec iadel, FXSQLDB_ipc::delMsgSpec idel)
+inline void TnFXSQLDB_ipc::addAsyncMsg(FXIPCMsg *ia, FXIPCMsg *i, void *ref, void (*refdel)(void *), TnFXSQLDB_ipc::AckHandler handler, TnFXSQLDB_ipc::delMsgSpec iadel, TnFXSQLDB_ipc::delMsgSpec idel)
 {
 	assert(i->msgId());
-	p->acksPending.push_back(FXSQLDB_ipcPrivate::Ack(ia, i, ref, refdel, handler, iadel, idel));
+	p->acksPending.push_back(TnFXSQLDB_ipcPrivate::Ack(ia, i, ref, refdel, handler, iadel, idel));
 }
-inline bool FXSQLDB_ipc::pollAcks(bool waitIfNoneReady)
+inline bool TnFXSQLDB_ipc::pollAcks(bool waitIfNoneReady)
 {	// Note that getMsgAck() can throw exceptions received from the other side
-	FXSQLDB_ipcPrivate::Ack &ack=p->acksPending.front();
+	TnFXSQLDB_ipcPrivate::Ack &ack=p->acksPending.front();
 	if(getMsgAck(ack.ia, ack.i, waitIfNoneReady ? FXINFINITE : 0))
 	{
 		p->acks.splice(p->acks.end(), p->acksPending, p->acksPending.begin());
@@ -127,21 +129,21 @@ inline bool FXSQLDB_ipc::pollAcks(bool waitIfNoneReady)
 }
 
 
-bool FXSQLDB_ipc::isAsynchronous() const throw()
+bool TnFXSQLDB_ipc::isAsynchronous() const throw()
 {
 	return p->asynchronous;
 }
-FXSQLDB_ipc &FXSQLDB_ipc::setIsAsynchronous(bool v) throw()
+TnFXSQLDB_ipc &TnFXSQLDB_ipc::setIsAsynchronous(bool v) throw()
 {
 	p->asynchronous=v;
 	return *this;
 }
-void FXSQLDB_ipc::prefetching(FXuint &no, FXuint &askForMore) const throw()
+void TnFXSQLDB_ipc::prefetching(FXuint &no, FXuint &askForMore) const throw()
 {
 	no=p->prefetchNo;
 	askForMore=p->askForMore;
 }
-FXSQLDB_ipc &FXSQLDB_ipc::setPrefetching(FXuint no, FXuint askForMore) throw()
+TnFXSQLDB_ipc &TnFXSQLDB_ipc::setPrefetching(FXuint no, FXuint askForMore) throw()
 {
 	p->prefetchNo=no;
 	p->askForMore=askForMore;
@@ -149,17 +151,17 @@ FXSQLDB_ipc &FXSQLDB_ipc::setPrefetching(FXuint no, FXuint askForMore) throw()
 }
 
 
-const FXString &FXSQLDB_ipc::versionInfo() const
+const FXString &TnFXSQLDB_ipc::versionInfo() const
 {
 	static const FXString myversion("TnFOX SQL DB via IPC channel v1.00");
 	return myversion;
 }
 
-void FXSQLDB_ipc::open(const FXString &password)
+void TnFXSQLDB_ipc::open(const FXString &password)
 {
 	if(!p->connh)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		FXint sidx=dbName().find(':');
 		assert(sidx>=0);
 		Open *i;
@@ -176,19 +178,19 @@ void FXSQLDB_ipc::open(const FXString &password)
 			ssl.open(IO_WriteOnly);
 			s << password;
 		}
-		sendAsyncMsg<OpenAck>(i, (FXSQLDBCursor *) 0, AckHandler(*p, &FXSQLDB_ipcPrivate::openAck));
+		sendAsyncMsg<OpenAck>(i, (TnFXSQLDBCursor *) 0, AckHandler(*p, &TnFXSQLDB_ipcPrivate::openAck));
 		uni.dismiss();
 		if(!p->asynchronous)
 			synchronise();
 	}
 }
-void FXSQLDB_ipc::close()
+void TnFXSQLDB_ipc::close()
 {
 	if(p->connh)
 	{	// Wait for everything to finish processing first
 		while(!p->acksPending.empty())
 			pollAcks(true);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		Close i(p->connh);
 		CloseAck ia;
 		sendMsg(ia, i);
@@ -197,33 +199,33 @@ void FXSQLDB_ipc::close()
 	}
 }
 
-struct FXSQLDB_ipc::Column : public FXSQLDBColumn
+struct TnFXSQLDB_ipc::Column : public TnFXSQLDBColumn
 {
-	friend struct FXSQLDB_ipc::Cursor;
-	Column(FXuint flags, FXSQLDBCursor *parent, FXuint column, FXint row, FXSQLDB::SQLDataType type) : FXSQLDBColumn(flags, parent, column, row, type) { }
-	Column(const Column &o) : FXSQLDBColumn(o) { }
-	virtual FXSQLDBColumnRef copy() const
+	friend struct TnFXSQLDB_ipc::Cursor;
+	Column(FXuint flags, TnFXSQLDBCursor *parent, FXuint column, FXint row, TnFXSQLDB::SQLDataType type) : TnFXSQLDBColumn(flags, parent, column, row, type) { }
+	Column(const Column &o) : TnFXSQLDBColumn(o) { }
+	virtual TnFXSQLDBColumnRef copy() const
 	{
 		Column *c;
 		FXERRHM(c=new Column(*this));
 		return c;
 	}
 };
-struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
+struct TnFXSQLDB_ipc::Cursor : public TnFXSQLDBCursor
 {
-	FXSQLDB_ipc *o;
-	FXSQLDB_ipcPrivate *p;
+	TnFXSQLDB_ipc *o;
+	TnFXSQLDB_ipcPrivate *p;
 	FXuint cursh;
 	struct Buffer
 	{
-		QMemArray<FXSQLDBIPCMsgsI::ColumnData> *data;
+		QMemArray<TnFXSQLDBIPCMsgsI::ColumnData> *data;
 		FXint rows, rowsToGo;
 		Buffer() : data(0), rows(0), rowsToGo(0) { }
 		Buffer(const Buffer &o) : data(0), rows(o.rows), rowsToGo(o.rowsToGo)
 		{
 			if(o.data)
 			{
-				FXERRHM(data=new QMemArray<FXSQLDBIPCMsgsI::ColumnData>);
+				FXERRHM(data=new QMemArray<TnFXSQLDBIPCMsgsI::ColumnData>);
 				for(FXuint n=0; n<o.data->count(); n++)
                     data->at(n).copy(o.data->at(n));
 			}
@@ -239,10 +241,10 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 	};
 	FXint bufferrowbegin;
 	Buffer *buffers[2];
-	mutable QMemArray<FXSQLDBIPCMsgsI::ColType> *colTypes;
-	QMemArray<FXSQLDBIPCMsgsI::ColumnData> *headers;
+	mutable QMemArray<TnFXSQLDBIPCMsgsI::ColType> *colTypes;
+	QMemArray<TnFXSQLDBIPCMsgsI::ColumnData> *headers;
 
-	inline void configBuffer(int buffer, QMemArray<FXSQLDBIPCMsgsI::ColumnData> *&data, FXint rowsToGo)
+	inline void configBuffer(int buffer, QMemArray<TnFXSQLDBIPCMsgsI::ColumnData> *&data, FXint rowsToGo)
 	{
 		Buffer *b=buffers[buffer];
 		b->data=data; data=0;
@@ -250,7 +252,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		b->rowsToGo=rowsToGo;
 		int_setRowsReady(bufferrowbegin, bufferrowbegin+buffers[0]->rows+buffers[1]->rows);
 	}
-	inline void config(FXuint _cursh, FXint rows, FXuint flags, FXuint columns, QMemArray<FXSQLDBIPCMsgsI::ColumnData> *&data, FXint rowsToGo)
+	inline void config(FXuint _cursh, FXint rows, FXuint flags, FXuint columns, QMemArray<TnFXSQLDBIPCMsgsI::ColumnData> *&data, FXint rowsToGo)
 	{
 		cursh=_cursh;
 		int_setInternals(&rows, &flags, &columns);
@@ -258,7 +260,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 	}
 	bool executeAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		ExecuteAck *ia=(ExecuteAck *) _ia;
 		if(ia->cursh)
 			config(ia->cursh, ia->rows, ia->flags, ia->columns, ia->data, ia->rowsToGo);
@@ -266,20 +268,20 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 	}
 	bool requestRowsAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		RequestRowsAck *ia=(RequestRowsAck *) _ia;
 		configBuffer(buffers[0]->data ? 1 : 0, ia->data, ia->rowsToGo);
 		return true;
 	}
 	bool copyCursorAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		CopyCursorAck *ia=(CopyCursorAck *) _ia;
 		cursh=ia->cursh;
 		return true;
 	}
-	Cursor(FXSQLDB_ipcPrivate *_p, FXSQLDB_ipc *_o, FXuint flags, FXSQLDBStatement *parent, QWaitCondition *latch, FXuint &stmth, bool alreadyInProgress=false)
-		: FXSQLDBCursor(flags, parent, latch, (FXuint)-1), o(_o), p(_p), cursh(0), bufferrowbegin(0), colTypes(0), headers(0)
+	Cursor(TnFXSQLDB_ipcPrivate *_p, TnFXSQLDB_ipc *_o, FXuint flags, TnFXSQLDBStatement *parent, QWaitCondition *latch, FXuint &stmth, bool alreadyInProgress=false)
+		: TnFXSQLDBCursor(flags, parent, latch, (FXuint)-1), o(_o), p(_p), cursh(0), bufferrowbegin(0), colTypes(0), headers(0)
 	{
 		buffers[0]=buffers[1]=0;
 		FXERRHM(buffers[0]=new Buffer);
@@ -289,7 +291,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 			while(!stmth && !p->acksPending.empty())
 				o->pollAcks(true);
 			assert(stmth);
-			using namespace FXSQLDBIPCMsgsI;
+			using namespace TnFXSQLDBIPCMsgsI;
 			Execute *i;
 			FXERRHM(i=new Execute(stmth, p->prefetchNo, flags));
 			FXRBOp uni=FXRBNew(i);
@@ -297,17 +299,17 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 			uni.dismiss();
 		}
 		// Ensure I point at record zero, not -1
-		FXSQLDBCursor::at(0);
+		TnFXSQLDBCursor::at(0);
 	}
-	Cursor(const Cursor &ot) : FXSQLDBCursor(ot), o(ot.o), p(ot.p), cursh(0), bufferrowbegin(ot.bufferrowbegin), colTypes(0), headers(0)
+	Cursor(const Cursor &ot) : TnFXSQLDBCursor(ot), o(ot.o), p(ot.p), cursh(0), bufferrowbegin(ot.bufferrowbegin), colTypes(0), headers(0)
 	{
 		buffers[0]=buffers[1]=0;
 		if(ot.buffers[0]) FXERRHM(buffers[0]=new Buffer(*ot.buffers[0]));
 		if(ot.buffers[1]) FXERRHM(buffers[1]=new Buffer(*ot.buffers[1]));
-		if(ot.colTypes) FXERRHM(colTypes=new QMemArray<FXSQLDBIPCMsgsI::ColType>(*ot.colTypes));
+		if(ot.colTypes) FXERRHM(colTypes=new QMemArray<TnFXSQLDBIPCMsgsI::ColType>(*ot.colTypes));
 		if(ot.headers)
 		{
-			FXERRHM(headers=new QMemArray<FXSQLDBIPCMsgsI::ColumnData>);
+			FXERRHM(headers=new QMemArray<TnFXSQLDBIPCMsgsI::ColumnData>);
 			for(FXuint n=0; n<ot.headers->count(); n++)
 				headers->at(n).copy(ot.headers->at(n));
 		}
@@ -317,7 +319,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		while(!cursh && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(cursh);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		CloseCursor i(cursh);
 		o->sendMsg(i);
 		cursh=0;
@@ -327,7 +329,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		FXDELETE(buffers[1]);
 		FXDELETE(buffers[0]);
 	}
-	virtual FXSQLDBCursorRef copy() const
+	virtual TnFXSQLDBCursorRef copy() const
 	{
 		while(!cursh && !p->acksPending.empty())
 			o->pollAcks(true);
@@ -335,7 +337,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		Cursor *c;
 		FXERRHM(c=new Cursor(*this));
 		FXRBOp unc=FXRBNew(c);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		CopyCursor *i;
 		FXERRHM(i=new CopyCursor(cursh));
 		FXRBOp uni=FXRBNew(i);
@@ -352,7 +354,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		assert(!buffers[1]->data);
 		if(buffers[0]->rowsToGo)
 		{
-			using namespace FXSQLDBIPCMsgsI;
+			using namespace TnFXSQLDBIPCMsgsI;
 			RequestRows *i;
 			FXERRHM(i=new RequestRows(cursh, bufferrowbegin+buffers[0]->rows, p->prefetchNo));
 			FXRBOp uni=FXRBNew(i);
@@ -369,7 +371,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		buffers[0]=buffers[1];
 		buffers[1]=t;
 	}
-	using FXSQLDBCursor::at;
+	using TnFXSQLDBCursor::at;
 	virtual FXint at(FXint newrow)
 	{
 		while((!cursh || !buffers[0]->data) && !p->acksPending.empty())
@@ -378,7 +380,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		if(newrow>=bufferrowbegin && newrow<endofbuffer)
 		{
 			int_setAtEnd(false);
-			return FXSQLDBCursor::at(newrow);
+			return TnFXSQLDBCursor::at(newrow);
 		}
 		if(buffers[1]->data && newrow<endofbuffer+buffers[1]->rows)
 		{	// It's in the next buffer
@@ -388,7 +390,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		// Ok, it's either before our buffers or after them so go fetch
 		buffers[0]->reset(); buffers[1]->reset();
 		bufferrowbegin=newrow;
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		RequestRows *i;
 		FXERRHM(i=new RequestRows(cursh, bufferrowbegin, p->prefetchNo));
 		FXRBOp uni=FXRBNew(i);
@@ -403,7 +405,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		FXint mypos=at();
 		int_setAtEnd(false);
 		if(mypos>bufferrowbegin)
-			return FXSQLDBCursor::backwards();
+			return TnFXSQLDBCursor::backwards();
 		return at(mypos-1);
 	}
 	virtual FXint forwards()
@@ -412,7 +414,7 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 			o->pollAcks(true);
 		if(!atEnd())
 		{
-			FXint ret=FXSQLDBCursor::forwards(), endofbuffer=bufferrowbegin+buffers[0]->rows;
+			FXint ret=TnFXSQLDBCursor::forwards(), endofbuffer=bufferrowbegin+buffers[0]->rows;
 			if(ret>=endofbuffer)
 			{
 				int_setAtEnd(!buffers[0]->rowsToGo);
@@ -422,14 +424,14 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 				askForNextBuffer();
 			return ret;
 		}
-		return FXSQLDBCursor::at();
+		return TnFXSQLDBCursor::at();
 	}
-	virtual void type(FXSQLDB::SQLDataType &datatype, FXint &size, FXuint no) const
+	virtual void type(TnFXSQLDB::SQLDataType &datatype, FXint &size, FXuint no) const
 	{
 		while(!cursh && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(cursh);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		if(!colTypes)
 		{
 			RequestColTypes i(cursh);
@@ -438,16 +440,16 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 			colTypes=ia.data;
 			ia.data=0;
 		}
-		FXERRH(no<colTypes->count(), QTrans::tr("FXSQLDB_ipc", "Column does not exist"), 0, 0);
+		FXERRH(no<colTypes->count(), QTrans::tr("TnFXSQLDB_ipc", "Column does not exist"), 0, 0);
 		datatype=(*colTypes)[no].datatype;
 		size=(*colTypes)[no].size;
 	}
-	virtual FXSQLDBColumnRef header(FXuint no)
+	virtual TnFXSQLDBColumnRef header(FXuint no)
 	{
 		while(!cursh && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(cursh);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		if(!headers)
 		{
 			RequestColHeaders i(cursh);
@@ -456,10 +458,10 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 			headers=ia.data;
 			ia.data=0;
 		}
-		FXERRH(no<headers->count(), QTrans::tr("FXSQLDB_ipc", "Header does not exist"), 0, 0);
+		FXERRH(no<headers->count(), QTrans::tr("TnFXSQLDB_ipc", "Header does not exist"), 0, 0);
 		ColumnData &cd=(*headers)[no];
 		Column *c;
-		FXERRHM(c=new Column(cd.flags, this, no, -1, (FXSQLDB::SQLDataType) cd.data.type));
+		FXERRHM(c=new Column(cd.flags, this, no, -1, (TnFXSQLDB::SQLDataType) cd.data.type));
 		c->mydatalen=cd.data.data.length;
 		if(BLOB==cd.data.type)
 			c->mydata=cd.data.data.blob;
@@ -469,17 +471,17 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 			c->mydata=&cd.data.data.tinyint;
 		return c;
 	}
-	virtual FXSQLDBColumnRef data(FXuint no)
+	virtual TnFXSQLDBColumnRef data(FXuint no)
 	{
 		while((!cursh || !buffers[0]->data) && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(cursh && buffers[0]->data);
 		FXuint dataoffset=(at()*columns())+no-bufferrowbegin;
 		assert(dataoffset<buffers[0]->data->count());
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		ColumnData &cd=(*buffers[0]->data)[dataoffset];
 		Column *c;
-		FXERRHM(c=new Column(cd.flags, this, no, at(), (FXSQLDB::SQLDataType) cd.data.type));
+		FXERRHM(c=new Column(cd.flags, this, no, at(), (TnFXSQLDB::SQLDataType) cd.data.type));
 		c->mydatalen=cd.data.data.length;
 		if(BLOB==cd.data.type)
 			c->mydata=cd.data.data.blob;
@@ -490,16 +492,16 @@ struct FXSQLDB_ipc::Cursor : public FXSQLDBCursor
 		return c;
 	}
 };
-struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
+struct TnFXSQLDB_ipc::Statement : public TnFXSQLDBStatement
 {
-	FXSQLDB_ipc *o;
-	FXSQLDB_ipcPrivate *p;
+	TnFXSQLDB_ipc *o;
+	TnFXSQLDB_ipcPrivate *p;
 	FXuint stmth;
 	QMemArray<FXString> parNames;
 	Cursor *inProgressCursor;
 	bool prepareStatementAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		PrepareStatementAck *ia=(PrepareStatementAck *) _ia;
 		stmth=ia->stmth;
 		parNames=ia->parNames;
@@ -513,21 +515,21 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 	}
 	bool bindParameterAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		BindParameterAck *ia=(BindParameterAck *) _ia;
 		return true;
 	}
 	bool executeAck(FXIPCMsg *_ia, FXIPCMsg *_i)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		ExecuteAck *ia=(ExecuteAck *) _ia;
 		assert(!ia->cursh);
 		return true;
 	}
-	Statement(FXSQLDB_ipcPrivate *_p, FXSQLDB_ipc *parent, const FXString &text, bool executeNow=false, FXuint cursflags=0)
-		: FXSQLDBStatement(parent, text), o(parent), p(_p), stmth(0), inProgressCursor(0)
+	Statement(TnFXSQLDB_ipcPrivate *_p, TnFXSQLDB_ipc *parent, const FXString &text, bool executeNow=false, FXuint cursflags=0)
+		: TnFXSQLDBStatement(parent, text), o(parent), p(_p), stmth(0), inProgressCursor(0)
 	{
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		PrepareStatement *i;
 		assert(p->connh);
 		FXERRHM(i=new PrepareStatement(o->p->connh, text, executeNow ? p->prefetchNo : 0, cursflags));
@@ -540,12 +542,12 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 		while(!stmth && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(stmth);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		UnprepareStatement i(stmth);
 		o->sendMsg(i);
 		stmth=0;
 	}
-	virtual FXSQLDBStatementRef copy() const
+	virtual TnFXSQLDBStatementRef copy() const
 	{
 		Statement *s;
 		FXERRHM(s=new Statement(p, o, text()));
@@ -578,62 +580,62 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 		if(idx<0 || idx>=(FXint) parNames.count()) return FXString::nullStr();
 		return parNames[idx];
 	}
-	virtual FXSQLDBStatement &bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data)
+	virtual TnFXSQLDBStatement &bind(FXint idx, TnFXSQLDB::SQLDataType datatype, void *data)
 	{
 		while(!stmth && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(stmth);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		BindParameter *i;
 		FXERRHM(i=new BindParameter(stmth, idx, datatype));
 		FXRBOp uni=FXRBNew(i);
 		switch(datatype)
 		{
-		case FXSQLDB::Null:
+		case TnFXSQLDB::Null:
 			break;
-		case FXSQLDB::VarChar:
-		case FXSQLDB::Char:
-		case FXSQLDB::WVarChar:
-		case FXSQLDB::WChar:
+		case TnFXSQLDB::VarChar:
+		case TnFXSQLDB::Char:
+		case TnFXSQLDB::WVarChar:
+		case TnFXSQLDB::WChar:
 			i->par.data.length=((FXString *) data)->length();
 			i->par.data.text=(FXchar *)((FXString *) data)->text();
 			break;
 
-		case FXSQLDB::TinyInt:
+		case TnFXSQLDB::TinyInt:
 			i->par.data.length=sizeof(FXuchar);
 			i->par.data.tinyint=*(FXuchar *) data;
 			break;
-		case FXSQLDB::SmallInt:
+		case TnFXSQLDB::SmallInt:
 			i->par.data.length=sizeof(FXushort);
 			i->par.data.smallint=*(FXushort *) data;
 			break;
-		case FXSQLDB::Integer:
+		case TnFXSQLDB::Integer:
 			i->par.data.length=sizeof(FXuint);
 			i->par.data.integer=*(FXuint *) data;
 			break;
-		case FXSQLDB::BigInt:
-		case FXSQLDB::Decimal:
-		case FXSQLDB::Numeric:
+		case TnFXSQLDB::BigInt:
+		case TnFXSQLDB::Decimal:
+		case TnFXSQLDB::Numeric:
 			i->par.data.length=sizeof(FXulong);
 			i->par.data.bigint=*(FXulong *) data;
 			break;
-		case FXSQLDB::Real:
+		case TnFXSQLDB::Real:
 			i->par.data.length=sizeof(float);
 			i->par.data.real=*(float *) data;
 			break;
-		case FXSQLDB::Double:
-		case FXSQLDB::Float:
+		case TnFXSQLDB::Double:
+		case TnFXSQLDB::Float:
 			i->par.data.length=sizeof(double);
 			i->par.data.double_=*(double *) data;
 			break;
-		case FXSQLDB::Timestamp:
-		case FXSQLDB::Date:
-		case FXSQLDB::Time:
+		case TnFXSQLDB::Timestamp:
+		case TnFXSQLDB::Date:
+		case TnFXSQLDB::Time:
 			i->par.data.length=sizeof(FXTime);
 			*(FXTime *)&i->par.data.timestamp=*(FXTime *) data;
 			break;
 
-		case FXSQLDB::BLOB:
+		case TnFXSQLDB::BLOB:
 			{
 				QByteArray *ba=(QByteArray *) data;
 				i->par.data.length=ba->size();
@@ -650,9 +652,9 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 			o->synchronise();
 		return *this;
 	}
-	FXSQLDBCursorRef int_execute(FXuint flags, QWaitCondition *latch)
+	TnFXSQLDBCursorRef int_execute(FXuint flags, QWaitCondition *latch)
 	{
-		FXSQLDBCursorRef cr;
+		TnFXSQLDBCursorRef cr;
 		Cursor *c=0;
 		FXERRHM(cr=c=new Cursor(p, o, flags, this, latch, stmth, true));
 		assert(!inProgressCursor);
@@ -661,9 +663,9 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 			o->synchronise();
 		return cr;
 	}
-	virtual FXSQLDBCursorRef execute(FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0)
+	virtual TnFXSQLDBCursorRef execute(FXuint flags=TnFXSQLDBCursor::IsDynamic|TnFXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0)
 	{
-		FXSQLDBCursorRef cr;
+		TnFXSQLDBCursorRef cr;
 		FXERRHM(cr=new Cursor(p, o, flags, this, latch, stmth));
 		if(!p->asynchronous)
 			o->synchronise();
@@ -672,7 +674,7 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 	virtual void immediate()
 	{	// We just pretend to be a Cursor here for simplicity
 		assert(stmth);
-		using namespace FXSQLDBIPCMsgsI;
+		using namespace TnFXSQLDBIPCMsgsI;
 		Execute *i;
 		FXERRHM(i=new Execute(stmth, p->prefetchNo, 0/*don't return a cursh*/));
 		FXRBOp uni=FXRBNew(i);
@@ -683,40 +685,40 @@ struct FXSQLDB_ipc::Statement : public FXSQLDBStatement
 	}
 };
 
-FXSQLDBStatementRef FXSQLDB_ipc::prepare(const FXString &text)
+TnFXSQLDBStatementRef TnFXSQLDB_ipc::prepare(const FXString &text)
 {
 	while(!p->connh && !p->acksPending.empty())
 		pollAcks(true);
-	FXERRH(p->connh, QTrans::tr("FXSQLDB_ipc", "Database is not open"), 0, 0);
-	FXSQLDBStatementRef sr;
+	FXERRH(p->connh, QTrans::tr("TnFXSQLDB_ipc", "Database is not open"), 0, 0);
+	TnFXSQLDBStatementRef sr;
 	FXERRHM(sr=new Statement(p, this, text));
 	if(!p->asynchronous)
 		synchronise();
 	return sr;
 }
 
-FXSQLDBCursorRef FXSQLDB_ipc::execute(const FXString &text, FXuint flags, QWaitCondition *latch)
+TnFXSQLDBCursorRef TnFXSQLDB_ipc::execute(const FXString &text, FXuint flags, QWaitCondition *latch)
 {
 	while(!p->connh && !p->acksPending.empty())
 		pollAcks(true);
-	FXERRH(p->connh, QTrans::tr("FXSQLDB_ipc", "Database is not open"), 0, 0);
-	FXSQLDBStatementRef sr;
+	FXERRH(p->connh, QTrans::tr("TnFXSQLDB_ipc", "Database is not open"), 0, 0);
+	TnFXSQLDBStatementRef sr;
 	Statement *s=0;
 	FXERRHM(sr=s=new Statement(p, this, text, true, flags));
 	return s->int_execute(flags, latch);
 }
-void FXSQLDB_ipc::immediate(const FXString &text)
+void TnFXSQLDB_ipc::immediate(const FXString &text)
 {
 	while(!p->connh && !p->acksPending.empty())
 		pollAcks(true);
-	FXERRH(p->connh, QTrans::tr("FXSQLDB_ipc", "Database is not open"), 0, 0);
-	FXSQLDBStatementRef sr;
+	FXERRH(p->connh, QTrans::tr("TnFXSQLDB_ipc", "Database is not open"), 0, 0);
+	TnFXSQLDBStatementRef sr;
 	FXERRHM(sr=new Statement(p, this, text, true));
 	if(!p->asynchronous)
 		synchronise();
 }
 
-void FXSQLDB_ipc::synchronise()
+void TnFXSQLDB_ipc::synchronise()
 {
 	while(!p->acksPending.empty())
 		pollAcks(true);
@@ -724,7 +726,7 @@ void FXSQLDB_ipc::synchronise()
 
 //*******************************************************************************
 
-struct FXSQLDBServerPrivate
+struct TnFXSQLDBServerPrivate
 {
 	FXSSLPKey passwordKey;
 	struct Database
@@ -742,9 +744,9 @@ struct FXSQLDBServerPrivate
 	struct Handle
 	{
 		int type;
-		FXSQLDBServerPrivate *p;
+		TnFXSQLDBServerPrivate *p;
 		FXuint handle;
-		Handle(int _type, FXSQLDBServerPrivate *_p, FXuint _handle) : type(_type), p(_p), handle(_handle) { }
+		Handle(int _type, TnFXSQLDBServerPrivate *_p, FXuint _handle) : type(_type), p(_p), handle(_handle) { }
 		~Handle()
 		{
 			p->handles.remove(handle);
@@ -755,16 +757,16 @@ struct FXSQLDBServerPrivate
 	struct CursorH : Handle
 	{
 		StatementH *parent;
-		FXSQLDBCursorRef curs;
-		CursorH(FXSQLDBServerPrivate *p, StatementH *_parent, FXuint cursh, FXSQLDBCursorRef _curs) : Handle(3, p, cursh), parent(_parent), curs(_curs) { }
+		TnFXSQLDBCursorRef curs;
+		CursorH(TnFXSQLDBServerPrivate *p, StatementH *_parent, FXuint cursh, TnFXSQLDBCursorRef _curs) : Handle(3, p, cursh), parent(_parent), curs(_curs) { }
 	};
 	struct StatementH : Handle
 	{
 		ConnectionH *parent;
-		FXSQLDBStatementRef stmt;
+		TnFXSQLDBStatementRef stmt;
 		QIntDict<CursorH> curshs;
 		QMemArray<void *> blobs;
-		StatementH(FXSQLDBServerPrivate *p, ConnectionH *_parent, FXuint stmth, FXSQLDBStatementRef _stmt) : Handle(2, p, stmth), parent(_parent), stmt(_stmt), curshs(1, true) { }
+		StatementH(TnFXSQLDBServerPrivate *p, ConnectionH *_parent, FXuint stmth, TnFXSQLDBStatementRef _stmt) : Handle(2, p, stmth), parent(_parent), stmt(_stmt), curshs(1, true) { }
 		~StatementH()
 		{
 			for(FXuint n=0; n<blobs.count(); n++)
@@ -773,13 +775,13 @@ struct FXSQLDBServerPrivate
 	};
 	struct ConnectionH : Handle
 	{
-		FXAutoPtr<FXSQLDB> driver;
+		FXAutoPtr<TnFXSQLDB> driver;
 		QIntDict<StatementH> stmths;
-		ConnectionH(FXSQLDBServerPrivate *p, FXuint connh, FXAutoPtr<FXSQLDB> _driver) : Handle(1, p, connh), driver(_driver), stmths(1, true) { }
+		ConnectionH(TnFXSQLDBServerPrivate *p, FXuint connh, FXAutoPtr<TnFXSQLDB> _driver) : Handle(1, p, connh), driver(_driver), stmths(1, true) { }
 	};
 	QIntDict<Handle> handles;			// For quick lookup
 	QIntDict<ConnectionH> connhs;
-	FXSQLDBServerPrivate() : connhs(1, true), handles(1) { }
+	TnFXSQLDBServerPrivate() : connhs(1, true), handles(1) { }
 	FXuint makeRandomId() const
 	{	// Use OpenSSL if we have it as more random = more secure
 		FXuint v=0;
@@ -797,7 +799,7 @@ struct FXSQLDBServerPrivate
 	}
 	FXuint execute(StatementH *sh, FXuint cursflags)
 	{	// If cursflags==0, it's an immediate statement
-		FXSQLDBCursorRef sr=sh->stmt->execute(!cursflags ? FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly : cursflags);
+		TnFXSQLDBCursorRef sr=sh->stmt->execute(!cursflags ? TnFXSQLDBCursor::IsDynamic|TnFXSQLDBCursor::ForwardOnly : cursflags);
 		if(cursflags)
 		{
 			CursorH *ch;
@@ -812,61 +814,61 @@ struct FXSQLDBServerPrivate
 		}
 		return 0;
 	}
-	void getcursor(FXuint &flags, FXuint &columns, FXint &rows, QMemArray<FXSQLDBIPCMsgsI::ColumnData> *&data, FXint &rowsToGo, FXuint cursh, FXuint request)
+	void getcursor(FXuint &flags, FXuint &columns, FXint &rows, QMemArray<TnFXSQLDBIPCMsgsI::ColumnData> *&data, FXint &rowsToGo, FXuint cursh, FXuint request)
 	{
 		CursorH *ch=(CursorH *) handles.find(cursh);
-		FXERRH(ch, QTrans::tr("FXSQLDBServer", "Cursor handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+		FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Cursor handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 		flags=ch->curs->flags();
 		columns=ch->curs->columns();
 		rows=ch->curs->rows();
 		if(request) getdata(data, rowsToGo, ch, request);
 	}
-	void getdata(QMemArray<FXSQLDBIPCMsgsI::ColumnData> *&data, FXint &rowsToGo, CursorH *ch, FXuint request)
+	void getdata(QMemArray<TnFXSQLDBIPCMsgsI::ColumnData> *&data, FXint &rowsToGo, CursorH *ch, FXuint request)
 	{
 		FXuint r, origrequest=request;
 		if(request>10000) request=10000;
 		if(!data)
-			FXERRHM(data=new QMemArray<FXSQLDBIPCMsgsI::ColumnData>(ch->curs->columns()*request));
+			FXERRHM(data=new QMemArray<TnFXSQLDBIPCMsgsI::ColumnData>(ch->curs->columns()*request));
 		else
 			data->resize(ch->curs->columns()*request);
-		FXSQLDBCursor *curs=PtrPtr(ch->curs);
+		TnFXSQLDBCursor *curs=PtrPtr(ch->curs);
 		for(r=0; r<request && !curs->atEnd(); r++, curs->next())
 		{
 			for(FXuint c=0; c<curs->columns(); c++)
 			{
-				FXSQLDBColumnRef cr_=curs->data(c);
-				FXSQLDBColumn *cr=PtrPtr(cr_);
-				FXSQLDBIPCMsgsI::ColumnData &cd=(*data)[r*curs->columns()+c];
+				TnFXSQLDBColumnRef cr_=curs->data(c);
+				TnFXSQLDBColumn *cr=PtrPtr(cr_);
+				TnFXSQLDBIPCMsgsI::ColumnData &cd=(*data)[r*curs->columns()+c];
 				cd.data.data.length=(FXuint) cr->size();
 				switch((cd.data.type=(FXuchar) cr->type()))
 				{
-				case FXSQLDB::Null:
+				case TnFXSQLDB::Null:
 					break;
-				case FXSQLDB::VarChar:
-				case FXSQLDB::Char:
-				case FXSQLDB::WVarChar:
-				case FXSQLDB::WChar:
+				case TnFXSQLDB::VarChar:
+				case TnFXSQLDB::Char:
+				case TnFXSQLDB::WVarChar:
+				case TnFXSQLDB::WChar:
 					FXERRHM(cd.data.data.text=(FXchar *) malloc(cd.data.data.length+1));
 					cd.data.mydata=true;
 					memcpy(cd.data.data.text, cr->data(), cd.data.data.length+1);
 					break;
 
-				case FXSQLDB::TinyInt:
-				case FXSQLDB::SmallInt:
-				case FXSQLDB::Integer:
-				case FXSQLDB::BigInt:
-				case FXSQLDB::Decimal:
-				case FXSQLDB::Numeric:
-				case FXSQLDB::Real:
-				case FXSQLDB::Double:
-				case FXSQLDB::Float:
-				case FXSQLDB::Timestamp:
-				case FXSQLDB::Date:
-				case FXSQLDB::Time:
+				case TnFXSQLDB::TinyInt:
+				case TnFXSQLDB::SmallInt:
+				case TnFXSQLDB::Integer:
+				case TnFXSQLDB::BigInt:
+				case TnFXSQLDB::Decimal:
+				case TnFXSQLDB::Numeric:
+				case TnFXSQLDB::Real:
+				case TnFXSQLDB::Double:
+				case TnFXSQLDB::Float:
+				case TnFXSQLDB::Timestamp:
+				case TnFXSQLDB::Date:
+				case TnFXSQLDB::Time:
 					memcpy(&cd.data.data.tinyint, cr->data(), cr->size());
 					break;
 
-				case FXSQLDB::BLOB:
+				case TnFXSQLDB::BLOB:
 					FXERRHM(cd.data.data.blob=malloc(cd.data.data.length));
 					cd.data.mydata=true;
 					memcpy(cd.data.data.blob, cr->data(), cd.data.data.length);
@@ -878,30 +880,30 @@ struct FXSQLDBServerPrivate
 	}
 };
 
-FXSQLDBServer::FXSQLDBServer() : p(0)
+TnFXSQLDBServer::TnFXSQLDBServer() : p(0)
 {
-	FXERRHM(p=new FXSQLDBServerPrivate);
+	FXERRHM(p=new TnFXSQLDBServerPrivate);
 }
-FXSQLDBServer::~FXSQLDBServer()
+TnFXSQLDBServer::~TnFXSQLDBServer()
 { FXEXCEPTIONDESTRUCT1 {
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
 
-FXSQLDBServer &FXSQLDBServer::addDatabase(const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port)
+TnFXSQLDBServer &TnFXSQLDBServer::addDatabase(const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port)
 {
-	p->permitted.push_back(FXSQLDBServerPrivate::Database(driverName, dbname, user, host, port));
+	p->permitted.push_back(TnFXSQLDBServerPrivate::Database(driverName, dbname, user, host, port));
 	return *this;
 }
-bool FXSQLDBServer::removeDatabase(const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port)
+bool TnFXSQLDBServer::removeDatabase(const FXString &driverName, const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port)
 {
 	size_t c=p->permitted.size();
-	p->permitted.remove(FXSQLDBServerPrivate::Database(driverName, dbname, user, host, port));
+	p->permitted.remove(TnFXSQLDBServerPrivate::Database(driverName, dbname, user, host, port));
 	return c!=p->permitted.size();
 }
 
-FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
+FXIPCChannel::HandledCode TnFXSQLDBServer::handleMsg(FXIPCMsg *msg)
 {
-	using namespace FXSQLDBIPCMsgsI;
+	using namespace TnFXSQLDBIPCMsgsI;
 	switch(msg->msgType()-msgChunk())
 	{
 	case RequestKey::id::code:
@@ -924,7 +926,7 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 		{
 			Open *i=(Open *) msg;
 			bool isOk=false;
-			for(QValueList<FXSQLDBServerPrivate::Database>::const_iterator it=p->permitted.begin(); it!=p->permitted.end(); ++it)
+			for(QValueList<TnFXSQLDBServerPrivate::Database>::const_iterator it=p->permitted.begin(); it!=p->permitted.end(); ++it)
 			{
 				if(fxfilematch(it->driverName.text(), i->driver.text(), 0)
 					&& fxfilematch(it->dbname.text(), i->dbname.text(), 0)
@@ -936,17 +938,17 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 					break;
 				}
 			}
-			FXERRH(isOk, QTrans::tr("FXSQLDBServer", "Requested database '%1' via driver '%2' not permitted").arg(i->dbname).arg(i->driver), FXSQLDBSERVER_NOTPERMITTED, 0);
+			FXERRH(isOk, QTrans::tr("TnFXSQLDBServer", "Requested database '%1' via driver '%2' not permitted").arg(i->dbname).arg(i->driver), TNFXSQLDBSERVER_NOTPERMITTED, 0);
 			OpenAck ia(i->msgId(), p->makeRandomId());
-			FXSQLDBServerPrivate::ConnectionH *ch;
-			FXERRHM(ch=new FXSQLDBServerPrivate::ConnectionH(p, ia.connh, FXSQLDBRegistry::make(i->driver, i->dbname, i->user, i->host, i->port)));
+			TnFXSQLDBServerPrivate::ConnectionH *ch;
+			FXERRHM(ch=new TnFXSQLDBServerPrivate::ConnectionH(p, ia.connh, TnFXSQLDBRegistry::make(i->driver, i->dbname, i->user, i->host, i->port)));
 			FXRBOp unch=FXRBNew(ch);
 			p->connhs.insert(ia.connh, ch);
 			unch.dismiss();
 			p->handles.insert(ia.connh, ch);
 			QDICTDYNRESIZE(p->connhs);
 			QDICTDYNRESIZE(p->handles);
-			FXRBOp uneverything=FXRBObj(p->connhs, &QIntDict<FXSQLDBServerPrivate::ConnectionH>::remove, ia.connh);
+			FXRBOp uneverything=FXRBObj(p->connhs, &QIntDict<TnFXSQLDBServerPrivate::ConnectionH>::remove, ia.connh);
 			FXString password;
 			if(!i->password.isNull())
 			{
@@ -965,8 +967,8 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case Close::id::code:
 		{
 			Close *i=(Close *) msg;
-			FXSQLDBServerPrivate::ConnectionH *ch=p->connhs.find(i->connh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Connection handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::ConnectionH *ch=p->connhs.find(i->connh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Connection handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			p->connhs.remove(i->connh);
 			QDICTDYNRESIZE(p->connhs);
 			QDICTDYNRESIZE(p->handles);
@@ -980,18 +982,18 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case PrepareStatement::id::code:
 		{
 			PrepareStatement *i=(PrepareStatement *) msg;
-			FXSQLDBServerPrivate::ConnectionH *ch=(FXSQLDBServerPrivate::ConnectionH *) p->handles.find(i->connh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Connection handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::ConnectionH *ch=(TnFXSQLDBServerPrivate::ConnectionH *) p->handles.find(i->connh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Connection handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			PrepareStatementAck ia(i->msgId(), p->makeRandomId());
-			FXSQLDBServerPrivate::StatementH *sh;
-			FXERRHM(sh=new FXSQLDBServerPrivate::StatementH(p, ch, ia.stmth, ch->driver->prepare(i->statement)));
+			TnFXSQLDBServerPrivate::StatementH *sh;
+			FXERRHM(sh=new TnFXSQLDBServerPrivate::StatementH(p, ch, ia.stmth, ch->driver->prepare(i->statement)));
 			FXRBOp unsh=FXRBNew(sh);
 			ch->stmths.insert(ia.stmth, sh);
 			unsh.dismiss();
 			p->handles.insert(ia.stmth, sh);
 			QDICTDYNRESIZE(ch->stmths);
 			QDICTDYNRESIZE(p->handles);
-			FXRBOp uneverything=FXRBObj(ch->stmths, &QIntDict<FXSQLDBServerPrivate::StatementH>::remove, ia.stmth);
+			FXRBOp uneverything=FXRBObj(ch->stmths, &QIntDict<TnFXSQLDBServerPrivate::StatementH>::remove, ia.stmth);
 			// Enumerate the parameter names
 			FXString parname;
 			for(FXint paridx=0; !(parname=sh->stmt->parameterName(paridx)).empty(); paridx++)
@@ -1010,9 +1012,9 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case UnprepareStatement::id::code:
 		{
 			UnprepareStatement *i=(UnprepareStatement *) msg;
-			FXSQLDBServerPrivate::StatementH *sh=(FXSQLDBServerPrivate::StatementH *) p->handles.find(i->stmth);
-			FXERRH(sh, QTrans::tr("FXSQLDBServer", "Statement handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
-			FXSQLDBServerPrivate::ConnectionH *ch=sh->parent;
+			TnFXSQLDBServerPrivate::StatementH *sh=(TnFXSQLDBServerPrivate::StatementH *) p->handles.find(i->stmth);
+			FXERRH(sh, QTrans::tr("TnFXSQLDBServer", "Statement handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::ConnectionH *ch=sh->parent;
 			ch->stmths.remove(i->stmth);
 			QDICTDYNRESIZE(ch->stmths);
 			QDICTDYNRESIZE(p->handles);
@@ -1021,10 +1023,10 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case BindParameter::id::code:
 		{
 			BindParameter *i=(BindParameter *) msg;
-			FXSQLDBServerPrivate::StatementH *sh=(FXSQLDBServerPrivate::StatementH *) p->handles.find(i->stmth);
-			FXERRH(sh, QTrans::tr("FXSQLDBServer", "Statement handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
-			FXSQLDB::SQLDataType partype=(FXSQLDB::SQLDataType) i->par.type;
-			if(FXSQLDB::BLOB==partype)
+			TnFXSQLDBServerPrivate::StatementH *sh=(TnFXSQLDBServerPrivate::StatementH *) p->handles.find(i->stmth);
+			FXERRH(sh, QTrans::tr("TnFXSQLDBServer", "Statement handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDB::SQLDataType partype=(TnFXSQLDB::SQLDataType) i->par.type;
+			if(TnFXSQLDB::BLOB==partype)
 			{
 				QByteArray ba((FXuchar *) i->par.data.blob, i->par.data.length);
 				sh->stmt->bind(i->paridx, partype, (void *) &ba);
@@ -1032,7 +1034,7 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 				sh->blobs.push_back(i->par.data.blob);
 				i->par.data.blob=0;
 			}
-			else if(partype>=FXSQLDB::VarChar && partype<=FXSQLDB::WChar)
+			else if(partype>=TnFXSQLDB::VarChar && partype<=TnFXSQLDB::WChar)
 			{
 				FXString str(i->par.data.text, i->par.data.length);
 				sh->stmt->bind(i->paridx, partype, (void *) &str);
@@ -1049,8 +1051,8 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case Execute::id::code:
 		{
 			Execute *i=(Execute *) msg;
-			FXSQLDBServerPrivate::StatementH *sh=(FXSQLDBServerPrivate::StatementH *) p->handles.find(i->stmth);
-			FXERRH(sh, QTrans::tr("FXSQLDBServer", "Statement handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::StatementH *sh=(TnFXSQLDBServerPrivate::StatementH *) p->handles.find(i->stmth);
+			FXERRH(sh, QTrans::tr("TnFXSQLDBServer", "Statement handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			ExecuteAck ia(i->msgId(), p->execute(sh, i->cursflags));
 			if(ia.cursh)
 				p->getcursor(ia.flags, ia.columns, ia.rows, ia.data, ia.rowsToGo, ia.cursh, i->request);
@@ -1061,9 +1063,9 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case CloseCursor::id::code:
 		{
 			CloseCursor *i=(CloseCursor *) msg;
-			FXSQLDBServerPrivate::CursorH *ch=(FXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Cursor handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
-			FXSQLDBServerPrivate::StatementH *sh=ch->parent;
+			TnFXSQLDBServerPrivate::CursorH *ch=(TnFXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Cursor handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::StatementH *sh=ch->parent;
 			sh->curshs.remove(i->cursh);
 			QDICTDYNRESIZE(sh->curshs);
 			QDICTDYNRESIZE(p->handles);
@@ -1072,8 +1074,8 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case RequestRows::id::code:
 		{
 			RequestRows *i=(RequestRows *) msg;
-			FXSQLDBServerPrivate::CursorH *ch=(FXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Cursor handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::CursorH *ch=(TnFXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Cursor handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			RequestRowsAck ia(i->msgId());
 			p->getdata(ia.data, ia.rowsToGo, ch, i->request);
 			if(i->wantsAck())
@@ -1083,8 +1085,8 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case RequestColTypes::id::code:
 		{
 			RequestColTypes *i=(RequestColTypes *) msg;
-			FXSQLDBServerPrivate::CursorH *ch=(FXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Cursor handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::CursorH *ch=(TnFXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Cursor handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			RequestColTypesAck ia(i->msgId());
 			FXERRHM(ia.data=new QMemArray<ColType>(ch->curs->columns()));
 			for(FXuint n=0; n<ch->curs->columns(); n++)
@@ -1096,17 +1098,17 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case RequestColHeaders::id::code:
 		{
 			RequestColHeaders *i=(RequestColHeaders *) msg;
-			FXSQLDBServerPrivate::CursorH *ch=(FXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Cursor handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::CursorH *ch=(TnFXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Cursor handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			RequestColHeadersAck ia(i->msgId());
 			FXERRHM(ia.data=new QMemArray<ColumnData>(ch->curs->columns()));
 			for(FXuint n=0; n<ch->curs->columns(); n++)
 			{
-				FXSQLDBColumnRef cr=ch->curs->header(n);
+				TnFXSQLDBColumnRef cr=ch->curs->header(n);
 				ColumnData &cd=(*ia.data)[n];
 				cd.flags=cr->flags();
 				cd.data.type=(FXuchar) cr->type();
-				assert(FXSQLDB::VarChar==cr->type());
+				assert(TnFXSQLDB::VarChar==cr->type());
 				cd.data.data.length=(FXuint) cr->size();
 				cd.data.data.text=(FXchar *) cr->data();
 			}
@@ -1117,11 +1119,11 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 	case CopyCursor::id::code:
 		{
 			CopyCursor *i=(CopyCursor *) msg;
-			FXSQLDBServerPrivate::CursorH *ch=(FXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
-			FXERRH(ch, QTrans::tr("FXSQLDBServer", "Cursor handle not found"), FXSQLDBSERVER_NOTFOUND, 0);
+			TnFXSQLDBServerPrivate::CursorH *ch=(TnFXSQLDBServerPrivate::CursorH *) p->handles.find(i->cursh);
+			FXERRH(ch, QTrans::tr("TnFXSQLDBServer", "Cursor handle not found"), TNFXSQLDBSERVER_NOTFOUND, 0);
 			CopyCursorAck ia(i->msgId());
-			FXSQLDBServerPrivate::CursorH *ch2;
-			FXERRHM(ch2=new FXSQLDBServerPrivate::CursorH(p, ch->parent, p->makeRandomId(), ch->curs->copy()));
+			TnFXSQLDBServerPrivate::CursorH *ch2;
+			FXERRHM(ch2=new TnFXSQLDBServerPrivate::CursorH(p, ch->parent, p->makeRandomId(), ch->curs->copy()));
 			FXRBOp unch2=FXRBNew(ch2);
 			ch->parent->curshs.insert(ch2->handle, ch2);
 			unch2.dismiss();
@@ -1137,3 +1139,5 @@ FXIPCChannel::HandledCode FXSQLDBServer::handleMsg(FXIPCMsg *msg)
 }
 
 }
+
+#endif

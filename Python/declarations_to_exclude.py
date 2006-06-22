@@ -10,9 +10,14 @@ from pygccxml import declarations
 
 to_be_excluded = [
       "::FX::FXACL::int_toWin32SecurityDescriptor"            # internal
+    , "::FX::FXApp::getNextEvent"                             # Uses FXRawEvent (undefined)
+    , "::FX::FXApp::dispatchEvent"                            # Uses FXRawEvent (undefined)
     , "::FX::FXDataTarget::addUpcall"                         # uses functor
     , "::FX::FXDCPrint::outf"                                 # internal
     , "::FX::FXDCPrint::outhex"                               # internal
+    , "::FX::FXEventLoop::getNextEvent"                       # Uses FXRawEvent (undefined)
+    , "::FX::FXEventLoop::getNextEventI"                      # Uses FXRawEvent (undefined)
+    , "::FX::FXEventLoop::dispatchEvent"                      # Uses FXRawEvent (undefined)
     , "::FX::FXException::int_enableNestedExceptionFramework" # internal
     , "::FX::FXFile::info"                                    # Uses unstable struct stat
     , "::FX::FXFile::linkinfo"                                # Uses unstable struct stat
@@ -34,7 +39,7 @@ to_be_excluded = [
     , "::FX::FXObject::getPythonObject"                       # internal
     , "::FX::FXSettings::readFormatEntry"                     # Uses ...
     , "::FX::FXSettings::writeFormatEntry"                    # Uses ...
-    , "::FX::FXSQLDBCursor::resultsLatch"                     # internal
+    , "::FX::TnFXSQLDBCursor::resultsLatch"                   # internal
     , "::FX::FXStream::readBytes"
     , "::FX::FXStream::readRawBytes"
     , "::FX::FXStream::writeBytes"
@@ -75,10 +80,6 @@ to_be_excluded = [
     , "::FX::fxmessage"                                       # uses ...
     , "::FX::fxwarning"                                       # uses ...
     , "::FX::fxerror"                                         # uses ...
-
-    , "::FX::FXGLTriangleMesh::getColorBuffer"                # to be fixed
-    , "::FX::FXGLTriangleMesh::getNormalBuffer"               # to be fixed
-    , "::FX::FXGLTriangleMesh::getVertexBuffer"               # to be fixed
 ]
 
 declarations_aliases = [

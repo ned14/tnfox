@@ -40,8 +40,8 @@ def filter_decls(mb):
         fx_ns.class_( 'QPtrVector<FX::Generic::BoundFunctorV>').exclude()
     except: pass
     #Niall? wrapper for this function could not be compiled
-    #FXSQLDBStatement = fx_ns.class_( 'FXSQLDBStatement' )
-    #FXSQLDBStatement.member_function( name='bind', arg_types=[None,None,None] ).exclude()
+    #TnFXSQLDBStatement = fx_ns.class_( 'TnFXSQLDBStatement' )
+    #TnFXSQLDBStatement.member_function( name='bind', arg_types=[None,None,None] ).exclude()
 
     for func in fx_ns.calldefs():
         #I want to exclude all functions that returns pointer to pointer
@@ -200,35 +200,34 @@ private:
 
     # Patch in custom FXApp::init() implementation
     fxapp = mb.class_( 'FXApp' )
-    # Awaiting custom text inserter
-    foo = """static void FXApp_init(FXApp &app, int argc, bp::list argv, unsigned char connect=TRUE)
-{
-    int n, size=PyList_Size(argv.ptr());
-    static QMemArray<const char *> array;
-    array.resize(size+1);
-    for(n=0; n<size; n++)
-    {
-        array[n]=PyString_AsString(PyList_GetItem(argv.ptr(), n));
-    }
-    array[n]=0;
-    app.init(argc, (char **)(array.data()), connect);
-}
-static void FXApp_init2(FXApp &app, int argc, bp::list argv)
-{
-    FXApp_init(app, argc, argv);
-}"""
     fxapp.member_functions( 'init' ).exclude()
     fxapp.add_code( 'def("init", &FXApp_init)' )
     fxapp.add_code( 'def("init", &FXApp_init2)' )
+    fxapp.add_code( 'def("getArgv", &FXApp_getArgv)' )
+
+    # Patch in custom FXGLTriangleMesh implementations
+    fxgltrianglemesh = mb.class_( 'FXGLTriangleMesh' )
+    fxgltrianglemesh.member_functions( 'getVertexBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getVertexBuffer",       &FXGLTriangleMesh_getVertexBuffer)' )
+    fxgltrianglemesh.member_functions( 'getColorBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getColorBuffer",        &FXGLTriangleMesh_getColorBuffer)' )
+    fxgltrianglemesh.member_functions( 'getNormalBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getNormalBuffer",       &FXGLTriangleMesh_getNormalBuffer)' )
+    fxgltrianglemesh.member_functions( 'getTextureCoordBuffer' ).exclude()
+    fxgltrianglemesh.add_code   ( 'def("getTextureCoordBuffer", &FXGLTriangleMesh_getTextureCoordBuffer)' )
+
+    # Patch in custom FXGLViewer implementations
+    fxglviewer = mb.class_( 'FXGLViewer' )
+    fxglviewer.member_functions( 'lasso' ).exclude()
+    fxglviewer.add_code   ( 'def("lasso",  &FXGLViewer_lasso, bp::return_value_policy< bp::manage_new_object, bp::default_call_policies >() )' )
+    fxglviewer.member_functions( 'select' ).exclude()
+    fxglviewer.add_code   ( 'def("select", &FXGLViewer_select, bp::return_value_policy< bp::manage_new_object, bp::default_call_policies >() )' )
 
     # Patch image & bitmap getData() functions
-    getdatafuncs = mb.calldefs( lambda decl: decl.name == 'getData' and ('Icon' in decl.parent.name or 'Image' in decl.parent.name or 'Bitmap' in decl.parent.name) )
+    getdatafuncs = mb.calldefs( lambda decl: decl.name == 'getData' and not declarations.is_void_pointer( decl.return_type ) and ('Icon' in decl.parent.name or 'Image' in decl.parent.name or 'Bitmap' in decl.parent.name) )
     getdatafuncs.exclude()
-    #for getdatafunc in getdatafuncs:
-        # Awaiting custom text inserter
-        #declaration_code("DEFINE_MAKECARRAYITER(FXIcon, FX::FXColor, getData, (), (c.getWidth()*c.getHeight()))")
-        #declaration_code("DEFINE_MAKECARRAYITER(FXBitmap, FX::FXuchar, getData, (), (c.getWidth()*c.getHeight()/8))")
-        #getdatafunc.parent.add_code( 'def("getData", &'+getdatafunc.parent.name+'_getData)' )
+    for getdatafunc in getdatafuncs:
+        getdatafunc.parent.add_code( 'def("getData", &'+getdatafunc.parent.name+'_getData)' )
     
     # Patch sort functions
     sortfuncs = mb.calldefs( lambda decl: 'SortFunc' in decl.name and 'set' in decl.name )
@@ -281,25 +280,55 @@ def customize_module( mb ):
     # Insert a custom init call
     extmodule.adopt_creator( code_creators.custom_text_t('extern void InitialiseTnFOXPython();\n\n'), len(extmodule.creators)-1)
     extmodule.body.adopt_creator( code_creators.custom_text_t('    InitialiseTnFOXPython();\n\n'), 0)
-        
+
+    # Remove all standard headers in favour of precompiled header
     includes = filter( lambda creator: isinstance( creator, code_creators.include_t )
                         , extmodule.creators )
-    includes = includes[2:] #all includes except boost\python.hpp and __array_1.pypp.hpp
     map( lambda creator: extmodule.remove_creator( creator ), includes )
-    extmodule.adopt_include( code_creators.include_t( header="fx.h" ) )
     position = extmodule.last_include_index() + 1
     extmodule.adopt_creator( code_creators.namespace_using_t('::FX'), position )
     extmodule.user_defined_directories.append( settings.generated_files_dir )
+    extmodule.adopt_include( code_creators.include_t( header='../common.h' ) )    
+    extmodule.precompiled_header = '../common.h'
+    extmodule.adopt_include( code_creators.include_t( header='../patches.cpp.h' ) )    
 
-    # Stop using keywords as BPL will fault when they use an undeclared enum   
-    mb.calldefs().use_keywords = False
-    
     # Fix bug in gccxml where default args with function as value gain an extra ()
     try:
         constr = mb.constructor( 'FXPrimaryButton', arg_types=[None]*15 )
         constr.arguments[10].default_value = '(FX::FXWindow::defaultPadding() * 4)'
         constr.arguments[11].default_value = '(FX::FXWindow::defaultPadding() * 4)'
     except: pass
+
+    # Patch default args with enums to be number (to avoid undeclared enum problem)
+    def args_declaration_wa( self ):
+        args = []
+        for index, arg in enumerate( self.declaration.arguments ):
+            result = arg.type.decl_string + ' ' + self.argument_name(index)
+            if arg.default_value:
+                result += '=%s' % arg.wrapper_default_value
+            args.append( result )
+        if len( args ) == 1:
+            return args[ 0 ]
+        return ', '.join( args )
+
+    code_creators.calldef.calldef_wrapper_t.args_declaration = args_declaration_wa 
+
+    allfuncs = mb.calldefs()
+    for func in allfuncs:
+        #print type(func), type(func.parent), func
+        for arg in func.arguments:
+            if not arg.default_value:
+                continue
+            arg.wrapper_default_value = arg.default_value
+            if not declarations.is_enum( arg.type ):
+                continue
+            enum_ = declarations.enum_declaration( arg.type )
+            if isinstance( enum_.parent, declarations.namespace_t ):
+                continue #global enum
+            # Be lazy, and just lookup the last part
+            value = arg.default_value[ arg.default_value.rfind('::')+2: ]
+            arg.default_value = arg.type.declaration.values[ value ] + '/*' + arg.default_value + '*/'
+
 
 def create_module():
     parser_config = parser.config_t( )

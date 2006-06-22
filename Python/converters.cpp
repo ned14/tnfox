@@ -17,23 +17,97 @@
 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 ********************************************************************************/
 
-#include <boost/python.hpp>
-#include "../include/fxdefs.h"
-#include "../include/fxver.h"
-#include "../include/FXString.h"
-#include "../include/FXException.h"
-#include "../include/FXPtrHold.h"
-#include "../include/FXProcess.h"
-#include "FXPython.h"
-#include "CArrays.h"
-#include "../include/qvaluelist.h"
-#include "../include/qptrlist.h"
-#include "../include/qptrdict.h"
+#include "common.h"
 
-using namespace boost::python;
+#include "../include/fxver.h"
+#include <boost/python/suite/indexing/container_proxy.hpp>
+#include <boost/python/suite/indexing/list.hpp>
+#include <boost/python/suite/indexing/vector.hpp>
+
+
+// Define a QValueList converter
+namespace boost { namespace python { namespace indexing { namespace detail {
+template <class T>
+class algorithms_selector<FX::QValueList<T> >
+    {
+      typedef FX::QValueList<T> Container;
+
+      typedef list_traits<Container>       mutable_traits;
+      typedef list_traits<Container const> const_traits;
+
+    public:
+      typedef list_algorithms<mutable_traits> mutable_algorithms;
+      typedef list_algorithms<const_traits>   const_algorithms;
+    };
+}}}}
+template<typename type> void RegisterConvQValueList()
+{
+	using namespace FX;
+	using namespace boost::python;
+	class_< QValueList<type> >(Generic::typeInfo<QValueList<type> >().asIdentifier().text())
+		.def(indexing::container_suite< QValueList<type> >());
+}
+
+// Define a QPtrList converter
+/* TODO - need to access internal std::list
+namespace boost { namespace python { namespace indexing { namespace detail {
+template <class T, class Allocator>
+    class algorithms_selector<std::list<T, Allocator> >
+    {
+      typedef std::list<T, Allocator> Container;
+
+      typedef list_traits<Container>       mutable_traits;
+      typedef list_traits<Container const> const_traits;
+
+    public:
+      typedef list_algorithms<mutable_traits> mutable_algorithms;
+      typedef list_algorithms<const_traits>   const_algorithms;
+    };
+}}}}
+template<typename type> void RegisterConvQPtrList()
+{
+	class_< FX::QPtrList<type> >(FX::Generic::typeInfo<FX::QPtrList<type> >().asIdentifier().text())
+		.def (indexing::container_suite< std::list<type> >::with_policies(return_internal_reference()));
+}
+*/
+
+// Define a QMemArray converter
+namespace boost { namespace python { namespace indexing { namespace detail {
+template <class T>
+class algorithms_selector<FX::QMemArray<T> >
+    {
+      typedef FX::QMemArray<T> Container;
+
+      typedef random_access_sequence_traits<Container>       mutable_traits;
+      typedef random_access_sequence_traits<Container const> const_traits;
+
+    public:
+      typedef default_algorithms<mutable_traits> mutable_algorithms;
+      typedef default_algorithms<const_traits>   const_algorithms;
+    };
+}}}}
+template<typename type> void RegisterConvQMemArray()
+{
+	using namespace boost::python;
+	class_< FX::QMemArray<type> >(FX::Generic::typeInfo<FX::QMemArray<type> >().asIdentifier().text())
+		.def(indexing::container_suite< std::vector<type> >());
+}
+
+// Define a std::vector converter
+template<typename type> void RegisterConvStdVector()
+{
+	using namespace boost::python;
+	class_< std::vector<type> >(FX::Generic::typeInfo<std::vector<type> >().asIdentifier().text())
+		.def (indexing::container_suite< std::vector<type> >());
+}
+
+
 
 //*******************************************************************************
 // integral integer type converter
+
+using namespace boost::python;
+
 
 template<typename type> struct integral_to_python_int : public to_python_converter<type, integral_to_python_int<type> >
 {
@@ -217,6 +291,10 @@ void InitialiseTnFOXPython()
 	RegisterConvFXException();
 	RegisterConvFXString();
 	def("DeinitTnFOX", &DeinitialiseTnFOXPython);
+
+    RegisterConvQValueList<FX::FXException>();
+	RegisterConvQValueList<FX::FXProcess::MappedFileInfo>();
+	RegisterConvQValueList<FX::QTrans::ProvidedInfo>();
 
 	FXProcess *alreadyinited=FXProcess::instance();
 	if(!alreadyinited)

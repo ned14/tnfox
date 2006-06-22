@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXScrollPane.cpp,v 1.21 2006/01/22 17:58:41 fox Exp $                    *
 ********************************************************************************/
+#ifndef FX_DISABLEMENUS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -305,3 +307,5 @@ FXScrollPane::~FXScrollPane(){
   }
 
 }
+
+#endif

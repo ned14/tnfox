@@ -68,7 +68,7 @@
  #elif defined(_M_IA64)
   #define ARCHITECTURE "ia64"
  #else
-  #define ARCHITECTURE "i486"
+  #error Some new and unknown processor architecture detected!
  #endif
 #else
  #include <sys/time.h>
@@ -221,7 +221,7 @@ static const char *MachErrorToString(kern_return_t code) throw()
  #elif defined(__hppa__)
   #define ARCHITECTURE "PA_RISC"
  #elif defined(__powerpc__)
-  #define ARCHITECTURE "PPC"
+  #define ARCHITECTURE "PowerPC"
  #elif defined(__sparc__)
   #define ARCHITECTURE "SPARC"
  #else
