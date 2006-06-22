@@ -19,6 +19,7 @@ FXException
 + Made FXAtomicInt, and therefore TnFOX, portable to all GCC supported
 architectures
 + Added modular building of TnFOX
+* Renamed FXSQLDB* to TnFXSQLDB*
 
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=

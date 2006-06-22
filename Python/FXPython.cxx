@@ -20,6 +20,7 @@
 ********************************************************************************/
 
 #include "common.h"
+#include <boost/python/suite/indexing/iterator_range.hpp>
 
 #include "FXCodeToPythonCode.h"
 #ifndef FX_DISABLEGUI

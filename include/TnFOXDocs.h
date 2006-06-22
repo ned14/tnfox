@@ -294,11 +294,11 @@ the page about Inter Process Communication
 SQL Database support
 \endlink
 </b><br>
-FX::FXSQLDB is the primary class for accessing SQL databases but unlike other implementations,
+FX::TnFXSQLDB is the primary class for accessing SQL databases but unlike other implementations,
 it has transparent BLOB support for storing & retrieving arbitrary C++ object instances
 via metaprogramming. It is easy to write your own driver, and prewritten drivers come for
 SQLite3 (of which there is a customised copy built into TnFOX) and using an IPC connection
-to remotely work with another database via FX::FXSQLDBServer.
+to remotely work with another database via FX::TnFXSQLDBServer.
 
 <li><b>Threads can now run their own event loops</b><br>
 Through a small implementational change to FX::FXApp, threads can now run their own
@@ -426,7 +426,7 @@ FreeBSD questions:
 
 	\li All the FX::QIODevice classes
 	\li All the QTL thunk classes and all classes starting with 'Q'
-	\li All the FX::FXSQLDB classes
+	\li All the FX::TnFXSQLDB classes
 	\li All the stuff in FX::Secure
 	\li FX::FXACL, FX::FXFSMonitor, FX::FXRollback, FX::FXProcess, FX::FXNetwork
 	\li And from FOX, FX::fxfilematch(), FX::FXString and FX::FXStream (the FOX
@@ -2222,6 +2222,14 @@ But NOT FX::FXMenuButton nor FX::FXMenuPane
 \li FX::FXMDIMinimizeButton
 \li FX::FXMDIRestoreButton
 \li FX::FXMDIWindowButton
+
+\subsection configDisableSQL disableSQL:
+\li FX::TnFXSQLDB
+\li FX::TnFXSQLDB_ipc
+\li FX::TnFXSQLDB_sqlite3
+
+Also the embedded copy of SQLite3 is not compiled in.
+
 */
 
 
@@ -2733,8 +2741,8 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXZeroedWait, an event which signals when its count becomes zero
 <li>FX::QThreadPool, a pool of worker threads
 
-<li>FX::FXSQLDB, a generic SQL database accessor
-<li>FX::FXSQLDB_sqlite3, a driver for SQLite3 databases
+<li>FX::TnFXSQLDB, a generic SQL database accessor
+<li>FX::TnFXSQLDB_sqlite3, a driver for SQLite3 databases
 
 <li>FX::QBZip2Device, accesses bzip2 compressed files
 <li>FX::QGZipDevice, accesses zlib compressed files

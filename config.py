@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=False
+debugmode=True
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
@@ -45,6 +45,9 @@ disableMenus=False
 
 # Set to disable the MDI interface
 disableMDI=False
+
+# Set to disable SQL functionality
+disableSQL=False
 
 # Set to disable the graphing functionality
 disableGraphing=False

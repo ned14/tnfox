@@ -244,9 +244,6 @@
 #include "FXRefedObject.h"
 #include "FXRollback.h"
 #include "FXSecure.h"
-#include "FXSQLDB.h"
-#include "FXSQLDB_ipc.h"
-#include "FXSQLDB_sqlite3.h"
 #include "FXTime.h"
 #include "FXWinLinks.h"
 #include "QBlkSocket.h"
@@ -266,6 +263,9 @@
 #include "QThread.h"
 #include "QTrans.h"
 #include "TnFXApp.h"
+#include "TnFXSQLDB.h"
+#include "TnFXSQLDB_ipc.h"
+#include "TnFXSQLDB_sqlite3.h"
 
 #ifdef FX_INCLUDE_ABSOLUTELY_EVERYTHING
 // The stuff normally not included

@@ -144,12 +144,12 @@ quite straightforward if you think about it for a while. Tn's kernel implements
 precisely this mechanism to link together components running in disparate
 processes.
 
-Using the IPC framework asynchronously is demonstrated by FX::FXSQLDB_ipc
+Using the IPC framework asynchronously is demonstrated by FX::TnFXSQLDB_ipc
 and the example code in the Tn directory inside the test suite.
 
 <h3>Example code:</h3>
-If you want some examples of usage, see the source for FX::FXSQLDBServer and
-FX::FXSQLDB_ipc. Also see \c TestIPC and \c TestSQLDB in the test suite.
+If you want some examples of usage, see the source for FX::TnFXSQLDBServer and
+FX::TnFXSQLDB_ipc. Also see \c TestIPC and \c TestSQLDB in the test suite.
 */
 
 /*! \struct FXIPCMsg

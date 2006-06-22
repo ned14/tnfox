@@ -18,9 +18,10 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
+#ifndef FX_DISABLESQL
 
-#ifndef FXSQLDB_H
-#define FXSQLDB_H
+#ifndef TnFXSQLDB_H
+#define TnFXSQLDB_H
 
 #include "FXTime.h"
 #include "FXRefedObject.h"
@@ -31,7 +32,7 @@
 
 namespace FX {
 
-/*! \file FXSQLDB.h
+/*! \file TnFXSQLDB.h
 \brief Defines classes used to work with SQL databases
 */
 
@@ -50,20 +51,20 @@ Indeed, unless you are working with weird databases, for the most
 part you can forget about binding.
 
 <h3>The Drivers:</h3>
-The core of the TnFOX SQL Database Support is FX::FXSQLDB which
+The core of the TnFOX SQL Database Support is FX::TnFXSQLDB which
 is the abstract base class of SQL Database drivers in TnFOX. To use it,
-simply instantiate an implementation via FX::FXSQLDBRegistry which is
+simply instantiate an implementation via FX::TnFXSQLDBRegistry which is
 the future-proof method (which in the future may load in a driver DLL).
 
 The drivers currently provided are:
-\li <b>FX::FXSQLDB_sqlite3</b><br>
+\li <b>FX::TnFXSQLDB_sqlite3</b><br>
 This driver accesses a SQLite3 database via an embedded, customised
 edition of SQLite3. SQLite3 (http://www.sqlite.org/) is a self-contained,
 embeddable, zero-configuration SQL database engine implementing most
 of SQL92.
-\li <b>FX::FXSQLDB_ipc</b><br>
-This driver, in tandem with FX::FXSQLDBServer, permits any other
-FX::FXSQLDB to be accessed over a FX::FXIPCChannel.
+\li <b>FX::TnFXSQLDB_ipc</b><br>
+This driver, in tandem with FX::TnFXSQLDBServer, permits any other
+FX::TnFXSQLDB to be accessed over a FX::FXIPCChannel.
 
 If you want a driver for your particular database, it's very easy to
 implement your own - just see the sources. Please do consider donating
@@ -73,14 +74,14 @@ implemented.
 
 <h3>Quick Usage Example:</h3>
 \code
-FXAutoPtr<FXSQLDB> mydb=FXSQLDBRegistry::make("SQLite3", dbname);
+FXAutoPtr<TnFXSQLDB> mydb=TnFXSQLDBRegistry::make("SQLite3", dbname);
 mydb->open();
 mydb->immediate("CREATE TABLE test(id INTEGER PRIMARY KEY, 'value' INTEGER, 'text' VARCHAR(256), 'when' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);");
 
-FXSQLDBStatementRef s=db->prepare("SELECT :field FROM 'test' WHERE :field==:value;");
+TnFXSQLDBStatementRef s=db->prepare("SELECT :field FROM 'test' WHERE :field==:value;");
 s->bind(":field", "test");
 s->bind(":value", (FXint) 5);
-for(FXSQLDBCursorRef c=s->execute(); !c->atEnd(); c->next())
+for(TnFXSQLDBCursorRef c=s->execute(); !c->atEnd(); c->next())
 {
   fxmessage("Entry %d: %d\n", c->at(), c->data(0)->get<FXint>(v));
 }
@@ -93,7 +94,7 @@ SQL92 compatible way which isn't required if you simply bind in the values.
 
 TODO:
 \li SQLITE_BUSY handler
-\li FXSQLDB_ipc
+\li TnFXSQLDB_ipc
 */
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -104,7 +105,7 @@ TODO:
 
 class QStringList;
 
-namespace FXSQLDBImpl
+namespace TnFXSQLDBImpl
 {	// We can't partially specialise member functions (which is stupid of the C++ spec)
 	template<bool isUnsignedInt, typename type, typename signedIntEquiv> struct checkForOverflow
 	{
@@ -141,18 +142,18 @@ namespace FXSQLDBImpl
 	template<int sql92type, bool isUnsignedInt, typename type> struct BindImpl;
 }
 
-class FXSQLDBStatement;
+class TnFXSQLDBStatement;
 //! A reference to a Statement
-typedef FXRefingObject<FXSQLDBStatement> FXSQLDBStatementRef;
-class FXSQLDBCursor;
+typedef FXRefingObject<TnFXSQLDBStatement> TnFXSQLDBStatementRef;
+class TnFXSQLDBCursor;
 //! A reference to a Cursor
-typedef FXRefingObject<FXSQLDBCursor> FXSQLDBCursorRef;
-class FXSQLDBColumn;
+typedef FXRefingObject<TnFXSQLDBCursor> TnFXSQLDBCursorRef;
+class TnFXSQLDBColumn;
 //! A reference to a Column
-typedef FXRefingObject<FXSQLDBColumn> FXSQLDBColumnRef;
+typedef FXRefingObject<TnFXSQLDBColumn> TnFXSQLDBColumnRef;
 
 
-/*! \class FXSQLDB
+/*! \class TnFXSQLDB
 \ingroup sqldb
 \brief The abstract base class of a SQL database driver
 
@@ -172,7 +173,7 @@ speed. Some emulation is provided eg; if the driver doesn't support
 settable cursors but does support forwards and backwards cursors, at()
 will iterate those until the desired row is achieved. However, in general,
 most of the translation logic is done entirely by metaprogramming. A lot
-of the structure has been determined by requirements for FX::FXSQLDB_ipc
+of the structure has been determined by requirements for FX::TnFXSQLDB_ipc
 as the \c Node.Query capability is mostly implemented using that and
 achieving maximum efficiency was important (imagine working through a
 5,000 record dataset).
@@ -181,19 +182,19 @@ Note that if you store unsigned values, they are stored as their signed
 equivalent unless they are too big to fit. If this happens, they move
 up a container size which may cause your database driver to throw an
 exception if type constraints are exceeded. If you don't want this,
-cast your unsigned to signed before passing it to FX::FXSQLDBStatement::bind().
+cast your unsigned to signed before passing it to FX::TnFXSQLDBStatement::bind().
 
 <h3>BLOB support:</h3>
 Probably the biggest & best distinction of this SQL Database interface
 from others is the BLOB support. Basically, if there is an \c operator<<
 and \c operator>> overload for FX::FXStream for the type or a parent
-class of that type, FXSQLDB will automatically see them and use them to both
+class of that type, TnFXSQLDB will automatically see them and use them to both
 store and load transparently the type instance as a BLOB.
 
 And that's basically it. It just works.
 
 <h3>Asynchronous connections:</h3>
-FXSQLDB also supports the notion of asynchronous connections whereby if
+TnFXSQLDB also supports the notion of asynchronous connections whereby if
 say you bind a parameter to a prepared statement, it begins the process of
 binding that parameter but returns from the call before the bind has
 completed. This means two things: (i) the process of working with a remote
@@ -205,12 +206,12 @@ Normally, if you have written your code to be exception aware, this is
 not a problem. If however you need to know that everything you have done
 up till now has been processed and is fine, call synchronise().
 */
-struct FXSQLDBPrivate;
-class FXAPI FXSQLDB
+struct TnFXSQLDBPrivate;
+class FXAPI TnFXSQLDB
 {
-	FXSQLDBPrivate *p;
-	FXSQLDB(const FXSQLDB &);
-	FXSQLDB &operator=(const FXSQLDB &);
+	TnFXSQLDBPrivate *p;
+	TnFXSQLDB(const TnFXSQLDB &);
+	TnFXSQLDB &operator=(const TnFXSQLDB &);
 public:
 	//! Driver capabilities
 	struct Capabilities
@@ -239,9 +240,9 @@ public:
 		Capabilities &setAsynchronous(bool v=true) { Asynchronous=v; return *this; }
 	};
 protected:
-	FXSQLDB(Capabilities caps, const FXString &driverName, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
+	TnFXSQLDB(Capabilities caps, const FXString &driverName, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0);
 public:
-	virtual ~FXSQLDB();
+	virtual ~TnFXSQLDB();
 
 	//! The standard SQL92 types of data which can be stored in a database
 	enum SQLDataType
@@ -307,7 +308,7 @@ public:
 		FXSTATIC_ASSERT(LastSQLDataTypeEntry==Generic::TL::length<CPPDataTypes>::value, Mismatched_SQLDataTypes_And_CPPDataTypes);
 		typedef CPPToSQL92Type<type> sql92type;
 
-		return (SQLDataType)(sql92type::value+FXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(v));
+		return (SQLDataType)(sql92type::value+TnFXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(v));
 	}
 	//! Invokes \em instance with the C++ type the specified SQL data type best matches via FX::Generic::TL::dynamicAt
 	template<template<typename type> class instance> struct toCPPType
@@ -353,10 +354,10 @@ public:
 	//! Closes the database connection
 	virtual void close()=0;
 	//! Prepares a statement for later execution
-	virtual FXSQLDBStatementRef prepare(const FXString &text)=0;
+	virtual TnFXSQLDBStatementRef prepare(const FXString &text)=0;
 
 	//! Executes a statement with results
-	virtual FXSQLDBCursorRef execute(const FXString &text, FXuint flags=2/*FXSQLDBCursor::IsDynamic*/|4/*FXSQLDBCursor::ForwardOnly*/, QWaitCondition *latch=0);
+	virtual TnFXSQLDBCursorRef execute(const FXString &text, FXuint flags=2/*TnFXSQLDBCursor::IsDynamic*/|4/*TnFXSQLDBCursor::ForwardOnly*/, QWaitCondition *latch=0);
 	//! Executes a statement immediately
 	virtual void immediate(const FXString &text);
 
@@ -364,41 +365,41 @@ public:
 	virtual void synchronise();
 };
 
-/*! \class FXSQLDBCursor
+/*! \class TnFXSQLDBCursor
 \ingroup sqldb
 \brief Abstract base class for a cursor which can iterate through the results of
 executing a statement
 
 You should iterate like this:
 \code
-for(FXSQLDBCursorRef cursor=statement->execute(); !cursor->atEnd(); cursor->next())
+for(TnFXSQLDBCursorRef cursor=statement->execute(); !cursor->atEnd(); cursor->next())
 {
-  FXSQLDBColumnRef field0=cursor->data(0);
+  TnFXSQLDBColumnRef field0=cursor->data(0);
   ...
 }
 \endcode
 
-\sa FX::FXSQLDB, FX::FXSQLDBStatement
+\sa FX::TnFXSQLDB, FX::TnFXSQLDBStatement
 */
-struct FXSQLDBCursorPrivate;
-class FXAPI FXSQLDBCursor : public FXRefedObject<int>
+struct TnFXSQLDBCursorPrivate;
+class FXAPI TnFXSQLDBCursor : public FXRefedObject<int>
 {
-	FXSQLDBCursorPrivate *p;
-	FXSQLDBCursor &operator=(const FXSQLDBCursor &o);
+	TnFXSQLDBCursorPrivate *p;
+	TnFXSQLDBCursor &operator=(const TnFXSQLDBCursor &o);
 protected:
-	FXSQLDBCursor(FXuint flags, FXSQLDBStatement *parent, QWaitCondition *latch, FXuint columns);
-	FXSQLDBCursor(const FXSQLDBCursor &o);
+	TnFXSQLDBCursor(FXuint flags, TnFXSQLDBStatement *parent, QWaitCondition *latch, FXuint columns);
+	TnFXSQLDBCursor(const TnFXSQLDBCursor &o);
 	void int_setInternals(FXint *rows, FXuint *flags=0, FXuint *columns=0, QWaitCondition *latch=0);
 	void int_setRowsReady(FXint start, FXint end);
 	void int_setAtEnd(bool atend);
 public:
-	virtual ~FXSQLDBCursor();
+	virtual ~TnFXSQLDBCursor();
 	//! Copies a cursor
-	virtual FXSQLDBCursorRef copy() const=0;
+	virtual TnFXSQLDBCursorRef copy() const=0;
 
 	//! Cursor flags
 	enum Flags
-	{	// If you change these remember to adjust FXSQLDB above
+	{	// If you change these remember to adjust TnFXSQLDB above
 		IsStatic=1,			//!< The results returned by this cursor never change
 		IsDynamic=2,		//!< The results returned by this cursor can change
 		ForwardOnly=4		//!< This cursor can only move forwards
@@ -407,7 +408,7 @@ public:
 	//! Returns flags
 	FXuint flags() const throw();
 	//! Returns the statement for which this cursor is returning results
-	FXSQLDBStatement *statement() const throw();
+	TnFXSQLDBStatement *statement() const throw();
 	//! Returns the wait condition which will be signalled when results become available
 	QWaitCondition *resultsLatch() const throw();
 	//! Returns how many columns of information there are
@@ -436,14 +437,14 @@ public:
 
 	/*! Returns the column type and size for the specified zero-based column. This is the type
 	of the column itself, not that of the result itself (they can vary in some drivers) */
-	virtual void type(FXSQLDB::SQLDataType &datatype, FXint &size, FXuint no) const=0;
+	virtual void type(TnFXSQLDB::SQLDataType &datatype, FXint &size, FXuint no) const=0;
 	//! Returns the header for the specified zero-based column in the results
-	virtual FXSQLDBColumnRef header(FXuint no)=0;
+	virtual TnFXSQLDBColumnRef header(FXuint no)=0;
 	//! Returns the data for the specified zero-based column in the results
-	virtual FXSQLDBColumnRef data(FXuint no)=0;
+	virtual TnFXSQLDBColumnRef data(FXuint no)=0;
 };
 
-/*! \class FXSQLDBStatement
+/*! \class TnFXSQLDBStatement
 \ingroup sqldb
 \brief The abstract base class of a prepared SQL statement
 
@@ -466,21 +467,21 @@ takes a copy.
 
 \sa FX::FXSQL
 */
-struct FXSQLDBStatementPrivate;
-class FXAPI FXSQLDBStatement : public FXRefedObject<int>
+struct TnFXSQLDBStatementPrivate;
+class FXAPI TnFXSQLDBStatement : public FXRefedObject<int>
 {
-	FXSQLDBStatementPrivate *p;
-	FXSQLDBStatement &operator=(const FXSQLDBStatement &o);
+	TnFXSQLDBStatementPrivate *p;
+	TnFXSQLDBStatement &operator=(const TnFXSQLDBStatement &o);
 protected:
-	FXSQLDBStatement(FXSQLDB *parent, const FXString &text);
-	FXSQLDBStatement(const FXSQLDBStatement &o);
+	TnFXSQLDBStatement(TnFXSQLDB *parent, const FXString &text);
+	TnFXSQLDBStatement(const TnFXSQLDBStatement &o);
 public:
-	virtual ~FXSQLDBStatement();
+	virtual ~TnFXSQLDBStatement();
 	//! Copies a statement
-	virtual FXSQLDBStatementRef copy() const=0;
+	virtual TnFXSQLDBStatementRef copy() const=0;
 
 	//! Returns the driver which will execute this statement
-	FXSQLDB *driver() const throw();
+	TnFXSQLDB *driver() const throw();
 	//! Returns the original text of the statement
 	const FXString &text() const throw();
 
@@ -494,34 +495,34 @@ public:
 	have their data copied except for anything which becomes a BLOB
 	which is used by reference and must exist until the statement is
 	destroyed or the parameter rebound */
-	virtual FXSQLDBStatement &bind(FXint idx, FXSQLDB::SQLDataType datatype, void *data);
+	virtual TnFXSQLDBStatement &bind(FXint idx, TnFXSQLDB::SQLDataType datatype, void *data);
 private:
 #if defined(_MSC_VER) && _MSC_VER<=1400 && !defined(__INTEL_COMPILER) && !defined(__GCCXML__)
 #if _MSC_VER<=1310 
 	// MSVC7.1 and earlier just won't friend templates with specialisations :(
-	friend struct FXSQLDBImpl::DoSerialise;
+	friend struct TnFXSQLDBImpl::DoSerialise;
 #else
 	// MSVC8.0 is even worse :(. Just give up and call it public
 public:
 #endif
 #else
 	// This being the proper ISO C++ form
-	template<bool unknownType, typename type> friend struct FXSQLDBImpl::DoSerialise;
+	template<bool unknownType, typename type> friend struct TnFXSQLDBImpl::DoSerialise;
 #endif
 	void int_bindUnknownBLOB(FXint idx, FXAutoPtr<QBuffer> buff);
 public:
 	//! Binds a value to a parameter by zero-based position
-	template<typename type> FXSQLDBStatement &bind(FXint idx, const type &v)
+	template<typename type> TnFXSQLDBStatement &bind(FXint idx, const type &v)
 	{
-		typedef FXSQLDB::CPPToSQL92Type<type> sql92type;
-		FXSQLDBImpl::BindImpl<sql92type::value, -1!=sql92type::unsignedIntIdx, type>(this, idx,
-			FXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(&v), v);
+		typedef TnFXSQLDB::CPPToSQL92Type<type> sql92type;
+		TnFXSQLDBImpl::BindImpl<sql92type::value, -1!=sql92type::unsignedIntIdx, type>(this, idx,
+			TnFXSQLDBImpl::checkForOverflow<-1!=sql92type::unsignedIntIdx, type, typename sql92type::signedIntEquiv>::Do(&v), v);
 		return *this;
 	}
 	//! Binds null to a parameter
-	FXSQLDBStatement &bind(FXint idx)
+	TnFXSQLDBStatement &bind(FXint idx)
 	{
-		bind(idx, FXSQLDB::Null, 0);
+		bind(idx, TnFXSQLDB::Null, 0);
 		return *this;
 	}
 	/*! Binds a value to a named parameter, returning the parameter index.
@@ -537,19 +538,19 @@ public:
 	FXint bind(const FXString &name)
 	{
 		FXint idx=parameterIdx(name);
-		bind(idx, FXSQLDB::Null, 0);
+		bind(idx, TnFXSQLDB::Null, 0);
 		return idx;
 	}
 	/*! Executes a statement returning results. \em flags are a combination
-	of FX::FXSQLDBCursor::Flags. If set and asynchronous results
+	of FX::TnFXSQLDBCursor::Flags. If set and asynchronous results
 	set in the flags, \em latch will be signalled for you when results become available */
-	virtual FXSQLDBCursorRef execute(FXuint flags=FXSQLDBCursor::IsDynamic|FXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0)=0;
+	virtual TnFXSQLDBCursorRef execute(FXuint flags=TnFXSQLDBCursor::IsDynamic|TnFXSQLDBCursor::ForwardOnly, QWaitCondition *latch=0)=0;
 	//! Executes a statement returning no results
 	virtual void immediate()=0;
 };
 
 
-namespace FXSQLDBImpl
+namespace TnFXSQLDBImpl
 {	// You can specialise these to use custom dumping routines like Tn does
 	template<bool override, typename type> struct SerialiseUnknownBLOB
 	{
@@ -570,20 +571,20 @@ namespace FXSQLDBImpl
 
 	template<int sql92type, bool isUnsignedInt, typename type> struct BindImpl
 	{	// It's known and not an unsigned int, so simply pass as a void *
-		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
+		BindImpl(TnFXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
-			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<type>(&v) ;
+			TnFXSQLDB::SQLDataType datatype=TnFXSQLDB::toSQL92Type<type>(&v) ;
 			s->bind(idx, datatype, (void *) &v);
 		}
 	};
 	template<int sql92type, typename type> struct BindImpl<sql92type, true, type>
 	{	// It's known and is an unsigned int, so simply pass as a void *
-		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
+		BindImpl(TnFXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
-			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<type>(&v) ;
+			TnFXSQLDB::SQLDataType datatype=TnFXSQLDB::toSQL92Type<type>(&v) ;
 			if(upgrade)
 			{	// Need to copy to higher container to stay endian safe
-				typedef typename Generic::TL::at<FXSQLDB::CPPDataTypes, sql92type+1>::value biggerContainer;
+				typedef typename Generic::TL::at<TnFXSQLDB::CPPDataTypes, sql92type+1>::value biggerContainer;
 				biggerContainer bv=v;
 				s->bind(idx, datatype, (void *) &bv);
 			}
@@ -593,14 +594,14 @@ namespace FXSQLDBImpl
 	};
 	template<bool canSerialise, typename type> struct DoSerialise
 	{
-		DoSerialise(FXSQLDBStatement *s, FXint idx, const type &v)
+		DoSerialise(TnFXSQLDBStatement *s, FXint idx, const type &v)
 		{
 			FXERRG(FXString("No operator<< found for type %1").arg(Generic::typeInfo<type>().name()), 0, FXERRH_ISDEBUG);
 		}
 	};
 	template<typename type> struct DoSerialise<true, type>
 	{
-		DoSerialise(FXSQLDBStatement *s, FXint idx, const type &v)
+		DoSerialise(TnFXSQLDBStatement *s, FXint idx, const type &v)
 		{
 			FXAutoPtr<QBuffer> buff;
 			FXERRHM(buff=new QBuffer);
@@ -612,17 +613,17 @@ namespace FXSQLDBImpl
 	};
 	template<bool isUnsignedInt, typename type> struct BindImpl<-1, isUnsignedInt, type>
 	{	// It's some unknown type. Try serialising it
-		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
+		BindImpl(TnFXSQLDBStatement *s, FXint idx, bool upgrade, const type &v)
 		{
 			DoSerialise<Generic::hasSerialise<type>::value, type>(s, idx, v);
 		}
 	};
 	template<bool isUnsignedInt> struct BindImpl<-1, isUnsignedInt, const char *>
 	{	// A string literal. Convert to FXString and pass
-		BindImpl(FXSQLDBStatement *s, FXint idx, bool upgrade, const char *&v)
+		BindImpl(TnFXSQLDBStatement *s, FXint idx, bool upgrade, const char *&v)
 		{
 			FXString l(v);
-			FXSQLDB::SQLDataType datatype=FXSQLDB::toSQL92Type<FXString>(&l) ;
+			TnFXSQLDB::SQLDataType datatype=TnFXSQLDB::toSQL92Type<FXString>(&l) ;
 			s->bind(idx, datatype, (void *) &l);
 		}
 	};
@@ -631,27 +632,27 @@ namespace FXSQLDBImpl
 
 	template<bool isConvertible, typename rettype, typename srctype> struct GetImpl
 	{
-		GetImpl(rettype *dst, const srctype *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		GetImpl(rettype *dst, const srctype *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{	// For the common case when no conversion exists between src and dst
 			FXERRG(FXString("No conversion exists from %1 to %2").arg(Generic::typeInfo<srctype>().name()).arg(Generic::typeInfo<rettype>().name()), 0, FXERRH_ISDEBUG);
 		}
 	};
 	template<typename rettype, typename srctype> struct GetImpl<true, rettype, srctype>
 	{	// Good for anything with an implicit conversion available
-		GetImpl(rettype *dst, const srctype *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		GetImpl(rettype *dst, const srctype *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{	// Set dest equal to src, invoking appropriate conversions
 			*dst=*src;
 		}
 	};
 	template<typename rettype> struct GetImpl<true, rettype, FXString>
 	{	// To avoid excessive memory copying, we don't construct FXString until the last moment
-		GetImpl(rettype *dst, const FXString *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		GetImpl(rettype *dst, const FXString *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{
-			if(FXSQLDB::VarChar==sqldatatype || FXSQLDB::Char==sqldatatype)
+			if(TnFXSQLDB::VarChar==sqldatatype || TnFXSQLDB::Char==sqldatatype)
 			{
 				*dst=FXString((const FXchar *) src, (FXint) srcsize);
 			}
-			else if(FXSQLDB::WVarChar==sqldatatype || FXSQLDB::WChar==sqldatatype)
+			else if(TnFXSQLDB::WVarChar==sqldatatype || TnFXSQLDB::WChar==sqldatatype)
 			{
 				//*dst=FXString((FXnchar *) src, (FXint) srcsize);
 				assert(0);
@@ -661,9 +662,9 @@ namespace FXSQLDBImpl
 	};
 	template<> struct GetImpl<false, const char *, FXString>
 	{	// This being the by-reference accessor
-		GetImpl(const char **dst, const FXString *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		GetImpl(const char **dst, const FXString *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{
-			if(FXSQLDB::VarChar==sqldatatype || FXSQLDB::Char==sqldatatype)
+			if(TnFXSQLDB::VarChar==sqldatatype || TnFXSQLDB::Char==sqldatatype)
 			{
 				*dst=(const FXchar *) src;
 			}
@@ -673,7 +674,7 @@ namespace FXSQLDBImpl
 	};
 	template<> struct GetImpl<true, QByteArray, QByteArray>
 	{	// To avoid excessive memory copying, construct the QByteArray to directly point at this data
-		GetImpl(QByteArray *dst, const QByteArray *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		GetImpl(QByteArray *dst, const QByteArray *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{
 			dst->setRawData((FXuchar *) src, (FXuint) srcsize, true);
 		}
@@ -698,7 +699,7 @@ namespace FXSQLDBImpl
 	};
 	template<bool isConvertible, typename rettype> struct GetImpl<isConvertible, rettype, QByteArray>
 	{	// This being the specialisation of BLOB to unknown type
-		GetImpl(rettype *dst, const QByteArray *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		GetImpl(rettype *dst, const QByteArray *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{
 			DoDeserialise<Generic::hasDeserialise<rettype>::value, rettype>(dst, (FXuchar *) src, (FXuint) srcsize);
 		}
@@ -707,19 +708,19 @@ namespace FXSQLDBImpl
 	{
 		template<typename type> struct Source
 		{	// rettype is the type we're storing to, type is the source type
-			static void Do(rettype *dst, const void *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+			static void Do(rettype *dst, const void *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 			{
 				GetImpl<Generic::convertible<rettype, type>::value, rettype, type>(dst, (const type *) src, sqldatatype, srcsize);
 			}
 		};
-		static void Invoke(rettype *dst, const void *src, FXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
+		static void Invoke(rettype *dst, const void *src, TnFXSQLDB::SQLDataType sqldatatype, FXuval srcsize)
 		{
-			FXSQLDB::toCPPType<Source>(sqldatatype, dst, src, sqldatatype, srcsize);
+			TnFXSQLDB::toCPPType<Source>(sqldatatype, dst, src, sqldatatype, srcsize);
 		}
 	};
 }
 
-/*! \class FXSQLDBColumn
+/*! \class TnFXSQLDBColumn
 \ingroup sqldb
 \brief Represents information about a column in a row
 
@@ -729,19 +730,19 @@ thus avoiding copying.
 
 FX::FXString's always copy both in and out. Note that except for BLOB's and
 strings (including headers which really are just a string), the value is stored
-in the scratch space inside FXSQLDBColumn and thus their value persists after the
+in the scratch space inside TnFXSQLDBColumn and thus their value persists after the
 cursor they came from is moved. 
 
-\sa FX::FXSQLDB, FX::FXSQLCursor
+\sa FX::TnFXSQLDB, FX::FXSQLCursor
 */
-class FXAPI FXSQLDBColumn : public FXRefedObject<int>
+class FXAPI TnFXSQLDBColumn : public FXRefedObject<int>
 {
 protected:
 	FXint myflags;
-	FXSQLDBCursorRef myparent;
+	TnFXSQLDBCursorRef myparent;
 	FXuint mycolumn;
 	FXint myrow;
-	FXSQLDB::SQLDataType mytype;
+	TnFXSQLDB::SQLDataType mytype;
 	const void *mydata;
 	FXuval mydatalen;
 	union Scratch			// Some scratch space to avoid memory allocation for small types
@@ -754,14 +755,14 @@ protected:
 		FXdouble double_;
 		char timestamp[sizeof(FXTime)];
 	} scratch;
-	FXSQLDBColumn(const FXSQLDBColumn &o) : myflags(o.myflags), myparent(o.myparent), mycolumn(o.mycolumn), myrow(o.myrow), mytype(o.mytype),
+	TnFXSQLDBColumn(const TnFXSQLDBColumn &o) : myflags(o.myflags), myparent(o.myparent), mycolumn(o.mycolumn), myrow(o.myrow), mytype(o.mytype),
 		mydata(o.mydata), mydatalen(o.mydatalen) { }
 public:
-	FXSQLDBColumn(FXuint flags, FXSQLDBCursor *parent, FXuint column, FXint row, FXSQLDB::SQLDataType type=FXSQLDB::Null)
+	TnFXSQLDBColumn(FXuint flags, TnFXSQLDBCursor *parent, FXuint column, FXint row, TnFXSQLDB::SQLDataType type=TnFXSQLDB::Null)
 		: myflags(flags), myparent(parent), mycolumn(column), myrow(row), mytype(type), mydata(0), mydatalen(0) { }
-	virtual ~FXSQLDBColumn() { }
+	virtual ~TnFXSQLDBColumn() { }
 	//! Copies a column
-	virtual FXSQLDBColumnRef copy() const=0;
+	virtual TnFXSQLDBColumnRef copy() const=0;
 	//! Flags
 	enum Flags
 	{
@@ -771,15 +772,15 @@ public:
 	//! Returns flags
 	FXuint flags() const throw() { return myflags; }
 	//! Returns the cursor which owns this column
-	FXSQLDBCursor *cursor() const throw() { return const_cast<FXSQLDBCursor *>(PtrPtr(myparent)); }
+	TnFXSQLDBCursor *cursor() const throw() { return const_cast<TnFXSQLDBCursor *>(PtrPtr(myparent)); }
 	//! Returns which column index this is
 	FXuint column() const throw() { return mycolumn; }
 	//! Returns which row index this is
 	FXint row() const throw() { return myrow; }
 	//! Returns the header for this column
-	FXSQLDBColumnRef header() const { return cursor()->header(column()); }
+	TnFXSQLDBColumnRef header() const { return cursor()->header(column()); }
 	//! Returns the type of this column's data
-	FXSQLDB::SQLDataType type() const throw() { return mytype; }
+	TnFXSQLDB::SQLDataType type() const throw() { return mytype; }
 	//! Returns a pointer to the raw data
 	const void *data() const throw() { return mydata; }
 	//! Returns the size of the column's data
@@ -787,12 +788,12 @@ public:
 	/*! Returns the effective type of this column's data. This
 	is what the parameterised types (Decimal, Numeric, Float) are
 	treated as */
-	FXSQLDB::SQLDataType effectiveType() const throw()
+	TnFXSQLDB::SQLDataType effectiveType() const throw()
 	{
-		if(FXSQLDB::Decimal==mytype || FXSQLDB::Numeric==mytype)
-			return (FXSQLDB::SQLDataType)(FXSQLDB::TinyInt+fxbitscan(mydatalen));
-		if(FXSQLDB::Float==mytype)
-			return (FXSQLDB::SQLDataType)(FXSQLDB::Real-2+fxbitscan(mydatalen));
+		if(TnFXSQLDB::Decimal==mytype || TnFXSQLDB::Numeric==mytype)
+			return (TnFXSQLDB::SQLDataType)(TnFXSQLDB::TinyInt+fxbitscan(mydatalen));
+		if(TnFXSQLDB::Float==mytype)
+			return (TnFXSQLDB::SQLDataType)(TnFXSQLDB::Real-2+fxbitscan(mydatalen));
 		return mytype;
 	}
 
@@ -801,8 +802,8 @@ public:
 	template<class T> void get(T &dst) const
 	{	// Our problem is that we must make the rvalue for the operator= the
 		// type that it is actually stored as
-		FXSQLDB::SQLDataType coldatatype=effectiveType();
-		FXSQLDBImpl::Get<T>::Invoke(&dst, mydata, coldatatype, mydatalen);
+		TnFXSQLDB::SQLDataType coldatatype=effectiveType();
+		TnFXSQLDBImpl::Get<T>::Invoke(&dst, mydata, coldatatype, mydatalen);
 	}
 	//! \overload
 	template<class T> T get() const
@@ -815,43 +816,43 @@ public:
 
 
 
-/*! \class FXSQLDBRegistry
+/*! \class TnFXSQLDBRegistry
 \ingroup sqldb
-\brief Knows of all currently available FX::FXSQLDB's
+\brief Knows of all currently available FX::TnFXSQLDB's
 
 In the future, this registry may be expanded to enumerate a directory for
 database driver DLL's and thus load them on demand. However, for now, it
 merely holds a registry of all known database drivers.
 */
-struct FXSQLDBRegistryPrivate;
-class FXAPI FXSQLDBRegistry
+struct TnFXSQLDBRegistryPrivate;
+class FXAPI TnFXSQLDBRegistry
 {
-	friend struct FXSQLDBRegistryPrivate;
-	FXSQLDBRegistryPrivate *p;
-	FXSQLDBRegistry(const FXSQLDBRegistry &);
-	FXSQLDBRegistry &operator=(const FXSQLDBRegistry &);
-	typedef FXAutoPtr<FXSQLDB> (*createSpec)(const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port);
+	friend struct TnFXSQLDBRegistryPrivate;
+	TnFXSQLDBRegistryPrivate *p;
+	TnFXSQLDBRegistry(const TnFXSQLDBRegistry &);
+	TnFXSQLDBRegistry &operator=(const TnFXSQLDBRegistry &);
+	typedef FXAutoPtr<TnFXSQLDB> (*createSpec)(const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port);
 	void int_register(const FXString &name, createSpec create);
 	void int_deregister(const FXString &name, createSpec create);
 public:
-	FXSQLDBRegistry();
-	~FXSQLDBRegistry();
+	TnFXSQLDBRegistry();
+	~TnFXSQLDBRegistry();
 
 	//! Returns the process instance of this registry
-	static FXSQLDBRegistry *processRegistry();
+	static TnFXSQLDBRegistry *processRegistry();
 	//! Returns a list of all known drivers
 	QStringList drivers() const;
 	//! Instantiates an instance of a driver, returning zero if unknown
-	FXAutoPtr<FXSQLDB> instantiate(const FXString &name, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0) const;
+	FXAutoPtr<TnFXSQLDB> instantiate(const FXString &name, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0) const;
 	//! Instantiates an instance of a driver from the process registry, returning zero if unknown
-	static FXAutoPtr<FXSQLDB> make(const FXString &name, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0)
+	static FXAutoPtr<TnFXSQLDB> make(const FXString &name, const FXString &dbname=FXString::nullStr(), const FXString &user=FXString::nullStr(), const QHostAddress &host=QHOSTADDRESS_LOCALHOST, FXushort port=0)
 	{
 		return processRegistry()->instantiate(name, dbname, user, host, port);
 	}
 
 	template<class type> struct Register
 	{
-		static FXAutoPtr<FXSQLDB> create(const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port) { return new type(dbname, user, host, port); }
+		static FXAutoPtr<TnFXSQLDB> create(const FXString &dbname, const FXString &user, const QHostAddress &host, FXushort port) { return new type(dbname, user, host, port); }
 		Register() { processRegistry()->int_register(type::MyName, create); }
 		~Register() { processRegistry()->int_deregister(type::MyName, create); }
 	};
@@ -865,4 +866,5 @@ public:
 
 }
 
+#endif
 #endif

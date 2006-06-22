@@ -39,7 +39,7 @@ to_be_excluded = [
     , "::FX::FXObject::getPythonObject"                       # internal
     , "::FX::FXSettings::readFormatEntry"                     # Uses ...
     , "::FX::FXSettings::writeFormatEntry"                    # Uses ...
-    , "::FX::FXSQLDBCursor::resultsLatch"                     # internal
+    , "::FX::TnFXSQLDBCursor::resultsLatch"                   # internal
     , "::FX::FXStream::readBytes"
     , "::FX::FXStream::readRawBytes"
     , "::FX::FXStream::writeBytes"

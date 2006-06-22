@@ -17,10 +17,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-def baseFXSQLDB():
+def baseTnFXSQLDB():
     return None
 
-def applyFXSQLDB(g, cclass):
+def applyTnFXSQLDB(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.Capabilities.setTransactions,         return_self())
@@ -31,24 +31,24 @@ def applyFXSQLDB(g, cclass):
     set_policy(cclass.Capabilities.setHasStaticCursor,      return_self())
     set_policy(cclass.Capabilities.setAsynchronous,         return_self())
 
-def applyFXSQLDBRegistry(g, cclass):
+def applyTnFXSQLDBRegistry(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.processRegistry,  return_value_policy(reference_existing_object))
 
-def applyFXSQLDBStatement(g, cclass):
+def applyTnFXSQLDBStatement(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.bind,             return_self())
     set_policy(cclass.driver,           return_value_policy(reference_existing_object))
 
-def applyFXSQLDBColumn(g, cclass):
+def applyTnFXSQLDBColumn(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.cursor,           return_value_policy(reference_existing_object))
     exclude(cclass.data)
 
-def applyFXSQLDBCursor(g, cclass):
+def applyTnFXSQLDBCursor(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.statement,        return_value_policy(reference_existing_object))

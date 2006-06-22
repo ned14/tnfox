@@ -183,9 +183,11 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     prefixpath=os.path.abspath(prefixpath)+"/"
     platprefix=os.path.abspath(platprefix)+"/"
     print prefixpath, platprefix
-    execfile(prefixpath+"config.py")    # Sets debugmode, version, libtnfoxname
-    for key,value in locals().items():
+    varsset={}
+    execfile(prefixpath+"config.py", globals(), varsset)    # Sets debugmode, version, libtnfoxname
+    for key,value in varsset.items():
         globals()[key]=value
+    global FOXCompatLayer, disableFileDirDialogs, disableFindReplaceDialogs, disableMDI
     if targetversion==0: targetversion=tnfoxversion
     compiler=ARGUMENTS.get("compiler", None)
     global toolset
@@ -248,13 +250,14 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if disableFindReplaceDialogs: env['CPPDEFINES']+=[("FX_DISABLEFINDREPLACEDIALOGS", 1)]
     if disableMenus: env['CPPDEFINES']+=[("FX_DISABLEMENUS", 1)]
     if disableMDI: env['CPPDEFINES']+=[("FX_DISABLEMDI", 1)]
+    if disableSQL: env['CPPDEFINES']+=[("FX_DISABLESQL", 1)]
     if disableGraphing: env['CPPDEFINES']+=[("FX_DISABLEGRAPHING", 1)]
 
     if onWindows:
         # Seems to need this on some installations
         env['ENV']['TMP']=os.environ['TMP']
 
-    if os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
+    if not disableSQL and os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
         env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
         env['CPPPATH']+=[prefixpath+"src/sqlite"]
         # Generate a static library of SQLite and add to ourselves

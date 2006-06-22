@@ -17,13 +17,13 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXSQLDB
+import TnFXSQLDB
 
-def baseFXSQLDB_sqlite3():
-    return "FXSQLDB"
+def baseTnFXSQLDB_sqlite3():
+    return "TnFXSQLDB"
 
-def applyFXSQLDB_sqlite3(g, cclass):
+def applyTnFXSQLDB_sqlite3(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXSQLDB.applyFXSQLDB(g, cclass)
+    TnFXSQLDB.applyTnFXSQLDB(g, cclass)
     

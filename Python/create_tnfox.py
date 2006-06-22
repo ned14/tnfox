@@ -40,8 +40,8 @@ def filter_decls(mb):
         fx_ns.class_( 'QPtrVector<FX::Generic::BoundFunctorV>').exclude()
     except: pass
     #Niall? wrapper for this function could not be compiled
-    #FXSQLDBStatement = fx_ns.class_( 'FXSQLDBStatement' )
-    #FXSQLDBStatement.member_function( name='bind', arg_types=[None,None,None] ).exclude()
+    #TnFXSQLDBStatement = fx_ns.class_( 'TnFXSQLDBStatement' )
+    #TnFXSQLDBStatement.member_function( name='bind', arg_types=[None,None,None] ).exclude()
 
     for func in fx_ns.calldefs():
         #I want to exclude all functions that returns pointer to pointer

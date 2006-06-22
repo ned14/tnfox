@@ -17,19 +17,19 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                          *
 #********************************************************************************
 
-import FXSQLDB
+import TnFXSQLDB
 
-def baseFXSQLDB_ipc():
-    return "FXSQLDB"
+def baseTnFXSQLDB_ipc():
+    return "TnFXSQLDB"
 
-def applyFXSQLDB_ipc(g, cclass):
+def applyTnFXSQLDB_ipc(g, cclass):
     for key,value in g.items():
         globals()[key]=value
-    FXSQLDB.applyFXSQLDB(g, cclass)
+    TnFXSQLDB.applyTnFXSQLDB(g, cclass)
     set_policy(cclass.setIsAsynchronous,       return_self())
     set_policy(cclass.setPrefetching,          return_self())
     
-def applyFXSQLDBServer(g, cclass):
+def applyTnFXSQLDBServer(g, cclass):
     for key,value in g.items():
         globals()[key]=value
     set_policy(cclass.addDatabase,             return_self())
