@@ -20,10 +20,12 @@ def CheckMSVC80(cc):
     cc.Result(result)
     return result
 conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
-assert conf.CheckMSVC71()
-MSVCVersion=710
+MSVCVersion=0
+if conf.CheckMSVC71():
+    MSVCVersion=710
 if conf.CheckMSVC80():
     MSVCVersion=800
+assert MSVCVersion>0
 env=conf.Finish()
 
 env['CPPPATH']+=[prefixpath+"windows"]
@@ -33,11 +35,11 @@ if not os.path.exists(builddir):
 # Warnings, synchronous exceptions, enable RTTI, smallest inlining,
 # wchar_t native, types defined before pointers to members used
 cppflags=Split('/c /nologo /W3 /EHsc /GR /Ob1 /Ow /Zc:wchar_t /vmb /vmm')
-assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
-    cppflags+=[ "/Ow",                         # Only functions may alias
-                "/G%d" % architecture_version # Optimise for given processor revision
+    cppflags+=[ "/Ow"                          # Only functions may alias
               ]
+    if architecture=="x86":
+        cppflags+=[ "/G%d" % architecture_version ] # Optimise for given processor revision
 else:
     # Stop the stupid STDC function deprecated warnings
     env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1), ("_SECURE_SCL_THROWS", 1)]
@@ -72,10 +74,11 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   ]
 if MSVCVersion>=800:
     env['LINKFLAGS']+=["/NXCOMPAT"]
-if make64bit:
-    env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
-else:
-    env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x52000000", "/LARGEADDRESSAWARE"]
+if architecture=="x86" or architecture=="x64":
+    if make64bit:
+        env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
+    else:
+        env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x52000000", "/LARGEADDRESSAWARE"]
 if debugmode:
     env['LINKFLAGS']+=["/OPT:NOREF",
                        "/OPT:NOICF"

@@ -126,9 +126,7 @@ many compilers don't fully support all the constructs TnFOX uses - hence TnFOX s
 have build system support eg; Intel's). If you don't use those compilers
 on those platforms, expect to do some minor porting work (noting that I will never support using GCC for
 building Windows binaries until it becomes properly compatible with the PE binary format - hence, there is
-no mingw or cygwin support). Furthermore, due to a lack of access to alternatives to x86 and x64, only those two
-architectures are supported (though it is very, very easy to add others - simply fix the assembler in
-FX::FXAtomicInt - and I'll gladly add alternative architecture support).
+no mingw or cygwin support).
 
 \li Also ancillory to the above, TnFOX is not as "lightweight" as FOX - but then TnFOX is a solution
 framework (primarily it's Tn's portability layer) whereas FOX still remains mostly a GUI toolkit. All
@@ -2246,7 +2244,7 @@ also read that.
 \section supported Supported configuration:
 TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
 only. It hasn't been tested on PowerPC architectures, but there is no reason it
-shouldn't work apart from the x86 only assembler in int_QMutexImpl.h.
+shouldn't work now that TnFOX is compatible across all GCC supported architectures.
 
 You MUST set architecture_version=7, x86_SSE=2 and x86_3dnow=0 in config.py as the
 Apple GCC won't output valid code for other architecture configurations.

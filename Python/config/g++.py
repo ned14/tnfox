@@ -48,8 +48,7 @@ if architecture=="x86":
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
     cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
-else:
-    raise IOError, "Unknown architecture type"
+
 cppflags+=["-fexceptions",              # Enable exceptions
            #"-Winvalid-pch",             # Warning if PCH files can't be used
            "-pipe"                      # Use faster pipes
@@ -63,7 +62,6 @@ else:
                "-fomit-frame-pointer"   # No frame pointer
                ]
 env['CPPFLAGS']+=cppflags
-
 
 # Linkage
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling

@@ -35,12 +35,12 @@ if not os.path.exists(builddir):
 # Warnings, synchronous exceptions, enable RTTI, pool strings, separate COMDAT per function,
 # ANSI for scoping, wchar_t native, types defined before pointers to members used
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Gy /Zc:forScope /Zc:wchar_t /vmb /vmm')
-assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                         # Only functions may alias
-                "/G%d" % architecture_version, # Optimise for given processor revision
                 "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
               ]
+    if architecture=="x86":
+        cppflags+=[ "/G%d" % architecture_version ] # Optimise for given processor revision
 else:
     cppflags+=[ "/fp:fast",                    # Fastest floating-point performance
                 ###"/Gm",                         # Minimum rebuild (seriously broken on MSVC8)
@@ -95,10 +95,11 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   ]
 if MSVCVersion>=800:
     env['LINKFLAGS']+=["/NXCOMPAT"]
-if make64bit:
-    env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
-else:
-    env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x60000000", "/LARGEADDRESSAWARE"]
+if architecture=="x86" or architecture=="x64":
+    if make64bit:
+        env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
+    else:
+        env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x60000000", "/LARGEADDRESSAWARE"]
 if debugmode:
     env['LINKFLAGS']+=["/NODEFAULTLIB:MSVCRT"]
 else:

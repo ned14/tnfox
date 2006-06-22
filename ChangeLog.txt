@@ -20,6 +20,7 @@ FXException
 architectures
 + Added modular building of TnFOX
 * Renamed FXSQLDB* to TnFXSQLDB*
++ Updated build system so it will compile on generic architectures
 
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=

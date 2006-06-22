@@ -28,20 +28,24 @@ assert MSVCVersion>0
 env=conf.Finish()
 # Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping, wchar_t native
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t')
-assert architecture=="x86" or architecture=="x64"
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                        # Only functions may alias
-                "/G%d" % architecture_version, # Optimise for given processor revision
-                "/Gm",                         # Minimum rebuild
                 "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
               ]
+    if architecture=="x86":
+        cppflags+=[ "/G%d" % architecture_version ] # Optimise for given processor revision
 else:
     cppflags+=[ "/fp:fast",                    # Fastest floating-point performance
                 ###"/Gm",                         # Minimum rebuild (seriously broken on MSVC8)
                 "/Fd"+builddir+"/vc80.pdb"     # Set PDB location
               ]
     # Stop the stupid STDC function deprecated warnings
-    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
+    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1), ("_SECURE_SCL_THROWS", 1)]
+    if not debugmode:
+        # Prevent checked iterators on release builds
+        env['CPPDEFINES']+=[("_SECURE_SCL",0)]
+        cppflags+=["/GS-",       # Disable buffer overrun check
+                   ]
 if architecture=="x86":
     if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
     elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
@@ -72,10 +76,11 @@ env['LINKFLAGS']=["/version:"+tnfoxversion,
                   ]
 if MSVCVersion>=800:
     env['LINKFLAGS']+=["/NXCOMPAT"]
-if make64bit:
-    env['LINKFLAGS']+=["/MACHINE:X64"]
-else:
-    env['LINKFLAGS']+=["/MACHINE:X86", "/LARGEADDRESSAWARE"]
+if architecture=="x86" or architecture=="x64":
+    if make64bit:
+        env['LINKFLAGS']+=["/MACHINE:X64"]
+    else:
+        env['LINKFLAGS']+=["/MACHINE:X86", "/LARGEADDRESSAWARE"]
 if debugmode:
     env['LINKFLAGS']+=["/INCREMENTAL"]
 else:

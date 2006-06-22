@@ -34,8 +34,7 @@ if architecture=="x86":
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
     cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
-else:
-    raise IOError, "Unknown architecture type"
+
 cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
            "-fargument-noalias",        # Arguments may alias globals but not each other
@@ -86,19 +85,13 @@ else:
 # Include system libs (mandatory)
 env['CPPDEFINES']+=[("STDC_HEADERS",1),
                     ("HAVE_SYS_TYPES_H",1),
-                    ("HAVE_SYS_STAT_H",1),
                     ("HAVE_STDLIB_H",1),
                     ("HAVE_STRING_H",1),
-                    ("HAVE_MEMORY_H",1),
                     ("HAVE_STRINGS_H",1),
-                    ("HAVE_INTTYPES_H",1),
-                    ("HAVE_STDINT_H",1),
                     ("HAVE_UNISTD_H",1),
-                    ("HAVE_DLFCN_H",1),
                     ("TIME_WITH_SYS_TIME",1),
                     ("HAVE_SYS_WAIT_H",1),
                     ("HAVE_DIRENT_H",1),
-                    ("HAVE_UNISTD_H",1),
                     ("HAVE_SYS_PARAM_H",1),
                     ("HAVE_SYS_SELECT_H",1)
                     ]

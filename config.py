@@ -61,6 +61,10 @@ SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 ######## Processor architecture ########
 
+# Define for a "generic" build
+#architecture="generic"
+#architecture_version=0
+
 architecture="x86"       # Can be "x86" or "x64"
 # For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
 #architecture_version=4           
