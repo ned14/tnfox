@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXMenuBar.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                       *
 ********************************************************************************/
+#ifndef FX_DISABLEMENUS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -218,3 +220,5 @@ long FXMenuBar::onCmdUnpost(FXObject*,FXSelector,void*){
   }
 
 }
+
+#endif

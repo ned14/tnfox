@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXFileDialog.h,v 1.31 2005/02/08 03:23:28 fox Exp $                      *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #ifndef FXFILEDIALOG_H
 #define FXFILEDIALOG_H

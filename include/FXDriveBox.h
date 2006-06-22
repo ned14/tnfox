@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXDriveBox.h,v 1.16 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #ifndef FXDRIVEBOX_H
 #define FXDRIVEBOX_H

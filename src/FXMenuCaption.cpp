@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXMenuCaption.cpp,v 1.46 2005/01/16 16:06:07 fox Exp $                   *
 ********************************************************************************/
+#ifndef FX_DISABLEMENUS
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -398,3 +400,5 @@ FXMenuCaption::~FXMenuCaption(){
   }
 
 }
+
+#endif

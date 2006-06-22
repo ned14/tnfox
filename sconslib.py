@@ -182,7 +182,7 @@ def getBase(file):
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
     prefixpath=os.path.abspath(prefixpath)+"/"
     platprefix=os.path.abspath(platprefix)+"/"
-    #print prefixpath, platprefix
+    print prefixpath, platprefix
     execfile(prefixpath+"config.py")    # Sets debugmode, version, libtnfoxname
     for key,value in locals().items():
         globals()[key]=value
@@ -221,15 +221,35 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     env['LINKFLAGS']=[ ]
     make64bit=(architecture=="x64")
     execfile(platformconfig)
+
+    # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
+    # the python bindings. Alter it at the top of fxmemoryops.h
     env['CPPDEFINES']+=[("FOX_BIGENDIAN",ternary(sys.byteorder=="big", 1, 0))]
+    if tcommonopts:
+        # Force config for Tn
+        if tcommonopts==2:
+            env['CPPDEFINES']+=["BUILDING_TCOMMON"]
+        FOXCompatLayer=False
+        disableFileDirDialogs=True
+        disableFindReplaceDialogs=True
+        disableMenus=True
+        disableMDI=True
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
-    if tcommonopts!=2 and FOXCompatLayer: env['CPPDEFINES']+=["FX_FOXCOMPAT"]
+    if FOXCompatLayer: env['CPPDEFINES']+=["FX_FOXCOMPAT"]
     if disableGUI: env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
-    # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
-    # the python bindings. Alter it at the top of fxmemoryops.h
-    if tcommonopts==2: env['CPPDEFINES']+=["BUILDING_TCOMMON"]
+    
+    if not disableFileDirDialogs or not disableMDI: disableMenus=False
+    if not disableGraphing: disableGL=False
+    if disableGL: env['CPPDEFINES']+=[("FX_DISABLEGL", 1)]
+    if disableFileDirDialogs: env['CPPDEFINES']+=[("FX_DISABLEFILEDIRDIALOGS", 1)]
+    if disablePrintDialogs: env['CPPDEFINES']+=[("FX_DISABLEPRINTDIALOGS", 1)]
+    if disableFindReplaceDialogs: env['CPPDEFINES']+=[("FX_DISABLEFINDREPLACEDIALOGS", 1)]
+    if disableMenus: env['CPPDEFINES']+=[("FX_DISABLEMENUS", 1)]
+    if disableMDI: env['CPPDEFINES']+=[("FX_DISABLEMDI", 1)]
+    if disableGraphing: env['CPPDEFINES']+=[("FX_DISABLEGRAPHING", 1)]
+
     if onWindows:
         # Seems to need this on some installations
         env['ENV']['TMP']=os.environ['TMP']

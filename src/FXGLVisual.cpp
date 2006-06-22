@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXGLVisual.cpp,v 1.61 2005/01/31 17:53:07 fox Exp $                      *
 ********************************************************************************/
+#ifndef FX_DISABLEGL
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -1122,3 +1124,5 @@ void glUseFXFont(FXFont* font,int first,int count,int list){
   }
 
 }
+
+#endif

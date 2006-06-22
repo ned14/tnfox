@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXGLVisual.h,v 1.23 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
+#ifndef FX_DISABLEGL
+
 #ifndef FXGLVISUAL_H
 #define FXGLVISUAL_H
 
@@ -152,4 +154,5 @@ extern FXAPI void glUseFXFont(FXFont* font,int first,int count,int list);
 
 }
 
+#endif
 #endif

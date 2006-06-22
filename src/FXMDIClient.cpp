@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXMDIClient.cpp,v 1.57 2005/01/16 16:06:07 fox Exp $                     *
 ********************************************************************************/
+#ifndef FX_DISABLEMDI
+
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
@@ -617,3 +619,5 @@ FXMDIClient::~FXMDIClient(){
   }
 
 }
+
+#endif

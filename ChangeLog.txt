@@ -18,6 +18,7 @@ FXException
 * Substantially improved python bindings
 + Made FXAtomicInt, and therefore TnFOX, portable to all GCC supported
 architectures
++ Added modular building of TnFOX
 
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=

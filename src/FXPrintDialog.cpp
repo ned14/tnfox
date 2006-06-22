@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXPrintDialog.cpp,v 1.45 2005/01/16 16:06:07 fox Exp $                   *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEPRINTDIALOGS
 
 #include "xincs.h"
 #include "fxver.h"
@@ -619,16 +619,16 @@ long FXPrintDialog::onCmdAccept(FXObject* sender,FXSelector sel,void* ptr){
 
 // Browse output file
 long FXPrintDialog::onCmdBrowse(FXObject*,FXSelector,void*){
+#ifndef FX_DISABLEFILEDIRDIALOGS
   FXString name=getApp()->reg().readStringEntry("PRINTER","file","output.ps");
-#ifndef BUILDING_TCOMMON
   name=FXFileDialog::getSaveFilename(this,"Select Output File",name,"All Files (*)\nPostscript Files (*.ps,*.eps)",0);
-#endif
   if(name.empty()) return 1;
   getApp()->reg().writeStringEntry("PRINTER","file",name.text());
   if(printer.flags&PRINT_DEST_FILE){
     printer.name=name;
     FXTRACE((100,"Print to file: %s\n",printer.name.text()));
     }
+#endif
   return 1;
   }
 

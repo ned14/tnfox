@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXPrintDialog.h,v 1.16 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEPRINTDIALOGS
 
 #ifndef FXPRINTDIALOG_H
 #define FXPRINTDIALOG_H

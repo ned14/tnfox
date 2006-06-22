@@ -103,6 +103,7 @@ Porting from FOX to TnFOX
 Generic programming tools provided by TnFOX
 \endlink
 \li \ref debugging
+\li \ref modularbuilding
 
 \li \ref applemacosnotes
 \li \ref windowsnotes
@@ -131,14 +132,8 @@ FX::FXAtomicInt - and I'll gladly add alternative architecture support).
 
 \li Also ancillory to the above, TnFOX is not as "lightweight" as FOX - but then TnFOX is a solution
 framework (primarily it's Tn's portability layer) whereas FOX still remains mostly a GUI toolkit. All
-the metaprogramming adds a fair bit of extra bulk to generated binaries though far more so on GCC than
-MSVC as GCC's optimiser is nowhere near as good with a lot of templates (though it's made leaps & bounds recently).
-TnFOX is designed to be used as a shared library, accepting a large shareable binary reused by many
-processes rather than portions of it being statically bound to each. If the extra bloat in binary size
-is not acceptable to you, don't use TnFOX (note that the bloat has no effect on speed with a good
-optimiser - TnFOX pounds a lot of competitors into dust on the benchmarks).
-\note However, all of this said, as of v0.86 there is an option to build just the extensions with no
-GUI support at all!
+the metaprogramming adds a fair bit of extra bulk to generated binaries. As of v0.87, TnFOX can be built
+with optional components left out - see \ref modularbuilding
 
 \section whouse Who should use TnFOX?
 \li Heavy multithreaded applications. TnFOX's multithreading support is second to none and is heavily
@@ -421,41 +416,6 @@ FreeBSD questions:
 	\li FX::fxDllOpen etc.
 	\li FX::FXBZStream
 	\li FX::FXGZStream
-
-  <li>
-	\subsection BuildingTnDiffs What are the differences when \c BUILDING_TCOMMON is defined?
-
-	When the macro \c BUILDING_TCOMMON is defined, TnFOX turns on certain code and doesn't
-	compile or hides other code. This is because under Tn, quite a lot of stuff is obsolete. In
-	particular, anything to do with files and directories is pointless as these no longer
-	exist under Tn. A whole pile of other stuff become internal linkage only in order to
-	enforce Tn's security model (eg; Tn code has no business knowing anything about
-	sockets). A summary of the changes:
-
-	Enabled:
-	\li FX::FXPrimaryButton gets coloured borders
-
-	Internal linkage:
-	\li FX::FXACL, FX::FXACLEntity, FX::FXACLIterator
-	\li FX::QBlkSocket, FX::QBuffer, FX::FXFile, FX::QGZipDevice, FX::QLocalPipe,
-	FX::QMemMap, FX::QPipe, FX::QSSLDevice
-	\li FX::QDir, FX::QFileInfo, FX::FXFSMonitor
-	\li FX::QHostAddress, FX::FXNetwork
-	\li FX::FXRegistry
-
-	Not compiled:
-	\li FX::FXDirBox
-	\li FX::FXDirDialog
-	\li FX::FXDirList
-	\li FX::FXDirSelector
-	\li FX::FXDLL
-	\li FX::FXDriveBox
-	\li FX::FXFileDialog
-	\li FX::FXFileList
-	\li FX::FXFileSelector
-	\li FX::FXPrintDialog
-	\li FX::FXReplaceDialog
-	\li FX::FXSearchDialog
 
   <li>
 	\subsection BuildingNoGUIDiffs What are the differences in a no-GUI build?
@@ -2198,6 +2158,70 @@ and disc i/o full indicators so you can test operation in memory low situations.
 On MSVC only:
 \li FXMemDbg.h lets you list all memory leaks and where they were allocated.
 Use valgrind instead on Linux.
+*/
+
+
+
+/*! \page modularbuilding Modular building of TnFOX
+
+In config.py, there are a series of variables you can set to exclude certain
+portions of TnFOX. Remember you can exclude the entire GUI using \c disableGUI:
+
+\subsection configDisableGL disableGL:
+\li FX::FXGLCanvas
+\li FX::FXGLCone
+\li FX::FXGLContext
+\li FX::FXGLCube
+\li FX::FXGLCylinder
+\li FX::FXGLGroup
+\li FX::FXGLLine
+\li FX::FXGLObject
+\li FX::FXGLPoint
+\li FX::FXGLShape
+\li FX::FXGLSphere
+\li FX::FXGLTriangleMesh
+\li FX::FXGLViewer
+\li FX::FXGLVisual
+
+\subsection configDisableFileDirDialogs disableFileDirDialogs (if False, sets disableMenus to False):
+\li FX::FXDirBox
+\li FX::FXDirDialog
+\li FX::FXDirList
+\li FX::FXDirSelector
+\li FX::FXDriveBox
+\li FX::FXFileDialog
+\li FX::FXFileList
+\li FX::FXFileSelector
+
+\subsection configDisablePrintDialogs disablePrintDialogs:
+\li FX::FXPrintDialog
+
+\subsection configDisableFindReplaceDialogs disableFindReplaceDialogs:
+\li FX::FXReplaceDialog
+\li FX::FXSearchDialog
+
+\subsection configDisableMenus disableMenus:
+\li FX::FXMenuBar
+\li FX::FXMenuCaption
+\li FX::FXMenuCascade
+\li FX::FXMenuCheck
+\li FX::FXMenuCommand
+\li FX::FXMenuRadio
+\li FX::FXMenuSeparator
+\li FX::FXMenuTitle
+\li FX::FXScrollPane
+
+But NOT FX::FXMenuButton nor FX::FXMenuPane
+
+\subsection configDisableMDI disableMDI:
+\li FX::FXMDIChild
+\li FX::FXMDIClient
+\li FX::FXMDIDeleteButton
+\li FX::FXMDIMaximizeButton
+\li FX::FXMDIMenu
+\li FX::FXMDIMinimizeButton
+\li FX::FXMDIRestoreButton
+\li FX::FXMDIWindowButton
 */
 
 

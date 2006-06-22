@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXFileList.cpp,v 1.173.2.1 2005/02/08 07:17:57 fox Exp $                     *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #include "xincs.h"
 #include "fxver.h"

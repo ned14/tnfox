@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXReplaceDialog.h,v 1.21 2005/01/16 16:06:06 fox Exp $                   *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFINDREPLACEDIALOGS
 
 #ifndef FXREPLACEDIALOG_H
 #define FXREPLACEDIALOG_H

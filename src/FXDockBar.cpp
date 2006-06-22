@@ -464,6 +464,7 @@ long FXDockBar::onUpdDockFlip(FXObject* sender,FXSelector,void*){
 
 // Right clicked on bar
 long FXDockBar::onPopupMenu(FXObject*,FXSelector,void* ptr){
+#ifndef FX_DISABLEMENUS
   FXEvent* event=static_cast<FXEvent*>(ptr);
   if(event->moved) return 1;
   FXMenuPane dockmenu(this);
@@ -487,6 +488,7 @@ long FXDockBar::onPopupMenu(FXObject*,FXSelector,void* ptr){
 //  getApp()->refresh();
   dockmenu.forceRefresh();
   getApp()->runModalWhileShown(&dockmenu);
+#endif
   return 1;
   }
 

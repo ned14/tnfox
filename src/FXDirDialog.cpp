@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXDirDialog.cpp,v 1.20 2005/01/16 16:06:07 fox Exp $                     *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #include "xincs.h"
 #include "fxver.h"

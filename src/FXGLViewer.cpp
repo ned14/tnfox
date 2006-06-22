@@ -2391,7 +2391,7 @@ FXbool FXGLViewer::readPixels(FXColor*& buffer,FXint x,FXint y,FXint w,FXint h){
 
 // Print the window by grabbing pixels
 long FXGLViewer::onCmdPrintImage(FXObject*,FXSelector,void*){
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEPRINTDIALOGS
   FXColor *buffer;
 
   // First, ensure window is fully painted

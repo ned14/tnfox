@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXDirBox.cpp,v 1.56 2005/01/16 16:06:06 fox Exp $                        *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #include "xincs.h"
 #include "fxver.h"

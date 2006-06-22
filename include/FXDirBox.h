@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXDirBox.h,v 1.24 2005/01/16 16:06:06 fox Exp $                          *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #ifndef FXDIRBOX_H
 #define FXDIRBOX_H

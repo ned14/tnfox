@@ -21,6 +21,8 @@
 *********************************************************************************
 * $Id: FXMenuSeparator.h,v 1.16 2005/01/16 16:06:06 fox Exp $                   *
 ********************************************************************************/
+#ifndef FX_DISABLEMENUS
+
 #ifndef FXMENUSEPARATOR_H
 #define FXMENUSEPARATOR_H
 
@@ -80,4 +82,4 @@ public:
 }
 
 #endif
-
+#endif

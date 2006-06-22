@@ -21,7 +21,7 @@
 *********************************************************************************
 * $Id: FXDirSelector.h,v 1.20 2005/01/16 16:06:06 fox Exp $                     *
 ********************************************************************************/
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEFILEDIRDIALOGS
 
 #ifndef FXDIRSELECTOR_H
 #define FXDIRSELECTOR_H
