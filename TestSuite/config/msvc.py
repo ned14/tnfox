@@ -89,4 +89,4 @@ else:
                        "/OPT:ICF",
                        "/RELEASE",
                        ]
-env['LIBS']+=["kernel32", "user32", libtnfox ]
+env['LIBS']+=["kernel32", "user32"]

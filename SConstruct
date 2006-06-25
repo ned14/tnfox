@@ -28,7 +28,6 @@ if not os.path.exists("lib"):
 if not os.path.exists(targetname):
     os.mkdir(targetname)
 targetname+="/"+tnfoxname
-env['CPPDEFINES']+=[ "FOXDLL_EXPORTS" ]
 doConfTests(env)
 # This must go after all the conf tests as it's DLL only
 if onDarwin:
@@ -39,23 +38,59 @@ if onDarwin:
 updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
 objects=[]
 if not disableGUI:
-    objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", False)]
-objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS']) for x in getTnFOXSources("", True)]
-if libsqlite: objects.append(libsqlite)
+    objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", False)]
+objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", True)]
+if SQLModule==1: objects.append(sqlmoduleobjs)
+if GraphingModule==1: objects.append(graphingmoduleobjs)
 for object in objects:
     env.Depends(object, updmunged)
+
+# Unfortunately some stuff is per output DLL and so can't live in config/<tool>.py
+linkflags=env['LINKFLAGS']
 if onWindows:
     versionrc="src/version.rc"
-    objects+=[env.RES(builddir+"/version.res", versionrc)]
+    versionobj=env.RES(builddir+"/version.res", versionrc)
+    objects+=[versionobj]
+    if architecture=="x86" or architecture=="x64":
+        linkflags+=[ternary(make64bit, "/BASE:0x7ff06200000", "/BASE:0x62000000")]
 Clean(targetname, objects)
-DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib)
+DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib, LINKFLAGS=linkflags)
 env.Precious(DLL)
 addBind(DLL)
+if SQLModule==2:
+    linkflags=env['LINKFLAGS']
+    if onWindows:
+        sqlmoduleobjs+=[versionobj]
+        if architecture=="x86" or architecture=="x64":
+            linkflags+=[ternary(make64bit, "/BASE:0x7ff06300000", "/BASE:0x63000000")]
+    Clean(targetname, sqlmoduleobjs)
+    SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LIBS=env['LIBS']+[libtnfox], LINKFLAGS=linkflags)
+    env.Depends(SQLDLL, DLL)
+    DLL=SQLDLL
+    env.Precious(DLL)
+    addBind(DLL)
+if GraphingModule==2:
+    linkflags=env['LINKFLAGS']
+    if onWindows:
+        graphingmoduleobjs+=[versionobj]
+        if architecture=="x86" or architecture=="x64":
+            linkflags+=[ternary(make64bit, "/BASE:0x7ff06310000", "/BASE:0x63100000")]
+    Clean(targetname, graphingmoduleobjs)
+    GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LIBS=env['LIBS']+ternary(SQLModule==2, [libtnfox, libtnfoxsql], [libtnfox]), LINKFLAGS=linkflags)
+    env.Depends(GraphingDLL, DLL)
+    DLL=GraphingDLL
+    env.Precious(DLL)
+    addBind(DLL)
 
 if onWindows:
     env.MSVSProject("windows/TnFOXProject"+env['MSVSPROJECTSUFFIX'],
-                srcs=["../src/"+x for x in getTnFOXSources()] + ["../src/"+x for x in getTnFOXSources("", True)],
-                incs=["../include/"+x for x in getTnFOXIncludes()],
+                srcs=["../src/"+x for x in getTnFOXSources()]
+                    + ["../src/"+x for x in getSQLModuleSources("")]
+                    + ["../src/"+x for x in getGraphingModuleSources("")]
+                    + ["../src/"+x for x in getTnFOXSources("", True)],
+                incs=["../include/"+x for x in getTnFOXIncludes()]
+                    + ["../src/"+x for x in getSQLModuleIncludes("")]
+                    + ["../src/"+x for x in getGraphingModuleIncludes("")],
                 localincs=["../config.py", "../config/msvc.py", "../config/g++.py"],
                 resources="../"+versionrc,
                 misc=["../"+x for x in ["ChangeLog.txt", "License.txt", "License_Addendum.txt",

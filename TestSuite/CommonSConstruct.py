@@ -30,13 +30,11 @@ execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
 
-env['CPPDEFINES']+=[ "FOXDLL" ]
 env['CPPPATH']+=[ ".",
                  "../../include",
                  "../../../boost",
                  "../../Python"
                  ]
-env['LIBPATH']+=[dir+"/../lib/"+architectureSpec()]
 if PYTHON_INCLUDE:
     env['CPPPATH'].append(PYTHON_INCLUDE)
 else:
@@ -49,9 +47,11 @@ else:
     except:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
-if onDarwin:
+if onWindows or onDarwin:
     env['LIBS']+=[libtnfox]
-elif not onWindows: # Can't put in g++.py as dir isn't defined there
+    if SQLModule==2: env['LIBS']+=[libtnfoxsql]
+    if GraphingModule==2: env['LIBS']+=[libtnfoxgraphing]
+else: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
 try:
     if wantPython:

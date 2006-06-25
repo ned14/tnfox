@@ -3,7 +3,7 @@
 *                            SQLite3 Database Support                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -18,10 +18,10 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
-#ifndef FX_DISABLESQL
+#if FX_SQLMODULE
 
-#ifndef TnFXSQLDB_SQLITE3_H
-#define TnFXSQLDB_SQLITE3_H
+#ifndef TNFXSQLDB_SQLITE3_H
+#define TNFXSQLDB_SQLITE3_H
 
 #include "TnFXSQLDB.h"
 
@@ -79,7 +79,7 @@ that operations may block for a while. This driver knows to wait on the
 underlying file rather spin, wasting processor time.
 */
 struct TnFXSQLDB_sqlite3Private;
-class FXAPI TnFXSQLDB_sqlite3 : public TnFXSQLDB
+class FXSQLMODULEAPI TnFXSQLDB_sqlite3 : public TnFXSQLDB
 {
 	TnFXSQLDB_sqlite3Private *p;
 	TnFXSQLDB_sqlite3(const TnFXSQLDB_sqlite3 &);

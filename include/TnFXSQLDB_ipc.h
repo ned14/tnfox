@@ -18,10 +18,10 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
-#ifndef FX_DISABLESQL
+#if FX_SQLMODULE
 
-#ifndef TnFXSQLDB_IPC_H
-#define TnFXSQLDB_IPC_H
+#ifndef TNFXSQLDB_IPC_H
+#define TNFXSQLDB_IPC_H
 
 #include "TnFXSQLDB.h"
 #include "FXIPC.h"
@@ -740,7 +740,7 @@ after all the INSERT's or else data could get lost
 \sa FX::TnFXSQLDB, FX::TnFXSQLDBServer
 */
 struct TnFXSQLDB_ipcPrivate;
-class FXAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndirector
+class FXSQLMODULEAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndirector
 {
 	friend struct TnFXSQLDB_ipcPrivate;
 	TnFXSQLDB_ipcPrivate *p;
@@ -809,7 +809,7 @@ for security. You must add databases which can be served using addDatabase()
 which accepts patterns. If the pattern matches, the database is served.
 */
 struct TnFXSQLDBServerPrivate;
-class FXAPI TnFXSQLDBServer : public FXIPCChannelIndirector
+class FXSQLMODULEAPI TnFXSQLDBServer : public FXIPCChannelIndirector
 {
 	TnFXSQLDBServerPrivate *p;
 	TnFXSQLDBServer(const TnFXSQLDBServer &);

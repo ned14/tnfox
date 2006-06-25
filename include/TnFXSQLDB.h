@@ -3,7 +3,7 @@
 *                              SQL Database Support                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -18,10 +18,10 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
-#ifndef FX_DISABLESQL
+#if FX_SQLMODULE
 
-#ifndef TnFXSQLDB_H
-#define TnFXSQLDB_H
+#ifndef TNFXSQLDB_H
+#define TNFXSQLDB_H
 
 #include "FXTime.h"
 #include "FXRefedObject.h"
@@ -29,6 +29,16 @@
 #include "QHostAddress.h"
 #include "QTrans.h"
 #include <qcstring.h>
+
+#if FX_SQLMODULE==1
+ #define FXSQLMODULEAPI FXAPI
+#elif FX_SQLMODULE==2
+ #ifdef FX_SQLMODULE_EXPORTS
+  #define FXSQLMODULEAPI FXEXPORT
+ #else
+  #define FXSQLMODULEAPI FXIMPORT
+ #endif
+#endif
 
 namespace FX {
 
@@ -207,7 +217,7 @@ not a problem. If however you need to know that everything you have done
 up till now has been processed and is fine, call synchronise().
 */
 struct TnFXSQLDBPrivate;
-class FXAPI TnFXSQLDB
+class FXSQLMODULEAPI TnFXSQLDB
 {
 	TnFXSQLDBPrivate *p;
 	TnFXSQLDB(const TnFXSQLDB &);
@@ -382,7 +392,7 @@ for(TnFXSQLDBCursorRef cursor=statement->execute(); !cursor->atEnd(); cursor->ne
 \sa FX::TnFXSQLDB, FX::TnFXSQLDBStatement
 */
 struct TnFXSQLDBCursorPrivate;
-class FXAPI TnFXSQLDBCursor : public FXRefedObject<int>
+class FXSQLMODULEAPI TnFXSQLDBCursor : public FXRefedObject<int>
 {
 	TnFXSQLDBCursorPrivate *p;
 	TnFXSQLDBCursor &operator=(const TnFXSQLDBCursor &o);
@@ -468,7 +478,7 @@ takes a copy.
 \sa FX::FXSQL
 */
 struct TnFXSQLDBStatementPrivate;
-class FXAPI TnFXSQLDBStatement : public FXRefedObject<int>
+class FXSQLMODULEAPI TnFXSQLDBStatement : public FXRefedObject<int>
 {
 	TnFXSQLDBStatementPrivate *p;
 	TnFXSQLDBStatement &operator=(const TnFXSQLDBStatement &o);
@@ -735,7 +745,7 @@ cursor they came from is moved.
 
 \sa FX::TnFXSQLDB, FX::FXSQLCursor
 */
-class FXAPI TnFXSQLDBColumn : public FXRefedObject<int>
+class FXSQLMODULEAPI TnFXSQLDBColumn : public FXRefedObject<int>
 {
 protected:
 	FXint myflags;
@@ -825,7 +835,7 @@ database driver DLL's and thus load them on demand. However, for now, it
 merely holds a registry of all known database drivers.
 */
 struct TnFXSQLDBRegistryPrivate;
-class FXAPI TnFXSQLDBRegistry
+class FXSQLMODULEAPI TnFXSQLDBRegistry
 {
 	friend struct TnFXSQLDBRegistryPrivate;
 	TnFXSQLDBRegistryPrivate *p;

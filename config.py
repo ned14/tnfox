@@ -46,11 +46,12 @@ disableMenus=False
 # Set to disable the MDI interface
 disableMDI=False
 
-# Set to disable SQL functionality
-disableSQL=False
 
-# Set to disable the graphing functionality
-disableGraphing=False
+# How to include SQL functionality (=0 to disable, =1 to include in core, =2 to build as separate DLL)
+SQLModule=2
+
+# How to include the graphing functionality (=0 to disable, =1 to include in core, =2 to build as separate DLL)
+GraphingModule=2
 
 SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
