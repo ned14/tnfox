@@ -310,13 +310,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
             env['LIBS']+=[vtkbinpath+"/vtkCommon", vtkbinpath+"/vtkFiltering", vtkbinpath+"/vtkGraphics",
                 vtkbinpath+"/vtkHybrid", vtkbinpath+"/vtkImaging", vtkbinpath+"/vtkIO", vtkbinpath+"/vtkRendering"]
             del vtkpath, vtkbinpath
-        elif conf.CheckLibWithHeader(["vtkCommon", "vtkFiltering", "vtkGraphics",
-            "vtkHybrid", "vtkImaging", "vtkIO", "vtkRendering"], ["vtk/Common/vtkVersion.h"], "c++", "vtkVersion::GetVTKVersion();"):
-            env['CPPDEFINES']+=[("HAVE_VTK", 1)]
-            env['CPPPATH']+=["vtk", "vtk/Common", "vtk/Filtering", "vtk/Graphics"
-                "vtk/Hybrid", "vtk/Imaging", "vtk/IO", "vtk/Rendering"]
         else:
-            print "VTK not found, disabling support!\n"
+            print "Local VTK not found"
         graphingmoduleobjs=[env.SharedObject(builddir+"/graphingmodule/"+getBase(x), prefixpath+"src/"+x, CPPDEFINES=env['CPPDEFINES']+[ternary(GraphingModule==2, "FX_GRAPHINGMODULE_EXPORTS", "FOXDLL_EXPORTS")]) for x in getGraphingModuleSources(prefixpath)]
         libtnfoxgraphing,libtnfoxgraphingsuffix=VersionedSharedLibraryName(env, tnfoxname+"_graphing", tnfoxversioninfo, debug=debugmode)
 
@@ -457,6 +452,14 @@ def doConfTests(env, prefixpath=""):
             print "GLU library not found, disabling support"
     else:
         print "GL library not found, disabling support"
+
+    if not os.path.exists(prefixpath+"../VTK/Common/vtkVersion.h"):
+        if conf.CheckLibWithHeader("vtkCommon", ["vtk/Common/vtkVersion.h"], "c++", "vtkVersion::GetVTKVersion();"):
+            env['CPPDEFINES']+=[("HAVE_VTK", 1)]
+            env['CPPPATH']+=["vtk", "vtk/Common", "vtk/Filtering", "vtk/Graphics"
+                "vtk/Hybrid", "vtk/Imaging", "vtk/IO", "vtk/Rendering"]
+            env['LIBS']+=["vtkFiltering", "vtkGraphics",
+                "vtkHybrid", "vtkImaging", "vtkIO", "vtkRendering"]
 
     env=conf.Finish()
 

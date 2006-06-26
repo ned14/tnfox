@@ -46,7 +46,7 @@ for object in objects:
     env.Depends(object, updmunged)
 
 # Unfortunately some stuff is per output DLL and so can't live in config/<tool>.py
-linkflags=env['LINKFLAGS']
+linkflags=env['LINKFLAGS'][:]
 if onWindows:
     versionrc="src/version.rc"
     versionobj=env.RES(builddir+"/version.res", versionrc)
@@ -58,7 +58,7 @@ DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tn
 env.Precious(DLL)
 addBind(DLL)
 if SQLModule==2:
-    linkflags=env['LINKFLAGS']
+    linkflags=env['LINKFLAGS'][:]
     if onWindows:
         sqlmoduleobjs+=[versionobj]
         if architecture=="x86" or architecture=="x64":
@@ -70,7 +70,7 @@ if SQLModule==2:
     env.Precious(DLL)
     addBind(DLL)
 if GraphingModule==2:
-    linkflags=env['LINKFLAGS']
+    linkflags=env['LINKFLAGS'][:]
     if onWindows:
         graphingmoduleobjs+=[versionobj]
         if architecture=="x86" or architecture=="x64":
