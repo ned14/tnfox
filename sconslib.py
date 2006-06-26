@@ -288,7 +288,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
             vtkpath=os.path.normpath(prefixpath+"../VTK")
             env['CPPDEFINES']+=[("HAVE_VTK", 1)]
             env['CPPPATH']+=[vtkpath, vtkpath+"/Common", vtkpath+"/Filtering", vtkpath+"/Graphics",
-                vtkpath+"/Hybrid", vtkpath+"/Imaging", vtkpath+"/Rendering"]
+                vtkpath+"/Hybrid", vtkpath+"/Imaging", vtkpath+"/IO", vtkpath+"/Rendering"]
             if debugmode:
                 if os.path.exists(vtkpath+"/bin/debug"):
                     vtkbinpath=vtkpath+"/bin/debug"
@@ -308,11 +308,13 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
                 else:
                     raise RuntimeError, "VTK doesn't appear to have been built!"
             env['LIBS']+=[vtkbinpath+"/vtkCommon", vtkbinpath+"/vtkFiltering", vtkbinpath+"/vtkGraphics",
-                vtkbinpath+"/vtkHybrid", vtkbinpath+"/vtkImaging", vtkbinpath+"/vtkRendering"]
+                vtkbinpath+"/vtkHybrid", vtkbinpath+"/vtkImaging", vtkbinpath+"/vtkIO", vtkbinpath+"/vtkRendering"]
             del vtkpath, vtkbinpath
-        elif conf.CheckLibWithHeader(["vtkCommon", "vtkFiltering", "vtkGraphics", "vtkHybrid", "vtkImaging", "vtkRendering"], ["vtk/Common/vtkVersion.h"], "c++", "vtkVersion::GetVTKVersion();"):
+        elif conf.CheckLibWithHeader(["vtkCommon", "vtkFiltering", "vtkGraphics",
+            "vtkHybrid", "vtkImaging", "vtkIO", "vtkRendering"], ["vtk/Common/vtkVersion.h"], "c++", "vtkVersion::GetVTKVersion();"):
             env['CPPDEFINES']+=[("HAVE_VTK", 1)]
-            env['CPPPATH']+=["vtk", "vtk/Common", "vtk/Filtering", "vtk/Graphics", "vtk/Hybrid", "vtk/Imaging", "vtk/Rendering"]
+            env['CPPPATH']+=["vtk", "vtk/Common", "vtk/Filtering", "vtk/Graphics"
+                "vtk/Hybrid", "vtk/Imaging", "vtk/IO", "vtk/Rendering"]
         else:
             print "VTK not found, disabling support!\n"
         graphingmoduleobjs=[env.SharedObject(builddir+"/graphingmodule/"+getBase(x), prefixpath+"src/"+x, CPPDEFINES=env['CPPDEFINES']+[ternary(GraphingModule==2, "FX_GRAPHINGMODULE_EXPORTS", "FOXDLL_EXPORTS")]) for x in getGraphingModuleSources(prefixpath)]
@@ -365,11 +367,11 @@ def getSQLModuleIncludes(prefix=""):
     return filelist
 def getGraphingModuleSources(prefix=""):
     filelist=os.listdir(prefix+"src")
-    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "vtkTnFXRenderWindowInteractor" in src or "TnFXGraph" in src, filelist)
+    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
     return filelist
 def getGraphingModuleIncludes(prefix=""):
     filelist=os.listdir(prefix+"include")
-    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "vtkTnFXRenderWindowInteractor" in src or "TnFXGraph" in src, filelist)
+    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
     return filelist
    
 def CheckCompilerPtr32(cc):

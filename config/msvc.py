@@ -97,9 +97,9 @@ if MSVCVersion>=800:
     env['LINKFLAGS']+=["/NXCOMPAT"]
 if architecture=="x86" or architecture=="x64":
     if make64bit:
-        env['LINKFLAGS']+=["/MACHINE:X64", "/BASE:0x7ff06000000"]
+        env['LINKFLAGS']+=["/MACHINE:X64"]
     else:
-        env['LINKFLAGS']+=["/MACHINE:X86", "/BASE:0x60000000", "/LARGEADDRESSAWARE"]
+        env['LINKFLAGS']+=["/MACHINE:X86", "/LARGEADDRESSAWARE"]
 if debugmode:
     env['LINKFLAGS']+=["/NODEFAULTLIB:MSVCRT"]
 else:
