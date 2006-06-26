@@ -185,7 +185,7 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 #endif
 }
 
-FXuval QIODevice::applyCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, QIODevice::CRLFType crlftype, QIODevice::UnicodeType utftype)
+FXuval QIODevice::applyCRLF(FXuchar *restrict output, const FXuchar *restrict input, FXuval outputlen, FXuval &inputlen, QIODevice::CRLFType crlftype, QIODevice::UnicodeType utftype)
 {
 	if(Default==crlftype)
 #ifdef WIN32
@@ -285,7 +285,7 @@ FXuval QIODevice::applyCRLF(FXuchar *output, const FXuchar *input, FXuval output
 	return o;
 }
 
-FXuval QIODevice::removeCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, QIODevice::UnicodeType utftype)
+FXuval QIODevice::removeCRLF(FXuchar *restrict output, const FXuchar *restrict input, FXuval outputlen, FXuval &inputlen, QIODevice::UnicodeType utftype)
 {
 	FXuval o=0, i=0;
 	FXwchar thischar=0, nextchar=0;

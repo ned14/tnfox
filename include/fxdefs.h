@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxdefs.h,v 1.145.2.3 2005/03/24 01:35:50 fox Exp $                           *
+* $Id: fxdefs.h,v 1.145.2.3 2005/03/24 01:35:50 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXDEFS_H
 #define FXDEFS_H
@@ -146,18 +146,31 @@
   #define FXEXCEPTIONAPI(api)
 #endif
 
-// Forcing inlines and marking deprecation are non-portable extensions
+// Forcing inlines, marking deprecation and restricting are non-portable extensions
 #if defined(_MSC_VER) && !defined(__GCCXML__)
  #define FXFORCEINLINE __forceinline
  #define FXDEPRECATED __declspec(deprecated)
+ #ifndef restrict
+  #if _MSC_VER>=1400
+   #define restrict __declspec(restrict)
+  #else
+   #define restrict
+  #endif
+ #endif
 #elif defined(__GNUC__) && !defined(__GCCXML__)
  #define FXFORCEINLINE inline __attribute__ ((always_inline))
  #define FXDEPRECATED __attribute ((deprecated))
+ #ifndef restrict
+  #define restrict __restrict
+ #endif
 #else
 //! Forces a function to be inlined no matter what (use extremely sparingly). Only works in release builds.
  #define FXFORCEINLINE inline
 //! Marks a function as being deprecated
  #define FXDEPRECATED
+ #ifndef restrict
+  #define restrict
+ #endif
 #endif
 #ifdef DEBUG	// No inlining when debugging
  #undef FXFORCEINLINE

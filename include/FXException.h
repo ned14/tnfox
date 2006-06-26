@@ -407,7 +407,7 @@ public:
   //! Sets whether this exception is fatal or not
   void setFatal(bool _fatal);
   //! Returns in which source file the exception happened
-  void sourceInfo(const char **file, int *lineno) const throw() { if(file) *file=srcfilename; if(lineno) *lineno=srclineno; }
+  void sourceInfo(const char **restrict file, int *restrict lineno) const throw() { if(file) *file=srcfilename; if(lineno) *lineno=srclineno; }
   //! Returns the message this exception represents
   const FXString &message() const throw() { return _message; }
   //! Sets the message to be reported by this exception

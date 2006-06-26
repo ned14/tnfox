@@ -273,7 +273,7 @@ public:
 	should rewind processing to the difference between entrant \em inputlen and
 	returned \em inputlen.
 	*/
-	static FXuval applyCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, CRLFType crlftype=Default, UnicodeType utftype=NoTranslation);
+	static FXuval applyCRLF(FXuchar *restrict output, const FXuchar *restrict input, FXuval outputlen, FXuval &inputlen, CRLFType crlftype=Default, UnicodeType utftype=NoTranslation);
 	/*! Removes CR/LF translation intelligently (ie; self-adjusts to MS-DOS, Unix
 	and MacOS formats or any mixture of these) and can perform optional UTF-x
 	translation, returning bytes output. 
@@ -282,7 +282,7 @@ public:
 	should rewind processing to the difference between entrant \em inputlen and
 	returned \em inputlen.
 	*/
-	static FXuval removeCRLF(FXuchar *output, const FXuchar *input, FXuval outputlen, FXuval &inputlen, UnicodeType utftype=NoTranslation);
+	static FXuval removeCRLF(FXuchar *restrict output, const FXuchar *restrict input, FXuval outputlen, FXuval &inputlen, UnicodeType utftype=NoTranslation);
 	/*! Destroys the \em len bytes of data from offset \em offset into the file.
 	Restores the file pointer afterwards and returns how much data was
 	shredded before end of file if encountered. You must have the device

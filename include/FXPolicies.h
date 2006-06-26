@@ -139,11 +139,11 @@ template<class type> class destructiveCopy : public destructiveCopyNoDelete<type
 {
 public:
 	destructiveCopy(type *d) : destructiveCopyNoDelete<type>(d) { }
-	~destructiveCopy() { FXDELETE(data); }
+	~destructiveCopy() { FXDELETE(destructiveCopyNoDelete<type>::data); }
 	destructiveCopy &operator=(const destructiveCopy &o)
 	{
-		FXDELETE(data);
-		data=o.data;
+		FXDELETE(destructiveCopyNoDelete<type>::data);
+		destructiveCopyNoDelete<type>::data=o.data;
 		o.data=0;
 		return *this;
 	}
@@ -175,7 +175,7 @@ template<class type> class noCopy : public noCopyNoDelete<type>
 {
 public:
 	noCopy(type *d) : noCopyNoDelete<type>(d) { }
-	~noCopy() { FXDELETE(data); }
+	~noCopy() { FXDELETE(noCopyNoDelete<type>::data); }
 };
 
 /*! \struct itMove

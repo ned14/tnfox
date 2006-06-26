@@ -746,9 +746,9 @@ class FXSQLMODULEAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndire
 	TnFXSQLDB_ipcPrivate *p;
 	TnFXSQLDB_ipc(const TnFXSQLDB_ipc &);
 	TnFXSQLDB_ipc &operator=(const TnFXSQLDB_ipc &);
-	typedef Generic::Functor<Generic::TL::create<bool, FXIPCMsg *, FXIPCMsg *>::value> AckHandler;
+	typedef Generic::Functor<Generic::TL::create<bool, FXIPCMsg *restrict, FXIPCMsg *restrict>::value> AckHandler;
 	typedef void (*delMsgSpec)(FXIPCMsg *m);
-	inline void FXDLLLOCAL addAsyncMsg(FXIPCMsg *ia, FXIPCMsg *i, void *ref, void (*refdel)(void *), AckHandler handler, delMsgSpec iadel, delMsgSpec idel);
+	inline void FXDLLLOCAL addAsyncMsg(FXIPCMsg *restrict ia, FXIPCMsg *restrict i, void *ref, void (*refdel)(void *), AckHandler handler, delMsgSpec iadel, delMsgSpec idel);
 	template<class reftype> static void delRef(void *ptr) { delete static_cast<reftype *>(ptr); }
 	template<class msgacktype, class msgtype, class reprtype> inline void sendAsyncMsg(msgtype *i, reprtype *dest, AckHandler handler)
 	{	// Avoid including FXRollback.h

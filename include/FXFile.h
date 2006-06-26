@@ -166,7 +166,7 @@ public:
 	/*! Returns metadata for \em path. This is the fastest way to read this kind
 	of information as it can be all performed at once, or avoiding bits not required.
 	Returns false if an error occurred. */
-	static bool readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize=0, FXuint *hardLinks=0);
+	static bool readMetadata(const FXString &path, FXuint *restrict flags, FXfval *restrict size, FXTime *restrict created, FXTime *restrict lastModified, FXTime *restrict lastAccessed, FXfval *restrict compressedSize=0, FXuint *restrict hardLinks=0);
 	/*! Stamps the path entry with the specified metadata. Needed to
 	work around the Windows "file tunnelling" misfeature. This function can throw
 	an exception. */

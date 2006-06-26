@@ -574,7 +574,7 @@ int FXFile::ungetch(int c)
 	return -1;
 }
 
-bool FXFile::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize, FXuint *hardLinks)
+bool FXFile::readMetadata(const FXString &path, FXuint *restrict flags, FXfval *restrict size, FXTime *restrict created, FXTime *restrict lastModified, FXTime *restrict lastAccessed, FXfval *restrict compressedSize, FXuint *restrict hardLinks)
 {
 	if(flags) *flags=0;
 	if(size) *size=0;
