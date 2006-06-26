@@ -111,18 +111,35 @@ public:
 	friend const type *PtrRef(const refCounted &p) { return p.data; }
 };
 
+/*! \class destructiveCopyNoDelete
+\brief Policy specifying that an object pointee should be copied destructively but not deleted on destruction
+
+\sa FX::Generic::ptr
+*/
+template<class type> class destructiveCopyNoDelete
+{
+protected:
+	mutable type *data;
+	destructiveCopyNoDelete &operator=(const destructiveCopyNoDelete &o);	// implementation needs to be replaced
+public:
+	destructiveCopyNoDelete(type *d) : data(d) { }
+	destructiveCopyNoDelete(const destructiveCopyNoDelete &o) : data(o.data) { o.data=0; }
+	friend type *PtrPtr(destructiveCopyNoDelete &p) { return p.data; }
+	friend const type *PtrPtr(const destructiveCopyNoDelete &p) { return p.data; }
+	friend type *&PtrRef(destructiveCopyNoDelete &p) { return p.data; }
+	friend const type *PtrRef(const destructiveCopyNoDelete &p) { return p.data; }
+};
+
 /*! \class destructiveCopy
 \brief Policy specifying that an object pointee should be copied destructively
 
 \sa FX::Generic::ptr
 */
-template<class type> class destructiveCopy
+template<class type> class destructiveCopy : public destructiveCopyNoDelete<type>
 {
-protected:
-	mutable type *data;
 public:
-	destructiveCopy(type *d) : data(d) { }
-	destructiveCopy(const destructiveCopy &o) : data(o.data) { o.data=0; }
+	destructiveCopy(type *d) : destructiveCopyNoDelete<type>(d) { }
+	~destructiveCopy() { FXDELETE(data); }
 	destructiveCopy &operator=(const destructiveCopy &o)
 	{
 		FXDELETE(data);
@@ -130,29 +147,35 @@ public:
 		o.data=0;
 		return *this;
 	}
-	~destructiveCopy() { FXDELETE(data); }
-	friend type *PtrPtr(destructiveCopy &p) { return p.data; }
-	friend const type *PtrPtr(const destructiveCopy &p) { return p.data; }
-	friend type *&PtrRef(destructiveCopy &p) { return p.data; }
-	friend const type *PtrRef(const destructiveCopy &p) { return p.data; }
 };
 
-/*! \class noCopy
-\brief Policy specifying that an object pointee should not be copied
+/*! \class noCopyNoDelete
+\brief Policy specifying that an object pointee should not be copied nor deleted
 
 \sa FX::Generic::ptr
 */
-template<class type> class noCopy
+template<class type> class noCopyNoDelete
 {
 protected:
 	type *data;
 public:
-	noCopy(type *d) : data(d) { }
+	noCopyNoDelete(type *d) : data(d) { }
+	friend type *PtrPtr(noCopyNoDelete &p) { return p.data; }
+	friend const type *PtrPtr(const noCopyNoDelete &p) { return p.data; }
+	friend type *&PtrRef(noCopyNoDelete &p) { return p.data; }
+	friend const type *PtrRef(const noCopyNoDelete &p) { return p.data; }
+};
+
+/*! \class noCopy
+\brief Policy specifying that an object pointee should not be copied nor deleted
+
+\sa FX::Generic::ptr
+*/
+template<class type> class noCopy : public noCopyNoDelete<type>
+{
+public:
+	noCopy(type *d) : noCopyNoDelete<type>(d) { }
 	~noCopy() { FXDELETE(data); }
-	friend type *PtrPtr(noCopy &p) { return p.data; }
-	friend const type *PtrPtr(const noCopy &p) { return p.data; }
-	friend type *&PtrRef(noCopy &p) { return p.data; }
-	friend const type *PtrRef(const noCopy &p) { return p.data; }
 };
 
 /*! \struct itMove

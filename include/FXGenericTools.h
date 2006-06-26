@@ -339,8 +339,12 @@ to some \c int like entity eg; FX::FXAtomicInt). Deletion of the smart pointer
 decrements the pointee's reference count.
 \li FX::Pol::destructiveCopy which destroys the source smart pointer during
 copies.
+\li FX::Pol::destructiveCopyNoDelete which does the same as above, but never
+deletes the pointee (useful when subclassing with your own destructor)
 \li FX::Pol::noCopy which does nothing, thus making the smart pointer behave
 like a pointer holder (ie; FX::FXPtrHold).
+\li FX::Pol::noCopyNoDelete which does the same as above, but never
+deletes the pointee (useful when subclassing with your own destructor)
 
 For all these except where specified, deleting the smart pointer deletes its
 pointee.

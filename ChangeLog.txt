@@ -21,6 +21,7 @@ architectures
 + Added modular building of TnFOX
 * Renamed FXSQLDB* to TnFXSQLDB*
 + Updated build system so it will compile on generic architectures
++ Added Pol::destructiveCopyNoDelete and Pol::noCopyNoDelete
 
 v0.86 2nd April 2006
 -=-=-=-=-=-=-=-=-=-=
