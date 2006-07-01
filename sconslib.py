@@ -215,7 +215,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         builddir="Debug_"+tool+"_"+architectureSpec()
     else:
         builddir="Release_"+tool+"_"+architectureSpec()
-    env['CPPDEFINES']=[ "FOXDLL" ]
+    env['CPPDEFINES']=[ ]
+    if GenStaticLib!=2: env['CPPDEFINES']=[ "FOXDLL" ]
     env['CPPPATH']=[ prefixpath+"include" ]
     env['CPPFLAGS']=[ ]
     env['LIBPATH']=[ prefixpath+"lib/"+architectureSpec() ]

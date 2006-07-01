@@ -29,6 +29,7 @@ if "/Volumes/DATA" in dir:
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
+#doConfTests(env, dir+"/../")
 
 env['CPPPATH']+=[ ".",
                  "../../include",
@@ -48,9 +49,10 @@ else:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
 if onWindows or onDarwin:
-    env['LIBS']+=[libtnfox]
-    if SQLModule==2: env['LIBS']+=[libtnfoxsql]
-    if GraphingModule==2: env['LIBS']+=[libtnfoxgraphing]
+    suffix=ternary(GenStaticLib==2, ".a", env['LIBSUFFIX'])
+    env['LINKFLAGS']+=[libtnfox+suffix]
+    if SQLModule==2: env['LINKFLAGS']+=[libtnfoxsql+suffix]
+    if GraphingModule==2: env['LINKFLAGS']+=[libtnfoxgraphing+suffix]
 else: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
 try:
