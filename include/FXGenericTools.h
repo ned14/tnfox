@@ -1131,7 +1131,7 @@ struct IntegralLists
 */
 template<typename type, bool minus=false> struct BiggestValue
 {
-private:
+protected:
 	static const int UnsignedIntIdx=TL::find<IntegralLists::unsignedInts, type>::value;
 	static const int SignedIntIdx  =TL::find<IntegralLists::signedInts, type>::value;
 	static const int intIdx=(-1==UnsignedIntIdx) ? SignedIntIdx : UnsignedIntIdx;
@@ -1142,13 +1142,45 @@ private:
 public:
 	static const type value=(type)(minus ? ~maxSignedValue : maxSignedValue);
 };
+/*! \struct SmallestValue
+\ingroup generic
+\brief Returns the smallest positive or negative value which can be stored in an integral type
+*/
+template<typename type, bool minus=false> struct SmallestValue : public BiggestValue<type, minus>
+{
+	static const type value=1;
+};
+template<typename type> struct SmallestValue<type, true> : public BiggestValue<type, true>
+{
+	static const type value=(BiggestValue<type, true>::UnsignedIntIdx==-1) ? -1 : 1;
+};
 #if defined(_MSC_VER) && _MSC_VER<=1400
-template<bool minus> struct BiggestValue<float, minus>
-{	// Not supported on <=MSVC80
-};
-template<bool minus> struct BiggestValue<double, minus>
-{	// Not supported on <=MSVC80
-};
+// Sadly <=MSVC80 doesn't support static const <double|float>
+namespace Impl { namespace
+{
+	template<typename type, bool minus> struct MSVCBiggestValue;
+	template<typename type, bool minus> struct MSVCSmallestValue;
+	template<> struct  MSVCBiggestValue<float, false> { static  float value; };
+	template<> struct  MSVCBiggestValue<float, true>  { static  float value; };
+	template<> struct  MSVCBiggestValue<double, false>{ static double value; };
+	template<> struct  MSVCBiggestValue<double, true> { static double value; };
+	template<> struct MSVCSmallestValue<float, false> { static  float value; };
+	template<> struct MSVCSmallestValue<float, true>  { static  float value; };
+	template<> struct MSVCSmallestValue<double, false>{ static double value; };
+	template<> struct MSVCSmallestValue<double, true> { static double value; };
+	 float MSVCBiggestValue <float,  false>::value=3.402823466e+38F;
+	 float MSVCBiggestValue <float,  true>::value=-3.402823466e+38F;
+	double MSVCBiggestValue <double, false>::value=1.7976931348623158e+308;
+	double MSVCBiggestValue <double, true>::value=-1.7976931348623158e+308;
+	 float MSVCSmallestValue<float,  false>::value=1.175494351e-38F;
+	 float MSVCSmallestValue<float,  true>::value=-1.175494351e-38F;
+	double MSVCSmallestValue<double, false>::value=2.2250738585072014e-308;
+	double MSVCSmallestValue<double, true>::value=-2.2250738585072014e-308;
+} }
+template<bool minus> struct  BiggestValue<float,  minus> : public Impl::MSVCBiggestValue <float , minus> { };
+template<bool minus> struct  BiggestValue<double, minus> : public Impl::MSVCBiggestValue <double, minus> { };
+template<bool minus> struct SmallestValue<float,  minus> : public Impl::MSVCSmallestValue<float , minus> { };
+template<bool minus> struct SmallestValue<double, minus> : public Impl::MSVCSmallestValue<double, minus> { };
 #else
 template<> struct BiggestValue<float, false>
 {
@@ -1156,7 +1188,7 @@ template<> struct BiggestValue<float, false>
 };
 template<> struct BiggestValue<float, true>
 {
-	static const float value=1.175494351e-38F;
+	static const float value=-3.402823466e+38F;
 };
 template<> struct BiggestValue<double, false>
 {
@@ -1164,7 +1196,24 @@ template<> struct BiggestValue<double, false>
 };
 template<> struct BiggestValue<double, true>
 {
+	static const double value=-1.7976931348623158e+308;
+};
+
+template<> struct SmallestValue<float, false>
+{
+	static const float value=1.175494351e-38F;
+};
+template<> struct SmallestValue<float, true>
+{
+	static const float value=-1.175494351e-38F;
+};
+template<> struct SmallestValue<double, false>
+{
 	static const double value=2.2250738585072014e-308;
+};
+template<> struct SmallestValue<double, true>
+{
+	static const double value=-2.2250738585072014e-308;
 };
 #endif
 
