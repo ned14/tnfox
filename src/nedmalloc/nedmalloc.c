@@ -31,7 +31,7 @@ DEALINGS IN THE SOFTWARE.
 /*#pragma optimize("a", on)*/
 #endif
 
-//#define CHECKVALIDTC
+/*#define FULLSANITYCHECKS*/
 
 #include "nedmalloc.h"
 #define MSPACES 1
@@ -52,10 +52,13 @@ DEALINGS IN THE SOFTWARE.
 /* The default of 64Kb means we spend too much time kernel-side */
 #define DEFAULT_GRANULARITY (1*1024*1024)
 #define MAX_RELEASE_CHECK_FREQUENCY 4095
+/*#define FORCEINLINE*/
 #include "malloc.c.h"
 
 /* The maximum concurrent threads in a pool possible */
 #define MAXTHREADSINPOOL 16
+/* The maximum number of threadcaches which can be allocated */
+#define THREADCACHEMAXCACHES 256
 /* The maximum size to be allocated from the thread cache */
 #define THREADCACHEMAX 8192
 #if 0
@@ -83,6 +86,15 @@ DEALINGS IN THE SOFTWARE.
  #define TLSSET(k, a)	pthread_setspecific(k, a)
 #endif
 
+#if 0
+/* Only enable if testing with valgrind. Causes misoperation */
+#define mspace_malloc(p, s) malloc(s)
+#define mspace_realloc(p, m, s) realloc(m, s)
+#define mspace_calloc(p, n, s) calloc(n, s)
+#define mspace_free(p, m) free(m)
+#endif
+
+
 #if defined(__cplusplus)
 #if !defined(NO_NED_NAMESPACE)
 namespace nedalloc {
@@ -93,13 +105,19 @@ extern "C" {
 
 size_t nedblksize(void *mem) THROWSPEC
 {
+#if 1
+	/* Only enable if testing with valgrind. Causes misoperation */
 	if(mem)
 	{
 		mchunkptr p=mem2chunk(mem);
+		assert(cinuse(p));	/* If this fails, someone tried to free a block twice */
 		if(cinuse(p))
 			return chunksize(p)-overhead_for(p);
 	}
 	return 0;
+#else
+	return THREADCACHEMAX;
+#endif
 }
 
 void nedsetvalue(void *v) THROWSPEC					{ nedpsetvalue(0, v); }
@@ -122,30 +140,32 @@ struct threadcacheblk_t;
 typedef struct threadcacheblk_t threadcacheblk;
 struct threadcacheblk_t
 {	/* Keep less than 16 bytes on 32 bit systems and 32 bytes on 64 bit systems */
+#ifdef FULLSANITYCHECKS
+	unsigned int magic;
+#endif
 	unsigned int lastUsed, size;
 	threadcacheblk *next, *prev;
 };
 typedef struct threadcache_t
 {
-#ifdef CHECKVALIDTC
+#ifdef FULLSANITYCHECKS
 	unsigned int magic1;
 #endif
-	int mymspace;						/* Last mspace entry this thread used. =-1 for not in use, =-2 for end of list */
+	int mymspace;						/* Last mspace entry this thread used */
 	long threadid;
 	unsigned int mallocs, frees, successes;
 	size_t freeInCache;					/* How much free space is stored in this cache */
 	threadcacheblk *bins[(THREADCACHEMAXBINS+1)*2];
-#ifdef CHECKVALIDTC
+#ifdef FULLSANITYCHECKS
 	unsigned int magic2;
 #endif
-	char cachesync[128];				/* Make sure it's nowhere near the next threadcache */
 } threadcache;
 struct nedpool_t
 {
 	MLOCK_T mutex;
 	void *uservalue;
 	int threads;						/* Max entries in m to use */
-	threadcache *caches;
+	threadcache *caches[THREADCACHEMAXCACHES];
 	TLSVAR mycache;						/* Thread cache for this thread */
 	mstate m[MAXTHREADSINPOOL+1];		/* mspace entries for this pool */
 };
@@ -198,56 +218,80 @@ static FORCEINLINE unsigned int size2binidx(size_t _size) THROWSPEC
 }
 
 
-static int InitCaches(nedpool *p, int from, int to) THROWSPEC
+#ifdef FULLSANITYCHECKS
+static void tcsanitycheck(threadcacheblk **ptr) THROWSPEC
 {
-	if(!p->caches)
+	assert((ptr[0] && ptr[1]) || (!ptr[0] && !ptr[1]));
+	if(ptr[0] && ptr[1])
 	{
-		p->caches=(threadcache *) mspace_malloc(p->m[0], (to+1)*sizeof(threadcache));
-		if(!p->caches)
-			return 1;
+		assert(nedblksize(ptr[0])>=sizeof(threadcacheblk));
+		assert(nedblksize(ptr[1])>=sizeof(threadcacheblk));
+		assert(*(unsigned int *) "NEDN"==ptr[0]->magic);
+		assert(*(unsigned int *) "NEDN"==ptr[1]->magic);
+		assert(!ptr[0]->prev);
+		assert(!ptr[1]->next);
+		if(ptr[0]==ptr[1])
+		{
+			assert(!ptr[0]->next);
+			assert(!ptr[1]->prev);
+		}
 	}
-	else if(from)
-	{
-		threadcache *newcaches;
-		newcaches=(threadcache *) mspace_realloc(p->m[0], p->caches, (to+1)*sizeof(threadcache));
-		if(!newcaches) return 1;
-		p->caches=newcaches;
-	}
-	for(; from<to; from++)
-	{
-		threadcache *tc=&p->caches[from];
-		tc->mymspace=-1;
-		memset(tc->bins, 0, (THREADCACHEMAXBINS+1)*2*sizeof(threadcacheblk *));
-	}
-	p->caches[to].mymspace=-2;
-	memset(p->caches[to].bins, 0, (THREADCACHEMAXBINS+1)*2*sizeof(threadcacheblk *));
-	return 0;
 }
+static void tcfullsanitycheck(threadcache *tc) THROWSPEC
+{
+	threadcacheblk **tcbptr=tc->bins;
+	int n;
+	for(n=0; n<=THREADCACHEMAXBINS; n++, tcbptr+=2)
+	{
+		threadcacheblk *b, *ob=0;
+		tcsanitycheck(tcbptr);
+		for(b=tcbptr[0]; b; ob=b, b=b->next)
+		{
+			assert(*(unsigned int *) "NEDN"==b->magic);
+			assert(!ob || ob->next==b);
+			assert(!ob || b->prev==ob);
+		}
+	}
+}
+#endif
+
 static NOINLINE void RemoveCacheEntries(nedpool *p, threadcache *tc, unsigned int age) THROWSPEC
 {
+#ifdef FULLSANITYCHECKS
+	tcfullsanitycheck(tc);
+#endif
 	if(tc->freeInCache)
 	{
 		threadcacheblk **tcbptr=tc->bins;
 		int n;
 		for(n=0; n<=THREADCACHEMAXBINS; n++, tcbptr+=2)
 		{
-			threadcacheblk **tcb=tcbptr+1;
+			threadcacheblk **tcb=tcbptr+1;		/* come from oldest end of list */
+			/*tcsanitycheck(tcbptr);*/
 			for(; *tcb && tc->frees-(*tcb)->lastUsed>=age; )
 			{
 				threadcacheblk *f=*tcb;
 				size_t blksize=f->size; /*nedblksize(f);*/
 				assert(blksize<=nedblksize(f));
 				assert(blksize);
+#ifdef FULLSANITYCHECKS
+				assert(*(unsigned int *) "NEDN"==(*tcb)->magic);
+#endif
 				*tcb=(*tcb)->prev;
 				if(*tcb)
 					(*tcb)->next=0;
 				else
 					*tcbptr=0;
 				tc->freeInCache-=blksize;
+				assert((long) tc->freeInCache>=0);
 				mspace_free(0, f);
+				/*tcsanitycheck(tcbptr);*/
 			}
 		}
 	}
+#ifdef FULLSANITYCHECKS
+	tcfullsanitycheck(tc);
+#endif
 }
 static void DestroyCaches(nedpool *p) THROWSPEC
 {
@@ -255,30 +299,35 @@ static void DestroyCaches(nedpool *p) THROWSPEC
 	{
 		threadcache *tc;
 		int n;
-		for(n=0; -2!=(tc=&p->caches[n], tc->mymspace); n++)
+		for(n=0; n<THREADCACHEMAXCACHES; n++)
 		{
-			tc->frees++;
-			RemoveCacheEntries(p, tc, 0);
-			assert(!tc->freeInCache);
-			tc->mymspace=-1;
-			tc->threadid=0;
+			if((tc=p->caches[n]))
+			{
+				tc->frees++;
+				RemoveCacheEntries(p, tc, 0);
+				assert(!tc->freeInCache);
+				tc->mymspace=-1;
+				tc->threadid=0;
+				mspace_free(0, tc);
+				p->caches[n]=0;
+			}
 		}
 	}
 }
 
 static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 {
-	threadcache *tc;
+	threadcache *tc=0;
 	int n;
 	ACQUIRE_LOCK(&p->mutex);
-	for(n=0; (tc=&p->caches[n], tc->mymspace)>=0; n++);
-	if(-2==tc->mymspace)
-	{	/* Need to extend */
-		InitCaches(p, n, n+4);
-		tc=&p->caches[n];
+	for(n=0; n<THREADCACHEMAXCACHES && p->caches[n]; n++);
+	if(THREADCACHEMAXCACHES==n)
+	{	/* List exhausted, so disable for this thread */
+		return 0;
 	}
-	tc->mymspace=0;
-#ifdef CHECKVALIDTC
+	tc=p->caches[n]=mspace_calloc(p->m[0], 1, sizeof(threadcache));
+	if(!tc) return 0;
+#ifdef FULLSANITYCHECKS
 	tc->magic1=*(unsigned int *)"NEDMALC1";
 	tc->magic2=*(unsigned int *)"NEDMALC2";
 #endif
@@ -295,6 +344,9 @@ static void *threadcache_malloc(nedpool *p, threadcache *tc, size_t *size) THROW
 	unsigned int idx=size2binidx(*size);
 	size_t blksize=0;
 	threadcacheblk *blk, **binsptr;
+#ifdef FULLSANITYCHECKS
+	tcfullsanitycheck(tc);
+#endif
 	/* Calculate best fit bin size */
 	bestsize=1<<(idx+4);
 #if 0
@@ -343,6 +395,10 @@ static void *threadcache_malloc(nedpool *p, threadcache *tc, size_t *size) THROW
 		*binsptr=blk->next;
 		if(!*binsptr)
 			binsptr[1]=0;
+#ifdef FULLSANITYCHECKS
+		blk->magic=0;
+#endif
+		assert(binsptr[0]!=blk && binsptr[1]!=blk);
 		assert(nedblksize(blk)>=sizeof(threadcacheblk) && nedblksize(blk)<=THREADCACHEMAX+CHUNK_OVERHEAD);
 		/*printf("malloc: %p, %p, %p, %lu\n", p, tc, blk, (long) size);*/
 		ret=(void *) blk;
@@ -353,6 +409,7 @@ static void *threadcache_malloc(nedpool *p, threadcache *tc, size_t *size) THROW
 		assert(blksize>=*size);
 		++tc->successes;
 		tc->freeInCache-=blksize;
+		assert((long) tc->freeInCache>=0);
 	}
 #if defined(DEBUG) && 0
 	if(!(tc->mallocs & 0xfff))
@@ -360,6 +417,9 @@ static void *threadcache_malloc(nedpool *p, threadcache *tc, size_t *size) THROW
 		printf("*** threadcache=%u, mallocs=%u (%f), free=%u (%f), freeInCache=%u\n", (unsigned int) tc->threadid, tc->mallocs,
 			(float) tc->successes/tc->mallocs, tc->frees, (float) tc->successes/tc->frees, (unsigned int) tc->freeInCache);
 	}
+#endif
+#ifdef FULLSANITYCHECKS
+	tcfullsanitycheck(tc);
 #endif
 	return ret;
 }
@@ -381,6 +441,9 @@ static void threadcache_free(nedpool *p, threadcache *tc, int mymspace, void *me
 	unsigned int idx=size2binidx(size);
 	threadcacheblk **binsptr, *tck=(threadcacheblk *) mem;
 	assert(size>=sizeof(threadcacheblk) && size<=THREADCACHEMAX+CHUNK_OVERHEAD);
+#ifdef FULLSANITYCHECKS
+	tcfullsanitycheck(tc);
+#endif
 	/* Calculate best fit bin size */
 	bestsize=1<<(idx+4);
 #if 0
@@ -400,6 +463,14 @@ static void threadcache_free(nedpool *p, threadcache *tc, int mymspace, void *me
 		size=bestsize;
 	binsptr=&tc->bins[idx*2];
 	assert(idx<=THREADCACHEMAXBINS);
+	if(tck==*binsptr)
+	{
+		fprintf(stderr, "Attempt to free already freed memory block %p - aborting!\n", tck);
+		abort();
+	}
+#ifdef FULLSANITYCHECKS
+	tck->magic=*(unsigned int *) "NEDN";
+#endif
 	tck->lastUsed=++tc->frees;
 	tck->size=(unsigned int) size;
 	tck->next=*binsptr;
@@ -410,8 +481,13 @@ static void threadcache_free(nedpool *p, threadcache *tc, int mymspace, void *me
 		binsptr[1]=tck;
 	assert(!*binsptr || (*binsptr)->size==tck->size);
 	*binsptr=tck;
+	assert(tck==tc->bins[idx*2]);
+	assert(tc->bins[idx*2+1]==tck || binsptr[0]->next->prev==tck);
 	/*printf("free: %p, %p, %p, %lu\n", p, tc, mem, (long) size);*/
 	tc->freeInCache+=size;
+#ifdef FULLSANITYCHECKS
+	tcfullsanitycheck(tc);
+#endif
 #if 1
 	if(tc->freeInCache>=THREADCACHEMAXFREESPACE)
 		ReleaseFreeInCache(p, tc, mymspace);
@@ -429,7 +505,6 @@ static NOINLINE int InitPool(nedpool *p, size_t capacity, int threads) THROWSPEC
 	if(TLSALLOC(&p->mycache)) goto err;
 	if(!(p->m[0]=(mstate) create_mspace(capacity, 1))) goto err;
 	p->m[0]->extp=p;
-	if(InitCaches(p, 0, 4)) goto err;
 	RELEASE_LOCK(&p->mutex);
 	return 1;
 err:
@@ -569,7 +644,7 @@ void neddisablethreadcache(nedpool *p) THROWSPEC
 	}
 	else if(mycache>0)
 	{	/* Set to last used mspace */
-		threadcache *tc=&p->caches[mycache-1];
+		threadcache *tc=p->caches[mycache-1];
 #if defined(DEBUG)
 		printf("Threadcache utilisation: %lf%% in cache with %lf%% lost to other threads\n",
 			100.0*tc->successes/tc->mallocs, 100.0*((double) tc->mallocs-tc->frees)/tc->mallocs);
@@ -577,6 +652,8 @@ void neddisablethreadcache(nedpool *p) THROWSPEC
 		TLSSET(p->mycache, (void *)(size_t)(-tc->mymspace));
 		tc->threadid=0;
 		tc->mymspace=-1;
+		mspace_free(0, p->caches[mycache-1]);
+		p->caches[mycache-1]=0;
 	}
 }
 
@@ -608,13 +685,19 @@ static FORCEINLINE void GetThreadCache(nedpool **p, threadcache **tc, int *mymsp
 	mycache=(int)(size_t) TLSGET((*p)->mycache);
 	if(mycache>0)
 	{
-		*tc=&(*p)->caches[mycache-1];
+		*tc=(*p)->caches[mycache-1];
 		*mymspace=(*tc)->mymspace;
 	}
 	else if(!mycache)
 	{
 		*tc=AllocCache(*p);
-		*mymspace=(*tc)->mymspace;
+		if(!*tc)
+		{	/* Disable */
+			TLSSET((*p)->mycache, (void *)-1);
+			*mymspace=0;
+		}
+		else
+			*mymspace=(*tc)->mymspace;
 	}
 	else
 	{
@@ -622,10 +705,11 @@ static FORCEINLINE void GetThreadCache(nedpool **p, threadcache **tc, int *mymsp
 		*mymspace=-mycache-1;
 	}
 	assert(*mymspace>=0);
-#ifdef CHECKVALIDTC
+	assert((long)(size_t)CURRENT_THREAD==(*tc)->threadid);
+#ifdef FULLSANITYCHECKS
 	if(*tc)
 	{
-		if(*tc<&(*p)->caches[0] || *tc>=&(*p)->caches[5] || *(unsigned int *)"NEDMALC1"!=(*tc)->magic1 || *(unsigned int *)"NEDMALC2"!=(*tc)->magic2)
+		if(*(unsigned int *)"NEDMALC1"!=(*tc)->magic1 || *(unsigned int *)"NEDMALC2"!=(*tc)->magic2)
 		{
 			abort();
 		}
