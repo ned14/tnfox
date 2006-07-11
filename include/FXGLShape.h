@@ -133,6 +133,12 @@ public:
   /// Drag this object from one position to another
   virtual FXbool drag(FXGLViewer* viewer,FXint fx,FXint fy,FXint tx,FXint ty);
 
+  /// Gets the options
+  FXuint getOptions() const { return options; }
+
+  /// Sets the options
+  void setOptions(FXuint opts) { options=opts; }
+
   /// Set the tool tip message for this object
   void setTipText(const FXString& text){ tip=text; }
 
@@ -144,6 +150,12 @@ public:
 
   /// Get the material for specified side (where side = 0 or 1)
   void getMaterial(FXint side,FXMaterial &mtl) const;
+
+  /// Get the origin of the object
+  const FXVec3f &getPosition() const { return position; }
+
+  /// Set the origin of the object
+  void setPosition(const FXVec3f &pos);
 
   /// Save shape to a stream
   virtual void save(FXStream& store) const;

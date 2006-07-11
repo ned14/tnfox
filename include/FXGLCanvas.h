@@ -95,6 +95,12 @@ public:
   /// Get GL context handle
   void* getContext() const { return ctx; }
 
+  /// Get options
+  FXuint getOptions() const { return options; }
+
+  /// Set options
+  void setOptions(FXuint ops) { options=ops; }
+
   /// Swap front and back buffer
   virtual void swapBuffers();
 

@@ -29,6 +29,9 @@
 #ifndef FXGLCANVAS_H
 #include "FXGLCanvas.h"
 #endif
+#ifndef FXGLOBJECT_H
+#include "FXGLObject.h"
+#endif
 #include "FXVec3f.h"
 #include "FXVec4f.h"
 #include "FXQuatf.h"
@@ -47,7 +50,8 @@ class FXGLVisual;
 enum {
   VIEWER_LIGHTING = 0x00008000,    /// Lighting is on
   VIEWER_FOG      = 0x00010000,    /// Fog mode on
-  VIEWER_DITHER   = 0x00020000     /// Dithering
+  VIEWER_DITHER   = 0x00020000,    /// Dithering
+  VIEWER_ANTIALIAS= 0x00040000     /// Anti-aliasing
   };
 
 
@@ -65,9 +69,9 @@ struct FXViewport {
 
 // OpenGL Light Source
 struct FXAPI FXLight {
-  FXVec4f    ambient;           // Ambient light color
-  FXVec4f    diffuse;           // Diffuse light color
-  FXVec4f    specular;          // Specular light color
+  FXGLColor  ambient;           // Ambient light color
+  FXGLColor  diffuse;           // Diffuse light color
+  FXGLColor  specular;          // Specular light color
   FXVec4f    position;          // Light position
   FXVec3f    direction;         // Spot direction
   FXfloat    exponent;          // Spotlight exponent
@@ -80,10 +84,10 @@ struct FXAPI FXLight {
 
 // OpenGL Material Description
 struct FXAPI FXMaterial {
-  FXVec4f    ambient;           // Ambient material color
-  FXVec4f    diffuse;           // Diffuse material color
-  FXVec4f    specular;          // Specular material color
-  FXVec4f    emission;          // Emissive material color
+  FXGLColor  ambient;           // Ambient material color
+  FXGLColor  diffuse;           // Diffuse material color
+  FXGLColor  specular;          // Specular material color
+  FXGLColor  emission;          // Emissive material color
   FXfloat    shininess;         // Specular shininess
   };
 
@@ -115,8 +119,8 @@ protected:
   FXdouble        ax,ay;            // Quick view->world coordinate mapping
   FXdouble        diameter;         // Size of model diameter ( always > 0)
   FXdouble        distance;         // Distance of PRP to target
-  FXVec4f         background[2];    // Background colors
-  FXVec4f         ambient;          // Global ambient light
+  FXGLColor       background[2];    // Background colors
+  FXGLColor       ambient;          // Global ambient light
   FXLight         light;            // Light source
   FXMaterial      material;         // Base material properties
   FXint           dial[3];          // Dial positions
@@ -485,16 +489,16 @@ public:
   FXuint getProjection() const { return projection; }
 
   /// Change top or bottom or both background colors
-  void setBackgroundColor(const FXVec4f& clr,FXbool bottom=MAYBE);
+  void setBackgroundColor(const FXGLColor& clr,FXbool bottom=MAYBE);
 
   /// Return top or bottom window background color.
-  const FXVec4f& getBackgroundColor(FXbool bottom=FALSE) const { return background[bottom]; }
+  const FXGLColor& getBackgroundColor(FXbool bottom=FALSE) const { return background[bottom]; }
 
   /// Change global ambient light color
-  void setAmbientColor(const FXVec4f& clr);
+  void setAmbientColor(const FXGLColor& clr);
 
   /// Return global ambient light color
-  const FXVec4f& getAmbientColor() const { return ambient; }
+  const FXGLColor& getAmbientColor() const { return ambient; }
 
   /**
   * Read the pixels off the screen as array of FXColor;

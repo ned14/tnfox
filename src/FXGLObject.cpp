@@ -65,6 +65,16 @@
 
 namespace FX {
 
+
+FXStream &operator<<(FXStream &s, const FXGLColor &o)
+{
+	return s.save(&o.r, 4);
+}
+FXStream &operator>>(FXStream &s, FXGLColor &o)
+{
+	return s.load(&o.r, 4);
+}
+
 // Object implementation
 FXIMPLEMENT(FXGLObject,FXObject,NULL,0)
 
@@ -199,172 +209,6 @@ FXGLGroup::~FXGLGroup(){
   for(FXint i=0; i<list.no(); i++) delete list[i];
   }
 
-
-/*******************************************************************************/
-
-#define HANDLE_SIZE 4.0
-
-
-// Object implementation
-FXIMPLEMENT(FXGLPoint,FXGLObject,NULL,0)
-
-
-// Create point
-FXGLPoint::FXGLPoint():pos(0.0f,0.0f,0.0f){
-  }
-
-// Copy constructor
-FXGLPoint::FXGLPoint(const FXGLPoint& orig):FXGLObject(orig),pos(orig.pos){
-  }
-
-// Create initialized point
-FXGLPoint::FXGLPoint(FXfloat x,FXfloat y,FXfloat z):pos(x,y,z){
-  }
-
-
-// Get bounding box
-void FXGLPoint::bounds(FXRangef& box){
-  box.upper.x=box.lower.x=pos.x;
-  box.upper.y=box.lower.y=pos.y;
-  box.upper.z=box.lower.z=pos.z;
-  }
-
-
-// Draw
-void FXGLPoint::draw(FXGLViewer* ){
-#ifdef HAVE_GL_H
-  glColor3f(0.0,0.0,1.0);
-  glPointSize(HANDLE_SIZE);
-  glBegin(GL_POINTS);
-  glVertex3fv(pos);
-  glEnd();
-#endif
-  }
-
-
-// Draw for hit
-void FXGLPoint::hit(FXGLViewer* ){
-#ifdef HAVE_GL_H
-  glBegin(GL_POINTS);
-  glVertex3fv(pos);
-  glEnd();
-#endif
-  }
-
-
-// Copy
-FXGLObject* FXGLPoint::copy(){
-  return new FXGLPoint(*this);
-  }
-
-// Save object to stream
-void FXGLPoint::save(FXStream& store) const {
-  FXGLObject::save(store);
-  store << pos;
-  }
-
-
-// Load object from stream
-void FXGLPoint::load(FXStream& store){
-  FXGLObject::load(store);
-  store >> pos;
-  }
-
-
-/*******************************************************************************/
-
-// Object implementation
-FXIMPLEMENT(FXGLLine,FXGLObject,NULL,0)
-
-
-// Create line
-FXGLLine::FXGLLine():fm(-0.5f,0.0f,0.0f),to(0.5f,0.0f,0.0f){
-  }
-
-
-// Copy constructor
-FXGLLine::FXGLLine(const FXGLLine& orig):FXGLObject(orig),fm(orig.fm),to(orig.to){
-  }
-
-
-// Create inittialized line
-FXGLLine::FXGLLine(FXfloat fx,FXfloat fy,FXfloat fz,FXfloat tx,FXfloat ty,FXfloat tz):fm(fx,fy,fz),to(tx,ty,tz){
-  }
-
-
-// Get bounding box
-void FXGLLine::bounds(FXRangef& box){
-  FXMINMAX(box.lower.x,box.upper.x,fm.pos.x,to.pos.x);
-  FXMINMAX(box.lower.y,box.upper.y,fm.pos.y,to.pos.y);
-  FXMINMAX(box.lower.z,box.upper.z,fm.pos.z,to.pos.z);
-  }
-
-
-// Draw
-void FXGLLine::draw(FXGLViewer*){
-#ifdef HAVE_GL_H
-  glColor3f(1.0,0.0,0.0);
-  glPointSize(HANDLE_SIZE);
-  glBegin(GL_LINES);
-  glVertex3fv(fm.pos);
-  glVertex3fv(to.pos);
-  glEnd();
-
-/*
-static GLint list=-1;
-
-FXFont *font=FXApp::instance()->getNormalFont();
-
-int first,last,count;
-if(list<0){
-first=font->getMinChar();
-last=font->getMaxChar();
-count=last-first+1;
-list=glGenLists(count);
-glUseFXFont(font,first,count,list);
-FXTRACE((1,"first=%d last=%d list=%d\n",first,last,list));
-}
-
-  glColor3f(1.0,0.0,0.0);
-  glRasterPos2f(0,0);
-  glListBase(list);
-  glCallLists(26,GL_UNSIGNED_BYTE,(GLubyte*)"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-*/
-#endif
-  }
-
-
-// Draw for hit
-void FXGLLine::hit(FXGLViewer* ){
-#ifdef HAVE_GL_H
-  glBegin(GL_LINES);
-  glVertex3fv(fm.pos);
-  glVertex3fv(to.pos);
-  glEnd();
-#endif
-  }
-
-
-// Copy
-FXGLObject* FXGLLine::copy(){
-  return new FXGLLine(*this);
-  }
-
-
-// Save object to stream
-void FXGLLine::save(FXStream& store) const {
-  FXGLObject::save(store);
-  fm.save(store);
-  to.save(store);
-  }
-
-
-// Load object from stream
-void FXGLLine::load(FXStream& store){
-  FXGLObject::load(store);
-  fm.load(store);
-  to.load(store);
-  }
 
 }
 

@@ -71,6 +71,10 @@
 #include "FXGLCylinder.h"
 #include "FXGLSphere.h"
 #include "FXGLTriangleMesh.h"
+#include "FXGLVertices.h"
+
+#include "TnFXGraph.h"
+#include "TnFXVTKCanvas.h"
 
 #ifndef FX_NO_GLOBAL_NAMESPACE
 using namespace FX;

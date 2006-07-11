@@ -1117,7 +1117,7 @@ void glUseFXFont(FXFont* font,int first,int count,int list){
 #else
   HDC hdc=wglGetCurrentDC();
   HFONT oldfont=(HFONT)SelectObject(hdc,(HFONT)font->id());
-  FXbool result=wglUseFontBitmaps(hdc,first,count,list);
+  FXbool result=wglUseFontOutlines(hdc,first,count,list,0.01f,0,WGL_FONT_POLYGONS,NULL);
   SelectObject(hdc,oldfont);
 #endif
 #endif
