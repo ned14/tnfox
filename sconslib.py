@@ -313,7 +313,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
             del vtkpath, vtkbinpath
         else:
             print "Local VTK not found"
-        graphingmoduleobjs=[env.SharedObject(builddir+"/graphingmodule/"+getBase(x), prefixpath+"src/"+x, CPPDEFINES=env['CPPDEFINES']+[ternary(GraphingModule==2, "FX_GRAPHINGMODULE_EXPORTS", "FOXDLL_EXPORTS")]) for x in getGraphingModuleSources(prefixpath)]
+        graphingmoduleobjs=[env.SharedObject(builddir+"/graphingmodule/"+getBase(x), prefixpath+"src/"+x, CPPDEFINES=env['CPPDEFINES']+[ternary(GraphingModule==2, "FX_GRAPHINGMODULE_EXPORTS", "FOXDLL_EXPORTS"), "HAVE_GL_H", "HAVE_GLU_H"]) for x in getGraphingModuleSources(prefixpath)]
         libtnfoxgraphing,libtnfoxgraphingsuffix=VersionedSharedLibraryName(env, tnfoxname+"_graphing", tnfoxversioninfo, debug=debugmode)
 
     for key,value in locals().items():
