@@ -171,7 +171,7 @@ namespace Secure
 	};
 	/*! \class PRandomness
 	\ingroup security
-	\brief A source of pseudo entropy
+	\brief A cryptographically secure source of pseudo entropy
 
 	The great trouble with a source of true entropy like FX::Secure::Randomness
 	is that there is very little new random information accumulated by a computer
@@ -196,6 +196,145 @@ namespace Secure
 		static void freshen(FXuval amount);
 		//! Returns how much randomness is already available. Always (FXuval)-1
 		static FXuval size() { return (FXuval)-1; }
+	};
+	/*! \class FRandomness
+	\ingroup security
+	\brief A fast quality source of pseudo entropy
+
+	Unlike FX::Secure::PRandomness, this class provides a much faster but
+	not cryptographically secure pseudo random generator. In this it is much
+	like FX::fxrandom(), except that instead of a 2^32 period this one has a
+	mathematically proven 2^19937 period and is considered a much higher quality
+	generator. Also, unlike FX::Secure::PRandomness, this class doesn't require
+	the OpenSSL library to be compiled in.
+
+	More specifically, this class is a 64 bit implementation of the Mersenne Twister.
+	You can find out more about this algorithm at http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html.
+
+	\code
+   A C-program for MT19937-64 (2004/9/29 version).
+   Coded by Takuji Nishimura and Makoto Matsumoto.
+
+   This is a 64-bit version of Mersenne Twister pseudorandom number
+   generator.
+
+   Before using, initialize the state by using init_genrand64(seed)  
+   or init_by_array64(init_key, key_length).
+
+   Copyright (C) 2004, Makoto Matsumoto and Takuji Nishimura,
+   All rights reserved.                          
+
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
+
+     1. Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+     2. Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+     3. The names of its contributors may not be used to endorse or promote 
+        products derived from this software without specific prior written 
+        permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+   A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+   CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+   References:
+   T. Nishimura, ``Tables of 64-bit Mersenne Twisters''
+     ACM Transactions on Modeling and 
+     Computer Simulation 10. (2000) 348--357.
+   M. Matsumoto and T. Nishimura,
+     ``Mersenne Twister: a 623-dimensionally equidistributed
+       uniform pseudorandom number generator''
+     ACM Transactions on Modeling and 
+     Computer Simulation 8. (Jan. 1998) 3--30.
+
+   Any feedback is very welcome.
+   http://www.math.hiroshima-u.ac.jp/~m-mat/MT/emt.html
+   email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
+	\endcode
+	*/
+	class FRandomness
+	{
+		static const FXuint NN=312;
+		static const FXuint MM=156;
+		static const FXulong MATRIX_A=0xB5026F5AA96619E9ULL;
+		static const FXulong UM=0xFFFFFFFF80000000ULL;	/* Most significant 33 bits */
+		static const FXulong LM=0x7FFFFFFFULL;			/* Least significant 31 bits */
+
+		FXulong mt[NN];									/* The array for the state vector */
+		int mti;
+	public:
+		//! Constructs, using seed \em seed
+		FRandomness(FXulong seed) throw() : mti(NN+1)
+		{
+			mt[0] = seed;
+			for (mti=1; mti<NN; mti++) 
+				mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
+		}
+
+        //! Generates a random number on [0, 2^64-1]-interval
+		FXulong int64() throw()
+		{
+			int i;
+			FXulong x;
+			static FXulong mag01[2]={0ULL, MATRIX_A};
+
+			if (mti >= NN) { /* generate NN words at one time */
+
+				for (i=0;i<NN-MM;i++) {
+					x = (mt[i]&UM)|(mt[i+1]&LM);
+					mt[i] = mt[i+MM] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
+				}
+				for (;i<NN-1;i++) {
+					x = (mt[i]&UM)|(mt[i+1]&LM);
+					mt[i] = mt[i+(MM-NN)] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
+				}
+				x = (mt[NN-1]&UM)|(mt[0]&LM);
+				mt[NN-1] = mt[MM-1] ^ (x>>1) ^ mag01[(int)(x&1ULL)];
+
+				mti = 0;
+			}
+		  
+			x = mt[mti++];
+
+			x ^= (x >> 29) & 0x5555555555555555ULL;
+			x ^= (x << 17) & 0x71D67FFFEDA60000ULL;
+			x ^= (x << 37) & 0xFFF7EEE000000000ULL;
+			x ^= (x >> 43);
+
+			return x;
+		}
+
+		//! generates a random number on [0,1]-real-interval by division of 2^53-1
+		double real1(void) throw()
+		{
+			return (int64() >> 11) * (1.0/9007199254740991.0);
+		}
+
+		//! generates a random number on [0,1)-real-interval by division of 2^53
+		double real2(void) throw()
+		{
+			return (int64() >> 11) * (1.0/9007199254740992.0);
+		}
+
+		//! generates a random number on (0,1)-real-interval by division of 2^52
+		double real3(void) throw()
+		{
+			return ((int64() >> 12) + 0.5) * (1.0/4503599627370496.0);
+		}
 	};
 
 	/*! \class TigerHash
