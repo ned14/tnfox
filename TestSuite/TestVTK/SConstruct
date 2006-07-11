@@ -1,0 +1,2 @@
+DoConfTests=True
+execfile("../CommonSConstruct.py")

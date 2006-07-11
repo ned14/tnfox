@@ -29,7 +29,8 @@ if "/Volumes/DATA" in dir:
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
-#doConfTests(env, dir+"/../")
+if globals().has_key('DoConfTests'):
+    doConfTests(env, dir+"/../")
 
 env['CPPPATH']+=[ ".",
                  "../../include",
