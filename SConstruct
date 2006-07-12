@@ -57,6 +57,7 @@ Clean(targetname, objects)
 DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib, LINKFLAGS=linkflags)
 env.Precious(DLL)
 addBind(DLL)
+libs=env['LIBS']+[libtnfox]
 if SQLModule==2:
     linkflags=env['LINKFLAGS'][:]
     if onWindows:
@@ -64,11 +65,12 @@ if SQLModule==2:
         if architecture=="x86" or architecture=="x64":
             linkflags+=[ternary(make64bit, "/BASE:0x7ff06300000", "/BASE:0x63000000")]
     Clean(targetname, sqlmoduleobjs)
-    SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LIBS=env['LIBS']+[libtnfox], LINKFLAGS=linkflags)
+    SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LIBS=libs, LINKFLAGS=linkflags)
     env.Depends(SQLDLL, DLL)
     DLL=SQLDLL
     env.Precious(DLL)
     addBind(DLL)
+    libs.append(libtnfoxsql)
 if GraphingModule==2:
     linkflags=env['LINKFLAGS'][:]
     if onWindows:
@@ -76,11 +78,12 @@ if GraphingModule==2:
         if architecture=="x86" or architecture=="x64":
             linkflags+=[ternary(make64bit, "/BASE:0x7ff06310000", "/BASE:0x63100000")]
     Clean(targetname, graphingmoduleobjs)
-    GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LIBS=env['LIBS']+ternary(SQLModule==2, [libtnfox, libtnfoxsql], [libtnfox]), LINKFLAGS=linkflags)
+    GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LIBS=libs, LINKFLAGS=linkflags)
     env.Depends(GraphingDLL, DLL)
     DLL=GraphingDLL
     env.Precious(DLL)
     addBind(DLL)
+    libs.append(libtnfoxgraphing)
 
 if onWindows:
     env.MSVSProject("windows/TnFOXProject"+env['MSVSPROJECTSUFFIX'],
@@ -89,8 +92,8 @@ if onWindows:
                     + ["../src/"+x for x in getGraphingModuleSources("")]
                     + ["../src/"+x for x in getTnFOXSources("", True)],
                 incs=["../include/"+x for x in getTnFOXIncludes()]
-                    + ["../src/"+x for x in getSQLModuleIncludes("")]
-                    + ["../src/"+x for x in getGraphingModuleIncludes("")],
+                    + ["../include/"+x for x in getSQLModuleIncludes("")]
+                    + ["../include/"+x for x in getGraphingModuleIncludes("")],
                 localincs=["../config.py", "../config/msvc.py", "../config/g++.py"],
                 resources="../"+versionrc,
                 misc=["../"+x for x in ["ChangeLog.txt", "License.txt", "License_Addendum.txt",
