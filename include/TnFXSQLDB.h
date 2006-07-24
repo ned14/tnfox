@@ -805,9 +805,9 @@ public:
 	TnFXSQLDB::SQLDataType effectiveType() const throw()
 	{
 		if(TnFXSQLDB::Decimal==mytype || TnFXSQLDB::Numeric==mytype)
-			return (TnFXSQLDB::SQLDataType)(TnFXSQLDB::TinyInt+fxbitscan(mydatalen));
+			return (TnFXSQLDB::SQLDataType)(TnFXSQLDB::TinyInt+fxbitscan((FXulong) mydatalen));
 		if(TnFXSQLDB::Float==mytype)
-			return (TnFXSQLDB::SQLDataType)(TnFXSQLDB::Real-2+fxbitscan(mydatalen));
+			return (TnFXSQLDB::SQLDataType)(TnFXSQLDB::Real-2+fxbitscan((FXulong) mydatalen));
 		return mytype;
 	}
 
