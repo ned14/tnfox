@@ -28,6 +28,11 @@ architectures
 + Added FXGLVertices
 + Added Generic::SmallestValue. Fixed up Generic::BiggestValue for MSVC
 + Added Secure::FRandomness
++ Added Maths namespace and moved Secure::FRandomness into it. Added
+functions and classes Array, Array2, normalrand, normaldist, mean,
+variance, stddev, distribution to Maths namespace
++ Added 64 bit overloads for fxbitscan() and fxbitscanrev()
++ Added Maths::InfinityValue and Maths::NaNValue
 
 
 v0.86 2nd April 2006

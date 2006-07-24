@@ -235,6 +235,7 @@
 #include "FXHandedMsgBox.h"
 #include "FXIPC.h"
 #include "FXLRUCache.h"
+#include "FXMaths.h"
 #include "FXMemoryPool.h"
 #include "FXNetwork.h"
 #include "FXPolicies.h"
