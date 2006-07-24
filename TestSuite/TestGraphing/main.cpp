@@ -29,15 +29,27 @@
 class Window : public FXMainWindow
 {
 	FXDECLARE(Window)
-	double h;			// integration step size
+	double h;			// integration step size for all fractals
+	float scale;		// Scaling factor
+	FXVec3d & (Window::*iterator)(FXVec3d &vec) throw();
+
+
+	// Lorentz
 	double Pr;			// Prandtl number
 	double r;			// Rayleigh number
 	double b;
+
+	// Pendulum
+	double omega0;		// Natural angular frequency of undamped oscillator
+	double Q;
+	double a0;			// External forcing F0/m
+	double omega, T0, gamma, T_driving, x, v, t;
+
 	FXAutoPtr<FXGLVisual> vis1, vis2, vis3;
 	FXHorizontalFrame *canvas3dFrames;
 	FXPacker *canvasFrame1, *canvasFrame2, *canvasFrame3;
 	FXGLViewer *graphviewer1, *graphviewer2, *graphviewer3;
-	FXRadioButton *darkerButton, *brighterButton, *rainbowButton;
+	FXRadioButton *lorentzButton, *pendulumButton, *darkerButton, *brighterButton, *rainbowButton;
 	FXVec3d state;			// Lorentz state
 	QMemArray<FXVec3f> points;
 	TnFX3DGraph graph1, graph2;
@@ -56,6 +68,8 @@ public:
 		ID_TURBO,
 		ID_COPYCAMERA1,
 		ID_COPYCAMERA2,
+		ID_LORENTZ,
+		ID_PENDULUM,
 		ID_DARKERGEN,
 		ID_BRIGHTERGEN,
 		ID_RAINBOWGEN,
@@ -67,15 +81,29 @@ public:
 	Window(FXApp *app) : FXMainWindow(app, "TnFOX Graphing Test", NULL, NULL, DECOR_ALL, 50, 50, 800, 600),
 		vis1(new FXGLVisual(app, VISUAL_DOUBLEBUFFER)), vis2(new FXGLVisual(app, VISUAL_DOUBLEBUFFER)),
 		vis3(new FXGLVisual(app, VISUAL_DOUBLEBUFFER)), state(0.1, 0, 0),
-		maxPoints(2000), addPoints(0)
+		maxPoints(20000), addPoints(0)
 	{
 		h=0.005;
+		scale=4;
+		iterator=&Window::iterateLorentz;
+		// Lorentz
 		//Pr=10.0;
 		//r=28.0;
 		//b=8.0 / 3.0;
 		Pr=28.0;
 		r=46.92;
 		b=4.0;
+		// Pendulum
+		omega0=1.0;
+		Q=2.0;
+		a0=1.15; // 1.15, 1.5
+
+		omega=omega0*0.67;
+		T0=2*PI/omega0;
+		gamma=omega0/Q;
+		T_driving=2*PI/omega;
+		x=v=t=0;
+
 		FXHorizontalFrame *frame = new FXHorizontalFrame(this, LAYOUT_FILL_X | LAYOUT_FILL_Y);
 		FXVerticalFrame *canvasFrames = new FXVerticalFrame(frame, LAYOUT_FILL);
 		canvas3dFrames = new FXHorizontalFrame(canvasFrames, LAYOUT_FILL, 0,0,0,0, 0,0,0,0);
@@ -105,6 +133,10 @@ public:
 		new FXSpinner(addPointsFrame, 4, new FXDataTarget(addPoints), FXDataTarget::ID_VALUE, SPIN_NOMAX|FRAME_THICK|FRAME_SUNKEN);
 		new FXButton(controls, "Copy Camera =>", NULL, this, ID_COPYCAMERA1);
 		new FXButton(controls, "Copy Camera <=", NULL, this, ID_COPYCAMERA2);
+		FXGroupBox *fractalBox = new FXGroupBox(controls, "Fractal:", FRAME_RIDGE|LAYOUT_FILL_X);
+		lorentzButton = new FXRadioButton(fractalBox, "Lorentz",   this, ID_LORENTZ);
+		pendulumButton = new FXRadioButton(fractalBox, "Pendulum", this, ID_PENDULUM);
+		lorentzButton->setCheck();
 		FXGroupBox *colourBox = new FXGroupBox(controls, "Colour Generator:", FRAME_RIDGE|LAYOUT_FILL_X);
 		darkerButton = new FXRadioButton(colourBox, "Darker",   this, ID_DARKERGEN);
 		brighterButton = new FXRadioButton(colourBox, "Brighter", this, ID_BRIGHTERGEN);
@@ -154,7 +186,7 @@ public:
 		graphviewer3->setZoom(1.8);
 		getApp()->addTimeout(this, 0, 100);
 	}
-	FXVec3d &iterateLorentz(FXVec3d &vec) const throw()
+	FXVec3d &iterateLorentz(FXVec3d &vec) throw()
 	{
 		double &x0=vec[0], &y0=vec[1], &z0=vec[2], x1, y1, z1;
 		x1 = x0 + h * Pr * (y0 - x0);
@@ -165,30 +197,65 @@ public:
 		z0 = z1;
 		return vec;
 	}
+	inline double accel(double x, double v, double t) throw()
+	{
+		return -omega0*omega0*sin(x)-gamma*v+a0*cos(omega*t);
+	}
+	double rk4() throw()
+	{
+		double xk1, vk1, xk2, vk2, xk3, vk3, xk4, vk4;
+		xk1=h*v;
+		vk1=h*accel(x, v, t);
+		xk2=h*(v+vk1/2.0);
+		vk2=h*accel(x+xk1/2.0, v+vk1/2.0, t+h/2);
+		xk3=h*(v+vk2/2.0);
+		vk3=h*accel(x+xk2/2.0, v+vk2/2.0, t+h/2);
+		xk4=h*(v+vk3);
+		vk4=h*accel(x+xk3, v+vk3, t+h);
+		x+=(xk1+2.0*xk2+2.0*xk3+xk4)/6.0;
+		v+=(vk1+2.0*vk2+2.0*vk3+vk4)/6.0;
+		if(x<-PI) x+=2*PI;
+		if(x>PI) x-=2*PI;
+		t+=h;
+		return x;
+	}
+	FXVec3d &iteratePendulum(FXVec3d &vec) throw()
+	{
+		static FXVec3d vecM1(0, 0, 0);
+		//vec[2]=vecM1[1];
+		//vec[1]=vecM1[0];
+		//vec[0]=rk4()-vec[1];
+		//vecM1=vec;
+		vec[0]=rk4();
+		vec[1]=v;
+		vec[2]=0;
+		//fxmessage("%f, %f\n", x, v);
+		return vec;
+	}
 	void genPoints(FXuint no)
 	{
 		for(FXuint n=0; n<no; n++)
 		{
-			iterateLorentz(state);
-			points.append(FXVec3f((FXfloat) state.x*4.0f, (FXfloat) state.y*4.0f, (FXfloat) state.z*4.0f));
+			((*this).*iterator)(state);
+			points.append(FXVec3f((FXfloat) state.x*scale, (FXfloat) state.y*scale, (FXfloat) state.z*scale));
 		}
 		if(points.count()>maxPoints)
 		{
 			memmove(points.data(), points.data()+(points.count()-maxPoints), maxPoints*sizeof(FXVec3f));
 			points.resize(maxPoints);
 		}
+		graph1.itemChanged(0);
+		graph2.itemChanged(0);
+		graph3.itemChanged(0); graph3.itemChanged(1); graph3.itemChanged(2);
+		if(canvasFrame1->shown()) graphviewer1->update();
+		if(canvasFrame2->shown()) graphviewer2->update();
+		if(canvasFrame3->shown()) graphviewer3->update();
 	}
 	long addPoint(FXObject* sender,FXSelector,void*)
 	{
 		if(addPoints)
 		{
 			genPoints(addPoints);
-			graph1.itemChanged(0);
-			graph2.itemChanged(0);
-			graph3.itemChanged(0); graph3.itemChanged(1); graph3.itemChanged(2);
-			if(canvasFrame1->shown()) graphviewer1->update();
-			if(canvasFrame2->shown()) graphviewer2->update();
-			if(canvasFrame3->shown()) graphviewer3->update();
 		}
 		getApp()->addTimeout(this, 0, 100);
 		return 1;
@@ -220,6 +287,41 @@ public:
 	{
 		graphviewer1->setTurboMode(!graphviewer1->getTurboMode());
 		graphviewer2->setTurboMode(!graphviewer2->getTurboMode());
+		return 1;
+	}
+	long fractal(FXObject* sender,FXSelector sel,void *ptr)
+	{
+		if(ptr)
+		{
+			FXRangef r(-1.0f,1.0f,-1.0f,1.0f,-1.0f,1.0f);
+			points.resize(0);
+			if(FXSELID(sel)==ID_LORENTZ)
+			{
+				iterator=&Window::iterateLorentz;
+				graph1.setItemDetails(0, "", FXGLColor(0,0,0,0), 4, 2);
+				graph2.setItemDetails(0, "", FXGLColor(0,0,0,0), 4, 2);
+				h=0.05;
+				scale=4;
+				genPoints(2000);
+				graphviewer1->getScene()->bounds(r);
+				graphviewer1->setBounds(r);
+				graphviewer2->setBounds(r);
+			}
+			else
+			{
+				iterator=&Window::iteratePendulum;
+				graph1.setItemDetails(0, "", FXGLColor(0,0,0,0), 1, 0);
+				graph2.setItemDetails(0, "", FXGLColor(0,0,0,0), 1, 0);
+				h=0.1;
+				scale=10;
+				genPoints(2000);
+				graphviewer1->getScene()->bounds(r);
+				graphviewer1->setBounds(r);
+				graphviewer2->setBounds(r);
+			}
+			if(FXSELID(sel)!=ID_LORENTZ) lorentzButton->setCheck(false);
+			if(FXSELID(sel)!=ID_PENDULUM) pendulumButton->setCheck(false);
+		}
 		return 1;
 	}
 	long colourGen(FXObject* sender,FXSelector sel,void *ptr)
@@ -293,7 +395,8 @@ FXDEFMAP(Window) WindowMap[]={
 	FXMAPFUNC(SEL_COMMAND,Window::ID_SHOWVIEWER3, Window::showViewer),
 	FXMAPFUNC(SEL_COMMAND,Window::ID_ANTIALIAS,   Window::antiAlias),
 	FXMAPFUNC(SEL_COMMAND,Window::ID_TURBO,       Window::turbo),
-	FXMAPFUNCS(SEL_COMMAND,Window::ID_DARKERGEN,Window::ID_RAINBOWGEN,Window::colourGen),
+	FXMAPFUNCS(SEL_COMMAND,Window::ID_LORENTZ,	  Window::ID_PENDULUM,Window::fractal),
+	FXMAPFUNCS(SEL_COMMAND,Window::ID_DARKERGEN,  Window::ID_RAINBOWGEN,Window::colourGen),
 	FXMAPFUNC(SEL_COMMAND,Window::ID_COPYCAMERA1, Window::copyCamera),
 	FXMAPFUNC(SEL_COMMAND,Window::ID_COPYCAMERA2, Window::copyCamera),
 	FXMAPFUNC(SEL_COMMAND,Window::ID_SAVEIMAGE1,  Window::saveImage),
