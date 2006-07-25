@@ -40,12 +40,12 @@ struct TnFXSQLDB_ipcPrivate
 	FXuint prefetchNo, askForMore;
 	struct Ack
 	{
-		FXIPCMsg *restrict ia, *restrict i;
+		FXIPCMsg *FXRESTRICT ia, *FXRESTRICT i;
 		void *ref;
 		void (*refdel)(void *);
 		AckHandler handler;
 		delMsgSpec iadel, idel;
-		Ack(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i, void *_ref, void (*_refdel)(void *), AckHandler _handler, delMsgSpec _iadel, delMsgSpec _idel)
+		Ack(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i, void *_ref, void (*_refdel)(void *), AckHandler _handler, delMsgSpec _iadel, delMsgSpec _idel)
 			: ia(_ia), i(_i), ref(_ref), refdel(_refdel), handler(_handler), iadel(_iadel), idel(_idel) { }
 #ifndef HAVE_MOVECONSTRUCTORS
 		Ack(const Ack &_o) : ia(_o.ia), i(_o.i), ref(_o.ref), refdel(_o.refdel),
@@ -89,7 +89,7 @@ public:
 
 	TnFXSQLDB_ipcPrivate() : asynchronous(false), prefetchNo(20), askForMore(15), connh(0) { }
 
-	bool openAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool openAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		OpenAck *ia=(OpenAck *) _ia;
@@ -110,7 +110,7 @@ TnFXSQLDB_ipc::~TnFXSQLDB_ipc()
 	close();
 	FXDELETE(p);
 } FXEXCEPTIONDESTRUCT2; }
-inline void TnFXSQLDB_ipc::addAsyncMsg(FXIPCMsg *restrict ia, FXIPCMsg *restrict i, void *ref, void (*refdel)(void *), TnFXSQLDB_ipc::AckHandler handler, TnFXSQLDB_ipc::delMsgSpec iadel, TnFXSQLDB_ipc::delMsgSpec idel)
+inline void TnFXSQLDB_ipc::addAsyncMsg(FXIPCMsg *FXRESTRICT ia, FXIPCMsg *FXRESTRICT i, void *ref, void (*refdel)(void *), TnFXSQLDB_ipc::AckHandler handler, TnFXSQLDB_ipc::delMsgSpec iadel, TnFXSQLDB_ipc::delMsgSpec idel)
 {
 	assert(i->msgId());
 	p->acksPending.push_back(TnFXSQLDB_ipcPrivate::Ack(ia, i, ref, refdel, handler, iadel, idel));
@@ -258,7 +258,7 @@ struct TnFXSQLDB_ipc::Cursor : public TnFXSQLDBCursor
 		int_setInternals(&rows, &flags, &columns);
 		configBuffer(0, data, rowsToGo);
 	}
-	bool executeAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool executeAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		ExecuteAck *ia=(ExecuteAck *) _ia;
@@ -266,14 +266,14 @@ struct TnFXSQLDB_ipc::Cursor : public TnFXSQLDBCursor
 			config(ia->cursh, ia->rows, ia->flags, ia->columns, ia->data, ia->rowsToGo);
 		return true;
 	}
-	bool requestRowsAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool requestRowsAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		RequestRowsAck *ia=(RequestRowsAck *) _ia;
 		configBuffer(buffers[0]->data ? 1 : 0, ia->data, ia->rowsToGo);
 		return true;
 	}
-	bool copyCursorAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool copyCursorAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		CopyCursorAck *ia=(CopyCursorAck *) _ia;
@@ -499,7 +499,7 @@ struct TnFXSQLDB_ipc::Statement : public TnFXSQLDBStatement
 	FXuint stmth;
 	QMemArray<FXString> parNames;
 	Cursor *inProgressCursor;
-	bool prepareStatementAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool prepareStatementAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		PrepareStatementAck *ia=(PrepareStatementAck *) _ia;
@@ -513,13 +513,13 @@ struct TnFXSQLDB_ipc::Statement : public TnFXSQLDBStatement
 		}
 		return true;
 	}
-	bool bindParameterAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool bindParameterAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		BindParameterAck *ia=(BindParameterAck *) _ia;
 		return true;
 	}
-	bool executeAck(FXIPCMsg *restrict _ia, FXIPCMsg *restrict _i)
+	bool executeAck(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i)
 	{
 		using namespace TnFXSQLDBIPCMsgsI;
 		ExecuteAck *ia=(ExecuteAck *) _ia;

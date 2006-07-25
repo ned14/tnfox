@@ -38,16 +38,6 @@ template<class type> class QMemArray;
 class FXMemoryPool;
 class QThread;
 
-#if defined(_MSC_VER) && _MSC_VER>=1400
-#define FXMALLOCATTR __declspec(restrict)
-#endif
-#ifdef __GNUC__
-#define FXMALLOCATTR __attribute__ ((malloc))
-#endif
-#ifndef FXMALLOCATTR
-#define FXMALLOCATTR
-#endif
-
 /*! \ingroup fxmemoryops
 Allocates memory */
 extern FXAPI FXMALLOCATTR void *malloc(size_t size, FXMemoryPool *heap=0) throw();

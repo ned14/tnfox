@@ -155,8 +155,8 @@ public:
 	template<int offset, int stepe, int stepm> static void ReduceE(QMemArray<FXVec3f> &out, const QMemArray<FXVec3f> &in)
 	{
 		out.resize(in.count()*3/(stepe+stepm));
-		FXfloat *restrict o=(FXfloat *) out.data();
-		const FXfloat *restrict i=(const FXfloat *) in.data();
+		FXfloat *FXRESTRICT o=(FXfloat *) out.data();
+		const FXfloat *FXRESTRICT i=(const FXfloat *) in.data();
 		for(FXuint n=offset; n<in.count()*3; n+=stepe)
 		{
 			*o++=i[n];
@@ -169,8 +169,8 @@ public:
 	{
 		out.resize(in.count()*3/step);
 		FXfloat y=0;
-		FXfloat *restrict o=(FXfloat *) out.data();
-		const FXfloat *restrict i=(const FXfloat *) in.data();
+		FXfloat *FXRESTRICT o=(FXfloat *) out.data();
+		const FXfloat *FXRESTRICT i=(const FXfloat *) in.data();
 		for(FXuint n=offset; n<in.count()*3; n+=step)
 		{
 			*o++=i[n];
@@ -184,8 +184,8 @@ public:
 	{
 		out.resize(in.count()*3/step);
 		FXfloat x=0;
-		FXfloat *restrict o=(FXfloat *) out.data();
-		const FXfloat *restrict i=(const FXfloat *) in.data();
+		FXfloat *FXRESTRICT o=(FXfloat *) out.data();
+		const FXfloat *FXRESTRICT i=(const FXfloat *) in.data();
 		for(FXuint n=offset; n<in.count()*3; n+=step)
 		{
 			*o++=x;

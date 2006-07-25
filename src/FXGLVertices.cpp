@@ -24,6 +24,12 @@
 #ifndef FX_DISABLEGL
 
 #include "xincs.h"
+#include "FXObjectList.h"
+#include "FXVec2f.h"
+#include "FXVec3f.h"
+#include "FXVec4f.h"
+#include "FXRangef.h"
+#include "FXGLViewer.h"
 #include "FXGLVertices.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)

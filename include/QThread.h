@@ -158,7 +158,7 @@ public:
 /*! \class QShrdMemMutex
 \brief A very lightweight mutex object to synchronise access to shared memory regions
 
-What goes for FX::QMutex goes for this. However, there are further restrictions: because
+What goes for FX::QMutex goes for this. However, there are further FXRESTRICTions: because
 inter-process mutex support is not available on all platforms, this object provides
 a working alternative based on FX::FXAtomicInt. It however does not invoke kernel waits
 so hence your process will waste processor time spinning on the lock if it is held by
@@ -873,7 +873,7 @@ on MacOS X to emulate a similar behaviour. This comes with a cost of an extra tw
 open per thread object.
 
 \warning Cleanup handlers are invoked on most POSIX platforms via a synchronous signal. This
-implies that all the restrictions placed on signal handling code also apply to cleanup code -
+implies that all the FXRESTRICTions placed on signal handling code also apply to cleanup code -
 the most annoying is that QWaitCondition is totally unusable.
 
 <h3>Self-destruction:</h3>

@@ -55,14 +55,14 @@ in no more than maxAtomicLength() (usually 4096 bytes, but it is system dependen
 so two threads writing at the same time will cause the read data to be mixed
 blocks of data - which you probably don't want. If you do use a pipe which has
 more than two users, ensure all data transfers are less than maxAtomicLength(). If
-you want a pipe with less restrictions and only for intra-process communication,
-see FX::QLocalPipe. If you need less restrictions across multiple processes, see
+you want a pipe with less FXRESTRICTions and only for intra-process communication,
+see FX::QLocalPipe. If you need less FXRESTRICTions across multiple processes, see
 FX::QBlkSocket (though this is inefficient).
 
 Default security is for FX::FXACLEntity::everything() to have full access. This
 makes sense as named pipes are generally for inter-process communication -
 if however it's a private pipe for communication with a known process it makes
-sense to restrict access to the user running that process at least.
+sense to FXRESTRICT access to the user running that process at least.
 Note that until the pipe is opened, permissions()
 returns what will be applied to the pipe on open() rather than the pipe
 itself - if you want the latter, use the static method.

@@ -384,7 +384,7 @@ namespace Maths {
 	}
 
 	//! Computes the mean, max, min and mode of an array
-	template<typename type> inline type mean(const type *restrict array, FXuval len, FXuint stride=1, type *restrict min=0, type *restrict max=0, type *restrict mode=0) throw()
+	template<typename type> inline type mean(const type *FXRESTRICT array, FXuval len, FXuint stride=1, type *FXRESTRICT min=0, type *FXRESTRICT max=0, type *FXRESTRICT mode=0) throw()
 	{
 		type m=0;
 		if(min) *min=Generic::BiggestValue<type>::value;
@@ -399,13 +399,13 @@ namespace Maths {
 		}
 		return m/len;
 	}
-	template<typename type> inline type mean(const QMemArray<type> &array, FXuint stride=1, type *restrict min=0, type *restrict max=0, type *restrict mode=0) throw()
+	template<typename type> inline type mean(const QMemArray<type> &array, FXuint stride=1, type *FXRESTRICT min=0, type *FXRESTRICT max=0, type *FXRESTRICT mode=0) throw()
 	{
 		return mean(array.data(), array.count(), stride, max, min, mode);
 	}
 
 	//! Computes the variance of an array
-	template<typename type> inline type variance(const type *restrict array, FXuval len, FXuint stride=1, const type *restrict _mean=0) throw()
+	template<typename type> inline type variance(const type *FXRESTRICT array, FXuval len, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
 	{
 		type v=0, m=_mean ? *_mean : mean(array, len, stride);
 		for(FXuval n=0; n<len; n+=stride)
@@ -415,23 +415,23 @@ namespace Maths {
 		}
 		return v/((len/stride)-1);
 	}
-	template<typename type> inline type variance(const QMemArray<type> &array, FXuint stride=1, const type *restrict _mean=0) throw()
+	template<typename type> inline type variance(const QMemArray<type> &array, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
 	{
 		return variance(array.data(), array.count(), stride, _mean);
 	}
 
 	//! Computes the standard deviation of an array
-	template<typename type> inline type stddev(const type *restrict array, FXuval len, FXuint stride=1, const type *restrict _mean=0) throw()
+	template<typename type> inline type stddev(const type *FXRESTRICT array, FXuval len, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
 	{
 		return sqrt(variance(array, len, stride, _mean));
 	}
-	template<typename type> inline type stddev(const QMemArray<type> &array, FXuint stride=1, const type *restrict _mean=0) throw()
+	template<typename type> inline type stddev(const QMemArray<type> &array, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
 	{
 		return stddev(array.data(), array.count(), stride, _mean);
 	}
 
 	//! Computes distribution of an array. Returns min, max & bucket size in first three items.
-	template<unsigned int buckets, typename type> inline Array<type, buckets+3> distribution(const type *restrict array, FXuval len, FXuint stride=1, const type *restrict min=0, const type *restrict max=0) throw()
+	template<unsigned int buckets, typename type> inline Array<type, buckets+3> distribution(const type *FXRESTRICT array, FXuval len, FXuint stride=1, const type *FXRESTRICT min=0, const type *FXRESTRICT max=0) throw()
 	{
 		Array<type, buckets+3> ret;
 		const type &_min=(min && max) ? *min : ret[0], &_max=(min && max) ? *max : ret[1];
@@ -449,7 +449,7 @@ namespace Maths {
 		}
 		return ret;
 	}
-	template<unsigned int buckets, typename type> inline Array<type, buckets+3> distribution(const QMemArray<type> &array, FXuint stride=1, const type *restrict min=0, const type *restrict max=0) throw()
+	template<unsigned int buckets, typename type> inline Array<type, buckets+3> distribution(const QMemArray<type> &array, FXuint stride=1, const type *FXRESTRICT min=0, const type *FXRESTRICT max=0) throw()
 	{
 		return distribution<type, buckets>(array.data(), array.count(), stride, min, max);
 	}

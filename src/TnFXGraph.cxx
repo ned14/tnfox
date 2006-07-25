@@ -24,8 +24,14 @@
 #if FX_GRAPHINGMODULE
 
 #include "xincs.h"
+#include "FXObjectList.h"
+#include "FXVec2f.h"
+#include "FXVec3f.h"
+#include "FXVec4f.h"
+#include "FXRangef.h"
 #include "TnFXGraph.h"
 #include "FXRollback.h"
+#include "FXGLViewer.h"
 #include "FXGLVertices.h"
 #include "FXGLVisual.h"
 #include "FXFont.h"
