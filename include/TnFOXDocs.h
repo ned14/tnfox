@@ -39,7 +39,7 @@ TnFOX absorbs the latest improvements to the core FOX library on a regular basis
 from v1.4.34), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
 is (C) 2001-2006 Niall Douglas and all code rests under the same licence as FOX but with
-one extra FXRESTRICTion - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
+one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
 so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b>. If you want to know more
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the
 \c LICENCE-ADDENDUM.txt file and you can find out more about mine in the \c LICENCE-ADDENDUM2.txt
@@ -555,7 +555,7 @@ Wrote through TFileBySyncDev at 10538.028622Kb/sec
 	\endcode
 	Now your TnFOX based application runs with root privileges. Isn't this unsafe? Partially
 	yes - however, TnFOX does set the correct ownership of things it creates and on Linux
-	FXRESTRICTs its filing system access to that of the real user so it still can't access
+	restricts its filing system access to that of the real user so it still can't access
 	things the owning user couldn't. For all intents and purposes the process runs as though
 	it were a typical process though obviously if it's an untrusted application it could
 	easily abuse these powers to do anything at all. If you don't mind your unencrypted
@@ -738,7 +738,7 @@ a python exception of e.report(). Even the most appropriate type of
 python exception is chosen where possible.
 \li Python exceptions automatically become a FX::FXPythonException.
 \li C style arrays become full python lists which can be sliced,
-altered etc. - the only FXRESTRICTion is that they cannot be extended
+altered etc. - the only restriction is that they cannot be extended
 or shrunk. You can even alter FXImage's bitmap data directly through
 altering the sequence returned by getData()! Note however that
 FXGLViewer::lasso and FXGLViewer::select's returns are very simple
