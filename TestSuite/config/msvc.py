@@ -89,4 +89,11 @@ else:
                        "/OPT:ICF",
                        "/RELEASE",
                        ]
-env['LIBS']+=["kernel32", "user32", libtnfox ]
+env['LIBS']+=["kernel32", "user32", "gdi32"]
+#env['LIBS']+=["advapi32", "shell32", "gdi32",
+#              "winspool",
+#              "delayimp", "wsock32", "ws2_32", "psapi", "dbghelp",
+#              "pdh", "netapi32", "secur32", "userenv"
+#              ]
+#if not disableGUI:
+#    env['LIBS']+=["comctl32"]

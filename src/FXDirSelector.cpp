@@ -1,5 +1,3 @@
-#ifndef BUILDING_TCOMMON
-
 /********************************************************************************
 *                                                                               *
 *              D i r e c t o r y   S e l e c t i o n   W i d g e t              *

@@ -343,30 +343,12 @@ void FXGLViewer::initialize(){
   updateProjection();                           // Initial projection
   updateTransform();                            // Set transformation
   maxhits=512;                                  // Maximum hit buffer size
-  background[0][0]=0.5f;                        // Top background
-  background[0][1]=0.5f;
-  background[0][2]=1.0f;
-  background[0][3]=1.0f;
-  background[1][0]=1.0f;                        // Bottom background
-  background[1][1]=1.0f;
-  background[1][2]=1.0f;
-  background[1][3]=1.0f;
-  ambient[0]=0.2f;                              // Scene ambient
-  ambient[1]=0.2f;
-  ambient[2]=0.2f;
-  ambient[3]=1.0f;
-  light.ambient[0]=0.0f;                        // Light ambient
-  light.ambient[1]=0.0f;
-  light.ambient[2]=0.0f;
-  light.ambient[3]=1.0f;
-  light.diffuse[0]=1.0f;                        // Light diffuse
-  light.diffuse[1]=1.0f;
-  light.diffuse[2]=1.0f;
-  light.diffuse[3]=1.0f;
-  light.specular[0]=0.0f;                       // Light specular
-  light.specular[1]=0.0f;
-  light.specular[2]=0.0f;
-  light.specular[3]=1.0f;
+  background[0]=FXGLColor(0.5f, 0.5f, 1.0f);    // Top background
+  background[1]=FXGLColor(1.0f, 1.0f, 1.0f);    // Bottom background
+  ambient=FXGLColor(0.2f, 0.2f, 0.2f);          // Scene ambient
+  light.ambient=FXGLColor(0.0f, 0.0f, 0.0f);    // Light ambient
+  light.diffuse=FXGLColor(1.0f, 1.0f, 1.0f);    // Light diffuse
+  light.specular=FXGLColor(0.0f, 0.0f, 0.0f);   // Light specular
   light.position[0]=-2.0f;                      // Light position
   light.position[1]= 2.0f;
   light.position[2]= 5.0f;
@@ -379,22 +361,10 @@ void FXGLViewer::initialize(){
   light.c_attn=1.0f;                            // Light constant attenuation
   light.l_attn=0.0f;                            // Light linear attenuation
   light.q_attn=0.0f;                            // Light quadratic attenuation
-  material.ambient[0]=0.2f;                     // Material ambient reflectivity
-  material.ambient[1]=0.2f;
-  material.ambient[2]=0.2f;
-  material.ambient[3]=1.0f;
-  material.diffuse[0]=0.8f;                     // Material diffuse reflectivity
-  material.diffuse[1]=0.8f;
-  material.diffuse[2]=0.8f;
-  material.diffuse[3]=1.0f;
-  material.specular[0]=1.0f;                    // Material specular reflectivity
-  material.specular[1]=1.0f;
-  material.specular[2]=1.0f;
-  material.specular[3]=1.0f;
-  material.emission[0]=0.0f;                    // Material emissivity
-  material.emission[1]=0.0f;
-  material.emission[2]=0.0f;
-  material.emission[3]=1.0f;
+  material.ambient=FXGLColor(0.2f, 0.2f, 0.2f); // Material ambient reflectivity
+  material.diffuse=FXGLColor(0.8f, 0.8f, 0.8f); // Material diffuse reflectivity
+  material.specular=FXGLColor(1.0f, 1.0f, 1.0f);// Material specular reflectivity
+  material.emission=FXGLColor(0.0f, 0.0f, 0.0f);// Material emissivity
   material.shininess=30.0f;                     // Material shininess
   dial[0]=0;                                    // Old dial position
   dial[1]=0;                                    // Old dial position
@@ -469,7 +439,7 @@ void FXGLViewer::glsetup(){
     glDepthFunc(GL_LESS);
     glDepthRange(0.0,1.0);
     glClearDepth(1.0);
-    glClearColor(background[0][0],background[0][1],background[0][2],background[0][3]);
+    glClearColor(background[0].r,background[0].g,background[0].b,background[0].a);
 
     // No face culling
     glDisable(GL_CULL_FACE);
@@ -478,16 +448,16 @@ void FXGLViewer::glsetup(){
 
     // Two sided lighting
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,TRUE);
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT,&ambient.r);
 
     // Preferred blend over background
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     // Light on
     glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0,GL_AMBIENT,light.ambient);
-    glLightfv(GL_LIGHT0,GL_DIFFUSE,light.diffuse);
-    glLightfv(GL_LIGHT0,GL_SPECULAR,light.specular);
+    glLightfv(GL_LIGHT0,GL_AMBIENT,&light.ambient.r);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,&light.diffuse.r);
+    glLightfv(GL_LIGHT0,GL_SPECULAR,&light.specular.r);
     glLightfv(GL_LIGHT0,GL_POSITION,light.position);
     glLightfv(GL_LIGHT0,GL_SPOT_DIRECTION,light.direction);
     glLightf(GL_LIGHT0,GL_SPOT_EXPONENT,light.exponent);
@@ -500,10 +470,10 @@ void FXGLViewer::glsetup(){
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER,TRUE);
 
     // Material colors
-    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,material.ambient);
-    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,material.diffuse);
-    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,material.specular);
-    glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,material.emission);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,&material.ambient.r);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,&material.diffuse.r);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,&material.specular.r);
+    glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,&material.emission.r);
     glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material.shininess);
 
     // Vertex colors change both diffuse and ambient
@@ -561,7 +531,7 @@ void FXGLViewer::drawWorld(FXViewport& wv){
 
   // Clear to solid background
   glClearDepth(1.0);
-  glClearColor(background[0][0],background[0][1],background[0][2],background[0][3]);
+  glClearColor(background[0].r,background[0].g,background[0].b,background[0].a);
   if(background[0]==background[1]){
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     }
@@ -572,8 +542,8 @@ void FXGLViewer::drawWorld(FXViewport& wv){
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     glBegin(GL_TRIANGLE_STRIP);
-    glColor4fv(background[1]); glVertex3f(-1.0f,-1.0f,0.0f); glVertex3f( 1.0f,-1.0f,0.0f);
-    glColor4fv(background[0]); glVertex3f(-1.0f, 1.0f,0.0f); glVertex3f( 1.0f, 1.0f,0.0f);
+    glColor4fv(&background[1].r); glVertex3f(-1.0f,-1.0f,0.0f); glVertex3f( 1.0f,-1.0f,0.0f);
+    glColor4fv(&background[0].r); glVertex3f(-1.0f, 1.0f,0.0f); glVertex3f( 1.0f, 1.0f,0.0f);
     glEnd();
     }
 
@@ -599,9 +569,9 @@ void FXGLViewer::drawWorld(FXViewport& wv){
 
   // Set light parameters
   glEnable(GL_LIGHT0);
-  glLightfv(GL_LIGHT0,GL_AMBIENT,light.ambient);
-  glLightfv(GL_LIGHT0,GL_DIFFUSE,light.diffuse);
-  glLightfv(GL_LIGHT0,GL_SPECULAR,light.specular);
+  glLightfv(GL_LIGHT0,GL_AMBIENT,&light.ambient.r);
+  glLightfv(GL_LIGHT0,GL_DIFFUSE,&light.diffuse.r);
+  glLightfv(GL_LIGHT0,GL_SPECULAR,&light.specular.r);
   glLightfv(GL_LIGHT0,GL_POSITION,light.position);
   glLightfv(GL_LIGHT0,GL_SPOT_DIRECTION,light.direction);
   glLightf(GL_LIGHT0,GL_SPOT_EXPONENT,light.exponent);
@@ -611,24 +581,24 @@ void FXGLViewer::drawWorld(FXViewport& wv){
   glLightf(GL_LIGHT0,GL_QUADRATIC_ATTENUATION,light.q_attn);
 
   // Default material colors
-  glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,material.ambient);
-  glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,material.diffuse);
-  glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,material.specular);
-  glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,material.emission);
+  glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,&material.ambient.r);
+  glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,&material.diffuse.r);
+  glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,&material.specular.r);
+  glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,&material.emission.r);
   glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material.shininess);
 
   // Color commands change both
   glColorMaterial(GL_FRONT_AND_BACK,GL_AMBIENT_AND_DIFFUSE);
 
   // Global ambient light
-  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,ambient);
+  glLightModelfv(GL_LIGHT_MODEL_AMBIENT,&ambient.r);
 
   // Enable fog
   if(options&VIEWER_FOG){
     glEnable(GL_FOG);
-    glFogfv(GL_FOG_COLOR,background[0]);                // Disappear into the background
+    glFogfv(GL_FOG_COLOR,&background[0].r);             // Disappear into the background
     //glFogf(GL_FOG_DENSITY,1.0f);
-    glFogf(GL_FOG_START,(GLfloat)(distance-diameter));  // Range tight around model position
+    glFogf(GL_FOG_START,(GLfloat)(distance-diameter/2));// Keep the front of the model bright
     glFogf(GL_FOG_END,(GLfloat)(distance+diameter));    // Far place same as clip plane:- clipped stuff is in the mist!
     glFogi(GL_FOG_MODE,GL_LINEAR);	                // Simple linear depth cueing
     }
@@ -798,7 +768,10 @@ long FXGLViewer::onPaint(FXObject*,FXSelector,void*){
   FXGLVisual *vis=(FXGLVisual*)getVisual();
   FXASSERT(xid);
   if(makeCurrent()){
-    drawWorld(wvt);
+    if(options&VIEWER_ANTIALIAS)
+      drawAnti(wvt);
+    else
+      drawWorld(wvt);
     if(vis->isDoubleBuffer()) swapBuffers();
     makeNonCurrent();
     }
@@ -1224,7 +1197,7 @@ FXVec3f FXGLViewer::spherePoint(FXint px,FXint py){
   v.y=2.0f*(0.5f*wvt.h-py)/screenmin;
   d=v.x*v.x+v.y*v.y;
   if(d<0.75f){
-    v.z=sqrtf(1.0-d);
+    v.z=sqrtf(1.0f-d);
     }
   else if(d<3.0f){
     d=1.7320508008f-sqrtf(d);
@@ -2512,7 +2485,7 @@ void FXGLViewer::drawFeedback(FXDCPrint& pdc,const FXfloat* buffer,FXint used){
   FXint nvertices,smooth,token,i,p;
 
   // Draw background
-  pdc.outf("%g %g %g C\n",background[0][0],background[0][1],background[0][2]);
+  pdc.outf("%g %g %g C\n",background[0].r,background[0].g,background[0].b);
   pdc.outf("newpath\n");
   pdc.outf("%g %g moveto\n",0.0,0.0);
   pdc.outf("%g %g lineto\n",0.0,(double)height);
@@ -2587,7 +2560,7 @@ void FXGLViewer::drawFeedback(FXDCPrint& pdc,const FXfloat* buffer,FXint used){
 
 // Print the window by means of feedback buffer
 long FXGLViewer::onCmdPrintVector(FXObject*,FXSelector,void*){
-#ifndef BUILDING_TCOMMON
+#ifndef FX_DISABLEPRINTDIALOGS
   FXPrintDialog dlg(this,"Print Scene");
   FXPrinter printer;
   FXfloat *buffer;
@@ -2995,7 +2968,7 @@ long FXGLViewer::onDNDDrop(FXObject* sender,FXSelector sel,void* ptr){
 
   // Dropped on viewer
   if(getDNDData(FROM_DRAGNDROP,FXGLViewer::colorType,(FXuchar*&)clr,len)){
-    setBackgroundColor(FXVec4f(clr[0]/65535.0f,clr[1]/65535.0f,clr[2]/65535.0f,1.0f));
+    setBackgroundColor(FXGLColor(clr[0]/65535.0f,clr[1]/65535.0f,clr[2]/65535.0f,1.0f));
     FXFREE(&clr);
     update();
     return 1;
@@ -3013,7 +2986,7 @@ void FXGLViewer::setProjection(FXuint proj){
 
 
 // Set background
-void FXGLViewer::setBackgroundColor(const FXVec4f& clr,FXbool bottom){
+void FXGLViewer::setBackgroundColor(const FXGLColor& clr,FXbool bottom){
   if(bottom==MAYBE){
     background[0]=background[1]=clr;
     }
@@ -3025,7 +2998,7 @@ void FXGLViewer::setBackgroundColor(const FXVec4f& clr,FXbool bottom){
 
 
 // Set ambient color
-void FXGLViewer::setAmbientColor(const FXVec4f& clr){
+void FXGLViewer::setAmbientColor(const FXGLColor& clr){
   ambient=clr;
   update();
   }

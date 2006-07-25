@@ -50,7 +50,7 @@ using namespace FX;
 namespace FX {
 
 
-bool FXStat::readMetadata(const FXString &path, FXuint *flags, FXfval *size, FXTime *created, FXTime *lastModified, FXTime *lastAccessed, FXfval *compressedSize, FXuint *hardLinks)
+bool FXStat::readMetadata(const FXString &path, FXuint *FXRESTRICT flags, FXfval *FXRESTRICT size, FXTime *FXRESTRICT created, FXTime *FXRESTRICT lastModified, FXTime *FXRESTRICT lastAccessed, FXfval *FXRESTRICT compressedSize, FXuint *FXRESTRICT hardLinks)
 {
 	if(flags) *flags=0;
 	if(size) *size=0;

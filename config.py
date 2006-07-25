@@ -46,11 +46,12 @@ disableMenus=False
 # Set to disable the MDI interface
 disableMDI=False
 
-# Set to disable SQL functionality
-disableSQL=False
 
-# Set to disable the graphing functionality
-disableGraphing=False
+# How to include SQL functionality (=0 to disable, =1 to include in core, =2 to build as separate DLL)
+SQLModule=2
+
+# How to include the graphing functionality (=0 to disable, =1 to include in core, =2 to build as separate DLL)
+GraphingModule=2
 
 SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
@@ -61,22 +62,36 @@ SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 ######## Processor architecture ########
 
+# architecture can be "generic", "x86" or "x64"
+# architecture_version can be:
+#     For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
+#     For x64: =0 for AMD64/EM64T
+
 # Define for a "generic" build
 #architecture="generic"
 #architecture_version=0
 
-architecture="x86"       # Can be "x86" or "x64"
-# For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
-#architecture_version=4           
-#x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
-#x86_3dnow=0             # =0 (disable), =1 (3dnow)
-architecture_version=7
-x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
-x86_3dnow=1             # =0 (disable), =1 (3dnow)
 
-#architecture="x64"
-# For x64: =0 for AMD64/EM64T
-#architecture_version=0
+
+if sys.platform=="win32":
+    if os.environ.has_key('PROCESSOR_ARCHITEW6432'):   # Only defined when in WOW64
+        architecture="x64"
+        architecture_version=0
+    else:
+        architecture="x86"
+        architecture_version=7
+        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        x86_3dnow=1             # =0 (disable), =1 (3dnow)
+else:
+    import platform
+    if 'x64' in platform.machine():
+        architecture="x64"
+        architecture_version=0
+    else:
+        architecture="x86"
+        architecture_version=7
+        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        x86_3dnow=1             # =0 (disable), =1 (3dnow)
 
 
 toolset=None             # Let scons pick which compiler/linker to use

@@ -187,7 +187,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     execfile(prefixpath+"config.py", globals(), varsset)    # Sets debugmode, version, libtnfoxname
     for key,value in varsset.items():
         globals()[key]=value
-    global FOXCompatLayer, disableFileDirDialogs, disableFindReplaceDialogs, disableMDI
+    global FOXCompatLayer, disableGL, disableFileDirDialogs, disableFindReplaceDialogs, disableMDI
+    global SQLModule, GraphingModule
     if targetversion==0: targetversion=tnfoxversion
     compiler=ARGUMENTS.get("compiler", None)
     global toolset
@@ -214,10 +215,11 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         builddir="Debug_"+tool+"_"+architectureSpec()
     else:
         builddir="Release_"+tool+"_"+architectureSpec()
-    env['CPPDEFINES']=[ "FOXDLL" ]
+    env['CPPDEFINES']=[ ]
+    if GenStaticLib!=2: env['CPPDEFINES']=[ "FOXDLL" ]
     env['CPPPATH']=[ prefixpath+"include" ]
     env['CPPFLAGS']=[ ]
-    env['LIBPATH']=[ ]
+    env['LIBPATH']=[ prefixpath+"lib/"+architectureSpec() ]
     env['LIBS']=[ ]
     env['CCWPOOPTS']=[ ]
     env['LINKFLAGS']=[ ]
@@ -236,6 +238,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         disableFindReplaceDialogs=True
         disableMenus=True
         disableMDI=True
+        SQLModule=1
+        GraphingModule=1
     if make64bit: env['CPPDEFINES']+=["FX_IS64BITPROCESSOR"]
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
@@ -243,44 +247,74 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if disableGUI: env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
     
     if not disableFileDirDialogs or not disableMDI: disableMenus=False
-    if not disableGraphing: disableGL=False
+    if GraphingModule: disableGL=False
     if disableGL: env['CPPDEFINES']+=[("FX_DISABLEGL", 1)]
     if disableFileDirDialogs: env['CPPDEFINES']+=[("FX_DISABLEFILEDIRDIALOGS", 1)]
     if disablePrintDialogs: env['CPPDEFINES']+=[("FX_DISABLEPRINTDIALOGS", 1)]
     if disableFindReplaceDialogs: env['CPPDEFINES']+=[("FX_DISABLEFINDREPLACEDIALOGS", 1)]
     if disableMenus: env['CPPDEFINES']+=[("FX_DISABLEMENUS", 1)]
     if disableMDI: env['CPPDEFINES']+=[("FX_DISABLEMDI", 1)]
-    if disableSQL: env['CPPDEFINES']+=[("FX_DISABLESQL", 1)]
-    if disableGraphing: env['CPPDEFINES']+=[("FX_DISABLEGRAPHING", 1)]
 
     if onWindows:
         # Seems to need this on some installations
         env['ENV']['TMP']=os.environ['TMP']
 
-    if not disableSQL and os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
-        env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
-        env['CPPPATH']+=[prefixpath+"src/sqlite"]
-        # Generate a static library of SQLite and add to ourselves
-        filelist=os.listdir(prefixpath+"src/sqlite/src")
-        idx=0
-        while idx<len(filelist):
-            if filelist[idx][-2:]!=".c" or filelist[idx][:3]=="os_":
-                del filelist[idx]
-            else: idx+=1
-        del idx
-        if onWindows:
-            filelist.append("os_win.c")
+    if SQLModule:
+        env['CPPDEFINES']+=[("FX_SQLMODULE", SQLModule)]
+        SQLModuleSources=getSQLModuleSources(prefixpath)
+        sqlmoduleobjs=[]
+        if os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
+            env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
+            env['CPPPATH']+=[prefixpath+"src/sqlite"]
+            filelist=os.listdir(prefixpath+"src/sqlite/src")
+            filelist=filter(lambda src: src[-2:]==".c" and src[:3]!="os_", filelist)
+            if onWindows:
+                filelist.append("os_win.c")
+            else:
+                filelist.append("os_unix.c")
+            # Compile SQLite threadsafe with UTF16 support removed
+            sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlite/"+getBase(x), prefixpath+"src/sqlite/src/"+x,
+                CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)]) for x in filelist]
+            del filelist
         else:
-            filelist.append("os_unix.c")
-        # Compile SQLite threadsafe with UTF16 support removed
-        objects=[env.SharedObject(builddir+"/sqlite/"+getBase(x), prefixpath+"src/sqlite/src/"+x,
-            CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)]) for x in filelist]
-        del filelist
-        libsqlite=objects # StaticLibrary(builddir+"/sqlite", objects)
-        del objects
-    else:
-        print "SQLite not found in TnFOX sources, disabling support!\n"
-        libsqlite=None
+            print "SQLite not found in TnFOX sources, disabling support!\n"
+            SQLModuleSources=filter(lambda obj: "TnFXSQLDB_sqlite" in obj, SQLModuleSources)
+        sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlmodule/"+getBase(x), prefixpath+"src/"+x, CPPDEFINES=env['CPPDEFINES']+[ternary(SQLModule==2, "FX_SQLMODULE_EXPORTS", "FOXDLL_EXPORTS")]) for x in SQLModuleSources]
+        libtnfoxsql,libtnfoxsqlsuffix=VersionedSharedLibraryName(env, tnfoxname+"_sql", tnfoxversioninfo, debug=debugmode)
+        del SQLModuleSources
+    
+    if GraphingModule:
+        env['CPPDEFINES']+=[("FX_GRAPHINGMODULE", GraphingModule)]
+        if os.path.exists(prefixpath+"../VTK/Common/vtkVersion.h"):
+            vtkpath=os.path.normpath(prefixpath+"../VTK")
+            env['CPPDEFINES']+=[("HAVE_VTK", 1)]
+            env['CPPPATH']+=[vtkpath, vtkpath+"/Common", vtkpath+"/Filtering", vtkpath+"/Graphics",
+                vtkpath+"/Hybrid", vtkpath+"/Imaging", vtkpath+"/IO", vtkpath+"/Rendering"]
+            if debugmode:
+                if os.path.exists(vtkpath+"/bin/debug"):
+                    vtkbinpath=vtkpath+"/bin/debug"
+                elif os.path.exists(vtkpath+"/bin/relwithdebinfo"):
+                    vtkbinpath=vtkpath+"/bin/relwithdebinfo"
+                elif os.path.exists(vtkpath+"/bin/release"):
+                    vtkbinpath=vtkpath+"/bin/release"
+                else:
+                    raise RuntimeError, "VTK doesn't appear to have been built!"
+            else:
+                if os.path.exists(vtkpath+"/bin/release"):
+                    vtkbinpath=vtkpath+"/bin/release"
+                elif os.path.exists(vtkpath+"/bin/relwithdebinfo"):
+                    vtkbinpath=vtkpath+"/bin/relwithdebinfo"
+                elif os.path.exists(vtkpath+"/bin/debug"):
+                    vtkbinpath=vtkpath+"/bin/debug"
+                else:
+                    raise RuntimeError, "VTK doesn't appear to have been built!"
+            env['LIBS']+=[vtkbinpath+"/vtkCommon", vtkbinpath+"/vtkFiltering", vtkbinpath+"/vtkGraphics",
+                vtkbinpath+"/vtkHybrid", vtkbinpath+"/vtkImaging", vtkbinpath+"/vtkIO", vtkbinpath+"/vtkRendering"]
+            del vtkpath, vtkbinpath
+        else:
+            print "Local VTK not found"
+        graphingmoduleobjs=[env.SharedObject(builddir+"/graphingmodule/"+getBase(x), prefixpath+"src/"+x, CPPDEFINES=env['CPPDEFINES']+[ternary(GraphingModule==2, "FX_GRAPHINGMODULE_EXPORTS", "FOXDLL_EXPORTS"), "HAVE_GL_H", "HAVE_GLU_H"]) for x in getGraphingModuleSources(prefixpath)]
+        libtnfoxgraphing,libtnfoxgraphingsuffix=VersionedSharedLibraryName(env, tnfoxname+"_graphing", tnfoxversioninfo, debug=debugmode)
 
     for key,value in locals().items():
         cglobals[key]=value
@@ -306,15 +340,34 @@ def getTnFOXSources(prefix="", getWPOfiles=False):
             elif not onWindows and filelist[idx]=="vsscanf.cpp":
                 del filelist[idx]   # Causes issues with glibc
             else: idx+=1
+    sqlsrcs=getSQLModuleSources(prefix)
+    filelist=filter(lambda src: not src in sqlsrcs, filelist)
+    graphingsrcs=getGraphingModuleSources(prefix)
+    filelist=filter(lambda src: not src in graphingsrcs, filelist)
     return filelist
 def getTnFOXIncludes(prefix=""):
     filelist=os.listdir(prefix+"include")
-    idx=0
-    while idx<len(filelist):
-        type=filelist[idx][-2:]
-        if type!=".h":
-            del filelist[idx]
-        else: idx+=1
+    filelist=filter(lambda src: src[-2:]==".h", filelist)
+    sqlsrcs=getSQLModuleIncludes(prefix)
+    filelist=filter(lambda src: not src in sqlsrcs, filelist)
+    graphingsrcs=getGraphingModuleIncludes(prefix)
+    filelist=filter(lambda src: not src in graphingsrcs, filelist)
+    return filelist
+def getSQLModuleSources(prefix=""):
+    filelist=os.listdir(prefix+"src")
+    filelist=filter(lambda src: "TnFXSQL" in src, filelist)
+    return filelist
+def getSQLModuleIncludes(prefix=""):
+    filelist=os.listdir(prefix+"include")
+    filelist=filter(lambda src: "TnFXSQL" in src, filelist)
+    return filelist
+def getGraphingModuleSources(prefix=""):
+    filelist=os.listdir(prefix+"src")
+    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
+    return filelist
+def getGraphingModuleIncludes(prefix=""):
+    filelist=os.listdir(prefix+"include")
+    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
     return filelist
    
 def CheckCompilerPtr32(cc):
@@ -400,6 +453,14 @@ def doConfTests(env, prefixpath=""):
             print "GLU library not found, disabling support"
     else:
         print "GL library not found, disabling support"
+
+    if not os.path.exists(prefixpath+"../VTK/Common/vtkVersion.h"):
+        if conf.CheckLibWithHeader("vtkCommon", ["vtk/Common/vtkVersion.h"], "c++", "vtkVersion::GetVTKVersion();"):
+            env['CPPDEFINES']+=[("HAVE_VTK", 1)]
+            env['CPPPATH']+=["vtk", "vtk/Common", "vtk/Filtering", "vtk/Graphics"
+                "vtk/Hybrid", "vtk/Imaging", "vtk/IO", "vtk/Rendering"]
+            env['LIBS']+=["vtkFiltering", "vtkGraphics",
+                "vtkHybrid", "vtkImaging", "vtkIO", "vtkRendering"]
 
     env=conf.Finish()
 

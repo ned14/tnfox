@@ -23,6 +23,18 @@ architectures
 * Renamed FXSQLDB* to TnFXSQLDB*
 + Updated build system so it will compile on generic architectures
 * Merged FOX v1.6.9
++ Added Pol::destructiveCopyNoDelete and Pol::noCopyNoDelete
++ Added support and use of restrict keyword
+* Fixed up linking tests against a static TnFOX library
++ Added FXGLColor and replaced use of FXVec4f where appropriate
++ Added FXGLVertices
++ Added Generic::SmallestValue. Fixed up Generic::BiggestValue for MSVC
++ Added Secure::FRandomness
++ Added Maths namespace and moved Secure::FRandomness into it. Added
+functions and classes Array, Array2, normalrand, normaldist, mean,
+variance, stddev, distribution to Maths namespace
++ Added 64 bit overloads for fxbitscan() and fxbitscanrev()
++ Added Maths::InfinityValue and Maths::NaNValue
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=

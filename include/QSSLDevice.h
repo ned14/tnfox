@@ -455,7 +455,7 @@ from testing, but internal changes to OpenSSL may cause future breakage.
 <h4>File-based usage:</h4>
 Most of the focus so far in this documentation has been for encrypting
 communications. However, if you have some data to which you want to
-restrict access, QSSLDevice can also apply straight off symmetric
+FXRESTRICT access, QSSLDevice can also apply straight off symmetric
 or asymmetric encryption to raw data.
 
 Asymmetric encryption has been implemented as symmetric encryption
@@ -485,7 +485,7 @@ undefined operation. This problem goes away on 64 bit systems.
 As of v0.86, support for seeking, mixing reads & writes and truncating has been added.
 This comes at the cost of no longer being able to use Cipher-Block Chaining
 (CBC) mode (as previous versions did) as you'd need to know all the data up
-to the seek point. A similar restriction would obviously apply to Cipher
+to the seek point. A similar FXRESTRICTion would obviously apply to Cipher
 Feedback (CFB) mode, so that leaves us with Output Feedback (OFB) mode or
 Counter (CTR) mode. Counter mode is really Electronic Codebook (ECB) with
 the input as a combination of nonce and counter with the output XORed with

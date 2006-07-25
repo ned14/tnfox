@@ -46,6 +46,16 @@ extern "C" unsigned char _BitScanReverse(unsigned long *index, unsigned long mas
 #define BitScanReverse _BitScanReverse
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
+
+#if defined(_M_AMD64)
+extern "C" unsigned char _BitScanForward64(unsigned long *index, unsigned __int64 mask);
+extern "C" unsigned char _BitScanReverse64(unsigned long *index, unsigned __int64 mask);
+#define BitScanForward64 _BitScanForward64
+#define BitScanReverse64 _BitScanReverse64
+#pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse64)
+#endif
+
 #endif
 #include <stdlib.h>		// For byteswap
 //        unsigned short __cdecl _byteswap_ushort(unsigned short);
@@ -83,6 +93,20 @@ inline FXuint fxbitscan(FXuint x) throw()
 #endif
 	return m;
 }
+inline FXuint fxbitscan(FXulong x) throw()
+{
+	FXuint m;
+#if defined(BitScanForward64)
+	unsigned long _m;
+	BitScanForward64(&_m, x);
+	m=(unsigned int) _m;
+#else
+	FXuint *_x=(FXuint *) &x;
+	m=fxbitscan(_x[0]);
+	if(32==m) m=32+fxbitscan(_x[1]);
+#endif
+	return m;
+}
 inline FXuint fxbitscanrev(FXuint x) throw()
 {
 	FXuint m;
@@ -98,6 +122,20 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	}
 #else
 #error Unknown implementation
+#endif
+	return m;
+}
+inline FXuint fxbitscanrev(FXulong x) throw()
+{
+	FXuint m;
+#if defined(BitScanReverse64)
+	unsigned long _m;
+	BitScanReverse64(&_m, x);
+	m=(unsigned int) _m;
+#else
+	FXuint *_x=(FXuint *) &x;
+	m=32+fxbitscanrev(_x[1]);
+	if(64==m) { m=fxbitscanrev(_x[0]); if(32==m) m=64; }
 #endif
 	return m;
 }
@@ -135,12 +173,40 @@ inline FXuint fxbitscan(FXuint x) throw()
 			: "g"  (x));
 	return m;
 }
+inline FXuint fxbitscan(FXulong x) throw()
+{
+	FXuint m;
+#if defined(__x86_64__)
+	__asm__("bsfl %1,%0\n\t"
+			: "=r" (m) 
+			: "g"  (x));
+#else
+	FXuint *_x=(FXuint *) &x;
+	m=fxbitscan(_x[0]);
+	if(32==m) m=32+fxbitscan(_x[1]);
+#endif
+	return m;
+}
 inline FXuint fxbitscanrev(FXuint x) throw()
 {
 	FXuint m;
 	__asm__("bsrl %1,%0\n\t"
 			: "=r" (m) 
 			: "g"  (x));
+	return m;
+}
+inline FXuint fxbitscanrev(FXulong x) throw()
+{
+	FXuint m;
+#if defined(__x86_64__)
+	__asm__("bsrl %1,%0\n\t"
+			: "=r" (m) 
+			: "g"  (x));
+#else
+	FXuint *_x=(FXuint *) &x;
+	m=32+fxbitscanrev(_x[1]);
+	if(64==m) { m=fxbitscanrev(_x[0]); if(32==m) m=64; }
+#endif
 	return m;
 }
 inline void fxendianswap2(void *_p)
@@ -218,6 +284,13 @@ inline FXuint fxbitscan(FXuint x) throw()
    x = x + (x << 16);
    return x >> 24;
 }
+inline FXuint fxbitscan(FXulong x) throw()
+{
+	FXuint m, *_x=(FXuint *) &x;
+	m=fxbitscan(_x[0]);
+	if(32==m) m=32+fxbitscan(_x[1]);
+	return m;
+}
 /*! \ingroup fxassemblerops
 Backward scans an unsigned integer, returning the index of the
 first set bit. Compiles into roughly 24 x86 cycles with no
@@ -252,6 +325,13 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	x = x + (x << 16);
 	return x >> 24;
 #endif
+}
+inline FXuint fxbitscanrev(FXulong x) throw()
+{
+	FXuint m, *_x=(FXuint *) &x;
+	m=32+fxbitscanrev(_x[1]);
+	if(64==m) { m=fxbitscanrev(_x[0]); if(32==m) m=64; }
+	return m;
 }
 
 /*! \ingroup fxassemblerops

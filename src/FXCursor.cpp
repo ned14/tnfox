@@ -191,7 +191,7 @@ void FXCursor::create(){
         // We have support for color cursors and its a color cursor
 #ifdef HAVE_XCURSOR_H
         if(isColor() && XcursorSupportsARGB(DISPLAY(getApp()))){
-          register FXuchar *src,*dst,*end; XcursorImage *image;
+          register FXuchar *FXRESTRICT src,*FXRESTRICT dst,*FXRESTRICT end; XcursorImage *image;
           FXTRACE((100,"%s::create: custom color %dx%d cursor\n",getClassName(),width,height));
           image=XcursorImageCreate(width,height);
           image->xhot=hotx;

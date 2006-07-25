@@ -144,11 +144,11 @@ struct FXDLLLOCAL FXIPCChannelPrivate
 	QPtrList<QWaitCondition> wcsFree;
 	struct AckEntry
 	{
-		FXIPCMsg *msg, *ack;
+		FXIPCMsg *FXRESTRICT msg, *FXRESTRICT ack;
 		QWaitCondition *wc;
 		FXuint timesent;
 		FXException *erroroccurred;
-		AckEntry(FXIPCMsg *_msg, FXIPCMsg *_ack, QWaitCondition *_wc)
+		AckEntry(FXIPCMsg *FXRESTRICT _msg, FXIPCMsg *FXRESTRICT _ack, QWaitCondition *_wc)
 			: msg(_msg), ack(_ack), wc(_wc), timesent(FXProcess::getMsCount()), erroroccurred(0) { }
 		~AckEntry() { FXDELETE(wc); }
 	};
@@ -685,7 +685,7 @@ inline FXuint FXIPCChannel::int_makeUniqueMsgId()
 	} while(!ret || p->msgs.find(ret));
 	return ret;
 }
-bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endianiseSpec endianise, FXuint waitfor)
+bool FXIPCChannel::sendMsgI(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXIPCChannel::endianiseSpec endianise, FXuint waitfor)
 {
 	FXERRH(msg->hasAck() || (!msgack && !waitfor), "Can't wait for ack if the message doesn't have one", 0, FXERRH_ISDEBUG);
 	//FXERRH(running(), "Communications monitor thread appears not to be running", 0, FXERRH_ISDEBUG);
@@ -835,7 +835,7 @@ bool FXIPCChannel::sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endia
 		return getMsgAck(msgack, msg, waitfor);
 	return true;
 }
-bool FXIPCChannel::getMsgAck(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor)
+bool FXIPCChannel::getMsgAck(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXuint waitfor)
 {
 	QMtxHold h(this);
 	FXIPCChannelPrivate::AckEntry *ae=p->msgs.find(msg->msgId());

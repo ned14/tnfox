@@ -18,10 +18,10 @@
 *********************************************************************************
 * $Id:                                                                          *
 ********************************************************************************/
-#ifndef FX_DISABLESQL
+#if FX_SQLMODULE
 
-#ifndef TnFXSQLDB_IPC_H
-#define TnFXSQLDB_IPC_H
+#ifndef TNFXSQLDB_IPC_H
+#define TNFXSQLDB_IPC_H
 
 #include "TnFXSQLDB.h"
 #include "FXIPC.h"
@@ -740,15 +740,15 @@ after all the INSERT's or else data could get lost
 \sa FX::TnFXSQLDB, FX::TnFXSQLDBServer
 */
 struct TnFXSQLDB_ipcPrivate;
-class FXAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndirector
+class FXSQLMODULEAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndirector
 {
 	friend struct TnFXSQLDB_ipcPrivate;
 	TnFXSQLDB_ipcPrivate *p;
 	TnFXSQLDB_ipc(const TnFXSQLDB_ipc &);
 	TnFXSQLDB_ipc &operator=(const TnFXSQLDB_ipc &);
-	typedef Generic::Functor<Generic::TL::create<bool, FXIPCMsg *, FXIPCMsg *>::value> AckHandler;
+	typedef Generic::Functor<Generic::TL::create<bool, FXIPCMsg *FXRESTRICT, FXIPCMsg *FXRESTRICT>::value> AckHandler;
 	typedef void (*delMsgSpec)(FXIPCMsg *m);
-	inline void FXDLLLOCAL addAsyncMsg(FXIPCMsg *ia, FXIPCMsg *i, void *ref, void (*refdel)(void *), AckHandler handler, delMsgSpec iadel, delMsgSpec idel);
+	inline void FXDLLLOCAL addAsyncMsg(FXIPCMsg *FXRESTRICT ia, FXIPCMsg *FXRESTRICT i, void *ref, void (*refdel)(void *), AckHandler handler, delMsgSpec iadel, delMsgSpec idel);
 	template<class reftype> static void delRef(void *ptr) { delete static_cast<reftype *>(ptr); }
 	template<class msgacktype, class msgtype, class reprtype> inline void sendAsyncMsg(msgtype *i, reprtype *dest, AckHandler handler)
 	{	// Avoid including FXRollback.h
@@ -809,7 +809,7 @@ for security. You must add databases which can be served using addDatabase()
 which accepts patterns. If the pattern matches, the database is served.
 */
 struct TnFXSQLDBServerPrivate;
-class FXAPI TnFXSQLDBServer : public FXIPCChannelIndirector
+class FXSQLMODULEAPI TnFXSQLDBServer : public FXIPCChannelIndirector
 {
 	TnFXSQLDBServerPrivate *p;
 	TnFXSQLDBServer(const TnFXSQLDBServer &);

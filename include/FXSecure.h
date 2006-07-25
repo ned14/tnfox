@@ -171,7 +171,7 @@ namespace Secure
 	};
 	/*! \class PRandomness
 	\ingroup security
-	\brief A source of pseudo entropy
+	\brief A cryptographically secure source of pseudo entropy
 
 	The great trouble with a source of true entropy like FX::Secure::Randomness
 	is that there is very little new random information accumulated by a computer

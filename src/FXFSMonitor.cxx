@@ -81,10 +81,10 @@ struct FXFSMon : public QMutex
 			struct Change
 			{
 				FXFSMonitor::Change change;
-				const QFileInfo *oldfi, *newfi;
+				const QFileInfo *FXRESTRICT oldfi, *FXRESTRICT newfi;
 				FXuint myoldfi : 1;
 				FXuint mynewfi : 1;
-				Change(const QFileInfo *_oldfi, const QFileInfo *_newfi) : oldfi(_oldfi), newfi(_newfi), myoldfi(0), mynewfi(0) { }
+				Change(const QFileInfo *FXRESTRICT _oldfi, const QFileInfo *FXRESTRICT _newfi) : oldfi(_oldfi), newfi(_newfi), myoldfi(0), mynewfi(0) { }
 				~Change()
 				{
 					if(myoldfi) { FXDELETE(oldfi); }

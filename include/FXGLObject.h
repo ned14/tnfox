@@ -40,6 +40,30 @@ class FXGLObject;
 // List of objects
 typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 
+/// OpenGL color object
+class FXAPI FXGLColor
+{
+public:
+  FXfloat r,g,b,a;
+public:
+  // Constructors
+  FXGLColor() : r(1), g(1), b(1), a(1) { }
+  FXGLColor(FXfloat _r, FXfloat _g, FXfloat _b, FXfloat _a=1) : r(_r), g(_g), b(_b), a(_a) { }
+  explicit FXGLColor(const FXfloat *colors) : r(colors ? colors[0] : 1), g(colors ? colors[1] : 1), b(colors ? colors[2] : 1), a(colors ? colors[3] : 1) { }
+  FXGLColor(const FXColor &o) : r(FXREDVAL(o)/255.0f), g(FXGREENVAL(o)/255.0f), b(FXBLUEVAL(o)/255.0f), a(FXALPHAVAL(o)/255.0f) { }
+  operator FXColor() const { return FXRGBA(((FXuchar)(r*255.0f) & 0xff), ((FXuchar)(g*255.0f) & 0xff), ((FXuchar)(b*255.0f) & 0xff), ((FXuchar)(a*255.0f) & 0xff)); }
+
+  /// True if color is white
+  bool isWhite() const { return 1==r && 1==g && 1==b; }
+
+  /// True if color is black
+  bool isBlack() const { return 0==r && 0==g && 0==b; }
+
+  friend FXAPI FXStream &operator<<(FXStream &s, const FXGLColor &o);
+  friend FXAPI FXStream &operator>>(FXStream &s, FXGLColor &o);
+};
+
+
 /// Basic OpenGL object
 class FXAPI FXGLObject : public FXObject {
   FXDECLARE(FXGLObject)
@@ -172,78 +196,6 @@ public:
 #pragma warning( pop )
 #endif
 #endif
-
-
-/// OpenGL Point Object
-class FXAPI FXGLPoint : public FXGLObject {
-  FXDECLARE(FXGLPoint)
-public:
-  FXVec3f pos;
-public:
-
-  /// Default constructor
-  FXGLPoint();
-
-  /// Copy constructor
-  FXGLPoint(const FXGLPoint& orig);
-
-  /// Construct with specified coordinates
-  FXGLPoint(FXfloat x,FXfloat y,FXfloat z);
-
-  /// Copy this object
-  virtual FXGLObject* copy();
-
-  /// Called by the viewer to get bounds for this object
-  virtual void bounds(FXRangef& box);
-
-  /// Draw this object in a viewer
-  virtual void draw(FXGLViewer* viewer);
-
-  /// Draw this object for hit-testing purposes
-  virtual void hit(FXGLViewer* viewer);
-
-  /// Save to a stream
-  virtual void save(FXStream& store) const;
-
-  /// Load from a stream
-  virtual void load(FXStream& store);
-  };
-
-
-/// OpenGL Line Object
-class FXAPI FXGLLine : public FXGLObject {
-  FXDECLARE(FXGLLine)
-public:
-  FXGLPoint fm,to;
-public:
-
-  /// Default constructor
-  FXGLLine();
-
-  /// Copy constructor
-  FXGLLine(const FXGLLine& orig);
-
-  /// Construct with specified endpoints
-  FXGLLine(FXfloat fx,FXfloat fy,FXfloat fz,FXfloat tx,FXfloat ty,FXfloat tz);
-
-  /// Called by the viewer to get bounds for this object
-  virtual void bounds(FXRangef& box);
-
-  /// Draw this object in a viewer
-  virtual void draw(FXGLViewer* viewer);
-
-  /// Copy this object
-  virtual FXGLObject* copy();
-
-  /// Draw this object for hit-testing purposes
-  virtual void hit(FXGLViewer* viewer);
-
-  /// Save to a stream
-  virtual void save(FXStream& store) const;
-
-  /// Load from a stream
-  virtual void load(FXStream& store);
-  };
 
 }
 

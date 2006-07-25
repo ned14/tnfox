@@ -29,14 +29,14 @@ if "/Volumes/DATA" in dir:
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
+if globals().has_key('DoConfTests'):
+    doConfTests(env, dir+"/../")
 
-env['CPPDEFINES']+=[ "FOXDLL" ]
 env['CPPPATH']+=[ ".",
                  "../../include",
                  "../../../boost",
                  "../../Python"
                  ]
-env['LIBPATH']+=[dir+"/../lib/"+architectureSpec()]
 if PYTHON_INCLUDE:
     env['CPPPATH'].append(PYTHON_INCLUDE)
 else:
@@ -49,9 +49,12 @@ else:
     except:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
-if onDarwin:
-    env['LIBS']+=[libtnfox]
-elif not onWindows: # Can't put in g++.py as dir isn't defined there
+if onWindows or onDarwin:
+    suffix=ternary(GenStaticLib==2, ".a", env['LIBSUFFIX'])
+    env['LINKFLAGS']+=[libtnfox+suffix]
+    if SQLModule==2: env['LINKFLAGS']+=[libtnfoxsql+suffix]
+    if GraphingModule==2: env['LINKFLAGS']+=[libtnfoxgraphing+suffix]
+else: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
 try:
     if wantPython:

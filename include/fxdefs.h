@@ -146,18 +146,30 @@
   #define FXEXCEPTIONAPI(api)
 #endif
 
-// Forcing inlines and marking deprecation are non-portable extensions
+// Forcing inlines, marking deprecation and restricting are non-portable extensions
 #if defined(_MSC_VER) && !defined(__GCCXML__)
  #define FXFORCEINLINE __forceinline
  #define FXDEPRECATED __declspec(deprecated)
+ #if _MSC_VER>=1400
+  #define FXMALLOCATTR __declspec(restrict)
+  #define FXRESTRICT __restrict
+ #endif
 #elif defined(__GNUC__) && !defined(__GCCXML__)
  #define FXFORCEINLINE inline __attribute__ ((always_inline))
  #define FXDEPRECATED __attribute ((deprecated))
+ #define FXMALLOCATTR __attribute__ ((malloc))
+ #define FXRESTRICT __restrict
 #else
 //! Forces a function to be inlined no matter what (use extremely sparingly). Only works in release builds.
  #define FXFORCEINLINE inline
 //! Marks a function as being deprecated
  #define FXDEPRECATED
+#endif
+#ifndef FXMALLOCATTR
+ #define FXMALLOCATTR
+#endif
+#ifndef FXRESTRICT
+ #define FXRESTRICT
 #endif
 #ifdef DEBUG	// No inlining when debugging
  #undef FXFORCEINLINE

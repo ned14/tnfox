@@ -63,6 +63,8 @@
   #else
    #error Unknown x86 architecture
   #endif
+ #elif defined(_M_X64)
+  #define ARCHITECTURE "x64"
  #elif defined(_M_ALPHA)
   #define ARCHITECTURE "Alpha"
  #elif defined(_M_IA64)

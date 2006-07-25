@@ -88,15 +88,15 @@ FXGLShape::FXGLShape(){
   position.x=0.0f;
   position.y=0.0f;
   position.z=0.0f;
-  material[0].ambient=FXVec4f(0.2f,0.2f,0.2f,1.0f);
-  material[0].diffuse=FXVec4f(0.8f,0.8f,0.8f,1.0f);
-  material[0].specular=FXVec4f(1.0f,1.0f,1.0f,1.0f);
-  material[0].emission=FXVec4f(0.0f,0.0f,0.0f,1.0f);
+  material[0].ambient=FXGLColor(0.2f,0.2f,0.2f,1.0f);
+  material[0].diffuse=FXGLColor(0.8f,0.8f,0.8f,1.0f);
+  material[0].specular=FXGLColor(1.0f,1.0f,1.0f,1.0f);
+  material[0].emission=FXGLColor(0.0f,0.0f,0.0f,1.0f);
   material[0].shininess=30.0f;
-  material[1].ambient=FXVec4f(0.2f,0.2f,0.2f,1.0f);
-  material[1].diffuse=FXVec4f(0.8f,0.8f,0.8f,1.0f);
-  material[1].specular=FXVec4f(1.0f,1.0f,1.0f,1.0f);
-  material[1].emission=FXVec4f(0.0f,0.0f,0.0f,1.0f);
+  material[1].ambient=FXGLColor(0.2f,0.2f,0.2f,1.0f);
+  material[1].diffuse=FXGLColor(0.8f,0.8f,0.8f,1.0f);
+  material[1].specular=FXGLColor(1.0f,1.0f,1.0f,1.0f);
+  material[1].emission=FXGLColor(0.0f,0.0f,0.0f,1.0f);
   material[1].shininess=30.0;
   range.lower.x=-1.0f;
   range.lower.y=-1.0f;
@@ -113,15 +113,15 @@ FXGLShape::FXGLShape(FXfloat x,FXfloat y,FXfloat z,FXuint opts){
   position.x=x;
   position.y=y;
   position.z=z;
-  material[0].ambient=FXVec4f(0.2f,0.2f,0.2f,1.0f);
-  material[0].diffuse=FXVec4f(0.8f,0.8f,0.8f,1.0f);
-  material[0].specular=FXVec4f(1.0f,1.0f,1.0f,1.0f);
-  material[0].emission=FXVec4f(0.0f,0.0f,0.0f,1.0f);
+  material[0].ambient=FXGLColor(0.2f,0.2f,0.2f,1.0f);
+  material[0].diffuse=FXGLColor(0.8f,0.8f,0.8f,1.0f);
+  material[0].specular=FXGLColor(1.0f,1.0f,1.0f,1.0f);
+  material[0].emission=FXGLColor(0.0f,0.0f,0.0f,1.0f);
   material[0].shininess=30.0f;
-  material[1].ambient=FXVec4f(0.2f,0.2f,0.2f,1.0f);
-  material[1].diffuse=FXVec4f(0.8f,0.8f,0.8f,1.0f);
-  material[1].specular=FXVec4f(1.0f,1.0f,1.0f,1.0f);
-  material[1].emission=FXVec4f(0.0f,0.0f,0.0f,1.0f);
+  material[1].ambient=FXGLColor(0.2f,0.2f,0.2f,1.0f);
+  material[1].diffuse=FXGLColor(0.8f,0.8f,0.8f,1.0f);
+  material[1].specular=FXGLColor(1.0f,1.0f,1.0f,1.0f);
+  material[1].emission=FXGLColor(0.0f,0.0f,0.0f,1.0f);
   material[1].shininess=30.0f;
   range.lower.x=-1.0f;
   range.lower.y=-1.0f;
@@ -177,12 +177,12 @@ FXbool FXGLShape::canDelete() const { return TRUE; }
 
 // Handle drag-and-drop drop
 long FXGLShape::onDNDDrop(FXObject* sender,FXSelector,void*){
-  FXushort *clr; FXuint len; FXVec4f color;
+  FXushort *clr; FXuint len; FXGLColor color;
   if(((FXWindow*)sender)->getDNDData(FROM_DRAGNDROP,FXWindow::colorType,(FXuchar*&)clr,len)){
-    color[0]=clr[0]/65535.0f;
-    color[1]=clr[1]/65535.0f;
-    color[2]=clr[2]/65535.0f;
-    color[3]=clr[3]/65535.0f;
+    color.r=clr[0]/65535.0f;
+    color.g=clr[1]/65535.0f;
+    color.b=clr[2]/65535.0f;
+    color.a=clr[3]/65535.0f;
     FXFREE(&clr);
     material[0].ambient=color;
     material[0].diffuse=color;
@@ -295,22 +295,22 @@ void FXGLShape::draw(FXGLViewer* viewer){
 
     // Material
     if(options&SURFACE_DUALSIDED){
-      glMaterialfv(GL_FRONT,GL_AMBIENT,material[0].ambient);
-      glMaterialfv(GL_FRONT,GL_DIFFUSE,material[0].diffuse);
-      glMaterialfv(GL_FRONT,GL_SPECULAR,material[0].specular);
-      glMaterialfv(GL_FRONT,GL_EMISSION,material[0].emission);
+      glMaterialfv(GL_FRONT,GL_AMBIENT,&material[0].ambient.r);
+      glMaterialfv(GL_FRONT,GL_DIFFUSE,&material[0].diffuse.r);
+      glMaterialfv(GL_FRONT,GL_SPECULAR,&material[0].specular.r);
+      glMaterialfv(GL_FRONT,GL_EMISSION,&material[0].emission.r);
       glMaterialf(GL_FRONT,GL_SHININESS,material[0].shininess);
-      glMaterialfv(GL_BACK,GL_AMBIENT,material[1].ambient);
-      glMaterialfv(GL_BACK,GL_DIFFUSE,material[1].diffuse);
-      glMaterialfv(GL_BACK,GL_SPECULAR,material[1].specular);
-      glMaterialfv(GL_BACK,GL_EMISSION,material[1].emission);
+      glMaterialfv(GL_BACK,GL_AMBIENT,&material[1].ambient.r);
+      glMaterialfv(GL_BACK,GL_DIFFUSE,&material[1].diffuse.r);
+      glMaterialfv(GL_BACK,GL_SPECULAR,&material[1].specular.r);
+      glMaterialfv(GL_BACK,GL_EMISSION,&material[1].emission.r);
       glMaterialf(GL_BACK,GL_SHININESS,material[1].shininess);
       }
     else{
-      glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,material[0].ambient);
-      glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,material[0].diffuse);
-      glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,material[0].specular);
-      glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,material[0].emission);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,&material[0].ambient.r);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,&material[0].diffuse.r);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,&material[0].specular.r);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_EMISSION,&material[0].emission.r);
       glMaterialf(GL_FRONT_AND_BACK,GL_SHININESS,material[0].shininess);
       }
 
@@ -499,6 +499,12 @@ void FXGLShape::setMaterial(FXint side,const FXMaterial& mtl){
 // Obtain material of surface
 void FXGLShape::getMaterial(FXint side,FXMaterial& mtl) const {
   mtl=material[side];
+  }
+
+
+// Set the origin of the object
+void FXGLShape::setPosition(const FXVec3f &pos) {
+  position=pos;
   }
 
 

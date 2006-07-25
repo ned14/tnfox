@@ -523,7 +523,7 @@ delete h1;                              // Thread 1
 In the above, the region ptr+4096 to ptr+36864 remains locked.
 
 \warning Many operating systems view locking too many pages in memory as a
-malicious act and so restrict the maximum per process. In particular on
+malicious act and so FXRESTRICT the maximum per process. In particular on
 Windows NT systems it can be a very low amount, perhaps only 200Kb.
 */
 class FXAPI FXProcess_MemLock

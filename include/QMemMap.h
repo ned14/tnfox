@@ -75,7 +75,7 @@ Default security is for FX::FXACLEntity::everything() to have full access when
 the type is mapped memory - file maps deny everything access except the local
 process. This makes sense as mapped memory is generally for inter-process
 communication - if however it's a private region for communication with a
-known process it makes sense to restrict access to the user running that
+known process it makes sense to FXRESTRICT access to the user running that
 process at least. Note that until the map is opened, permissions()
 returns what will be applied to the map on open() rather than the map
 itself - if you want the latter, use the static method. Note also that the

@@ -57,7 +57,7 @@ same problem and in his December 2000 CUJ article he gave an almost entirely
 compile-time solution (as much as it could be). From some ideas in that, I have
 come up with the functions listed below which can be almost as efficient as Andrei's when no rollbacks
 occur (around 15-20 instructions in x86). Furthermore, it offers a considerable
-superset of functionality including you not needing to restrict your rollbacks to the local scope.
+superset of functionality including you not needing to FXRESTRICT your rollbacks to the local scope.
 
 <h3>Usage:</h3>
 Firstly, if you merely want a pointer deleted on scope exit, please see FX::FXPtrHold

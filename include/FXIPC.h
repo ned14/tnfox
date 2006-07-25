@@ -705,7 +705,7 @@ public:
 
 	typedef void (*endianiseSpec)(FXIPCMsg *, FXStream &);
 	//! Message send implementation. Use sendMsg() in preference to this where possible.
-	bool sendMsgI(FXIPCMsg *msgack, FXIPCMsg *msg, endianiseSpec endianise, FXuint waitfor);
+	bool sendMsgI(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, endianiseSpec endianise, FXuint waitfor);
 	/*! \return True if the ack message was received within the specified timeout
 	\param msgack Pointer to an already constructed corresponding ack message.
 	If zero, we don't care about ack (throw it away)
@@ -721,7 +721,7 @@ public:
 	\note If the channel suddenly closes before an ack to a message you sent arrives,
 	sendMsg() and getMsgAck() throw a FX::FXConnectionLostException.
 	*/
-	template<class msgacktype, class msgtype> bool sendMsg(msgacktype *msgack, msgtype *msg, FXuint waitfor=FXINFINITE)
+	template<class msgacktype, class msgtype> bool sendMsg(msgacktype *FXRESTRICT msgack, msgtype *FXRESTRICT msg, FXuint waitfor=FXINFINITE)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck || msgtype::id::code+1==msgacktype::id::code, AckMsg_Not_Ack_Of_Msg);
 		return sendMsgI(msgack, msg, &msgtype::regtype::endianise, waitfor);
@@ -749,9 +749,9 @@ public:
 	identical parameters to sendMsg() except for \em waitfor. Internally
 	sendMsg() actually calls this function.
 	*/
-	bool getMsgAck(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor=FXINFINITE);
+	bool getMsgAck(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXuint waitfor=FXINFINITE);
 	//! \overload
-	bool getMsgAck(FXIPCMsg &msgack, FXIPCMsg &msg, FXuint waitfor=FXINFINITE)
+	bool getMsgAck(FXIPCMsg &FXRESTRICT msgack, FXIPCMsg &FXRESTRICT msg, FXuint waitfor=FXINFINITE)
 	{
 		return getMsgAck(&msgack, &msg, waitfor);
 	}
@@ -855,8 +855,8 @@ class FXIPCChannelIndirector
 {
 	FXIPCChannel *mychannel;
 	FXuint myMsgChunk, myrouting;
-	bool (FXIPCChannel::*sendMsgI)(FXIPCMsg *msgack, FXIPCMsg *msg, FXIPCChannel::endianiseSpec endianise, FXuint waitfor);
-	bool (FXIPCChannel::*getMsgAckI)(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor);
+	bool (FXIPCChannel::*sendMsgI)(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXIPCChannel::endianiseSpec endianise, FXuint waitfor);
+	bool (FXIPCChannel::*getMsgAckI)(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXuint waitfor);
 	/*void resetChunkAdd(FXIPCMsg *msg) const throw()
 	{
 		msg->type-=myMsgChunk;
@@ -886,7 +886,7 @@ protected:
 	}
 	/*! Sends a message via the previously set channel, applying the previously specified routing
 	and adding the previously specified message chunk. See FX::FXIPCChannel::sendMsg() */
-	template<class msgacktype, class msgtype> bool sendMsg(msgacktype *msgack, msgtype *msg, FXuint waitfor=FXINFINITE)
+	template<class msgacktype, class msgtype> bool sendMsg(msgacktype *FXRESTRICT msgack, msgtype *FXRESTRICT msg, FXuint waitfor=FXINFINITE)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck || msgtype::id::code+1==msgacktype::id::code, AckMsg_Not_Ack_Of_Msg);
 		configMsg(msg);
@@ -894,7 +894,7 @@ protected:
 		return ((*mychannel).*sendMsgI)(msgack, msg, &msgtype::regtype::endianise, waitfor);
 	}
 	//! \overload
-	template<class msgacktype, class msgtype> bool sendMsg(msgacktype &msgack, msgtype &msg, FXuint waitfor=FXINFINITE)
+	template<class msgacktype, class msgtype> bool sendMsg(msgacktype &FXRESTRICT msgack, msgtype & FXRESTRICT msg, FXuint waitfor=FXINFINITE)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck || msgtype::id::code+1==msgacktype::id::code, AckMsg_Not_Ack_Of_Msg);
 		configMsg(&msg);
@@ -918,12 +918,12 @@ protected:
 		return ((*mychannel).*sendMsgI)(0, &msg, &msgtype::regtype::endianise, 0);
 	}
 	//! Gets the ack for a message previously sent using sendMsg(). See FX::FXIPCChannel::getMsgAck().
-	bool getMsgAck(FXIPCMsg *msgack, FXIPCMsg *msg, FXuint waitfor=FXINFINITE)
+	bool getMsgAck(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXuint waitfor=FXINFINITE)
 	{
 		return ((*mychannel).*getMsgAckI)(msgack, msg, waitfor);
 	}
 	//! \overload
-	bool getMsgAck(FXIPCMsg &msgack, FXIPCMsg &msg, FXuint waitfor=FXINFINITE)
+	bool getMsgAck(FXIPCMsg &FXRESTRICT msgack, FXIPCMsg &FXRESTRICT msg, FXuint waitfor=FXINFINITE)
 	{
 		return ((*mychannel).*getMsgAckI)(&msgack, &msg, waitfor);
 	}
