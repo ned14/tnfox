@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDate.h,v 1.10 2006/01/22 17:58:00 fox Exp $                            *
+* $Id: FXDate.h,v 1.10.2.1 2006/07/17 17:57:30 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXDATE_H
 #define FXDATE_H
@@ -69,7 +69,7 @@ public:
   FXDate(FXuint j):julian(j){}
 
   /// Set julian day number
-  void setJulian(FXuint day){ julian=day; }
+  void setJulian(FXuint d){ julian=d; }
 
   /// Get julian day number
   FXuint getJulian() const { return julian; }
@@ -105,16 +105,16 @@ public:
   static bool leapYear(FXint y);
 
   /// Get the name of the month
-  static const FXchar *monthName(FXint month){ return longMonthName[month-1]; }
+  static const FXchar *monthName(FXint m){ return longMonthName[m-1]; }
 
   /// Get the abbreviated name of the month
-  static const FXchar *monthNameShort(FXint month){ return shortMonthName[month-1]; }
+  static const FXchar *monthNameShort(FXint m){ return shortMonthName[m-1]; }
 
   /// Get the name of the day
-  static const FXchar *dayName(FXint day){ return longWeekDay[day]; }
+  static const FXchar *dayName(FXint d){ return longWeekDay[d]; }
 
   /// Get the abbreviated name of the day
-  static const FXchar *dayNameShort(FXint day){ return shortWeekDay[day]; }
+  static const FXchar *dayNameShort(FXint d){ return shortWeekDay[d]; }
 
   /// Return current local date
   static FXDate localDate();

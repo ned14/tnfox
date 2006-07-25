@@ -29,7 +29,7 @@ namespace FX {
 
 
 /// Extent
-class FXExtentf {
+class FXAPI FXExtentf {
 public:
   FXVec2f lower;
   FXVec2f upper;

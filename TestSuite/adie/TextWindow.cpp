@@ -19,7 +19,7 @@
 * along with this program; if not, write to the Free Software                   *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: TextWindow.cpp,v 1.125 2006/02/06 03:03:38 fox Exp $                     *
+* $Id: TextWindow.cpp,v 1.125.2.1 2006/06/08 13:09:06 fox Exp $                     *
 ********************************************************************************/
 #include "fx.h"
 #include "fxkeys.h"

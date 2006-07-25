@@ -19,7 +19,7 @@
 * along with this program; if not, write to the Free Software                   *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: Adie.cpp,v 1.110 2006/01/22 18:01:09 fox Exp $                           *
+* $Id: Adie.cpp,v 1.110.2.1 2006/03/21 07:29:06 fox Exp $                           *
 ********************************************************************************/
 #include "fx.h"
 #include "fxkeys.h"

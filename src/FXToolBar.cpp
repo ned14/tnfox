@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBar.cpp,v 1.48 2006/01/22 17:58:47 fox Exp $                       *
+* $Id: FXToolBar.cpp,v 1.48.2.1 2006/06/20 13:13:06 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -563,7 +563,10 @@ void FXToolBar::setDockingSide(FXuint side){
         if((options&LAYOUT_RIGHT) && (options&LAYOUT_CENTER_X)) side|=LAYOUT_FIX_Y;
         else if(options&LAYOUT_RIGHT) side|=LAYOUT_BOTTOM;
         else if(options&LAYOUT_CENTER_X) side|=LAYOUT_CENTER_Y;
-        if(options&LAYOUT_FILL_X) side|=LAYOUT_FILL_Y;
+        if(options&LAYOUT_FILL_X){
+          if(options&LAYOUT_FILL_Y) side|=LAYOUT_FILL_X;
+          side|=LAYOUT_FILL_Y;
+          }
         }
       else{                               // Was vertical already
         side|=(options&(LAYOUT_BOTTOM|LAYOUT_CENTER_Y|LAYOUT_FILL_Y));
@@ -576,7 +579,10 @@ void FXToolBar::setDockingSide(FXuint side){
         if((options&LAYOUT_BOTTOM) && (options&LAYOUT_CENTER_Y)) side|=LAYOUT_FIX_X;
         else if(options&LAYOUT_BOTTOM) side|=LAYOUT_RIGHT;
         else if(options&LAYOUT_CENTER_Y) side|=LAYOUT_CENTER_X;
-        if(options&LAYOUT_FILL_Y) side|=LAYOUT_FILL_X;
+        if(options&LAYOUT_FILL_Y){
+          if(options&LAYOUT_FILL_X) side|=LAYOUT_FILL_Y;
+          side|=LAYOUT_FILL_X;
+          }
         }
       else{
         side|=(options&(LAYOUT_RIGHT|LAYOUT_CENTER_X|LAYOUT_FILL_X));

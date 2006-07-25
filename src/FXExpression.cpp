@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXExpression.cpp,v 1.30 2006/03/21 01:41:43 fox Exp $                    *
+* $Id: FXExpression.cpp,v 1.30.2.1 2006/07/24 15:33:14 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -968,7 +968,6 @@ FXExpressionError FXExpression::parse(const FXchar* expression,const FXchar* var
 
       // Allocate new code
       size=cs.pc-cs.code;
-      code=(FXuchar*)malloc(size);
       if(!FXMALLOC(&code,FXuchar,size)){
         code=(FXuchar*)initial;
         return EXPRERR_MEMORY;

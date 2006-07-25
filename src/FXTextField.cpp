@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextField.cpp,v 1.171 2006/01/22 17:58:47 fox Exp $                    *
+* $Id: FXTextField.cpp,v 1.171.2.1 2006/07/14 14:54:21 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1080,7 +1080,7 @@ void FXTextField::drawPWDTextFragment(FXDCWindow& dc,FXint x,FXint y,FXint fm,FX
 
 // Draw range of text
 void FXTextField::drawTextRange(FXDCWindow& dc,FXint fm,FXint to){
-  register FXint sx,ex,xx,yy,cw,hh,ww,si,ei,lx,rx;
+  register FXint sx,ex,xx,yy,cw,hh,ww,si,ei,lx,rx,t;
   register FXint rr=width-border-padright;
   register FXint ll=border+padleft;
   register FXint mm=(ll+rr)/2;
@@ -1211,16 +1211,18 @@ void FXTextField::drawTextRange(FXDCWindow& dc,FXint fm,FXint to){
     lx=xx+font->getTextWidth(&contents[0],fm);
     rx=lx+font->getTextWidth(&contents[fm],to-fm);
     while(fm<to){
-      cw=font->getTextWidth(&contents[fm],1);
+      t=contents.inc(fm);
+      cw=font->getTextWidth(&contents[fm],t-fm);
       if(lx+cw>=0) break;
       lx+=cw;
-      fm=contents.inc(fm);
+      fm=t;
       }
     while(fm<to){
-      cw=font->getTextWidth(&contents[to-1],1);
+      t=contents.dec(to);
+      cw=font->getTextWidth(&contents[t],to-t);
       if(rx-cw<width) break;
       rx-=cw;
-      to=contents.dec(to);
+      to=t;
       }
 
     // Adjust selected range

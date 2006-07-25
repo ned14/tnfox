@@ -19,7 +19,7 @@
 * along with this program; if not, write to the Free Software                   *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: Adie.h,v 1.54 2006/01/22 18:01:10 fox Exp $                              *
+* $Id: Adie.h,v 1.54.2.1 2006/03/21 07:29:06 fox Exp $                              *
 ********************************************************************************/
 #ifndef ADIE_H
 #define ADIE_H

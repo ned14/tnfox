@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.cpp,v 1.91.2.1 2006/04/05 18:56:22 fox Exp $                         *
+* $Id: FXPopup.cpp,v 1.91.2.2 2006/06/20 21:49:52 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -744,6 +744,7 @@ void FXPopup::popdown(){
   grabowner=NULL;
   killFocus();
   hide();
+  getApp()->flush(true);
   }
 
 

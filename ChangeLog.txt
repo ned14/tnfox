@@ -22,6 +22,7 @@ architectures
 + Added modular building of TnFOX
 * Renamed FXSQLDB* to TnFXSQLDB*
 + Updated build system so it will compile on generic architectures
+* Merged FOX v1.6.9
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=

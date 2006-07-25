@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTable.cpp,v 1.245.2.2 2006/05/24 12:08:45 fox Exp $                        *
+* $Id: FXTable.cpp,v 1.245.2.3 2006/06/21 04:33:15 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -2801,7 +2801,10 @@ long FXTable::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     tablepos.col=colAtX(event->win_x);
 
     // Outside table
-    if(tablepos.row<0 || tablepos.row>=nrows || tablepos.col<0 || tablepos.col>=ncols) return 0;
+    if(tablepos.row<0 || tablepos.row>=nrows || tablepos.col<0 || tablepos.col>=ncols){
+      setCurrentItem(current.row,current.col,true);
+      return 1;
+      }
 
     // Change current item
     setCurrentItem(tablepos.row,tablepos.col,TRUE);

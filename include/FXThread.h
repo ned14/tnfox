@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXThread.h,v 1.40 2006/03/16 22:22:43 fox Exp $                          *
+* $Id: FXThread.h,v 1.40.2.1 2006/07/04 02:44:04 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTHREAD_H
 #define FXTHREAD_H
@@ -165,7 +165,7 @@ public:
 * A semaphore allows for protection of a resource that can
 * be accessed by a fixed number of simultaneous threads.
 */
-class FXSemaphore {
+class FXAPI FXSemaphore {
 private:
   FXuval data[16];
 private:
@@ -288,7 +288,7 @@ public:
   * Wake at appointed time specified in nanoseconds since Epoch.
   */
   static void wakeat(FXlong nsec);
-  
+
   /**
   * Return pointer to the FXThread instance associated
   * with the calling thread; it returns NULL for the main
