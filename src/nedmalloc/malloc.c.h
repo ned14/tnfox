@@ -4,7 +4,7 @@
   http://creativecommons.org/licenses/publicdomain.  Send questions,
   comments, complaints, performance data, etc to dl@cs.oswego.edu
 
-* Version pre-2.8.4 Wed Mar  1 08:34:55 2006    (dl at gee)
+* Version pre-2.8.4 Tue Aug  1 12:03:53 2006    (dl at gee)
 
    Note: There may be an updated version of this malloc obtainable at
            ftp://gee.cs.oswego.edu/pub/misc/malloc.c
@@ -214,7 +214,17 @@ use the symbolic values MAX_SIZE_T, SIZE_T_ONE, etc below.
 
 WIN32                    default: defined if _WIN32 defined
   Defining WIN32 sets up defaults for MS environment and compilers.
-  Otherwise defaults are for unix.
+  Otherwise defaults are for unix. Beware that there seem to be some
+  cases where this malloc might not be a pure drop-in replacement for
+  Win32 malloc: Random-looking failures from Win32 GDI API's (eg;
+  SetDIBits()) may be due to bugs in some video driver implementations
+  when pixel buffers are malloc()ed, and the region spans more than
+  one VirtualAlloc()ed region. Because dlmalloc uses a small (64Kb)
+  default granularity, pixel buffers may straddle virtual allocation
+  regions more often than when using the Microsoft allocator.  You can
+  avoid this by using VirtualAlloc() and VirtualFree() for all pixel
+  buffers rather than using malloc().  If this is not possible,
+  recompile this malloc with a larger DEFAULT_GRANULARITY.
 
 MALLOC_ALIGNMENT         default: (size_t)8
   Controls the minimum alignment for malloc'ed chunks.  It must be a
@@ -239,7 +249,7 @@ USE_LOCKS                default: 0 (false)
 
 USE_SPIN_LOCKS           default: 1 iff USE_LOCKS and on x86 using gcc or MSC
   If true, uses custom spin locks for locking. This is currently
-  supported only for x86 platforms using gcc or recent MS compilers. 
+  supported only for x86 platforms using gcc or recent MS compilers.
   Otherwise, posix locks or win32 critical sections are used.
 
 FOOTERS                  default: 0
@@ -456,7 +466,7 @@ DEFAULT_MMAP_THRESHOLD       default: 256K
   empirically derived value that works well in most systems. You can
   disable mmap by setting to MAX_SIZE_T.
 
-MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
+MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
   The number of consolidated frees between checks to release
   unused segments when freeing. When using non-contiguous segments,
   especially with multiple mspaces, checking only for topmost space
@@ -475,10 +485,13 @@ MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
 #ifdef _WIN32
 #define WIN32 1
 #endif  /* _WIN32 */
+#ifdef _WIN32_WCE
+#define LACKS_FCNTL_H
+#define WIN32 1
+#endif /* _WIN32_WCE */
 #endif  /* WIN32 */
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
-#define _WIN32_WINNT 0x600
 #include <windows.h>
 #define HAVE_MMAP 1
 #define HAVE_MORECORE 0
@@ -489,7 +502,9 @@ MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
 #define LACKS_STRINGS_H
 #define LACKS_SYS_TYPES_H
 #define LACKS_ERRNO_H
+#ifndef MALLOC_FAILURE_ACTION
 #define MALLOC_FAILURE_ACTION
+#endif /* MALLOC_FAILURE_ACTION */
 #ifdef _WIN32_WCE /* WINCE reportedly does not clear */
 #define MMAP_CLEARS 0
 #else
@@ -502,6 +517,10 @@ MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
 #ifndef HAVE_MORECORE
 #define HAVE_MORECORE 0
 #define HAVE_MMAP 1
+/* OSX allocators provide 16 byte alignment */
+#ifndef MALLOC_ALIGNMENT
+#define MALLOC_ALIGNMENT ((size_t)16U)
+#endif
 #endif  /* HAVE_MORECORE */
 #endif  /* DARWIN */
 
@@ -584,7 +603,7 @@ MAX_RELEASE_CHECK_RATE   default: 255 unless not HAVE_MMAP
 #endif  /* MORECORE_CONTIGUOUS */
 #endif  /* HAVE_MORECORE */
 #ifndef DEFAULT_GRANULARITY
-#if MORECORE_CONTIGUOUS
+#if (MORECORE_CONTIGUOUS || defined(WIN32))
 #define DEFAULT_GRANULARITY (0)  /* 0 means to compute in init_mparams */
 #else   /* MORECORE_CONTIGUOUS */
 #define DEFAULT_GRANULARITY ((size_t)64U * (size_t)1024U)
@@ -1374,10 +1393,11 @@ unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
 #define SIZE_T_BITSIZE      (sizeof(size_t) << 3)
 
 /* Some constants coerced to size_t */
-/* Annoying but necessary to avoid errors on some plaftorms */
+/* Annoying but necessary to avoid errors on some platforms */
 #define SIZE_T_ZERO         ((size_t)0)
 #define SIZE_T_ONE          ((size_t)1)
 #define SIZE_T_TWO          ((size_t)2)
+#define SIZE_T_FOUR         ((size_t)4)
 #define TWO_SIZE_T_SIZES    (SIZE_T_SIZE<<1)
 #define FOUR_SIZE_T_SIZES   (SIZE_T_SIZE<<2)
 #define SIX_SIZE_T_SIZES    (FOUR_SIZE_T_SIZES+TWO_SIZE_T_SIZES)
@@ -1443,15 +1463,9 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 #define DIRECT_MMAP(s)       CALL_MMAP(s)
 #else /* WIN32 */
 
-static SIZE_T win32largepagesize;
-
 /* Win32 MMAP via VirtualAlloc */
 static FORCEINLINE void* win32mmap(size_t size) {
-  void* ptr = 0;
-  /*if(size && !(size & (win32largepagesize-1)))
-    ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_LARGE_PAGES, PAGE_READWRITE);*/
-  if(!ptr)
-    ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+  void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
   return (ptr != 0)? ptr: MFAIL;
 }
 
@@ -1524,7 +1538,7 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
    To enable use in layered extensions, locks are reentrant.
 
    Because lock-protected regions generally have bounded times, we use
-   the supplied simple spinlocks in the custom versions for x86. 
+   the supplied simple spinlocks in the custom versions for x86.
 
    If USE_LOCKS is > 1, the definitions of lock routines here are
    bypassed, in which case you will need to define at least
@@ -1534,7 +1548,7 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
    commonly needed in extensions.)
 */
 
-#if USE_LOCKS == 1 
+#if USE_LOCKS == 1
 
 #if USE_SPIN_LOCKS
 #ifndef WIN32
@@ -1621,7 +1635,7 @@ struct win32_mlock_t
 };
 #define MLOCK_T struct win32_mlock_t
 #define CURRENT_THREAD        GetCurrentThreadId()
-#define SPINS_PER_YIELD       63
+#define SPINS_PER_YIELD    63
 static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
   long mythreadid=CURRENT_THREAD;
   if(mythreadid==sl->threadid)
@@ -1774,7 +1788,7 @@ static MLOCK_T morecore_mutex;
 
 /* -----------------------  User-defined locks ------------------------ */
 
-#if USE_LOCKS > 1 
+#if USE_LOCKS > 1
 /* Define your own lock implementation here */
 /* #define INITIAL_LOCK(sl)  ... */
 /* #define ACQUIRE_LOCK(sl)  ... */
@@ -1841,7 +1855,7 @@ static MLOCK_T morecore_mutex = NULL_LOCK_INITIALIZER;
   A chunk that's in use looks like:
 
    chunk-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-           | Size of previous chunk (if P = 1)                             |
+           | Size of previous chunk (if P = 0)                             |
            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
          +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ |P|
          | Size of this chunk                                         1| +-+
@@ -2013,11 +2027,15 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
   use. If the chunk was obtained with mmap, the prev_foot field has
   IS_MMAPPED_BIT set, otherwise holding the offset of the base of the
   mmapped region to the base of the chunk.
+
+  FLAG4_BIT is not used by this malloc, but might be useful in extensions.
 */
 
 #define PINUSE_BIT          (SIZE_T_ONE)
 #define CINUSE_BIT          (SIZE_T_TWO)
+#define FLAG4_BIT           (SIZE_T_FOUR)
 #define INUSE_BITS          (PINUSE_BIT|CINUSE_BIT)
+#define FLAG_BITS           (PINUSE_BIT|CINUSE_BIT|FLAG4_BIT)
 
 /* Head value for fenceposts */
 #define FENCEPOST_HEAD      (INUSE_BITS|SIZE_T_SIZE)
@@ -2025,7 +2043,7 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 /* extraction of fields from head words */
 #define cinuse(p)           ((p)->head & CINUSE_BIT)
 #define pinuse(p)           ((p)->head & PINUSE_BIT)
-#define chunksize(p)        ((p)->head & ~(INUSE_BITS))
+#define chunksize(p)        ((p)->head & ~(FLAG_BITS))
 
 #define clear_pinuse(p)     ((p)->head &= ~PINUSE_BIT)
 #define clear_cinuse(p)     ((p)->head &= ~CINUSE_BIT)
@@ -2035,7 +2053,7 @@ typedef unsigned int flag_t;           /* The type of various bit flag sets */
 #define chunk_minus_offset(p, s) ((mchunkptr)(((char*)(p)) - (s)))
 
 /* Ptr to next or previous physical malloc_chunk. */
-#define next_chunk(p) ((mchunkptr)( ((char*)(p)) + ((p)->head & ~INUSE_BITS)))
+#define next_chunk(p) ((mchunkptr)( ((char*)(p)) + ((p)->head & ~FLAG_BITS)))
 #define prev_chunk(p) ((mchunkptr)( ((char*)(p)) - ((p)->prev_foot) ))
 
 /* extract next chunk's pinuse bit */
@@ -2387,10 +2405,15 @@ struct malloc_params {
 
 static struct malloc_params mparams;
 
+#if !ONLY_MSPACES
+
 /* The global malloc_state used for all non-"mspace" calls */
 static struct malloc_state _gm_;
 #define gm                 (&_gm_)
 #define is_global(M)       ((M) == &_gm_)
+
+#endif /* !ONLY_MSPACES */
+
 #define is_initialized(M)  ((M)->top != 0)
 
 /* -------------------------- system alloc setup ------------------------- */
@@ -2415,11 +2438,23 @@ static struct malloc_state _gm_;
 
 /* page-align a size */
 #define page_align(S)\
- (((S) + (mparams.page_size)) & ~(mparams.page_size - SIZE_T_ONE))
+ (((S) + (mparams.page_size - SIZE_T_ONE)) & ~(mparams.page_size - SIZE_T_ONE))
 
 /* granularity-align a size */
 #define granularity_align(S)\
-  (((S) + (mparams.granularity)) & ~(mparams.granularity - SIZE_T_ONE))
+  (((S) + (mparams.granularity - SIZE_T_ONE))\
+   & ~(mparams.granularity - SIZE_T_ONE))
+
+
+/* For mmap, use granularity alignment on windows, else page-align */
+#ifdef WIN32
+#define mmap_align(S) granularity_align(S)
+#else
+#define mmap_align(S) page_align(S)
+#endif
+
+/* For sys_alloc, enough padding to ensure can malloc request on success */
+#define SYS_ALLOC_PADDING (TOP_FOOT_SIZE + MALLOC_ALIGNMENT)
 
 #define is_page_aligned(S)\
    (((size_t)(S) & (mparams.page_size - SIZE_T_ONE)) == 0)
@@ -2844,9 +2879,11 @@ static int init_mparams(void) {
     ACQUIRE_MAGIC_INIT_LOCK();
     if (mparams.magic == 0) {
       mparams.magic = s;
+#if !ONLY_MSPACES
       /* Set up lock for main malloc area */
       INITIAL_LOCK(&gm->mutex);
       gm->mflags = mparams.default_mflags;
+#endif
     }
     RELEASE_MAGIC_INIT_LOCK();
 
@@ -2860,36 +2897,7 @@ static int init_mparams(void) {
       GetSystemInfo(&system_info);
       mparams.page_size = system_info.dwPageSize;
       mparams.granularity = ((DEFAULT_GRANULARITY != 0)?
-                           DEFAULT_GRANULARITY : system_info.dwAllocationGranularity);
-#if 0
-      if(!win32largepagesize)
-      { /* Do we have large page support? */
-        SIZE_T (*GetLargePageMinimum)(void);
-        GetLargePageMinimum = (SIZE_T (*)(void)) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "GetLargePageMinimum");
-        if(!GetLargePageMinimum)
-          win32largepagesize = MAX_SIZE_T;
-        else
-          win32largepagesize = GetLargePageMinimum();
-
-        /* For older versions of Windows, we need to enable lock page privilege */
-        {
-          HANDLE adjh;
-          if(OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &adjh))
-          {
-            DWORD retlen=0;
-            TOKEN_PRIVILEGES tp={ 1 };
-            if(LookupPrivilegeValue(0, SE_LOCK_MEMORY_NAME, &tp.Privileges[0].Luid))
-            {
-              tp.Privileges[0].Attributes=SE_PRIVILEGE_ENABLED;
-              AdjustTokenPrivileges(adjh, FALSE, &tp, sizeof(tp), NULL, &retlen);
-              if(GetLastError()!=S_OK)
-                fprintf(stderr, "WARNING: Failed to enable SeLockMemoryPrivilege - large page support will not be available!\n");
-            }
-            CloseHandle(adjh);
-          }
-        }
-      }
-#endif
+                             DEFAULT_GRANULARITY : system_info.dwAllocationGranularity);
     }
 #endif /* WIN32 */
 
@@ -2947,7 +2955,7 @@ static void do_check_any_chunk(mstate m, mchunkptr p) {
 /* Check properties of top chunk */
 static void do_check_top_chunk(mstate m, mchunkptr p) {
   msegmentptr sp = segment_holding(m, (char*)p);
-  size_t  sz = chunksize(p);
+  size_t  sz = p->head & ~INUSE_BITS; /* third-lowest bit can be set! */
   assert(sp != 0);
   assert((is_aligned(chunk2mem(p))) || (p->head == FENCEPOST_HEAD));
   assert(ok_address(m, p));
@@ -2955,7 +2963,7 @@ static void do_check_top_chunk(mstate m, mchunkptr p) {
   assert(sz > 0);
   assert(sz == ((sp->base + sp->size) - (char*)p) - TOP_FOOT_SIZE);
   assert(pinuse(p));
-  assert(!next_pinuse(p));
+  assert(!pinuse(chunk_plus_offset(p, sz)));
 }
 
 /* Check properties of (inuse) mmapped chunks */
@@ -2985,7 +2993,7 @@ static void do_check_inuse_chunk(mstate m, mchunkptr p) {
 
 /* Check properties of free chunks */
 static void do_check_free_chunk(mstate m, mchunkptr p) {
-  size_t sz = p->head & ~(PINUSE_BIT|CINUSE_BIT);
+  size_t sz = chunksize(p);
   mchunkptr next = chunk_plus_offset(p, sz);
   do_check_any_chunk(m, p);
   assert(!cinuse(p));
@@ -3192,7 +3200,7 @@ static void do_check_malloc_state(mstate m) {
 
   if (m->top != 0) {   /* check top chunk */
     do_check_top_chunk(m, m->top);
-    assert(m->topsize == chunksize(m->top));
+    /*assert(m->topsize == chunksize(m->top)); redundant */
     assert(m->topsize > 0);
     assert(bin_find(m, m->top) == 0);
   }
@@ -3539,7 +3547,7 @@ static void internal_malloc_stats(mstate m) {
 
 /* Malloc using mmap */
 static void* mmap_alloc(mstate m, size_t nb) {
-  size_t mmsize = granularity_align(nb + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
+  size_t mmsize = mmap_align(nb + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
   if (mmsize > nb) {     /* Check for wrap around 0 */
     char* mm = (char*)(DIRECT_MMAP(mmsize));
     if (mm != CMFAIL) {
@@ -3576,8 +3584,7 @@ static mchunkptr mmap_resize(mstate m, mchunkptr oldp, size_t nb) {
   else {
     size_t offset = oldp->prev_foot & ~IS_MMAPPED_BIT;
     size_t oldmmsize = oldsize + offset + MMAP_FOOT_PAD;
-    size_t newmmsize = granularity_align(nb + SIX_SIZE_T_SIZES +
-                                         CHUNK_ALIGN_MASK);
+    size_t newmmsize = mmap_align(nb + SIX_SIZE_T_SIZES + CHUNK_ALIGN_MASK);
     char* cp = (char*)CALL_MREMAP((char*)oldp - offset,
                                   oldmmsize, newmmsize, 1);
     if (cp != CMFAIL) {
@@ -3772,6 +3779,11 @@ static void* sys_alloc(mstate m, size_t nb) {
        find space.
     3. A call to MORECORE that cannot usually contiguously extend memory.
        (disabled if not HAVE_MORECORE)
+
+   In all cases, we need to request enough bytes from system to ensure 
+   we can malloc nb bytes upon success, so pad with enough space for 
+   top_foot, plus alignment-pad to make sure we don't lose bytes if 
+   not on boundary, and round this up to a granularity unit.
   */
 
   if (MORECORE_CONTIGUOUS && !use_noncontiguous(m)) {
@@ -3783,7 +3795,7 @@ static void* sys_alloc(mstate m, size_t nb) {
     if (ss == 0) {  /* First time through or recovery */
       char* base = (char*)CALL_MORECORE(0);
       if (base != CMFAIL) {
-        asize = granularity_align(nb + TOP_FOOT_SIZE + SIZE_T_ONE);
+        asize = granularity_align(nb + SYS_ALLOC_PADDING);
         /* Adjust to end on a page boundary */
         if (!is_page_aligned(base))
           asize += (page_align((size_t)base) - (size_t)base);
@@ -3797,7 +3809,7 @@ static void* sys_alloc(mstate m, size_t nb) {
     }
     else {
       /* Subtract out existing available top space from MORECORE request. */
-      asize = granularity_align(nb - m->topsize + TOP_FOOT_SIZE + SIZE_T_ONE);
+      asize = granularity_align(nb - m->topsize + SYS_ALLOC_PADDING);
       /* Use mem here only if it did continuously extend old space */
       if (asize < HALF_MAX_SIZE_T &&
           (br = (char*)(CALL_MORECORE(asize))) == ss->base+ss->size) {
@@ -3809,8 +3821,8 @@ static void* sys_alloc(mstate m, size_t nb) {
     if (tbase == CMFAIL) {    /* Cope with partial failure */
       if (br != CMFAIL) {    /* Try to use/extend the space we did get */
         if (asize < HALF_MAX_SIZE_T &&
-            asize < nb + TOP_FOOT_SIZE + SIZE_T_ONE) {
-          size_t esize = granularity_align(nb + TOP_FOOT_SIZE + SIZE_T_ONE - asize);
+            asize < nb + SYS_ALLOC_PADDING) {
+          size_t esize = granularity_align(nb + SYS_ALLOC_PADDING - asize);
           if (esize < HALF_MAX_SIZE_T) {
             char* end = (char*)CALL_MORECORE(esize);
             if (end != CMFAIL)
@@ -3834,7 +3846,7 @@ static void* sys_alloc(mstate m, size_t nb) {
   }
 
   if (HAVE_MMAP && tbase == CMFAIL) {  /* Try MMAP */
-    size_t req = nb + TOP_FOOT_SIZE + SIZE_T_ONE;
+    size_t req = nb + SYS_ALLOC_PADDING;
     size_t rsize = granularity_align(req);
     if (rsize > nb) { /* Fail if wraps around zero */
       char* mp = (char*)(CALL_MMAP(rsize));
@@ -3847,7 +3859,7 @@ static void* sys_alloc(mstate m, size_t nb) {
   }
 
   if (HAVE_MORECORE && tbase == CMFAIL) { /* Try noncontiguous MORECORE */
-    size_t asize = granularity_align(nb + TOP_FOOT_SIZE + SIZE_T_ONE);
+    size_t asize = granularity_align(nb + SYS_ALLOC_PADDING);
     if (asize < HALF_MAX_SIZE_T) {
       char* br = CMFAIL;
       char* end = CMFAIL;
@@ -3877,9 +3889,12 @@ static void* sys_alloc(mstate m, size_t nb) {
       m->magic = mparams.magic;
       m->release_checks = MAX_RELEASE_CHECK_RATE;
       init_bins(m);
+#if !ONLY_MSPACES
       if (is_global(m))
         init_top(m, (mchunkptr)tbase, tsize - TOP_FOOT_SIZE);
-      else {
+      else
+#endif
+      {
         /* Offset top by embedded malloc_state */
         mchunkptr mn = next_chunk(mem2chunk(m));
         init_top(m, mn, (size_t)((tbase + tsize) - (char*)mn) -TOP_FOOT_SIZE);
@@ -3890,8 +3905,8 @@ static void* sys_alloc(mstate m, size_t nb) {
       /* Try to merge with an existing segment */
       msegmentptr sp = &m->seg;
       /* Only consider most recent segment if traversal suppressed */
-      while (sp != 0 && tbase != sp->base + sp->size) 
-        sp = (NO_SEGMENT_TRAVERSAL) ? 0 : sp->next; 
+      while (sp != 0 && tbase != sp->base + sp->size)
+        sp = (NO_SEGMENT_TRAVERSAL) ? 0 : sp->next;
       if (sp != 0 &&
           !is_extern_segment(sp) &&
           (sp->sflags & IS_MMAPPED_BIT) == mmap_flag &&
@@ -3903,8 +3918,8 @@ static void* sys_alloc(mstate m, size_t nb) {
         if (tbase < m->least_addr)
           m->least_addr = tbase;
         sp = &m->seg;
-        while (sp != 0 && sp->base != tbase + tsize) 
-          sp = (NO_SEGMENT_TRAVERSAL) ? 0 : sp->next; 
+        while (sp != 0 && sp->base != tbase + tsize)
+          sp = (NO_SEGMENT_TRAVERSAL) ? 0 : sp->next;
         if (sp != 0 &&
             !is_extern_segment(sp) &&
             (sp->sflags & IS_MMAPPED_BIT) == mmap_flag) {
@@ -3971,7 +3986,7 @@ static size_t release_unused_segments(mstate m) {
         else { /* back out if cannot unmap */
           insert_large_chunk(m, tp, psize);
         }
-      } 
+      }
     }
     if (NO_SEGMENT_TRAVERSAL) /* scan only first segment */
       break;
@@ -3979,7 +3994,7 @@ static size_t release_unused_segments(mstate m) {
     sp = next;
   }
   /* Reset check counter */
-  m->release_checks = ((nsegs > MAX_RELEASE_CHECK_RATE)? 
+  m->release_checks = ((nsegs > MAX_RELEASE_CHECK_RATE)?
                        nsegs : MAX_RELEASE_CHECK_RATE);
   return released;
 }
@@ -5240,6 +5255,15 @@ struct mallinfo mspace_mallinfo(mspace msp) {
 }
 #endif /* NO_MALLINFO */
 
+size_t mspace_usable_size(void* mem) {
+  if (mem != 0) {
+    mchunkptr p = mem2chunk(mem);
+    if (cinuse(p))
+      return chunksize(p) - overhead_for(p);
+  }
+  return 0;
+}
+
 int mspace_mallopt(int param_number, int value) {
   return change_mparam(param_number, value);
 }
@@ -5341,11 +5365,14 @@ int mspace_mallopt(int param_number, int value) {
 /* -----------------------------------------------------------------------
 History:
     V2.8.4 (not yet released)
+      * Fix insufficient sys_alloc padding when using 16byte alignment
       * Fix bad error check in mspace_footprint
-      * Better locks and other Win32 improvements, courtesy of Niall
-        Douglas and Earl Chew
+      * Adaptations for ptmalloc, courtesy of Wolfram Gloger.
+      * Reentrant spin locks, courtesy of Earl Chew and others
+      * Win32 improvements, courtesy of Niall Douglas and Earl Chew
       * Add NO_SEGMENT_TRAVERSAL and MAX_RELEASE_CHECK_RATE options
       * Various small adjustments to reduce warnings on some compilers
+      * Various #ifdef extensions/changes for more platforms.
       * Extension hook in malloc_state
 
     V2.8.3 Thu Sep 22 11:16:32 2005  Doug Lea  (dl at gee)
