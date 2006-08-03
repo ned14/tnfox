@@ -659,6 +659,11 @@ void FXProcess::init(int &argc, char *argv[])
 	FXERRH_TRY
 	{
 		bool inHelpMode=false;
+		const FXuint endiantest=1;
+		if(((char *) &endiantest)[FOX_BIGENDIAN ? 3 : 0]!=1)
+		{
+			fxerror("FATAL ERROR: Build define FOX_BIGENDIAN not set correctly!\n");
+		}
 #if defined(_MSC_VER) && defined(_DEBUG) && !defined(FXMEMDBG_DISABLE)
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF|_CRTDBG_LEAK_CHECK_DF|_CRTDBG_CHECK_EVERY_1024_DF);
 		//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF|_CRTDBG_LEAK_CHECK_DF|_CRTDBG_CHECK_EVERY_128_DF);
