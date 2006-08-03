@@ -179,6 +179,24 @@ def getBase(file):
         leaf=os.path.join(base[ternary(base[:3]=="src", 4, 0):], leaf)
     return leaf
     
+def CheckCompilerPtr32(cc):
+    cc.Message("Making sure this is really a 32 bit compiler ...")
+    result=cc.TryCompile('int main(void)\n{\nint foo[4==sizeof(void *) ? 1 : 0];\n}\n', '.c')
+    cc.Result(result)
+    return result
+
+def CheckCompilerPtr64(cc):
+    cc.Message("Making sure this is really a 64 bit compiler ...")
+    result=cc.TryCompile('int main(void)\n{\nint foo[8==sizeof(void *) ? 1 : 0];\n}\n', '.c')
+    cc.Result(result)
+    return result
+
+def CheckCompilerIsBigEndian(cc):
+    cc.Message("Is the compiler configured for big endian architecture ...")
+    result=cc.TryRun('int main(void)\n{\nint foo=1; return ((char *) &foo)[0]==1;\n}\n', '.c')
+    cc.Result(result[0])
+    return result
+
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
     prefixpath=os.path.abspath(prefixpath)+"/"
     platprefix=os.path.abspath(platprefix)+"/"
@@ -228,7 +246,18 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
 
     # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
     # the python bindings. Alter it at the top of fxmemoryops.h
-    env['CPPDEFINES']+=[("FOX_BIGENDIAN",ternary(sys.byteorder=="big", 1, 0))]
+
+    # Configure options always taken by testing
+    confA=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64, "CheckCompilerIsBigEndian" : CheckCompilerIsBigEndian } )
+    if make64bit:
+        assert confA.CheckCompilerPtr64()
+    else:
+        assert confA.CheckCompilerPtr32()
+    env['CPPDEFINES']+=[("FOX_BIGENDIAN",ternary(confA.CheckCompilerIsBigEndian(), 0, 1))]
+    env=confA.Finish()
+    del confA
+
+    # Library config
     if tcommonopts:
         # Force config for Tn
         if tcommonopts==2:
@@ -370,28 +399,12 @@ def getGraphingModuleIncludes(prefix=""):
     filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
     return filelist
    
-def CheckCompilerPtr32(cc):
-    cc.Message("Making sure this is really a 32 bit compiler ...")
-    result=cc.TryCompile('int main(void)\n{\nint foo[4==sizeof(void *) ? 1 : 0];\n}\n', '.cpp')
-    cc.Result(result)
-    return result
-
-def CheckCompilerPtr64(cc):
-    cc.Message("Making sure this is really a 64 bit compiler ...")
-    result=cc.TryCompile('int main(void)\n{\nint foo[8==sizeof(void *) ? 1 : 0];\n}\n', '.cpp')
-    cc.Result(result)
-    return result
-
 def doConfTests(env, prefixpath=""):
-    conf=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64 } )
+    conf=Configure(env)
     # Very rarely, scons won't create the object file output directory and
     # thus causes both the following tests to fail. Hence preempt the problem
     if not os.path.exists(builddir):
         os.mkdir(builddir)
-    if make64bit:
-        assert conf.CheckCompilerPtr64()
-    else:
-        assert conf.CheckCompilerPtr32()
     def checkLib(conf, name, header, prefix=""):
         capsname=string.upper(name)
         if os.path.exists(prefixpath+"windows/lib"+name+"/lib"+name+ternary(make64bit, "64", "32")+".lib"):

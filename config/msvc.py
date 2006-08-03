@@ -19,14 +19,15 @@ def CheckMSVC80(cc):
     result=cc.TryCompile('#if !defined(_MSC_VER) || _MSC_VER<1400\n#error Too old!\n#endif\n', '.cpp')
     cc.Result(result)
     return result
-conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
+confM=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
 MSVCVersion=0
-if conf.CheckMSVC71():
+if confM.CheckMSVC71():
     MSVCVersion=710
-if conf.CheckMSVC80():
+if confM.CheckMSVC80():
     MSVCVersion=800
 assert MSVCVersion>0
-env=conf.Finish()
+env=confM.Finish()
+del confM
 
 env['CPPPATH']+=[prefixpath+"windows"]
 if not os.path.exists(builddir):
@@ -85,9 +86,7 @@ env['CPPFLAGS']=cppflags
 
 # Sets version, base address
 env['LINKFLAGS']=["/version:"+targetversion,
-                  "/SUBSYSTEM:WINDOWS",
                   "/MAP:"+builddir+"\\TnFOXdll.map",
-                  "/DLL",
                   "/DEBUG",
                   "/OPT:NOWIN98",
                   "/INCREMENTAL:NO",      # Incremental linking is just broken on all versions of MSVC
