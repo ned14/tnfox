@@ -4,7 +4,7 @@
   http://creativecommons.org/licenses/publicdomain.  Send questions,
   comments, complaints, performance data, etc to dl@cs.oswego.edu
 
-* Version pre-2.8.4 Tue Aug  1 12:03:53 2006    (dl at gee)
+* Version pre-2.8.4 Wed Aug  2 14:13:56 2006    (dl at gee)
 
    Note: There may be an updated version of this malloc obtainable at
            ftp://gee.cs.oswego.edu/pub/misc/malloc.c
@@ -1579,11 +1579,11 @@ static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
       if ((++spins & SPINS_PER_YIELD) == 0) {
 #if defined (__SVR4) && defined (__sun) /* solaris */
         thr_yield();
-#else 
+#else
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
         sched_yield();
 #else  /* no-op yield on unknown systems */
-        ; 
+        ;
 #endif /* __linux__ || __FreeBSD__ || __APPLE__ */
 #endif /* solaris */
       }
@@ -2375,7 +2375,6 @@ struct malloc_state {
   size_t     footprint;
   size_t     max_footprint;
   flag_t     mflags;
-  char       cachesync[128];
 #if USE_LOCKS
   MLOCK_T    mutex;     /* locate lock among fields that rarely change */
 #endif /* USE_LOCKS */
@@ -2604,7 +2603,7 @@ static size_t traverse_and_check(mstate m);
 #define smallbin_at(M, i)   ((sbinptr)((char*)&((M)->smallbins[(i)<<1])))
 #define treebin_at(M,i)     (&((M)->treebins[i]))
 
-/* assign tree index for size S to variable I */
+/* assign tree index for size S to variable I. Use x86 asm if possible  */
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 #define compute_tree_index(S, I)\
 {\
@@ -2616,6 +2615,20 @@ static size_t traverse_and_check(mstate m);
   else {\
     unsigned int K;\
     __asm__("bsrl\t%1, %0\n\t" : "=r" (K) : "g"  (X));\
+    I =  (bindex_t)((K << 1) + ((S >> (K + (TREEBIN_SHIFT-1)) & 1)));\
+  }\
+}
+
+#elif defined (__INTEL_COMPILER)
+#define compute_tree_index(S, I)\
+{\
+  size_t X = S >> TREEBIN_SHIFT;\
+  if (X == 0)\
+    I = 0;\
+  else if (X > 0xFFFF)\
+    I = NTREEBINS-1;\
+  else {\
+    unsigned int K = _bit_scan_reverse (X); \
     I =  (bindex_t)((K << 1) + ((S >> (K + (TREEBIN_SHIFT-1)) & 1)));\
   }\
 }
@@ -2634,6 +2647,7 @@ static size_t traverse_and_check(mstate m);
     I =  (bindex_t)((K << 1) + ((S >> (K + (TREEBIN_SHIFT-1)) & 1)));\
   }\
 }
+
 #else /* GNUC */
 #define compute_tree_index(S, I)\
 {\
@@ -2683,7 +2697,16 @@ static size_t traverse_and_check(mstate m);
 #define clear_treemap(M,i)      ((M)->treemap  &= ~idx2bit(i))
 #define treemap_is_marked(M,i)  ((M)->treemap  &   idx2bit(i))
 
-/* index corresponding to given bit */
+/* isolate the least set bit of a bitmap */
+#define least_bit(x)         ((x) & -(x))
+
+/* mask with all bits to left of least bit of x on */
+#define left_bits(x)         ((x<<1) | -(x<<1))
+
+/* mask with all bits to left of or equal to least bit of x on */
+#define same_or_left_bits(x) ((x) | -(x))
+
+/* index corresponding to given bit. Use x86 asm if possible */
 
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 #define compute_bit2idx(X, I)\
@@ -2692,6 +2715,15 @@ static size_t traverse_and_check(mstate m);
   __asm__("bsfl\t%1, %0\n\t" : "=r" (J) : "g" (X));\
   I = (bindex_t)J;\
 }
+
+#elif defined (__INTEL_COMPILER)
+#define compute_bit2idx(X, I)\
+{\
+  unsigned int J;\
+  J = _bit_scan_forward (X); \
+  I = (bindex_t)J;\
+}
+
 #elif defined(_MSC_VER) && _MSC_VER>=1300
 #define compute_bit2idx(X, I)\
 {\
@@ -2700,11 +2732,10 @@ static size_t traverse_and_check(mstate m);
   I = (bindex_t)J;\
 }
 
-#else /* GNUC */
-#if  USE_BUILTIN_FFS
+#elif USE_BUILTIN_FFS
 #define compute_bit2idx(X, I) I = ffs(X)-1
 
-#else /* USE_BUILTIN_FFS */
+#else 
 #define compute_bit2idx(X, I)\
 {\
   unsigned int Y = X - 1;\
@@ -2716,17 +2747,7 @@ static size_t traverse_and_check(mstate m);
   N += K = Y >> (1-0) &  1;  Y >>= K;\
   I = (bindex_t)(N + Y);\
 }
-#endif /* USE_BUILTIN_FFS */
 #endif /* GNUC */
-
-/* isolate the least set bit of a bitmap */
-#define least_bit(x)         ((x) & -(x))
-
-/* mask with all bits to left of least bit of x on */
-#define left_bits(x)         ((x<<1) | -(x<<1))
-
-/* mask with all bits to left of or equal to least bit of x on */
-#define same_or_left_bits(x) ((x) | -(x))
 
 
 /* ----------------------- Runtime Check Support ------------------------- */
@@ -3846,8 +3867,7 @@ static void* sys_alloc(mstate m, size_t nb) {
   }
 
   if (HAVE_MMAP && tbase == CMFAIL) {  /* Try MMAP */
-    size_t req = nb + SYS_ALLOC_PADDING;
-    size_t rsize = granularity_align(req);
+    size_t rsize = granularity_align(nb + SYS_ALLOC_PADDING);
     if (rsize > nb) { /* Fail if wraps around zero */
       char* mp = (char*)(CALL_MMAP(rsize));
       if (mp != CMFAIL) {
@@ -4062,6 +4082,7 @@ static int sys_trim(mstate m, size_t pad) {
   return (released != 0)? 1 : 0;
 }
 
+
 /* ---------------------------- malloc support --------------------------- */
 
 /* allocate a large request from the best fitting chunk in a treebin */
@@ -4071,7 +4092,6 @@ static void* tmalloc_large(mstate m, size_t nb) {
   tchunkptr t;
   bindex_t idx;
   compute_tree_index(nb, idx);
-
   if ((t = *treebin_at(m, idx)) != 0) {
     /* Traverse tree for this bin looking for node with size == nb */
     size_t sizebits = nb << leftshift_for_tree_index(idx);
@@ -4095,7 +4115,6 @@ static void* tmalloc_large(mstate m, size_t nb) {
       sizebits <<= 1;
     }
   }
-
   if (t == 0 && v == 0) { /* set t to root of next non-empty treebin */
     binmap_t leftbits = left_bits(idx2bit(idx)) & m->treemap;
     if (leftbits != 0) {
@@ -4144,7 +4163,6 @@ static void* tmalloc_small(mstate m, size_t nb) {
   bindex_t i;
   binmap_t leastbit = least_bit(m->treemap);
   compute_bit2idx(leastbit, i);
-
   v = t = *treebin_at(m, i);
   rsize = chunksize(t) - nb;
 
@@ -5371,9 +5389,10 @@ History:
       * Reentrant spin locks, courtesy of Earl Chew and others
       * Win32 improvements, courtesy of Niall Douglas and Earl Chew
       * Add NO_SEGMENT_TRAVERSAL and MAX_RELEASE_CHECK_RATE options
-      * Various small adjustments to reduce warnings on some compilers
-      * Various #ifdef extensions/changes for more platforms.
       * Extension hook in malloc_state
+      * Various small adjustments to reduce warnings on some compilers
+      * Various configuration extensions/changes for more platforms. Thanks
+         to all who contributed these.
 
     V2.8.3 Thu Sep 22 11:16:32 2005  Doug Lea  (dl at gee)
       * Add max_footprint functions
