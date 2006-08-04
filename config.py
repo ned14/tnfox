@@ -62,17 +62,13 @@ SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 ######## Processor architecture ########
 
-# architecture can be "generic", "x86" or "x64"
+# architecture can be "generic", "x86", "x64", "ppc" or "macosx-ppc"/"macosx-i386"
 # architecture_version can be:
 #     For x86: =4 for i486, =5 for Pentium, =6 for Pentium Pro/Athlon, =7 for Pentium 4/Athlon XP
 #     For x64: =0 for AMD64/EM64T
+#     For ppc: =1 for Power1, =2 for Power2 etc until =6 for PowerPC, =7 for 64 bit PowerPC
 
-# Define for a "generic" build
-#architecture="generic"
-#architecture_version=0
-
-
-
+# The default, unless overriden below, is to choose x86 or x64
 if sys.platform=="win32":
     if os.environ.has_key('PROCESSOR_ARCHITEW6432'):   # Only defined when in WOW64
         architecture="x64"
@@ -84,7 +80,7 @@ if sys.platform=="win32":
         x86_3dnow=1             # =0 (disable), =1 (3dnow)
 else:
     import platform
-    if 'x64' in platform.machine():
+    if 'x64' in platform.machine() or 'x86_64' in platform.machine():
         architecture="x64"
         architecture_version=0
     else:
@@ -92,6 +88,25 @@ else:
         architecture_version=7
         x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
         x86_3dnow=1             # =0 (disable), =1 (3dnow)
+
+
+# Define for a "generic" build
+#architecture="generic"
+#architecture_version=0
+
+# Define for a PowerPC build
+#architecture="ppc"
+#architecture_version=6
+
+# Define for a PowerPC build (Apple MacOS X only)
+#architecture="macosx-ppc"
+#architecture_version=0
+
+# Define for an Intel build (Apple MacOS X only)
+#architecture="macosx-i386"
+#architecture_version=0
+
+
 
 
 toolset=None             # Let scons pick which compiler/linker to use

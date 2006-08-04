@@ -56,7 +56,7 @@ namespace Maths {
 	*/
 
 
-	namespace Impl { namespace
+	namespace Impl
 	{
 		template<typename type, bool minus> struct CalcInfinity;
 		template<bool minus> struct CalcInfinity<float, minus>
@@ -84,7 +84,7 @@ namespace Maths {
 			};
 			CalcInfinity()
 			{	// Directly poke in our value
-				integer=minus ? 0xfff0000000000000 : 0x7ff0000000000000;
+				integer=minus ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
 			}
 			operator const double &()
 			{
@@ -93,12 +93,12 @@ namespace Maths {
 		};
 		template<typename type, bool minus> struct InfinityValue
 		{
-			static CalcInfinity<type, minus> value;
+			static const CalcInfinity<type, minus> &value()
+			{
+				static const CalcInfinity<type, minus> foo;
+				return foo;
+			}
 		};
-		CalcInfinity< float, false> InfinityValue< float, false>::value;
-		CalcInfinity< float,  true> InfinityValue< float,  true>::value;
-		CalcInfinity<double, false> InfinityValue<double, false>::value;
-		CalcInfinity<double,  true> InfinityValue<double,  true>::value;
 
 		template<typename type> struct CalcNaN;
 		template<> struct CalcNaN<float>
@@ -112,7 +112,7 @@ namespace Maths {
 			{	// Directly poke in our value
 				integer=0x7fffffff;
 			}
-			operator const float &()
+			operator const float &() const
 			{
 				return floatingpoint;
 			}
@@ -126,20 +126,22 @@ namespace Maths {
 			};
 			CalcNaN()
 			{	// Directly poke in our value
-				integer=0x7fffffffffffffff;
+				integer=0x7fffffffffffffffULL;
 			}
-			operator const double &()
+			operator const double &() const
 			{
 				return floatingpoint;
 			}
 		};
 		template<typename type> struct NaNValue
 		{
-			static CalcNaN<type> value;
+			static const CalcNaN<type> &value()
+			{
+				static const CalcNaN<type> foo;
+				return foo;
+			}
 		};
-		CalcNaN< float> NaNValue< float>::value;
-		CalcNaN<double> NaNValue<double>::value;
-	} }
+	}
 	/*! \struct InfinityValue
 	\brief Returns -inf or +inf floating point values
 	*/
@@ -150,8 +152,8 @@ namespace Maths {
 	template<typename type> struct NaNValue : public Impl::NaNValue<type> { };
 	//! Returns true if the floating point value is a NaN
 	template<typename type> inline bool isNaN(type val) throw();
-	template<> inline bool isNaN<float>(float val) throw() { return *((FXuint *) &val)==*((FXuint *) &NaNValue<float>::value); }
-	template<> inline bool isNaN<double>(double val) throw() { return *((FXulong *) &val)==*((FXulong *) &NaNValue<double>::value); }
+	template<> inline bool isNaN<float>(float val) throw() { return *((FXuint *) &val)==NaNValue<float>::value().integer; }
+	template<> inline bool isNaN<double>(double val) throw() { return *((FXulong *) &val)==NaNValue<double>::value().integer; }
 
 	/*! \class Array
 	\brief An N dimensional array
