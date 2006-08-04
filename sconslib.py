@@ -195,7 +195,7 @@ def CheckCompilerIsBigEndian(cc):
     cc.Message("Is the compiler configured for big endian architecture ...")
     result=cc.TryRun('int main(void)\n{\nint foo=1; return ((char *) &foo)[0]==1;\n}\n', '.c')
     cc.Result(result[0])
-    return result
+    return result[0]
 
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
     prefixpath=os.path.abspath(prefixpath)+"/"
@@ -253,7 +253,10 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         assert confA.CheckCompilerPtr64()
     else:
         assert confA.CheckCompilerPtr32()
-    env['CPPDEFINES']+=[("FOX_BIGENDIAN",ternary(confA.CheckCompilerIsBigEndian(), 0, 1))]
+    if confA.CheckCompilerIsBigEndian():
+        env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
+    else:
+        env['CPPDEFINES']+=[("FOX_BIGENDIAN",0)]
     env=confA.Finish()
     del confA
 

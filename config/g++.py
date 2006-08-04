@@ -34,6 +34,13 @@ if architecture=="x86":
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
     cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
+elif architecture=="ppc":
+    cppflagsopts=["power", "power2", "power3", "power4", "power5", "powerpc", "powerpc64"]
+    cppflags+=["-mcpu="+cppflagsopts[architecture_version-1] ]
+elif architecture=="macosx-ppc":
+    cppflags+=["-arch", "ppc"]
+elif architecture=="macosx-i386":
+    cppflags+=["-arch", "i386"]
 
 cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
@@ -69,6 +76,10 @@ env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when
                    #"-pg",                             # Profile
                    ternary(make64bit, "-m64", "-m32")
                   ]
+if architecture=="macosx-ppc":
+    env['LINKFLAGS']+=["-arch", "ppc"]
+elif architecture=="macosx-i386":
+    env['LINKFLAGS']+=["-arch", "i386"]
 
 if debugmode:
     env['LINKFLAGS']+=[]
@@ -152,6 +163,7 @@ if not disableGUI:
             if "lib64" in conf.env['LIBPATH'][n]:
                 print "   NOTE: Removing unneccessary library path", conf.env['LIBPATH'][n]
                 del conf.env['LIBPATH'][n]
+                break
     if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
         if onDarwin:
             print "*** Xft is present but doesn't appear to work on Apple's X11 implementation!"
