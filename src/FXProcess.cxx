@@ -219,12 +219,13 @@ static const char *MachErrorToString(kern_return_t code) throw()
   #define ARCHITECTURE "MIPS"
  #elif defined(__hppa__)
   #define ARCHITECTURE "PA_RISC"
- #elif defined(__powerpc__)
+ #elif defined(__powerpc__) || defined(__ppc__)
   #define ARCHITECTURE "PowerPC"
  #elif defined(__sparc__)
   #define ARCHITECTURE "SPARC"
  #else
-  #error Unknown architecture
+  #warning Unknown architecture
+  #define ARCHITECTURE "Unknown"
  #endif
 #endif
 #include "FXMemDbg.h"
@@ -240,6 +241,19 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 
+/* Need this to work around ISO C++ bugs */
+namespace Generic {
+	const  float BiggestValue < float, false>::value=3.402823466e+38F;
+	const  float BiggestValue < float, true >::value=-3.402823466e+38F;
+	const double BiggestValue <double, false>::value=1.7976931348623158e+308;
+	const double BiggestValue <double, true >::value=-1.7976931348623158e+308;
+
+	const  float SmallestValue< float, false>::value=1.175494351e-38F;
+	const  float SmallestValue< float, true >::value=-1.175494351e-38F;
+	const double SmallestValue<double, false>::value=2.2250738585072014e-308;
+	const double SmallestValue<double, true >::value=-2.2250738585072014e-308;
+}
+	
 /* FXTime implementation, see FXTime.h */
 #ifdef WIN32
 static QMutex gmtimelock;

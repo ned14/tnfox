@@ -1182,38 +1182,38 @@ template<bool minus> struct  BiggestValue<double, minus> : public Impl::MSVCBigg
 template<bool minus> struct SmallestValue<float,  minus> : public Impl::MSVCSmallestValue<float , minus> { };
 template<bool minus> struct SmallestValue<double, minus> : public Impl::MSVCSmallestValue<double, minus> { };
 #else
-template<> struct BiggestValue<float, false>
+template<> struct FXAPI BiggestValue<float, false>
 {
-	static const float value=3.402823466e+38F;
+	static const float value;
 };
-template<> struct BiggestValue<float, true>
+template<> struct FXAPI BiggestValue<float, true>
 {
-	static const float value=-3.402823466e+38F;
+	static const float value;
 };
-template<> struct BiggestValue<double, false>
+template<> struct FXAPI BiggestValue<double, false>
 {
-	static const double value=1.7976931348623158e+308;
+	static const double value;
 };
-template<> struct BiggestValue<double, true>
+template<> struct FXAPI BiggestValue<double, true>
 {
-	static const double value=-1.7976931348623158e+308;
+	static const double value;
 };
 
-template<> struct SmallestValue<float, false>
+template<> struct FXAPI SmallestValue<float, false>
 {
-	static const float value=1.175494351e-38F;
+	static const float value;
 };
-template<> struct SmallestValue<float, true>
+template<> struct FXAPI SmallestValue<float, true>
 {
-	static const float value=-1.175494351e-38F;
+	static const float value;
 };
-template<> struct SmallestValue<double, false>
+template<> struct FXAPI SmallestValue<double, false>
 {
-	static const double value=2.2250738585072014e-308;
+	static const double value;
 };
-template<> struct SmallestValue<double, true>
+template<> struct FXAPI SmallestValue<double, true>
 {
-	static const double value=-2.2250738585072014e-308;
+	static const double value;
 };
 #endif
 
