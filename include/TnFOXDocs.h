@@ -2243,11 +2243,23 @@ also read that.
 
 \section supported Supported configuration:
 TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
-only. It hasn't been tested on PowerPC architectures, but there is no reason it
-shouldn't work now that TnFOX is compatible across all GCC supported architectures.
+only. The PowerPC build has however been tested on x86 via Rosetta and appears to
+work just fine.
 
-You MUST set architecture_version=7, x86_SSE=2 and x86_3dnow=0 in config.py as the
-Apple GCC won't output valid code for other architecture configurations.
+You have two choices when building TnFOX on Apples - the first is the same as on
+other platforms where you set \c x86 or \c x64, however you MUST set architecture_version=7,
+x86_SSE=2 and x86_3dnow=0 in config.py as the Apple GCC won't output valid code for
+other architecture configurations.
+
+The other choice is to specify one of the special architectures \c macosx-ppc/macosx-i386.
+If you want to build a Universal binary, then you must use these. Firstly you build one,
+then change the config and build the other so you get two full builds - one PowerPC, the
+other i386. This is necessary because the endian is different for each.
+
+You must then merge the two binaries into a Universal one using Apple's \c libtool:
+\code
+Merging code to be added later
+\endcode
 
 \section config Directory configuration:
 Unlike most Unices, MacOS X is missing libraries for JPEG, PNG and TIFF. You can
@@ -2375,17 +2387,15 @@ But don't worry, it'll come!
 
 /*! \page unixnotes Unix-specific notes
 
-This covers Linux, BSD and Apple MacOS X. Note that due to lack of access to a MacOS
-installation I have no way of knowing if it works, but as FOX compiles and works
-against Apple's X11 thunking layer and TnFOX is happy on FreeBSD it should be fine or
-at least the problems will be minor.
+This covers Linux, BSD and partially Apple MacOS X for a minimum of x86, x64 and PowerPC
+architectures (but likely covers all GCC supported architectures).
 
 \section supported Supported configuration:
 TnFOX was developed against:
-\li A RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
+\li An x86 RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
 tested, but there is no reason why it shouldn't continue to work.
-\li A SuSE Linux 10.0 (2.6 kernel) installation with GCC v4.1.
-\li A FreeBSD v6.0 installation with GCC v4.0.2.
+\li An x64 SuSE Linux 10.0 (2.6 kernel) installation with GCC v4.1.
+\li An x86 FreeBSD v6.0 installation with GCC v4.0.2.
 
 GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
 
