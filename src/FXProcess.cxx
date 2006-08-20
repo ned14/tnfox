@@ -242,6 +242,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 namespace FX {
 
 /* Need this to work around ISO C++ bugs */
+#if !(defined(_MSC_VER) && _MSC_VER<=1400)
 namespace Generic {
 	const  float BiggestValue < float, false>::value=3.402823466e+38F;
 	const  float BiggestValue < float, true >::value=-3.402823466e+38F;
@@ -253,6 +254,7 @@ namespace Generic {
 	const double SmallestValue<double, false>::value=2.2250738585072014e-308;
 	const double SmallestValue<double, true >::value=-2.2250738585072014e-308;
 }
+#endif
 	
 /* FXTime implementation, see FXTime.h */
 #ifdef WIN32
