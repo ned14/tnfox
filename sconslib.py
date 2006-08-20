@@ -206,6 +206,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     for key,value in varsset.items():
         globals()[key]=value
     global FOXCompatLayer, disableGL, disableFileDirDialogs, disableFindReplaceDialogs, disableMDI
+    global disableMenus
     global SQLModule, GraphingModule
     if targetversion==0: targetversion=tnfoxversion
     compiler=ARGUMENTS.get("compiler", None)
@@ -247,6 +248,10 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
     # the python bindings. Alter it at the top of fxmemoryops.h
 
+    # Very rarely, scons won't create the object file output directory and
+    # thus causes both the following tests to fail. Hence preempt the problem
+    if not os.path.exists(builddir):
+        os.mkdir(builddir)
     # Configure options always taken by testing
     confA=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64, "CheckCompilerIsBigEndian" : CheckCompilerIsBigEndian } )
     if make64bit:
@@ -404,10 +409,6 @@ def getGraphingModuleIncludes(prefix=""):
    
 def doConfTests(env, prefixpath=""):
     conf=Configure(env)
-    # Very rarely, scons won't create the object file output directory and
-    # thus causes both the following tests to fail. Hence preempt the problem
-    if not os.path.exists(builddir):
-        os.mkdir(builddir)
     def checkLib(conf, name, header, prefix=""):
         capsname=string.upper(name)
         if os.path.exists(prefixpath+"windows/lib"+name+"/lib"+name+ternary(make64bit, "64", "32")+".lib"):
