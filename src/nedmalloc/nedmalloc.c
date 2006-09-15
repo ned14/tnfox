@@ -326,7 +326,7 @@ static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 		return 0;
 	}
 	tc=p->caches[n]=(threadcache *) mspace_calloc(p->m[0], 1, sizeof(threadcache));
-	if(!tc) return 0;
+	if(!tc) { RELEASE_LOCK(&p->mutex); return 0; }
 #ifdef FULLSANITYCHECKS
 	tc->magic1=*(unsigned int *)"NEDMALC1";
 	tc->magic2=*(unsigned int *)"NEDMALC2";
@@ -762,6 +762,7 @@ void * nedprealloc(nedpool *p, void *mem, size_t size) THROWSPEC
 	void *ret=0;
 	threadcache *tc;
 	int mymspace;
+	if(!mem) return nedpmalloc(p, size);
 	GetThreadCache(&p, &tc, &mymspace, &size);
 #if THREADCACHEMAX
 	if(tc && size && size<=THREADCACHEMAX)

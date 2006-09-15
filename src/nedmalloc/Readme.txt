@@ -1,4 +1,4 @@
-nedalloc v1.03 10th July 2006:
+nedalloc v1.04 ?:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 by Niall Douglas (http://www.nedprod.com/programs/portable/nedmalloc/)
@@ -78,6 +78,12 @@ of the memory bus being the limiting factor.
 
 ChangeLog:
 -=-=-=-=-=
+v1.04 ?:
+ * Fixed failure to unlock thread cache list if allocating a new list failed.
+Thanks to Dmitry Chichkov for reporting this.
+ * Fixed realloc(0, <size>) segfaulting. Thanks to Dmitry Chichkov for
+reporting this.
+
 v1.03 10th July 2006:
  * Fixed memory corruption bug in threadcache code which only appeared with >4
 threads and in heavy use of the threadcache.

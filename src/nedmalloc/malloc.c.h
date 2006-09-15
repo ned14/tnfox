@@ -2888,7 +2888,11 @@ static int init_mparams(void) {
       }
       else
 #endif /* USE_DEV_RANDOM */
+#ifdef WIN32
+        s = (size_t)(GetTickCount() ^ (size_t)0x55555555U);
+#else
         s = (size_t)(time(0) ^ (size_t)0x55555555U);
+#endif
 
       s |= (size_t)8U;    /* ensure nonzero */
       s &= ~(size_t)7U;   /* improve chances of fault for bad values */
