@@ -83,6 +83,8 @@ v1.04 ?:
 Thanks to Dmitry Chichkov for reporting this. Futher thanks to Aleksey Sanin.
  * Fixed realloc(0, <size>) segfaulting. Thanks to Dmitry Chichkov for
 reporting this.
+ * Made config defines #ifndef so they can be overriden by the build system.
+Thanks to Aleksey Sanin for suggesting this.
 
 v1.03 10th July 2006:
  * Fixed memory corruption bug in threadcache code which only appeared with >4

@@ -50,17 +50,27 @@ DEALINGS IN THE SOFTWARE.
  #undef DEBUG
 #endif
 /* The default of 64Kb means we spend too much time kernel-side */
+#ifndef DEFAULT_GRANULARITY
 #define DEFAULT_GRANULARITY (1*1024*1024)
+#endif
+#ifndef MAX_RELEASE_CHECK_FREQUENCY
 #define MAX_RELEASE_CHECK_FREQUENCY 4095
+#endif
 /*#define FORCEINLINE*/
 #include "malloc.c.h"
 
 /* The maximum concurrent threads in a pool possible */
+#ifndef MAXTHREADSINPOOL
 #define MAXTHREADSINPOOL 16
+#endif
 /* The maximum number of threadcaches which can be allocated */
+#ifndef THREADCACHEMAXCACHES
 #define THREADCACHEMAXCACHES 256
+#endif
 /* The maximum size to be allocated from the thread cache */
+#ifndef THREADCACHEMAX
 #define THREADCACHEMAX 8192
+#endif
 #if 0
 /* The number of cache entries for finer grained bins. This is (topbitpos(THREADCACHEMAX)-4)*2 */
 #define THREADCACHEMAXBINS ((13-4)*2)
@@ -69,7 +79,9 @@ DEALINGS IN THE SOFTWARE.
 #define THREADCACHEMAXBINS (13-4)
 #endif
 /* Point at which the free space in a thread cache is garbage collected */
+#ifndef THREADCACHEMAXFREESPACE
 #define THREADCACHEMAXFREESPACE (512*1024)
+#endif
 
 
 #ifdef WIN32
