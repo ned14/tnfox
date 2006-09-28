@@ -80,7 +80,7 @@ ChangeLog:
 -=-=-=-=-=
 v1.04 ?:
  * Fixed failure to unlock thread cache list if allocating a new list failed.
-Thanks to Dmitry Chichkov for reporting this.
+Thanks to Dmitry Chichkov for reporting this. Futher thanks to Aleksey Sanin.
  * Fixed realloc(0, <size>) segfaulting. Thanks to Dmitry Chichkov for
 reporting this.
 

@@ -323,10 +323,15 @@ static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 	for(n=0; n<THREADCACHEMAXCACHES && p->caches[n]; n++);
 	if(THREADCACHEMAXCACHES==n)
 	{	/* List exhausted, so disable for this thread */
+		RELEASE_LOCK(&p->mutex);
 		return 0;
 	}
 	tc=p->caches[n]=(threadcache *) mspace_calloc(p->m[0], 1, sizeof(threadcache));
-	if(!tc) { RELEASE_LOCK(&p->mutex); return 0; }
+	if(!tc)
+	{
+		RELEASE_LOCK(&p->mutex);
+		return 0;
+	}
 #ifdef FULLSANITYCHECKS
 	tc->magic1=*(unsigned int *)"NEDMALC1";
 	tc->magic2=*(unsigned int *)"NEDMALC2";
