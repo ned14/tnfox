@@ -300,7 +300,8 @@ public:
 				iterator=&Window::iterateLorentz;
 				graph1.setItemDetails(0, "", FXGLColor(0,0,0,0), 4, 2);
 				graph2.setItemDetails(0, "", FXGLColor(0,0,0,0), 4, 2);
-				h=0.05;
+				state=FXVec3d(0.1, 0, 0);
+				h=0.005;
 				scale=4;
 				genPoints(2000);
 				graphviewer1->getScene()->bounds(r);
