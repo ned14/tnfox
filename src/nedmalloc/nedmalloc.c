@@ -797,9 +797,9 @@ void * nedprealloc(nedpool *p, void *mem, size_t size) THROWSPEC
 	}
 #endif
 	if(!ret)
-	{	/* Use this thread's mspace */
-        GETMSPACE(m, p, tc, mymspace, size,
-                  ret=mspace_realloc(m, mem, size));
+	{	/* Reallocs always happen in the mspace they happened in, so skip
+		locking the preferred mspace for this thread */
+		ret=mspace_realloc(0, mem, size);
 	}
 	return ret;
 }

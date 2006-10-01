@@ -1264,7 +1264,9 @@ int mspace_mallopt(int, int);
 #include <assert.h>
 #endif /* ABORT_ON_ASSERT_FAILURE */
 #else  /* DEBUG */
+#ifndef assert
 #define assert(x)
+#endif
 #endif /* DEBUG */
 #ifndef LACKS_STRING_H
 #include <string.h>      /* for memset etc */
