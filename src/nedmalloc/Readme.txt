@@ -88,6 +88,11 @@ Thanks to Aleksey Sanin for suggesting this.
  * Fixed deadlock in nedprealloc() due to unnecessary locking of preferred
 thread mspace when mspace_realloc() always uses the original block's mspace
 anyway. Thanks to Aleksey Sanin for reporting this.
+ * Made some speed improvements by hacking mspace_malloc() to no longer lock
+its mspace, thus allowing the recursive mutex implementation to be removed
+with an associated speed increase. Thanks to Aleksey Sanin for suggesting this.
+ * Fixed a bug where allocating mspaces overran its max limit. Thanks to
+Aleksey Sanin for reporting this.
 
 v1.03 10th July 2006:
  * Fixed memory corruption bug in threadcache code which only appeared with >4

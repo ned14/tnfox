@@ -1557,25 +1557,25 @@ static FORCEINLINE int win32munmap(void* ptr, size_t size) {
 /* Custom pthread-style spin locks on x86 and x64 for gcc */
 struct pthread_mlock_t
 {
-  volatile pthread_t threadid;
-  volatile unsigned int c;
+  /*volatile pthread_t threadid;
+  volatile unsigned int c;*/
   volatile unsigned int l;
 };
 #define MLOCK_T struct pthread_mlock_t
 #define CURRENT_THREAD        pthread_self()
 #define SPINS_PER_YIELD       63
 static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
-  if(CURRENT_THREAD==sl->threadid)
+  /*if(CURRENT_THREAD==sl->threadid)
     ++sl->c;
-  else {
+  else*/ {
     int spins = 0;
     for (;;) {
       int ret;
       __asm__ __volatile__ ("lock/cmpxchgl %2,(%1)" : "=a" (ret) : "r" (&sl->l), "r" (1), "a" (0));
       if(!ret) {
-        assert(!sl->threadid);
+        /*assert(!sl->threadid);
         sl->threadid=CURRENT_THREAD;
-        sl->c=1;
+        sl->c=1;*/
         break;
       }
       if ((++spins & SPINS_PER_YIELD) == 0) {
@@ -1597,9 +1597,9 @@ static FORCEINLINE int pthread_acquire_lock (MLOCK_T *sl) {
 
 static FORCEINLINE void pthread_release_lock (MLOCK_T *sl) {
   int ret;
-  assert(CURRENT_THREAD==sl->threadid);
-  if (!--sl->c) {
-    sl->threadid=0;
+  /*assert(CURRENT_THREAD==sl->threadid);
+  if (!--sl->c)*/ {
+    /*sl->threadid=0;*/
     __asm__ __volatile__ ("xchgl %2,(%1)" : "=r" (ret) : "r" (&sl->l), "0" (0));
   }
 }
@@ -1608,9 +1608,9 @@ static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
   int ret;
   __asm__ __volatile__ ("lock/cmpxchgl %2,(%1)" : "=a" (ret) : "r" (&sl->l), "r" (1), "a" (0));
   if(!ret){
-    assert(!sl->threadid);
+    /*assert(!sl->threadid);
     sl->threadid=CURRENT_THREAD;
-    sl->c=1;
+    sl->c=1;*/
     return 1;
   }
   return 0;
@@ -1622,33 +1622,33 @@ static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
 #define TRY_LOCK(sl)          pthread_try_lock(sl)
 #define IS_LOCKED(sl)         ((sl)->l)
 
-static MLOCK_T magic_init_mutex = {0, 0, 0 };
+static MLOCK_T magic_init_mutex = {0};
 #if HAVE_MORECORE
-static MLOCK_T morecore_mutex = {0, 0, 0 };
+static MLOCK_T morecore_mutex = {0};
 #endif /* HAVE_MORECORE */
 
 #else /* WIN32 */
 /* Custom win32-style spin locks on x86 and x64 for MSC */
 struct win32_mlock_t
 {
-  volatile long threadid;
-  volatile unsigned int c;
+  /*volatile long threadid;
+  volatile unsigned int c;*/
   long l;
 };
 #define MLOCK_T struct win32_mlock_t
 #define CURRENT_THREAD        GetCurrentThreadId()
 #define SPINS_PER_YIELD    63
 static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
-  long mythreadid=CURRENT_THREAD;
+  /*long mythreadid=CURRENT_THREAD;
   if(mythreadid==sl->threadid)
     ++sl->c;
-  else {
+  else*/ {
     int spins = 0;
     for (;;) {
       if (!interlockedexchange(&sl->l, 1)) {
-        assert(!sl->threadid);
+        /*assert(!sl->threadid);
         sl->threadid=mythreadid;
-        sl->c=1;
+        sl->c=1;*/
         break;
       }
       if ((++spins & SPINS_PER_YIELD) == 0)
@@ -1659,18 +1659,18 @@ static FORCEINLINE int win32_acquire_lock (MLOCK_T *sl) {
 }
 
 static FORCEINLINE void win32_release_lock (MLOCK_T *sl) {
-  assert(CURRENT_THREAD==sl->threadid);
-  if (!--sl->c) {
-    sl->threadid=0;
+  /*assert(CURRENT_THREAD==sl->threadid);
+  if (!--sl->c)*/ {
+    /*sl->threadid=0;*/
     interlockedexchange (&sl->l, 0);
   }
 }
 
 static FORCEINLINE int win32_try_lock (MLOCK_T *sl) {
   if (!interlockedexchange(&sl->l, 1)){
-    assert(!sl->threadid);
+    /*assert(!sl->threadid);
     sl->threadid=CURRENT_THREAD;
-    sl->c=1;
+    sl->c=1;*/
     return 1;
   }
   return 0;
@@ -1682,9 +1682,9 @@ static FORCEINLINE int win32_try_lock (MLOCK_T *sl) {
 #define TRY_LOCK(sl)          win32_try_lock(sl)
 #define IS_LOCKED(sl)         ((sl)->l)
 
-static MLOCK_T magic_init_mutex = {0, 0 };
+static MLOCK_T magic_init_mutex = {0};
 #if HAVE_MORECORE
-static MLOCK_T morecore_mutex = {0, 0 };
+static MLOCK_T morecore_mutex = {0};
 #endif /* HAVE_MORECORE */
 
 #endif /* WIN32 */
@@ -1721,18 +1721,18 @@ static FORCEINLINE int pthread_try_lock (MLOCK_T *sl) {
 }
 
 static FORCEINLINE int pthread_init_lock (MLOCK_T *sl) {
-  pthread_mutexattr_t attr;
+  /*pthread_mutexattr_t attr;*/
   sl->c=0;
-  if(pthread_mutexattr_init(&attr)) return 1;
+  /*if(pthread_mutexattr_init(&attr)) return 1;
   if(pthread_mutexattr_settype(&attr,
 #ifdef __linux__
     PTHREAD_MUTEX_RECURSIVE_NP
 #else
     PTHREAD_MUTEX_RECURSIVE
 #endif
-    )) return 1;
-  if(pthread_mutex_init(&sl->l, &attr)) return 1;
-  pthread_mutexattr_destroy(&attr);
+    )) return 1;*/
+  if(pthread_mutex_init(&sl->l, NULL /*&attr*/)) return 1;
+  /*pthread_mutexattr_destroy(&attr);*/
   return 0;
 }
 
@@ -2529,6 +2529,10 @@ static int has_segment_link(mstate m, msegmentptr ss) {
 #endif  /* POSTACTION */
 
 #endif /* USE_LOCKS */
+
+#ifndef PREACTION2
+#define PREACTION2(M) PREACTION(M)
+#endif
 
 /*
   CORRUPTION_ERROR_ACTION is triggered upon detected bad addresses.
@@ -4935,7 +4939,7 @@ void* mspace_malloc(mspace msp, size_t bytes) {
     USAGE_ERROR_ACTION(ms,ms);
     return 0;
   }
-  if (!PREACTION(ms)) {
+  if (!PREACTION2(ms)) {
     void* mem;
     size_t nb;
     if (bytes <= MAX_SMALL_REQUEST) {

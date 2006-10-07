@@ -53,11 +53,24 @@ DEALINGS IN THE SOFTWARE.
 #ifndef DEFAULT_GRANULARITY
 #define DEFAULT_GRANULARITY (1*1024*1024)
 #endif
-#ifndef MAX_RELEASE_CHECK_FREQUENCY
-#define MAX_RELEASE_CHECK_FREQUENCY 4095
+
+/* Disable mspace_malloc() locking */
+static int preactionassert(int v);
+#ifdef DEBUG
+#define PREACTION2(M) ((GLOBALLY_INITIALIZE() || use_lock(M)) ? preactionassert(IS_LOCKED(&(M)->mutex)) : 0)
+#else
+#define PREACTION2(M) (GLOBALLY_INITIALIZE(), 0)
 #endif
 /*#define FORCEINLINE*/
 #include "malloc.c.h"
+
+#ifdef DEBUG
+static int preactionassert(int v)
+{
+	assert(v);
+	return 0;
+}
+#endif
 
 /* The maximum concurrent threads in a pool possible */
 #ifndef MAXTHREADSINPOOL
@@ -330,7 +343,7 @@ static void DestroyCaches(nedpool *p) THROWSPEC
 static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 {
 	threadcache *tc=0;
-	int n;
+	int n, end;
 	ACQUIRE_LOCK(&p->mutex);
 	for(n=0; n<THREADCACHEMAXCACHES && p->caches[n]; n++);
 	if(THREADCACHEMAXCACHES==n)
@@ -338,6 +351,7 @@ static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 		RELEASE_LOCK(&p->mutex);
 		return 0;
 	}
+	ACQUIRE_LOCK(&p->m[0]->mutex);
 	tc=p->caches[n]=(threadcache *) mspace_calloc(p->m[0], 1, sizeof(threadcache));
 	if(!tc)
 	{
@@ -349,6 +363,8 @@ static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 	tc->magic2=*(unsigned int *)"NEDMALC2";
 #endif
 	tc->threadid=(long)(size_t)CURRENT_THREAD;
+	for(end=0; p->m[end]; end++);
+	tc->mymspace=tc->threadid % end;
 	RELEASE_LOCK(&p->mutex);
 	TLSSET(p->mycache, (void *)(size_t)(n+1));
 	return tc;
@@ -564,7 +580,7 @@ static NOINLINE mstate FindMSpace(nedpool *p, threadcache *tc, int *lastUsed, si
 		ACQUIRE_LOCK(&p->mutex);
 		while(p->m[end] && end<p->threads)
 			end++;
-		if(p->m[end])
+		if(end>=p->threads)
 		{	/* Drat, must destroy it now */
 			RELEASE_LOCK(&p->mutex);
 			destroy_mspace((mspace) temp);
@@ -679,7 +695,7 @@ void neddisablethreadcache(nedpool *p) THROWSPEC
   {                                             \
     mstate m = GetMSpace((p),(tc),(ms),(s));    \
     action;                                     \
-    RELEASE_LOCK(&m->mutex);                    \
+    /*RELEASE_LOCK(&m->mutex);*/                    \
   } while (0)
 
 static FORCEINLINE mstate GetMSpace(nedpool *p, threadcache *tc, int mymspace, size_t size) THROWSPEC
