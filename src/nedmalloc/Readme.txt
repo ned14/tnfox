@@ -79,6 +79,11 @@ of the memory bus being the limiting factor.
 ChangeLog:
 -=-=-=-=-=
 v1.04 ?:
+ * Fixed a bug with the new optimised implementation that failed to lock
+on a realloc under certain conditions.
+ * Fixed lack of thread synchronisation in InitPool() causing pool corruption
+
+v1.04alpha_svn915 7th October 2006:
  * Fixed failure to unlock thread cache list if allocating a new list failed.
 Thanks to Dmitry Chichkov for reporting this. Futher thanks to Aleksey Sanin.
  * Fixed realloc(0, <size>) segfaulting. Thanks to Dmitry Chichkov for

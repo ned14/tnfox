@@ -54,23 +54,8 @@ DEALINGS IN THE SOFTWARE.
 #define DEFAULT_GRANULARITY (1*1024*1024)
 #endif
 
-/* Disable mspace_malloc() locking */
-static int preactionassert(int v);
-#ifdef DEBUG
-#define PREACTION2(M) ((GLOBALLY_INITIALIZE() || use_lock(M)) ? preactionassert(IS_LOCKED(&(M)->mutex)) : 0)
-#else
-#define PREACTION2(M) (GLOBALLY_INITIALIZE(), 0)
-#endif
 /*#define FORCEINLINE*/
 #include "malloc.c.h"
-
-#ifdef DEBUG
-static int preactionassert(int v)
-{
-	assert(v);
-	return 0;
-}
-#endif
 
 /* The maximum concurrent threads in a pool possible */
 #ifndef MAXTHREADSINPOOL
@@ -103,6 +88,16 @@ static int preactionassert(int v)
  #define TLSFREE(k)		(!TlsFree(k))
  #define TLSGET(k)		TlsGetValue(k)
  #define TLSSET(k, a)	(!TlsSetValue(k, a))
+ #ifdef DEBUG
+static LPVOID ChkedTlsGetValue(DWORD idx)
+{
+	LPVOID ret=TlsGetValue(idx);
+	assert(S_OK==GetLastError());
+	return ret;
+}
+  #undef TLSGET
+  #define TLSGET(k) ChkedTlsGetValue(k)
+ #endif
 #else
  #define TLSVAR			pthread_key_t
  #define TLSALLOC(k)	pthread_key_create(k, 0)
@@ -351,7 +346,6 @@ static NOINLINE threadcache *AllocCache(nedpool *p) THROWSPEC
 		RELEASE_LOCK(&p->mutex);
 		return 0;
 	}
-	ACQUIRE_LOCK(&p->m[0]->mutex);
 	tc=p->caches[n]=(threadcache *) mspace_calloc(p->m[0], 1, sizeof(threadcache));
 	if(!tc)
 	{
@@ -532,13 +526,16 @@ static void threadcache_free(nedpool *p, threadcache *tc, int mymspace, void *me
 
 static NOINLINE int InitPool(nedpool *p, size_t capacity, int threads) THROWSPEC
 {	/* threads is -1 for system pool */
+	static MLOCK_T initlock=NULL_LOCK_INITIALIZER;
+	ACQUIRE_LOCK(&initlock);
+	if(p->threads) goto done;
 	if(INITIAL_LOCK(&p->mutex)) goto err;
-	ACQUIRE_LOCK(&p->mutex);
-	p->threads=(threads<1 || threads>MAXTHREADSINPOOL) ? MAXTHREADSINPOOL : threads;
 	if(TLSALLOC(&p->mycache)) goto err;
 	if(!(p->m[0]=(mstate) create_mspace(capacity, 1))) goto err;
 	p->m[0]->extp=p;
-	RELEASE_LOCK(&p->mutex);
+	p->threads=(threads<1 || threads>MAXTHREADSINPOOL) ? MAXTHREADSINPOOL : threads;
+done:
+	RELEASE_LOCK(&initlock);
 	return 1;
 err:
 	if(threads<0)
@@ -554,7 +551,7 @@ err:
 		TLSFREE(p->mycache);
 		p->mycache=0;
 	}
-	RELEASE_LOCK(&p->mutex);
+	RELEASE_LOCK(&initlock);
 	return 0;
 }
 static NOINLINE mstate FindMSpace(nedpool *p, threadcache *tc, int *lastUsed, size_t size) THROWSPEC
@@ -765,7 +762,7 @@ void * nedpmalloc(nedpool *p, size_t size) THROWSPEC
 	if(!ret)
 	{	/* Use this thread's mspace */
         GETMSPACE(m, p, tc, mymspace, size,
-                  ret=mspace_malloc(m, size));
+                  ret=mspace_malloc2(m, size));
 	}
 	return ret;
 }
@@ -786,7 +783,7 @@ void * nedpcalloc(nedpool *p, size_t no, size_t size) THROWSPEC
 	if(!ret)
 	{	/* Use this thread's mspace */
         GETMSPACE(m, p, tc, mymspace, rsize,
-                  ret=mspace_calloc(m, 1, rsize));
+                  ret=mspace_calloc2(m, 1, rsize));
 	}
 	return ret;
 }
@@ -844,7 +841,7 @@ void * nedpmemalign(nedpool *p, size_t alignment, size_t bytes) THROWSPEC
 	GetThreadCache(&p, &tc, &mymspace, &bytes);
 	{	/* Use this thread's mspace */
         GETMSPACE(m, p, tc, mymspace, bytes,
-                  ret=mspace_memalign(m, alignment, bytes));
+                  RELEASE_LOCK(&m->mutex);ret=mspace_memalign(m, alignment, bytes));
 	}
 	return ret;
 }
