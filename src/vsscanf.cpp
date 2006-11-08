@@ -46,7 +46,9 @@ using namespace FX;
 #ifndef HAVE_VSSCANF
 
 // API
+#if !defined(_MSC_VER) || (_MSC_VER < 1400)
 extern "C" int vfscanf(FILE *stream, const char *format, va_list arg_ptr);
+#endif
 
 
 // API
@@ -388,10 +390,12 @@ err_out:
 
 
 // API
+#if !defined(_MSC_VER) || (_MSC_VER < 1400)
 int vfscanf(FILE *stream,const char *format,va_list arg_ptr){
   arg_scanf farg={(void*)stream,(int(*)(void*))fgetc,(int(*)(int,void*))ungetc};
   return __v_scanf(&farg,format,arg_ptr);
   }
+#endif
 
 
 // API

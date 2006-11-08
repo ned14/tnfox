@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxxpmio.cpp,v 1.53 2006/01/22 17:58:58 fox Exp $                         *
+* $Id: fxxpmio.cpp,v 1.53.2.1 2006/08/02 01:31:11 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -150,7 +150,7 @@ bool fxloadXPM(const FXchar **pixels,FXColor*& data,FXint& width,FXint& height){
   // Allow more colors for short lookup strings
   if(ncolors>16384) return false;
 
-  FXTRACE((50,"fxloadXPM: width=%d height=%d ncolors=%d cpp=%d\n",width,height,ncolors,cpp));
+  //FXTRACE((100,"fxloadXPM: width=%d height=%d ncolors=%d cpp=%d\n",width,height,ncolors,cpp));
 
   // Read the color table
   for(c=0; c<ncolors; c++){
@@ -247,7 +247,7 @@ bool fxloadXPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   // Allow more colors for short lookup strings
   if(ncolors>16384) return false;
 
-  FXTRACE((50,"fxloadXPM: width=%d height=%d ncolors=%d cpp=%d\n",width,height,ncolors,cpp));
+  //FXTRACE((100,"fxloadXPM: width=%d height=%d ncolors=%d cpp=%d\n",width,height,ncolors,cpp));
 
   // Read the color table
   for(c=0; c<ncolors; c++){

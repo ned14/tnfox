@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.cpp,v 1.211 2006/01/22 17:58:25 fox Exp $                     *
+* $Id: FXFileList.cpp,v 1.211.2.1 2006/08/01 18:04:33 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 
@@ -387,15 +387,15 @@ long FXFileList::onDNDDrop(FXObject* sender,FXSelector sel,void* ptr){
 
       // Move, Copy, or Link as appropriate
       if(dropaction==DRAG_MOVE){
-        FXTRACE((1,"Moving file: %s to %s\n",filesrc.text(),filedst.text()));
+        FXTRACE((100,"Moving file: %s to %s\n",filesrc.text(),filedst.text()));
         if(!FXFile::moveFiles(filesrc,filedst)) getApp()->beep();
         }
       else if(dropaction==DRAG_COPY){
-        FXTRACE((1,"Copying file: %s to %s\n",filesrc.text(),filedst.text()));
+        FXTRACE((100,"Copying file: %s to %s\n",filesrc.text(),filedst.text()));
         if(!FXFile::copyFiles(filesrc,filedst)) getApp()->beep();
         }
       else if(dropaction==DRAG_LINK){
-        FXTRACE((1,"Linking file: %s to %s\n",filesrc.text(),filedst.text()));
+        FXTRACE((100,"Linking file: %s to %s\n",filesrc.text(),filedst.text()));
         if(!FXFile::symlink(filesrc,filedst)) getApp()->beep();
         }
       }

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxascii.cpp,v 1.5 2006/01/22 17:58:52 fox Exp $                          *
+* $Id: fxascii.cpp,v 1.5.2.2 2006/08/09 20:01:07 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxdefs.h"
@@ -43,6 +43,7 @@ using namespace FX;
 
 namespace FX {
 
+namespace Ascii {
 
 // Ascii table
 const unsigned short ascii_data[256]={
@@ -81,110 +82,111 @@ const unsigned short ascii_data[256]={
   };
 
 
-FXint Ascii::digitValue(FXchar asc){
+FXint digitValue(FXchar asc){
   return ('0'<=asc && asc<='9') ? (asc-'0') : ('a'<=asc && asc<='z') ? (asc-'a'+10) : ('A'<=asc && asc<='Z') ? asc-'A'+10 : -1;
   }
 
 
-bool Ascii::hasCase(FXchar asc){
+bool hasCase(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x4000)!=0;
   }
 
 
-bool Ascii::isUpper(FXchar asc){
+bool isUpper(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x200)!=0;
   }
 
 
-bool Ascii::isLower(FXchar asc){
+bool isLower(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x20)!=0;
   }
 
 
-bool Ascii::isTitle(FXchar asc){
+bool isTitle(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x200)!=0;
   }
 
 
-bool Ascii::isAscii(FXchar asc){
+bool isAscii(FXchar asc){
   return ((FXuchar)asc)<128;
   }
 
 
-bool Ascii::isLetter(FXchar asc){
+bool isLetter(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x2)!=0;
   }
 
 
-bool Ascii::isDigit(FXchar asc){
+bool isDigit(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x8)!=0;
   }
 
 
-bool Ascii::isAlphaNumeric(FXchar asc){
+bool isAlphaNumeric(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x1)!=0;
   }
 
 
-bool Ascii::isControl(FXchar asc){
+bool isControl(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x4)!=0;
   }
 
 
-bool Ascii::isSpace(FXchar asc){
+bool isSpace(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x100)!=0;
   }
 
 
-bool Ascii::isBlank(FXchar asc){
+bool isBlank(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x800)!=0;
   }
 
 
-bool Ascii::isPunct(FXchar asc){
+bool isPunct(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x80)!=0;
   }
 
 
-bool Ascii::isGraph(FXchar asc){
+bool isGraph(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x10)!=0;
   }
 
 
-bool Ascii::isPrint(FXchar asc){
+bool isPrint(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x40)!=0;
   }
 
 
-bool Ascii::isHexDigit(FXchar asc){
+bool isHexDigit(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x400)!=0;
   }
 
 
-bool Ascii::isSymbol(FXchar asc){
+bool isSymbol(FXchar asc){
   return (ascii_data[(FXuchar)asc]&0x2000)!=0;
   }
 
 
-bool Ascii::isSep(FXchar asc){
+bool isSep(FXchar asc){
   return asc==' ';
   }
 
 
-FXchar Ascii::toUpper(FXchar asc){
+FXchar toUpper(FXchar asc){
   return ('a'<=asc && asc<='z') ? (asc-'a'+'A') : asc;
   }
 
 
-FXchar Ascii::toLower(FXchar asc){
+FXchar toLower(FXchar asc){
   return ('A'<=asc && asc<='Z') ? (asc-'A'+'a') : asc;
   }
 
 
-FXchar Ascii::toTitle(FXchar asc){
+FXchar toTitle(FXchar asc){
   return ('a'<=asc && asc<='z') ? (asc-'a'+'A') : asc;
   }
 
 
 }
 
+}

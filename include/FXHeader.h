@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.h,v 1.70 2006/01/22 17:58:04 fox Exp $                          *
+* $Id: FXHeader.h,v 1.70.2.1 2006/07/28 00:56:30 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXHEADER_H
 #define FXHEADER_H
@@ -163,6 +163,11 @@ public:
   };
 
 
+/// Explicit template specialization
+FXTEMPLATE_EXTERN template class FXAPI FXObjectListOf<FXHeaderItem>;
+
+
+/// List of FXHeaderItem's
 typedef FXObjectListOf<FXHeaderItem> FXHeaderItemList;
 
 

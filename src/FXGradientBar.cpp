@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGradientBar.cpp,v 1.71 2006/01/22 17:58:30 fox Exp $                   *
+* $Id: FXGradientBar.cpp,v 1.71.2.1 2006/08/01 18:04:42 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -758,7 +758,6 @@ void FXGradientBar::moveSegments(FXint sglo,FXint sghi,FXdouble val,FXbool notif
   register FXdouble delta, below,above,room;
   register FXint i;
   if(0<=sglo && sghi<nsegs && sglo<=sghi){
-    FXTRACE((1,"sglo=%d sghi=%d val=%.10f\n",sglo,sghi,val));
     below=seg[sglo].middle-seg[sglo].lower;
     above=seg[sghi].upper-seg[sglo].middle;
     room=seg[sghi].middle-seg[sglo].middle;

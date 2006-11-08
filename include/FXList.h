@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXList.h,v 1.88 2006/01/22 17:58:05 fox Exp $                            *
+* $Id: FXList.h,v 1.88.2.1 2006/07/28 00:56:30 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXLIST_H
 #define FXLIST_H
@@ -149,6 +149,11 @@ public:
 typedef FXint (*FXListSortFunc)(const FXListItem*,const FXListItem*);
 
 
+/// Explicit template specialization
+FXTEMPLATE_EXTERN template class FXAPI FXObjectListOf<FXListItem>;
+
+
+/// List of FXListItem's
 typedef FXObjectListOf<FXListItem> FXListItemList;
 
 

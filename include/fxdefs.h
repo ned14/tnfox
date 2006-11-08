@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxdefs.h,v 1.178 2006/03/21 01:41:43 fox Exp $                           *
+* $Id: fxdefs.h,v 1.178.2.1 2006/07/28 00:56:30 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXDEFS_H
 #define FXDEFS_H
@@ -123,6 +123,7 @@
 #ifdef FOXDLL
   #ifdef FOXDLL_EXPORTS
     #define FXAPI FXEXPORT
+    #define FXTEMPLATE_EXTERN
     //#ifdef BUILDING_TCOMMON
     //#define FXAPIR
     //#else
@@ -130,10 +131,12 @@
     //#endif // BUILDING_TCOMMON
   #else
     #define FXAPI  FXIMPORT
+    #define FXTEMPLATE_EXTERN extern
     #define FXAPIR FXIMPORT
   #endif // FOXDLL_EXPORTS
 #else
   #define FXAPI
+  #define FXTEMPLATE_EXTERN
   #define FXAPIR
 #endif // FOXDLL
 

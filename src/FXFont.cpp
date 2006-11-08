@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFont.cpp,v 1.184 2006/01/22 17:58:26 fox Exp $                         *
+* $Id: FXFont.cpp,v 1.184.2.1 2006/08/01 18:04:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -957,7 +957,7 @@ void* FXFont::match(const FXString& wantfamily,const FXString& wantforge,FXuint 
     // Match them
     for(f=0; f<nfontnames; f++){
 
-      //FXTRACE((1,"font=%s\n",fontnames[f]));
+      //FXTRACE((100,"font=%s\n",fontnames[f]));
 
       // Break apart into fields
       strncpy(candidate,fontnames[f],sizeof(candidate));
@@ -1184,13 +1184,13 @@ void* FXFont::match(const FXString& wantfamily,const FXString& wantforge,FXuint 
           if(((XFontStruct*)font)->properties[b].name==XA_FONT){
             char *fn=XGetAtomName(DISPLAY(getApp()),((XFontStruct*)font)->properties[b].card32);
             strncpy(candidate,fn,sizeof(candidate));
-            FXTRACE((1,"FONT = %s\n",candidate));
+            FXTRACE((100,"FONT = %s\n",candidate));
             xlfdSplit(field,candidate);
             XFree(fn);
-            FXTRACE((1,"mat  = %s\n",field[6]));
+            FXTRACE((100,"mat  = %s\n",field[6]));
             }
           else{
-            FXTRACE((1,"%d (%s) = %d\n",((XFontStruct*)font)->properties[b].name,XGetAtomName(DISPLAY(getApp()),((XFontStruct*)font)->properties[b].name),((XFontStruct*)font)->properties[b].card32));
+            FXTRACE((100,"%d (%s) = %d\n",((XFontStruct*)font)->properties[b].name,XGetAtomName(DISPLAY(getApp()),((XFontStruct*)font)->properties[b].name),((XFontStruct*)font)->properties[b].card32));
             }
           }
         }

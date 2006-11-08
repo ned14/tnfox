@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxtifio.cpp,v 1.35 2006/01/22 17:58:56 fox Exp $                         *
+* $Id: fxtifio.cpp,v 1.35.2.1 2006/08/01 18:04:47 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -199,7 +199,7 @@ bool fxloadTIF(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXushor
 
   // We try to remember the codec for later when we save the image back out...
   TIFFGetField(image,TIFFTAG_COMPRESSION,&codec);
-  FXTRACE((100,"fxloadTIF: codec=%d\n",codec));
+  //FXTRACE((100,"fxloadTIF: codec=%d\n",codec));
 
   // FIXME TIFFRGBAImage{Begin,Get,End} is too broken!
   if(TIFFRGBAImageBegin(&img,image,0,emsg)!=1){
@@ -207,7 +207,7 @@ bool fxloadTIF(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXushor
     return false;
     }
 
-  FXTRACE((1,"fxloadTIF: width=%u height=%u alpha=%d bitspersample=%u samplesperpixel=%u orientation=%u photometric=%u\n",img.width,img.height,img.alpha,img.bitspersample,img.samplesperpixel,img.orientation,img.photometric));
+  //FXTRACE((1,"fxloadTIF: width=%u height=%u alpha=%d bitspersample=%u samplesperpixel=%u orientation=%u photometric=%u\n",img.width,img.height,img.alpha,img.bitspersample,img.samplesperpixel,img.orientation,img.photometric));
 
   // Make room for data
   size=img.width*img.height;
@@ -261,7 +261,7 @@ bool fxsaveTIF(FXStream& store,const FXColor* data,FXint width,FXint height,FXus
   // write them back as that would require the LZW compression algorithm!
   if(codec==COMPRESSION_LZW) codec=COMPRESSION_PACKBITS;
 
-  FXTRACE((100,"fxsaveTIF: codec=%d\n",codec));
+  //FXTRACE((100,"fxsaveTIF: codec=%d\n",codec));
 
   // Set error/warning handlers
   TIFFSetErrorHandler(fxerrorhandler);

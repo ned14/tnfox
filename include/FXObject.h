@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObject.h,v 1.35 2006/01/22 17:58:06 fox Exp $                          *
+* $Id: FXObject.h,v 1.35.2.1 2006/08/05 00:58:29 fox Exp $                          *
 ********************************************************************************/
 #if !defined(FXOBJECT_H) && !defined(FX_DISABLEGUI)
 #define FXOBJECT_H
@@ -143,16 +143,16 @@ public:
 #define FXDEFMAP(classname) static const classname::FXMapEntry
 
 /// Define range of function types
-#define FXMAPTYPES(typelo,typehi,func) {MKUINT(MINKEY,typelo),MKUINT(MAXKEY,typehi),&func}
+#define FXMAPTYPES(typelo,typehi,func) {FXSEL(typelo,FX::MINKEY),FXSEL(typehi,FX::MAXKEY),&func}
 
 /// Define range of function types
-#define FXMAPTYPE(type,func) {MKUINT(MINKEY,type),MKUINT(MAXKEY,type),&func}
+#define FXMAPTYPE(type,func) {FXSEL(type,FX::MINKEY),FXSEL(type,FX::MAXKEY),&func}
 
 /// Define range of functions
-#define FXMAPFUNCS(type,keylo,keyhi,func) {MKUINT(keylo,type),MKUINT(keyhi,type),&func}
+#define FXMAPFUNCS(type,keylo,keyhi,func) {FXSEL(type,keylo),FXSEL(type,keyhi),&func}
 
 /// Define one function
-#define FXMAPFUNC(type,key,func) {MKUINT(key,type),MKUINT(key,type),&func}
+#define FXMAPFUNC(type,key,func) {FXSEL(type,key),FXSEL(type,key),&func}
 
 
 /**

@@ -19,27 +19,22 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxunicode.cpp,v 1.2 2006/01/22 17:58:56 fox Exp $                        *
+* $Id: fxunicode.cpp,v 1.2.2.2 2006/08/09 20:01:07 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxdefs.h"
 #include "fxunicode.h"
 
-/*
-  Notes:
-
-  Automatically created by unicode tool on 07/20/2005.
-  Don't edit by hand, changes will be lost!.
-*/
-
-/*******************************************************************************/
 
 
-// Unicode versions
+/******* Generated on 2006/08/09 08:19:06 by unicode tool version 2.0.0 ********/
+
 
 using namespace FX;
 
 namespace FX {
+
+namespace Unicode {
 
 // Planes category
 const unsigned short category_plane[68]={
@@ -1077,97 +1072,97 @@ const unsigned char category_data[13935]={
   };
 
 
-FXuint Unicode::charCategory(FXwchar ucs){
+FXuint charCategory(FXwchar ucs){
   return category_data[category_block[category_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
 
-bool Unicode::isLetter(FXwchar ucs){
+bool isLetter(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return (CatLetterUpper<=c && c<=CatLetterOther);
   }
 
 
-bool Unicode::isAlphaNumeric(FXwchar ucs){
+bool isAlphaNumeric(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return (CatLetterUpper<=c && c<=CatNumberOther);
   }
 
 
-bool Unicode::isControl(FXwchar ucs){
+bool isControl(FXwchar ucs){
   return charCategory(ucs)<=CatOther;
   }
 
 
-bool Unicode::isSpace(FXwchar ucs){
+bool isSpace(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return (CatMarkNonSpacing<=c && c<=CatSeparatorParagraph) || (9<=ucs && ucs<=13);
   }
 
 
-bool Unicode::isBlank(FXwchar ucs){
+bool isBlank(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return (CatMarkNonSpacing<=c && c<=CatSeparatorSpace) || (ucs==9);
   }
 
 
-bool Unicode::isMark(FXwchar ucs){
+bool isMark(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return (CatMarkNonSpacing<=c && c<=CatMarkEnclosing);
   }
 
 
-bool Unicode::isSep(FXwchar ucs){
+bool isSep(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return (CatSeparatorSpace<=c && c<=CatSeparatorParagraph);
   }
 
 
-bool Unicode::isPunct(FXwchar ucs){
+bool isPunct(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return CatPunctConnector<=c && c<=CatPunctOther;
   }
 
 
-bool Unicode::isGraph(FXwchar ucs){
+bool isGraph(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return CatLetterUpper<=c && c<=CatSymbolOther;
   }
 
 
-bool Unicode::isPrint(FXwchar ucs){
+bool isPrint(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return CatMarkNonSpacing<=c && c<=CatSymbolOther;
   }
 
 
-bool Unicode::isUpper(FXwchar ucs){
+bool isUpper(FXwchar ucs){
   return charCategory(ucs)==CatLetterUpper;
   }
 
 
-bool Unicode::isLower(FXwchar ucs){
+bool isLower(FXwchar ucs){
   return charCategory(ucs)==CatLetterLower;
   }
 
 
-bool Unicode::isTitle(FXwchar ucs){
+bool isTitle(FXwchar ucs){
   return charCategory(ucs)==CatLetterTitle;
   }
 
 
-bool Unicode::hasCase(FXwchar ucs){
+bool hasCase(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return CatLetterUpper<=c && c<=CatLetterTitle;
   }
 
 
-bool Unicode::isAscii(FXwchar ucs){
+bool isAscii(FXwchar ucs){
   return ucs<=0x7F;
   }
 
 
-bool Unicode::isSymbol(FXwchar ucs){
+bool isSymbol(FXwchar ucs){
   register FXuint c=charCategory(ucs);
   return CatSymbolMath<=c && c<=CatSymbolOther;
   }
@@ -1838,17 +1833,17 @@ const unsigned char direction_data[8826]={
   };
 
 
-FXuint Unicode::charDirection(FXwchar ucs){
+FXuint charDirection(FXwchar ucs){
   return direction_data[direction_block[direction_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)]&31;
   }
 
 
-FXuint Unicode::joiningType(FXwchar ucs){
+FXuint joiningType(FXwchar ucs){
   return (direction_data[direction_block[direction_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)]>>5)&3;
   }
 
 
-FXuint Unicode::isSymmetric(FXwchar ucs){
+FXuint isSymmetric(FXwchar ucs){
   return direction_data[direction_block[direction_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)]>>7;
   }
 
@@ -3486,17 +3481,17 @@ const FXwchar decompose_info[15460]={
   };
 
 
-FXuint Unicode::decomposeType(FXwchar ucs){
+FXuint decomposeType(FXwchar ucs){
   return decompose_info[decompose_data[decompose_block[decompose_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)]];
   }
 
 
-FXuint Unicode::charNumDecompose(FXwchar ucs){
+FXuint charNumDecompose(FXwchar ucs){
   return decompose_info[1+decompose_data[decompose_block[decompose_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)]];
   }
 
 
-const FXwchar* Unicode::charDecompose(FXwchar ucs){
+const FXwchar* charDecompose(FXwchar ucs){
   return &decompose_info[2+decompose_data[decompose_block[decompose_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)]];
   }
 
@@ -3741,7 +3736,7 @@ const FXwchar compose_data[920]={
   };
 
 
-FXwchar Unicode::charCompose(FXwchar ucsa,FXwchar ucsb){
+FXwchar charCompose(FXwchar ucsa,FXwchar ucsb){
   if(0x3c<=ucsa && ucsa<=0x30fd && 0x300<=ucsb && ucsb<=0x309a){
     register FXwchar combo=(ucsa<<16)|ucsb;
     register FXint h=919;
@@ -3988,7 +3983,7 @@ const unsigned char combining_data[2563]={
   };
 
 
-FXuint Unicode::charCombining(FXwchar ucs){
+FXuint charCombining(FXwchar ucs){
   return combining_data[combining_block[combining_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
@@ -4103,18 +4098,18 @@ const signed char decimal_data[615]={
   };
 
 
-FXint Unicode::digitValue(FXwchar ucs){
+FXint digitValue(FXwchar ucs){
   return decimal_data[decimal_block[decimal_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
 
-bool Unicode::isHexDigit(FXwchar ucs){
+bool isHexDigit(FXwchar ucs){
   register FXint c=digitValue(ucs);
   return 0<=c && c<16;
   }
 
 
-bool Unicode::isDigit(FXwchar ucs){
+bool isDigit(FXwchar ucs){
   register FXint c=digitValue(ucs);
   return 0<=c && c<10;
   }
@@ -4982,7 +4977,7 @@ const unsigned char linebreak_data[11619]={
   };
 
 
-FXuint Unicode::lineBreakType(FXwchar ucs){
+FXuint lineBreakType(FXwchar ucs){
   return linebreak_data[linebreak_block[linebreak_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
@@ -5192,7 +5187,7 @@ const short upper_data[2242]={
   };
 
 
-FXwchar Unicode::toUpper(FXwchar ucs){
+FXwchar toUpper(FXwchar ucs){
   return ucs+upper_data[upper_block[upper_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
@@ -5392,7 +5387,7 @@ const short lower_data[2084]={
   };
 
 
-FXwchar Unicode::toLower(FXwchar ucs){
+FXwchar toLower(FXwchar ucs){
   return ucs+lower_data[lower_block[lower_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
@@ -5602,7 +5597,7 @@ const short title_data[2242]={
   };
 
 
-FXwchar Unicode::toTitle(FXwchar ucs){
+FXwchar toTitle(FXwchar ucs){
   return ucs+title_data[title_block[title_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
@@ -5761,7 +5756,7 @@ const short mirror_data[1641]={
   };
 
 
-FXwchar Unicode::mirrorImage(FXwchar ucs){
+FXwchar mirrorImage(FXwchar ucs){
   return ucs+mirror_data[mirror_block[mirror_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
@@ -6530,10 +6525,12 @@ const unsigned char script_data[9847]={
   };
 
 
-FXuint Unicode::scriptType(FXwchar ucs){
+FXuint scriptType(FXwchar ucs){
   return script_data[script_block[script_plane[ucs>>14]+((ucs>>7)&127)]+(ucs&127)];
   }
 
+
+}
 
 }
 

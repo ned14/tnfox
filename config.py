@@ -76,7 +76,7 @@ if sys.platform=="win32":
     else:
         architecture="x86"
         architecture_version=7
-        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
         x86_3dnow=1             # =0 (disable), =1 (3dnow)
 else:
     import platform
@@ -86,7 +86,7 @@ else:
     else:
         architecture="x86"
         architecture_version=7
-        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        x86_SSE=1               # =0 (disable), =1 (SSE) or =2 (SSE2)
         x86_3dnow=1             # =0 (disable), =1 (3dnow)
 
 

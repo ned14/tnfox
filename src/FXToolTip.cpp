@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolTip.cpp,v 1.24 2006/01/22 17:58:48 fox Exp $                       *
+* $Id: FXToolTip.cpp,v 1.24.2.2 2006/07/29 02:18:14 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -194,19 +194,61 @@ long FXToolTip::onPaint(FXObject*,FXSelector,void* ptr){
 
 // Place the tool tip
 void FXToolTip::place(FXint x,FXint y){
-  FXint rx=getRoot()->getX();
-  FXint ry=getRoot()->getY();
-  FXint rw=getRoot()->getWidth();
-  FXint rh=getRoot()->getHeight();
-  FXint w=getDefaultWidth();
-  FXint h=getDefaultHeight();
-  FXint px,py;
+  FXint rx,ry,rw,rh,px,py,w,h;
+  w=getDefaultWidth();
+  h=getDefaultHeight();
+#ifndef WIN32
+  rx=getRoot()->getX();
+  ry=getRoot()->getY();
+  rw=getRoot()->getWidth();
+  rh=getRoot()->getHeight();
+#else
+  RECT rect;
+#if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
+  HINSTANCE user32;
+  typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);
+  typedef HMONITOR (WINAPI* PFN_MONITORFROMRECTA)(LPRECT, DWORD);
+  PFN_GETMONITORINFOA GetMonitorInfoA;
+  PFN_MONITORFROMRECTA MonitorFromRectA;
+
+  // Suggested by "Daniel Gehriger" <gehriger@linkcad.com>
+  // The API does not exist on older Windows NT and 95, so
+  // We can't even link it, let alone call it.
+  // The solution is to ask the DLL if the function exists.
+  // And another patch from Lothar Scholtz; now it works!
+  if((user32=LoadLibraryA("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
+    MONITORINFOEXA minfo;
+    HMONITOR hMon;
+    rect.left=x;
+    rect.right=x+w;
+    rect.top=y;
+    rect.bottom=y+h;
+    hMon=MonitorFromRectA(&rect,MONITOR_DEFAULTTOPRIMARY);
+    memset(&minfo,0,sizeof(minfo));
+    minfo.cbSize=sizeof(minfo);
+    GetMonitorInfoA(hMon,&minfo);
+    rx=minfo.rcWork.left;
+    ry=minfo.rcWork.top;
+    rw=minfo.rcWork.right-minfo.rcWork.left;
+    rh=minfo.rcWork.bottom-minfo.rcWork.top;
+    }
+  else
+#endif
+    {
+    // On Win95 and WinNT, we have to use the following
+    SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
+    rx=rect.left;
+    ry=rect.top;
+    rw=rect.right-rect.left;
+    rh=rect.bottom-rect.top;
+    }
+#endif
   px=x+16-w/3;
   py=y+20;
-  if(px+w>rw) px=rw-w;
   if(px<rx) px=rx;
-  if(py+h+50>rh){ py=y-h-10; }
   if(py<ry) py=ry;
+  if(px+w>rx+rw) px=rx+rw-w;
+  if(py+h+50>ry+rh){ py=y-h-10; }
   position(px,py,w,h);
   }
 

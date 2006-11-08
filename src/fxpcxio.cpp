@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxpcxio.cpp,v 1.31 2006/01/22 17:58:53 fox Exp $                         *
+* $Id: fxpcxio.cpp,v 1.31.2.1 2006/08/01 18:04:46 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -178,7 +178,7 @@ bool fxloadPCX(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   // Get 58 bytes, to get to 128 byte header
   for(i=0; i<58; i++) store >> fill;
 
-  FXTRACE((1,"fxloadPCX: width=%d height=%d Version=%d BitsPerPixel=%d NPlanes=%d BytesPerLine=%d Encoding=%d\n",width,height,Version,BitsPerPixel,NPlanes,BytesPerLine,Encoding));
+  //FXTRACE((1,"fxloadPCX: width=%d height=%d Version=%d BitsPerPixel=%d NPlanes=%d BytesPerLine=%d Encoding=%d\n",width,height,Version,BitsPerPixel,NPlanes,BytesPerLine,Encoding));
 
   // Allocate memory
   if(!FXCALLOC(&data,FXColor,NumPixels)) return false;

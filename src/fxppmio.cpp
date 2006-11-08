@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxppmio.cpp,v 1.13 2006/01/22 17:58:54 fox Exp $                         *
+* $Id: fxppmio.cpp,v 1.13.2.1 2006/08/01 18:04:46 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -113,7 +113,7 @@ bool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
     if(maxvalue<=0 || maxvalue>=256) return false;
     }
 
-  FXTRACE((1,"fxloadPPM: width=%d height=%d type=%c \n",width,height,format));
+  //FXTRACE((1,"fxloadPPM: width=%d height=%d type=%c \n",width,height,format));
 
   // Allocate buffer
   if(!FXCALLOC(&data,FXColor,npixels)) return false;

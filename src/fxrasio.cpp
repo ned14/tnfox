@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxrasio.cpp,v 1.16 2006/01/22 17:58:54 fox Exp $                         *
+* $Id: fxrasio.cpp,v 1.16.2.1 2006/08/01 18:04:47 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -225,7 +225,7 @@ bool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   header.maptype=read32(store);
   header.maplength=read32(store);
 
-  FXTRACE((1,"fxloadRAS: magic=%08x width=%d height=%d depth=%d length=%d type=%d maptype=%d maplength=%d\n",header.magic,header.width,header.height,header.depth,header.length,header.type,header.maptype,header.maplength));
+  //FXTRACE((1,"fxloadRAS: magic=%08x width=%d height=%d depth=%d length=%d type=%d maptype=%d maplength=%d\n",header.magic,header.width,header.height,header.depth,header.length,header.type,header.maptype,header.maplength));
 
   // Check magic code
   if(header.magic!=RAS_MAGIC) return false;
@@ -252,11 +252,11 @@ bool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   npixels=width*height;
   linesize=((width*depth+15)/16)*2;
 
-  FXTRACE((1,"fxloadRAS: header.length=%d linesize=%d 4*npixels=%d\n",header.length,linesize,4*npixels));
+  //FXTRACE((1,"fxloadRAS: header.length=%d linesize=%d 4*npixels=%d\n",header.length,linesize,4*npixels));
 
   // Read in the colormap
   if(header.maptype==RMT_EQUAL_RGB && header.maplength){
-    FXTRACE((1,"fxloadRAS: RMT_EQUAL_RGB\n"));
+    //FXTRACE((1,"fxloadRAS: RMT_EQUAL_RGB\n"));
     store.load(red,header.maplength/3);
     store.load(green,header.maplength/3);
     store.load(blue,header.maplength/3);
@@ -264,20 +264,20 @@ bool fxloadRAS(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
   // Skip colormap
   else if(header.maptype==RMT_RAW && header.maplength){
-    FXTRACE((1,"fxloadRAS: RMT_RAW\n"));
+    //FXTRACE((1,"fxloadRAS: RMT_RAW\n"));
     store.position(header.maplength,FXFromCurrent);
     }
 
   // Black and white
   else if(header.depth==1){
-    FXTRACE((1,"fxloadRAS: 1 bit\n"));
+    //FXTRACE((1,"fxloadRAS: 1 bit\n"));
     red[0]=green[0]=blue[0]=0;
     red[1]=green[1]=blue[1]=255;
     }
 
   // Gray scale
   else if(header.depth==8){
-    FXTRACE((1,"fxloadRAS: 8 bit\n"));
+    //FXTRACE((1,"fxloadRAS: 8 bit\n"));
     for(i=0; i<256; i++){
       red[i]=green[i]=blue[i]=i;
       }

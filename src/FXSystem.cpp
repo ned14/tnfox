@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSystem.cpp,v 1.18 2006/01/22 17:58:43 fox Exp $                        *
+* $Id: FXSystem.cpp,v 1.18.2.1 2006/08/09 01:55:08 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -313,7 +313,7 @@ FXString FXSystem::getExecPath(){
 
 // Return the home directory for the current user.
 FXString FXSystem::getHomeDirectory(){
-  return getUserDirectory(FXString::null);
+  return FXSystem::getUserDirectory(FXString::null);
   }
 
 

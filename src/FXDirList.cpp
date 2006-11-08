@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirList.cpp,v 1.160 2006/01/22 17:58:22 fox Exp $                      *
+* $Id: FXDirList.cpp,v 1.160.2.2 2006/08/02 01:31:08 fox Exp $                      *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 #include "xincs.h"
@@ -350,15 +350,15 @@ long FXDirList::onDNDDrop(FXObject* sender,FXSelector sel,void* ptr){
       filedst=dropdirectory+PATHSEPSTRING+FXPath::name(filesrc);
       // Move, Copy, or Link as appropriate
       if(dropaction==DRAG_MOVE){
-        FXTRACE((1,"Moving file: %s to %s\n",filesrc.text(),filedst.text()));
+        FXTRACE((100,"Moving file: %s to %s\n",filesrc.text(),filedst.text()));
         if(!FXFile::moveFiles(filesrc,filedst)) getApp()->beep();
         }
       else if(dropaction==DRAG_COPY){
-        FXTRACE((1,"Copying file: %s to %s\n",filesrc.text(),filedst.text()));
+        FXTRACE((100,"Copying file: %s to %s\n",filesrc.text(),filedst.text()));
         if(!FXFile::copyFiles(filesrc,filedst)) getApp()->beep();
         }
       else if(dropaction==DRAG_LINK){
-        FXTRACE((1,"Linking file: %s to %s\n",filesrc.text(),filedst.text()));
+        FXTRACE((100,"Linking file: %s to %s\n",filesrc.text(),filedst.text()));
         if(!FXFile::symlink(filesrc,filedst)) getApp()->beep();
         }
       }
@@ -614,7 +614,6 @@ long FXDirList::onUpdSortCase(FXObject* sender,FXSelector,void* ptr){
 FXbool FXDirList::expandTree(FXTreeItem* tree,FXbool notify){
   if(FXTreeList::expandTree(tree,notify)){
     if(isItemDirectory(tree)){
-      FXTRACE((10,"expandTree: %s pathname=%s\n",tree->getText().text(),getItemPathname(tree).text()));
       listChildItems((FXDirItem*)tree);
       sortChildItems(tree);
       }
@@ -628,7 +627,6 @@ FXbool FXDirList::expandTree(FXTreeItem* tree,FXbool notify){
 FXbool FXDirList::collapseTree(FXTreeItem* tree,FXbool notify){
   if(FXTreeList::collapseTree(tree,notify)){
     if(isItemDirectory(tree)){
-      FXTRACE((10,"collapseTree: %s path=%s\n",tree->getText().text(),getItemPathname(tree).text()));
       // As a memory saving feature, all knowledge below this item
       // is deleted; we'll just recreate it when its reexpanded!
       //removeItems(item->first,item->last);

@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStream.cpp,v 1.53 2004/11/08 15:35:10 fox Exp $                        *
+* $Id: FXStream.cpp,v 1.66.2.3 2006/09/13 18:18:52 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -384,11 +384,13 @@ FXStream& FXStream::load(FXulong* p,unsigned long n){
 // Add object without saving or loading
 FXStream& FXStream::addObject(const FXObject* v){
 #ifndef FX_DISABLEGUI
-  if(dir==FXStreamSave){
-    hash->insert((void*)v,(void*)(FXuval)seq++);
-    }
-  else if(dir==FXStreamLoad){
-    hash->insert((void*)(FXuval)seq++,(void*)v);
+  if(v){
+    if(dir==FXStreamSave){
+      hash->insert((void*)v,(void*)(FXuval)seq++);
+      }
+    else if(dir==FXStreamLoad){
+      hash->insert((void*)(FXuval)seq++,(void*)v);
+      }
     }
 #endif
   return *this;
@@ -425,7 +427,7 @@ FXStream& FXStream::saveObject(const FXObject* v){
     *this << tag;                               // Save tag
     *this << zero;
     save(name,tag);
-    FXTRACE((100,"saveObject(%s)\n",v->getClassName()));
+    FXTRACE((100,"%08ld: saveObject(%s)\n",(FXuval)pos,v->getClassName()));
     v->save(*this);
     }
 #endif
@@ -472,7 +474,7 @@ FXStream& FXStream::loadObject(FXObject*& v){
       }
     v=cls->makeInstance();                      // Build some object!!
     hash->insert((void*)(FXuval)seq++,(void*)v); // Add to table
-    FXTRACE((100,"loadObject(%s)\n",v->getClassName()));
+    FXTRACE((100,"%08ld: loadObject(%s)\n",(FXuval)pos,v->getClassName()));
     v->load(*this);
     }
 #endif

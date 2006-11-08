@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.175.2.1 2006/05/10 13:18:13 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.175.2.2 2006/09/28 15:18:08 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -898,7 +898,7 @@ FXbool FXTopWindow::close(FXbool notify){
   register FXWindow *window;
 
   // Ask target if desired
-  if(!notify || !target || !message || !target->tryHandle(this,FXSEL(SEL_CLOSE,message),NULL)){
+  if(!notify || !target || !target->tryHandle(this,FXSEL(SEL_CLOSE,message),NULL)){
 
     // Target will receive no further messages from us
     setTarget(NULL);

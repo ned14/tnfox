@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxiffio.cpp,v 1.14 2006/01/22 17:58:53 fox Exp $                         *
+* $Id: fxiffio.cpp,v 1.14.2.2 2006/08/02 01:31:11 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -199,7 +199,7 @@ bool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
     // Commodore AMiGa
     else if(tag==CAMG){
       view=read32(store);
-      FXTRACE((1,"view=%04x\n",view));
+      //FXTRACE((1,"view=%04x\n",view));
       }
 
     // Body
@@ -300,13 +300,13 @@ bool fxloadIFF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       }
 
 /*
-    FXTRACE((1,"y: %d\n",y));
+    FXTRACE((100,"y: %d\n",y));
     for(plane=0; plane<planes; plane++){
-      FXTRACE((1,"P %2d: ",plane));
+      FXTRACE((100,"P %2d: ",plane));
       for(i=0; i<bytesperline; i++){
-        FXTRACE((1,"%02x ",buffer[plane*bytesperline+i]));
+        FXTRACE((100,"%02x ",buffer[plane*bytesperline+i]));
         }
-      FXTRACE((1,"\n"));
+      FXTRACE((100,"\n"));
       }
 */
 

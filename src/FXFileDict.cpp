@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.cpp,v 1.67 2006/01/22 17:58:25 fox Exp $                      *
+* $Id: FXFileDict.cpp,v 1.67.2.1 2006/08/02 01:31:08 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -249,7 +249,7 @@ void *FXFileDict::createData(const void* ptr){
   if(strstr(extra,"cd")) flags|=1;
   if(strstr(extra,"term")) flags|=2;
 
-  FXTRACE((10,"FXFileDict: command=\"%s\" extension=\"%s\" mimetype=\"%s\" big=\"%s\" bigopen=\"%s\" mini=\"%s\" miniopen=\"%s\" flags=%d\n",command,extension,mimetype,bigname,bignameopen,mininame,mininameopen,flags));
+  FXTRACE((300,"FXFileDict: command=\"%s\" extension=\"%s\" mimetype=\"%s\" big=\"%s\" bigopen=\"%s\" mini=\"%s\" miniopen=\"%s\" flags=%d\n",command,extension,mimetype,bigname,bignameopen,mininame,mininameopen,flags));
 
   // Initialize association data
   fileassoc->command=command;

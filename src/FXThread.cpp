@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXThread.cpp,v 1.53.2.1 2006/03/28 12:56:24 fox Exp $                        *
+* $Id: FXThread.cpp,v 1.53.2.7 2006/07/28 05:30:49 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"

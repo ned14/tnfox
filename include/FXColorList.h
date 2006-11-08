@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorList.h,v 1.4 2006/01/22 17:57:59 fox Exp $                        *
+* $Id: FXColorList.h,v 1.4.2.1 2006/07/27 02:18:50 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXCOLORLIST_H
 #define FXCOLORLIST_H
@@ -32,7 +32,7 @@ namespace FX {
 
 
 /// Color item
-class FXColorItem : public FXListItem {
+class FXAPI FXColorItem : public FXListItem {
   FXDECLARE(FXColorItem)
 protected:
   FXColor  color;

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSlider.cpp,v 1.65 2006/01/22 17:58:41 fox Exp $                        *
+* $Id: FXSlider.cpp,v 1.65.2.1 2006/08/14 12:00:06 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -545,11 +545,11 @@ long FXSlider::onKeyPress(FXObject*,FXSelector,void* ptr){
         break;
       case KEY_plus:
       case KEY_KP_Add:
-inc:    setValue(pos+incr);
+inc:    setValue(pos+incr,true);
         return 1;
       case KEY_minus:
       case KEY_KP_Subtract:
-dec:    setValue(pos-incr);
+dec:    setValue(pos-incr,true);
         return 1;
       }
     }

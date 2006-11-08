@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPath.cpp,v 1.20.2.3 2006/06/30 04:33:29 fox Exp $                          *
+* $Id: FXPath.cpp,v 1.20.2.4 2006/08/09 01:55:08 fox Exp $                          *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -456,7 +456,7 @@ FXString FXPath::absolute(const FXString& file){
 #else
   if(ISPATHSEP(file[0])){
     if(ISPATHSEP(file[1])) return FXPath::simplify(file);   // UNC
-    return simplify(FXSystem::getCurrentDrive()+file);
+    return FXPath::simplify(FXSystem::getCurrentDrive()+file);
     }
   if(Ascii::isLetter(file[0]) && file[1]==':'){
     if(ISPATHSEP(file[2])) return FXPath::simplify(file);

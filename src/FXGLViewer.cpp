@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLViewer.cpp,v 1.156 2006/01/22 17:58:28 fox Exp $                     *
+* $Id: FXGLViewer.cpp,v 1.156.2.1 2006/08/02 01:31:08 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -2637,7 +2637,7 @@ long FXGLViewer::onClipboardRequest(FXObject* sender,FXSelector sel,void* ptr){
 
   // Requested data from clipboard
   if(event->target==objectType){
-    FXTRACE((1,"requested objectType\n"));
+    FXTRACE((100,"requested objectType\n"));
 //    FXMemoryStream stream;
 //    stream.open(NULL,0,FXStreamSave);
 //    stream.takeBuffer(data,len);

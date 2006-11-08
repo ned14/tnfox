@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextField.cpp,v 1.171.2.1 2006/07/14 14:54:21 fox Exp $                    *
+* $Id: FXTextField.cpp,v 1.171.2.2 2006/08/15 05:03:16 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -888,9 +888,20 @@ void FXTextField::drawCursor(FXuint state){
         dc.fillRectangle(xx-2,border,5,height-(border<<1));
 
         // Draw two characters before and after cursor
-        cl=contents.dec(contents.dec(cursor));
-        ch=contents.inc(contents.inc(cursor));
-        drawTextRange(dc,FXMAX(cl,0),FXMIN(ch,contents.length()));
+        cl=ch=cursor;
+        if(0<cl){
+          cl=contents.dec(cl);
+          if(0<cl){
+            cl=contents.dec(cl);
+            }
+          }
+        if(ch<contents.length()){
+          ch=contents.inc(ch);
+          if(ch<contents.length()){
+            ch=contents.inc(ch);
+            }
+          }
+        drawTextRange(dc,cl,ch);
         }
       }
     flags^=FLAG_CARET;

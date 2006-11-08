@@ -35,6 +35,7 @@ functions and classes Array, Array2, normalrand, normaldist, mean,
 variance, stddev, distribution to Maths namespace
 + Added 64 bit overloads for fxbitscan() and fxbitscanrev()
 + Added Maths::InfinityValue and Maths::NaNValue
+* Merged FOX v1.6.18
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=

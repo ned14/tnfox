@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLObject.h,v 1.28 2006/01/22 17:58:03 fox Exp $                        *
+* $Id: FXGLObject.h,v 1.28.2.2 2006/07/28 00:56:30 fox Exp $                        *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -36,9 +36,6 @@ namespace FX {
 class FXGLViewer;
 class FXGLObject;
 
-
-// List of objects
-typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 
 /// OpenGL color object
 class FXAPI FXGLColor
@@ -108,13 +105,12 @@ public:
   };
 
 
-// Suppress warning about FXGLGroup::list not being exported
-#ifdef _MSC_VER
-#if _MSC_VER >= 1200
-#pragma warning( push )
-#endif
-#pragma warning( disable : 4251 )
-#endif
+/// Explicit template specialization
+FXTEMPLATE_EXTERN template class FXAPI FXObjectListOf<FXGLObject>;
+
+
+/// List of GL objects
+typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 
 
 /// Group object
@@ -189,13 +185,6 @@ public:
   virtual ~FXGLGroup();
   };
 
-
-// Restore previous warning levels
-#ifdef _MSC_VER
-#if _MSC_VER >= 1200
-#pragma warning( pop )
-#endif
-#endif
 
 }
 

@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBitmap.cpp,v 1.89 2006/01/22 17:58:18 fox Exp $                        *
+* $Id: FXBitmap.cpp,v 1.89.2.1 2006/08/01 18:04:26 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -723,7 +723,7 @@ void FXBitmap::crop(FXint x,FXint y,FXint w,FXint h,FXbool color){
   if(w<1) w=1;
   if(h<1) h=1;
   if(x>=width || y>=height || x+w<=0 || y+h<=0){ fxerror("%s::crop: bad arguments.\n",getClassName()); }
-  FXTRACE((1,"%s::crop(%d,%d,%d,%d)\n",getClassName(),x,y,w,h));
+  FXTRACE((100,"%s::crop(%d,%d,%d,%d)\n",getClassName(),x,y,w,h));
   if(data){
     register FXuchar *pnn,*poo,*yyy,*pn,*po,*xx;
     register FXint oldbw=bytewidth;
@@ -765,7 +765,7 @@ void FXBitmap::crop(FXint x,FXint y,FXint w,FXint h,FXbool color){
       FXASSERT(ch>0);
       yyy=pnn+newbw*ch;
       cpybw=((cw-x+7)>>3)-((-x)>>3);
-      FXTRACE((1,"ow=%d oh=%d nw=%d nh=%d cw=%d ch=%d sh=%d cpybw=%d\n",ow,oh,nw,nh,cw,ch,sh,cpybw));
+      //FXTRACE((100,"ow=%d oh=%d nw=%d nh=%d cw=%d ch=%d sh=%d cpybw=%d\n",ow,oh,nw,nh,cw,ch,sh,cpybw));
       do{
         pn=pnn;
         po=poo;

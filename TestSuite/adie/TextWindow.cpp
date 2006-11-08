@@ -19,7 +19,7 @@
 * along with this program; if not, write to the Free Software                   *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: TextWindow.cpp,v 1.125.2.1 2006/06/08 13:09:06 fox Exp $                     *
+* $Id: TextWindow.cpp,v 1.125.2.2 2006/07/27 04:24:39 fox Exp $                     *
 ********************************************************************************/
 #include "fx.h"
 #include "fxkeys.h"
@@ -1400,7 +1400,7 @@ long TextWindow::onCmdAbout(FXObject*,FXSelector,void*){
   FXVerticalFrame* side=new FXVerticalFrame(&about,LAYOUT_SIDE_RIGHT|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 10,10,10,10, 0,0);
   new FXLabel(side,"A . d . i . e",NULL,JUSTIFY_LEFT|ICON_BEFORE_TEXT|LAYOUT_FILL_X);
   new FXHorizontalSeparator(side,SEPARATOR_LINE|LAYOUT_FILL_X);
-  new FXLabel(side,FXStringFormat(tr("\nThe Adie ADvanced Interactive Editor, version %d.%d.%d.\n\nAdie is a fast and convenient programming text editor and text\nfile viewer with an integrated file browser.\nAdie uses the FOX Toolkit version %d.%d.%d.\nCopyright (C) 2000,2005 Jeroen van der Zijp (jeroen@fox-toolkit.org).\n ").text(),VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,FOX_MAJOR,FOX_MINOR,FOX_LEVEL),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_Y);
+  new FXLabel(side,FXStringFormat(tr("\nThe Adie ADvanced Interactive Editor, version %d.%d.%d.\n\nAdie is a fast and convenient programming text editor and text\nfile viewer with an integrated file browser.\nAdie uses the FOX Toolkit version %d.%d.%d.\nCopyright (C) 2000,2006 Jeroen van der Zijp (jeroen@fox-toolkit.org).\n ").text(),VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,FOX_MAJOR,FOX_MINOR,FOX_LEVEL),NULL,JUSTIFY_LEFT|LAYOUT_FILL_X|LAYOUT_FILL_Y);
   FXButton *button=new FXButton(side,tr("&OK"),NULL,&about,FXDialogBox::ID_ACCEPT,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_RIGHT,0,0,0,0,32,32,2,2);
   button->setFocus();
   about.execute(PLACEMENT_OWNER);
