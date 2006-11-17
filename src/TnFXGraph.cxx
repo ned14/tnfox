@@ -94,11 +94,17 @@ FXGLVertices *TnFXGraph::setItemDetails(FXuint item, const FXString &title, cons
 	i->title=title;
 	i->vertices->setColor(colour);
 	if(pointsize)
+	{
 		i->vertices->setPointSize(pointsize);
+		i->vertices->setOptions(i->vertices->getOptions()|VERTICES_POINTS);
+	}
 	else
 		i->vertices->setOptions(i->vertices->getOptions()&~VERTICES_POINTS);
 	if(linesize)
+	{
 		i->vertices->setLineSize(linesize);
+		i->vertices->setOptions(i->vertices->getOptions()|VERTICES_LINES);
+	}
 	else
 		i->vertices->setOptions(i->vertices->getOptions()&~VERTICES_LINES);
 	return i->vertices;

@@ -50,10 +50,10 @@ else:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
 if onWindows or onDarwin:
-    suffix=ternary(GenStaticLib==2 or onWindows, env['LIBSUFFIX'], env['SHLIBSUFFIX'])
-    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+suffix)]
-    if SQLModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfoxsql+suffix)]
-    if GraphingModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfoxgraphing+suffix)]
+    suffix=ternary(GenStaticLib==2, ".a", ternary(onWindows, env['LIBSUFFIX'], env['SHLIBSUFFIX']))
+    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+suffix)]
+    if SQLModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+suffix)]
+    if GraphingModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+suffix)]
 else: # Can't put in g++.py as dir isn't defined there
     env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
 try:
