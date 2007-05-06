@@ -225,6 +225,14 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     print "Using platform configuration",platformconfig,"..."
     onWindows=(env['PLATFORM']=="win32" or env['PLATFORM']=="win64")
     onDarwin=(env['PLATFORM']=="darwin")
+    if onWindows:
+        #print env['ENV']
+        #print "Resetting $(INCLUDE) to",os.environ['INCLUDE']
+        env['ENV']['INCLUDE']=os.environ['INCLUDE']
+        #print "Resetting $(LIB) to",os.environ['LIB']
+        env['ENV']['LIB']=os.environ['LIB']
+        #print "Resetting $(PATH) to",os.environ['PATH']
+        env['ENV']['PATH']=os.environ['PATH']
     if tcommonopts:
         libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
         libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn"+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)

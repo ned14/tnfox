@@ -37,6 +37,8 @@ variance, stddev, distribution to Maths namespace
 + Added Maths::InfinityValue and Maths::NaNValue
 * Merged FOX v1.6.18
 * Merged FOX v1.6.25
+* Fixed problem with newer scons (> v0.96.95) which prevented correct
+detection of build environment
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=
