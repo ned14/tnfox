@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.cpp,v 1.103.2.3 2006/07/28 00:56:30 fox Exp $                       *
+* $Id: FXHeader.cpp,v 1.103.2.4 2006/11/21 19:01:53 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -181,7 +181,6 @@ void FXHeaderItem::draw(const FXHeader* header,FXDC& dc,FXint x,FXint y,FXint w,
   dc.setForeground(header->getTextColor());
 
   // Draw text
-  dc.setFont(font);
   yy=ty+font->getFontAscent();
   beg=0;
   do{
@@ -694,8 +693,8 @@ FXint FXHeader::getItemOffset(FXint index) const {
 // Get index of item at offset
 FXint FXHeader::getItemAt(FXint coord) const {
   register FXint h=items.no()-1,l=0,m;
+  coord=coord-pos;
   if(l<=h){
-    coord=coord-pos;
     if(coord<items[l]->getPos()) return -1;
     if(coord>=items[h]->getPos()+items[h]->getSize()) return items.no();
     do{
@@ -707,7 +706,7 @@ FXint FXHeader::getItemAt(FXint coord) const {
     while(h>=l);
     return m;
     }
-  return -1;
+  return coord<0 ? -1 : 0;
   }
 
 
@@ -838,109 +837,124 @@ long FXHeader::onPaint(FXObject*,FXSelector,void* ptr){
   FXDCWindow dc(this,ev);
   register FXint x,y,w,h,i,ilo,ihi;
 
+  // Set font
+  dc.setFont(font);
+
   // Paint background
   dc.setForeground(backColor);
   dc.fillRectangle(ev->rect.x,ev->rect.y,ev->rect.w,ev->rect.h);
 
-  // Got items
-  if(items.no()){
-    if(options&HEADER_VERTICAL){
+  // Vertical
+  if(options&HEADER_VERTICAL){
 
-      // Determine affected items
-      ilo=getItemAt(ev->rect.y);
-      ihi=getItemAt(ev->rect.y+ev->rect.h);
+    // Determine affected items
+    ilo=getItemAt(ev->rect.y);
+    ihi=getItemAt(ev->rect.y+ev->rect.h);
 
-      // Fragment below first item
-      if(ilo<0){
+    // Fragment below first item
+    if(ilo<0){
+      y=pos;
+      if(0<items.no()){
         y=pos+items[0]->getPos();
-        if(0<y){
-          if(options&FRAME_THICK)
-            drawDoubleRaisedRectangle(dc,0,0,width,y);
-          else if(options&FRAME_RAISED)
-            drawRaisedRectangle(dc,0,0,width,y);
-          }
-        ilo=0;
         }
-
-      // Fragment above last item
-      if(ihi>=items.no()){
-        y=pos+items[items.no()-1]->getPos()+items[items.no()-1]->getSize();
-        if(y<height){
-          if(options&FRAME_THICK)
-            drawDoubleRaisedRectangle(dc,0,y,width,height-y);
-          else if(options&FRAME_RAISED)
-            drawRaisedRectangle(dc,0,y,width,height-y);
-          }
-        ihi=items.no()-1;
+      if(0<y){
+        if(options&FRAME_THICK)
+          drawDoubleRaisedRectangle(dc,0,0,width,y);
+        else if(options&FRAME_RAISED)
+          drawRaisedRectangle(dc,0,0,width,y);
         }
-
-      // Draw only affected items
-      for(i=ilo; i<=ihi; i++){
-        y=pos+items[i]->getPos();
-        h=items[i]->getSize();
-        if(items[i]->isPressed()){
-          if(options&FRAME_THICK)
-            drawDoubleSunkenRectangle(dc,0,y,width,h);
-          else if(options&FRAME_RAISED)
-            drawSunkenRectangle(dc,0,y,width,h);
-          }
-        else{
-          if(options&FRAME_THICK)
-            drawDoubleRaisedRectangle(dc,0,y,width,h);
-          else if(options&FRAME_RAISED)
-            drawRaisedRectangle(dc,0,y,width,h);
-          }
-        items[i]->draw(this,dc,0,y,width,h);
-        }
+      ilo=0;
       }
-    else{
 
-      // Determine affected items
-      ilo=getItemAt(ev->rect.x);
-      ihi=getItemAt(ev->rect.x+ev->rect.w);
+    // Fragment above last item
+    if(ihi>=items.no()){
+      y=pos;
+      if(0<items.no()){
+        y=pos+items[items.no()-1]->getPos()+items[items.no()-1]->getSize();
+        }
+      if(y<height){
+        if(options&FRAME_THICK)
+          drawDoubleRaisedRectangle(dc,0,y,width,height-y);
+        else if(options&FRAME_RAISED)
+          drawRaisedRectangle(dc,0,y,width,height-y);
+        }
+      ihi=items.no()-1;
+      }
 
-      // Fragment below first item
-      if(ilo<0){
+    // Draw only affected items
+    for(i=ilo; i<=ihi; i++){
+      y=pos+items[i]->getPos();
+      h=items[i]->getSize();
+      if(items[i]->isPressed()){
+        if(options&FRAME_THICK)
+          drawDoubleSunkenRectangle(dc,0,y,width,h);
+        else if(options&FRAME_RAISED)
+          drawSunkenRectangle(dc,0,y,width,h);
+        }
+      else{
+        if(options&FRAME_THICK)
+          drawDoubleRaisedRectangle(dc,0,y,width,h);
+        else if(options&FRAME_RAISED)
+          drawRaisedRectangle(dc,0,y,width,h);
+        }
+      items[i]->draw(this,dc,0,y,width,h);
+      }
+    }
+
+  // Horizontal
+  else{
+
+    // Determine affected items
+    ilo=getItemAt(ev->rect.x);
+    ihi=getItemAt(ev->rect.x+ev->rect.w);
+
+    // Fragment below first item
+    if(ilo<0){
+      x=pos;
+      if(0<items.no()){
         x=pos+items[0]->getPos();
-        if(0<x){
-          if(options&FRAME_THICK)
-            drawDoubleRaisedRectangle(dc,0,0,x,height);
-          else if(options&FRAME_RAISED)
-            drawRaisedRectangle(dc,0,0,x,height);
-          }
-        ilo=0;
         }
+      if(0<x){
+        if(options&FRAME_THICK)
+          drawDoubleRaisedRectangle(dc,0,0,x,height);
+        else if(options&FRAME_RAISED)
+          drawRaisedRectangle(dc,0,0,x,height);
+        }
+      ilo=0;
+      }
 
-      // Fragment above last item
-      if(ihi>=items.no()){
+    // Fragment above last item
+    if(ihi>=items.no()){
+      x=pos;
+      if(0<items.no()){
         x=pos+items[items.no()-1]->getPos()+items[items.no()-1]->getSize();
-        if(x<width){
-          if(options&FRAME_THICK)
-            drawDoubleRaisedRectangle(dc,x,0,width-x,height);
-          else if(options&FRAME_RAISED)
-            drawRaisedRectangle(dc,x,0,width-x,height);
-          }
-        ihi=items.no()-1;
         }
+      if(x<width){
+        if(options&FRAME_THICK)
+          drawDoubleRaisedRectangle(dc,x,0,width-x,height);
+        else if(options&FRAME_RAISED)
+          drawRaisedRectangle(dc,x,0,width-x,height);
+        }
+      ihi=items.no()-1;
+      }
 
-      // Draw only the affected items
-      for(i=ilo; i<=ihi; i++){
-        x=pos+items[i]->getPos();
-        w=items[i]->getSize();
-        if(items[i]->isPressed()){
-          if(options&FRAME_THICK)
-            drawDoubleSunkenRectangle(dc,x,0,w,height);
-          else if(options&FRAME_RAISED)
-            drawSunkenRectangle(dc,x,0,w,height);
-          }
-        else{
-          if(options&FRAME_THICK)
-            drawDoubleRaisedRectangle(dc,x,0,w,height);
-          else if(options&FRAME_RAISED)
-            drawRaisedRectangle(dc,x,0,w,height);
-          }
-        items[i]->draw(this,dc,x,0,w,height);
+    // Draw only the affected items
+    for(i=ilo; i<=ihi; i++){
+      x=pos+items[i]->getPos();
+      w=items[i]->getSize();
+      if(items[i]->isPressed()){
+        if(options&FRAME_THICK)
+          drawDoubleSunkenRectangle(dc,x,0,w,height);
+        else if(options&FRAME_RAISED)
+          drawSunkenRectangle(dc,x,0,w,height);
         }
+      else{
+        if(options&FRAME_THICK)
+          drawDoubleRaisedRectangle(dc,x,0,w,height);
+        else if(options&FRAME_RAISED)
+          drawRaisedRectangle(dc,x,0,w,height);
+        }
+      items[i]->draw(this,dc,x,0,w,height);
       }
     }
   return 1;
@@ -998,7 +1012,7 @@ long FXHeader::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     // Where clicked
     coord=(options&HEADER_VERTICAL)?event->win_y:event->win_x;
     active=getItemAt(coord);
-    if(0<=active){
+    if(0<=active && active<items.no()){
       if((options&HEADER_RESIZE) && (active<items.no()) && (pos+items[active]->getPos()+items[active]->getSize()-FUDGE<coord)){
         activepos=pos+items[active]->getPos();
         activesize=items[active]->getSize();

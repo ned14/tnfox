@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFont.cpp,v 1.184.2.1 2006/08/01 18:04:37 fox Exp $                         *
+* $Id: FXFont.cpp,v 1.184.2.2 2007/02/21 15:58:01 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -1175,9 +1175,6 @@ void* FXFont::match(const FXString& wantfamily,const FXString& wantforge,FXuint 
         font=XLoadQueryFont(DISPLAY(getApp()),xlfd);
         }
 
-      // Remember font id
-      if(font){ xid=((XFontStruct*)font)->fid; }
-
 /*
       if(font){
         for(b=0; b<((XFontStruct*)font)->n_properties; b++){
@@ -1457,6 +1454,9 @@ void FXFont::create(){
         font=XLoadQueryFont(DISPLAY(getApp()),actualName.text());
         }
 
+      // Remember font id
+      if(font){ xid=((XFontStruct*)font)->fid; }
+      
       // Uh-oh, we failed
       if(!xid){ throw FXFontException("unable to create font"); }
 

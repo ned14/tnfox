@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.175.2.2 2006/09/28 15:18:08 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.175.2.5 2007/03/07 13:07:37 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -417,53 +417,44 @@ void FXTopWindow::place(FXuint placement){
   rh=getRoot()->getHeight();
 #else
   RECT rect;
-#if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
-  HINSTANCE user32;
-  typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);
-  typedef HMONITOR (WINAPI* PFN_MONITORFROMRECTA)(LPRECT, DWORD);
-  PFN_GETMONITORINFOA GetMonitorInfoA;
-  PFN_MONITORFROMRECTA MonitorFromRectA;
+  MYMONITORINFO minfo;
+  HANDLE monitor;
 
-  // Suggested by "Daniel Gehriger" <gehriger@linkcad.com>
-  // The API does not exist on older Windows NT and 95, so
-  // We can't even link it, let alone call it.
-  // The solution is to ask the DLL if the function exists.
-  // And another patch from Lothar Scholtz; now it works!
-  if((user32=LoadLibraryA("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
-    MONITORINFOEXA minfo;
-    HMONITOR hMon;
-    if(placement == PLACEMENT_CURSOR){
-      // Use mouse position to select screen.
-      getRoot()->getCursorPosition(x,y,state);
-      rect.left=x;
-      rect.right=x+1;
-      rect.top=y;
-      rect.bottom=y+1;
-      }
-    else{
-      // Use owner to select screen.
-      over=getOwner()?getOwner():getRoot();
-      over->translateCoordinatesTo(ox,oy,getRoot(),0,0);
-      ow=over->getWidth();
-      oh=over->getHeight();
-      rect.left=ox;
-      rect.right=ox+ow;
-      rect.top=oy;
-      rect.bottom=oy+oh;
-      }
-    hMon=MonitorFromRectA(&rect,MONITOR_DEFAULTTOPRIMARY);
+  // Use mouse position to select screen
+  if(placement!=PLACEMENT_OWNER){
+    getRoot()->getCursorPosition(x,y,state);
+    rect.left=x;
+    rect.right=x+1;
+    rect.top=y;
+    rect.bottom=y+1;
+    }
+
+  // Use owner to select screen
+  else{
+    over=getOwner()?getOwner():getRoot();
+    over->translateCoordinatesTo(ox,oy,getRoot(),0,0);
+    ow=over->getWidth();
+    oh=over->getHeight();
+    rect.left=ox;
+    rect.right=ox+ow;
+    rect.top=oy;
+    rect.bottom=oy+oh;
+    }
+
+  // Get monitor info if we have this API
+  monitor=fxMonitorFromRect(&rect,MONITOR_DEFAULTTOPRIMARY);
+  if(monitor){
     memset(&minfo,0,sizeof(minfo));
     minfo.cbSize=sizeof(minfo);
-    GetMonitorInfoA(hMon,&minfo);
+    fxGetMonitorInfo(monitor,&minfo);
     rx=minfo.rcWork.left;
     ry=minfo.rcWork.top;
     rw=minfo.rcWork.right-minfo.rcWork.left;
     rh=minfo.rcWork.bottom-minfo.rcWork.top;
     }
-  else
-#endif
-    {
-    // On Win95 and WinNT, we have to use the following
+
+  // Otherwise use the work-area
+  else{
     SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
     rx=rect.left;
     ry=rect.top;
@@ -511,8 +502,8 @@ void FXTopWindow::place(FXuint placement){
       // Adjust so dialog is fully visible
       if(wx<rx) wx=rx+10;
       if(wy<ry) wy=ry+10;
-      if(wx+ww>rw) wx=rw-ww-10;
-      if(wy+wh>rh) wy=rh-wh-10;
+      if(wx+ww>rx+rw) wx=rx+rw-ww-10;
+      if(wy+wh>ry+rh) wy=ry+rh-wh-10;
       break;
 
     // Place centered over the owner
@@ -535,8 +526,8 @@ void FXTopWindow::place(FXuint placement){
       // Adjust so dialog is fully visible
       if(wx<rx) wx=rx+10;
       if(wy<ry) wy=ry+10;
-      if(wx+ww>rw) wx=rw-ww-10;
-      if(wy+wh>rh) wy=rh-wh-10;
+      if(wx+ww>rx+rw) wx=rx+rw-ww-10;
+      if(wy+wh>ry+rh) wy=ry+rh-wh-10;
       break;
 
     // Place centered on the screen
@@ -553,8 +544,8 @@ void FXTopWindow::place(FXuint placement){
       // Adjust so dialog is fully visible
       if(wx<rx) wx=rx+10;
       if(wy<ry) wy=ry+10;
-      if(wx+ww>rw) wx=rw-ww-10;
-      if(wy+wh>rh) wy=rh-wh-10;
+      if(wx+ww>rx+rw) wx=rx+rw-ww-10;
+      if(wy+wh>ry+rh) wy=ry+rh-wh-10;
       break;
 
     // Place maximized

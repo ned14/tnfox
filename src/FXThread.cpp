@@ -126,9 +126,11 @@ void FXMutex::unlock(){
 
 // Test if locked
 FXbool FXMutex::locked(){
-  if(pthread_mutex_trylock((pthread_mutex_t*)data)==EBUSY) return TRUE;
-  pthread_mutex_unlock((pthread_mutex_t*)data);
-  return FALSE;
+  if(pthread_mutex_trylock((pthread_mutex_t*)data)==0){
+    pthread_mutex_unlock((pthread_mutex_t*)data);
+    return false;
+    }
+  return true;
   }
 
 
@@ -141,7 +143,7 @@ FXMutex::~FXMutex(){
 /*******************************************************************************/
 
 
-#ifdef APPLE
+#ifdef __APPLE__
 
 
 // Initialize semaphore
@@ -151,7 +153,7 @@ FXSemaphore::FXSemaphore(FXint initial){
   // machine and mail it to: jeroen@fox-toolkit.org!!
   //FXTRACE((150,"sizeof(MPSemaphoreID*)=%d\n",sizeof(MPSemaphoreID*)));
   FXASSERT(sizeof(data)>=sizeof(MPSemaphoreID*));
-  MPCreateSemaphore(2147483647,0,(MPSemaphoreID*)data);
+  MPCreateSemaphore(2147483647,initial,(MPSemaphoreID*)data);
   }
 
 
@@ -244,7 +246,7 @@ void FXCondition::broadcast(){
 
 // Wait for condition indefinitely
 void FXCondition::wait(FXMutex& mtx){
-  pthread_cond_wait((pthread_cond_t*)data,(pthread_mutex_t*)&mtx.data);
+  pthread_cond_wait((pthread_cond_t*)data,(pthread_mutex_t*)mtx.data);
   }
 
 
@@ -254,7 +256,7 @@ FXbool FXCondition::wait(FXMutex& mtx,FXlong nsec){
   struct timespec ts;
   ts.tv_sec=nsec/1000000000;
   ts.tv_nsec=nsec%1000000000;
-x:result=pthread_cond_timedwait((pthread_cond_t*)data,(pthread_mutex_t*)&mtx.data,&ts);
+x:result=pthread_cond_timedwait((pthread_cond_t*)data,(pthread_mutex_t*)mtx.data,&ts);
   if(result==EINTR) goto x;
   return result!=ETIMEDOUT;
   }
@@ -310,10 +312,12 @@ void FXMutex::unlock(){
 // Test if locked
 FXbool FXMutex::locked(){
 #if(_WIN32_WINNT >= 0x0400)
-  if(TryEnterCriticalSection((CRITICAL_SECTION*)data)==0) return FALSE;
-  LeaveCriticalSection((CRITICAL_SECTION*)data);
+  if(TryEnterCriticalSection((CRITICAL_SECTION*)data)!=0){
+    LeaveCriticalSection((CRITICAL_SECTION*)data);
+    return false;
+    }
 #endif
-  return TRUE;
+  return true;
   }
 
 

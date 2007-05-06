@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.617.2.4 2006/10/02 12:36:47 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.617.2.6 2007/03/28 16:47:00 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -1959,9 +1959,11 @@ bool FXEventLoop::removeInput(FXInputHandle fd,FXuint mode){
     inputs[fd].excpt.message=0;
     FD_CLR(fd,(fd_set*)e_fds);
     }
-  while(0<=maxinput){                   // Limit number of fd's to test if possible
-    if(inputs[maxinput].read.target || inputs[maxinput].write.target || inputs[maxinput].excpt.target) break;
-    maxinput--;
+  if(fd==maxinput){
+    while(fd>=0 && !FD_ISSET(fd,(fd_set*)r_fds) && !FD_ISSET(fd,(fd_set*)w_fds) && !FD_ISSET(fd,(fd_set*)e_fds)){
+      --fd;
+      }
+    maxinput=fd;
     }
 #else
   register FXint in;
@@ -3044,10 +3046,10 @@ bool FXEventLoop::dispatchEvent(FXRawEvent& ev){
             se.xclient.window=XDefaultRootWindow((Display*)display);
             se.xclient.data.l[0]=ev.xclient.data.l[0];
             se.xclient.data.l[1]=ev.xclient.data.l[1];
-            se.xclient.data.l[2]=0;
+            se.xclient.data.l[2]=ev.xclient.data.l[2];
             se.xclient.data.l[3]=0;
             se.xclient.data.l[4]=0;
-            XSendEvent((Display*)display,se.xclient.window,True,NoEventMask,&se);
+            XSendEvent((Display*)display,se.xclient.window,False,SubstructureRedirectMask|SubstructureNotifyMask,&se);
             }
           }
 

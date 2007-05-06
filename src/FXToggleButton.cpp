@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToggleButton.cpp,v 1.63 2006/01/22 17:58:47 fox Exp $                  *
+* $Id: FXToggleButton.cpp,v 1.63.2.1 2006/12/11 15:57:26 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -555,12 +555,14 @@ long FXToggleButton::onPaint(FXObject*,FXSelector,void* ptr){
 // Change text
 void FXToggleButton::setAltText(const FXString& text){
   FXString string=stripHotKey(text);
-  if(altlabel!=string){
+  FXHotKey hkey=parseHotKey(text);
+  FXint hoff=findHotKey(text);
+  if(altlabel!=string || althotkey!=hkey || althotoff!=hoff){
+    altlabel.adopt(string);
     remHotKey(althotkey);
-    althotkey=parseHotKey(text);
-    althotoff=findHotKey(text);
+    althotkey=hkey;
+    althotoff=hoff;
     addHotKey(althotkey);
-    altlabel=string;
     recalc();
     update();
     }

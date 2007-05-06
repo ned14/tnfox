@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileList.cpp,v 1.211.2.1 2006/08/01 18:04:33 fox Exp $                     *
+* $Id: FXFileList.cpp,v 1.211.2.2 2006/11/22 15:40:27 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 
@@ -380,7 +380,7 @@ long FXFileList::onDNDDrop(FXObject* sender,FXSelector sel,void* ptr){
       url=dropfiles.mid(beg,end-beg);
 
       // Source filename
-      filesrc=FXURL::fileFromURL(url);
+      filesrc=FXURL::decode(FXURL::fileFromURL(url));
 
       // Destination filename
       filedst=dropdirectory+PATHSEPSTRING+FXPath::name(filesrc);
@@ -439,7 +439,7 @@ long FXFileList::onBeginDrag(FXObject* sender,FXSelector sel,void* ptr){
     for(i=0; i<getNumItems(); i++){
       if(isItemSelected(i) && getItemFilename(i)!=".." && getItemFilename(i)!="."){
         if(!dragfiles.empty()) dragfiles+="\r\n";
-        dragfiles+=FXURL::fileToURL(getItemPathname(i));
+        dragfiles+=FXURL::encode(FXURL::fileToURL(getItemPathname(i)));
         }
       }
     return 1;

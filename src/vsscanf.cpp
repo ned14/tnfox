@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: vsscanf.cpp,v 1.20 2006/01/22 17:58:58 fox Exp $                         *
+* $Id: vsscanf.cpp,v 1.20.2.2 2007/01/29 20:22:29 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -46,9 +46,7 @@ using namespace FX;
 #ifndef HAVE_VSSCANF
 
 // API
-#if !defined(_MSC_VER) || (_MSC_VER < 1400)
 extern "C" int vfscanf(FILE *stream, const char *format, va_list arg_ptr);
-#endif
 
 
 // API
@@ -390,12 +388,10 @@ err_out:
 
 
 // API
-#if !defined(_MSC_VER) || (_MSC_VER < 1400)
 int vfscanf(FILE *stream,const char *format,va_list arg_ptr){
   arg_scanf farg={(void*)stream,(int(*)(void*))fgetc,(int(*)(int,void*))ungetc};
   return __v_scanf(&farg,format,arg_ptr);
   }
-#endif
 
 
 // API

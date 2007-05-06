@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLObject.h,v 1.28.2.2 2006/07/28 00:56:30 fox Exp $                        *
+* $Id: FXGLObject.h,v 1.28.2.3 2006/11/17 16:02:31 fox Exp $                        *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -105,13 +105,14 @@ public:
   };
 
 
-/// Explicit template specialization
-FXTEMPLATE_EXTERN template class FXAPI FXObjectListOf<FXGLObject>;
-
-
 /// List of GL objects
 typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
 
 /// Group object
 class FXAPI FXGLGroup : public FXGLObject {
@@ -185,6 +186,9 @@ public:
   virtual ~FXGLGroup();
   };
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 }
 

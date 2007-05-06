@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.h,v 1.95.2.3 2006/08/02 01:31:07 fox Exp $                        *
+* $Id: FXIconList.h,v 1.95.2.4 2006/11/17 16:02:31 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXICONLIST_H
 #define FXICONLIST_H
@@ -166,10 +166,6 @@ public:
 
 /// Icon item collate function
 typedef FXint (*FXIconListSortFunc)(const FXIconItem*,const FXIconItem*);
-
-
-/// Explicit template specialization
-FXTEMPLATE_EXTERN template class FXAPI FXObjectListOf<FXIconItem>;
 
 
 /// List of FXIconItem's

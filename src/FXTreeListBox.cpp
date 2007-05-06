@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTreeListBox.cpp,v 1.60 2006/01/22 17:58:50 fox Exp $                   *
+* $Id: FXTreeListBox.cpp,v 1.60.2.1 2007/02/06 16:43:25 fox Exp $                   *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -436,7 +436,6 @@ FXTreeItem *FXTreeListBox::moveItem(FXTreeItem* other,FXTreeItem* father,FXTreeI
 FXTreeItem* FXTreeListBox::extractItem(FXTreeItem* item){
   register FXTreeItem *currentitem=tree->getCurrentItem();
   register FXTreeItem *result=tree->extractItem(item);
-  tree->removeItem(item);
   if(item==currentitem){
     currentitem=tree->getCurrentItem();
     if(currentitem){
