@@ -33,6 +33,8 @@ functions and classes Array, Array2, normalrand, normaldist, mean,
 variance, stddev, distribution to Maths namespace
 + Added 64 bit overloads for fxbitscan() and fxbitscanrev()
 + Added Maths::InfinityValue and Maths::NaNValue
+* Fixed problem with newer scons (> v0.96.95) which prevented correct
+detection of build environment
 
 
 v0.86 2nd April 2006
