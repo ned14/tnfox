@@ -21,6 +21,7 @@
 
 #include "fxdefs.h"
 #include "fxver.h"
+#include "tnfxsvnrev.h"
 #include "FXProcess.h"
 #include "FXException.h"
 #include "FXPtrHold.h"
@@ -269,12 +270,12 @@ struct tm *FXTime::as_tm(struct tm *buf, bool inLocalTime) const
 	else if(!inLocalTime && isLocalTime)
 		tmp-=(time_t)(localTimeDiff()/micsPerSecond);
 #if defined(USE_POSIX) && defined(FOX_THREAD_SAFE)
-	return inLocalTime ? localtime_r(&tmp, buf) : gmtime_r(&tmp, buf);
+	return gmtime_r(&tmp, buf);
 #else
 #ifdef WIN32
 	QMtxHold h(gmtimelock);
 #endif
-	struct tm *src=inLocalTime ? localtime(&tmp) : gmtime(&tmp);
+	struct tm *src=gmtime(&tmp);
 	assert(src);
 	FXERRH(src, "Failed to convert to struct tm", 0, FXERRH_ISDEBUG);
 	*buf=*src;
@@ -348,7 +349,8 @@ FXlong FXTime::localTimeDiff()
 	i.dwLowDateTime=0;
 	FileTimeToLocalFileTime(&i, &o);
 	FXulong _i=((FXulong)i.dwHighDateTime<<32)|(FXulong)i.dwLowDateTime, _o=((FXulong)o.dwHighDateTime<<32)|(FXulong)o.dwLowDateTime;
-	return (FXlong)(_o-_i);
+	FXlong diff=(FXlong)(_o-_i);
+	return diff/10;
 #else
 	time_t tmp=1<<28;
 	struct tm buf1, buf2;
@@ -763,8 +765,8 @@ void FXProcess::init(int &argc, char *argv[])
 			if(0==strcmp(argv[argi], "-help"))
 			{
 				inHelpMode=true;
-				QTransString temp2=QTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n");
-				temp2.arg(FXFile::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR);
+				QTransString temp2=QTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3 (SVN rev %4)\n   (derived from FOX v%5.%6.%7) (built: %8 %9)\n");
+				temp2.arg(FXFile::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR).arg(SUBVERSION_REVISION);
 				temp2.arg(FOX_MAJOR).arg(FOX_MINOR).arg(FOX_LEVEL).arg(FXString(__TIME__)).arg(FXString(__DATE__));
 				FXString temp(temp2);
 				sstdio << temp.text();
@@ -1614,7 +1616,7 @@ void FXProcess::dllUnload(FXProcess::dllHandle &h)
 	lh.unlock();
 }
 
-FXString FXProcess::hostOS()
+FXString FXProcess::hostOS(FXString *myos, FXString *architecture)
 {
 #ifdef USE_WINAPI
 	LPVOID execbase;
@@ -1638,34 +1640,45 @@ FXString FXProcess::hostOS()
 	else if(IMAGE_FILE_MACHINE_AMD64  ==headers->FileHeader.Machine) desc="Win64/AMD64";
 #endif
 	else desc="unknown";
+	if(myos) *myos=desc.left(desc.find('/'));
+	if(architecture) *architecture=desc.mid(desc.find('/')+1);
 	return desc;
 #endif
 #ifdef USE_POSIX
 #ifdef __linux__
 	static FXString desc;
-	if(!desc.empty()) return desc;
-	
-	FILE *ih=0;
-	ih=fopen("/proc/sys/kernel/ostype", "rt");
-	if(!ih) FXERRGOS(errno, 0);
-	char buffer[64];
-	int len=fread(buffer, 1, 64, ih);
-	buffer[len-1]=0;
-	fclose(ih);
-	desc=buffer;
-	return desc+"/"+ARCHITECTURE;
+	if(desc.empty())
+	{
+		FILE *ih=0;
+		ih=fopen("/proc/sys/kernel/ostype", "rt");
+		if(!ih) FXERRGOS(errno, 0);
+		char buffer[64];
+		int len=fread(buffer, 1, 64, ih);
+		buffer[len-1]=0;
+		fclose(ih);
+		desc=buffer;
+		desc+="/"+ARCHITECTURE;
+	}
+	if(myos) *myos=desc.left(desc.find('/'));
+	if(architecture) *architecture=desc.mid(desc.find('/')+1);
+	return desc;
 #endif
 #if defined(__FreeBSD__) || defined(__APPLE__)
 	int command[2]={ CTL_KERN, KERN_OSTYPE };
 	char type[256];
 	size_t typelen=sizeof(type);
 	FXERRHOS(sysctl(command, 2, type, &typelen, NULL, 0));
-	return FXString(type)+"/"+ARCHITECTURE;
+	FXString desc(type);
+	desc+="/"+ARCHITECTURE;
+	if(myos) *myos=desc.left(desc.find('/'));
+	if(architecture) *architecture=desc.mid(desc.find('/')+1);
+	return desc;
 #endif
 #endif
 }
 
-FXString FXProcess::hostOSDescription()
+FXString FXProcess::hostOSDescription(FXString *myapi, FXString *kernelname, FXString *kernelversion,
+	FXString *apiversion, FXString *architecture)
 {
 #ifdef USE_WINAPI
 	SYSTEM_INFO si;
@@ -1673,35 +1686,47 @@ FXString FXProcess::hostOSDescription()
 	FXString desc;
 #ifdef PROCESSOR_ARCHITECTURE_IA64
 	if(si.wProcessorArchitecture>=PROCESSOR_ARCHITECTURE_IA64)
+	{
 		desc="Win64 (";
+		if(myapi) *myapi="Win64";
+	}
 	else
 #endif
+	{
 		desc="Win32 (";
+		if(myapi) *myapi="Win32";
+	}
 	OSVERSIONINFO ovi={ sizeof(OSVERSIONINFO) };
 	FXERRHWIN(GetVersionEx(&ovi));
-	if     (VER_PLATFORM_WIN32s       ==ovi.dwPlatformId) desc+="DOS";
-	else if(VER_PLATFORM_WIN32_WINDOWS==ovi.dwPlatformId) desc+="9x";
-	else if(VER_PLATFORM_WIN32_NT     ==ovi.dwPlatformId) desc+="NT";
-	else desc+="unknown";
+	if     (VER_PLATFORM_WIN32s       ==ovi.dwPlatformId) { desc+="DOS"; if(kernelname) *kernelname="DOS"; }
+	else if(VER_PLATFORM_WIN32_WINDOWS==ovi.dwPlatformId) { desc+="9x";  if(kernelname) *kernelname="9x"; }
+	else if(VER_PLATFORM_WIN32_NT     ==ovi.dwPlatformId) { desc+="NT";  if(kernelname) *kernelname="NT"; }
+#ifdef VER_PLATFORM_WIN32_CE
+	else if(VER_PLATFORM_WIN32_CE     ==ovi.dwPlatformId) { desc+="CE";  if(kernelname) *kernelname="CE"; }
+#endif
+	else { desc+="unknown";  if(kernelname) *kernelname="unknown"; }
 	desc+=" [%1] kernel) version %2.%3, ";
 	desc.arg(ovi.szCSDVersion);
+	if(kernelversion) *kernelversion=ovi.szCSDVersion;
 	desc.arg((FXint) ovi.dwMajorVersion).arg((FXint) ovi.dwMinorVersion);
+	if(apiversion) { *apiversion=FXString("%1.%2"); apiversion->arg((FXint) ovi.dwMajorVersion).arg((FXint) ovi.dwMinorVersion); }
 
-	if     (PROCESSOR_ARCHITECTURE_INTEL==si.wProcessorArchitecture) desc+=ARCHITECTURE;
-	else if(PROCESSOR_ARCHITECTURE_ALPHA==si.wProcessorArchitecture) desc+="Alpha";
-	else if(PROCESSOR_ARCHITECTURE_PPC  ==si.wProcessorArchitecture) desc+="PowerPC";
+	if     (PROCESSOR_ARCHITECTURE_INTEL==si.wProcessorArchitecture) { desc+=ARCHITECTURE; if(architecture) *architecture=ARCHITECTURE; }
+	else if(PROCESSOR_ARCHITECTURE_ALPHA==si.wProcessorArchitecture) { desc+="Alpha";      if(architecture) *architecture="Alpha"; }
+	else if(PROCESSOR_ARCHITECTURE_PPC  ==si.wProcessorArchitecture) { desc+="PowerPC";    if(architecture) *architecture="PowerPC"; }
 #ifdef PROCESSOR_ARCHITECTURE_IA64
-	else if(PROCESSOR_ARCHITECTURE_IA64 ==si.wProcessorArchitecture) desc+="IA64";
+	else if(PROCESSOR_ARCHITECTURE_IA64 ==si.wProcessorArchitecture) { desc+="IA64";       if(architecture) *architecture="IA64"; }
 #endif
 #ifdef PROCESSOR_ARCHITECTURE_AMD64
-	else if(PROCESSOR_ARCHITECTURE_AMD64==si.wProcessorArchitecture) desc+="AMD64";
+	else if(PROCESSOR_ARCHITECTURE_AMD64==si.wProcessorArchitecture) { desc+="AMD64";      if(architecture) *architecture="AMD64"; }
 #endif
-	else desc+="unknown";
+	else { desc+="unknown"; if(architecture) *architecture="unknown"; }
 	desc+=" architecture";
 	return desc;
 #endif
 #ifdef USE_POSIX
 	FXString desc="POSIX.2 (";
+	if(myapi) *myapi="POSIX.2";
 #ifdef __linux__
 	FILE *ih=0;
 	char buffer[256];
@@ -1713,12 +1738,14 @@ FXString FXProcess::hostOSDescription()
 	buffer[len-1]=0;
 	fclose(ih);
 	desc+=buffer;
+	if(kernelname) *kernelname=buffer;
 	ih=fopen("/proc/sys/kernel/osrelease", "rt");
 	if(!ih) FXERRGOS(errno, 0);
 	len=fread(buffer, 1, 64, ih);
 	buffer[len-1]=0;
 	fclose(ih);
 	desc+=" ["; desc+=buffer;
+	if(kernelversion) *kernelversion=buffer;
 #endif
 #if defined(__FreeBSD__) || defined(__APPLE__)
 	int command[2]={ CTL_KERN, KERN_OSTYPE };
@@ -1726,15 +1753,24 @@ FXString FXProcess::hostOSDescription()
 	size_t bufflen=sizeof(buffer);
 	FXERRHOS(sysctl(command, 2, buffer, &bufflen, NULL, 0));
 	desc+=buffer;
+	if(kernelname) *kernelname=buffer;
 	command[1]=KERN_OSRELEASE; bufflen=sizeof(buffer);
 	FXERRHOS(sysctl(command, 2, buffer, &bufflen, NULL, 0));
 	desc+=" ["; desc+=buffer;
+	if(kernelversion) *kernelversion=buffer;
 #endif
 	desc+="] kernel) version %1";
 	desc.arg((FXulong) sysconf(_SC_2_VERSION));
+	if(apiversion) *apiversion=FXString::number((FXulong) sysconf(_SC_2_VERSION));
 	desc+=", " ARCHITECTURE " architecture";
+	if(architecture) *architecture=ARCHITECTURE;
 	return desc;
 #endif
+}
+
+void FXProcess::buildInfo(int *svnrev)
+{
+	if(svnrev) *svnrev=SUBVERSION_REVISION;
 }
 
 FXfloat FXProcess::hostOSProcessorLoad()

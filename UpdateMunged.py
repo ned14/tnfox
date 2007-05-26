@@ -42,7 +42,9 @@ parser=OptionParser(usage="""%prog -d <directory> -t <timestampfile.h> -c "<comm
 parser.add_option("-d", "--directory", default=".",
                   help="Path to the directory of sources")
 parser.add_option("-t", "--timestampfile", default=None,
-                  help="Path to the directory of sources")
+                  help="Path to the timestamp file")
+parser.add_option("-s", "--svnrevisionheader", default=None,
+                  help="Path to a header file for writing the current SVN revision into")
 parser.add_option("-c", "--commandline", default="",
                   help="The command line arguments to pass to CppMunge.py")
 parser.add_option("-v", "--verbose", action="store_true", default=False,
@@ -64,6 +66,30 @@ try:
     lastmungedmtime=os.path.getmtime(timestampfile)
 except os.error:
     lastmungedmtime=0
+if options.svnrevisionheader:
+    fh=file(options.svnrevisionheader, "wt")
+    try:
+        fh.write("#define SUBVERSION_REVISION ")
+        try:
+            (childinh, childh)=os.popen4("svnversion")
+            line=childh.readline()
+            if line:
+                # We want the bit after any colon present
+                idx=line.find(':')
+                if idx!=-1:
+                    line=line[idx+1:]
+                idx=line.find('M')
+                if idx!=-1:
+                    line=line[:idx]+line[idx+1:]
+                fh.write(line)
+                print "\nThis is built from SVN revision",line
+            childinh.close()
+            childh.close()
+        except:
+            fh.write("-1\n")
+            print "\nCalling svnversion FAILED due to",sys.exc_info()
+    finally:
+        fh.close()
 
 filelistsrc=os.listdir(options.directory)
 filelist=[]
@@ -99,6 +125,8 @@ else:
                 line=childh.readline()
                 if not line: break
                 print "  "+line,
+            childinh.close()
+            childh.close()
     fh=file(timestampfile, "wt")
     fh.write("//foo")
     fh.close()

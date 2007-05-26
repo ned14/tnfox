@@ -6,6 +6,7 @@ B Fixed critical section nedmalloc miscompile
 B nedmalloc wasn't locking mspace if all mspaces were locked
 B FXApp was failing on init when trying to list fonts when Xft wasn't
 enabled
+B Fixed daylight saving time problems in FXTime
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException
@@ -35,6 +36,10 @@ variance, stddev, distribution to Maths namespace
 + Added Maths::InfinityValue and Maths::NaNValue
 * Fixed problem with newer scons (> v0.96.95) which prevented correct
 detection of build environment
+* Updated doxygen config to v1.5.2
++ Added incorporation of current SVN revision into source
+* Added FXProcess::buildInfo() and broke out hostOS() and
+hostOSDescription()
 
 
 v0.86 2nd April 2006

@@ -259,8 +259,10 @@ public:
 	static void *dllResolveBase(const dllHandle &h, const char *apiname);
 	//! Unloads the specified dynamic library
 	static void dllUnload(dllHandle &h);
-	//! Returns a short description of the host operating system eg; "Win32", "Linux" etc.
-	static FXString hostOS();
+	/*! Returns a short description of the operating system eg; "Win32", "Linux" etc
+	that TnFOX was built for with a slash '/' and then the machine architecture TnFOX
+	was built for. This can vary from hostOSDescription() below. */
+	static FXString hostOS(FXString *myos=0, FXString *architecture=0);
 	/*! Returns a textual description of the host operating system. The format
 	is as follows:
 
@@ -282,7 +284,12 @@ public:
 	Lastly, <i>machine architecture</i> currently can be one of: i486, PowerPC, Alpha, IA64,
 	AMD64, unknown.
 	*/
-	static FXString hostOSDescription();
+	static FXString hostOSDescription(FXString *myapi=0, FXString *kernelname=0, FXString *kernelversion=0,
+		FXString *apiversion=0, FXString *architecture=0);
+	/*! Returns build information for TnFOX. \em svnrev is the latest SVN revision of the
+	repository from which TnFOX was checked out. Note this can be -1 if \c svnversion wasn't
+	available during build */
+	static void buildInfo(int *svnrev=0);
 	/*! Returns a normalised floating-point value whereby \c 1.0 means full. System processors
 	are combined so that CPU A at 100% and CPU B at 0% yields the same return as both CPU's
 	being at 50%
