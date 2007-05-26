@@ -476,6 +476,9 @@ public:
 //! For Qt emulation
 typedef FXFile QFile;
 
+//! For FOX v1.6.x compatibility
+typedef FXFile FXPath;
+
 }
 
 #endif
