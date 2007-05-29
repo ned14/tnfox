@@ -40,6 +40,7 @@ detection of build environment
 + Added incorporation of current SVN revision into source
 * Added FXProcess::buildInfo() and broke out hostOS() and
 hostOSDescription()
++ Added FXApp::isAutomatedTest()
 
 
 v0.86 2nd April 2006

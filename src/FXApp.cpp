@@ -796,6 +796,7 @@ FXApp::FXApp(const FXString& name,const FXString& vendor):registry(name,vendor){
   appArgv=NULL;                           // Program arguments
   waitCount=0;                            // Cursor wait count
   initialized=FALSE;                      // Not yet initialized
+  automatedTest=FALSE;
   destructUpcalls=0;                      // Destruction upcalls
 
   // Monochrome visual
@@ -3594,6 +3595,13 @@ void FXApp::init(int& argc,char** argv,FXbool connect){
         fxwarning("%s::init: expected number of colors > 2.\n",getClassName());
         ::exit(1);
         }
+      j++;
+      continue;
+      }
+
+    // Is an automated test?
+    if(strcmp(argv[j],"-automatedtest")==0){
+	  automatedTest=TRUE;
       j++;
       continue;
       }
