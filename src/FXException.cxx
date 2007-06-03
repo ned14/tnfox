@@ -27,6 +27,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include "Windows.h"
 #include "Dbghelp.h"
+#include "psapi.h"
 #endif
 #endif
 #include "QTrans.h"
@@ -107,39 +108,173 @@ void FXException::int_enableNestedExceptionFramework(bool yes)
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 #define COPY_STRING(d, s, maxlen) { size_t len=strlen(s); len=(len>maxlen) ? maxlen-1 : len; memcpy(d, s, len); d[len]=0; }
 
-#ifndef _M_AMD64
-static DWORD __stdcall GetModBase(HANDLE hProcess, DWORD dwAddr)
+static int ExceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS *ep, CONTEXT *ct)
 {
-	DWORD modulebase;
-#else
+	*ct=*ep->ContextRecord;
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
 static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
 {
 	DWORD64 modulebase;
-#endif
-	modulebase=SymGetModuleBase(hProcess, dwAddr);
+	// Try to get the module base if already loaded, otherwise load the module
+	modulebase=SymGetModuleBase64(hProcess, dwAddr);
     if(modulebase)
-        return modulebase ;
+        return modulebase;
     else
     {
         MEMORY_BASIC_INFORMATION stMBI ;
-        if ( 0 != VirtualQueryEx ( hProcess, (LPCVOID)dwAddr, &stMBI, sizeof ( stMBI )))
+        if ( 0 != VirtualQueryEx ( hProcess, (LPCVOID)dwAddr, &stMBI, sizeof(stMBI)))
         {
-            DWORD dwNameLen = 0 ;
-            TCHAR szFile[ MAX_PATH ] ;
-            HANDLE hFile = NULL ;
-            dwNameLen = GetModuleFileName ( (HINSTANCE) stMBI.AllocationBase , szFile, MAX_PATH );
-            if ( 0 != dwNameLen )
-                hFile = CreateFile ( szFile, GENERIC_READ, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, 0);
-            SymLoadModule ( hProcess, hFile, (PSTR)( (dwNameLen) ? szFile : 0), NULL, (DWORD)stMBI.AllocationBase, 0);
-			if(hFile) CloseHandle(hFile);
-            return (DWORD) stMBI.AllocationBase;
+            DWORD dwPathLen=0, dwNameLen=0 ;
+            TCHAR szFile[ MAX_PATH ], szModuleName[ MAX_PATH ] ;
+			MODULEINFO mi={0};
+            dwPathLen = GetModuleFileName ( (HMODULE) stMBI.AllocationBase , szFile, MAX_PATH );
+            dwNameLen = GetModuleBaseName (hProcess, (HMODULE) stMBI.AllocationBase , szModuleName, MAX_PATH );
+			for(int n=dwNameLen; n>0; n--)
+			{
+				if(szModuleName[n]=='.')
+				{
+					szModuleName[n]=0;
+					break;
+				}
+			}
+			if(!GetModuleInformation(hProcess, (HMODULE) stMBI.AllocationBase, &mi, sizeof(mi)))
+			{
+				//fxmessage("WARNING: GetModuleInformation() returned error code %d\n", GetLastError());
+			}
+			if(!SymLoadModule64 ( hProcess, NULL, (PSTR)( (dwPathLen) ? szFile : 0), (PSTR)( (dwNameLen) ? szModuleName : 0),
+				(DWORD64) mi.lpBaseOfDll, mi.SizeOfImage))
+			{
+				//fxmessage("WARNING: SymLoadModule64() returned error code %d\n", GetLastError());
+			}
+			//fxmessage("%s, %p, %x, %x\n", szFile, mi.lpBaseOfDll, mi.SizeOfImage, (DWORD) mi.lpBaseOfDll+mi.SizeOfImage);
+			modulebase=SymGetModuleBase64(hProcess, dwAddr);
+			return modulebase;
         }
     }
     return 0;
 }
-#endif
-#endif
 
+static HANDLE myprocess;
+static void DeinitSym()
+{
+	if(myprocess)
+	{
+		SymCleanup(myprocess);
+		CloseHandle(myprocess);
+		myprocess=0;
+	}
+}
+
+void FXException::doStackWalk() throw()
+{
+	int i,i2;
+	HANDLE mythread=(HANDLE) GetCurrentThread();
+	STACKFRAME64 sf={ 0 };
+	CONTEXT ct={ 0 };
+	if(!myprocess)
+	{
+		DWORD symopts;
+		DuplicateHandle(GetCurrentProcess(), GetCurrentProcess(), GetCurrentProcess(), &myprocess, 0, FALSE, DUPLICATE_SAME_ACCESS);
+		symopts=SymGetOptions();
+		SymSetOptions(symopts /*| SYMOPT_DEFERRED_LOADS*/ | SYMOPT_LOAD_LINES);
+		SymInitialize(myprocess, NULL, TRUE);
+		atexit(DeinitSym);
+	}
+	ct.ContextFlags=CONTEXT_FULL;
+
+	// Use RtlCaptureContext() if we have it as it saves an exception throw
+	static VOID (WINAPI *RtlCaptureContextAddr)(PCONTEXT)=(VOID (WINAPI *)(PCONTEXT)) -1;
+	if((VOID (WINAPI *)(PCONTEXT)) -1==RtlCaptureContextAddr)
+		RtlCaptureContextAddr=(VOID (WINAPI *)(PCONTEXT)) GetProcAddress(GetModuleHandle("kernel32"), "RtlCaptureContext");
+	if(RtlCaptureContextAddr)
+		RtlCaptureContextAddr(&ct);
+	else
+	{	// This is nasty, but it works
+		__try
+		{
+			int *foo=0;
+			*foo=78;
+		}
+		__except (ExceptionFilter(GetExceptionCode(), GetExceptionInformation(), &ct))
+		{
+		}
+	}
+
+	sf.AddrPC.Mode=sf.AddrStack.Mode=sf.AddrFrame.Mode=AddrModeFlat;
+#ifndef _M_AMD64
+	sf.AddrPC.Offset   =ct.Eip;
+	sf.AddrStack.Offset=ct.Esp;
+	sf.AddrFrame.Offset=ct.Ebp;
+#else
+	sf.AddrPC.Offset   =ct.Rip;
+	sf.AddrStack.Offset=ct.Rsp;
+	sf.AddrFrame.Offset=ct.Rbp; // maybe Rdi?
+#endif
+	for(i2=0; i2<FXEXCEPTION_STACKBACKTRACEDEPTH; i2++)
+	{
+		IMAGEHLP_MODULE64 ihm={ sizeof(IMAGEHLP_MODULE64) };
+		char temp[MAX_PATH+sizeof(IMAGEHLP_SYMBOL64)];
+		IMAGEHLP_SYMBOL64 *ihs;
+		IMAGEHLP_LINE64 ihl={ sizeof(IMAGEHLP_LINE64) };
+		DWORD64 offset;
+		if(!StackWalk64(
+#ifndef _M_AMD64
+			IMAGE_FILE_MACHINE_I386,
+#else
+			IMAGE_FILE_MACHINE_AMD64,
+#endif
+			myprocess, mythread, &sf, &ct, NULL, SymFunctionTableAccess64, GetModBase, NULL))
+			break;
+		if(0==sf.AddrPC.Offset)
+			break;
+		i=i2;
+		if(i)	// Skip first entry relating to this function
+		{
+			stack[i-1].pc=(void *) sf.AddrPC.Offset;
+			if(SymGetModuleInfo64(myprocess, sf.AddrPC.Offset, &ihm))
+			{
+				char *leaf;
+				leaf=strrchr(ihm.ImageName, '\\');
+				if(!leaf) leaf=ihm.ImageName-1;
+				COPY_STRING(stack[i-1].module, leaf+1, sizeof(stack[i-1].module));
+			}
+			else strcpy(stack[i-1].module, "<unknown>");
+			//fxmessage("WARNING: SymGetModuleInfo64() returned error code %d\n", GetLastError());
+			memset(temp, 0, MAX_PATH+sizeof(IMAGEHLP_SYMBOL64));
+			ihs=(IMAGEHLP_SYMBOL64 *) temp;
+			ihs->SizeOfStruct=sizeof(IMAGEHLP_SYMBOL64);
+			ihs->Address=sf.AddrPC.Offset;
+			ihs->MaxNameLength=MAX_PATH;
+
+			if(SymGetSymFromAddr64(myprocess, sf.AddrPC.Offset, &offset, ihs))
+			{
+				COPY_STRING(stack[i-1].functname, ihs->Name, sizeof(stack[i-1].functname));
+				if(strlen(stack[i-1].functname)<sizeof(stack[i-1].functname)-8)
+				{
+					sprintf(strchr(stack[i-1].functname, 0), " +0x%x", offset);
+				}
+			}
+			else
+				strcpy(stack[i-1].functname, "<unknown>");
+			DWORD lineoffset=0;
+			if(SymGetLineFromAddr64(myprocess, sf.AddrPC.Offset, &lineoffset, &ihl))
+			{
+				char *leaf;
+				stack[i-1].lineno=ihl.LineNumber;
+
+				leaf=strrchr(ihl.FileName, '\\');
+				if(!leaf) leaf=ihl.FileName-1;
+				COPY_STRING(stack[i-1].file, leaf+1, sizeof(stack[i-1].file));
+			}
+			else
+				strcpy(stack[i-1].file, "<unknown>");
+		}
+	}
+#endif
+#endif
+}
 
 void FXException::init(const char *_filename, int _lineno, const FXString &msg, FXuint __code, FXuint __flags)
 {
@@ -176,91 +311,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	if(!(_flags & FXERRH_ISINFORMATIONAL))
 	{
 		QMtxHold lockh(symlock);
-		int i,i2;
-		HANDLE myprocess;
-		HANDLE mythread=(HANDLE) GetCurrentThread();
-		STACKFRAME sf={ 0 };
-		CONTEXT ct={ 0 };
-		DWORD symopts;
-		DuplicateHandle(GetCurrentProcess(), GetCurrentProcess(), GetCurrentProcess(), &myprocess, 0, FALSE, DUPLICATE_SAME_ACCESS);
-		symopts=SymGetOptions();
-		SymSetOptions(symopts | SYMOPT_LOAD_LINES);
-		SymInitialize(myprocess, NULL, FALSE);
-		ct.ContextFlags=CONTEXT_FULL;
-		GetThreadContext(mythread, &ct);
-		sf.AddrPC.Mode=sf.AddrStack.Mode=sf.AddrFrame.Mode=AddrModeFlat;
-#ifndef _M_AMD64
-		sf.AddrPC.Offset   =ct.Eip;
-		sf.AddrStack.Offset=ct.Esp;
-		sf.AddrFrame.Offset=ct.Ebp;
-#else
-		sf.AddrPC.Offset   =ct.Rip;
-		sf.AddrStack.Offset=ct.Rsp;
-		sf.AddrFrame.Offset=ct.Rbp;
-#endif
-		for(i2=0; i2<FXEXCEPTION_STACKBACKTRACEDEPTH; i2++)
-		{
-			IMAGEHLP_MODULE ihm={ sizeof(IMAGEHLP_MODULE) };
-			char temp[MAX_PATH+sizeof(IMAGEHLP_SYMBOL)];
-			IMAGEHLP_SYMBOL *ihs;
-			IMAGEHLP_LINE ihl={ sizeof(IMAGEHLP_LINE) };
-#ifndef _M_AMD64
-			DWORD offset;
-			if(!StackWalk(IMAGE_FILE_MACHINE_I386, myprocess, mythread, &sf, &ct, NULL,
-				SymFunctionTableAccess, GetModBase, NULL))
-				break;
-#else
-			DWORD64 offset;
-			if(!StackWalk(IMAGE_FILE_MACHINE_AMD64, myprocess, mythread, &sf, &ct, NULL,
-				SymFunctionTableAccess, GetModBase, NULL))
-				break;
-#endif
-			if(0==sf.AddrPC.Offset)
-				break;
-			i=i2;
-			if(i)	// Skip first entry relating to GetThreadContext()
-			{
-				stack[i-1].pc=(void *) sf.AddrPC.Offset;
-				if(SymGetModuleInfo(myprocess, sf.AddrPC.Offset, &ihm))
-				{
-					char *leaf;
-					leaf=strrchr(ihm.ImageName, '\\');
-					if(!leaf) leaf=ihm.ImageName-1;
-					COPY_STRING(stack[i-1].module, leaf+1, sizeof(stack[i-1].module));
-				}
-				else strcpy(stack[i-1].module, "<unknown>");
-				memset(temp, 0, MAX_PATH+sizeof(IMAGEHLP_SYMBOL));
-				ihs=(IMAGEHLP_SYMBOL *) temp;
-				ihs->SizeOfStruct=sizeof(IMAGEHLP_SYMBOL);
-				ihs->Address=sf.AddrPC.Offset;
-				ihs->MaxNameLength=MAX_PATH;
-
-				if(SymGetSymFromAddr(myprocess, sf.AddrPC.Offset, &offset, ihs))
-				{
-					COPY_STRING(stack[i-1].functname, ihs->Name, sizeof(stack[i-1].functname));
-					if(strlen(stack[i-1].functname)<sizeof(stack[i-1].functname)-8)
-					{
-						sprintf(strchr(stack[i-1].functname, 0), " +0x%x", offset);
-					}
-				}
-				else
-					strcpy(stack[i-1].functname, "<unknown>");
-				DWORD lineoffset=0;
-				if(SymGetLineFromAddr(myprocess, sf.AddrPC.Offset, &lineoffset, &ihl))
-				{
-					char *leaf;
-					stack[i-1].lineno=ihl.LineNumber;
-
-					leaf=strrchr(ihl.FileName, '\\');
-					if(!leaf) leaf=ihl.FileName-1;
-					COPY_STRING(stack[i-1].file, leaf+1, sizeof(stack[i-1].file));
-				}
-				else
-					strcpy(stack[i-1].file, "<unknown>");
-			}
-		}
-		SymCleanup(myprocess);
-		CloseHandle(myprocess);
+		doStackWalk();
 	}
 #endif
 #endif

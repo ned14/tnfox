@@ -371,7 +371,7 @@ private:
   QValueList<FXException> *nestedlist;
 #ifdef WIN32
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
-#define FXEXCEPTION_STACKBACKTRACEDEPTH 8
+#define FXEXCEPTION_STACKBACKTRACEDEPTH 16
 	struct
 	{
 		void *pc;
@@ -384,6 +384,7 @@ private:
 #endif
   int stacklevel;
 private:
+	FXDLLLOCAL void doStackWalk() throw();
 	void init(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
 public:
   /*!
