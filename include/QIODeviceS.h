@@ -77,7 +77,8 @@ public:
 public:
 	/*! Waits for more data to become available for reading on any one or
 	more of an array of QIODeviceS's specified by \em list. Precisely which
-	are those left in the zero terminated array \em signalled.
+	are those left in the array \em signalled if it's not NULL with empty
+	members being zero.
 	\warning Beware race conditions caused by waiting on i/o devices which
 	can be read asynchronously by other threads
 	\note This is a thread cancellation point
