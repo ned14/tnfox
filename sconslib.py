@@ -311,16 +311,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         if os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
             env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
             env['CPPPATH']+=[prefixpath+"src/sqlite"]
-            filelist=os.listdir(prefixpath+"src/sqlite/src")
-            filelist=filter(lambda src: src[-2:]==".c" and src[:3]!="os_", filelist)
-            if onWindows:
-                filelist.append("os_win.c")
-            else:
-                filelist.append("os_unix.c")
-            # Compile SQLite threadsafe with UTF16 support removed
-            sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlite/"+getBase(x), prefixpath+"src/sqlite/src/"+x,
-                CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)]) for x in filelist]
-            del filelist
+            sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlite/sqlite3", prefixpath+"src/sqlite/sqlite3.c",
+                 CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)])]
         else:
             print "SQLite not found in TnFOX sources, disabling support!\n"
             SQLModuleSources=filter(lambda obj: "TnFXSQLDB_sqlite" in obj, SQLModuleSources)
