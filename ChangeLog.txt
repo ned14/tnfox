@@ -9,6 +9,7 @@ enabled
 B Fixed daylight saving time problems in FXTime
 B Fixed win32 stack backtracing in FXException which hadn't been working
 reliably since we moved to MSVC7.1
+B TnFXSQLDB_sqlite3 was adding one to the month of any dates read in
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException
@@ -47,6 +48,7 @@ hostOSDescription()
 * Changed semantics of QIODeviceS::waitForData() as obvious usage was
 causing data corruption (the null termination on signalled)
 * Integrated sqlite v3.3.17
++ Added TnFXSQLDBTransaction
 
 
 v0.86 2nd April 2006

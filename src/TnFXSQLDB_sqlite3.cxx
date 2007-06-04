@@ -356,12 +356,14 @@ namespace TnFXSQLDB_sqlite3Impl
 							sscanf(t, "%u-%u-%u %u:%u:%u.%lf", &tmbuf.tm_year, &tmbuf.tm_mon, &tmbuf.tm_mday,
 								&tmbuf.tm_hour, &tmbuf.tm_min, &tmbuf.tm_sec, &fraction);
 							tmbuf.tm_year-=1900;
+							tmbuf.tm_mon-=1;
 						}
 						else if(isDate)
 						{
 							c->mytype=TnFXSQLDB::Date;
 							sscanf(t, "%u-%u-%u", &tmbuf.tm_year, &tmbuf.tm_mon, &tmbuf.tm_mday);
 							tmbuf.tm_year-=1900;
+							tmbuf.tm_mon-=1;
 						}
 						else
 						{
