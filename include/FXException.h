@@ -369,7 +369,6 @@ private:
   FXulong _threadId;
   mutable FXString *reporttxt;
   QValueList<FXException> *nestedlist;
-#ifdef WIN32
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 #define FXEXCEPTION_STACKBACKTRACEDEPTH 16
 	struct
@@ -380,7 +379,6 @@ private:
 		char file[64];
 		int lineno;
 	} stack[FXEXCEPTION_STACKBACKTRACEDEPTH];
-#endif
 #endif
   int stacklevel;
 private:

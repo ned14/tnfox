@@ -22,12 +22,14 @@
 #include <qptrlist.h>
 #include <qvaluelist.h>
 #include "FXException.h"
-#if defined(WIN32) && defined(_MSC_VER)
 #if !defined(FXEXCEPTION_DISABLESOURCEINFO)
+#if defined(WIN32) && defined(_MSC_VER)
 #define WIN32_LEAN_AND_MEAN
 #include "Windows.h"
 #include "Dbghelp.h"
 #include "psapi.h"
+#elif defined(__GNUC__)
+#include "execinfo.h"
 #endif
 #endif
 #include "QTrans.h"
@@ -272,9 +274,9 @@ void FXException::doStackWalk() throw()
 				strcpy(stack[i-1].file, "<unknown>");
 		}
 	}
-#endif
-#endif
 }
+#endif
+#endif
 
 void FXException::init(const char *_filename, int _lineno, const FXString &msg, FXuint __code, FXuint __flags)
 {
@@ -304,14 +306,30 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 #if defined(DEBUG) || defined(BUILDING_TCOMMON)
 	fxmessage("FXException id %d created, '%s' at line %d in %s thread %d\n", uniqueId, msg.text(), _lineno, _filename, (FXuint) _threadId);
 #endif
-#if defined(WIN32) && defined(_MSC_VER)
-	memset(stack, 0, sizeof(stack));
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
+	memset(stack, 0, sizeof(stack));
+#if defined(WIN32) && defined(_MSC_VER)
 	static QMutex symlock;
 	if(!(_flags & FXERRH_ISINFORMATIONAL))
 	{
 		QMtxHold lockh(symlock);
 		doStackWalk();
+	}
+#elif defined(__GNUC__)
+	{
+		void *backtr[FXEXCEPTION_STACKBACKTRACEDEPTH];
+		size_t size;
+		char **strings;
+		size=backtrace(backtr, FXEXCEPTION_STACKBACKTRACEDEPTH);
+		strings=backtrace_symbols(backtr, size);
+		for(size_t i2=0; i2<size; i2++)
+		{
+			if(strchr(strings[i2], '('))
+				sscanf(strings[i2], "%s(%s) [0x%p]", stack[i2].file, stack[i2].functname, &stack[i2].pc);
+			else
+				sscanf(strings[i2], "%s [0x%p]", stack[i2].file, &stack[i2].pc);
+		}
+		free(strings);
 	}
 #endif
 #endif
