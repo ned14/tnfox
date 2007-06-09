@@ -286,9 +286,15 @@ inline FXuint fxbitscan(FXuint x) throw()
 }
 inline FXuint fxbitscan(FXulong x) throw()
 {
-	FXuint m, *_x=(FXuint *) &x;
-	m=fxbitscan(_x[0]);
-	if(32==m) m=32+fxbitscan(_x[1]);
+	FXuint m;
+	union
+	{
+		FXulong l;
+		FXuint i[2];
+	} _x;
+	_x.l=x;
+	m=fxbitscan(_x.i[!FOX_BIGENDIAN]);
+	if(32==m) m=32+fxbitscan(_x.i[!!FOX_BIGENDIAN]);
 	return m;
 }
 /*! \ingroup fxassemblerops
@@ -328,9 +334,15 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 }
 inline FXuint fxbitscanrev(FXulong x) throw()
 {
-	FXuint m, *_x=(FXuint *) &x;
-	m=32+fxbitscanrev(_x[1]);
-	if(64==m) { m=fxbitscanrev(_x[0]); if(32==m) m=64; }
+	FXuint m;
+	union
+	{
+		FXulong l;
+		FXuint i[2];
+	} _x;
+	_x.l=x;
+	m=32+fxbitscanrev(_x.i[!!FOX_BIGENDIAN]);
+	if(64==m) { m=fxbitscanrev(_x.i[!FOX_BIGENDIAN]); if(32==m) m=64; }
 	return m;
 }
 
