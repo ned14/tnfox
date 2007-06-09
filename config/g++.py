@@ -127,13 +127,13 @@ if conf.CheckCHeader("pthread.h"):
     oldlibpath=conf.env['LIBPATH'][:]
     conf.env['CPPPATH'][0:0]=["/usr/include/nptl"]
     conf.env['LIBPATH'][0:0]=["/usr/"+libPathSpec(make64bit)+"/nptl"]
-    if conf.CheckLib("pthread", "pthread_setaffinity_np", "pthread.h"):
+    if conf.CheckLibWithHeader("pthread", "pthread.h", "C", "pthread_setaffinity_np(0,0,0);"):
         nothreads=False
         conf.env['CPPDEFINES']+=[("HAVE_NPTL",1)]
     else:
         conf.env['CPPPATH']=oldcpppath
         conf.env['LIBPATH']=oldlibpath
-        if conf.CheckLib("pthread", "pthread_create", "pthread.h") or conf.CheckLib("kse", "pthread_create", "pthread.h"):
+        if conf.CheckLibWithHeader("pthread", "pthread.h", "C", "pthread_create(0,0,0,0);") or conf.CheckLibWithHeader("kse", "pthread.h", "C", "pthread_create(0,0,0,0);"):
             nothreads=False
             print "Note that thread processor affinity functionality will not be present!"
 if nothreads:

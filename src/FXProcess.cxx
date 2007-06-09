@@ -1657,7 +1657,7 @@ FXString FXProcess::hostOS(FXString *myos, FXString *architecture)
 		buffer[len-1]=0;
 		fclose(ih);
 		desc=buffer;
-		desc+="/"+ARCHITECTURE;
+		desc+="/" ARCHITECTURE;
 	}
 	if(myos) *myos=desc.left(desc.find('/'));
 	if(architecture) *architecture=desc.mid(desc.find('/')+1);
@@ -1669,7 +1669,7 @@ FXString FXProcess::hostOS(FXString *myos, FXString *architecture)
 	size_t typelen=sizeof(type);
 	FXERRHOS(sysctl(command, 2, type, &typelen, NULL, 0));
 	FXString desc(type);
-	desc+="/"+ARCHITECTURE;
+	desc+="/" ARCHITECTURE;
 	if(myos) *myos=desc.left(desc.find('/'));
 	if(architecture) *architecture=desc.mid(desc.find('/')+1);
 	return desc;

@@ -49,6 +49,8 @@ hostOSDescription()
 causing data corruption (the null termination on signalled)
 * Integrated sqlite v3.3.17
 + Added TnFXSQLDBTransaction
+* Fixed a build problem on Unix with newer versions of scons
++ Added stack backtracing for GCC builds to FXException
 
 
 v0.86 2nd April 2006

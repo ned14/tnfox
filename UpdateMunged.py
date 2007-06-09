@@ -67,29 +67,32 @@ try:
 except os.error:
     lastmungedmtime=0
 if options.svnrevisionheader:
-    fh=file(options.svnrevisionheader, "wt")
-    try:
-        fh.write("#define SUBVERSION_REVISION ")
+    if "/home/ned" in os.path.abspath(myloc):
+        print "Skipping as on Niall's machine"
+    else:
+        fh=file(options.svnrevisionheader, "wt")
         try:
-            (childinh, childh)=os.popen4("svnversion")
-            line=childh.readline()
-            if line:
-                # We want the bit after any colon present
-                idx=line.find(':')
-                if idx!=-1:
-                    line=line[idx+1:]
-                idx=line.find('M')
-                if idx!=-1:
-                    line=line[:idx]+line[idx+1:]
-                fh.write(line)
-                print "\nThis is built from SVN revision",line
-            childinh.close()
-            childh.close()
-        except:
-            fh.write("-1\n")
-            print "\nCalling svnversion FAILED due to",sys.exc_info()
-    finally:
-        fh.close()
+            fh.write("#define SUBVERSION_REVISION ")
+            try:
+                (childinh, childh)=os.popen4("svnversion")
+                line=childh.readline()
+                if line:
+                    # We want the bit after any colon present
+                    idx=line.find(':')
+                    if idx!=-1:
+                        line=line[idx+1:]
+                    idx=line.find('M')
+                    if idx!=-1:
+                        line=line[:idx]+line[idx+1:]
+                    fh.write(line)
+                    print "\nThis is built from SVN revision",line
+                childinh.close()
+                childh.close()
+            except:
+                fh.write("-1\n")
+                print "\nCalling svnversion FAILED due to",sys.exc_info()
+        finally:
+            fh.close()
 
 filelistsrc=os.listdir(options.directory)
 filelist=[]
