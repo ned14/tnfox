@@ -64,15 +64,15 @@ struct FXDLLLOCAL QPipePrivate : public QMutex
 	FXACL acl;
 	FXint bufferLength;
 #ifdef USE_WINAPI
-	bool connected;
+	bool connected, inheritable;
 	int inprogress;			// =0 not in progress, =1 connecting =2 reading =3 just opened
 	HANDLE readh, writeh;
 	OVERLAPPED ol;
-	QPipePrivate(bool deepPipe) : acl(FXACL::Pipe), bufferLength(deepPipe ? WINDEEPPIPELEN : WINMAXATOMICLEN), readh(0), writeh(0), QMutex() { memset(&ol, 0, sizeof(ol)); }
+	QPipePrivate(bool deepPipe, bool _inheritable=false) : acl(FXACL::Pipe), bufferLength(deepPipe ? WINDEEPPIPELEN : WINMAXATOMICLEN), inheritable(_inheritable), readh(0), writeh(0), QMutex() { memset(&ol, 0, sizeof(ol)); }
 #endif
 #ifdef USE_POSIX
 	int readh, writeh;
-	QPipePrivate(bool deepPipe) : acl(FXACL::Pipe),
+	QPipePrivate(bool deepPipe, bool _inheritable=false) : acl(FXACL::Pipe),
 #if defined(__FreeBSD__) || defined(__APPLE__)
 		// PIPE_BUF lies on FreeBSD :(
 		bufferLength(deepPipe ? BIG_PIPE_SIZE : PIPE_SIZE),	// =PIPE_SIZE from sys/pipe.h, could even go to 64Kb (BIG_PIPE_SIZE)
@@ -105,6 +105,39 @@ void QPipe::int_hack_makeWriteNonblocking() const
 	{
 		::fcntl(p->writeh, F_SETFL, O_NONBLOCK);
 	}
+#endif
+}
+
+void QPipe::int_hack_makeHandlesInheritable() throw()
+{
+#ifdef USE_WINAPI
+	p->inheritable=true;
+#endif
+}
+
+void QPipe::int_getOSHandles(void **buf) const throw()
+{
+#ifdef USE_WINAPI
+	buf[0]=p->readh;
+	buf[1]=p->writeh;
+#endif
+#ifdef USE_POSIX
+	int *buff=(int *) buf;
+	buff[0]=p->readh;
+	buff[1]=p->writeh;
+#endif
+}
+
+void QPipe::int_setOSHandles(void **buf) throw()
+{
+#ifdef USE_WINAPI
+	p->readh=buf[0];
+	p->writeh=buf[1];
+#endif
+#ifdef USE_POSIX
+	int *buff=(int *) buf;
+	p->readh=buff[0];
+	p->writeh=buff[1];
 #endif
 }
 
@@ -183,6 +216,7 @@ bool QPipe::create(FXuint mode)
 		HANDLE ret;
 		SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
 		sa.lpSecurityDescriptor=p->acl.int_toWin32SecurityDescriptor();
+		sa.bInheritHandle=p->inheritable;
 		if(mode & IO_WriteOnly)
 		{
 			FXString writename(fullname+'w');

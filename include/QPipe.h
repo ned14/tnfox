@@ -115,6 +115,11 @@ class FXAPIR QPipe : public QIODeviceS
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 	friend class FXIPCChannel;
 	void FXDLLLOCAL int_hack_makeWriteNonblocking() const;
+	friend class QChildProcess;
+	friend struct QChildProcessPrivate;
+	void FXDLLLOCAL int_hack_makeHandlesInheritable() throw();
+	void FXDLLLOCAL int_getOSHandles(void **buf) const throw();
+	void FXDLLLOCAL int_setOSHandles(void **buf) throw();
 public:
 	QPipe();
 	/*! \param name Name you wish this pipe to refer to. If null, the pipe is set as anonymous
