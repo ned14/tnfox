@@ -1033,7 +1033,7 @@ FXlong fxgetticks(){
 
 #if (defined(__GNUC__) &&  __GNUC__>=3) || defined(__DMC__)
 // GNU symbol demangler
-const FXString &fxdemanglesymbol(const FXString &rawsymbol)
+const FXString &fxdemanglesymbol(const FXString &rawsymbol, bool errorIfNotFound)
 {
 	static QMutex lock;
 	static QDict<FXString> cache(13, true);
@@ -1044,7 +1044,15 @@ const FXString &fxdemanglesymbol(const FXString &rawsymbol)
 	FXRBOp dealloc=FXRBNew(ret);
 	int status=0;
 	char *demangled=::abi::__cxa_demangle(rawsymbol.text(), 0, 0, &status);
-	FXERRH(status==0 && demangled, "Failed to demangle symbol", 0, FXERRH_ISDEBUG);
+	if(status!=0 || !demangled)
+	{
+		if(errorIfNotFound)
+		{
+			FXERRG("Failed to demangle symbol", 0, FXERRH_ISDEBUG);
+		}
+		else
+			return rawsymbol;
+	}
 	FXRBOp demangledalloc=FXRBFunc(&::free, demangled);
 	ret->assign(demangled);
 	cache.insert(rawsymbol, ret);
