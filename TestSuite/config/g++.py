@@ -69,6 +69,7 @@ if not onDarwin:
     else: env['LINK']="libtool --mode=link g++"
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    #"-pg",                             # Profile
+                   "-rdynamic",                       # Keep function names for backtracing
                    ternary(make64bit, "-m64", "-m32")
                   ]
 

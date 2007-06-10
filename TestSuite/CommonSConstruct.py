@@ -20,12 +20,12 @@
 import os
 import sys
 dir,name=os.path.split(os.getcwd())
-if "windows" in dir:
+if "windows" in dir or "/media/Share" in dir:
     # Replace with Unix equiv
-    dir="/home/ned/"+dir[dir.find("Tn"):]
+    dir="/home/ned/"+dir[dir.find("Tornado"):]
 if "/Volumes/DATA" in dir:
     # Replace with MacOS X equiv
-    dir="/Users/ned/Documents/"+dir[dir.find("Tn"):]
+    dir="/Users/ned/Documents/"+dir[dir.find("Tornado"):]
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name

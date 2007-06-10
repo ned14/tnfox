@@ -74,6 +74,7 @@ env['CPPFLAGS']+=cppflags
 # Linkage
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    #"-pg",                             # Profile
+                   "-rdynamic",                       # Keep function names for backtracing
                    ternary(make64bit, "-m64", "-m32")
                   ]
 if architecture=="macosx-ppc":
