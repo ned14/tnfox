@@ -342,7 +342,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 					FXString functname(strings[i2]+start, idx-start);
 					FXint offset=functname.rfind("+0x");
 					FXString rawsymbol(functname.left(offset));
-					FXString symbol(fxdemanglesymbol(rawsymbol));
+					FXString symbol(rawsymbol.length() ? fxdemanglesymbol(rawsymbol, false) : rawsymbol);
 					symbol.append(functname.mid(offset));
 					int len=FXMIN(symbol.length(), sizeof(stack[i2].functname));
 					memcpy(stack[i2].functname, symbol.text(), len);
@@ -515,7 +515,7 @@ const FXString &FXException::report() const
 					if(!stack[i].pc) break;
 					{
 						FXString line(templ);
-						line.arg((FXulong) stack[i].pc, -(int)(2*sizeof(void *)), 16).arg(FXString(stack[i].module), -21).arg(FXString(stack[i].functname));
+						line.arg((FXuval) stack[i].pc, -(int)(2*sizeof(void *)), 16).arg(FXString(stack[i].module), -21).arg(FXString(stack[i].functname));
 						line.arg(stack[i].file, -25).arg(stack[i].lineno);
 						reporttxt->append(line);
 					}

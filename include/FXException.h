@@ -376,7 +376,7 @@ private:
 		void *pc;
 		char module[64];
 		char functname[256];
-		char file[64];
+		char file[96];
 		int lineno;
 	} stack[FXEXCEPTION_STACKBACKTRACEDEPTH];
 #endif
