@@ -1389,7 +1389,7 @@ void FXFont::create(){
 
       // Find pattern matching a font
       p=FcFontMatch(0,pattern,&result);
-      if(FcResultMatch==result){
+      if(p){
         // Get back the matched font properties
         FXFontDesc desc;
         pattern2FontDescXft(p, &desc);

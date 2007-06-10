@@ -1366,8 +1366,12 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 #ifndef WIN32
 	// Make font now FXApp is ready
 	{
-		FXString bestfont("helvetica,80,normal,normal");
-#ifndef __APPLE__		// helvetica is the best available on Apple's X11 implementation
+#ifdef HAVE_XFT_H
+		FXString bestfont("Sans,80");
+#else
+		FXString bestfont("helvetica,80");
+#endif
+#if defined(HAVE_XFT_H) || !defined(__APPLE__)		// Searching fonts crashes Apple's X11 implementation
 		FXFontDesc *fonts=0;
 		FXuint numfonts, f;
 		if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
