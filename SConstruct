@@ -57,33 +57,33 @@ Clean(targetname, objects)
 DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib, LINKFLAGS=linkflags)
 env.Precious(DLL)
 addBind(DLL)
-libs=env['LIBS']+[libtnfox]
+linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+ternary(onWindows, ".lib", libtnfoxsuffix))
 if SQLModule==2:
-    linkflags=env['LINKFLAGS'][:]
+    mylinkflags=linkflags[:]
     if onWindows:
         sqlmoduleobjs+=[versionobj]
         if architecture=="x86" or architecture=="x64":
-            linkflags+=[ternary(make64bit, "/BASE:0x7ff06300000", "/BASE:0x63000000")]
+            mylinkflags+=[ternary(make64bit, "/BASE:0x7ff06300000", "/BASE:0x63000000")]
     Clean(targetname, sqlmoduleobjs)
-    SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LIBS=libs, LINKFLAGS=linkflags)
+    SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LINKFLAGS=mylinkflags)
     env.Depends(SQLDLL, DLL)
     DLL=SQLDLL
     env.Precious(DLL)
     addBind(DLL)
-    libs.append(libtnfoxsql)
+    linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+ternary(onWindows, ".lib", libtnfoxsqlsuffix))
 if GraphingModule==2:
-    linkflags=env['LINKFLAGS'][:]
+    mylinkflags=linkflags[:]
     if onWindows:
         graphingmoduleobjs+=[versionobj]
         if architecture=="x86" or architecture=="x64":
-            linkflags+=[ternary(make64bit, "/BASE:0x7ff06310000", "/BASE:0x63100000")]
+            mylinkflags+=[ternary(make64bit, "/BASE:0x7ff06310000", "/BASE:0x63100000")]
     Clean(targetname, graphingmoduleobjs)
-    GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LIBS=libs, LINKFLAGS=linkflags)
+    GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LINKFLAGS=mylinkflags)
     env.Depends(GraphingDLL, DLL)
     DLL=GraphingDLL
     env.Precious(DLL)
     addBind(DLL)
-    libs.append(libtnfoxgraphing)
+    linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+ternary(onWindows, ".lib", libtnfoxgraphingsuffix))
 
 if onWindows:
     env.MSVSProject("windows/TnFOXProject"+env['MSVSPROJECTSUFFIX'],
