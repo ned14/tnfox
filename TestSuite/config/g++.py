@@ -115,13 +115,14 @@ def CheckGCCHasVisibility(cc):
     return result
 conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
 
-if conf.CheckGCCHasVisibility():
-    env['CPPFLAGS']+=["-fvisibility=hidden",        # All symbols are hidden unless marked otherwise
-                      "-fvisibility-inlines-hidden" # All inlines are always hidden
-                     ]
-    env['CPPDEFINES']+=["GCC_HASCLASSVISIBILITY"]
-else:
-    print "Disabling -fvisibility support"
+# Disabled to allow GCC backtrace support
+#if conf.CheckGCCHasVisibility():
+#    env['CPPFLAGS']+=["-fvisibility=hidden",        # All symbols are hidden unless marked otherwise
+#                      "-fvisibility-inlines-hidden" # All inlines are always hidden
+#                     ]
+#    env['CPPDEFINES']+=["GCC_HASCLASSVISIBILITY"]
+#else:
+#    print "Disabling -fvisibility support"
 
 env=conf.Finish()
 

@@ -30,7 +30,7 @@ execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
 if globals().has_key('DoConfTests'):
-    doConfTests(env, dir+"/../")
+    doConfTests(env, os.path.normpath(dir+"/../"))
 
 env['CPPPATH']+=[ ".",
                  "../../include",
@@ -49,13 +49,10 @@ else:
     except:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
-if onWindows or onDarwin:
-    suffix=ternary(GenStaticLib==2, ".a", ternary(onWindows, env['LIBSUFFIX'], env['SHLIBSUFFIX']))
-    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+suffix)]
-    if SQLModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+suffix)]
-    if GraphingModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+suffix)]
-else: # Can't put in g++.py as dir isn't defined there
-    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
+suffix=ternary(GenStaticLib==2, ".a", ternary(onWindows, env['LIBSUFFIX'], ternary(onWindows or onDarwin, env['SHLIBSUFFIX'], ".la")))
+env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+suffix)]
+if SQLModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+suffix)]
+if GraphingModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+suffix)]
 try:
     if wantPython:
         if PYTHON_LIB:
