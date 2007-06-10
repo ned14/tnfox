@@ -10,6 +10,8 @@ B Fixed daylight saving time problems in FXTime
 B Fixed win32 stack backtracing in FXException which hadn't been working
 reliably since we moved to MSVC7.1
 B TnFXSQLDB_sqlite3 was adding one to the month of any dates read in
+B FXFont wasn't degrading gracefully to alternative fonts if a font wasn't
+available
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException

@@ -316,6 +316,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 		doStackWalk();
 	}
 #elif defined(__GNUC__)
+	if(!(_flags & FXERRH_ISINFORMATIONAL))
 	{
 		void *backtr[FXEXCEPTION_STACKBACKTRACEDEPTH];
 		size_t size;
@@ -323,11 +324,42 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 		size=backtrace(backtr, FXEXCEPTION_STACKBACKTRACEDEPTH);
 		strings=backtrace_symbols(backtr, size);
 		for(size_t i2=0; i2<size; i2++)
-		{
-			if(strchr(strings[i2], '('))
-				sscanf(strings[i2], "%s(%s) [0x%p]", stack[i2].file, stack[i2].functname, &stack[i2].pc);
-			else
-				sscanf(strings[i2], "%s [0x%p]", stack[i2].file, &stack[i2].pc);
+		{	// Format can be <file path>(<mangled symbol>+0x<offset>) [<pc>]
+			// or can be <file path> [<pc>]
+			int start=0, end=strlen(strings[i2]), which=0;
+			for(int idx=0; idx<end; idx++)
+			{
+				if(0==which && (' '==strings[i2][idx] || '('==strings[i2][idx]))
+				{
+					int len=FXMIN(idx-start, sizeof(stack[i2].file));
+					memcpy(stack[i2].file, strings[i2]+start, len);
+					stack[i2].file[len]=0;
+					which=(' '==strings[i2][idx]) ? 2 : 1;
+					start=idx+1;
+				}
+				else if(1==which && ')'==strings[i2][idx])
+				{
+					FXString functname(strings[i2]+start, idx-start);
+					FXint offset=functname.rfind("+0x");
+					FXString rawsymbol(functname.left(offset));
+					FXString symbol(fxdemanglesymbol(rawsymbol));
+					symbol.append(functname.mid(offset));
+					int len=FXMIN(symbol.length(), sizeof(stack[i2].functname));
+					memcpy(stack[i2].functname, symbol.text(), len);
+					stack[i2].functname[len]=0;
+					which=2;
+				}
+				else if(2==which && '['==strings[i2][idx])
+				{
+					start=idx+1;
+					which=3;
+				}
+				else if(3==which && ']'==strings[i2][idx])
+				{
+					FXString v(strings[i2]+start+2, idx-start-2);
+					stack[i2].pc=(void *)(FXuval)v.toULong(0, 16);
+				}
+			}
 		}
 		free(strings);
 	}
@@ -359,11 +391,9 @@ FXException::FXException(const FXException &o)
 	{
 		FXERRHM(nestedlist=new QValueList<FXException>(*o.nestedlist));
 	}
-#ifdef WIN32
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 	for(int n=0; n<FXEXCEPTION_STACKBACKTRACEDEPTH; n++)
 		stack[n]=o.stack[n];
-#endif
 #endif
 	FXException_TIB *tib=0;
 	if(CheckTIB(&tib))
@@ -398,11 +428,9 @@ FXException &FXException::operator=(const FXException &o)
 	{
 		FXERRHM(nestedlist=new QValueList<FXException>(*o.nestedlist));
 	}
-#ifdef WIN32
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 	for(int n=0; n<FXEXCEPTION_STACKBACKTRACEDEPTH; n++)
 		stack[n]=o.stack[n];
-#endif
 #endif
 	stacklevel=o.stacklevel;
 	if(stacklevel>=0 && tib->stack.at(stacklevel)->uniqueId==uniqueId)
@@ -476,7 +504,6 @@ const FXString &FXException::report() const
 				else
 					reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4 thread %5)").arg(_message).arg(_code,0,16).arg(srcfilename).arg(srclineno).arg(_threadId));
 			}
-#if defined(WIN32) && defined(_MSC_VER)
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 			if(!(_flags & FXERRH_ISINFORMATIONAL))
 			{
@@ -498,7 +525,6 @@ const FXString &FXException::report() const
 				else
 					reporttxt->append(QTrans::tr("FXException", "<backtrace ends>"));
 			}
-#endif
 #endif
 			if(nestedLen())
 			{
