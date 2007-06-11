@@ -140,6 +140,7 @@ static const char *decodeWinsockErr(int code)
 #endif
 #ifdef USE_POSIX
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
@@ -652,6 +653,9 @@ bool QBlkSocket::create(FXuint mode)
 		FXERRHWIN(INVALID_HANDLE_VALUE!=(p->olr.hEvent=CreateEvent(NULL, TRUE, FALSE, NULL)));
 	}
 #endif
+#ifdef USE_POSIX
+	FXERRHOS(::fcntl(p->handle, F_SETFD, ::fcntl(p->handle, F_GETFD, 0)|FD_CLOEXEC));
+#endif
 	setupSocket();
 	if(Stream==p->type)
 	{
@@ -695,6 +699,9 @@ bool QBlkSocket::open(FXuint mode)
 		{
 			FXERRHWIN(INVALID_HANDLE_VALUE!=(p->olw.hEvent=CreateEvent(NULL, TRUE, FALSE, NULL)));
 		}
+#endif
+#ifdef USE_POSIX
+		FXERRHOS(::fcntl(p->handle, F_SETFD, ::fcntl(p->handle, F_GETFD, 0)|FD_CLOEXEC));
 #endif
 		setupSocket();
 		if(Stream==p->type)

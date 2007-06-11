@@ -56,6 +56,8 @@ causing data corruption (the null termination on signalled)
 * Fixed a build problem on Unix with newer versions of scons
 + Added stack backtracing for GCC builds to FXException
 + Added errorIfNotFound parameter to fxdemanglesymbol()
+* Made all POSIX file descriptors allocated by TnFOX FD_CLOEXEC so child
+processes won't inherit them. This duplicates the Win32 behaviour.
 
 
 v0.86 2nd April 2006

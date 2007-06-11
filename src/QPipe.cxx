@@ -259,6 +259,7 @@ bool QPipe::create(FXuint mode)
 			if(-1==mkfifo(readname.text(), S_IREAD|S_IWRITE)) { if(EEXIST==errno) { if(anonymous) continue; } else FXERRHOSFN(-1, readname); }
 			p->acl.writeTo(readname);
 			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
+			FXERRHOS(::fcntl(p->readh, F_SETFD, ::fcntl(p->readh, F_GETFD, 0)|FD_CLOEXEC));
 		}
 		if(mode & IO_WriteOnly)
 		{
@@ -327,6 +328,7 @@ bool QPipe::open(FXuint mode)
 			if(!FXFile::exists(readname)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
 			p->acl=FXACL(readname, FXACL::Pipe); doneACL=true;
 			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
+			FXERRHOS(::fcntl(p->readh, F_SETFD, ::fcntl(p->readh, F_GETFD, 0)|FD_CLOEXEC));
 		}
 		if(mode & IO_WriteOnly)
 		{
@@ -648,16 +650,19 @@ FXuval QPipe::writeBlock(const char *data, FXuval maxlen)
 	if(!isWriteable()) FXERRGIO(QTrans::tr("QPipe", "Not open for writing"));
 	if(isOpen())
 	{
-		FXuval written;
+		FXuval written=0;
 #ifdef USE_WINAPI
-		DWORD bwritten=0;
-		h.unlock();
-		BOOL ret=WriteFile(p->writeh, data, (DWORD) maxlen, &bwritten, NULL);
-		DWORD getlasterror=GetLastError();
-		QThread::current()->checkForTerminate();
-		h.relock();
-		FXERRHWIN2(ret, getlasterror);
-		written=(FXuval) bwritten;
+		if(maxlen)
+		{
+			DWORD bwritten=0;
+			h.unlock();
+			BOOL ret=WriteFile(p->writeh, data, (DWORD) maxlen, &bwritten, NULL);
+			DWORD getlasterror=GetLastError();
+			QThread::current()->checkForTerminate();
+			h.relock();
+			FXERRHWIN2(ret, getlasterror);
+			written=(FXuval) bwritten;
+		}
 #endif
 #ifdef USE_POSIX
 		if(!p->writeh)
@@ -667,14 +672,18 @@ FXuval QPipe::writeBlock(const char *data, FXuval maxlen)
 			p->writeh=::open(writename.text(), O_WRONLY, 0);
 			h.relock();
 			FXERRHOSFN(p->writeh, writename);
+			FXERRHOS(::fcntl(p->writeh, F_SETFD, ::fcntl(p->writeh, F_GETFD, 0)|FD_CLOEXEC));
 		}
-		QIODeviceS_SignalHandler::lockWrite();
-		h.unlock();
-		written=::write(p->writeh, data, maxlen);
-		h.relock();
-		FXERRHIO(written);
-		if(QIODeviceS_SignalHandler::unlockWrite())		// Nasty this
-			FXERRGCONLOST("Broken pipe", 0);
+		if(maxlen)
+		{
+			QIODeviceS_SignalHandler::lockWrite();
+			h.unlock();
+			written=::write(p->writeh, data, maxlen);
+			h.relock();
+			FXERRHIO(written);
+			if(QIODeviceS_SignalHandler::unlockWrite())		// Nasty this
+				FXERRGCONLOST("Broken pipe", 0);
+		}
 #endif
 		if(isRaw()) flush();
 		return written;

@@ -628,6 +628,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 #else
 			O_RDONLY));
 #endif
+		FXERRHOS(::fcntl(h, F_SETFD, ::fcntl(h, F_GETFD, 0)|FD_CLOEXEC));
 		EV_SET(&p->h, h, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_WRITE, 0, 0);
 		FXERRHOS(kevent(fxfsmon->kqueueh, &p->h, 1, NULL, 0, NULL));
 		w->pathByHandle.insert(h, p);
