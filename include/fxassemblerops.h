@@ -31,12 +31,12 @@
 There are little operations which one needs from time to time which can be
 relatively expensive or impossible to do in C. For these situations, TnFOX provides
 a series of small inline functions capable of providing them written in assembler
-on x86 (i686 or later only) and x64 but with fallback generic implementations in C.
+on x86 (i486 or later only) and x64 but with fallback generic implementations in C.
 
 Using these functions can \em seriously improve the speed of your code.
 */
 
-#if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=600) || defined(_M_AMD64))
+#if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=400) || defined(_M_AMD64))
 // Get the intrinsic definitions
 #include "xmmintrin.h"	// For mm_prefetch
 #ifndef BitScanForward	// Try to avoid pulling in WinNT.h
@@ -154,7 +154,7 @@ inline void fxendianswap8(void *_p)
 	FXulong *p=(FXulong *) _p;
 	*p=_byteswap_uint64(*p);		// Invokes bswap x86 instruction
 }
-#elif defined(__GNUC__) && (defined(__i686__) || defined(__x86_64__))
+#elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 namespace FX {
 
 inline void fxprefetchmemT(const void *ptr) throw()
@@ -181,9 +181,14 @@ inline FXuint fxbitscan(FXulong x) throw()
 			: "=r" (m) 
 			: "g"  (x));
 #else
-	FXuint *_x=(FXuint *) &x;
-	m=fxbitscan(_x[0]);
-	if(32==m) m=32+fxbitscan(_x[1]);
+	union
+	{
+		FXulong l;
+		FXuint i[2];
+	} _x;
+	_x.l=x;
+	m=fxbitscan(_x.i[!FOX_BIGENDIAN]);
+	if(32==m) m=32+fxbitscan(_x.i[!!FOX_BIGENDIAN]);
 #endif
 	return m;
 }
@@ -203,9 +208,14 @@ inline FXuint fxbitscanrev(FXulong x) throw()
 			: "=r" (m) 
 			: "g"  (x));
 #else
-	FXuint *_x=(FXuint *) &x;
-	m=32+fxbitscanrev(_x[1]);
-	if(64==m) { m=fxbitscanrev(_x[0]); if(32==m) m=64; }
+	union
+	{
+		FXulong l;
+		FXuint i[2];
+	} _x;
+	_x.l=x;
+	m=32+fxbitscanrev(_x.i[!!FOX_BIGENDIAN]);
+	if(64==m) { m=fxbitscanrev(_x.i[!FOX_BIGENDIAN]); if(32==m) m=64; }
 #endif
 	return m;
 }
