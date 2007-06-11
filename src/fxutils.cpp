@@ -72,6 +72,14 @@ const FXuchar fxversion[3]={FOX_MAJOR,FOX_MINOR,FOX_LEVEL};
 // TnFOX version number
 const FXuchar tnfoxversion[2]={TNFOX_MAJOR, TNFOX_MINOR};
 
+// TnFOX endian indicator
+#if FOX_BIGENDIAN
+extern "C" FXAPI void tnfoxbigendian();
+void tnfoxbigendian() { }
+#else
+extern "C" FXAPI void tnfoxlittleendian();
+void tnfoxlittleendian() { }
+#endif
 
 // Thread-safe, linear congruential random number generator from Knuth & Lewis.
 FXuint fxrandom(FXuint& seed){

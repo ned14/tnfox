@@ -31,6 +31,13 @@ if architecture=="x86":
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
     cppflags+=["-m64", "-mfpmath=sse", "-msse2"] #, "-march="+cppflagsopts[architecture_version] ]
+elif architecture=="ppc":
+    cppflagsopts=["power", "power2", "power3", "power4", "power5", "powerpc", "powerpc64"]
+    cppflags+=["-mcpu="+cppflagsopts[architecture_version-1] ]
+elif architecture=="macosx-ppc":
+    cppflags+=["-arch", "ppc"]
+elif architecture=="macosx-i386":
+    cppflags+=["-arch", "i386"]
 
 cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
@@ -72,6 +79,10 @@ env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when
                    "-rdynamic",                       # Keep function names for backtracing
                    ternary(make64bit, "-m64", "-m32")
                   ]
+if architecture=="macosx-ppc":
+    env['LINKFLAGS']+=["-arch", "ppc"]
+elif architecture=="macosx-i386":
+    env['LINKFLAGS']+=["-arch", "i386"]
 
 if debugmode:
     env['LINKFLAGS']+=[ # "-static"        # Don't use shared objects

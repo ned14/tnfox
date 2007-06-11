@@ -193,9 +193,22 @@ def CheckCompilerPtr64(cc):
 
 def CheckCompilerIsBigEndian(cc):
     cc.Message("Is the compiler configured for big endian architecture ...")
-    result=cc.TryRun('int main(void)\n{\nint foo=1; return ((char *) &foo)[0]==1;\n}\n', '.c')
+    result=cc.TryRun('#include <stdio.h>\nint main(void)\n{\nint foo=1;\nint retcode=((char *) &foo)[0]==1;\nprintf("%d,%d=%d\\n", foo, ((char *) &foo)[0], retcode);\nreturn retcode;\n}\n', '.c')
     cc.Result(result[0])
+    #print "Result=",result[0]
     return result[0]
+
+def CheckTnFOXIsBigEndian(cc):
+    cc.Message("Is the TnFOX library built for big endian architecture ...")
+    result=cc.TryLink('extern void tnfoxbigendian(void);\nint main(void)\n{\ntnfoxbigendian();\nreturn 0;\n}\n', '.c')
+    cc.Result(result)
+    return result
+
+def CheckTnFOXIsLittleEndian(cc):
+    cc.Message("Is the TnFOX library built for little endian architecture ...")
+    result=cc.TryLink('extern void tnfoxlittleendian(void);\nint main(void)\n{\ntnfoxlittleendian();\nreturn 0;\n}\n', '.c')
+    cc.Result(result)
+    return result
 
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
     prefixpath=os.path.abspath(prefixpath)+"/"

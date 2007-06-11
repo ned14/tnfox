@@ -65,7 +65,17 @@ try:
             env['LIBS']+=[ "util" ]
             env['LINKFLAGS']+=[ os.path.abspath(dir+"/../lib/"+architectureSpec()+"/TnFOX.so") ]
 except: pass
+
+# Some sanity checks
 assert os.path.exists("../../include/fxdefs.h")
+conf=Configure(env, { "CheckTnFOXIsBigEndian" : CheckTnFOXIsBigEndian, "CheckTnFOXIsLittleEndian" : CheckTnFOXIsLittleEndian } )
+foxbigendiandef=filter(lambda defn: defn[0]=="FOX_BIGENDIAN", env['CPPDEFINES'])[0]
+if not ternary(foxbigendiandef[1], conf.CheckTnFOXIsBigEndian, conf.CheckTnFOXIsLittleEndian)():
+    # Hmm our FOX_BIGENDIAN test is wrong! This happens on coLinux due to a bug in cofs not running executables properly
+    print "WARNING: FOX_BIGENDIAN definition does not match that of TnFOX library! Fixing ..."
+    env['CPPDEFINES'].remove(foxbigendiandef)
+    env['CPPDEFINES'].append(("FOX_BIGENDIAN", 1-foxbigendiandef[1]))
+env=conf.Finish()
 
 objects=[env.StaticObject(builddir+"/main", "main.cpp")] #+ [env.StaticObject(builddir+"/gcLink", "../gcLink.cc")]
 Clean(targetname, objects)
