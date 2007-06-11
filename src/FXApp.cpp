@@ -1375,7 +1375,7 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 		FXFontDesc *fonts=0;
 		FXuint numfonts, f;
 		if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
-							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SWISS|FONTHINT_SCALABLE))
+							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, /*FONTHINT_SWISS|*/FONTHINT_SCALABLE))
 		{
 			int bestscore=32;
 			for(f=0; f<numfonts; f++)
@@ -1390,12 +1390,12 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 						bestscore=0;
 						break;
 					}
-#if 0
-					else if(bestscore>1 && !comparecase(face, "nimbus sans l", 13))
-					{	// Better quality at low sizes
-						bestfont="nimbus sans l,80,normal,normal";
+					else if(bestscore>1 && !comparecase(face, "dejavu sans condensed", 21))
+					{	// Not bad
+						bestfont="dejavu sans condensed,80,normal,normal";
 						bestscore=1;
 					}
+#if 0
 					else if(bestscore>2 && !comparecase(face, "arial", 5))
 					{	// MS font is better quality and more complete than luxi sans
 						bestfont="arial,80,normal,normal";
