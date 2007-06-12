@@ -99,7 +99,7 @@ if onWindows:
                 misc=["../"+x for x in ["ChangeLog.txt", "License.txt", "License_Addendum.txt",
                       "License_Addendum2.txt", "Readme.txt", "ReadmePython.txt",
                       "TnFOXTrans.txt", "Todo.txt"]],
-                buildtarget=DLL,
+                buildtarget=DLL[0],
                 variant=["Release","Debug"][debugmode])
     env.Alias("msvcproj", "windows/TnFOXProject"+env['MSVSPROJECTSUFFIX'])
 env.Alias("tnfox", DLL)
