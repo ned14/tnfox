@@ -585,7 +585,6 @@ private:
   FXint            appArgc;             // Argument count
   const FXchar   **appArgv;             // Argument vector
   FXbool           initialized;         // Has been initialized
-  FXbool           automatedTest;       // Is an automated test
   FXAppDestructUpcall *destructUpcalls; // Destruction upcalls
 
 private:
@@ -739,9 +738,6 @@ public:
 
   /// Is application initialized
   FXbool isInitialized() const { return initialized; }
-
-  /// Is application an automated test?
-  FXbool isAutomatedTest() const { return automatedTest; }
 
   /// Get argument count
   FXint getArgc() const { return appArgc; }

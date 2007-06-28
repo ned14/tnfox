@@ -3,7 +3,7 @@
 *                         P r o c e s s   S u p p o r t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -644,6 +644,7 @@ struct FXDLLLOCAL FXProcessPrivate : public QMutex
 		int argc;
 		char **argv;
 	} argscopy;
+	bool automatedTest;
     struct Overrides_t
     {
         FXfloat memory;
@@ -655,7 +656,7 @@ struct FXDLLLOCAL FXProcessPrivate : public QMutex
 	FXProcess::UserHandedness handedness;
 	FXuint screenScale;
 	FXint maxScreenWidth, maxScreenHeight;
-	FXProcessPrivate() : threadpool(0), handedness(FXProcess::UNKNOWN_HANDED),
+	FXProcessPrivate() : automatedTest(false), threadpool(0), handedness(FXProcess::UNKNOWN_HANDED),
 		screenScale(100), maxScreenWidth(0x7fffffff), maxScreenHeight(0x7fffffff) { }
 };
 
@@ -836,6 +837,10 @@ void FXProcess::init(int &argc, char *argv[])
 						sstdio << temp.text();
 					}
 				}
+			}
+			else if(0==strcmp(argv[argi], "-automatedtest"))
+			{
+				p->automatedTest=true;
 			}
 			else if(0==strncmp(argv[argi], "-fxhanded=", 10))
 			{
@@ -1050,6 +1055,9 @@ bool FXProcess::runPendingStaticInits(int &argc, char *argv[], FXStream &txtout)
 		{
 			if(!(*it)->done)
 			{
+#ifdef DEBUG
+				fxmessage("Constructing static init %s\n", Generic::typeInfoBase(typeid(*it.current())).name().text());
+#endif
 				if((*it)->create(argc, argv, txtout)) quitNow=true;
 				(*it)->done=true;
 			}
@@ -1062,6 +1070,11 @@ void FXProcess::exit(FXint code)
 {
 	instance()->destroy();
 	::exit(code);
+}
+
+bool FXProcess::isAutomatedTest() throw()
+{
+	return instance()->p->automatedTest;
 }
 
 FXProcess *FXProcess::instance()

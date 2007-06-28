@@ -147,6 +147,8 @@ public:
 	static void exit(FXint code=0);
 	//! Runs any pending static inits. Only required if you implement your own shared library loading.
 	bool runPendingStaticInits(int &argc, char *argv[], FXStream &txtout);
+	//! Is application an automated test?
+	static bool isAutomatedTest() throw();
 
 	//! Returns a pointer to the TProcess for this process
 	static FXProcess *instance();
