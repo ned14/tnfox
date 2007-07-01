@@ -47,7 +47,7 @@ namespace FX {
 
 struct QChildProcessPrivate : public QMutex
 {
-	FXString command, arguments;
+	FXString command, arguments, workingDir;
 	QChildProcess::ReadChannel readChannel;
 	FXuchar connectionBroken : 2;
 	QBuffer outlog, errlog;
@@ -89,11 +89,11 @@ void *QChildProcess::int_getOSHandle() const
 {
 	if(isOpen())
 	{
-		if((QChildProcess::StdOut & p->readChannel) && p->outlog.size())
+		if((QChildProcess::StdOut & p->readChannel) && ((p->connectionBroken & 1) || p->outlog.size()))
 		{	// Return something which is always signalled
 			return (void *)(FXuval) p->alwayssignalled;
 		}
-		if((QChildProcess::StdErr & p->readChannel) && p->errlog.size())
+		if((QChildProcess::StdErr & p->readChannel) && ((p->connectionBroken & 2) || p->errlog.size()))
 		{	// Return something which is always signalled
 			return (void *)(FXuval) p->alwayssignalled;
 		}
@@ -140,7 +140,7 @@ void QChildProcess::setCommand(const FXString &command)
 	p->command=command;
 }
 
-const FXString &QChildProcess::arguments() const
+FXString QChildProcess::arguments() const
 {
 	QMtxHold h(p);
 	return p->arguments;
@@ -150,6 +150,18 @@ void QChildProcess::setArguments(const FXString &args)
 {
 	QMtxHold h(p);
 	p->arguments=args;
+}
+
+FXString QChildProcess::workingDir() const
+{
+	QMtxHold h(p);
+	return p->workingDir;
+}
+
+void QChildProcess::setWorkingDir(const FXString &dir)
+{
+	QMtxHold h(p);
+	p->workingDir=dir;
 }
 
 QChildProcess::ReadChannel QChildProcess::readChannel() const throw()
@@ -310,7 +322,7 @@ bool QChildProcess::open(FXuint mode)
 		si.hStdOutput=p->childinouth[1];
 		si.hStdError=p->childerrh[1];
 		FXERRHWINFN(CreateProcess(NULL, (LPTSTR) FXUnicodify<>(cmd).buffer(), NULL, NULL, TRUE,
-			CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi), p->command);
+			0, NULL, p->workingDir.empty() ? NULL : FXUnicodify<>(p->workingDir, true).buffer(), &si, &pi), p->command);
 		p->childh=pi.hProcess;
 		FXERRHWIN(CloseHandle(pi.hThread));
 		FXERRHWIN(p->alwayssignalled=CreateEvent(NULL, TRUE, TRUE, NULL));
@@ -348,6 +360,7 @@ bool QChildProcess::open(FXuint mode)
 			//if(ret>=0) ret=::close(p->childinouth[1]);
 			//if(ret>=0) ret=::close(p->childerrh[0]);
 			//if(ret>=0) ret=::close(p->childerrh[1]);
+			if(ret>=0 && !p->workingDir.empty()) ret=chdir(p->workingDir.text());
 			if(ret>=0) ret=execvp(p->command.text(), (char *const *) args_.data());
 			if(ret<0)
 				::_exit(-666);
