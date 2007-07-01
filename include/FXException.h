@@ -171,7 +171,7 @@ rich exception classes on any toolkit for C++. Features include:
 \li Custom error message and error code
 \li Automatic retries of guarded code
 \li Source code file name and line number embedding
-\li Full stack backtrace for MSVC
+\li Full stack backtrace for MSVC and GCC
 \li Thread safe
 \li Serialisable so it can be sent by IPC
 \li Support for nested exceptions. See section below about this
@@ -200,8 +200,22 @@ You should also replace <tt>throw</tt> with FXERRH_THROW() though this is usuall
 use any of the FXERRH or FXERRG macros.
 \sa FXERRHM(), FXERRHPTR(), FXERRGNF()
 
+<h3>Extending exception types</h3>
+You can subclass FXException to create your own specialised exception types - indeed, Tn does this as
+do applications I have written which use TnFOX. As of v0.87, FXException is now a destructively copied
+class rather than the normal exception class it previously was. This was done for two reasons:
+<ol>
+<li>FXException grew substantially in size as of v0.87, such that when being thrown up a call stack
+its large size made copy construction slow, and thus throwing exceptions slow.
+<li>There is a most unfortunate bug in MSVC whereby the compiler function stack size calculation
+routine misunderstands exception objects. It adds up the size of <i>every exception potentially throwable</i> in
+a function, so if you might FXERRHM()'d say five objects in your function, MSVC adds five times the size
+of the exception class to the total used. When your exception class is about 16Kb long, you exhaust
+stack space very, very quickly indeed!
+</ol>
+
 <h3>Source munging</h3>
-FXException has an accompanying source file munging script written in Python called CppMunge.py.
+FXException has an accompanying source file munging script written in Python called \c CppMunge.py.
 This useful tool can automatically extract error code macros as specified in your C++ sources
 and assign them unique constants into a header file (by default called ErrCodes.h) that are guaranteed
 to be unique to each class name. This greatly simplifies error handling across entire projects,
@@ -355,81 +369,79 @@ However this does not solve the problem of knowing whether p1 was actually const
 or if p1 points at random garbage. Furthermore function try blocks don't actually behave
 like normal try blocks, they work subtly differently (more like a filter than a handler).
 */
-class FXException;
+struct FXExceptionPrivate;
 template<class type> class QValueList;
 class FXEXCEPTIONAPI(FXAPI) FXException
 {
+  FXExceptionPrivate *p;
 private:
-  int uniqueId;		// zero if exception invalid
-  FXString _message;
-  FXuint _code;
-  FXuint _flags;
-  const char *srcfilename;
-  int srclineno;
-  FXulong _threadId;
-  mutable FXString *reporttxt;
-  QValueList<FXException> *nestedlist;
-#ifndef FXEXCEPTION_DISABLESOURCEINFO
-#define FXEXCEPTION_STACKBACKTRACEDEPTH 16
-	struct
-	{
-		void *pc;
-		char module[64];
-		char functname[256];
-		char file[96];
-		int lineno;
-	} stack[FXEXCEPTION_STACKBACKTRACEDEPTH];
-#endif
-  int stacklevel;
-private:
-	FXDLLLOCAL void doStackWalk() throw();
-	void init(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
+  FXDLLLOCAL void doStackWalk() throw();
+  void init(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
 public:
   /*!
   Constructs FXException with the given parameters.
 
   You should always use FXERRMAKE() or a derivative of it instead of this directly
   */
-  FXException(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags) : reporttxt(0), nestedlist(0)
+  FXException(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags) : p(0)
   { init(_filename, _lineno, _msg, _code, _flags); }
   /*! \overload 
   */
-  FXException() : uniqueId(0), reporttxt(0), nestedlist(0) { }
+  FXException() : p(0) { }
   //! \deprecated For backward code compatibility only
-  FXDEPRECATEDEXT FXException(const FXchar *msg) : reporttxt(0), nestedlist(0) { init(0, 0, msg, 0, 0); }
-  FXException(const FXException &o);
-  FXException &operator=(const FXException &o);
+  FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init(0, 0, msg, 0, 0); }
+#ifndef HAVE_MOVECONSTRUCTORS
+#ifdef HAVE_CONSTTEMPORARIES
+  FXException(const FXException &other) : p(other.p)
+  {
+    FXException &o=const_cast<FXException &>(other);
+#else
+  FXException(FXException &o) : p(o.p)
+  {
+#endif
+#else
+private:
+  FXException(const FXException &);		// disable copy constructor
+public:
+  FXException(FXException &&o) : p(o.p)
+  {
+#endif
+    o.p=0;
+  }
+  FXException &operator=(FXException &o);
+  //! Returns a true copy of this exception object
+  FXException copy() const;
   //! Returns if this exception object is valid or not
-  bool isValid() const throw() { return uniqueId!=0; }
+  bool isValid() const throw();
   //! Returns true if this exception is fatal
-  bool isFatal() const throw() { return _flags & FXERRH_ISFATAL; }
+  bool isFatal() const throw();
   //! Sets whether this exception is fatal or not
   void setFatal(bool _fatal);
   //! Returns in which source file the exception happened
-  void sourceInfo(const char **FXRESTRICT file, int *FXRESTRICT lineno) const throw() { if(file) *file=srcfilename; if(lineno) *lineno=srclineno; }
+  void sourceInfo(const char **FXRESTRICT file, int *FXRESTRICT lineno) const throw();
   //! Returns the message this exception represents
-  const FXString &message() const throw() { return _message; }
+  const FXString &message() const throw();
   //! Sets the message to be reported by this exception
   void setMessage(const FXString &msg);
   //! Returns the code of the exception
-  FXuint code() const throw() { return _code; }
+  FXuint code() const throw();
   //! Returns the flags of the exception
-  FXuint flags() const throw() { return _flags; }
+  FXuint flags() const throw();
   //! Returns the id of the thread in which the exception was thrown
-  FXulong threadId() const throw() { return _threadId; }
+  FXulong threadId() const throw();
   /*!
   Returns a string fully describing the exception, including its cause, location (file and
   line number) and a stack backtrace if supported or possible
   */
   const FXString &report() const;
   //! \deprecated For backward code compatibility only
-  FXDEPRECATEDEXT const FXchar *what() const { return _message.text(); }
+  FXDEPRECATEDEXT const FXchar *what() const { return message().text(); }
   //! Returns true if this exception is the primary (first) exception currently being thrown ie; not nested
   bool isPrimary() const;
   //! Returns the number of nested exceptions which occurred during the handling of this exception
   FXint nestedLen() const;
   //! Returns the nested exception \em idx
-  FXException &nested(FXint idx) const;
+  FXException nested(FXint idx) const;
   virtual ~FXException();
   /*! \return The previous setting
   \param no The new setting (0=create none (the default), negative number imply randomness)
