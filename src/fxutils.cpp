@@ -404,6 +404,8 @@ void fxassert(const char* expression,const char* filename,unsigned int lineno){
   fprintf(stderr,"%s(%d): FXASSERT(%s) failed.\n",filename,lineno,expression);
 #endif
 #endif
+  if(FXProcess::isAutomatedTest())
+    fflush(stderr);
   }
 
 
@@ -431,6 +433,8 @@ void fxmessage(const char* format,...){
   va_end(arguments);
 #endif
 #endif
+  if(FXProcess::isAutomatedTest())
+    fflush(stderr);
   }
 
 
@@ -461,6 +465,8 @@ void fxerror(const char* format,...){
   va_end(arguments);
 #endif
 #endif
+  if(FXProcess::isAutomatedTest())
+    fflush(stderr);
   abort();
   }
 
@@ -491,6 +497,8 @@ void fxwarning(const char* format,...){
   va_end(arguments);
 #endif
 #endif
+  if(FXProcess::isAutomatedTest())
+    fflush(stderr);
   }
 
 

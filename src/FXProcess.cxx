@@ -1074,7 +1074,7 @@ void FXProcess::exit(FXint code)
 
 bool FXProcess::isAutomatedTest() throw()
 {
-	return instance()->p->automatedTest;
+	return instance() ? instance()->p->automatedTest : false;
 }
 
 FXProcess *FXProcess::instance()
