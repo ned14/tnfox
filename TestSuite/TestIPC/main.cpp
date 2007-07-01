@@ -3,7 +3,7 @@
 *                                   IPC test                                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.              *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
 * the terms of the GNU Library General Public License v2.1 as published by the  *
@@ -36,13 +36,25 @@ protected:
 int main(int argc, char *argv[])
 {
 	FXProcess myprocess(argc, argv);
+	QChildProcess child(myprocess.execpath(), "-automatedtest -client");
 	char devtype[8], server[8];
 	bool amServer;
 	int choice=0;
 	do
 	{
 		fxmessage("YOU MUST RUN TWO INSTANCES OF ME AT THE SAME TIME!!!\nBe server (1) or client (2):\n");
-		scanf("%s", server);
+		if(myprocess.isAutomatedTest())
+		{
+			if(argc>2 && !strcmp(argv[2], "-client"))
+				server[0]='2';
+			else
+			{
+				server[0]='1';
+				child.open();
+			}
+		}
+		else
+			scanf("%s", server);
 		amServer=('1'==server[0]);
 	} while('1'!=server[0] && '2'!=server[0]);
 	fxmessage(amServer ? "Server\n" : "Client\n");
@@ -50,7 +62,10 @@ int main(int argc, char *argv[])
 	{
 		fxmessage("What should I use for the transport? (S: Socket, P: Pipe\n"
 			"    E: Encrypted Socket):\n");
-		scanf("%s", devtype);
+		if(myprocess.isAutomatedTest())
+			devtype[0]='E';
+		else
+			scanf("%s", devtype);
 		if('s'==devtype[0] || 'S'==devtype[0]) choice=1;
 		else if('p'==devtype[0] || 'P'==devtype[0]) choice=2;
 		else if('e'==devtype[0] || 'E'==devtype[0]) choice=3;
@@ -130,6 +145,16 @@ int main(int argc, char *argv[])
 			Tn::TFileBySyncDev server(true, ch, &testfile);
 			server.setPrintStatistics(false);
 			ch.start(true);
+			/*if(myprocess.isAutomatedTest())
+			{
+				char buffer[4097];
+				FXuval read;
+				while((read=child.readBlock(buffer, sizeof(buffer)-1)))
+				{
+					buffer[read]=0;
+					fxmessage(buffer);
+				}
+			}*/
 			ch.wait();
 		}
 		else
@@ -180,7 +205,8 @@ int main(int argc, char *argv[])
 
 	printf("\n\nTests complete!\n");
 #ifdef WIN32
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
 	return 0;
 }

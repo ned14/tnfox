@@ -3,7 +3,7 @@
 *                           Threading framework test                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -114,7 +114,10 @@ int main( int argc, char** argv)
 	{
 		threads[n]->start();
 	}
-	getchar();
+	if(myprocess.isAutomatedTest())
+		QThread::msleep(10000);
+	else
+		getchar();
 	for(n=0; n<MAX_THREADS; n++)
 	{
 		threads[n]->requestTermination();
@@ -134,7 +137,8 @@ int main( int argc, char** argv)
 		}
 	} while(!alldone);
 	fxmessage("\nPress Return to end\n");
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 	fxmessage("Exiting!\n");
 	return 0;
 }

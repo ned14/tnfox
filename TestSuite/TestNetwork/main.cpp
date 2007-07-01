@@ -3,7 +3,7 @@
 *                               Test of FXNetwork                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -28,15 +28,23 @@ int main(int argc, char *argv[])
 	char buffer[256];
 	for(;;)
 	{
-		printf("\nPlease enter a fully qualified name:\n");
-		gets(buffer);
+		fxmessage("\nPlease enter a fully qualified name:\n");
+		if(myprocess.isAutomatedTest())
+		{
+			fxmessage("www.google.com\n");
+			strcpy(buffer, "www.google.com");
+		}
+		else
+			gets(buffer);
 		if(!buffer[0]) break;
 		QHostAddress addr=FXNetwork::dnsLookup(FXString(buffer));
-		printf("\nIn IP that is: %s\n", addr.toString().text());
+		fxmessage("\nIn IP that is: %s\n", addr.toString().text());
 		QHostAddress addr6(addr.ip6Addr());
-		printf("In IPv6 that is: %s\n", addr6.toString().text());
+		fxmessage("In IPv6 that is: %s\n", addr6.toString().text());
 		FXString name=FXNetwork::dnsReverseLookup(addr);
-		printf("Reverse lookup says: %s\n", name.text());
+		fxmessage("Reverse lookup says: %s\n", name.text());
+		if(myprocess.isAutomatedTest())
+			break;
 	}
 	return 0;
 }

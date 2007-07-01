@@ -3,7 +3,7 @@
 *                               Mutex speed test                                *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2004 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -112,6 +112,7 @@ int main( int argc, char** argv)
 	{
 		fxmessage("System can perform %llu atomic increments per second\n", (1000LL*MAX_COUNT*MAX_THREADS)/taken);
 		fxmessage("Atomic Int is %u\n", (FXuint) count);
+		if(count!=MAX_COUNT*MAX_THREADS) fxerror("Atomic Int did not increment correctly!\n");
 	}
 
 	for(n=0; n<MAX_THREADS; n++)
@@ -125,7 +126,8 @@ int main( int argc, char** argv)
 		taken+=threads2[n].taken;
 	}
 	if(taken) fxmessage("System can perform %llu mutex lock/unlocks per second\n", (1000LL*MAX_MUTEX*MAX_THREADS)/taken);
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 	fxmessage("Exiting!\n");
 	return 0;
 }

@@ -3,7 +3,7 @@
 *                               SQL Database test                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2005-2007 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -413,11 +413,13 @@ int main( int argc, char** argv)
 	{
 		fxerror("%s\n", e.report().text());
 	}
-	FXERRH_ENDTRY }
+	FXERRH_ENDTRY
 
 	fxmessage("\nAll Done!\n");
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 	fxmessage("Exiting!\n");
+	}
 #if defined(_MSC_VER) && 0
 	fxmessage("Force deiniting myself ...\n"); 
 	_cexit();

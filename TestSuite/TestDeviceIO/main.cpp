@@ -3,7 +3,7 @@
 *                              Test of i/o classes                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -67,6 +67,7 @@ public:
 
 int main(int argc, char *argv[])
 {
+	int ret=0;
 	FXProcess myprocess(argc, argv);
 	fxmessage("These tests will leave large files on your hard drive\n"
 			  "You will probably want to delete these afterwards\n");
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
 				sbufferh << buffer[0]; count++;
 				fh.at(fh.at()-read+1);
 			}
-			fxmessage("Size of main.cpp is %d (reported by filing system: %ld)\n", count, fh.size());
+			fxmessage("Size of ReadMe.txt is %d (reported by filing system: %ld)\n", count, fh.size());
 			fh.close();
 			int i;
 			for(i=5; i<32 && !buffer[i]; i++);
@@ -122,7 +123,7 @@ int main(int argc, char *argv[])
 			FXStream stemp(&temp);
 			bufferh.at(0);
 			buffer2h.at(0);
-			stemp.writeRawBytes("The original main.cpp:\n", 22) << bufferh;
+			stemp.writeRawBytes("The original ReadMe.txt:\n", 22) << bufferh;
 			stemp.writeRawBytes("\nNow the mangled copy:\n", 23) << buffer2h;
 			for(int n=0; n<100000; n++)
 			{
@@ -285,7 +286,7 @@ int main(int argc, char *argv[])
 						dev->writeBlock(temp.data(), largefile.readBlock((char *) temp.data(), temp.size()));
 						//fxmessage("w%u\n", (FXuint) temp.size());
 						if(devi->isUnreliable)
-							QThread::yield();
+							QThread::msleep(1);
 					}
 					t->byteCount.wait();
 					taken=(FXProcess::getMsCount()-time)/1000.0;
@@ -383,7 +384,8 @@ int main(int argc, char *argv[])
 	FXERRH_ENDTRY
 	fxmessage("All Done!\n");
 #ifdef _MSC_VER
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
-	return 0;
+	return ret;
 }

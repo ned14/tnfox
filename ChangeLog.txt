@@ -61,6 +61,7 @@ causing data corruption (the null termination on signalled)
 + Added errorIfNotFound parameter to fxdemanglesymbol()
 * Made all POSIX file descriptors allocated by TnFOX FD_CLOEXEC so child
 processes won't inherit them. This duplicates the Win32 behaviour.
++ Added automated test suite
 
 
 v0.86 2nd April 2006
