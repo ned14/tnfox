@@ -642,10 +642,11 @@ long TestWindow::onCmdRunTests(FXObject *from, FXSelector sel, void *ptr)
 	{
 		if(tests->getItemIcon(row, 1)==greentick)
 		{
-			FXString testpath(FXPath::join(builddir, tests->getItemText(row, 0)));
+			FXString testpath(FXPath::join(builddir, tests->getItemText(row, 0))), workingdir(FXPath::directory(testpath));
 			if(!FXPath::exists(testpath)) testpath.append(".exe");
 			QChildProcess child(testpath, "-automatedtest");
-			child.setWorkingDir(FXPath::directory(testpath));
+			if(workingdir.right(5)==".libs") workingdir.truncate(workingdir.length()-6);
+			child.setWorkingDir(workingdir);
 			getApp()->beginWaitCursor();
 			TestResult test(this, tests->getItemText(row, 0));
 			FXERRH_TRY
