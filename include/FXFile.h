@@ -478,6 +478,7 @@ typedef FXFile QFile;
 
 //! For FOX v1.6.x compatibility
 typedef FXFile FXPath;
+typedef FXFile FXStat;
 
 }
 
