@@ -77,6 +77,8 @@ if options.svnrevisionheader:
                 (childinh, childh)=os.popen4("svnversion")
                 line=childh.readline()
                 if line:
+                    # Make sure it worked
+                    assert line[0].isdigit()
                     # We want the bit after any colon present
                     idx=line.find(':')
                     if idx!=-1:
