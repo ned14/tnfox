@@ -1650,7 +1650,7 @@ FXString FXProcess::hostOS(FXString *myos, FXString *architecture)
 	else if(IMAGE_FILE_MACHINE_IA64   ==headers->FileHeader.Machine) desc="Win64/IA64";
 #endif
 #ifdef IMAGE_FILE_MACHINE_AMD64
-	else if(IMAGE_FILE_MACHINE_AMD64  ==headers->FileHeader.Machine) desc="Win64/AMD64";
+	else if(IMAGE_FILE_MACHINE_AMD64  ==headers->FileHeader.Machine) desc="Win64/x64";
 #endif
 	else desc="unknown";
 	if(myos) *myos=desc.left(desc.find('/'));
@@ -1731,7 +1731,7 @@ FXString FXProcess::hostOSDescription(FXString *myapi, FXString *kernelname, FXS
 	else if(PROCESSOR_ARCHITECTURE_IA64 ==si.wProcessorArchitecture) { desc+="IA64";       if(architecture) *architecture="IA64"; }
 #endif
 #ifdef PROCESSOR_ARCHITECTURE_AMD64
-	else if(PROCESSOR_ARCHITECTURE_AMD64==si.wProcessorArchitecture) { desc+="AMD64";      if(architecture) *architecture="AMD64"; }
+	else if(PROCESSOR_ARCHITECTURE_AMD64==si.wProcessorArchitecture) { desc+="x64";        if(architecture) *architecture="x64"; }
 #endif
 	else { desc+="unknown"; if(architecture) *architecture="unknown"; }
 	desc+=" architecture";
