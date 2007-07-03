@@ -270,6 +270,7 @@
 #include "QBlkSocket.h"
 #include "QBuffer.h"
 #include "QBZip2Device.h"
+#include "QChildProcess.h"
 #include "QDir.h"
 #include "QFile.h"
 #include "QFileInfo.h"
