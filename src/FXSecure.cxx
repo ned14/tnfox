@@ -411,7 +411,7 @@ public:
 				{
 					FXulong diff=0;
 					POINT p;
-					FXERRHWIN(GetCursorPos(&p));
+					if(!GetCursorPos(&p)) break;
 					diff=p.x-cursorpos.x;
 					diff^=(p.y-cursorpos.y)<<12;	// 4096
 					if(diff) addRandomness(diff);
