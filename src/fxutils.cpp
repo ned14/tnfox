@@ -455,7 +455,8 @@ void fxerror(const char* format,...){
   OutputDebugStringA(msg);
   fprintf(stderr,"%s",msg); // if a console is available
   fflush(stderr);
-  MessageBoxA(NULL,msg,NULL,MB_OK|MB_ICONEXCLAMATION|MB_APPLMODAL);
+  if(!FXProcess::isAutomatedTest())
+    MessageBoxA(NULL,msg,NULL,MB_OK|MB_ICONEXCLAMATION|MB_APPLMODAL);
   DebugBreak();
 #else
   va_list arguments;
@@ -488,7 +489,8 @@ void fxwarning(const char* format,...){
   OutputDebugStringA(msg);
   fprintf(stderr,"%s",msg); // if a console is available
   fflush(stderr);
-  MessageBoxA(NULL,msg,NULL,MB_OK|MB_ICONINFORMATION|MB_APPLMODAL);
+  if(!FXProcess::isAutomatedTest())
+    MessageBoxA(NULL,msg,NULL,MB_OK|MB_ICONINFORMATION|MB_APPLMODAL);
 #else
   va_list arguments;
   va_start(arguments,format);
