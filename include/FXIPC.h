@@ -751,7 +751,7 @@ public:
 	*/
 	bool getMsgAck(FXIPCMsg *FXRESTRICT msgack, FXIPCMsg *FXRESTRICT msg, FXuint waitfor=FXINFINITE);
 	//! \overload
-	bool getMsgAck(FXIPCMsg &FXRESTRICT msgack, FXIPCMsg &FXRESTRICT msg, FXuint waitfor=FXINFINITE)
+	bool getMsgAck(FXIPCMsg &msgack, FXIPCMsg &msg, FXuint waitfor=FXINFINITE)
 	{
 		return getMsgAck(&msgack, &msg, waitfor);
 	}
@@ -894,7 +894,7 @@ protected:
 		return ((*mychannel).*sendMsgI)(msgack, msg, &msgtype::regtype::endianise, waitfor);
 	}
 	//! \overload
-	template<class msgacktype, class msgtype> bool sendMsg(msgacktype &FXRESTRICT msgack, msgtype & FXRESTRICT msg, FXuint waitfor=FXINFINITE)
+	template<class msgacktype, class msgtype> bool sendMsg(msgacktype &msgack, msgtype &msg, FXuint waitfor=FXINFINITE)
 	{
 		FXSTATIC_ASSERT(!msgtype::id::hasAck || msgtype::id::code+1==msgacktype::id::code, AckMsg_Not_Ack_Of_Msg);
 		configMsg(&msg);
@@ -923,7 +923,7 @@ protected:
 		return ((*mychannel).*getMsgAckI)(msgack, msg, waitfor);
 	}
 	//! \overload
-	bool getMsgAck(FXIPCMsg &FXRESTRICT msgack, FXIPCMsg &FXRESTRICT msg, FXuint waitfor=FXINFINITE)
+	bool getMsgAck(FXIPCMsg &msgack, FXIPCMsg &msg, FXuint waitfor=FXINFINITE)
 	{
 		return ((*mychannel).*getMsgAckI)(&msgack, &msg, waitfor);
 	}
