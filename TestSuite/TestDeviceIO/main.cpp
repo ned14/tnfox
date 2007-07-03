@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 				di->amSocket=true;
 				devs.append(di);
 			}
-			if(1) {
+			if(0) {
 				QBlkSocket *server=new QBlkSocket(QBlkSocket::Datagram),*w;
 				server->create(IO_ReadOnly);
 				w=new QBlkSocket(QHOSTADDRESS_LOCALHOST, server->port(), QBlkSocket::Datagram);
