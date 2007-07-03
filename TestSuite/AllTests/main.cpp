@@ -223,8 +223,13 @@ public:
 		redexclamation=new FXGIFIcon(app, RedExclamation);
 		FXFontDesc *fonts=0;
 		FXuint numfonts;
+#if FOX_MAJOR>1 || (FOX_MJAOR==1 && FOX_MINOR>4)
+		if(FXFont::listFonts(fonts, numfonts, "", 0, FXFont::Straight,
+							 0, FONTENCODING_UNICODE, FXFont::Scalable))
+#else
 		if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
 							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SCALABLE))
+#endif
 		{
 			int score=32;
 			FXString best;
@@ -300,7 +305,7 @@ public:
 	FXAutoPtr<TnFXSQLDB> openResults()
 	{
 		FXString dbname=FXPath::join(TnFOXpath, "TestResults.sqlite3");
-		bool exists=FXPath::exists(dbname)!=0;
+		bool exists=FXStat::exists(dbname)!=0;
 		FXAutoPtr<TnFXSQLDB> mydb=TnFXSQLDBRegistry::make("SQLite3", dbname);
 		mydb->open();
 		if(!exists)
@@ -511,7 +516,7 @@ CREATE TABLE 'results'('id' INTEGER PRIMARY KEY, 'testname' VARCHAR(32), 'starte
 	for(QFileInfoList::const_iterator it1=testsuite.entryInfoList()->begin(); it1!=testsuite.entryInfoList()->end(); ++it1)
 	{
 		const QFileInfo &fi=*it1;
-		if(fi.isDir() && FXPath::exists(FXPath::join(fi.filePath(), "SConstruct")))
+		if(fi.isDir() && FXStat::exists(FXPath::join(fi.filePath(), "SConstruct")))
 		{
 			tests->insertRows(n);
 			tests->setItemText(n, 0, fi.fileName());
@@ -643,7 +648,7 @@ long TestWindow::onCmdRunTests(FXObject *from, FXSelector sel, void *ptr)
 		if(tests->getItemIcon(row, 1)==greentick)
 		{
 			FXString testpath(FXPath::join(builddir, tests->getItemText(row, 0))), workingdir(FXPath::directory(testpath));
-			if(!FXPath::exists(testpath)) testpath.append(".exe");
+			if(!FXStat::exists(testpath)) testpath.append(".exe");
 			QChildProcess child(testpath, "-automatedtest");
 			if(workingdir.right(5)==".libs") workingdir.truncate(workingdir.length()-6);
 			child.setWorkingDir(workingdir);
