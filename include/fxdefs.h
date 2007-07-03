@@ -818,7 +818,7 @@ extern FXAPI FXint fxparsegeometry(const FXchar *string,FXint& x,FXint& y,FXint&
 extern FXAPI FXbool fxisconsole(const FXchar *path);
 
 /// Demangles a raw symbol into a human-readable one
-extern FXAPI const FXString &fxdemanglesymbol(const FXString &rawsymbol);
+extern FXAPI const FXString &fxdemanglesymbol(const FXString &rawsymbol, bool errorIfNotFound=true);
 
 /// Version number that the library has been compiled with
 extern FXAPI const FXuchar fxversion[3];

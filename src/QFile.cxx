@@ -305,6 +305,7 @@ bool QFile::open(FXuint mode)
 #endif
 #ifdef USE_POSIX
 		FXERRHOSFN(p->handle=::open(p->filename.text(), access, S_IREAD|S_IWRITE), p->filename);
+		FXERRHOS(::fcntl(p->handle, F_SETFD, ::fcntl(p->handle, F_GETFD, 0)|FD_CLOEXEC));
 #endif
 		if(access & O_CREAT)
 		{	// Set the perms

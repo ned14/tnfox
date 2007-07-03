@@ -68,6 +68,14 @@ const FXuchar fxversion[3]={FOX_MAJOR,FOX_MINOR,FOX_LEVEL};
 // TnFOX version number
 const FXuchar tnfoxversion[2]={TNFOX_MAJOR, TNFOX_MINOR};
 
+// TnFOX endian indicator
+#if FOX_BIGENDIAN
+extern "C" FXAPI void tnfoxbigendian();
+void tnfoxbigendian() { }
+#else
+extern "C" FXAPI void tnfoxlittleendian();
+void tnfoxlittleendian() { }
+#endif
 
 // Thread-safe, linear congruential random number generator from Knuth & Lewis.
 FXuint fxrandom(FXuint& seed){
@@ -967,7 +975,7 @@ FXlong fxgetticks(){
 
 #if (defined(__GNUC__) &&  __GNUC__>=3) || defined(__DMC__)
 // GNU symbol demangler
-const FXString &fxdemanglesymbol(const FXString &rawsymbol)
+const FXString &fxdemanglesymbol(const FXString &rawsymbol, bool errorIfNotFound)
 {
 	static QMutex lock;
 	static QDict<FXString> cache(13, true);
@@ -978,7 +986,15 @@ const FXString &fxdemanglesymbol(const FXString &rawsymbol)
 	FXRBOp dealloc=FXRBNew(ret);
 	int status=0;
 	char *demangled=::abi::__cxa_demangle(rawsymbol.text(), 0, 0, &status);
-	FXERRH(status==0 && demangled, "Failed to demangle symbol", 0, FXERRH_ISDEBUG);
+	if(status!=0 || !demangled)
+	{
+		if(errorIfNotFound)
+		{
+			FXERRG("Failed to demangle symbol", 0, FXERRH_ISDEBUG);
+		}
+		else
+			return rawsymbol;
+	}
 	FXRBOp demangledalloc=FXRBFunc(&::free, demangled);
 	ret->assign(demangled);
 	cache.insert(rawsymbol, ret);

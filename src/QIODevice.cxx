@@ -450,7 +450,8 @@ bool QIODeviceS::waitForData(QIODeviceS **signalled, FXuint no, QIODeviceS **lis
 				if(WAIT_OBJECT_0==WaitForSingleObject(hlist[n], 0))
 					signalled[oidx++]=list[n];
 			}
-			signalled[oidx]=0;
+			for(FXuint n=oidx; n<no; n++)
+				signalled[n]=0;
 		}
 		return true;
 	}
@@ -487,7 +488,8 @@ bool QIODeviceS::waitForData(QIODeviceS **signalled, FXuint no, QIODeviceS **lis
 			if(FD_ISSET(fd, &fds))
 				signalled[oidx++]=list[n];
 		}
-		signalled[oidx]=0;
+		for(FXuint n=oidx; n<no; n++)
+			signalled[n]=0;
 	}
 	return true;
 #endif

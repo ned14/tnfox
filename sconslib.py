@@ -193,9 +193,22 @@ def CheckCompilerPtr64(cc):
 
 def CheckCompilerIsBigEndian(cc):
     cc.Message("Is the compiler configured for big endian architecture ...")
-    result=cc.TryRun('int main(void)\n{\nint foo=1; return ((char *) &foo)[0]==1;\n}\n', '.c')
+    result=cc.TryRun('#include <stdio.h>\nint main(void)\n{\nint foo=1;\nint retcode=((char *) &foo)[0]==1;\nprintf("%d,%d=%d\\n", foo, ((char *) &foo)[0], retcode);\nreturn retcode;\n}\n', '.c')
     cc.Result(result[0])
+    #print "Result=",result[0]
     return result[0]
+
+def CheckTnFOXIsBigEndian(cc):
+    cc.Message("Is the TnFOX library built for big endian architecture ...")
+    result=cc.TryLink('extern void tnfoxbigendian(void);\nint main(void)\n{\ntnfoxbigendian();\nreturn 0;\n}\n', '.c')
+    cc.Result(result)
+    return result
+
+def CheckTnFOXIsLittleEndian(cc):
+    cc.Message("Is the TnFOX library built for little endian architecture ...")
+    result=cc.TryLink('extern void tnfoxlittleendian(void);\nint main(void)\n{\ntnfoxlittleendian();\nreturn 0;\n}\n', '.c')
+    cc.Result(result)
+    return result
 
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
     prefixpath=os.path.abspath(prefixpath)+"/"
@@ -311,16 +324,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         if os.path.exists(prefixpath+"src/sqlite/sqlite3.h"):
             env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
             env['CPPPATH']+=[prefixpath+"src/sqlite"]
-            filelist=os.listdir(prefixpath+"src/sqlite/src")
-            filelist=filter(lambda src: src[-2:]==".c" and src[:3]!="os_", filelist)
-            if onWindows:
-                filelist.append("os_win.c")
-            else:
-                filelist.append("os_unix.c")
-            # Compile SQLite threadsafe with UTF16 support removed
-            sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlite/"+getBase(x), prefixpath+"src/sqlite/src/"+x,
-                CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)]) for x in filelist]
-            del filelist
+            sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlite/sqlite3", prefixpath+"src/sqlite/sqlite3.c",
+                 CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)])]
         else:
             print "SQLite not found in TnFOX sources, disabling support!\n"
             SQLModuleSources=filter(lambda obj: "TnFXSQLDB_sqlite" in obj, SQLModuleSources)

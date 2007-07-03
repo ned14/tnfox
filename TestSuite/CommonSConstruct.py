@@ -20,17 +20,17 @@
 import os
 import sys
 dir,name=os.path.split(os.getcwd())
-if "windows" in dir:
+if "windows" in dir or "/media/Share" in dir:
     # Replace with Unix equiv
-    dir="/home/ned/"+dir[dir.find("Tn"):]
+    dir="/home/ned/"+dir[dir.find("Tornado"):]
 if "/Volumes/DATA" in dir:
     # Replace with MacOS X equiv
-    dir="/Users/ned/Documents/"+dir[dir.find("Tn"):]
+    dir="/Users/ned/Documents/"+dir[dir.find("Tornado"):]
 execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
 if globals().has_key('DoConfTests'):
-    doConfTests(env, dir+"/../")
+    doConfTests(env, os.path.normpath(dir+"/../"))
 
 env['CPPPATH']+=[ ".",
                  "../../include",
@@ -49,13 +49,10 @@ else:
     except:
         if wantPython: raise IOError, "You need to define PYTHON_INCLUDE and PYTHON_LIB for this test"
 
-if onWindows or onDarwin:
-    suffix=ternary(GenStaticLib==2, ".a", ternary(onWindows, env['LIBSUFFIX'], env['SHLIBSUFFIX']))
-    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+suffix)]
-    if SQLModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+suffix)]
-    if GraphingModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+suffix)]
-else: # Can't put in g++.py as dir isn't defined there
-    env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/lib"+libtnfox+".la")] #, "-static" ] #, "/lib/libselinux.so.1"]
+suffix=ternary(GenStaticLib==2, ".a", ternary(onWindows, env['LIBSUFFIX'], ternary(onWindows or onDarwin, env['SHLIBSUFFIX'], ".la")))
+env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+suffix)]
+if SQLModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+suffix)]
+if GraphingModule==2: env['LINKFLAGS']+=[os.path.normpath(dir+"/../lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+suffix)]
 try:
     if wantPython:
         if PYTHON_LIB:
@@ -68,7 +65,17 @@ try:
             env['LIBS']+=[ "util" ]
             env['LINKFLAGS']+=[ os.path.abspath(dir+"/../lib/"+architectureSpec()+"/TnFOX.so") ]
 except: pass
+
+# Some sanity checks
 assert os.path.exists("../../include/fxdefs.h")
+conf=Configure(env, { "CheckTnFOXIsBigEndian" : CheckTnFOXIsBigEndian, "CheckTnFOXIsLittleEndian" : CheckTnFOXIsLittleEndian } )
+foxbigendiandef=filter(lambda defn: defn[0]=="FOX_BIGENDIAN", env['CPPDEFINES'])[0]
+if not ternary(foxbigendiandef[1], conf.CheckTnFOXIsBigEndian, conf.CheckTnFOXIsLittleEndian)():
+    # Hmm our FOX_BIGENDIAN test is wrong! This happens on coLinux due to a bug in cofs not running executables properly
+    print "WARNING: FOX_BIGENDIAN definition does not match that of TnFOX library! Fixing ..."
+    env['CPPDEFINES'].remove(foxbigendiandef)
+    env['CPPDEFINES'].append(("FOX_BIGENDIAN", 1-foxbigendiandef[1]))
+env=conf.Finish()
 
 objects=[env.StaticObject(builddir+"/main", "main.cpp")] #+ [env.StaticObject(builddir+"/gcLink", "../gcLink.cc")]
 Clean(targetname, objects)

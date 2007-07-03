@@ -369,21 +369,20 @@ private:
   FXulong _threadId;
   mutable FXString *reporttxt;
   QValueList<FXException> *nestedlist;
-#ifdef WIN32
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
-#define FXEXCEPTION_STACKBACKTRACEDEPTH 8
+#define FXEXCEPTION_STACKBACKTRACEDEPTH 16
 	struct
 	{
 		void *pc;
 		char module[64];
-		char functname[128];
-		char file[64];
+		char functname[256];
+		char file[96];
 		int lineno;
 	} stack[FXEXCEPTION_STACKBACKTRACEDEPTH];
 #endif
-#endif
   int stacklevel;
 private:
+	FXDLLLOCAL void doStackWalk() throw();
 	void init(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
 public:
   /*!

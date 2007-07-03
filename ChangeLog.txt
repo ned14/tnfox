@@ -6,6 +6,14 @@ B Fixed critical section nedmalloc miscompile
 B nedmalloc wasn't locking mspace if all mspaces were locked
 B FXApp was failing on init when trying to list fonts when Xft wasn't
 enabled
+B Fixed daylight saving time problems in FXTime
+B Fixed win32 stack backtracing in FXException which hadn't been working
+reliably since we moved to MSVC7.1
+B TnFXSQLDB_sqlite3 was adding one to the month of any dates read in
+B FXFont wasn't degrading gracefully to alternative fonts if a font wasn't
+available
+B Due to changes in newer GCC's, fxassemblerops was not compiling i386
+assembler implementations
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException
@@ -39,6 +47,20 @@ variance, stddev, distribution to Maths namespace
 * Merged FOX v1.6.25
 * Fixed problem with newer scons (> v0.96.95) which prevented correct
 detection of build environment
+* Updated doxygen config to v1.5.2
++ Added incorporation of current SVN revision into source
+* Added FXProcess::buildInfo() and broke out hostOS() and
+hostOSDescription()
++ Added QChildProcess
+* Changed semantics of QIODeviceS::waitForData() as obvious usage was
+causing data corruption (the null termination on signalled)
+* Integrated sqlite v3.3.17
++ Added TnFXSQLDBTransaction
+* Fixed a build problem on Unix with newer versions of scons
++ Added stack backtracing for GCC builds to FXException
++ Added errorIfNotFound parameter to fxdemanglesymbol()
+* Made all POSIX file descriptors allocated by TnFOX FD_CLOEXEC so child
+processes won't inherit them. This duplicates the Win32 behaviour.
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=

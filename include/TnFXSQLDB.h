@@ -92,7 +92,7 @@ FXAutoPtr<TnFXSQLDB> mydb=TnFXSQLDBRegistry::make("SQLite3", dbname);
 mydb->open();
 mydb->immediate("CREATE TABLE test(id INTEGER PRIMARY KEY, 'value' INTEGER, 'text' VARCHAR(256), 'when' TIMESTAMP DEFAULT CURRENT_TIMESTAMP);");
 
-TnFXSQLDBStatementRef s=db->prepare("SELECT :field FROM 'test' WHERE :field==:value;");
+TnFXSQLDBStatementRef s=db->prepare("SELECT :field FROM 'test' WHERE :field=:value;");
 s->bind(":field", "test");
 s->bind(":value", (FXint) 5);
 for(TnFXSQLDBCursorRef c=s->execute(); !c->atEnd(); c->next())
@@ -377,6 +377,60 @@ public:
 
 	//! Synchronises the connection if the driver is asynchronous
 	virtual void synchronise();
+};
+
+/*! \class TnFXSQLDBTransaction
+\ingroup sqldb
+\brief Manages a SQL database transaction
+
+This useful class allows database integrity to be maintained during
+lengthy operations during which a C++ exception may be thrown. If
+the instance is destructed without commit() having been called,
+rollback() is invoked - thus undoing the partially completed operation.
+*/
+class FXSQLMODULEAPI TnFXSQLDBTransaction
+{
+	TnFXSQLDB *mydb;
+	FXString myname;
+	bool dismissed;
+	void command(const char *_cmd)
+	{
+		if(mydb)
+		{
+			FXString cmd(_cmd);
+			if(!myname.empty()) cmd.append(" '"+myname+"'");
+			cmd.append(";");
+			mydb->immediate(cmd);
+		}
+	}
+	TnFXSQLDBTransaction(const TnFXSQLDBTransaction &);
+	TnFXSQLDBTransaction &operator=(const TnFXSQLDBTransaction &);
+public:
+	//! Begins a transaction
+	TnFXSQLDBTransaction(TnFXSQLDB *db, const FXString &name=FXString::nullStr()) : mydb(db), myname(name), dismissed(false) { command("BEGIN TRANSACTION"); }
+	TnFXSQLDBTransaction(FXAutoPtr<TnFXSQLDB> &db, const FXString &name=FXString::nullStr()) : mydb(&(*db)), myname(name), dismissed(false) { command("BEGIN TRANSACTION"); }
+	~TnFXSQLDBTransaction()
+	{
+		rollback();
+	}
+	//! Commits the transaction
+	void commit()
+	{
+		if(mydb && !dismissed)
+		{
+			command("COMMIT TRANSACTION");
+			dismissed=true;
+		}
+	}
+	//! Rolls back the transaction
+	void rollback()
+	{
+		if(mydb && !dismissed)
+		{
+			command("ROLLBACK TRANSACTION");
+			dismissed=true;
+		}
+	}
 };
 
 /*! \class TnFXSQLDBCursor

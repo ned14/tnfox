@@ -55,14 +55,14 @@ in no more than maxAtomicLength() (usually 4096 bytes, but it is system dependen
 so two threads writing at the same time will cause the read data to be mixed
 blocks of data - which you probably don't want. If you do use a pipe which has
 more than two users, ensure all data transfers are less than maxAtomicLength(). If
-you want a pipe with less FXRESTRICTions and only for intra-process communication,
-see FX::QLocalPipe. If you need less FXRESTRICTions across multiple processes, see
+you want a pipe with less restrictions and only for intra-process communication,
+see FX::QLocalPipe. If you need less restrictions across multiple processes, see
 FX::QBlkSocket (though this is inefficient).
 
 Default security is for FX::FXACLEntity::everything() to have full access. This
 makes sense as named pipes are generally for inter-process communication -
 if however it's a private pipe for communication with a known process it makes
-sense to FXRESTRICT access to the user running that process at least.
+sense to restrict access to the user running that process at least.
 Note that until the pipe is opened, permissions()
 returns what will be applied to the pipe on open() rather than the pipe
 itself - if you want the latter, use the static method.
@@ -115,6 +115,11 @@ class FXAPIR QPipe : public QIODeviceS
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 	friend class FXIPCChannel;
 	void FXDLLLOCAL int_hack_makeWriteNonblocking() const;
+	friend class QChildProcess;
+	friend struct QChildProcessPrivate;
+	void FXDLLLOCAL int_hack_makeHandlesInheritable() throw();
+	void FXDLLLOCAL int_getOSHandles(void **buf) const throw();
+	void FXDLLLOCAL int_setOSHandles(void **buf) throw();
 public:
 	QPipe();
 	/*! \param name Name you wish this pipe to refer to. If null, the pipe is set as anonymous

@@ -641,6 +641,7 @@ bool QMemMap::open(FXuint mode)
 						access|=O_CREAT;
 						p->creator=true;
 						FXERRHIO(p->filefd=::shm_open(name.text(), access, S_IREAD|S_IWRITE));
+						FXERRHOS(::fcntl(p->filefd, F_SETFD, ::fcntl(p->filefd, F_GETFD, 0)|FD_CLOEXEC));
 						FXERRHIO(::ftruncate(p->filefd, p->size));
 						p->acl.writeTo(p->filefd);
 					}
