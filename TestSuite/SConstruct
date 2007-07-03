@@ -11,7 +11,7 @@ def runScons(target, source, env):
     cpath=os.getcwd()
     try:
         os.chdir(str(source[0]))
-        inh, outh=os.popen4("scons")
+        inh, outh=os.popen4("scons --config=force")
         while True:
             line=outh.readline()
             if not line: break
