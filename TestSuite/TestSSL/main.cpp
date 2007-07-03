@@ -3,7 +3,7 @@
 *                              Test of secure i/o                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -100,6 +100,7 @@ static void stippledTransfer(QIODevice *dest, QIODevice *src)
 
 int main(int argc, char *argv[])
 {
+	int ret=0;
 	FXProcess myprocess(argc, argv);
 	fxmessage("Encrypted device i/o test\n"
 			  "-=-=-=-=-=-=-=-=-=-=-=-=-\n");
@@ -143,9 +144,15 @@ int main(int argc, char *argv[])
 			void *p1=src.mapIn();
 			void *p2=dest2.mapIn();
 			if(src.size()!=dest2.size())
+			{
 				fxwarning("Error: File sizes are different!\n");
+				ret=1;
+			}
 			if(memcmp(p1, p2, (size_t) src.size()))
+			{
 				fxwarning("Error: File contents are different!\n");
+				ret=1;
+			}
 			else
 				fxmessage("File contents are the same\n");
 		}
@@ -239,7 +246,7 @@ int main(int argc, char *argv[])
 					t->requestTermination();
 					dev->close();
 					t->wait();
-					if(t->crc!=origCRC) fxmessage("WARNING: Data read was corrupted!\n");
+					if(t->crc!=origCRC) { fxwarning("WARNING: Data read was corrupted!\n"); ret=1; }
 					delete t;
 					fxmessage("That took %f seconds, average speed=%dKb/sec\n", taken, (FXuint)(((FXlong)largefile.at()/1024)/taken));
 				}
@@ -270,7 +277,10 @@ int main(int argc, char *argv[])
 					taken=(FXProcess::getMsCount()-time)/1000.0;
 					fxmessage("Decryption took %f seconds, average speed=%dKb/sec\n", taken, (FXuint)(((FXlong)largefile.at()/1024)/taken));
 					if(largefile.size()!=temp.size() || memcmp(largefile.buffer().data(), temp.buffer().data(), (size_t) largefile.size()))
-						fxmessage("WARNING: Decrypted data not same as original\n");
+					{
+						fxwarning("WARNING: Decrypted data not same as original\n");
+						ret=1;
+					}
 				}
 				if(devi->wdev!=devi->rdev) FXDELETE(devi->wdev);
 				FXDELETE(devi->rdev);
@@ -288,7 +298,8 @@ int main(int argc, char *argv[])
 	FXERRH_ENDTRY
 	fxmessage("All Done!\n");
 #ifdef _MSC_VER
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
-	return 0;
+	return ret;
 }

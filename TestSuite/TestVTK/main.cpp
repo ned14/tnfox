@@ -3,7 +3,7 @@
 *                              VTK Graphing test                                *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2006 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2006-2007 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -116,5 +116,5 @@ int main( int argc, char *argv[] )
 	app.create();
 	win->show(PLACEMENT_SCREEN);
 	
-	return app.run();
+	return myprocess.isAutomatedTest() ? (app.runWhileEvents(), 0) : app.run();
 }

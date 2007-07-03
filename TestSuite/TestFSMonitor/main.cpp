@@ -3,7 +3,7 @@
 *                       Test of filing system monitor                           *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -35,8 +35,10 @@ static void printDir(const QFileInfoList *list)
 		print(*it);
 	}
 }
+static int called;
 static void handler(FXFSMonitor::Change change, const QFileInfo &oldfi, const QFileInfo &newfi)
 {
+	called++;
 	fxmessage("Item changed to:\n");
 	print(newfi);
 	if(change.modified)
@@ -67,6 +69,7 @@ static void handler(FXFSMonitor::Change change, const QFileInfo &oldfi, const QF
 
 int main(int argc, char *argv[])
 {
+	int ret=0;
 	FXProcess myprocess(argc, argv);
 	fxmessage("TnFOX Filing system Monitor test:\n"
 		      "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
@@ -103,7 +106,15 @@ int main(int argc, char *argv[])
 	FXFile::remove("MyTestFile.txt");
 	FXFile::remove("MyTestFile2.txt");
 	fxmessage("Deleted MyTestFile.txt and MyTestFile2.txt\n");
+	QThread::sleep(5);
+	fxmessage("\nChange handler was called %d times\n", called);
+	if(called<3)
+	{
+		fxwarning("FAILED: Change handler should have been called at least three times!\n");
+		ret=1;
+	}
 	fxmessage("\nAll Done!\n");
-	getchar();
-	return 0;
+	if(!myprocess.isAutomatedTest())
+		getchar();
+	return ret;
 }

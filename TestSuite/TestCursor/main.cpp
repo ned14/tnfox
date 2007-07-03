@@ -3,7 +3,7 @@
 *                                  Cursors test                                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.              *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
 * the terms of the GNU Library General Public License v2.1 as published by the  *
@@ -50,6 +50,12 @@ public:
 		recalc();
 		
 		app->addTimeout(this, ID_TIMER, 100);
+
+		if(FXProcess::isAutomatedTest())
+		{
+			onCmdArea1(0,0,0);
+			onCmdArea2(0,0,0);
+		}
 	}
 	~TestWindow()
 	{
@@ -80,10 +86,17 @@ public:
 		{
 			Tn::THourglass::setPercent(a, val);
 			Tn::THourglass::setReadingLED(a, (val & 1)!=0);
-			if(++val>100) val=0;
+			if(++val>100)
+			{
+				val=0;
+				if(FXProcess::isAutomatedTest())
+				{
+					this->hide();
+				}
+			}
 			Tn::THourglass::setWritingLED(a, (val & 1)!=0);
 		}
-		getApp()->addTimeout(this, ID_TIMER, 1000);
+		getApp()->addTimeout(this, ID_TIMER, 100);
 		return 1;
 	}
 };

@@ -97,9 +97,13 @@ public:
 	//! Sets the command to be executed
 	void setCommand(const FXString &command);
 	//! The arguments for the command to be executed
-	const FXString &arguments() const;
+	FXString arguments() const;
 	//! Sets the arguments for the command to be executed
 	void setArguments(const FXString &args);
+	//! The working directory for the command
+	FXString workingDir() const;
+	//! Sets the working directory for the command to be executed
+	void setWorkingDir(const FXString &dir);
 	//! Returns the channel to be used for reading
 	ReadChannel readChannel() const throw();
 	//! Sets the channel to be used for reading

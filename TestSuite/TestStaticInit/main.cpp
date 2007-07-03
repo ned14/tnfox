@@ -3,7 +3,7 @@
 *                      Test of FXProcess static init                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
 	fxmessage("                        B2     \n");
 
 #ifdef _MSC_VER
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
 	return 0;
 }

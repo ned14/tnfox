@@ -3,7 +3,7 @@
 *                           Test of embedding Python                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -136,7 +136,10 @@ int main(int argc, char *argv[])
 		doThreads1(&ointerp, 1);
 		fxmessage("Press Return to end\n");
 		mainpython.unsetContext();
-		getchar();
+		if(myprocess.isAutomatedTest())
+			QThread::msleep(10000);
+		else
+			getchar();
 		//mainpython.setContext();
 		doThreads2(&ointerp);
 		doThreads2(&mainpython);
@@ -148,7 +151,8 @@ int main(int argc, char *argv[])
 
 	fxmessage("All Done!\n");
 #ifdef _MSC_VER
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
 	return 0;
 }

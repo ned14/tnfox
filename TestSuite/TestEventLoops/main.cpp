@@ -3,7 +3,7 @@
 *                                Event Loops test                               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.              *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
 * the terms of the GNU Library General Public License v2.1 as published by the  *
@@ -33,11 +33,12 @@ public:
 	FXDataTargetI<FXuint> count;
     FXMainWindow *mainwnd;
 	bool timerrunning;
+	int loop;
 	FXDial *dial;
 	FXProgressBar *progress;
 	FXListBox *listbox;
 	FXList *list;
-	Thread() : TnFXAppEventLoop("Test Thread", (TnFXApp *) TnFXApp::instance()), mainwnd(0), timerrunning(false)
+	Thread() : TnFXAppEventLoop("Test Thread", (TnFXApp *) TnFXApp::instance()), mainwnd(0), timerrunning(false), loop(0)
 	{
 		*count=0;
 	}
@@ -81,7 +82,9 @@ public:
 		mainwnd->move(50*(fxrandom(seed)>>29), 50*(fxrandom(seed)>>29));
         mainwnd->show();
 	    app->create();
-        return app->run();
+		if(FXProcess::isAutomatedTest())
+			onCmdToggleCounter(0,0,0);
+		return app->run();
 	}
 	long onCmdToggleCounter(FXObject *from, FXSelector sel, void *data)
 	{
@@ -99,7 +102,14 @@ public:
 	}
 	long onCmdTimerTick(FXObject *from, FXSelector sel, void *data)
 	{
-		*count=*count>=100 ? 0 : *count+1;
+		if(*count>=100)
+		{
+			*count=0;
+			if(loop++>=5 && FXProcess::isAutomatedTest())
+				mainwnd->close();
+		}
+		else
+            *count=*count+1;
 		getApp()->addTimeout(this, ID_TIMERTICK, 10);
 		return 1;
 	}
@@ -153,7 +163,8 @@ int main(int argc, char *argv[])
 	}
 	printf("\n\nTests complete!\n");
 #ifdef WIN32
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
 	return 0;
 }

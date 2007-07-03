@@ -3,7 +3,7 @@
 *                                 Graphing test                                 *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2006 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2006-2007 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -258,6 +258,8 @@ public:
 			genPoints(addPoints);
 		}
 		getApp()->addTimeout(this, 0, 100);
+		if(FXProcess::isAutomatedTest())
+			close();
 		return 1;
 	}
 	long showViewer(FXObject* sender,FXSelector sel,void*)

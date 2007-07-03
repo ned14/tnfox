@@ -1756,7 +1756,7 @@ public:
 	{
 		QMtxHold h(mastertimekeeperlock);
 		Entry *entry;
-		assert(entries.isEmpty());	// Otherwise it's probably a memory leak
+		//assert(entries.isEmpty());	// Otherwise it's probably a memory leak
 		while((entry=entries.getFirst()))
 		{
 			PtrRelease(entry->code);

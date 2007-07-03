@@ -239,6 +239,7 @@ FXFSMon::Watcher::~Watcher()
 		latch=0;
 	}
 #endif
+	paths.clear();
 }
 
 #ifdef USE_WINAPI

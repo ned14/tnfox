@@ -3,7 +3,7 @@
 *                         Exception framework test                              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.              *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
 * the terms of the GNU Library General Public License v2.1 as published by the  *
@@ -41,6 +41,7 @@ public:
 
 int main(int argc, char *argv[])
 {
+	int ret=0;
 	FXProcess myprocess(argc, argv);
 	FXApp app("TestExceptions");
 	app.init(argc,argv);
@@ -68,6 +69,7 @@ int main(int argc, char *argv[])
 	{
 		printf("Caught exception, Nesting count=%d, fatal flag=%d\n", e.nestedLen(), e.isFatal());
 		printf("\nFull report: %s\n", e.report().text());
+		if(e.nestedLen()!=2 || !e.isFatal()) ret=1;
 	}
 	FXERRH_ENDTRY
 
@@ -80,8 +82,16 @@ int main(int argc, char *argv[])
 	FXERRH_CATCH(FXException &e)
 	{
 		printf("Caught exception, now reporting to user\n");
+		if(e.nestedLen()!=2 || !e.isFatal()) ret=1;
 		e.setFatal(false);
-		FXERRH_REPORT(&app, e);
+		if(FXProcess::isAutomatedTest())
+		{
+			FX::FXExceptionDialog f(&app, e);
+			f.place(PLACEMENT_CURSOR);
+			f.hide();
+		}
+		else
+			FXERRH_REPORT(&app, e);
 	}
 	FXERRH_ENDTRY
 	printf("User chose to cancel\n");
@@ -91,7 +101,8 @@ int main(int argc, char *argv[])
 
 	printf("\n\nTests complete!\n");
 #ifdef WIN32
-	getchar();
+	if(!FXProcess::isAutomatedTest())
+		getchar();
 #endif
-	return 0;
+	return ret;
 }

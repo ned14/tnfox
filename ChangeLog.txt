@@ -14,6 +14,9 @@ B FXFont wasn't degrading gracefully to alternative fonts if a font wasn't
 available
 B Due to changes in newer GCC's, fxassemblerops was not compiling i386
 assembler implementations
+B Fixed segfault in FXFSMonitor on process exit due to unremoved paths
+B Moved FXException data into private structure to work around MSVC stack
+over-allocation bug
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException
@@ -61,6 +64,7 @@ causing data corruption (the null termination on signalled)
 + Added errorIfNotFound parameter to fxdemanglesymbol()
 * Made all POSIX file descriptors allocated by TnFOX FD_CLOEXEC so child
 processes won't inherit them. This duplicates the Win32 behaviour.
++ Added automated test suite
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=

@@ -3,7 +3,7 @@
 *                                Refed Object test                              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.              *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
 * the terms of the GNU Library General Public License v2.1 as published by the  *
@@ -79,7 +79,8 @@ int main(int argc, char *argv[])
 	foos.print();
 	printf("\n\nTests complete!\n");
 #ifdef WIN32
-	getchar();
+	if(!myprocess.isAutomatedTest())
+		getchar();
 #endif
 	return 0;
 }

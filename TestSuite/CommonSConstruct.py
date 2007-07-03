@@ -3,7 +3,7 @@
 #                            TnFOX tests make file                              *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+#        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -30,7 +30,7 @@ execfile(dir+"/../sconslib.py")
 init(globals(), dir+"/../", dir+"/")
 targetname=dir+"/../lib/"+architectureSpec()+"/"+name
 if globals().has_key('DoConfTests'):
-    doConfTests(env, os.path.normpath(dir+"/../"))
+    doConfTests(env, os.path.normpath(dir+"/..")+"/")
 
 env['CPPPATH']+=[ ".",
                  "../../include",
