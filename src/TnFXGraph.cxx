@@ -405,7 +405,7 @@ FXGLVertices *TnFX2DGraph::setAxesMajor(FXfloat granx, FXfloat grany, FXfloat li
 		p->majors.font=font;
 		if(!p->majors.vertices)
 		{
-			FXERRHM(p->majors.vertices=new FXGLVertices(0,0,0, VERTICES_LINES|VERTICES_LINEITEMS, p->majors.data.data(), 0, 0, lineSize));
+			FXERRHM(p->majors.vertices=new FXGLVertices(0,0,0, VERTICES_LINES|VERTICES_LINEITEMS, 0, 0, 0, lineSize));
 			p->majors.vertices->setColor(FXGLColor(0,0,0));
 			append(p->majors.vertices);
 		}
