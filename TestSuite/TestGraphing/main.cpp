@@ -20,11 +20,7 @@
 ********************************************************************************/
 
 #include "fx.h"
-#include "TnFXGraph.h"
-#include "FXVec3d.h"
-#include "FXGLVertices.h"
-#include "FXGLVisual.h"
-#include "FXGLViewer.h"
+#include "fx3d.h"
 
 class Window : public FXMainWindow
 {

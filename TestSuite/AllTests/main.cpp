@@ -223,9 +223,9 @@ public:
 		redexclamation=new FXGIFIcon(app, RedExclamation);
 		FXFontDesc *fonts=0;
 		FXuint numfonts;
-#if FOX_MAJOR>1 || (FOX_MJAOR==1 && FOX_MINOR>4)
+#if FOX_MAJOR>1 || (FOX_MAJOR==1 && FOX_MINOR>4)
 		if(FXFont::listFonts(fonts, numfonts, "", 0, FXFont::Straight,
-							 0, FONTENCODING_UNICODE, FXFont::Scalable))
+							 0, FONTENCODING_DEFAULT, FXFont::Scalable))
 #else
 		if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
 							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_SCALABLE))
