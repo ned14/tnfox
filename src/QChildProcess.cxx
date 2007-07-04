@@ -322,7 +322,7 @@ bool QChildProcess::open(FXuint mode)
 		si.hStdOutput=p->childinouth[1];
 		si.hStdError=p->childerrh[1];
 		FXERRHWINFN(CreateProcess(NULL, (LPTSTR) FXUnicodify<>(cmd).buffer(), NULL, NULL, TRUE,
-			0, NULL, p->workingDir.empty() ? NULL : FXUnicodify<>(p->workingDir, true).buffer(), &si, &pi), p->command);
+			0, NULL, p->workingDir.empty() ? NULL : FXUnicodify<>(p->workingDir).buffer(), &si, &pi), p->command);
 		p->childh=pi.hProcess;
 		FXERRHWIN(CloseHandle(pi.hThread));
 		FXERRHWIN(p->alwayssignalled=CreateEvent(NULL, TRUE, TRUE, NULL));
