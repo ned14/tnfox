@@ -20,11 +20,7 @@
 ********************************************************************************/
 
 #include "fx.h"
-#include "TnFXGraph.h"
-#include "FXVec3d.h"
-#include "FXGLVertices.h"
-#include "FXGLVisual.h"
-#include "FXGLViewer.h"
+#include "fx3d.h"
 
 class Window : public FXMainWindow
 {
@@ -368,7 +364,7 @@ public:
 		{
 			if(dialog.execute())
 			{
-				FXFile fh(dialog.getFilename());
+				QFile fh(dialog.getFilename());
 				// Need to repaint the screen fully first
 				getApp()->runWhileEvents();
 				fh.open(IO_WriteOnly);

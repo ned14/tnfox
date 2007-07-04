@@ -65,6 +65,7 @@ causing data corruption (the null termination on signalled)
 * Made all POSIX file descriptors allocated by TnFOX FD_CLOEXEC so child
 processes won't inherit them. This duplicates the Win32 behaviour.
 + Added automated test suite
++ Added Windows Vista support
 
 v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=
