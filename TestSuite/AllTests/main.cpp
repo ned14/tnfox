@@ -185,12 +185,14 @@ public:
         FXText *output;
 		FXFont *monospaced;
 	} testresults;
-	FXPrimaryButton *runtests;
+	FXPrimaryButton *trim, *ashtml, *runtests;
 public:
 	enum
 	{
 		ID_FILLINTESTS=FXMainWindow::ID_LAST,
 		ID_CHANGETEST,
+		ID_TRIM,
+		ID_ASHTML,
 		ID_RUNTESTS,
 		ID_LAST
 	};
@@ -287,7 +289,9 @@ public:
 		tests->selectRange(0, 0, tests->getNumColumns()==2 ? 1 : 2, tests->getNumColumns()==2 ? 1 : 2);
 
 		FXGroupBox *tasksgroup=new FXGroupBox(f1, tr("Tasks:"), LAYOUT_FILL_X|FRAME_RIDGE);
-		runtests=new FXPrimaryButton(tasksgroup, tr("Run Tests!"), 0, this, ID_RUNTESTS, PBUTTON_NORMAL|FXWindow::userHandednessLayout());
+		runtests=new FXPrimaryButton(tasksgroup, tr("Run Tests!"), 0, this, ID_RUNTESTS, BUTTON_NORMAL|LAYOUT_SIDE_RIGHT);
+		ashtml=new FXPrimaryButton(tasksgroup, tr("Output results as HTML"), 0, this, ID_ASHTML, BUTTON_NORMAL|LAYOUT_SIDE_LEFT);
+		trim=new FXPrimaryButton(tasksgroup, tr("Trim database of excess results"), 0, this, ID_TRIM, BUTTON_NORMAL|LAYOUT_SIDE_LEFT);
 
 		onCmdChangeTest(0, 0, 0);
 	}
@@ -321,6 +325,8 @@ public:
 	long onCmdChangeTest(FXObject *from, FXSelector sel, void *ptr);
 	void appendOutput(QChildProcess &child, bool terminate);
 	long onCmdRunTests(FXObject *from, FXSelector sel, void *ptr);
+	long onCmdTrim(FXObject *from, FXSelector sel, void *ptr);
+	long onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr);
 };
 
 
@@ -328,6 +334,8 @@ FXDEFMAP(TestWindow) TestWindowMap[]={
 	FXMAPFUNC(SEL_COMMAND,   TestWindow::ID_FILLINTESTS, TestWindow::onCmdFillInTests),
 	FXMAPFUNC(SEL_SELECTED,  TestWindow::ID_CHANGETEST,  TestWindow::onCmdChangeTest),
 	FXMAPFUNC(SEL_COMMAND,   TestWindow::ID_RUNTESTS,    TestWindow::onCmdRunTests),
+	FXMAPFUNC(SEL_COMMAND,   TestWindow::ID_TRIM,        TestWindow::onCmdTrim),
+	FXMAPFUNC(SEL_COMMAND,   TestWindow::ID_ASHTML,      TestWindow::onCmdAsHtml),
 };
 
 FXIMPLEMENT(TestWindow, FXMainWindow, TestWindowMap, ARRAYNUMBER(TestWindowMap))
@@ -385,17 +393,6 @@ public:
 		FXERRH(c->atEnd(), QTrans::tr("TestWindow", "Database table 'platforms' is ambiguous"), 0, 0);
 		return (myPlatformId=ret);
 	}
-	TnFXSQLDBStatementRef &bind(TnFXSQLDBStatementRef &st)
-	{
-		st->bind(":testname", testname);
-		st->bind(":started", started);
-		st->bind(":ended", ended);
-		st->bind(":platform", myPlatformId);
-		st->bind(":svnrev", version.svnrev);
-		st->bind(":returncode", returncode);
-		st->bind(":output", output);
-		return st;
-	}
 	TnFXSQLDBCursorRef &get(TnFXSQLDBCursorRef &cur, bool loadOutput=true)
 	{
 		cur->data(1)->get<>(testname);
@@ -404,7 +401,25 @@ public:
 		cur->data(4)->get<>(myPlatformId);
 		cur->data(5)->get<>(version.svnrev);
 		cur->data(6)->get<>(returncode);
-		if(loadOutput) cur->data(7)->get<>(output);
+		if(loadOutput)
+		{
+			FXERRH_TRY
+			{	// A nice illustration of TnFOX's power! :)
+				// No other C++ toolkit can bz2 decompress from a SQL query BLOB in so little code
+				QByteArray blob;
+				cur->data(7)->get<>(blob);
+				QBuffer buff(blob);
+				QBZip2Device bz2(&buff);
+				bz2.open(IO_ReadOnly);
+				FXStream s(&bz2);
+				s >> output;
+			}
+			FXERRH_CATCH(FXException &)
+			{	// It's stored as plain text (legacy format)
+				cur->data(7)->get<>(output);
+			}
+			FXERRH_ENDTRY
+		}
 		return cur;
 	}
 	void insert(TnFXSQLDB *db)
@@ -413,7 +428,22 @@ public:
 			findMyPlatformId(db, true);
 		assert(myPlatformId>=0);
 		TnFXSQLDBStatementRef st=db->prepare("INSERT INTO 'results'('testname', 'started', 'ended', 'platform', 'svnrev', 'returncode', 'output') VALUES(:testname, :started, :ended, :platform, :svnrev, :returncode, :output);");
-		bind(st);
+		st->bind(":testname", testname);
+		st->bind(":started", started);
+		st->bind(":ended", ended);
+		st->bind(":platform", myPlatformId);
+		st->bind(":svnrev", version.svnrev);
+		st->bind(":returncode", returncode);
+
+		// Write the output bz2 compressed to save (lots of) space
+		QBuffer buff;
+		{
+			QBZip2Device bz2(&buff);
+			bz2.open(IO_WriteOnly);
+			FXStream s(&bz2);
+			s << output;
+		}
+		st->bind(":output", buff.buffer());
 		st->execute();
 	}
 	bool load(TnFXSQLDB *db, TestWindow *w, int r, int c, bool loadOutput=true)
@@ -491,7 +521,7 @@ CREATE TABLE 'results'('id' INTEGER PRIMARY KEY, 'testname' VARCHAR(32), 'starte
 		tests->setColumnWidth(n, 130);
 		n++;
 	}
-	for(TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'platforms' WHERE tnfoxver='"+TnFOXver+"' ORDER BY 'kernelname','kernelversion','architecture','foxver';"); !c->atEnd(); c->next())
+	for(TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'platforms' WHERE tnfoxver='"+TnFOXver+"' ORDER BY kernelname+kernelversion, architecture, foxver;"); !c->atEnd(); c->next())
 	{
 		Platform pf;
 		c->data(0)->get<>(pf.id);
@@ -621,7 +651,8 @@ void TestWindow::appendOutput(QChildProcess &child, bool terminate)
 			buff=buffer+sizeof(buffer)-inputlen;
 			testresults.output->appendText((FXchar *) output, read);
 			testresults.output->makePositionVisible(testresults.output->getLength());
-			getApp()->runWhileEvents();
+			getApp()->runModalWhileEvents(this);
+			getApp()->runModalWhileEvents(this);
 		}
 		else break;
 	}
@@ -641,9 +672,9 @@ void TestWindow::appendOutput(QChildProcess &child, bool terminate)
 long TestWindow::onCmdRunTests(FXObject *from, FXSelector sel, void *ptr)
 {
 	FXRectangle selection(tests->getSelStartRow(), tests->getSelStartColumn(), tests->getSelEndRow(), tests->getSelEndColumn());
-	int col=tests->getSelStartColumn();
+	int col=tests->getSelStartColumn(), endRow=tests->getSelEndRow();
 	FXString builddir=FXPath::directory(mypath);
-	for(int row=tests->getSelStartRow(); row<=tests->getSelEndRow(); row++)
+	for(int row=tests->getSelStartRow(); row<=endRow; row++)
 	{
 		if(tests->getItemIcon(row, 1)==greentick)
 		{
@@ -693,6 +724,60 @@ long TestWindow::onCmdRunTests(FXObject *from, FXSelector sel, void *ptr)
 	onCmdFillInTests(from, sel, ptr);
 	tests->selectRange(selection.x, selection.w, selection.y, selection.h);
 	onCmdChangeTest(from, sel, ptr);
+	return 1;
+}
+
+long TestWindow::onCmdTrim(FXObject *from, FXSelector sel, void *ptr)
+{
+	if(FXHandedMsgBox::question(this, tr("Question from TnFOX Automated Tester"),
+		tr("This will permanently remove old results from the results database. Are you sure?")))
+	{
+		static const bool upgrade=false;
+		int processed=1, deleted=0;
+		TestResult mtest, dtest;
+		FXAutoPtr<TnFXSQLDB> mydb=openResults();
+		TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'results' ORDER BY platform, testname, ended DESC;");
+		mtest.get(c, upgrade);
+		for(c->next(); !c->atEnd(); )
+		{
+			int id;
+			c->data(0)->get<>(id);
+			dtest.get(c, upgrade);
+			if(mtest.testname==dtest.testname && mtest.myPlatformId==dtest.myPlatformId)
+			{
+				c->next();
+				mydb->immediate("DELETE FROM 'results' WHERE id="+FXString::number(id)+";");
+				deleted++;
+			}
+			else
+			{
+				if(upgrade)
+				{	// Upgrade the output storage format
+					TnFXSQLDBStatementRef st=mydb->prepare("UPDATE 'results' SET output=:output WHERE id="+FXString::number(id)+";");
+					QBuffer buff;
+					{
+						QBZip2Device bz2(&buff);
+						bz2.open(IO_WriteOnly);
+						FXStream s(&bz2);
+						s << dtest.output;
+					}
+					st->bind(":output", buff.buffer());
+					st->execute();
+				}
+				mtest=dtest;
+				c->next();
+			}
+			processed++;
+		}
+		mydb->immediate("VACUUM results;");
+		FXHandedMsgBox::informational(this, tr("Message from TnFOX Automated Test"), tr("Processed %1 records, removing %2!").arg(processed).arg(deleted));
+		onCmdFillInTests(from, sel, ptr);
+	}
+	return 1;
+}
+
+long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
+{
 	return 1;
 }
 
