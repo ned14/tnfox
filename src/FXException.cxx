@@ -388,7 +388,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 				}
 			}
 		}
-		free(strings);
+		::free(strings);
 	}
 #endif
 #endif
