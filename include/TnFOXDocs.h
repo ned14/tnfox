@@ -36,9 +36,9 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.6.25), and the extensions listed below are designed to not interfere with that process where
+from v1.6.28), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
-is (C) 2001-2006 Niall Douglas and all code rests under the same licence as FOX but with
+is (C) 2001-2007 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
 so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b>. If you want to know more
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the

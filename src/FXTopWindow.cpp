@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.175.2.5 2007/03/07 13:07:37 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.175.2.6 2007/03/29 18:01:51 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -190,6 +190,18 @@ void FXTopWindow::create(){
   if(xid){
     if(getApp()->isInitialized()){
 
+    // Only shrinkable; size may not be above default size
+    if((options&DECOR_SHRINKABLE) && !(options&DECOR_STRETCHABLE)){
+      if(width>getDefaultWidth()) width=getDefaultWidth();
+      if(height>getDefaultHeight()) height=getDefaultHeight();
+      }
+
+    // Only stretchable; size may not be below default size
+    else if((options&DECOR_STRETCHABLE) && !(options&DECOR_SHRINKABLE)){
+      if(width<getDefaultWidth()) width=getDefaultWidth();
+      if(height<getDefaultHeight()) height=getDefaultHeight();
+      }
+
 #ifndef WIN32
       // Catch delete window
       Atom protocols[3];
@@ -201,42 +213,45 @@ void FXTopWindow::create(){
       // Set position for Window Manager
       XSizeHints size;
 
-      size.flags=USSize|PSize|PWinGravity;      // Let Window Manager place it
-      size.x=0;
-      size.y=0;
-      //if(xpos!=0 || ypos!=0){                   // Force explicit position
-        size.flags|=USPosition|PPosition;
-      //  }
-        size.x=xpos;
-        size.y=ypos;
-      size.min_width=0;
-      size.min_height=0;
-      size.base_width=0;
-      size.base_height=0;
-      if(!(options&DECOR_SHRINKABLE)){          // Can not shrink, so set min size
-        size.flags|=PMinSize|PBaseSize;
-        size.min_width=getDefaultWidth();
-        size.min_height=getDefaultHeight();
-        size.base_width=width;
-        size.base_height=height;
-        }
-      size.max_width=0;
-      size.max_height=0;
-      if(!(options&DECOR_STRETCHABLE)){         // Can not grow, so set max size
-        size.flags|=PMaxSize;
-        size.max_width=getDefaultWidth();
-        size.max_height=getDefaultHeight();
-        }
+      // Placement hints
+      size.flags=USSize|PSize|PWinGravity|USPosition|PPosition;
+      size.x=xpos;
+      size.y=ypos;
       size.width=width;
       size.height=height;
+      size.min_width=0;
+      size.min_height=0;
+      size.max_width=0;
+      size.max_height=0;
       size.width_inc=0;
       size.height_inc=0;
       size.min_aspect.x=0;
       size.min_aspect.y=0;
       size.max_aspect.x=0;
       size.max_aspect.y=0;
+      size.base_width=0;
+      size.base_height=0;
       size.win_gravity=NorthWestGravity;        // Tim Alexeevsky <realtim@mail.ru>
       size.win_gravity=StaticGravity;           // Account for border (ICCCM)
+
+      // Apply resize limitations
+      if(!(options&DECOR_SHRINKABLE)){
+        if(!(options&DECOR_STRETCHABLE)){       // Cannot change at all
+          size.flags|=PMinSize|PMaxSize;
+          size.min_width=size.max_width=width;
+          size.min_height=size.max_height=height;
+          }
+        else{                                   // Cannot get smaller than default
+          size.flags|=PMinSize;
+          size.min_width=getDefaultWidth();
+          size.min_height=getDefaultHeight();
+          }
+        }
+      else if(!(options&DECOR_STRETCHABLE)){    // Cannot get larger than default
+        size.flags|=PMaxSize;
+        size.max_width=getDefaultWidth();
+        size.max_height=getDefaultHeight();
+        }
 
       // Set hints
       XSetWMNormalHints(DISPLAY(getApp()),xid,&size);

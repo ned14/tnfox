@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.617.2.6 2007/03/28 16:47:00 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.617.2.7 2007/03/29 18:01:45 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -4616,12 +4616,20 @@ Alt key seems to repeat.
         RECT rect;
         //FXTRACE((100,"WM_GETMINMAXINFO ptMaxSize=%d,%d ptMinTrackSize=%d,%d ptMaxTrackSize=%d,%d\n",((MINMAXINFO*)lParam)->ptMaxSize.x,((MINMAXINFO*)lParam)->ptMaxSize.y,((MINMAXINFO*)lParam)->ptMinTrackSize.x,((MINMAXINFO*)lParam)->ptMinTrackSize.y,((MINMAXINFO*)lParam)->ptMaxTrackSize.x,((MINMAXINFO*)lParam)->ptMaxTrackSize.y));
         if(!(((FXTopWindow*)window)->getDecorations()&DECOR_SHRINKABLE)){
-          SetRect(&rect,0,0,window->getDefaultWidth(),window->getDefaultHeight());
+          if(!(((FXTopWindow*)window)->getDecorations()&DECOR_STRETCHABLE)){    // Cannot change at all
+            SetRect(&rect,0,0,window->getWidth(),window->getHeight());
+            AdjustWindowRectEx(&rect,GetWindowLong((HWND)hwnd,GWL_STYLE),false,GetWindowLong((HWND)hwnd,GWL_EXSTYLE));
+            ((MINMAXINFO*)lParam)->ptMinTrackSize.x=((MINMAXINFO*)lParam)->ptMaxTrackSize.x=rect.right-rect.left;
+            ((MINMAXINFO*)lParam)->ptMinTrackSize.y=((MINMAXINFO*)lParam)->ptMaxTrackSize.y=rect.bottom-rect.top;
+            }
+          else{                                                                 // Cannot get smaller than default
+            SetRect(&rect,0,0,window->getDefaultWidth(),window->getDefaultHeight());
           AdjustWindowRectEx(&rect,GetWindowLongPtr((HWND)hwnd,GWL_STYLE),FALSE,GetWindowLongPtr((HWND)hwnd,GWL_EXSTYLE));
-          ((MINMAXINFO*)lParam)->ptMinTrackSize.x=rect.right-rect.left;
-          ((MINMAXINFO*)lParam)->ptMinTrackSize.y=rect.bottom-rect.top;
+            ((MINMAXINFO*)lParam)->ptMinTrackSize.x=rect.right-rect.left;
+            ((MINMAXINFO*)lParam)->ptMinTrackSize.y=rect.bottom-rect.top;
+            }
           }
-        if(!(((FXTopWindow*)window)->getDecorations()&DECOR_STRETCHABLE)){
+        else if(!(((FXTopWindow*)window)->getDecorations()&DECOR_STRETCHABLE)){ // Cannot get larger than default
           SetRect(&rect,0,0,window->getDefaultWidth(),window->getDefaultHeight());
           AdjustWindowRectEx(&rect,GetWindowLongPtr((HWND)hwnd,GWL_STYLE),FALSE,GetWindowLongPtr((HWND)hwnd,GWL_EXSTYLE));
           ((MINMAXINFO*)lParam)->ptMaxTrackSize.x=rect.right-rect.left;

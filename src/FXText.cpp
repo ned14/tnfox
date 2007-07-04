@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXText.cpp,v 1.348.2.1 2006/05/24 12:08:46 fox Exp $                         *
+* $Id: FXText.cpp,v 1.348.2.2 2007/05/17 02:56:16 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -4413,6 +4413,7 @@ void FXText::drawBufferText(FXDCWindow& dc,FXint x,FXint y,FXint,FXint,FXint pos
       }
     else{
       dc.drawText(x,y,&buffer[pos],gapstart-pos);
+      if(usedstyle&STYLE_BOLD) dc.drawText(x+1,y,&buffer[pos],gapstart-pos);
       x+=font->getTextWidth(&buffer[pos],gapstart-pos);
       dc.drawText(x,y,&buffer[gapend],pos+n-gapstart);
       if(usedstyle&STYLE_BOLD) dc.drawText(x+1,y,&buffer[gapend],pos+n-gapstart);

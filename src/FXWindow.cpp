@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWindow.cpp,v 1.341.2.1 2006/05/10 13:18:13 fox Exp $                       *
+* $Id: FXWindow.cpp,v 1.341.2.2 2007/05/15 05:23:44 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -2790,12 +2790,12 @@ bool FXWindow::setDNDData(FXDNDOrigin origin,FXDragType targettype,FXuchar* data
 bool FXWindow::setDNDData(FXDNDOrigin origin,FXDragType targettype,const FXString& string) const {
   FXuchar *data; FXuint size;
   size=string.length();
-  if(FXCALLOC(&data,FXuchar,size+1)){
+  if(FXCALLOC(&data,FXuchar,size+2)){
     memcpy(data,string.text(),size);
 #ifndef WIN32
     setDNDData(origin,targettype,data,size);
 #else
-    setDNDData(origin,targettype,data,size+1);
+    setDNDData(origin,targettype,data,size+2);
 #endif
     return true;
     }

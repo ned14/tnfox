@@ -556,6 +556,7 @@ inline double FXLERP(double a, double b, double f) { return ((a)+((b)-(a))*(f));
 
 /// Make int out of two shorts
 inline FXuint MKUINT(FXuint l, FXuint h) { return ((((FX::FXuint)(l))&0xffff) | (((FX::FXuint)(h))<<16)); }
+#define MKUINT_(l,h) ((((FX::FXuint)(l))&0xffff) | (((FX::FXuint)(h))<<16))
 
 /// Make selector from message type and message id
 inline FXuint FXSEL(FXuint type, FXuint id) { return ((((FX::FXuint)(id))&0xffff) | (((FX::FXuint)(type))<<16)); }
