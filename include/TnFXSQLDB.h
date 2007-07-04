@@ -106,6 +106,22 @@ use \c db->execute() directly. However, there is an important caveat -
 if you place values directly into a string, you must escape them in a
 SQL92 compatible way which isn't required if you simply bind in the values.
 
+To give you some idea of the power of TnFOX, this is from the AllTests
+application in the Test suite:
+\code
+// No other C++ toolkit can bz2 decompress from a SQL query BLOB in so little code!
+QByteArray blob;
+cur->data(7)->get<>(blob);
+QBuffer buff(blob);
+QBZip2Device bz2(&buff);
+bz2.open(IO_ReadOnly);
+FXStream s(&bz2);
+s >> output;
+\endcode
+Yes, that tiny amount of code fetches a BLOB from column 7 into a FX::QByteArray
+(by reference, thus not copying any memory), points a FX::QBuffer at it, a
+FX::QBZip2Device filter on that, then uses a FX::FXStream to read a FX::FXString!
+
 TODO:
 \li SQLITE_BUSY handler
 \li TnFXSQLDB_ipc
