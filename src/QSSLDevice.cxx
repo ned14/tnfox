@@ -255,17 +255,17 @@ public:
 				FXuval size=Secure::Randomness::readBlock(buffer, FXMIN(SEED_SIZE, Secure::Randomness::size()));
 				RAND_seed(buffer, (FXuint) size);
 			}
-			FXERRHSSL(ctx=SSL_CTX_new(SSLv23_method()));
+			if(!(ctx=SSL_CTX_new(SSLv23_method()))) FXERRHSSL(-1);
 			FXERRHSSL(SSL_CTX_set_options(ctx, SSL_OP_SINGLE_DH_USE));
 			{	// Read dh1024
 				BIO *h=BIO_new_mem_buf((void *) dh1024data, sizeof(dh1024data));
 				FXRBOp unh=FXRBFunc(BIO_free, h);
-				FXERRHSSL(dh1024=PEM_read_bio_DHparams(h, NULL, NULL, NULL));
+				if(!(dh1024=PEM_read_bio_DHparams(h, NULL, NULL, NULL))) FXERRHSSL(-1);
 			}
 			{	// Read dh4096
 				BIO *h=BIO_new_mem_buf((void *) dh4096data, sizeof(dh4096data));
 				FXRBOp unh=FXRBFunc(BIO_free, h);
-				FXERRHSSL(dh4096=PEM_read_bio_DHparams(h, NULL, NULL, NULL));
+				if(!(dh4096=PEM_read_bio_DHparams(h, NULL, NULL, NULL))) FXERRHSSL(-1);
 			}
 			SSL_CTX_set_tmp_dh_callback(ctx, getDHParams);
 			FXERRHSSL(SSL_CTX_set_cipher_list(ctx, "ALL:@STRENGTH"));
@@ -467,23 +467,23 @@ public:
 			{
 				if(!key.rsa)
 				{
-					FXERRHSSL(key.rsa=RSA_new());
+					if(!(key.rsa=RSA_new())) FXERRHSSL(-1);
 					if(!what || 1==what)
 					{
-						if(o.key.rsa->d) { FXERRHSSL(key.rsa->d=BN_dup(o.key.rsa->d)); }
-						if(o.key.rsa->p) { FXERRHSSL(key.rsa->p=BN_dup(o.key.rsa->p)); }
-						if(o.key.rsa->q) { FXERRHSSL(key.rsa->q=BN_dup(o.key.rsa->q)); }
-						if(o.key.rsa->dmp1) { FXERRHSSL(key.rsa->dmp1=BN_dup(o.key.rsa->dmp1)); }
-						if(o.key.rsa->dmq1) { FXERRHSSL(key.rsa->dmq1=BN_dup(o.key.rsa->dmq1)); }
+						if(o.key.rsa->d) { if(!(key.rsa->d=BN_dup(o.key.rsa->d))) FXERRHSSL(-1); }
+						if(o.key.rsa->p) { if(!(key.rsa->p=BN_dup(o.key.rsa->p))) FXERRHSSL(-1); }
+						if(o.key.rsa->q) { if(!(key.rsa->q=BN_dup(o.key.rsa->q))) FXERRHSSL(-1); }
+						if(o.key.rsa->dmp1) { if(!(key.rsa->dmp1=BN_dup(o.key.rsa->dmp1))) FXERRHSSL(-1); }
+						if(o.key.rsa->dmq1) { if(!(key.rsa->dmq1=BN_dup(o.key.rsa->dmq1))) FXERRHSSL(-1); }
 					}
 					if(!what)
 					{
-						if(o.key.rsa->iqmp) { FXERRHSSL(key.rsa->iqmp=BN_dup(o.key.rsa->iqmp)); }
+						if(o.key.rsa->iqmp) { if(!(key.rsa->iqmp=BN_dup(o.key.rsa->iqmp))) FXERRHSSL(-1); }
 					}
 					if(!what || 2==what)
 					{
-						if(o.key.rsa->n) { FXERRHSSL(key.rsa->n=BN_dup(o.key.rsa->n)); }
-						if(o.key.rsa->e) { FXERRHSSL(key.rsa->e=BN_dup(o.key.rsa->e)); }
+						if(o.key.rsa->n) { if(!(key.rsa->n=BN_dup(o.key.rsa->n))) FXERRHSSL(-1); }
+						if(o.key.rsa->e) { if(!(key.rsa->e=BN_dup(o.key.rsa->e))) FXERRHSSL(-1); }
 					}
 				}
 				break;
@@ -492,14 +492,14 @@ public:
 			{
 				if(!key.dh)
 				{
-					FXERRHSSL(key.dh=DH_new());
+					if(!(key.dh=DH_new())) FXERRHSSL(-1);
 					if(!what)
 					{
-						FXERRHSSL(key.dh->p=BN_dup(o.key.dh->p));
-						FXERRHSSL(key.dh->g=BN_dup(o.key.dh->g));
+						if(!(key.dh->p=BN_dup(o.key.dh->p))) FXERRHSSL(-1);
+						if(!(key.dh->g=BN_dup(o.key.dh->g))) FXERRHSSL(-1);
 					}
-					if(!what || 1==what) FXERRHSSL(key.dh->priv_key=BN_dup(o.key.dh->priv_key));
-					if(!what || 2==what) FXERRHSSL(key.dh->pub_key=BN_dup(o.key.dh->pub_key));
+					if(!what || 1==what) { if(!(key.dh->priv_key=BN_dup(o.key.dh->priv_key))) FXERRHSSL(-1); }
+					if(!what || 2==what) { if(!(key.dh->pub_key=BN_dup(o.key.dh->pub_key))) FXERRHSSL(-1); }
 				}
 				break;
 			}
@@ -680,9 +680,9 @@ FXString FXSSLPKey::publicKeyAsString() const
 		case FXSSLPKey::RSA:
 			{
 				char *mod, *exp;
-				FXERRHSSL(mod=BN_bn2hex(p->key.rsa->n));
+				if(!(mod=BN_bn2hex(p->key.rsa->n))) FXERRHSSL(-1);
 				FXRBOp unmod=FXRBFunc(OPENSSL_freeFunc, mod);
-				FXERRHSSL(exp=BN_bn2hex(p->key.rsa->e));
+				if(!(exp=BN_bn2hex(p->key.rsa->e))) FXERRHSSL(-1);
 				FXRBOp unexp=FXRBFunc(OPENSSL_freeFunc, exp);
 				return "m0x"+FXString(mod)+",e0x"+FXString(exp);
 			}
@@ -759,7 +759,7 @@ void FXSSLPKey::generate()
 	case RSA:
 		{
 			if(p->key.rsa) RSA_free(p->key.rsa);
-			FXERRHSSL(p->key.rsa=RSA_generate_key(p->bitsize, RSA_F4, NULL, 0));
+			if(!(p->key.rsa=RSA_generate_key(p->bitsize, RSA_F4, NULL, 0))) FXERRHSSL(-1);
 			FXERRHSSL(RSA_blinding_on(p->key.rsa, NULL));
 			break;
 		}
@@ -768,13 +768,13 @@ void FXSSLPKey::generate()
 			::DH *basedh=getDHParams(0, 0, p->bitsize);
 			if(basedh)
 			{
-				FXERRHSSL(p->key.dh=DH_new());
-				FXERRHSSL(p->key.dh->p=BN_dup(basedh->p));
-				FXERRHSSL(p->key.dh->g=BN_dup(basedh->g));
+				if(!(p->key.dh=DH_new())) FXERRHSSL(-1);
+				if(!(p->key.dh->p=BN_dup(basedh->p))) FXERRHSSL(-1);
+				if(!(p->key.dh->g=BN_dup(basedh->g))) FXERRHSSL(-1);
 			}
 			else if(!p->key.dh)		// Skip it if primes already generated
 			{
-				FXERRHSSL(p->key.dh=DH_generate_parameters(p->bitsize, 5, NULL, 0));
+				if(!(p->key.dh=DH_generate_parameters(p->bitsize, 5, NULL, 0))) FXERRHSSL(-1);
 			}
 			if(p->key.dh->priv_key)
 			{
@@ -809,7 +809,7 @@ void FXSSLPKey::readFromPEM(QIODevice *dev)
 {
 #ifdef HAVE_OPENSSL
 	BIO *bio;
-	FXERRHSSL(bio=BIO_new(&BIO_s_QIODevice));
+	if(!(bio=BIO_new(&BIO_s_QIODevice))) FXERRHSSL(-1);
 	FXRBOp unbio=FXRBFunc(BIO_free_all, bio);
 	BIO_set_fp(bio, dev, 0);
 	p->clear();
@@ -841,7 +841,7 @@ void FXSSLPKey::writeAsPEM(QIODevice *dev) const
 {
 #ifdef HAVE_OPENSSL
 	BIO *bio;
-	FXERRHSSL(bio=BIO_new(&BIO_s_QIODevice));
+	if(!(bio=BIO_new(&BIO_s_QIODevice))) FXERRHSSL(-1);
 	FXRBOp unbio=FXRBFunc(BIO_free_all, bio);
 	BIO_set_fp(bio, dev, 0);
 	switch(p->type)
@@ -881,7 +881,7 @@ FXSSLPKey FXSSLPKey::publicKeyFromString(const FXString &s, FXSSLPKey::KeyType k
 				int n;
 				for(n=-1; bits!=0; n++) bits>>=1;
 				ret.p->bitsize=1<<n;
-				FXERRHSSL(ret.p->key.rsa=RSA_new());
+				if(!(ret.p->key.rsa=RSA_new())) FXERRHSSL(-1);
 				FXERRHSSL(BN_hex2bn(&ret.p->key.rsa->n, mantissa.text()));
 				FXERRHSSL(BN_hex2bn(&ret.p->key.rsa->e, exponent.text()));
 				return ret;
@@ -948,19 +948,19 @@ FXStream &operator>>(FXStream &s, FXSSLPKey &i)
 			{
 				if(!i.p->key.rsa)
 				{
-					FXERRHSSL(i.p->key.rsa=RSA_new());
+					if(!(i.p->key.rsa=RSA_new())) FXERRHSSL(-1);
 				}
 				if(*(FXuint *)"PUB1"==tag)
 				{
 					s >> len; s.readRawBytes(buffer, FXMIN(len, 1024));
-					FXERRHSSL(i.p->key.rsa->n=BN_bin2bn(buffer, len, NULL));
+					if(!(i.p->key.rsa->n=BN_bin2bn(buffer, len, NULL))) FXERRHSSL(-1);
 					s >> len; s.readRawBytes(buffer, FXMIN(len, 1024));
-					FXERRHSSL(i.p->key.rsa->e=BN_bin2bn(buffer, len, NULL));
+					if(!(i.p->key.rsa->e=BN_bin2bn(buffer, len, NULL))) FXERRHSSL(-1);
 				}
 				else if(*(FXuint *)"PRV1"==tag)
 				{
 					s >> len; s.readRawBytes(buffer, FXMIN(len, 1024));
-					FXERRHSSL(i.p->key.rsa->d=BN_bin2bn(buffer, len, NULL));
+					if(!(i.p->key.rsa->d=BN_bin2bn(buffer, len, NULL))) FXERRHSSL(-1);
 				}
 				else if(*(FXuint *)"ENDK"==tag) break;
 				else FXERRG(QTrans::tr("FXSSLPKey", "Unknown tag"), FXSSLPKEY_BADFORMAT, 0);
@@ -1319,7 +1319,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 			FXuval size=Secure::Randomness::readBlock(buffer, FXMIN(SEED_SIZE, Secure::Randomness::size()));
 			RAND_seed(buffer, (FXuint) size);
 		}
-		FXERRHSSL(handle=SSL_new(myinit->ctx));
+		if(!(handle=SSL_new(myinit->ctx))) FXERRHSSL(-1);
 		if(enabled.v2 && enabled.v3)
 		{
 			FXERRHSSL(SSL_set_ssl_method(handle, SSLv23_method()));
@@ -1333,7 +1333,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 			FXERRHSSL(SSL_set_ssl_method(handle, SSLv3_method()));
 		}
 		FXERRHSSL(SSL_set_cipher_list(handle, ciphers.text()));
-		FXERRHSSL(bio=BIO_new(&BIO_s_QIODevice));
+		if(!(bio=BIO_new(&BIO_s_QIODevice))) FXERRHSSL(-1);
 		BIO_set_fp(bio, dev, 0);
 		SSL_set_bio(handle, bio, bio);
 	}
@@ -1349,7 +1349,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 			if(amServer)
 			{	// Need to temporarily disable the session cache
 				FXString myname("TnFOX_%1_%2_%3_disabled");
-				myname.arg(FXNetwork::hostname()).arg(FXFile::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
+				myname.arg(FXNetwork::hostname()).arg(FXPath::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
 				FXERRHSSL(SSL_CTX_set_session_id_context(myinit->ctx, (unsigned char *) myname.text(), myname.length()));
 			}
 			int ret;
@@ -1365,7 +1365,7 @@ struct FXDLLLOCAL QSSLDevicePrivate : public QMutex
 			if(amServer)
 			{
 				FXString myname("TnFOX_%1_%2_%3");
-				myname.arg(FXNetwork::hostname()).arg(FXFile::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
+				myname.arg(FXNetwork::hostname()).arg(FXPath::name(FXProcess::execpath())).arg(FXProcess::id(), 0, 16);
 				FXERRHSSL(SSL_CTX_set_session_id_context(myinit->ctx, (unsigned char *) myname.text(), myname.length()));
 			}
 			FXERRHSSL(ret);
@@ -1830,8 +1830,8 @@ bool QSSLDevice::open(FXuint mode)
 					writeLE4(source+key.bytesLen(), key.bitsLen());
 					writeLE4(source+key.bytesLen()+sizeof(FXuint), key.saltLen());
 					writeLE2(source+key.bytesLen()+2*sizeof(FXuint), key.type());
-					FXERRHSSL(ret=RSA_public_encrypt(key.bytesLen()+2*sizeof(FXuint)+sizeof(FXushort),
-						source, buffer, pkey->p->key.rsa, RSA_PKCS1_PADDING));
+					if(!(ret=RSA_public_encrypt(key.bytesLen()+2*sizeof(FXuint)+sizeof(FXushort),
+						source, buffer, pkey->p->key.rsa, RSA_PKCS1_PADDING))) FXERRHSSL(-1);
 					FXSSLKey tempkey(0);
 					tempkey.p->setToEncrypted();
 					tempkey.p->int_setKey((void *) buffer, ret);
