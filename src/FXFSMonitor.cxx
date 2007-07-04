@@ -26,6 +26,8 @@
 #else
  #ifdef HAVE_FAM
   #include <fam.h>
+  #include <sys/select.h>
+  #include "tnfxselect.h"
   #define USE_FAM
   #define FXERRHFAM(ret) if(ret<0) { FXERRG(FXString("FAM Error: %1 (code %2)").arg(FXString(FamErrlist[FAMErrno])).arg(FAMErrno), FXEXCEPTION_OSSPECIFIC, 0); }
  #elif defined(__APPLE__) || defined(__FreeBSD__)
@@ -194,6 +196,8 @@ FXFSMon::FXFSMon() : watchers(true)
 FXFSMon::~FXFSMon()
 { FXEXCEPTIONDESTRUCT1 {
 	Watcher *w;
+	watchers.clear();
+	// All watcher threads should have been terminated by the watchers.clear, but make sure anyway
 	for(QPtrListIterator<Watcher> it(watchers); (w=it.current()); ++it)
 	{
 		w->requestTermination();
@@ -202,7 +206,6 @@ FXFSMon::~FXFSMon()
 	{
 		w->wait();
 	}
-	watchers.clear();
 #ifdef USE_KQUEUES
 	if(kqueueh)
 	{
@@ -230,6 +233,7 @@ FXFSMon::Watcher::Watcher() : QThread("Filing system monitor", false, 128*1024, 
 
 FXFSMon::Watcher::~Watcher()
 {
+	paths.clear();
 	requestTermination();
 	wait();
 #ifdef USE_WINAPI
@@ -239,7 +243,6 @@ FXFSMon::Watcher::~Watcher()
 		latch=0;
 	}
 #endif
-	paths.clear();
 }
 
 #ifdef USE_WINAPI
@@ -335,9 +338,15 @@ void FXFSMon::Watcher::run()
 	for(;;)
 	{
 		FXERRH_TRY
-		{
-			while((ret=FAMNextEvent(&fxfsmon->fc, &fe)))
+		{	/* Why is every implementation of FAM I've tried using crap?
+			This is yet another workaround for thread cancellation hanging the process */
+			fd_set fds;
+			for(;;)
 			{
+				FD_ZERO(&fds);
+				FD_SET(FAMCONNECTION_GETFD(&fxfsmon->fc), &fds);
+				FXERRHOS(tnfxselect(FAMCONNECTION_GETFD(&fxfsmon->fc)+1, &fds, 0, 0, NULL));
+				if(!(ret=FAMNextEvent(&fxfsmon->fc, &fe))) break;
 				FXERRHFAM(ret);
 				if(FAMStartExecuting==fe.code || FAMStopExecuting==fe.code
 					|| FAMAcknowledge==fe.code) continue;
