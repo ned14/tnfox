@@ -31,7 +31,7 @@
 #include <string.h>
 #include "FXErrCodes.h"
 #ifdef USE_POSIX
-#include <unistd.h>
+#include <sys/select.h>
 #include "tnfxselect.h"
 #else
 #include "WindowsGubbins.h"
