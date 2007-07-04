@@ -1548,13 +1548,13 @@ FXProcess::dllHandle FXProcess::dllLoad(const FXString &path)
 		// Try directory where my executable is
 		FXString inexecpath=FXPath::directory(execpath())+PATHSEPSTRING;
 		path_=path;
-		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
 		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		if(!hasLib) { path_="lib"+path_;			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		// Try current directory
 		inexecpath="." PATHSEPSTRING;
 		path_=path;
-		if(FXFile::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
+		if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; }
 		if(!hasSO)  { path_+=SHAREDOBJECTSUFFIX;	if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		if(!hasLib) { path_="lib"+path_;			if(FXStat::exists(inexecpath+path_)) { path_=inexecpath+path_; break; } }
 		break;
