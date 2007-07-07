@@ -776,8 +776,103 @@ long TestWindow::onCmdTrim(FXObject *from, FXSelector sel, void *ptr)
 	return 1;
 }
 
+#define WRTXT(txt) oh.writeBlock(txt, sizeof(txt))
+#define WRTXTV(txt, v) { char buffer[1024]; sprintf(buffer, txt, v); oh.writeBlock(buffer, strlen(buffer)); }
+struct Item
+{
+	TestWindow::Platform pf;
+	QMemArray<TestResult> results;
+};
 long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 {
+	FXString htmlpath=FXFileDialog::getSaveFilename(this, tr("Save HTML to:"), FXPath::join(TnFOXpath, "testresults.html"), "*.html");
+	if(!htmlpath.empty())
+	{
+		FXAutoPtr<TnFXSQLDB> mydb=openResults();
+		Item temp;
+		QMemArray<Item> items;
+		TestResult mtest, dtest;
+		for(TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'platforms' WHERE tnfoxver='"+TnFOXver+"' ORDER BY kernelname+kernelversion, architecture, foxver;"); !c->atEnd(); c->next())
+		{
+			temp.results.resize(0);
+			c->data(0)->get<>(temp.pf.id);
+			c->data(1)->get<>(temp.pf.tnfoxver);
+			c->data(2)->get<>(temp.pf.foxver);
+			c->data(3)->get<>(temp.pf.architecture);
+			c->data(4)->get<>(temp.pf.kernelname);
+			c->data(5)->get<>(temp.pf.kernelversion);
+
+			{
+				TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'results' WHERE platform="+FXString::number(temp.pf.id)+" ORDER BY testname, ended DESC;");
+				if(!c->atEnd())
+				{
+					mtest.get(c, false);
+					temp.results.push_back(mtest);
+					for(c->next(); !c->atEnd(); c->next())
+					{
+						dtest.get(c, false);
+						if(mtest.testname!=dtest.testname)
+						{
+							temp.results.push_back(dtest);
+							mtest=dtest;
+						}
+					}
+					items.push_back(temp);
+				}
+			}
+		}
+		FXFile oh(htmlpath);
+		FXuint div=100/(items.count()+1);
+		oh.open(IO_WriteOnly);
+		WRTXT("<html>\n<body>\n");
+		{
+			FXString t(tr("<h1>TnFOX version: %1 (latest SVN rev %2)</h1>\n").arg(TnFOXver).arg(svnrev));
+			oh.writeBlock(t.text(), t.length());
+		}
+		{
+			FXString t(tr("<p>Generated on %1</p>\n").arg(FXTime::now().asString()));
+			oh.writeBlock(t.text(), t.length());
+		}
+		WRTXT("<table border=\"1\">\n");
+		WRTXT("  <tr>\n");
+		WRTXTV("    <th width=\"%u%%\">\n", div);
+		WRTXT("    </th>\n");
+		for(FXuint y=0; y<items.count(); y++)
+		{
+			const Item &i=items[y];
+			WRTXTV("    <th width=\"%u%%\">\n", div);
+			FXString t(tr("%1 %2<br />\n%3<br />\nFOX %4\n").arg(i.pf.kernelname).arg(i.pf.kernelversion).arg(i.pf.architecture).arg(i.pf.foxver));
+			oh.writeBlock(t.text(), t.length());
+			WRTXT("    </th>\n");
+		}
+		WRTXT("  </tr>\n");
+		for(FXint y=0; y<tests->getNumRows(); y++)
+		{
+			WRTXT("  <tr>\n");
+			WRTXTV("    <td align=\"right\" width=\"%u%%\">\n", div);
+			WRTXTV("      <b>%s</b>\n", tests->getItemText(y, 0).text());
+			WRTXT("    </td>\n");
+			for(FXuint x=0; x<items.count(); x++)
+			{
+				const Item &i=items[x];
+				WRTXTV("    <td align=\"center\" valign=\"middle\" width=\"%u%%\">\n", div);
+				for(FXuint r=0; r<i.results.count(); r++)
+				{
+					if(i.results[r].testname==tests->getItemText(y, 0))
+					{
+						assert(i.results[r].myPlatformId==i.pf.id);
+						FXString t("      (svn rev %1) <img src=\"%2\" width=\"18\" height=\"18\" />\n");
+						t.arg(i.results[r].version.svnrev).arg(i.results[r].returncode ? "RedExclamation.gif" : "GreenTick.gif");
+						oh.writeBlock(t.text(), t.length());
+						break;
+					}
+				}
+				WRTXT("    </td>\n");
+			}
+			WRTXT("  </tr>\n");
+		}
+		WRTXT("</table>\n</body>\n</html>\n");
+	}
 	return 1;
 }
 
