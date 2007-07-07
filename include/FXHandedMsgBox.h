@@ -107,12 +107,12 @@ public:
 		return FXHandedMsgBox(window, caption, text, errorIcon(), opts, x,y,w,h, pl,pr,pt,pb, hs,vs).execute();
 	}
 	//! Issues a question message box
-	static FXuint question(FXApp *a, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON|HANDEDMSGBOX_USEYESNO,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
+	static FXuint question(FXApp *a, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON|HANDEDMSGBOX_OKCANCELBUTTONS|HANDEDMSGBOX_USEYESNO,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
 	{
 		return FXHandedMsgBox(a, caption, text, questionIcon(), opts, x,y,w,h, pl,pr,pt,pb, hs,vs).execute();
 	}
 	//! Issues a question message box
-	static FXuint question(FXWindow *window, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON|HANDEDMSGBOX_USEYESNO,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
+	static FXuint question(FXWindow *window, const FXString &caption, const FXString &text, FXuint opts=DECOR_ALL|HANDEDMSGBOX_DEFOKBUTTON|HANDEDMSGBOX_OKCANCELBUTTONS|HANDEDMSGBOX_USEYESNO,FXint x=0,FXint y=0,FXint w=200,FXint h=150,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD,FXint hs=DEFAULT_SPACING,FXint vs=DEFAULT_SPACING)
 	{
 		return FXHandedMsgBox(window, caption, text, questionIcon(), opts, x,y,w,h, pl,pr,pt,pb, hs,vs).execute();
 	}

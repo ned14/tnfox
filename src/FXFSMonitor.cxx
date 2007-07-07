@@ -196,8 +196,6 @@ FXFSMon::FXFSMon() : watchers(true)
 FXFSMon::~FXFSMon()
 { FXEXCEPTIONDESTRUCT1 {
 	Watcher *w;
-	watchers.clear();
-	// All watcher threads should have been terminated by the watchers.clear, but make sure anyway
 	for(QPtrListIterator<Watcher> it(watchers); (w=it.current()); ++it)
 	{
 		w->requestTermination();
@@ -206,6 +204,7 @@ FXFSMon::~FXFSMon()
 	{
 		w->wait();
 	}
+	watchers.clear();
 #ifdef USE_KQUEUES
 	if(kqueueh)
 	{
@@ -233,7 +232,6 @@ FXFSMon::Watcher::Watcher() : QThread("Filing system monitor", false, 128*1024, 
 
 FXFSMon::Watcher::~Watcher()
 {
-	paths.clear();
 	requestTermination();
 	wait();
 #ifdef USE_WINAPI
@@ -243,6 +241,7 @@ FXFSMon::Watcher::~Watcher()
 		latch=0;
 	}
 #endif
+	paths.clear();
 }
 
 #ifdef USE_WINAPI
