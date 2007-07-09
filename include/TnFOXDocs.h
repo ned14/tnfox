@@ -3,7 +3,7 @@
 *                          Differences documentation                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -2267,29 +2267,33 @@ download a \c /usr/local tree containing these from the TnFOX homepage after whi
 these libraries will be found and used.
 
 \section problems Problems:
-\li Apple's X11 implementation provides Xft support, but I couldn't get it working
-correctly on the Apple Mac I have access to. Therefore it is disabled in \c config/g++.py
-but please do try reenabling it and trying it on your machine.
+\li Apple's X11 implementation provides Xft support, but will return no fonts available.
+Run 'sudo fc-cache' to fix this problem.
 \li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
 is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
-\li MacOS X does not support thread cancellation during select(). This is a major
-problem for TnFOX as the POSIX threads spec says it should be, so TnFOX emulates
-correct behaviour using an internal per-thread pipe to signal cancellation. You
-shouldn't notice any difference generally speaking.
-\li Colour cursors (XCursor) are broken on Apple's X11 implementation. I've patched
-FXCursor to at least give the right colours, but as you'll see it ignores the alpha
-channel when you move the mouse.
+In particular, they won't monitor non-HFS partitions, so if you try running TestFSMonitor
+from a FAT partition, it will fail.
+\li MacOS X has shitty support for thread cancellation. It is inconsistent, unreliable,
+and generally downright buggy. In particular, it does not support thread cancellation
+during select(). This is a major problem for TnFOX as the POSIX threads spec says it
+should be, so TnFOX emulates correct behaviour using an internal per-thread pipe to
+signal cancellation. You shouldn't notice any difference generally speaking.
 \li You MUST define \c _APPLE_C_SOURCE when compiling any code using TnFOX. This
 causes alternative (and improved) implementations of many C library functions to
 be used instead of the defaults. Failing to do this will cause random crashes and
-other weird behaviour. Personally, I just don't get why they don't enable the
-improved versions by default and have the macro enable the older crappy ones instead :(
+other weird behaviour.
+\li TestDLL fails on MacOS X due to \c dlclose() not kicking out a shared library like
+it's supposed to do.
+\li TestGraphing fails on MacOS X due to buggy support within the X11 OpenGL routines.
+Specifically, because TnFOX sets \c XInitThreads(), the OpenGL code hangs in the internally
+called \c XLockDisplay(). If you really need OpenGL working, you will have to comment
+out this call in \c FXApp.cpp.
 
 */
 
 /*! \page windowsnotes Windows-specific notes
 
-This covers Windows 2000 and Windows XP, both 32 bit and 64 bit editions. Windows 95, 98
+This covers Windows 2000, Windows XP and Windows Vista, both 32 bit and 64 bit editions. Windows 95, 98
 and ME are not supported due to insufficient host OS facilities. Windows NT should be mostly
 compatible - though there are quite a few unsupported calls.
 
@@ -2302,7 +2306,7 @@ compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ 
 v8 for Windows works fine, though its config is very out of date nowadays.
 
 <u>Win64</u><br>
-Currently only AMD64/EM64T (ie; x64) is supported. The only official compiler supporting x64
+The only official compiler supporting x64
 is MSVC8 (Visual Studio 2005) so this is what I describe. You \em can make it work with beta compilers from the
 Platform SDK, but you NEED the MSVC7.1 STL (rather than the MSVC6 STL which comes with those
 test compilers) which is hard to get.
