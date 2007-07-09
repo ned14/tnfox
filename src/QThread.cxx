@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2004 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -656,6 +656,8 @@ public:
 		plsCancelWaiter[0]=plsCancelWaiter[1]=0;
 		plsCancelDisabled=false;
 		FXERRHOS(pipe(plsCancelWaiter));
+		FXERRHOS(::fcntl(plsCancelWaiter[0], F_SETFD, ::fcntl(plsCancelWaiter[0], F_GETFD, 0)|FD_CLOEXEC));
+		FXERRHOS(::fcntl(plsCancelWaiter[1], F_SETFD, ::fcntl(plsCancelWaiter[1], F_GETFD, 0)|FD_CLOEXEC));
 #endif
 		creator=currentThread;
 		if(creator && creator->p->recursiveProcessorAffinity)
@@ -879,7 +881,7 @@ void QThreadPrivate::run(QThread *t)
 		// Only allow signals we like
 		//sigset_t sigmask;
 		//FXERRHOS(sigfillset(&sigmask));
-		//FXERRHOS(sigaddset(&sigmask, SIGPIPE));
+		//FXERRHOS(sigdelset(&sigmask, SIGPIPE));
 		//FXERRHOS(pthread_sigmask(SIG_SETMASK, &sigmask, NULL));
 #endif
 		QThread::yield();
@@ -976,6 +978,8 @@ void QThreadPrivate::cleanup(QThread *t)
 	if(stoppedwc)
 	{
 		stoppedwc->wakeAll();
+		// Leave it linger for threads to wake up before deletion
+		QThread::msleep(1000);
 		FXDELETE(stoppedwc);
 	}
 }
@@ -1016,9 +1020,12 @@ QThread::~QThread()
 		QThreadPrivate::CleanupCall *cc;
 		for(QPtrListIterator<QThreadPrivate::CleanupCall> it(p->cleanupcalls); (cc=it.current()); ++it)
 		{
-			h.unlock();
-			(*cc->code)();
-			h.relock();
+			if(!cc->inThread)
+			{
+				h.unlock();
+				(*cc->code)();
+				h.relock();
+			}
 		}
 		h.unlock();
 		FXDELETE(p);
@@ -1070,7 +1077,12 @@ bool QThread::wait(FXuint time)
 		h.unlock();
 		FXERRHOS(pthread_join(p->threadh, &result));
 		if(p) p->threadh=0;
-		if(!isFinished) fxwarning("WARNING: Thread appears to have been terminated unnaturally\n");
+		if(!isFinished)
+		{
+			fxwarning("WARNING: Thread appears to have been terminated unnaturally\n");
+			if(p->isLocked())
+				fxerror("Thread terminated during system code - your pthreads implementation is broken!\n");
+		}
 		isFinished=true; isRunning=false; isInCleanup=false;	// In case thread had died
 	}
 	else
