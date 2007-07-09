@@ -273,7 +273,15 @@ public:
 		hostosd->setVisibleRows(1);
 		hostosd->setText(hostOSDescription);
 
-		FXFSMonitor::add(FXPath::directory(mypath), FXFSMonitor::ChangeHandler(*this, &TestWindow::invokeFillInTests));
+		FXERRH_TRY
+		{
+			FXFSMonitor::add(FXPath::directory(mypath), FXFSMonitor::ChangeHandler(*this, &TestWindow::invokeFillInTests));
+		}
+		FXERRH_CATCH(FXException &e)
+		{
+			fxwarning("WARNING: Couldn't add directory monitor due to error '%s'\n", e.report().text());
+		}
+		FXERRH_ENDTRY
 
 		FXGroupBox *testgroup=new FXGroupBox(f1, tr("Tests:"), LAYOUT_FILL|FRAME_RIDGE);
 		FXSplitter *tg1=new FXSplitter(testgroup, SPLITTER_VERTICAL|SPLITTER_TRACKING|SPLITTER_REVERSED|LAYOUT_FILL);
@@ -638,7 +646,7 @@ void TestWindow::appendOutput(QChildProcess &child, bool terminate)
 	char buffer[4096], *buff;
 	QIODeviceS *dev=&child;
 	bool timedout;
-	while(!(timedout=!QIODeviceS::waitForData(0, 1, &dev, 30000)))
+	while(!(timedout=!QIODeviceS::waitForData(0, 1, &dev, 120*1000)))
 	{
 		FXuval read;
 		buff=buffer;
