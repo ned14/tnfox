@@ -238,7 +238,12 @@ bool QChildProcess::waitForExit(FXuint waitfor)
 				else if(ret>0)
 					goto success;
 				else
-					FXERRHOS(ret);
+				{
+					if(ECHILD==errno)
+						goto success;
+					else
+						FXERRHOS(ret);
+				}
 			} while(FXProcess::getMsCount()-start<waitfor);
 			return false;
 		}
