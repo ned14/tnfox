@@ -1370,11 +1370,15 @@ FXbool FXApp::openDisplay(const FXchar* dpyname){
 #else
 		FXString bestfont("helvetica,80");
 #endif
-#if defined(HAVE_XFT_H) || !defined(__APPLE__)		// Searching fonts crashes Apple's X11 implementation
+#if defined(HAVE_XFT_H)
 		FXFontDesc *fonts=0;
 		FXuint numfonts, f;
-		if(FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_REGULAR,
-							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, /*FONTHINT_SWISS|*/FONTHINT_SCALABLE))
+		if(!FXFont::listFonts(fonts, numfonts, "", FONTWEIGHT_DONTCARE, FONTSLANT_DONTCARE,
+							 FONTSETWIDTH_DONTCARE, FONTENCODING_DEFAULT, FONTHINT_DONTCARE))
+		{
+			fxerror("No Freetype fonts found. Try running 'sudo fc-cache'\n");
+		}
+		else
 		{
 			int bestscore=32;
 			for(f=0; f<numfonts; f++)
