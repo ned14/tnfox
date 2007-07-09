@@ -1969,9 +1969,11 @@ void QSSLDevice::close()
 		}
 		if(p->handle)
 		{
+			h.unlock();
 			int ret=SSL_shutdown(p->handle);
 			if(0==ret) ret=SSL_shutdown(p->handle);
 			if(-1==ret) FXERRHSSL(ret);
+			h.relock();
 			SSL_free(p->handle);
 			ERR_clear_error();
 			p->handle=0;

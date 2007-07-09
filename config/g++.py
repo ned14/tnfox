@@ -74,9 +74,10 @@ env['CPPFLAGS']+=cppflags
 # Linkage
 env['LINKFLAGS']+=[# "-Wl,--allow-multiple-definition", # You may need this when cross-compiling
                    #"-pg",                             # Profile
-                   "-rdynamic",                       # Keep function names for backtracing
                    ternary(make64bit, "-m64", "-m32")
                   ]
+if not onDarwin:
+    env['LINKFLAGS']+=["-rdynamic"]                   # Keep function names for backtracing
 if architecture=="macosx-ppc":
     env['LINKFLAGS']+=["-arch", "ppc"]
 elif architecture=="macosx-i386":
@@ -166,10 +167,7 @@ if not disableGUI:
                 del conf.env['LIBPATH'][n]
                 break
     if conf.CheckCHeader(["X11/Xlib.h", "X11/Xft/Xft.h"]):
-        if onDarwin:
-            print "*** Xft is present but doesn't appear to work on Apple's X11 implementation!"
-        else:
-            conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
+        conf.env['CPPDEFINES']+=[("HAVE_XFT_H",1)]
     else:
         # If freetype-config failed, try a boilerplate location
         oldcpppath=conf.env['CPPPATH'][:]

@@ -3,7 +3,7 @@
 *                     E x c e p t i o n  H a n d l i n g                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -28,7 +28,7 @@
 #include "Windows.h"
 #include "Dbghelp.h"
 #include "psapi.h"
-#elif defined(__GNUC__)
+#elif defined(__linux__)
 #include "execinfo.h"
 #endif
 #endif
@@ -103,7 +103,10 @@ static bool GlobalPause;
 
 static void DestroyTIB()
 {
-	delete mytib;
+	FXException_TIB *tib=mytib;
+	assert(tib!=(FXException_TIB *)((FXuval)-1));
+	if(tib!=(FXException_TIB *)((FXuval)-1))
+		delete mytib;
 	mytib=(FXException_TIB *)((FXuval)-1);
 }
 static inline bool CheckTIB(FXException_TIB **_mytib=0)
@@ -342,7 +345,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 		QMtxHold lockh(symlock);
 		doStackWalk();
 	}
-#elif defined(__GNUC__)
+#elif defined(__linux__)
 	if(!(p->flags & FXERRH_ISINFORMATIONAL))
 	{
 		void *backtr[FXEXCEPTION_STACKBACKTRACEDEPTH];
@@ -928,7 +931,7 @@ FXStream &operator<<(FXStream &s, const FXException &e)
 	if(e.isValid())
 	{
 		s << e.report() << e.code() << e.flags();
-		s << e.p->nestedlist.size();
+		s << (FXuint) e.p->nestedlist.size();
 		FXExceptionPrivate *_e;
 		for(QPtrVectorIterator<FXExceptionPrivate> it(e.p->nestedlist); (_e=it.current()); ++it)
 		{

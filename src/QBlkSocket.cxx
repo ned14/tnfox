@@ -579,6 +579,9 @@ static inline sockaddr *makeSockAddr(int &salen, sockaddr_in6 &sa6, const QHostA
 		sa->sin_family=AF_INET;
 		sa->sin_port=htons(port);
 		sa->sin_addr.s_addr=htonl(addr.ip4Addr());
+		// Some systems define a sa_len member at the top of the structure
+		if((void *) &sa->sin_family>(void *) sa)
+			*(char *)(sa)=salen;
 	}
 	if(addr.isIp6Addr())
 	{
@@ -588,6 +591,9 @@ static inline sockaddr *makeSockAddr(int &salen, sockaddr_in6 &sa6, const QHostA
 		sa6.sin6_flowinfo=0;
 		memcpy(sa6.sin6_addr.s6_addr, addr.ip6Addr(), 16);
 		//sa6.sin6_scope_id=0;
+		// Some systems define a sin6_len member at the top of the structure
+		if((void *) &sa6.sin6_family>(void *) &sa6)
+			*(char *)(&sa6)=salen;
 	}
 	return (sockaddr *) &sa6;
 }
@@ -888,6 +894,13 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 		h.unlock();
 		if(Stream==p->type)
 		{
+#ifdef __APPLE__
+			// Mac OS X has such inconsistent thread cancellation support :(
+			fd_set fds;
+			FD_ZERO(&fds);
+			FD_SET(p->handle, &fds);
+			tnfxselect(p->handle+1, &fds, 0, 0, NULL);
+#endif
 			/* 31st Jan 2005 ned: Finally fixed segfault on Linux 2.6 kernels when
 			library was being using dynamically. For some odd reason it doesn't like
 			being thread cancelled during a recv(), so I've moved permanently to

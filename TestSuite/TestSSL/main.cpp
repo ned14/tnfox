@@ -35,6 +35,13 @@ struct DevInfo
 		rssl.setEncryptedDev(rdev);
 		wssl.setEncryptedDev(wdev);
 	}
+	~DevInfo()
+	{
+		rssl.close();
+		wssl.close();
+		if(wdev!=rdev) FXDELETE(wdev);
+		FXDELETE(rdev);
+	}
 };
 
 class IOThread : public QThread
@@ -282,8 +289,6 @@ int main(int argc, char *argv[])
 						ret=1;
 					}
 				}
-				if(devi->wdev!=devi->rdev) FXDELETE(devi->wdev);
-				FXDELETE(devi->rdev);
 			}
 		}
 	}

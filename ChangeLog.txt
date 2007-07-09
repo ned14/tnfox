@@ -19,6 +19,7 @@ B Moved FXException data into private structure to work around MSVC stack
 over-allocation bug
 B QSSLDevice wasn't 64 bit compatible and threw random errors :(
 B FXFSMonitor was hanging on process exit on POSIX due to FAM/gamin
+B FXNetwork::dnsReverseLookup was failing on Apple MacOS X
 
 * Removed many unnecessary fetches of per-thread data (slow on POSIX) in
 FXException

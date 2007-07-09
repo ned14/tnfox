@@ -77,6 +77,13 @@ at the time of addition so if the current directory changes, you will need
 to specify something different to remove the monitor.
 
 <h3>Usage:</h3>
+PLEASE NOTE that monitoring of certain parts of the file system is not supported
+by all operating systems eg; some Unices won't let you monitor a mounted VFAT
+or NFS path which would be indistinguishable from normal filing system paths.
+In this situation, FXFSMonitor will throw an exception during add()
+which you will need to catch and handle appropriately. Therefore, ALWAYS wrap
+FXFSMonitor::add() with a FXERRH_THROW etc.
+
 The upcall is issued with what has changed (FX::FXFSMonitor::Change) and both
 the previous and latest states of the path. Because POSIX
 doesn't provide a mechanism for the OS to tell you what file has been renamed

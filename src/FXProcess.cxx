@@ -498,9 +498,9 @@ static LONG MyUnhandledExceptionFilter(EXCEPTION_POINTERS *ei)
 }
 #endif
 #ifdef USE_POSIX
+static int MyUnhandledSignalHandlerCount;
 static void MyUnhandledSignalHandler(int sig, siginfo_t *si, void *data)
 {
-	RunFatalExitCalls(true);
 	FXString codestr("Unknown");
 	switch(sig)
 	{
@@ -636,6 +636,8 @@ static void MyUnhandledSignalHandler(int sig, siginfo_t *si, void *data)
 	fprintf(stderr, "\nUnhandled Signal 0x%x (%s)\n    at address %p - immediate exit!\n",
 		sig, codestr.text(), si->si_addr);
 	fflush(stderr);
+	if(!MyUnhandledSignalHandlerCount++)
+		RunFatalExitCalls(true);
 	_exit(EXIT_FAILURE);
 }
 #endif
