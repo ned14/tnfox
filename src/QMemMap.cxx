@@ -615,8 +615,8 @@ bool QMemMap::open(FXuint mode)
 		}
 		else if(mode & IO_WriteOnly)
 		{
-			access|=O_WRONLY;
-			p->pageaccess|=PROT_WRITE;
+			access|=O_RDWR;
+			p->pageaccess|=PROT_READ|PROT_WRITE;
 		}
 		if(Memory==p->type)
 		{
