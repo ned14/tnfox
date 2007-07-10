@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=True
+debugmode=False
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:

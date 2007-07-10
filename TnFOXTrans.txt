@@ -1,5 +1,5 @@
 # TnFOX human language string literal translation file
-# Last updated: Tue, 03 Jul 2007 21:05:00 +0000
+# Last updated: Tue, 10 Jul 2007 14:43:15 +0000
 
 version=1:
 
@@ -33,7 +33,7 @@ langids="ES":
 		ES: up
 
 "  %1. %2 at %3, %4, %5, %6, %7, windows drive=%8\n":
-	ES: "  %1. %2 a %3, %4, %5, %6, %7, disco duro=%8\n":
+	ES: "  %1. %2 a %3, %4, %5, %6, %7, disco duro=%8\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
@@ -183,15 +183,11 @@ langids="ES":
 	ES: "No se pueda encontrar el columno"
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
-		ES: "!TODO! enter translation here"
 
 "Connection handle not found":
 	ES: "No se pueda encontrar el conneccion"
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
-		ES: "!TODO! enter translation here"
 
 "Couldn't find drive name translation for '%1'":
 	ES: "No se pueda encontrar un traduccion de nombre de disco duro de '%1'"
@@ -202,8 +198,6 @@ langids="ES":
 	ES: "No se pueda encontrar el cursor"
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
-		ES: "!TODO! enter translation here"
 
 "Database is not open":
 	ES: "El database no esta abierto"
@@ -211,10 +205,6 @@ langids="ES":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
-		ES: "!TODO! enter translation here"
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "Destination '%1' must exist":
 	ES: "El destino '%1' necesita ser"
@@ -223,6 +213,8 @@ langids="ES":
 
 "Device reopen has different mode":
 	ES: "El modo de operacion no es iqual que antes"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
 	srcfile="QBZip2Device.cxx":class="QBZip2Device":
 		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
@@ -230,6 +222,8 @@ langids="ES":
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
+		ES: up
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
@@ -286,15 +280,11 @@ langids="ES":
 	ES: "Hay fracaso para leer el columno"
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "Failed to retrive column type":
 	ES: "Hay fracaso para leer el tipo de columno"
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "Failed to start thread":
 	ES: "Hay fracaso para empazar un hilo de ejecucion"
@@ -312,6 +302,8 @@ langids="ES":
 
 "File '%1' not found":
 	ES: "El archivo '%1' no se encontrado"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
 	srcfile="QFile.cxx":class="QFile":
 		ES: up
 
@@ -344,8 +336,6 @@ langids="ES":
 	ES: "No se pueda encontrar el header"
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
-		ES: "!TODO! enter translation here"
 
 "Incorrect key":
 	ES: "Llave mala"
@@ -356,8 +346,6 @@ langids="ES":
 	ES: "Index mala"
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "Invalid Security Descriptor":
 	ES: "Referencia de seguridad mala"
@@ -436,11 +424,15 @@ langids="ES":
 
 "Not open for reading":
 	ES: "No esta abierto para leer"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
+		ES: up
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
@@ -453,11 +445,15 @@ langids="ES":
 
 "Not open for writing":
 	ES: "No esta abierto para escribir"
+	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
 	srcfile="QBlkSocket.cxx":class="QBlkSocket":
 		ES: up
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
+		ES: up
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
@@ -534,22 +530,16 @@ langids="ES":
 	ES: "El database solicitado '%1' con driver '%2' no es permitado"
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
-		ES: "!TODO! enter translation here"
 
 "SQLite3 cursors cannot be copied":
 	ES: "Cursores de SQLite3 no puedan estar copiado"
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "SQLite3 does not support static or non-forwards cursors":
 	ES: "SQLite3 no tiene cursores staticos ni cursores retrasados"
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "Salt length must be a multiple of eight":
 	ES: "La longitud de sal de llave necesita estar un multiplo de ocho"
@@ -610,15 +600,11 @@ langids="ES":
 	ES: "No se pueda encontrar el statement"
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
-	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
-		ES: "!TODO! enter translation here"
 
 "Statement has expired":
 	ES: "El statement es invalido"
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
-	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
-		ES: "!TODO! enter translation here"
 
 "System load: processor=%1, memory=%2, disc i/o=%3 with %4 VAS free\n":
 	ES: "Carga de sistema: processadora=%1, memoria=%2, discos=%3 con %4 VAS libre\n"
