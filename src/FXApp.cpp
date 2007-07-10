@@ -1495,7 +1495,7 @@ bool FXApp::openDisplay(const FXchar* dpyname){
 #if defined(HAVE_XFT_H)
 		FXFontDesc *fonts=0;
 		FXuint numfonts, f;
-		if(FXFont::listFonts(fonts, numfonts, "", 0, FXFont::Straight,
+		if(!FXFont::listFonts(fonts, numfonts, "", 0, FXFont::Straight,
 							 0, FONTENCODING_UNICODE, /*FXFont::Swiss|*/FXFont::Scalable))
 		{
 			fxerror("No Freetype fonts found. Try running 'sudo fc-cache'\n");
