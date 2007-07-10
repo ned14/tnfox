@@ -287,6 +287,8 @@ seamlessly. FX::FXIPCChannel is a base class implementing almost everything you 
 get started immediately. For more information, see \link IPC
 the page about Inter Process Communication
 \endlink
+For running traditional command line programs such as compilers whilst redirecting standard
+input and output, FX::QChildProcess is provided.
 
 <li><b>\link sqldb
 SQL Database support

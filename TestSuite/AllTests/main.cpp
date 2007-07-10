@@ -239,7 +239,9 @@ public:
 			{
 				FXFontDesc &f=fonts[n];
 				FXString face(f.face);
+#ifdef DEBUG
 				fxmessage("Candidate font: %s\n", face.text());
+#endif
 				if(!comparecase(face, "courier new", 11)) { best="courier new,80,normal,normal"; score=0; }
 				else if(score>1 && !comparecase(face, "courier", 7)) { best="courier,80,normal,normal"; score=1; }
 				else if(score>2 && !comparecase(face, "luxi mono", 9)) { best="luxi mono,80,normal,normal"; score=2; }

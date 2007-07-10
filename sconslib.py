@@ -302,7 +302,9 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if makeSMPBuild: env['CPPDEFINES']+=["FX_SMPBUILD"]
     if inlineMutex: env['CPPDEFINES']+=["FXINLINE_MUTEX_IMPLEMENTATION"]
     if FOXCompatLayer: env['CPPDEFINES']+=["FX_FOXCOMPAT"]
-    if disableGUI: env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
+    if disableGUI:
+        env['CPPDEFINES']+=[("FX_DISABLEGUI", 1)]
+        GraphingModule=0
     
     if not disableFileDirDialogs or not disableMDI: disableMenus=False
     if GraphingModule: disableGL=False
