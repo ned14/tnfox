@@ -1,4 +1,4 @@
-TnFOX v0.87 ?:
+TnFOX v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas
@@ -13,14 +13,14 @@ yet it's still not quite working. Hence the bindings have NOT been supplied
 with this release.
 
 2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
-See Todo.txt for a list of known bugs.
+See per-platform documentation and Todo.txt for a list of known bugs.
 
 
 Installation:
 -=-=-=-=-=-=-
 If you're installing the binary only on POSIX, simply do:
 
-libtool --mode=install cp libTnFOX-0.86.la /usr/local/lib
+libtool --mode=install cp libTnFOX-0.87.la /usr/local/lib
 
 
 You will need a make tool called scons from http://www.scons.org/ v0.95 or
@@ -81,10 +81,10 @@ Testing regime:
 Before this release, every program in the TestSuite was compiled and tested
 in both debug and release modes on:
 
-1. Microsoft Windows XP SP2 with MSVC7.1 (Visual Studio .NET 2003)
-2. Microsoft Windows XP x64 with MSVC8.0 (Visual Studio .NET 2005)
-3. SuSE 10.0 with GCC & libstdc++ 4.1
-4. FreeBSD v6.0 with GCC & libstdc++ 4.0
+1. Microsoft Windows XP SP2 x86 with MSVC7.1 (Visual Studio .NET 2003)
+2. Microsoft Windows Vista x64 with MSVC8.0 (Visual Studio .NET 2005)
+3. KUbuntu 6.1 x64 with GCC & libstdc++ 4.1
+4. Apple Mac OS X 10.4.8 x86 with XCode v2.3
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings
 in its compiler have forced me to drop it.
