@@ -33,7 +33,7 @@ langids="ES":
 		ES: up
 
 "  %1. %2 at %3, %4, %5, %6, %7, windows drive=%8\n":
-	ES: "  %1. %2 a %3, %4, %5, %6, %7, disco duro=%8\n":
+	ES: "  %1. %2 a %3, %4, %5, %6, %7, disco duro=%8\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
