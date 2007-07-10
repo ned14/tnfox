@@ -1,5 +1,5 @@
 # TnFOX human language string literal translation file
-# Last updated: Thu, 31 May 2007 22:59:38 +0000
+# Last updated: Tue, 10 Jul 2007 14:43:15 +0000
 
 version=1:
 
@@ -223,6 +223,8 @@ langids="ES":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
 		ES: up
+	srcfile="QFile.cxx":class="QFile":
+		ES: up
 	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
@@ -301,6 +303,8 @@ langids="ES":
 "File '%1' not found":
 	ES: "El archivo '%1' no se encontrado"
 	srcfile="FXFile.cxx":class="FXFile":
+		ES: up
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 
 "File type devices not supported":
@@ -428,6 +432,8 @@ langids="ES":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
 		ES: up
+	srcfile="QFile.cxx":class="QFile":
+		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
 	srcfile="QMemMap.cxx":class="QMemMap":
@@ -446,6 +452,8 @@ langids="ES":
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
+		ES: up
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
