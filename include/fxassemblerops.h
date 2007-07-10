@@ -170,7 +170,7 @@ inline FXuint fxbitscan(FXuint x) throw()
 	FXuint m;
 	__asm__("bsfl %1,%0\n\t"
 			: "=r" (m) 
-			: "g"  (x));
+			: "rm" (x));
 	return m;
 }
 inline FXuint fxbitscan(FXulong x) throw()
@@ -179,7 +179,7 @@ inline FXuint fxbitscan(FXulong x) throw()
 #if defined(__x86_64__)
 	__asm__("bsfl %1,%0\n\t"
 			: "=r" (m) 
-			: "g"  (x));
+			: "rm" (x));
 #else
 	union
 	{
@@ -197,7 +197,7 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	FXuint m;
 	__asm__("bsrl %1,%0\n\t"
 			: "=r" (m) 
-			: "g"  (x));
+			: "rm" (x));
 	return m;
 }
 inline FXuint fxbitscanrev(FXulong x) throw()
@@ -206,7 +206,7 @@ inline FXuint fxbitscanrev(FXulong x) throw()
 #if defined(__x86_64__)
 	__asm__("bsrl %1,%0\n\t"
 			: "=r" (m) 
-			: "g"  (x));
+			: "rm" (x));
 #else
 	union
 	{
@@ -247,10 +247,10 @@ inline void fxendianswap8(void *_p)
 			: "=m" (*(FXulong *)_p));
 #else
 	__asm__("mov %0, %%edx\n\t"
-			"mov 4%0, %%ecx\n\t"
+			"mov 4+%0, %%ecx\n\t"
 			"bswap %%edx\n\t"
 			"bswap %%ecx\n\t"
-			"mov %%edx, 4%0\n\t"
+			"mov %%edx, 4+%0\n\t"
 			"mov %%ecx, %0\n\t"
 			: "=m" (*(FXulong *)_p));
 #endif
