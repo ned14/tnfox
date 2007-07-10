@@ -6,7 +6,7 @@ version=1:
 # If the line below says =Yes, then there are still text literals in here
 # which have not been translated yet. Search for "!TODO!" to find them
 
-needsupdating=Yes:
+needsupdating=No:
 
 # Enter the list of all language ids used in the file
 
@@ -28,17 +28,14 @@ langids="ES":
 		ES: up
 
 "  %1 to %2 %3%4%5%6 %7:%8\n":
-	srcfile="FXProcess.cxx":class="FXProcess":
-		ES: "!TODO! enter translation here"
-
-"  %1 to %2 %3%4%5%6 %7\n":
-	ES: "  %1 a %2 %3%4%5%6 %7\n"
+	ES: "  %1 a %2 %3%4%5%6 %7:8%\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
 "  %1. %2 at %3, %4, %5, %6, %7, windows drive=%8\n":
+	ES: "  %1. %2 a %3, %4, %5, %6, %7, disco duro=%8\n":
 	srcfile="FXProcess.cxx":class="FXProcess":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "  -fxhanded=<left|right> : Overrides the handedness of the user\n":
 	ES: "  -fxhanded=<left|right> : Desautorizar el lado de manu de usuario\n"
@@ -96,11 +93,7 @@ langids="ES":
 		ES: up
 
 "%1 based on the TnFOX portable library v%2.%3 (SVN rev %4)\n   (derived from FOX v%5.%6.%7) (built: %8 %9)\n":
-	srcfile="FXProcess.cxx":class="FXProcess":
-		ES: "!TODO! enter translation here"
-
-"%1 based on the TnFOX portable library v%2.%3\n   (derived from FOX v%4.%5.%6) (built: %7 %8)\n":
-	ES: "%1 basado en el libririo portatil 'TnFOX' v%2.%3\n   (derivado de FOX v%4.%5.%6) (haciendo: %7 %8)\n"
+	ES: "%1 basado en el libririo portatil 'TnFOX' v%2.%3 (SVN rev %4)\n   (derivado de FOX v%5.%6.%7) (haciendo: %8 %9)\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
@@ -188,14 +181,14 @@ langids="ES":
 
 "Column does not exist":
 	ES: "No se pueda encontrar el columno"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: "!TODO! enter translation here"
 
 "Connection handle not found":
 	ES: "No se pueda encontrar el conneccion"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: "!TODO! enter translation here"
@@ -207,16 +200,16 @@ langids="ES":
 
 "Cursor handle not found":
 	ES: "No se pueda encontrar el cursor"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: "!TODO! enter translation here"
 
 "Database is not open":
 	ES: "El database no esta abierto"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: up
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: "!TODO! enter translation here"
@@ -237,8 +230,6 @@ langids="ES":
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
-		ES: "!TODO! enter translation here"
-	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
@@ -293,14 +284,14 @@ langids="ES":
 
 "Failed to retrive column header":
 	ES: "Hay fracaso para leer el columno"
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: "!TODO! enter translation here"
 
 "Failed to retrive column type":
 	ES: "Hay fracaso para leer el tipo de columno"
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: "!TODO! enter translation here"
@@ -351,7 +342,7 @@ langids="ES":
 
 "Header does not exist":
 	ES: "No se pueda encontrar el header"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDB_ipc":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDB_ipc":
 		ES: "!TODO! enter translation here"
@@ -363,7 +354,7 @@ langids="ES":
 
 "Index is invalid":
 	ES: "Index mala"
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: "!TODO! enter translation here"
@@ -450,8 +441,6 @@ langids="ES":
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
-		ES: "!TODO! enter translation here"
-	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
@@ -469,8 +458,6 @@ langids="ES":
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
 	srcfile="QChildProcess.cxx":class="QChildProcess":
-		ES: "!TODO! enter translation here"
-	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QLocalPipe.cxx":class="QLocalPipe":
 		ES: up
@@ -539,26 +526,27 @@ langids="ES":
 		ES: up
 
 "QChildProcess::create() not possible!":
+	ES: "QChildProcess::create() no es posible!"
 	srcfile="QChildProcess.cxx":class="QChildProcess":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "Requested database '%1' via driver '%2' not permitted":
 	ES: "El database solicitado '%1' con driver '%2' no es permitado"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: "!TODO! enter translation here"
 
 "SQLite3 cursors cannot be copied":
 	ES: "Cursores de SQLite3 no puedan estar copiado"
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: "!TODO! enter translation here"
 
 "SQLite3 does not support static or non-forwards cursors":
 	ES: "SQLite3 no tiene cursores staticos ni cursores retrasados"
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: "!TODO! enter translation here"
@@ -620,14 +608,14 @@ langids="ES":
 
 "Statement handle not found":
 	ES: "No se pueda encontrar el statement"
-	srcfile="FXSQLDB_ipc.cxx":class="FXSQLDBServer":
+	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: up
 	srcfile="TnFXSQLDB_ipc.cxx":class="TnFXSQLDBServer":
 		ES: "!TODO! enter translation here"
 
 "Statement has expired":
 	ES: "El statement es invalido"
-	srcfile="FXSQLDB_sqlite3.cxx":class="FXSQLDB_sqlite3":
+	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: up
 	srcfile="TnFXSQLDB_sqlite3.cxx":class="TnFXSQLDB_sqlite3":
 		ES: "!TODO! enter translation here"
@@ -648,8 +636,9 @@ langids="ES":
 		ES: up
 
 "The following partitions can be mounted:\n":
+	ES: "Las particiones siguientes pueden ser montadas:"
 	srcfile="FXProcess.cxx":class="FXProcess":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "The host OS is: %1\n":
 	ES: "La sistema operativa anfitriona es: %1\n"
