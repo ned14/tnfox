@@ -842,6 +842,115 @@ static DWORD WINAPI start_threadwin(void *p)
 }
 #endif
 
+#ifdef USE_POSIX
+#ifdef HAVE_NPTL
+}
+extern "C" {
+// The default NPTL pthread_cleanup_push() macro uses C++ exception handling to cancel
+// threads, thus allowing stack unwinding and destruction of stacked C++ objects
+// UNFORTUNATELY this prevents threads being cancelled when they have gone through
+// C library code (eg; OpenSSL) or throw() marked functions. We therefore hack
+// the problem away by direct use of the non-EH pthread_cleanup_push() implementation
+#undef pthread_cleanup_push
+#undef pthread_cleanup_pop
+
+
+// The following comes from glibc's pthread.h
+// The first is the GCC-optimised implementation, the second is the default
+#if 0
+/* Function called to call the cleanup handler.  As an extern inline
+   function the compiler is free to decide inlining the change when
+   needed or fall back on the copy which must exist somewhere
+   else.  */
+extern __inline void
+__pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame)
+{
+  if (__frame->__do_it)
+    __frame->__cancel_routine (__frame->__cancel_arg);
+}
+
+/* Install a cleanup handler: ROUTINE will be called with arguments ARG
+   when the thread is canceled or calls pthread_exit.  ROUTINE will also
+   be called with arguments ARG when the matching pthread_cleanup_pop
+   is executed with non-zero EXECUTE argument.
+
+   pthread_cleanup_push and pthread_cleanup_pop are macros and must always
+   be used in matching pairs at the same nesting level of braces.  */
+#  define pthread_cleanup_push(routine, arg) \
+  do {									      \
+    struct __pthread_cleanup_frame __clframe				      \
+      __attribute__ ((__cleanup__ (__pthread_cleanup_routine)))		      \
+      = { (routine), (arg),	 	      \
+	  1 };
+
+/* Remove a cleanup handler installed by the matching pthread_cleanup_push.
+   If EXECUTE is non-zero, the handler function is called. */
+#  define pthread_cleanup_pop(execute) \
+    __clframe.__do_it = (execute);					      \
+  } while (0)
+
+#else
+/* Function called to call the cleanup handler.  As an extern inline
+   function the compiler is free to decide inlining the change when
+   needed or fall back on the copy which must exist somewhere
+   else.  */
+extern __inline void
+__pthread_cleanup_routine (struct __pthread_cleanup_frame *__frame)
+{
+  if (__frame->__do_it)
+    __frame->__cancel_routine (__frame->__cancel_arg);
+}
+
+/* Install a cleanup handler: ROUTINE will be called with arguments ARG
+   when the thread is canceled or calls pthread_exit.  ROUTINE will also
+   be called with arguments ARG when the matching pthread_cleanup_pop
+   is executed with non-zero EXECUTE argument.
+
+   pthread_cleanup_push and pthread_cleanup_pop are macros and must always
+   be used in matching pairs at the same nesting level of braces.  */
+# define pthread_cleanup_push(routine, arg) \
+  do {									      \
+    __pthread_unwind_buf_t __cancel_buf;				      \
+    void (*__cancel_routine) (void *) = (routine);			      \
+    void *__cancel_arg = (arg);						      \
+    int not_first_call = __sigsetjmp ((struct __jmp_buf_tag *)		      \
+				      __cancel_buf.__cancel_jmp_buf, 0);      \
+    if (__builtin_expect (not_first_call, 0))				      \
+      {									      \
+	__cancel_routine (__cancel_arg);				      \
+	__pthread_unwind_next (&__cancel_buf);				      \
+	/* NOTREACHED */						      \
+      }									      \
+									      \
+    __pthread_register_cancel (&__cancel_buf);				      \
+    do {
+extern void __pthread_register_cancel (__pthread_unwind_buf_t *__buf)
+     __cleanup_fct_attribute;
+
+/* Remove a cleanup handler installed by the matching pthread_cleanup_push.
+   If EXECUTE is non-zero, the handler function is called. */
+# define pthread_cleanup_pop(execute) \
+    } while (0);							      \
+    __pthread_unregister_cancel (&__cancel_buf);			      \
+    if (execute)							      \
+      __cancel_routine (__cancel_arg);					      \
+  } while (0)
+extern void __pthread_unregister_cancel (__pthread_unwind_buf_t *__buf)
+  __cleanup_fct_attribute;
+
+/* Internal interface to initiate cleanup.  */
+extern void __pthread_unwind_next (__pthread_unwind_buf_t *__buf)
+     __cleanup_fct_attribute __attribute__ ((__noreturn__))
+# ifndef SHARED
+     __attribute__ ((__weak__))
+# endif
+     ;
+#endif
+}
+namespace FX {
+#endif
+#endif
+
 void QThreadPrivate::run(QThread *t)
 {
 #ifdef USE_POSIX

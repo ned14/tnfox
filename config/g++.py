@@ -66,7 +66,7 @@ else:
                #"-fno-inline-functions",
                #"-fno-inline",
                #"-finline-limit=0",
-               #"-ggdb"
+               #"-ggdb",
                "-fomit-frame-pointer"   # No frame pointer
                ]
 env['CPPFLAGS']+=cppflags

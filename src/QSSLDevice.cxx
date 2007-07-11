@@ -316,10 +316,22 @@ static FXProcess_StaticInit<QSSLDevice_Init> mystaticinit("QSSLDevice");
 #ifdef HAVE_OPENSSL
 namespace Wrap {
 #define TRAPFXERR1 try
+#ifdef DEBUG
+#define TRAPFXERR2(type1) catch(FXException &) { \
+	ERR_put_error(ERR_LIB_BIO,type1,0,__FILE__,__LINE__); \
+	return -1; \
+	} \
+	catch(...) { \
+	fxmessage("\nWARNING: Unknown exception about to pass through C-based OpenSSL code!\n"); \
+	/*std::terminate();*/ /* You REALLY don't want exception based thread cancellation going through OpenSSL written in C */ \
+	throw; \
+	}
+#else
 #define TRAPFXERR2(type1) catch(FXException &) { \
 	ERR_put_error(ERR_LIB_BIO,type1,0,__FILE__,__LINE__); \
 	return -1; \
 	}
+#endif
 
 static int bwrite(BIO *b, const char *buffer, int len)
 {
