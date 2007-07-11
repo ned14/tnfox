@@ -3,7 +3,7 @@
 #                                 TnFOX make file                               *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003-2005 by Niall Douglas.   All Rights Reserved.       *
+#        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -38,7 +38,7 @@ if onDarwin:
 updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -s include/tnfxsvnrev.h -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
 objects=[]
 if not disableGUI:
-    objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", False)]
+    objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", False)]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", True)]
 if SQLModule==1: objects.append(sqlmoduleobjs)
 if GraphingModule==1: objects.append(graphingmoduleobjs)

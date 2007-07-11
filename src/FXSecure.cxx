@@ -132,6 +132,7 @@ void *mallocI(size_t size) throw()
 	_ret[1]=SECUREHEADERMAGIC;
 #endif
 	ret=(void *)(_ret+SECUREHEADERC);
+	//fxmessage("Secure::malloc(%p)\n", ret);
 	::memset(ret, 0, size);
 	secureheapinit.lock(ret, size);
 	return ret;
@@ -147,6 +148,7 @@ void *callocI(size_t no, size_t size) throw()
 	_ret[1]=SECUREHEADERMAGIC;
 #endif
 	ret=(void *)(_ret+SECUREHEADERC);
+	//fxmessage("Secure::calloc(%p)\n", ret);
 	::memset(ret, 0, size);
 	secureheapinit.lock(ret, size);
 	return ret;
@@ -157,6 +159,7 @@ void free(void *p) throw()
 	if(p)
 	{
 		FXuval *_p=(FXuval *) p;
+		//fxmessage("Secure::free(%p)\n", p);
 		size_t size=_p[-SECUREHEADERC];
 #ifdef DEBUG
 		assert(_p[-1]==SECUREHEADERMAGIC);
