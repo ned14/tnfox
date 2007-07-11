@@ -69,6 +69,12 @@ else:
                #"-ggdb",
                "-fomit-frame-pointer"   # No frame pointer
                ]
+    env['CCWPOOPTS']=[
+               #"-fno-default-inline",
+               #"-fno-inline-functions"
+               #"-fno-inline",
+               #"-finline-limit=0"
+               ]
 env['CPPFLAGS']+=cppflags
 
 # Linkage
