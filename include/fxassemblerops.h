@@ -175,9 +175,9 @@ inline FXuint fxbitscan(FXuint x) throw()
 }
 inline FXuint fxbitscan(FXulong x) throw()
 {
-	FXuint m;
+	FXulong m;
 #if defined(__x86_64__)
-	__asm__("bsfl %1,%0\n\t"
+	__asm__("bsfq %1,%0\n\t"
 			: "=r" (m) 
 			: "rm" (x));
 #else
@@ -190,7 +190,7 @@ inline FXuint fxbitscan(FXulong x) throw()
 	m=fxbitscan(_x.i[!FOX_BIGENDIAN]);
 	if(32==m) m=32+fxbitscan(_x.i[!!FOX_BIGENDIAN]);
 #endif
-	return m;
+	return (FXuint) m;
 }
 inline FXuint fxbitscanrev(FXuint x) throw()
 {
@@ -202,9 +202,9 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 }
 inline FXuint fxbitscanrev(FXulong x) throw()
 {
-	FXuint m;
+	FXulong m;
 #if defined(__x86_64__)
-	__asm__("bsrl %1,%0\n\t"
+	__asm__("bsrq %1,%0\n\t"
 			: "=r" (m) 
 			: "rm" (x));
 #else
@@ -217,7 +217,7 @@ inline FXuint fxbitscanrev(FXulong x) throw()
 	m=32+fxbitscanrev(_x.i[!!FOX_BIGENDIAN]);
 	if(64==m) { m=fxbitscanrev(_x.i[!FOX_BIGENDIAN]); if(32==m) m=64; }
 #endif
-	return m;
+	return (FXuint) m;
 }
 inline void fxendianswap2(void *_p)
 {	// Can't improve on this
@@ -226,10 +226,10 @@ inline void fxendianswap2(void *_p)
 }
 inline void fxendianswap4(void *_p)
 {	// Even with misalignment penalties, this is faster
-	__asm__("mov %0, %%edx\n\t"
-			"bswap %%edx\n\t"
-			"mov %%edx, %0\n\t"
-			: "=m" (*(FXuint *)_p));
+	FXuint &p=*(FXuint *)_p;
+	__asm__("bswapl %0\n\t"
+			: "=r" (p)
+			: "r"  (p));
 /*	__asm
 	{
 		mov edx, [_p]
@@ -240,19 +240,20 @@ inline void fxendianswap4(void *_p)
 }
 inline void fxendianswap8(void *_p)
 {	// Even with misalignment penalties, this is definitely faster
+	FXulong &p=*(FXulong *)_p;
 #if defined(__x86_64__)
-	__asm__("mov %0, %%rdx\n\t"
-			"bswap %%rdx\n\t"
-			"mov %%rdx, %0\n\t"
-			: "=m" (*(FXulong *)_p));
+	__asm__("bswapq %0\n\t"
+			: "=r" (p)
+			: "r"  (p));
 #else
-	__asm__("mov %0, %%edx\n\t"
-			"mov 4+%0, %%ecx\n\t"
-			"bswap %%edx\n\t"
-			"bswap %%ecx\n\t"
-			"mov %%edx, 4+%0\n\t"
-			"mov %%ecx, %0\n\t"
-			: "=m" (*(FXulong *)_p));
+	__asm__("bswapl %%eax\n\t"
+			"bswapl %%edx\n\t"
+			"movl %%eax, %%ecx\n\t"
+			"movl %%edx, %%eax\n\t"
+			"movl %%ecx, %%edx\n\t"
+			: "=A" (p)
+			: "A"  (p)
+			: "ecx");
 #endif
 /*	__asm
 	{
