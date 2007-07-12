@@ -106,12 +106,13 @@ int main(int argc, char *argv[])
 			bufferh.truncate(bufferh.size() & ~7);
 			for(bufferh.at(0); !sbufferh.atEnd(); )
 			{
-				FXulong c, c2, c3;
+				FXulong c;
+				volatile FXulong c2, c3;
 				sbufferh >> c;
 				c3=c2=c;
-				fxendianswap8(&c2);
+				fxendianswap8((void *) &c2);
 				{
-					FXuchar *p=(FXuchar *) &c3, t;
+					volatile FXuchar *p=(volatile FXuchar *) &c3, t;
 					t=p[0]; p[0]=p[7]; p[7]=t;
 					t=p[1]; p[1]=p[6]; p[6]=t;
 					t=p[2]; p[2]=p[5]; p[5]=t;
