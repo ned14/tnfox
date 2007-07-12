@@ -1598,10 +1598,13 @@ void FXACL::writeTo(int fd) const
 #endif
 }
 
-FXACL FXACL::default_(FXACL::EntityType type, int flags)
+FXACL FXACL::default_(FXACL::EntityType type, bool readOnly, int flags)
 {
 	FXACL ret(type);
-	ret.append(Entry(FXACLEntity::owner(), 0, Permissions().setAll((flags & 4)!=0)));
+	Permissions perms;
+	perms.setGenRead();
+	if(!readOnly) perms.setAll((flags & 4)!=0);
+	ret.append(Entry(FXACLEntity::owner(), 0, perms));
 	if(flags & 2)
 		ret.append(Entry(FXACLEntity::owner().group(), 0, Permissions().setGenRead().setGenWrite().setGenExecute((flags & 4)!=0)));
 	else if(flags & 1)

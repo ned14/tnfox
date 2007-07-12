@@ -360,7 +360,7 @@ static FXIcon *loadMsgIcon(const FXString &name)
 	{
 		tnpath.append("/icons/"+name);
 		FXERRHM(i=new FXPNGIcon(FXApp::instance()));
-		FXFile f(tnpath);
+		QFile f(tnpath);
 		f.open(IO_ReadOnly);
 		FXStream s(&f);
 		i->loadPixels(s);

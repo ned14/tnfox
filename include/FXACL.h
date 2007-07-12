@@ -402,10 +402,10 @@ public:
 
 	/*! Returns a default ACL with the owner set to the current user and
 	one entry specifying that only the current user has full access except
-	for execute. For \em flags bit 0 specifies that the user's group has
-	read access, bit 1 specifies write access and bit 2 has the execute
-	bits set too */
-	static FXACL default_(EntityType type, int flags=0);
+	for execute unless bit 2 of flags is set. For \em flags bit 0 specifies
+	that the user's group has read access, bit 1 specifies write access and
+	bit 2 has the execute bits set too */
+	static FXACL default_(EntityType type, bool readOnly, int flags=0);
 	//! Denotes how much security support the host OS provides
 	struct ACLSupport
 	{

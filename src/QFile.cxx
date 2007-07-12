@@ -50,51 +50,6 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
 
-/*
-  Notes:
-  - Thanks to Sean Hubbell for the original impetus for these functions.
-  - Windows flavors of some of these functions are not perfect yet.
-  - Windows 95 and NT:
-      -  1 to 255 character name.
-      -  Complete path for a file or project name cannot exceed 259
-         characters, including the separators.
-      -  May not begin or end with a space.
-      -  May not begin with a $
-      -  May contain 1 or more file extensions (eg. MyFile.Ext1.Ext2.Ext3.Txt).
-      -  Legal characters in the range of 32 - 255 but not ?"/\<>*|:
-      -  Filenames may be mixed case.
-      -  Filename comparisons are case insensitive (eg. ThIs.TXT = this.txt).
-  - MS-DOS and Windows 3.1:
-      -  1 to 11 characters in the 8.3 naming convention.
-      -  Legal characters are A-Z, 0-9, Double Byte Character Set (DBCS)
-         characters (128 - 255), and _^$~!#%&-{}@'()
-      -  May not contain spaces, 0 - 31, and "/\[]:;|=,
-      -  Must not begin with $
-      -  Uppercase only filename.
-  - Perhaps use GetEnvironmentVariable instead of getenv?
-  - QFile::search() what if some paths are quoted, like
-
-      \this\dir;"\that\dir with a ;";\some\other\dir
-
-  - Need function to contract filenames, e.g. change:
-
-      /home/jeroen/junk
-      /home/someoneelse/junk
-
-    to:
-
-      ~/junk
-      ~someoneelse/junk
-
-  - Perhaps also taking into account certain environment variables in the
-    contraction function?
-  - QFile::copy( "C:\tmp", "c:\tmp\tmp" ) results infinite-loop.
-
-*/
-
-
-
-
 #ifdef WIN32
 #include "WindowsGubbins.h"
 // Replacement ftruncate() (as there's no 64 bit version of _chsize())
@@ -136,13 +91,10 @@ public:
 		Write=2
 	} lastop;
 	QByteArray ungetchbuffer;
+	bool doacl;
 	FXACL *acl;
-	QFilePrivate(bool _amStdio, bool doacl) : amStdio(_amStdio), handle(0), size(0), lastop(NoOp), acl(0)
+	QFilePrivate(bool _amStdio, bool _doacl) : amStdio(_amStdio), handle(0), size(0), lastop(NoOp), doacl(_doacl), acl(0)
 	{
-		if(doacl)
-		{
-			FXERRHM(acl=new FXACL(FXACL::default_(FXACL::File)));
-		}
 	}
 	~QFilePrivate()
 	{
@@ -273,6 +225,14 @@ bool QFile::open(FXuint mode)
 		if(mode & IO_Append) access|=O_APPEND;
 		if(mode & IO_Truncate) access|=O_TRUNC;
 		if(!(access & O_CREAT) && !exists()) FXERRGNF(QTrans::tr("QFile", "File '%1' not found").arg(p->filename), 0);
+		if(p->doacl)
+		{
+			if(!p->acl)
+			{	// If we're not writing, the default ACL of want everything
+				// demands too much causing a fault on default NTFS perms
+				FXERRHM(p->acl=new FXACL(FXACL::default_(FXACL::File, !(mode & IO_WriteOnly))));
+			}
+		}
 #ifdef WIN32
 		access|=O_BINARY;
 		// Annoyingly, you must create a file handle with WRITE_DAC permission to
@@ -280,10 +240,11 @@ bool QFile::open(FXuint mode)
 		HANDLE h;
 		SECURITY_ATTRIBUTES sa={ sizeof(SECURITY_ATTRIBUTES) };
 		SECURITY_ATTRIBUTES *psa=&sa;
-		DWORD accessw=STANDARD_RIGHTS_ALL, creation=0;
-		if((O_RDONLY & access)==O_RDONLY) accessw|=GENERIC_READ;
-		if((O_WRONLY & access)==O_WRONLY) accessw|=GENERIC_WRITE;
-		if((O_RDWR & access)==O_RDWR) accessw|=GENERIC_READ|GENERIC_WRITE;
+		DWORD accessw=0, creation=0;
+		if((O_RDONLY & access)==O_RDONLY) accessw|=STANDARD_RIGHTS_READ|GENERIC_READ;
+		if((O_WRONLY & access)==O_WRONLY) accessw|=STANDARD_RIGHTS_ALL|GENERIC_WRITE;
+		if((O_RDWR & access)==O_RDWR) accessw|=STANDARD_RIGHTS_ALL|GENERIC_READ|GENERIC_WRITE;
+
 		if(p->acl)
 			sa.lpSecurityDescriptor=(SECURITY_DESCRIPTOR *) p->acl->int_toWin32SecurityDescriptor();
 		else
@@ -340,7 +301,6 @@ void QFile::close()
 		if(p->acl)
 		{	// Reset to default ACL
 			FXDELETE(p->acl);
-			FXERRHM(p->acl=new FXACL(FXACL::default_(FXACL::File)));
 		}
 		ioIndex=0;
 		setFlags(0);
@@ -432,12 +392,14 @@ bool QFile::atEnd() const
 
 const FXACL &QFile::permissions() const
 {
-	assert(p->acl);
-	return *p->acl;
+	if(p->acl)
+		return *p->acl;
+	static FXACL def(FXACL::default_(FXACL::File, false));
+	return def;
 }
 void QFile::setPermissions(const FXACL &perms)
 {
-	assert(p->acl);
+	if(!p->acl) FXERRHM(p->acl=new FXACL);
 	if(isOpen()) perms.writeTo(p->handle);
 	*p->acl=perms;
 }

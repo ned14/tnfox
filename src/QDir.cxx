@@ -487,7 +487,7 @@ bool QDir::mkdir(const FXString &leaf, bool acceptAbs)
 	{	// Set ACL so only current user has all access
 		FXERRH_TRY
 		{
-			QFile::setPermissions(path, FXACL::default_(FXACL::Directory, 4));
+			QFile::setPermissions(path, FXACL::default_(FXACL::Directory, false, 4));
 		}
 		FXERRH_CATCH(...)
 		{
