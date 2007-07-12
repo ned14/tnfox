@@ -747,6 +747,24 @@ FXString& FXString::adopt(FXString& s) throw() {
   }
 
 
+
+
+// Fill with a constant
+FXString& FXString::fill(FXchar c,FXint n){
+  length(n);
+  resetInserts();
+  memset(str,c,n);
+  return *this;
+  }
+
+
+// Fill up to current length
+FXString& FXString::fill(FXchar c) throw() {
+  memset(str,c,length());
+  return *this;
+  }
+
+
 // Assign input character to this string
 FXString& FXString::assign(FXchar c){
   length(1);

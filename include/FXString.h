@@ -148,6 +148,12 @@ public:
   /// Assign another string to this
   FXString& operator=(const FXString& s);
 
+  /// Fill with a constant
+  FXString& fill(FXchar c,FXint n);
+
+  /// Fill up to current length
+  FXString& fill(FXchar c) throw();
+
   /// Convert to lower case
   FXString& lower();
 
