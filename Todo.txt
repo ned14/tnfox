@@ -1,6 +1,6 @@
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
-NT v5.0 to v5.2 Failures:
+NT v5.0 (x86) and v6.0 (x64) Failures:
   1. If FXMemMap maps in a file for write access, then another FXMemMap maps in
 the same file for write access, you will find you cannot map in parts of the
 second section because of an "Access Denied" error (which is silently eaten
@@ -8,22 +8,34 @@ and only reported by TnFOX to the console). Cause: totally unknown, it
 appears to be a misfeature of NT long reported by others all over the internet.
 This problem does not apply if either file is not write access.
 
+
+KUbuntu 6.10 x64 Failures: (Linux kernel v2.6.17):
+  None known.
+
+
+Apple Mac OS X 10.4.8 x86 Failures:
+  1. TestDLL fails due to Apple's implementation of dlclose() not kicking out
+the shared library like it's supposed to.
+  2. TestGraphing fails due to buggy support within the X11 OpenGL routines.
+Specifically, because TnFOX sets XInitThreads(), the OpenGL code hangs in the
+internally called XLockDisplay(). If you really need OpenGL working, you will
+have to comment out this call in FXApp.cpp.
+  3. TestFSMonitor fails due to use of kevents which don't provide much
+information (not that we have any choice)
+  4. In general, POSIX thread cancellation is buggy and programs do not behave
+consistency. We await the 10.5 Leopard release.
+
+
+FreeBSD v6.0 x64 Failures:
+  1. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
+timings are off - therefore the events don't open as they should.
+
+
 Linux Kernel v2.4.20 (RH9) Failures:
   None known, but thread cancellation during pipe operations is a little flaky
 in Tn (see the cleanup() in FXIPCChannel). NOTE THAT THIS HAS NOT BEEN TESTED
 SINCE THE v0.80 RELEASE!
 
-SuSE 10 Failures: (linux kernel v2.6.13):
-  1. TestDeviceIO, there is an out of memory exception at the start. This is
-due to an optimisation bug in GCC v4.1.
-  2. TestSQLDB, there is a segfault in the linker on load. This is due to a
-bug in the linker. Load it bypassing libtool via .libs/TestSQLDB.
-  3. TestMemoryPool, there is a clash between glibc's memory allocator and
-TnFOX's. This will get fixed soon.
-
-FreeBSD v6.0 Failures:
-  1. TestFSMonitor, the FAM daemon uses polling on BSD and thus the test's
-timings are off - therefore the events don't open as they should.
 
 Known bugs:
 -=-=-=-=-=-
