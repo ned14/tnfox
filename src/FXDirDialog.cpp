@@ -3,7 +3,7 @@
 *                D i r e c t o r y   S e l e c t i o n   D i a l o g            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirDialog.cpp,v 1.20 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXDirDialog.cpp,v 1.27 2006/01/22 17:58:22 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 
@@ -28,12 +28,13 @@
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXStat.h"
 #include "FXFile.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
@@ -62,7 +63,7 @@
   To do:
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -193,7 +194,7 @@ FXString FXDirDialog::getOpenDirectory(FXWindow* owner,const FXString& caption,c
   dirdialog.setDirectory(path);
   if(dirdialog.execute()){
     dirname=dirdialog.getDirectory();
-    if(FXFile::isDirectory(dirname)) return dirname;
+    if(FXStat::isDirectory(dirname)) return dirname;
     }
   return FXString::null;
   }

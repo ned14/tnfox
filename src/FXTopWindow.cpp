@@ -3,7 +3,7 @@
 *                         T o p   W i n d o w   O b j e c t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.149.2.5 2005/10/25 12:34:28 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.175.2.6 2007/03/29 18:01:51 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -92,7 +92,7 @@
 
 #define DISPLAY(app) ((Display*)((app)->display))
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -106,6 +106,8 @@ FXDEFMAP(FXTopWindow) FXTopWindowMap[]={
   FXMAPFUNC(SEL_FOCUS_DOWN,0,FXTopWindow::onFocusDown),
   FXMAPFUNC(SEL_FOCUS_LEFT,0,FXTopWindow::onFocusLeft),
   FXMAPFUNC(SEL_FOCUS_RIGHT,0,FXTopWindow::onFocusRight),
+  FXMAPFUNC(SEL_SESSION_NOTIFY,0,FXTopWindow::onSessionNotify),
+  FXMAPFUNC(SEL_SESSION_CLOSED,0,FXTopWindow::onSessionClosed),
   FXMAPFUNC(SEL_CHORE,FXTopWindow::ID_CLOSE,FXTopWindow::onCmdClose),
   FXMAPFUNC(SEL_SIGNAL,FXTopWindow::ID_CLOSE,FXTopWindow::onCmdClose),
   FXMAPFUNC(SEL_TIMEOUT,FXTopWindow::ID_CLOSE,FXTopWindow::onCmdClose),
@@ -122,6 +124,19 @@ FXDEFMAP(FXTopWindow) FXTopWindowMap[]={
 
 // Object implementation
 FXIMPLEMENT_ABSTRACT(FXTopWindow,FXShell,FXTopWindowMap,ARRAYNUMBER(FXTopWindowMap))
+
+
+// Deserialization
+FXTopWindow::FXTopWindow(){
+  icon=NULL;
+  miniIcon=NULL;
+  padtop=0;
+  padbottom=0;
+  padleft=0;
+  padright=0;
+  hspacing=0;
+  vspacing=0;
+  }
 
 
 // Create toplevel window object & add to toplevel window list
@@ -169,55 +184,74 @@ void FXTopWindow::create(){
   if(icon) icon->create();
   if(miniIcon) miniIcon->create();
 
+  // Register string types
+  if(!utf8Type){ utf8Type=getApp()->registerDragType(utf8TypeName); }
+
   if(xid){
     if(getApp()->isInitialized()){
 
+    // Only shrinkable; size may not be above default size
+    if((options&DECOR_SHRINKABLE) && !(options&DECOR_STRETCHABLE)){
+      if(width>getDefaultWidth()) width=getDefaultWidth();
+      if(height>getDefaultHeight()) height=getDefaultHeight();
+      }
+
+    // Only stretchable; size may not be below default size
+    else if((options&DECOR_STRETCHABLE) && !(options&DECOR_SHRINKABLE)){
+      if(width<getDefaultWidth()) width=getDefaultWidth();
+      if(height<getDefaultHeight()) height=getDefaultHeight();
+      }
+
 #ifndef WIN32
       // Catch delete window
-      Atom protocols[2];
+      Atom protocols[3];
       protocols[0]=getApp()->wmDeleteWindow;
       protocols[1]=getApp()->wmTakeFocus;
-      XSetWMProtocols(DISPLAY(getApp()),xid,protocols,2);
+      protocols[2]=getApp()->wmNetPing;
+      XSetWMProtocols(DISPLAY(getApp()),xid,protocols,3);
 
       // Set position for Window Manager
       XSizeHints size;
 
-      size.flags=USSize|PSize|PWinGravity;      // Let Window Manager place it
-      size.x=0;
-      size.y=0;
-      //if(xpos!=0 || ypos!=0){                   // Force explicit position
-        size.flags|=USPosition|PPosition;
-      //  }
-        size.x=xpos;
-        size.y=ypos;
-      size.min_width=0;
-      size.min_height=0;
-      size.base_width=0;
-      size.base_height=0;
-      if(!(options&DECOR_SHRINKABLE)){          // Can not shrink, so set min size
-        size.flags|=PMinSize|PBaseSize;
-        size.min_width=getDefaultWidth();
-        size.min_height=getDefaultHeight();
-        size.base_width=width;
-        size.base_height=height;
-        }
-      size.max_width=0;
-      size.max_height=0;
-      if(!(options&DECOR_STRETCHABLE)){         // Can not grow, so set max size
-        size.flags|=PMaxSize;
-        size.max_width=getDefaultWidth();
-        size.max_height=getDefaultHeight();
-        }
+      // Placement hints
+      size.flags=USSize|PSize|PWinGravity|USPosition|PPosition;
+      size.x=xpos;
+      size.y=ypos;
       size.width=width;
       size.height=height;
+      size.min_width=0;
+      size.min_height=0;
+      size.max_width=0;
+      size.max_height=0;
       size.width_inc=0;
       size.height_inc=0;
       size.min_aspect.x=0;
       size.min_aspect.y=0;
       size.max_aspect.x=0;
       size.max_aspect.y=0;
+      size.base_width=0;
+      size.base_height=0;
       size.win_gravity=NorthWestGravity;        // Tim Alexeevsky <realtim@mail.ru>
       size.win_gravity=StaticGravity;           // Account for border (ICCCM)
+
+      // Apply resize limitations
+      if(!(options&DECOR_SHRINKABLE)){
+        if(!(options&DECOR_STRETCHABLE)){       // Cannot change at all
+          size.flags|=PMinSize|PMaxSize;
+          size.min_width=size.max_width=width;
+          size.min_height=size.max_height=height;
+          }
+        else{                                   // Cannot get smaller than default
+          size.flags|=PMinSize;
+          size.min_width=getDefaultWidth();
+          size.min_height=getDefaultHeight();
+          }
+        }
+      else if(!(options&DECOR_STRETCHABLE)){    // Cannot get larger than default
+        size.flags|=PMaxSize;
+        size.max_width=getDefaultWidth();
+        size.max_height=getDefaultHeight();
+        }
 
       // Set hints
       XSetWMNormalHints(DISPLAY(getApp()),xid,&size);
@@ -255,6 +289,25 @@ void FXTopWindow::detach(){
   }
 
 
+// Destroy window
+void FXTopWindow::destroy(){
+  if(xid){
+    if(getApp()->isInitialized()){
+#ifdef WIN32
+      HICON icold;
+      if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_BIG,0))!=0){
+        DestroyIcon(icold);
+        }
+      if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_SMALL,0))!=0){
+        DestroyIcon(icold);
+        }
+#endif
+      }
+    }
+  FXShell::destroy();
+  }
+
+
 // Focus to this toplevel window
 void FXTopWindow::setFocus(){
   FXShell::setFocus();
@@ -262,8 +315,8 @@ void FXTopWindow::setFocus(){
 #ifndef WIN32
     XSetInputFocus(DISPLAY(getApp()),xid,RevertToPointerRoot,CurrentTime);
 #else
-    SetActiveWindow((HWND)xid);
     //SetFocus((HWND)xid);
+    SetActiveWindow((HWND)xid);
 #endif
     }
   }
@@ -303,7 +356,8 @@ void FXTopWindow::killFocus(){
     if(GetActiveWindow()==(HWND)xid){
       if(getOwner() && getOwner()->id()){
         FXTRACE((100,"focus back to owner\n"));
-        SetActiveWindow((HWND)getOwner()->id());
+        SetActiveWindow((HWND)getOwner()->getShell()->id());        // Fix from Sander
+        //SetForegroundWindow((HWND)getOwner()->getShell()->id());
         }
       }
 #endif
@@ -337,6 +391,9 @@ void FXTopWindow::hide(){
 #ifndef WIN32
       XWithdrawWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())));
 #else
+//      if(getOwner() && getOwner()->id()){
+//        SetActiveWindow((HWND)getOwner()->getShell()->id());  // Fix from Sander
+//        }
       ShowWindow((HWND)xid,SW_HIDE);
 #endif
       }
@@ -375,57 +432,44 @@ void FXTopWindow::place(FXuint placement){
   rh=getRoot()->getHeight();
 #else
   RECT rect;
-//OSVERSIONINFO vinfo;
-//memset(&vinfo,0,sizeof(vinfo));
-//vinfo.dwOSVersionInfoSize=sizeof(vinfo);
-//GetVersionEx(&vinfo);
-#if (WINVER >= 0x500) || ((defined _WIN32_WINDOWS) && (_WIN32_WINDOWS >= 0x410))
-  HINSTANCE user32;
-  typedef BOOL (WINAPI* PFN_GETMONITORINFOA)(HMONITOR, LPMONITORINFO);
-  typedef HMONITOR (WINAPI* PFN_MONITORFROMRECTA)(LPRECT, DWORD);
-  PFN_GETMONITORINFOA GetMonitorInfoA;
-  PFN_MONITORFROMRECTA MonitorFromRectA;
+  MYMONITORINFO minfo;
+  HANDLE monitor;
 
-  // Suggested by "Daniel Gehriger" <gehriger@linkcad.com>
-  // The API does not exist on older Windows NT and 95, so
-  // We can't even link it, let alone call it.
-  // The solution is to ask the DLL if the function exists.
-  // And another patch from Lothar Scholtz; now it works!
-  if((user32=LoadLibrary("User32")) && (GetMonitorInfoA=reinterpret_cast<PFN_GETMONITORINFOA>(GetProcAddress(user32,"GetMonitorInfoA"))) && (MonitorFromRectA=reinterpret_cast<PFN_MONITORFROMRECTA>(GetProcAddress(user32,"MonitorFromRect")))){
-    MONITORINFOEX minfo;
-    HMONITOR hMon;
-    if(placement == PLACEMENT_CURSOR){
-      // Use mouse position to select screen.
-      getRoot()->getCursorPosition(x,y,state);
-      rect.left=x;
-      rect.right=x+1;
-      rect.top=y;
-      rect.bottom=y+1;
-      }
-    else{
-      // Use owner to select screen.
-      over=getOwner()?getOwner():getRoot();
-      over->translateCoordinatesTo(ox,oy,getRoot(),0,0);
-      ow=over->getWidth();
-      oh=over->getHeight();
-      rect.left=ox;
-      rect.right=ox+ow;
-      rect.top=oy;
-      rect.bottom=oy+oh;
-      }
-    hMon=MonitorFromRectA(&rect,MONITOR_DEFAULTTOPRIMARY);
+  // Use mouse position to select screen
+  if(placement!=PLACEMENT_OWNER){
+    getRoot()->getCursorPosition(x,y,state);
+    rect.left=x;
+    rect.right=x+1;
+    rect.top=y;
+    rect.bottom=y+1;
+    }
+
+  // Use owner to select screen
+  else{
+    over=getOwner()?getOwner():getRoot();
+    over->translateCoordinatesTo(ox,oy,getRoot(),0,0);
+    ow=over->getWidth();
+    oh=over->getHeight();
+    rect.left=ox;
+    rect.right=ox+ow;
+    rect.top=oy;
+    rect.bottom=oy+oh;
+    }
+
+  // Get monitor info if we have this API
+  monitor=fxMonitorFromRect(&rect,MONITOR_DEFAULTTOPRIMARY);
+  if(monitor){
     memset(&minfo,0,sizeof(minfo));
     minfo.cbSize=sizeof(minfo);
-    GetMonitorInfoA(hMon,&minfo);
+    fxGetMonitorInfo(monitor,&minfo);
     rx=minfo.rcWork.left;
     ry=minfo.rcWork.top;
     rw=minfo.rcWork.right-minfo.rcWork.left;
     rh=minfo.rcWork.bottom-minfo.rcWork.top;
     }
-  else
-#endif
-    {
-    // On Win95 and WinNT, we have to use the following
+
+  // Otherwise use the work-area
+  else{
     SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
     rx=rect.left;
     ry=rect.top;
@@ -473,8 +517,8 @@ void FXTopWindow::place(FXuint placement){
       // Adjust so dialog is fully visible
       if(wx<rx) wx=rx+10;
       if(wy<ry) wy=ry+10;
-      if(wx+ww>rw) wx=rw-ww-10;
-      if(wy+wh>rh) wy=rh-wh-10;
+      if(wx+ww>rx+rw) wx=rx+rw-ww-10;
+      if(wy+wh>ry+rh) wy=ry+rh-wh-10;
       break;
 
     // Place centered over the owner
@@ -497,8 +541,8 @@ void FXTopWindow::place(FXuint placement){
       // Adjust so dialog is fully visible
       if(wx<rx) wx=rx+10;
       if(wy<ry) wy=ry+10;
-      if(wx+ww>rw) wx=rw-ww-10;
-      if(wy+wh>rh) wy=rh-wh-10;
+      if(wx+ww>rx+rw) wx=rx+rw-ww-10;
+      if(wy+wh>ry+rh) wy=ry+rh-wh-10;
       break;
 
     // Place centered on the screen
@@ -515,8 +559,8 @@ void FXTopWindow::place(FXuint placement){
       // Adjust so dialog is fully visible
       if(wx<rx) wx=rx+10;
       if(wy<ry) wy=ry+10;
-      if(wx+ww>rw) wx=rw-ww-10;
-      if(wy+wh>rh) wy=rh-wh-10;
+      if(wx+ww>rx+rw) wx=rx+rw-ww-10;
+      if(wy+wh>ry+rh) wy=ry+rh-wh-10;
       break;
 
     // Place maximized
@@ -536,25 +580,6 @@ void FXTopWindow::place(FXuint placement){
   // Place it
   position(wx,wy,ww,wh);
   }
-
-
-#ifdef WIN32
-
-
-// Make HICON from FXIcon
-void* FXTopWindow::makeicon(FXIcon* icon){
-  ICONINFO iconinfo;
-  iconinfo.fIcon=TRUE;
-  iconinfo.xHotspot=0;
-  iconinfo.yHotspot=0;
-  iconinfo.hbmMask=(HBITMAP)icon->shape;
-  iconinfo.hbmColor=(HBITMAP)icon->id();
-  return (void*)CreateIconIndirect(&iconinfo);
-  }
-
-
-#endif
-
 
 
 // Set large icon(s)
@@ -621,6 +646,7 @@ void FXTopWindow::seticons(){
   }
 
 
+
 // Set title
 void FXTopWindow::settitle(){
   if(!title.empty()){
@@ -628,13 +654,23 @@ void FXTopWindow::settitle(){
     XTextProperty t;
     char *s;
     s=(char*)title.text();
-    if(XStringListToTextProperty((char**)&s,1,&t)){
+    if(XStringListToTextProperty((char**)&s,1,&t)){     // FIXME encode to iso8859-1?
       XSetWMIconName(DISPLAY(getApp()),xid,&t);
       XSetWMName(DISPLAY(getApp()),xid,&t);
       XFree(t.value);
       }
+
+    // Extended window manager hint for true unicode name in title
+    XChangeProperty(DISPLAY(getApp()),xid,getApp()->wmNetIconName,utf8Type,8,PropModeReplace,(unsigned char*)title.text(),title.length());
+    XChangeProperty(DISPLAY(getApp()),xid,getApp()->wmNetWindowName,utf8Type,8,PropModeReplace,(unsigned char*)title.text(),title.length());
 #else
-    SetWindowText((HWND)xid,title.text());
+#ifdef UNICODE
+    FXnchar titlewide[1024];
+    utf2ncs(titlewide,title.text(),title.length()+1);
+    SetWindowTextW((HWND)xid,titlewide);
+#else
+    SetWindowTextA((HWND)xid,title.text());
+#endif
 #endif
     }
   }
@@ -1036,10 +1072,10 @@ void FXTopWindow::position(FXint x,FXint y,FXint w,FXint h){
 
 // Compute minimum width based on child layout hints
 FXint FXTopWindow::getDefaultWidth(){
-  register FXint w,wcum,wmax,mw=0;
+  register FXint w,wcum,wmax,mw;
   register FXWindow* child;
   register FXuint hints;
-  wmax=wcum=0;
+  wmax=wcum=mw=0;
   if(options&PACK_UNIFORM_WIDTH) mw=maxChildWidth();
   for(child=getLast(); child; child=child->getPrev()){
     if(child->shown()){
@@ -1060,16 +1096,17 @@ FXint FXTopWindow::getDefaultWidth(){
         }
       }
     }
-  return padleft+padright+FXMAX(wcum,wmax);
+  wcum+=padleft+padright;
+  return FXMAX(wcum,wmax);
   }
 
 
 // Compute minimum height based on child layout hints
 FXint FXTopWindow::getDefaultHeight(){
-  register FXint h,hcum,hmax,mh=0;
+  register FXint h,hcum,hmax,mh;
   register FXWindow* child;
   register FXuint hints;
-  hmax=hcum=0;
+  hmax=hcum=mh=0;
   if(options&PACK_UNIFORM_HEIGHT) mh=maxChildHeight();
   for(child=getLast(); child; child=child->getPrev()){
     if(child->shown()){
@@ -1090,7 +1127,8 @@ FXint FXTopWindow::getDefaultHeight(){
         }
       }
     }
-  return padtop+padbottom+FXMAX(hcum,hmax);
+  hcum+=padtop+padbottom;
+  return FXMAX(hcum,hmax);
   }
 
 
@@ -1252,6 +1290,20 @@ long FXTopWindow::onCmdClose(FXObject*,FXSelector,void*){
   }
 
 
+// Session is about to close, give opportunity to save data
+long FXTopWindow::onSessionNotify(FXObject*,FXSelector,void* ptr){
+  return target && target->tryHandle(this,FXSEL(SEL_SESSION_NOTIFY,message),ptr);
+  }
+
+
+// Session has closed, close the window with prejudice
+long FXTopWindow::onSessionClosed(FXObject*,FXSelector,void* ptr){
+  if(target) target->tryHandle(this,FXSEL(SEL_SESSION_CLOSED,message),ptr);
+  close(FALSE);
+  return 1;
+  }
+
+
 // Focus moved up
 long FXTopWindow::onFocusUp(FXObject*,FXSelector,void* ptr){
   FXWindow *child,*c;
@@ -1380,12 +1432,30 @@ long FXTopWindow::onFocusRight(FXObject*,FXSelector,void* ptr){
   }
 
 
-
 // Change regular icon
 void FXTopWindow::setIcon(FXIcon* ic){
   if(icon!=ic){
     icon=ic;
-    if(xid) seticons();
+    if(xid){
+#ifdef WIN32
+      HICON icold=NULL;
+      HICON icnew=NULL;
+      if(icon){
+        ICONINFO iconinfo;
+        iconinfo.fIcon=TRUE;
+        iconinfo.xHotspot=0;
+        iconinfo.yHotspot=0;
+        iconinfo.hbmMask=(HBITMAP)icon->shape;
+        iconinfo.hbmColor=(HBITMAP)icon->xid;
+        icnew=CreateIconIndirect(&iconinfo);
+        }
+      if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_BIG,(LPARAM)icnew))!=0){
+        DestroyIcon(icold);
+        }
+#else
+      seticons();
+#endif
+      }
     }
   }
 
@@ -1394,9 +1464,29 @@ void FXTopWindow::setIcon(FXIcon* ic){
 void FXTopWindow::setMiniIcon(FXIcon *ic){
   if(miniIcon!=ic){
     miniIcon=ic;
-    if(xid) seticons();
+    if(xid){
+#ifdef WIN32
+      HICON icold=NULL;
+      HICON icnew=NULL;
+      if(miniIcon){
+        ICONINFO iconinfo;
+        iconinfo.fIcon=TRUE;
+        iconinfo.xHotspot=0;
+        iconinfo.yHotspot=0;
+        iconinfo.hbmMask=(HBITMAP)miniIcon->shape;
+        iconinfo.hbmColor=(HBITMAP)miniIcon->xid;
+        icnew=CreateIconIndirect(&iconinfo);
+        }
+      if((icold=(HICON)SendMessage((HWND)xid,WM_SETICON,ICON_SMALL,(LPARAM)icnew))!=0){
+        DestroyIcon(icold);
+        }
+#else
+      seticons();
+#endif
+      }
     }
   }
+
 
 
 // Set new window title
@@ -1484,14 +1574,19 @@ void FXTopWindow::setVSpacing(FXint vs){
     }
   }
 
+
 // Save object to stream
 void FXTopWindow::save(FXStream& store) const {
   FXShell::save(store);
   store << title;
   store << icon;
   store << miniIcon;
-  store << padtop << padbottom << padleft << padright;
-  store << hspacing << vspacing;
+  store << padtop;
+  store << padbottom;
+  store << padleft;
+  store << padright;
+  store << hspacing;
+  store << vspacing;
   }
 
 
@@ -1501,8 +1596,12 @@ void FXTopWindow::load(FXStream& store){
   store >> title;
   store >> icon;
   store >> miniIcon;
-  store >> padtop >> padbottom >> padleft >> padright;
-  store >> hspacing >> vspacing;
+  store >> padtop;
+  store >> padbottom;
+  store >> padleft;
+  store >> padright;
+  store >> hspacing;
+  store >> vspacing;
   }
 
 

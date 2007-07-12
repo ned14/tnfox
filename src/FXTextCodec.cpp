@@ -3,7 +3,7 @@
 *                   U n i c o d e   T e x t   C o d e c                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 2002,2006 by L.Johnson & J.van der Zijp.  All Rights Reserved.  *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextCodec.cpp,v 1.11 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXTextCodec.cpp,v 1.43 2006/01/22 17:58:47 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -29,12 +29,7 @@
 #include "FXDict.h"
 #include "FXString.h"
 #include "FXTextCodec.h"
-#include "FXUTF8Codec.h"
 
-#include "FXMemDbg.h"
-#if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
-static const char *_fxmemdbg_current_file_ = __FILE__;
-#endif
 
 /*
   Notes:
@@ -42,365 +37,403 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
   - IANA defined mime names for character sets are found in:
 
         http://www.iana.org/assignments/character-sets.
+
+  - Need API to count expected #characters needed for decode.
+
+  - UTF-8 Encoding scheme:
+
+    U-00000000 - U-0000007F 0xxxxxxx
+    U-00000080 - U-000007FF 110xxxxx 10xxxxxx
+    U-00000800 - U-0000FFFF 1110xxxx 10xxxxxx 10xxxxxx
+    U-00010000 - U-001FFFFF 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    U-00200000 - U-03FFFFFF 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+    U-04000000 - U-7FFFFFFF 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+
+    The last two cases shouldn't occur since all unicode is between 0 and 0x10FFFF.
+
+  - Values to add:
+
+    0xFFFFD080 - 11111111 11111111 11010000 10000000
+    0xFFFE0080 - 11111111 11111110 00000000 10000000
+    0xFFC00080 - 11111111 11000000 00000000 10000000
+    0xF8000080 - 11111000 00000000 00000000 10000000
+    0x00000080 - 00000000 00000000 00000000 10000000
+
+  - UTF-16 Encoding scheme:
+
+    W1 = 110110yy yyyyyyyy
+    W2 = 110111xx xxxxxxxx
+
+    Leading-surrogates or high-surrogates are from D800 to DBFF, and trailing-surrogates
+    or low-surrogates are from DC00 to DFFF.
+
+  - Unicode Transformation Formats information http://czyborra.com/utf.
+  - The decoder should replace a malformed sequence with U+FFFD
+  - See also: RFC 2279.
+  - See RFC-1759 for printer MIB Enums.
+
+  - 0x00000000   00000000
+    0x00003080   00110000 1000000
+    0x000E2080   00001110 00100000 10000000
+    0x03C82080   00111100 11001000 00100000 10000000
+    0xFA082080   11111010 00001000 00100000 10000000
+    0x82082080   10000010 00001000 00100000 10000000
+
+  - FIXME still unhappy with FXTextCodec's API's.  Change in FOX 1.8.
+  - Note also, representation (e.g. 8, 16, 32 bit) should be independent
+    of encoding/decoding; need to be able to store ascii in wide characters.
 */
+
+
+
 
 /*******************************************************************************/
 
 namespace FX {
 
 
-class FXTextCodecDict : public FXDict {
-  FXDECLARE(FXTextCodecDict)
-private:
-  FXTextCodecDict(const FXTextCodecDict&);
-  FXTextCodecDict& operator=(const FXTextCodecDict&);
-public:
-
-  /// Construct a codec dictionary
-  FXTextCodecDict(){}
-
-  /// Insert named codec into dictionary
-  FXTextCodec* insert(const FXchar* name,FXTextCodec* codec);
-
-  /// Remove named codec from dictionary
-  FXTextCodec* remove(const FXchar* name);
-
-  /// Find codec by name
-  FXTextCodec* find(const FXchar* name) const;
-  };
+// Base class is not instantiated
+FXIMPLEMENT_ABSTRACT(FXTextCodec,FXObject,NULL,0)
 
 
-FXIMPLEMENT(FXTextCodecDict,FXDict,NULL,0)
+
+/*********  Helpers to convert between unicode transformation formats  *********/
 
 
-// Insert codec with name
-FXTextCodec* FXTextCodecDict::insert(const FXchar* name,FXTextCodec* codec){
-  return reinterpret_cast<FXTextCodec*>(FXDict::insert(name,codec));
+// Number of bytes for wide character
+static inline FXint utflen(FXwchar w){
+  return (w<0x80 ? 1 : (w<0x800 ? 2 : (w<0x10000 ? 3 : (w<0x200000 ? 4 : (w<0x4000000 ? 5 : 6)))));
   }
 
 
-// Remove named codec
-FXTextCodec* FXTextCodecDict::remove(const FXchar* name){
-  return reinterpret_cast<FXTextCodec*>(FXDict::remove(name));
-  }
-
-
-// Find named codec
-FXTextCodec* FXTextCodecDict::find(const FXchar* name) const {
-  return reinterpret_cast<FXTextCodec*>(FXDict::find(name));
-  }
-
-
-//---------------------------------------------------------------------------
-
-
-// Dictionary maps names to codecs
-FXTextCodecDict* FXTextCodec::codecs=0;
-
-/* 27th Nov 2004 ned: It bugs me to see memory leaks after program exit, so here's
-a hacked in text code cleanup routine Jeroen really should implement himself by now */
-static struct DeleteFXTextCodecs
-{
-	~DeleteFXTextCodecs()
-	{
-		FXTextCodec *codec;
-		FXTextCodecDict *codecs=FXTextCodec::codecs;
-		if(codecs)
-		{
-			for(int n=0; n<codecs->size(); n++)
-			{
-				codec=(FXTextCodec *) codecs->data(n);
-				delete codec;
-			}
-			delete codecs; codecs=0;
-		}
-	}
-} deleteFXTextCodecs;
-
-
-// Register codec associated with this name.
-FXbool FXTextCodec::registerCodec(const FXchar* name,FXTextCodec* codec){
-  if(codecs==0){
-    codecs=new FXTextCodecDict;
+// Convert utf8 to wide character
+FXint FXTextCodec::utf2wc(FXwchar& wc,const FXchar* src,FXint nsrc){
+  register FXwchar c;
+  if(nsrc<1) return -1;
+  wc=c=(FXuchar)src[0];
+  if(0x80<=c){
+    if(c<0xC0) return 0;
+    if(nsrc<2) return -2;
+    if((FXuchar)src[1]<0x80) return 0;
+    if((FXuchar)src[1]>0xBF) return 0;
+    wc=(wc<<6)^(FXuchar)src[1]^0x0003080;
+    if(0xE0<=c){
+      if(nsrc<3) return -3;
+      if((FXuchar)src[2]<0x80) return 0;
+      if((FXuchar)src[2]>0xBF) return 0;
+      wc=(wc<<6)^(FXuchar)src[2]^0x0020080;
+      if(0xF0<=c){
+        if(nsrc<4) return -4;
+        if((FXuchar)src[3]<0x80) return 0;
+        if((FXuchar)src[3]>0xBF) return 0;
+        wc=(wc<<6)^(FXuchar)src[3]^0x0400080;
+        if(0xF8<=c){
+          if(nsrc<5) return -5;
+          if((FXuchar)src[4]<0x80) return 0;
+          if((FXuchar)src[4]>0xBF) return 0;
+          wc=(wc<<6)^(FXuchar)src[4]^0x8000080;
+          if(0xFC<=c){
+            if(nsrc<6) return -6;
+            if((FXuchar)src[5]<0x80) return 0;
+            if((FXuchar)src[5]>0xBF) return 0;
+            wc=(wc<<6)^(FXuchar)src[5]^0x0000080;
+            return 6;
+            }
+          return 5;
+          }
+        return 4;
+        }
+      return 3;
+      }
+    return 2;
     }
-  if(codecs->find(name)==0){
-    codecs->insert(name,codec);
-    return TRUE;
-    }
-  else{
-    return FALSE;
-    }
+  return 1;
   }
 
 
-// Return the codec associated with this name (or NULL if no match is found)
-FXTextCodec* FXTextCodec::codecForName(const FXchar* name){
-  return (codecs!=0)?codecs->find(name):0;
-  }
-
-
-//---------------------------------------------------------------------------
-
-
-/**
- * Codec for all supported ISO-8859-x character sets.
- * The ISO 8859 character codes are isomorphic in the sense that code
- * positions 0-127 contain the same character as in ASCII, positions
- * 128-159 are unused (reserved for control characters) and positions
- * 160-255 are the varying part, used differently in different members
- * of the ISO 8859 family.
- */
-class FXISOTextCodec : public FXTextCodec {
-private:
-  FXString name;
-  FXint mib;
-  const FXwchar* table;
-protected:
-  static const FXuchar SUBSTITUTE;
-protected:
-  FXISOTextCodec(){}
-  FXbool canEncode(FXwchar c) const;
-  FXuchar encode(FXwchar c) const;
-  FXwchar decode(FXuchar c) const;
-public:
-
-  /// Constructor
-  FXISOTextCodec(const FXString& nm,FXint m,const FXwchar* t);
-
-  /// Convert from Unicode to this encoding
-  virtual unsigned long fromUnicode(FXuchar*& dest,unsigned long m,const FXwchar*& src,unsigned long n);
-
-  /// Convert from this encoding to Unicode
-  virtual unsigned long toUnicode(FXwchar*& dest,unsigned long m,const FXuchar*& src,unsigned long n);
-
-  // Return the IANA mime name for this codec
-  virtual const FXchar* mimeName() const { return name.text(); }
-
-  /// Return the Management Information Base (MIBenum) for the character set.
-  virtual FXint mibEnum() const { return mib; }
-
-  /// Destructor
-  virtual ~FXISOTextCodec(){}
-  };
-
-
-/**
- * Character to substitute when we're encoding a Unicode string into this
- * character set and there's no corresponding character.
- */
-const FXuchar FXISOTextCodec::SUBSTITUTE='?';
-
-
-// Number of items in table
-static const FXint NTABLEITEMS=255-160+1;
-
-// Constructor
-FXISOTextCodec::FXISOTextCodec(const FXString& nm,FXint m,const FXwchar* t){
-  name=nm;
-  mib=m;
-  table=t;
-  }
-
-
-// Return true if can encode this character
-FXbool FXISOTextCodec::canEncode(FXwchar c) const {
-  register FXint i;
-  if(c<0x80){
-    return TRUE;
+// Convert utf16 to wide character
+FXint FXTextCodec::utf2wc(FXwchar& wc,const FXnchar* src,FXint nsrc){
+  const FXint SURROGATE_OFFSET=0x10000-(0xD800<<10)-0xDC00;
+  if(nsrc<1) return -1;
+  wc=src[0];
+  if(0xD800<=wc && wc<0xDC00){
+    if(nsrc<2) return -2;
+    if(src[1]<0xDC00 || 0xE000<=src[1]) return 0;
+    wc=(wc<<10)+src[1]+SURROGATE_OFFSET;
+    return 2;
     }
-  else{
-    for(i=0; i<NTABLEITEMS; i++){
-      if(table[i]==c) return TRUE;
+  return 1;
+  }
+
+
+// Convert utf32 to wide character
+FXint FXTextCodec::utf2wc(FXwchar& wc,const FXwchar* src,FXint nsrc){
+  if(nsrc<1) return -1;
+  wc=src[0];
+  return 1;
+  }
+
+
+// Convert wide character to utf8
+FXint FXTextCodec::wc2utf(FXchar* dst,FXint ndst,FXwchar wc){
+  if(ndst<1) return -1;
+  if(wc>=0x80){
+    if(ndst<2) return -2;
+    if(wc>=0x800){
+      if(ndst<3) return -3;
+      if(wc>=0x10000){
+        if(ndst<4) return -4;
+        if(wc>=0x200000){
+          if(ndst<5) return -5;
+          if(wc>=0x4000000){
+            if(ndst<6) return -6;
+            dst[0]=(wc>>30)|0xFC;
+            dst[1]=((wc>>24)&0X3F)|0x80;
+            dst[2]=((wc>>18)&0X3F)|0x80;
+            dst[3]=((wc>>12)&0X3F)|0x80;
+            dst[4]=((wc>>6)&0X3F)|0x80;
+            dst[5]=(wc&0X3F)|0x80;
+            return 6;
+            }
+          dst[0]=(wc>>24)|0xF8;
+          dst[1]=((wc>>18)&0x3F)|0x80;
+          dst[2]=((wc>>12)&0x3F)|0x80;
+          dst[3]=((wc>>6)&0x3F)|0x80;
+          dst[4]=(wc&0x3F)|0x80;
+          return 5;
+          }
+        dst[0]=(wc>>18)|0xF0;
+        dst[1]=((wc>>12)&0x3F)|0x80;
+        dst[2]=((wc>>6)&0x3F)|0x80;
+        dst[3]=(wc&0x3F)|0x80;
+        return 4;
+        }
+      dst[0]=(wc>>12)|0xE0;
+      dst[1]=((wc>>6)&0x3F)|0x80;
+      dst[2]=(wc&0x3F)|0x80;
+      return 3;
+      }
+    dst[0]=(wc>>6)|0xC0;
+    dst[1]=(wc&0x3F)|0x80;
+    return 2;
+    }
+  dst[0]=wc;
+  return 1;
+  }
+
+
+// Convert wide character to utf16
+FXint FXTextCodec::wc2utf(FXnchar* dst,FXint ndst,FXwchar wc){
+  const FXint LEAD_OFFSET=0xD800-(0x10000>>10);
+  if(ndst<1) return -1;
+  dst[0]=wc;
+  if(0xFFFF<wc){
+    if(ndst<2) return -2;
+    dst[0]=(wc>>10)+LEAD_OFFSET;
+    dst[1]=(wc&0x3FF)+0xDC00;
+    return 2;
+    }
+  return 1;
+  }
+
+
+// Convert wide character to utf32
+FXint FXTextCodec::wc2utf(FXwchar* dst,FXint ndst,FXwchar wc){
+  if(ndst<1) return -1;
+  dst[0]=wc;
+  return 1;
+  }
+
+
+/*********  Convert arrays of characters from multi-byte to unicode  ***********/
+
+
+// Convert multi-byte characters from src to single wide character
+FXint FXTextCodec::mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const {
+  return utf2wc(wc,src,nsrc);
+  }
+
+
+// Count number of utf8 characters needed to convert multi-byte characters from src
+FXint FXTextCodec::mb2utflen(const FXchar* src,FXint nsrc) const {
+  register FXint nr,len=0;
+  FXwchar w;
+  if(src && 0<nsrc){
+    do{
+      nr=mb2wc(w,src,nsrc);
+      if(nr<=0) return nr;
+      src+=nr;
+      nsrc-=nr;
+      len+=utflen(w);
+      }
+    while(0<nsrc);
+    }
+  return len;
+  }
+
+
+// Count utf8 characters needed to convert multi-byte characters from src
+FXint FXTextCodec::mb2utflen(const FXString& src) const {
+  return mb2utflen(src.text(),src.length());
+  }
+
+
+// Convert multi-byte characters from src to utf8 characters at dst
+FXint FXTextCodec::mb2utf(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const {
+  register FXint nr,nw,len=0;
+  FXwchar w;
+  if(dst && src && 0<nsrc){
+    do{
+      nr=mb2wc(w,src,nsrc);
+      if(nr<=0) return nr;
+      src+=nr;
+      nsrc-=nr;
+      nw=wc2utf(dst,ndst,w);
+      if(nw<=0) return nw;
+      len+=nw;
+      dst+=nw;
+      ndst-=nw;
+      }
+    while(0<nsrc);
+    }
+  return len;
+  }
+
+
+// Convert multi-byte characters from src to utf8 characters at dst
+FXint FXTextCodec::mb2utf(FXchar* dst,FXint ndst,const FXchar* src) const {
+  return mb2utf(dst,ndst,src,strlen(src));
+  }
+
+
+// Convert multi-byte characters from src to utf8 characters at dst
+FXint FXTextCodec::mb2utf(FXchar* dst,FXint ndst,const FXString& src) const {
+  return mb2utf(dst,ndst,src.text(),src.length());
+  }
+
+
+// Convert multi-byte characters from src to utf8 string
+FXString FXTextCodec::mb2utf(const FXchar* src,FXint nsrc) const {
+  register FXint len;
+  if(src && 0<nsrc){
+    if((len=mb2utflen(src,nsrc))>0){
+      FXString result;
+      result.length(len);
+      if(mb2utf(&result[0],len,src,nsrc)>0){
+        return result;
+        }
       }
     }
-  return FALSE;
+  return FXString::null;
   }
 
 
-// Encode this character (i.e. convert from Unicode to this encoding)
-FXuchar FXISOTextCodec::encode(FXwchar c) const {
-  register FXint i;
-  if(c<0x80){
-    return (FXuchar)c;
+// Convert multi-byte characters from src to utf8 string
+FXString FXTextCodec::mb2utf(const FXchar* src) const {
+  return mb2utf(src,strlen(src));
+  }
+
+
+// Convert multi-byte string to utf8 string
+FXString FXTextCodec::mb2utf(const FXString& src) const {
+  return mb2utf(src.text(),src.length());
+  }
+
+
+/*********  Convert arrays of characters from unicode to multi-byte  ***********/
+
+
+// Convert single wide character to multi-byte characters at dst
+FXint FXTextCodec::wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const {
+  return wc2utf(dst,ndst,wc);
+  }
+
+
+// Count multi-byte characters characters needed to convert utf8 from src
+FXint FXTextCodec::utf2mblen(const FXchar* src,FXint nsrc) const {
+  register FXint nr,len=0;
+  FXchar buffer[64];
+  FXwchar w;
+  if(src && 0<nsrc){
+    do{
+      nr=utf2wc(w,src,nsrc);
+      if(nr<=0) return nr;
+      src+=nr;
+      nsrc-=nr;
+      len+=wc2mb(buffer,sizeof(buffer),w);
+      }
+    while(0<nsrc);
     }
-  else{
-    for(i=0; i<NTABLEITEMS; i++){
-      if(table[i]==c) return 160+i;
+  return len;
+  }
+
+
+// Count multi-byte characters characters needed to convert utf8 from src
+FXint FXTextCodec::utf2mblen(const FXString& src) const {
+  return utf2mblen(src.text(),src.length());
+  }
+
+
+// Convert utf8 characters at src to multi-byte characters at dst
+FXint FXTextCodec::utf2mb(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const {
+  register FXint nr,nw,len=0;
+  FXwchar w;
+  if(dst && src && 0<nsrc){
+    do{
+      nr=utf2wc(w,src,nsrc);
+      if(nr<=0) return nr;
+      src+=nr;
+      nsrc-=nr;
+      nw=wc2mb(dst,ndst,w);
+      if(nw<=0) return nw;
+      len+=nw;
+      dst+=nw;
+      ndst-=nw;
+      }
+    while(0<nsrc);
+    }
+  return len;
+  }
+
+
+// Convert utf8 characters at src to multi-byte characters at dst
+FXint FXTextCodec::utf2mb(FXchar* dst,FXint ndst,const FXchar* src) const {
+  return utf2mb(dst,ndst,src,strlen(src));
+  }
+
+
+// Convert utf8 characters at src to multi-byte characters at dst
+FXint FXTextCodec::utf2mb(FXchar* dst,FXint ndst,const FXString& src) const {
+  return utf2mb(dst,ndst,src.text(),src.length());
+  }
+
+
+// Convert utf8 characters at src to multi-byte string
+FXString FXTextCodec::utf2mb(const FXchar* src,FXint nsrc) const {
+  register FXint len;
+  if(src && 0<nsrc){
+    if((len=utf2mblen(src,nsrc))>0){
+      FXString result;
+      result.length(len);
+      if(utf2mb(&result[0],len,src,nsrc)>0){
+        return result;
+        }
       }
     }
-  return SUBSTITUTE;
+  return FXString::null;
   }
 
 
-// Decode this character (i.e. convert from this encoding to Unicode)
-FXwchar FXISOTextCodec::decode(FXuchar c) const {
-  FXASSERT(c<0x80 || c>0x9f);
-  return (c<0x80)?c:table[c-160];
+// Convert utf8 characters at src to multi-byte string
+FXString FXTextCodec::utf2mb(const FXchar* src) const {
+  return utf2mb(src,strlen(src));
   }
 
 
-// Convert a sequence of wide characters from Unicode to this encoding
-unsigned long FXISOTextCodec::fromUnicode(FXuchar*& dest,unsigned long m,const FXwchar*& src,unsigned long n){
-  unsigned long i,j;
-  FXwchar c;
-  i=0;
-  j=0;
-  while(i<n && j<m){
-    c=src[i++];
-    dest[j++]=canEncode(c)?encode(c):SUBSTITUTE;
-    }
-  src=&src[i];
-  dest=&dest[j];
-  return j;
+// Convert utf8 string to multi-byte string
+FXString FXTextCodec::utf2mb(const FXString& src) const {
+  return utf2mb(src.text(),src.length());
   }
-
-
-// Convert a sequence of bytes in this encoding to Unicode
-unsigned long FXISOTextCodec::toUnicode(FXwchar*& dest,unsigned long m,const FXuchar*& src,unsigned long n){
-  unsigned long i,j;
-  i=0;
-  j=0;
-  while(i<n && j<m){
-    dest[j++]=decode(src[i++]);
-    }
-  src=&src[i];
-  dest=&dest[j];
-  return i;
-  }
-
-
-//---------------------------------------------------------------------------
-
-
-// ISO-8859-1 (Latin1)
-static const FXwchar ISO_8859_1[]={
- 0x00a0,0x00a1,0x00a2,0x00a3,0x00a4,0x00a5,0x00a6,0x00a7,0x00a8,0x00a9,
- 0x00aa,0x00ab,0x00ac,0x00ad,0x00ae,0x00af,0x00b0,0x00b1,0x00b2,0x00b3,
- 0x00b4,0x00b5,0x00b6,0x00b7,0x00b8,0x00b9,0x00ba,0x00bb,0x00bc,0x00bd,
- 0x00be,0x00bf,0x00c0,0x00c1,0x00c2,0x00c3,0x00c4,0x00c5,0x00c6,0x00c7,
- 0x00c8,0x00c9,0x00ca,0x00cb,0x00cc,0x00cd,0x00ce,0x00cf,0x00d0,0x00d1,
- 0x00d2,0x00d3,0x00d4,0x00d5,0x00d6,0x00d7,0x00d8,0x00d9,0x00da,0x00db,
- 0x00dc,0x00dd,0x00de,0x00df,0x00e0,0x00e1,0x00e2,0x00e3,0x00e4,0x00e5,
- 0x00e6,0x00e7,0x00e8,0x00e9,0x00ea,0x00eb,0x00ec,0x00ed,0x00ee,0x00ef,
- 0x00f0,0x00f1,0x00f2,0x00f3,0x00f4,0x00f5,0x00f6,0x00f7,0x00f8,0x00f9,
- 0x00fa,0x00fb,0x00fc,0x00fd,0x00fe,0x00ff};
-
-
-// ISO-8859-2 (Latin2)
-static const FXwchar ISO_8859_2[]={
- 0x00a0,0x0104,0x02d8,0x0141,0x00a4,0x013d,0x015a,0x00a7,0x00a8,0x0160,
- 0x015e,0x0164,0x0179,0x00ad,0x017d,0x017b,0x00b0,0x0105,0x02db,0x0142,
- 0x00b4,0x013e,0x015b,0x02c7,0x00b8,0x0161,0x015f,0x0165,0x017a,0x02dd,
- 0x017e,0x017c,0x0154,0x00c1,0x00c2,0x0102,0x00c4,0x0139,0x0106,0x00c7,
- 0x010c,0x00c9,0x0118,0x00cb,0x011a,0x00cd,0x00ce,0x010e,0x0110,0x0143,
- 0x0147,0x00d3,0x00d4,0x0150,0x00d6,0x00d7,0x0158,0x016e,0x00da,0x0170,
- 0x00dc,0x00dd,0x0162,0x00df,0x0155,0x00e1,0x00e2,0x0103,0x00e4,0x013a,
- 0x0107,0x00e7,0x010d,0x00e9,0x0119,0x00eb,0x011b,0x00ed,0x00ee,0x010f,
- 0x0111,0x0144,0x0148,0x00f3,0x00f4,0x0151,0x00f6,0x00f7,0x0159,0x016f,
- 0x00fa,0x0171,0x00fc,0x00fd,0x0163,0x02d9};
-
-
-// ISO-8859-3 (Latin3)
-static const FXwchar ISO_8859_3[]={
- 0x00a0,0x0126,0x02d8,0x00a3,0x00a4,0x0124,0x00a7,0x00a8,0x0130,
- 0x015e,0x011e,0x0134,0x00ad,0x017b,0x00b0,0x0127,0x00b2,0x00b3,
- 0x00b4,0x00b5,0x0125,0x00b7,0x00b8,0x0131,0x015f,0x011f,0x0135,0x00bd,
- 0x017c,0x00c0,0x00c1,0x00c2,0x00c4,0x010a,0x0108,0x00c7,
- 0x00c8,0x00c9,0x00ca,0x00cb,0x00cc,0x00cd,0x00ce,0x00cf,0x00d1,
- 0x00d2,0x00d3,0x00d4,0x0120,0x00d6,0x00d7,0x011c,0x00d9,0x00da,0x00db,
- 0x00dc,0x016c,0x015c,0x00df,0x00e0,0x00e1,0x00e2,0x00e4,0x010b,
- 0x0109,0x00e7,0x00e8,0x00e9,0x00ea,0x00eb,0x00ec,0x00ed,0x00ee,0x00ef,
- 0x00f1,0x00f2,0x00f3,0x00f4,0x0121,0x00f6,0x00f7,0x011d,0x00f9,
- 0x00fa,0x00fb,0x00fc,0x016d,0x015d,0x02d9};
-
-
-// ISO-8859-4 (Latin4)
-static const FXwchar ISO_8859_4[]={
- 0x00a0,0x0104,0x0138,0x0156,0x00a4,0x0128,0x013b,0x00a7,0x00a8,0x0160,
- 0x0112,0x0122,0x0166,0x00ad,0x017d,0x00af,0x00b0,0x0105,0x02db,0x0157,
- 0x00b4,0x0129,0x013c,0x02c7,0x00b8,0x0161,0x0113,0x0123,0x0167,0x014a,
- 0x017e,0x014b,0x0100,0x00c1,0x00c2,0x00c3,0x00c4,0x00c5,0x00c6,0x012e,
- 0x010c,0x00c9,0x0118,0x00cb,0x0116,0x00cd,0x00ce,0x012a,0x0110,0x0145,
- 0x014c,0x0136,0x00d4,0x00d5,0x00d6,0x00d7,0x00d8,0x0172,0x00da,0x00db,
- 0x00dc,0x0168,0x016a,0x00df,0x0101,0x00e1,0x00e2,0x00e3,0x00e4,0x00e5,
- 0x00e6,0x012f,0x010d,0x00e9,0x0119,0x00eb,0x0117,0x00ed,0x00ee,0x012b,
- 0x0111,0x0146,0x014d,0x0137,0x00f4,0x00f5,0x00f6,0x00f7,0x00f8,0x0173,
- 0x00fa,0x00fb,0x00fc,0x0169,0x016b,0x02d9};
-
-
-// ISO-8859-5 (Cyrillic)
-static const FXwchar ISO_8859_5[]={
- 0x00a0,0x0401,0x0402,0x0403,0x0404,0x0405,0x0406,0x0407,0x0408,0x0409,
- 0x040a,0x040b,0x040c,0x00ad,0x040e,0x040f,0x0410,0x0411,0x0412,0x0413,
- 0x0414,0x0415,0x0416,0x0417,0x0418,0x0419,0x041a,0x041b,0x041c,0x041d,
- 0x041e,0x041f,0x0420,0x0421,0x0422,0x0423,0x0424,0x0425,0x0426,0x0427,
- 0x0428,0x0429,0x042a,0x042b,0x042c,0x042d,0x042e,0x042f,0x0430,0x0431,
- 0x0432,0x0433,0x0434,0x0435,0x0436,0x0437,0x0438,0x0439,0x043a,0x043b,
- 0x043c,0x043d,0x043e,0x043f,0x0440,0x0441,0x0442,0x0443,0x0444,0x0445,
- 0x0446,0x0447,0x0448,0x0449,0x044a,0x044b,0x044c,0x044d,0x044e,0x044f,
- 0x2116,0x0451,0x0452,0x0453,0x0454,0x0455,0x0456,0x0457,0x0458,0x0459,
- 0x045a,0x045b,0x045c,0x00a7,0x045e,0x045f};
-
-
-// ISO-8859-7 (Greek)
-static const FXwchar ISO_8859_7[]={
- 0x00a0,0x02bd,0x02bc,0x00a3,0x00a4,0x00a5,0x00a6,0x00a7,0x00a8,0x00a9,
- 0x00aa,0x00ab,0x00ac,0x00ad,0x00ae,0x2015,0x00b0,0x00b1,0x00b2,0x00b3,
- 0x0384,0x0385,0x0386,0x00b7,0x0388,0x0389,0x038a,0x00bb,0x038c,0x00bd,
- 0x038e,0x038f,0x0390,0x0391,0x0392,0x0393,0x0394,0x0395,0x0396,0x0397,
- 0x0398,0x0399,0x039a,0x039b,0x039c,0x039d,0x039e,0x039f,0x03a0,0x03a1,
- 0x00d2,0x03a3,0x03a4,0x03a5,0x03a6,0x03a7,0x03a8,0x03a9,0x03aa,0x03ab,
- 0x03ac,0x03ad,0x03ae,0x03af,0x03b0,0x03b1,0x03b2,0x03b3,0x03b4,0x03b5,
- 0x03b6,0x03b7,0x03b8,0x03b9,0x03ba,0x03bb,0x03bc,0x03bd,0x03be,0x03bf,
- 0x03c0,0x03c1,0x03c2,0x03c3,0x03c4,0x03c5,0x03c6,0x03c7,0x03c8,0x03c9,
- 0x03ca,0x03cb,0x03cc,0x03cd,0x03ce,0x00ff};
-
-
-// ISO-8859-7 (Latin5)
-static const FXwchar ISO_8859_9[]={
- 0x00a0,0x00a1,0x00a2,0x00a3,0x00a4,0x00a5,0x00a6,0x00a7,0x00a8,0x00a9,
- 0x00aa,0x00ab,0x00ac,0x00ad,0x00ae,0x00af,0x00b0,0x00b1,0x00b2,0x00b3,
- 0x00b4,0x00b5,0x00b6,0x00b7,0x00b8,0x00b9,0x00ba,0x00bb,0x00bc,0x00bd,
- 0x00be,0x00bf,0x00c0,0x00c1,0x00c2,0x00c3,0x00c4,0x00c5,0x00c6,0x00c7,
- 0x00c8,0x00c9,0x00ca,0x00cb,0x00cc,0x00cd,0x00ce,0x00cf,0x011e,0x00d1,
- 0x00d2,0x00d3,0x00d4,0x00d5,0x00d6,0x00d7,0x00d8,0x00d9,0x00da,0x00db,
- 0x00dc,0x0130,0x015e,0x00df,0x00e0,0x00e1,0x00e2,0x00e3,0x00e4,0x00e5,
- 0x00e6,0x00e7,0x00e8,0x00e9,0x00ea,0x00eb,0x00ec,0x00ed,0x00ee,0x00ef,
- 0x011f,0x00f1,0x00f2,0x00f3,0x00f4,0x00f5,0x00f6,0x00f7,0x00f8,0x00f9,
- 0x00fa,0x00fb,0x00fc,0x0131,0x015f,0x00ff};
-
-
-// ISO-8859-15 (Latin9)
-static const FXwchar ISO_8859_15[]={
- 0x00a0,0x00a1,0x00a2,0x00a3,0x20ac,0x00a5,0x0160,0x00a7,0x0161,0x00a9,
- 0x00aa,0x00ab,0x00ac,0x00ad,0x00ae,0x00af,0x00b0,0x00b1,0x00b2,0x00b3,
- 0x017d,0x00b5,0x00b6,0x00b7,0x017e,0x00b9,0x00ba,0x00bb,0x0152,0x0153,
- 0x0178,0x00bf,0x00c0,0x00c1,0x00c2,0x00c3,0x00c4,0x00c5,0x00c6,0x00c7,
- 0x00c8,0x00c9,0x00ca,0x00cb,0x00cc,0x00cd,0x00ce,0x00cf,0x00d0,0x00d1,
- 0x00d2,0x00d3,0x00d4,0x00d5,0x00d6,0x00d7,0x00d8,0x00d9,0x00da,0x00db,
- 0x00dc,0x00dd,0x00de,0x00df,0x00e0,0x00e1,0x00e2,0x00e3,0x00e4,0x00e5,
- 0x00e6,0x00e7,0x00e8,0x00e9,0x00ea,0x00eb,0x00ec,0x00ed,0x00ee,0x00ef,
- 0x00f0,0x00f1,0x00f2,0x00f3,0x00f4,0x00f5,0x00f6,0x00f7,0x00f8,0x00f9,
- 0x00fa,0x00fb,0x00fc,0x00fd,0x00fe,0x00ff};
-
-
-class FXTextCodecRegistrar {
-public:
-  FXTextCodecRegistrar(){
-    FXTextCodec::registerCodec("ISO-8859-1",new FXISOTextCodec("ISO-8859-1",4,ISO_8859_1));
-    FXTextCodec::registerCodec("ISO-8859-2",new FXISOTextCodec("ISO-8859-2",5,ISO_8859_2));
-    FXTextCodec::registerCodec("ISO-8859-3",new FXISOTextCodec("ISO-8859-3",6,ISO_8859_3));
-    FXTextCodec::registerCodec("ISO-8859-4",new FXISOTextCodec("ISO-8859-4",7,ISO_8859_4));
-    FXTextCodec::registerCodec("ISO-8859-5",new FXISOTextCodec("ISO-8859-5",8,ISO_8859_5));
-    FXTextCodec::registerCodec("ISO-8859-7",new FXISOTextCodec("ISO-8859-7",10,ISO_8859_7));
-    FXTextCodec::registerCodec("ISO-8859-9",new FXISOTextCodec("ISO-8859-9",12,ISO_8859_9));
-    FXTextCodec::registerCodec("ISO-8859-15",new FXISOTextCodec("ISO-8859-15",111,ISO_8859_15));
-    FXTextCodec::registerCodec("UTF-8",new FXUTF8Codec);
-    }
-  };
-
-
-static FXTextCodecRegistrar textCodecRegistrar;
 
 
 }

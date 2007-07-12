@@ -3,7 +3,7 @@
 *                         D o c u m e n t   O b j e c t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,20 +19,20 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDocument.cpp,v 1.20 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXDocument.cpp,v 1.24 2006/01/22 17:58:24 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
-#include "FXFile.h"
+#include "FXPath.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
@@ -147,7 +147,7 @@
 
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -179,8 +179,8 @@ void FXDocument::setTitle(const FXString& name){
 
 // Set file name, and the title also
 void FXDocument::setFilename(const FXString& path){
-  filename=FXFile::absolute(path);
-  title=FXFile::title(filename);
+  filename=FXPath::absolute(path);
+  title=FXPath::title(filename);
   }
 
 

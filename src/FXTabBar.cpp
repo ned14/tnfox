@@ -3,7 +3,7 @@
 *                               T a b   O b j e c t                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBar.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXTabBar.cpp,v 1.28 2006/01/22 17:58:45 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -52,8 +52,9 @@
 
 #define TAB_ORIENT_MASK    (TAB_TOP|TAB_LEFT|TAB_RIGHT|TAB_BOTTOM)
 #define TABBOOK_MASK       (TABBOOK_SIDEWAYS|TABBOOK_BOTTOMTABS)
+#define REVEAL_PIXELS      20
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -88,12 +89,13 @@ FXTabBar::FXTabBar(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint
   target=tgt;
   message=sel;
   current=0;
+  shift=0;
   }
 
 
 // Get width
 FXint FXTabBar::getDefaultWidth(){
-  register FXint w,wtabs,wmaxtab,t,ntabs;
+  register FXint w,wtabs,maxtabw,t,ntabs;
   register FXuint hints;
   register FXWindow *child;
 
@@ -112,17 +114,17 @@ FXint FXTabBar::getDefaultWidth(){
 
   // Top or bottom tabs
   else{
-    wtabs=wmaxtab=ntabs=0;
+    wtabs=maxtabw=ntabs=0;
     for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
         if(hints&LAYOUT_FIX_WIDTH) t=child->getWidth(); else t=child->getDefaultWidth();
-        if(t>wmaxtab) wmaxtab=t;
+        if(t>maxtabw) maxtabw=t;
         wtabs+=t;
         ntabs++;
         }
       }
-    if(options&PACK_UNIFORM_WIDTH) wtabs=ntabs*wmaxtab;
+    if(options&PACK_UNIFORM_WIDTH) wtabs=ntabs*maxtabw;
     w=wtabs+5;
     }
   return w+padleft+padright+(border<<1);
@@ -131,23 +133,23 @@ FXint FXTabBar::getDefaultWidth(){
 
 // Get height
 FXint FXTabBar::getDefaultHeight(){
-  register FXint h,htabs,hmaxtab,t,ntabs;
+  register FXint h,htabs,maxtabh,t,ntabs;
   register FXuint hints;
   register FXWindow *child;
 
   // Left or right tabs
   if(options&TABBOOK_SIDEWAYS){
-    htabs=hmaxtab=ntabs=0;
+    htabs=maxtabh=ntabs=0;
     for(child=getFirst(); child; child=child->getNext()){
       if(child->shown()){
         hints=child->getLayoutHints();
         if(hints&LAYOUT_FIX_HEIGHT) t=child->getHeight(); else t=child->getDefaultHeight();
-        if(t>hmaxtab) hmaxtab=t;
+        if(t>maxtabh) maxtabh=t;
         htabs+=t;
         ntabs++;
         }
       }
-    if(options&PACK_UNIFORM_HEIGHT) htabs=ntabs*hmaxtab;
+    if(options&PACK_UNIFORM_HEIGHT) htabs=ntabs*maxtabh;
     h=htabs+5;
     }
 
@@ -169,7 +171,7 @@ FXint FXTabBar::getDefaultHeight(){
 
 // Recalculate layout
 void FXTabBar::layout(){
-  register int i,x,y,w,h,wmaxtab,hmaxtab,newcurrent;
+  register FXint i,px,py,pw,ph,x,y,xx,yy,w,h,maxtabw,maxtabh,cumw,cumh,newcurrent;
   register FXWindow *raisetab=NULL;
   register FXWindow *tab;
   register FXuint hints;
@@ -177,15 +179,15 @@ void FXTabBar::layout(){
   newcurrent=-1;
 
   // Measure tabs again
-  wmaxtab=hmaxtab=0;
+  maxtabw=maxtabh=0;
   for(tab=getFirst(),i=0; tab; tab=tab->getNext(),i++){
     if(tab->shown()){
       hints=tab->getLayoutHints();
+      if(newcurrent<0 || i<=current) newcurrent=i;
       if(hints&LAYOUT_FIX_WIDTH) w=tab->getWidth(); else w=tab->getDefaultWidth();
       if(hints&LAYOUT_FIX_HEIGHT) h=tab->getHeight(); else h=tab->getDefaultHeight();
-      if(w>wmaxtab) wmaxtab=w;
-      if(h>hmaxtab) hmaxtab=h;
-      if(newcurrent<0 || i<=current) newcurrent=i;
+      if(w>maxtabw) maxtabw=w;
+      if(h>maxtabh) maxtabh=h;
       }
     }
 
@@ -195,30 +197,81 @@ void FXTabBar::layout(){
   // Tabs on left or right
   if(options&TABBOOK_SIDEWAYS){
 
+    // Place panel
+    py=border+padtop;
+    ph=height-padtop-padbottom-(border<<1);
+
+    // Scroll as appropriate
+    for(tab=getFirst(),cumh=i=0; tab; tab=tab->getNext(),i++){
+      if(tab->shown()){
+        hints=tab->getLayoutHints();
+        if(hints&LAYOUT_FIX_HEIGHT) h=tab->getHeight();
+        else if(options&PACK_UNIFORM_HEIGHT) h=maxtabh;
+        else h=tab->getDefaultHeight();
+        if(i==current){
+          if(tab->getNext()){
+            if(cumh+shift+h>ph-REVEAL_PIXELS-2) shift=ph-cumh-h-REVEAL_PIXELS-2;
+            }
+          else{
+            if(cumh+shift+h>ph-2) shift=ph-cumh-h-2;
+            }
+          if(tab->getPrev()){
+            if(cumh+shift<REVEAL_PIXELS+2) shift=REVEAL_PIXELS+2-cumh;
+            }
+          else{
+            if(cumh+shift<2) shift=2-cumh;
+            }
+          }
+        cumh+=h;
+        }
+      }
+
+    // Adjust shift based on space
+    if(shift<ph-cumh-2) shift=ph-cumh-2;
+    if(shift>0) shift=0;
+
     // Place all of the children
-    for(tab=getFirst(),y=border+padtop,i=0; tab; tab=tab->getNext(),i++){
+    for(tab=getFirst(),yy=py+shift,i=0; tab; tab=tab->getNext(),i++){
       if(tab->shown()){
         hints=tab->getLayoutHints();
         if(hints&LAYOUT_FIX_WIDTH) w=tab->getWidth();
-        else if(options&PACK_UNIFORM_WIDTH) w=wmaxtab;
+        else if(options&PACK_UNIFORM_WIDTH) w=maxtabw;
         else w=tab->getDefaultWidth();
         if(hints&LAYOUT_FIX_HEIGHT) h=tab->getHeight();
-        else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
+        else if(options&PACK_UNIFORM_HEIGHT) h=maxtabh;
         else h=tab->getDefaultHeight();
-        if(current==i){
+        if(i<current){
+          y=yy+2;
+          if(y+h>py+ph-2) y=py+ph-2-h;
+          if(y<py+2) y=py+2;
+          if(options&TABBOOK_BOTTOMTABS)
+            tab->position(-4,y,w,h);
+          else
+            tab->position(width-w+4,y,w,h);
+          tab->raise();
+          yy+=h;
+          }
+        else if(i>current){
+          y=yy+2;
+          if(y+h>py+ph-2) y=py+ph-h-2;
+          if(y<py+2) y=py+2;
+          if(options&TABBOOK_BOTTOMTABS)
+            tab->position(-4,y,w,h);
+          else
+            tab->position(width-w+4,y,w,h);
+          tab->lower();
+          yy+=h;
+          }
+        else{
+          y=yy;
+          if(y+h>py+ph-2) y=py+ph-h-2;
+          if(y<py) y=py;
           if(options&TABBOOK_BOTTOMTABS)
             tab->position(-2,y,w,h);
           else
             tab->position(width-w+2,y,w,h);
           raisetab=tab;
-          y+=h-3;
-          }
-        else{
-          if(options&TABBOOK_BOTTOMTABS)
-            tab->position(-4,y+2,w,h);
-          else
-            tab->position(width-w+4,y+2,w,h);
-          y+=h;
+          yy+=h-3;
           }
         }
       }
@@ -227,30 +280,81 @@ void FXTabBar::layout(){
   // Tabs on top or bottom
   else{
 
-    // Place all of the children
-    for(tab=getFirst(),x=border+padleft,i=0; tab; tab=tab->getNext(),i++){
+    // Place panel
+    px=border+padleft;
+    pw=width-padleft-padright-(border<<1);
+
+    // Scroll as appropriate
+    for(tab=getFirst(),cumw=i=0; tab; tab=tab->getNext(),i++){
       if(tab->shown()){
         hints=tab->getLayoutHints();
         if(hints&LAYOUT_FIX_WIDTH) w=tab->getWidth();
-        else if(options&PACK_UNIFORM_WIDTH) w=wmaxtab;
+        else if(options&PACK_UNIFORM_WIDTH) w=maxtabw;
+        else w=tab->getDefaultWidth();
+        if(i==current){
+          if(tab->getNext()){
+            if(cumw+shift+w>pw-REVEAL_PIXELS-2) shift=pw-cumw-w-REVEAL_PIXELS-2;
+            }
+          else{
+            if(cumw+shift+w>pw-2) shift=pw-cumw-w-2;
+            }
+          if(tab->getPrev()){
+            if(cumw+shift<REVEAL_PIXELS+2) shift=REVEAL_PIXELS+2-cumw;
+            }
+          else{
+            if(cumw+shift<2) shift=2-cumw;
+            }
+          }
+        cumw+=w;
+        }
+      }
+
+    // Adjust shift based on space
+    if(shift<pw-cumw-2) shift=pw-cumw-2;
+    if(shift>0) shift=0;
+
+    // Place all of the children
+    for(tab=getFirst(),xx=px+shift,i=0; tab; tab=tab->getNext(),i++){
+      if(tab->shown()){
+        hints=tab->getLayoutHints();
+        if(hints&LAYOUT_FIX_WIDTH) w=tab->getWidth();
+        else if(options&PACK_UNIFORM_WIDTH) w=maxtabw;
         else w=tab->getDefaultWidth();
         if(hints&LAYOUT_FIX_HEIGHT) h=tab->getHeight();
-        else if(options&PACK_UNIFORM_HEIGHT) h=hmaxtab;
+        else if(options&PACK_UNIFORM_HEIGHT) h=maxtabh;
         else h=tab->getDefaultHeight();
-        if(current==i){
+        if(i<current){
+          x=xx+2;
+          if(x+w>px+pw-2) x=px+pw-2-w;
+          if(x<px+2) x=px+2;
           if(options&TABBOOK_BOTTOMTABS)
-            tab->position(x,-2,w,h);
+            tab->position(x,-4,w,h);
           else
-            tab->position(x,height-h+2,w,h);
-          raisetab=tab;
-          x+=w-3;
+            tab->position(x,height-h+4,w,h);
+          tab->raise();
+          xx+=w;
+          }
+        else if(i>current){
+          x=xx+2;
+          if(x+w>px+pw-2) x=px+pw-w-2;
+          if(x<px+2) x=px+2;
+          if(options&TABBOOK_BOTTOMTABS)
+            tab->position(xx+2,-4,w,h);
+          else
+            tab->position(xx+2,height-h+4,w,h);
+          tab->lower();
+          xx+=w;
           }
         else{
+          x=xx;
+          if(x+w>px+pw-2) x=px+pw-w-2;
+          if(x<px) x=px;
           if(options&TABBOOK_BOTTOMTABS)
-            tab->position(x+2,-4,w,h);
+            tab->position(xx,-2,w,h);
           else
-            tab->position(x+2,height-h+4,w,h);
-          x+=w;
+            tab->position(xx,height-h+2,w,h);
+          raisetab=tab;
+          xx+=w-3;
           }
         }
       }

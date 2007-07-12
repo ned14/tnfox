@@ -3,7 +3,7 @@
 *                     D i r e c t o r y   B o x   O b j e c t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,22 +19,26 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirBox.cpp,v 1.56 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXDirBox.cpp,v 1.65 2006/01/22 17:58:22 fox Exp $                        *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXPath.h"
+#include "FXStat.h"
 #include "FXFile.h"
+#include "FXDir.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
 #include "FXAccelTable.h"
@@ -74,7 +78,7 @@
     a single path but a list of paths.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -260,6 +264,11 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
   register FXint beg=0;
   register FXint end=0;
   FXchar drivename[10];
+//  FXchar volumename[256];
+//  FXchar filesystem[100];
+//  FXchar fullname[266];
+//  DWORD  MaximumComponentLength;
+//  DWORD  FileSystemFlags;
   FXuint drivemask;
 
   // Remove old items first
@@ -270,7 +279,7 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
     end++;
     if(ISPATHSEP(path[1])) end++;
     }
-  else if(isalpha((FXuchar)path[0]) && path[1]==':'){
+  else if(Ascii::isLetter(path[0]) && path[1]==':'){
     end+=2;
     if(ISPATHSEP(path[2])) end++;
     }
@@ -289,8 +298,18 @@ FXTreeItem* FXDirBox::getPathnameItem(const FXString& path){
     for(drivename[0]='A'; drivename[0]<='Z'; drivename[0]++){
       if(drivemask&1){
 
+        // Find volume label; unfortunately, we can't use this
+        // name as-is since when we're retrieving the item name
+        // we're expecting a legal drive letter sans volume label
+// 		if('B'<drivename[0] && GetVolumeInformationA(drivename,volumename,sizeof(volumename),NULL,&MaximumComponentLength,&FileSystemFlags,filesystem,sizeof(filesystem))!=0){
+//          sprintf(fullname,"%s (%s)",volumename,drivename);
+//          }
+//        else{
+//          sprintf(fullname,"Drive (%s)",drivename);
+//          }
+
         // Default icon based on hardware type
-        switch(GetDriveType(drivename)){
+        switch(GetDriveTypeA(drivename)){
           case DRIVE_REMOVABLE: icon=(drivename[0]<='B') ? floppyicon : zipdiskicon; break;
           case DRIVE_FIXED: icon=harddiskicon; break;
           case DRIVE_REMOTE: icon=netdriveicon; break;
@@ -400,7 +419,7 @@ long FXDirBox::onTreeChanged(FXObject*,FXSelector,void* ptr){
 
 // Set directory
 void FXDirBox::setDirectory(const FXString& pathname){
-  setCurrentItem(getPathnameItem(FXFile::absolute(pathname)));
+  setCurrentItem(getPathnameItem(FXPath::absolute(pathname)));
   }
 
 

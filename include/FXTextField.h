@@ -3,7 +3,7 @@
 *                         T e x t   F i e l d   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTextField.h,v 1.58 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXTextField.h,v 1.62 2006/01/22 17:58:11 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTEXTFIELD_H
 #define FXTEXTFIELD_H
@@ -30,7 +30,6 @@
 
 namespace FX {
 
-class FXFont;
 
 /// Textfield styles
 enum {
@@ -140,6 +139,7 @@ public:
   long onCmdCutSel(FXObject*,FXSelector,void*);
   long onCmdCopySel(FXObject*,FXSelector,void*);
   long onCmdPasteSel(FXObject*,FXSelector,void*);
+  long onCmdPasteMiddle(FXObject*,FXSelector,void*);
   long onCmdDeleteSel(FXObject*,FXSelector,void*);
   long onCmdDeleteAll(FXObject*,FXSelector,void*);
   long onCmdOverstString(FXObject*,FXSelector,void*);
@@ -181,6 +181,7 @@ public:
     ID_CUT_SEL,
     ID_COPY_SEL,
     ID_PASTE_SEL,
+    ID_PASTE_MIDDLE,
     ID_DELETE_SEL,
     ID_DELETE_ALL,
     ID_OVERST_STRING,
@@ -217,7 +218,7 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Yes, text field may receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();
@@ -225,11 +226,17 @@ public:
   /// Remove the focus from this window
   virtual void killFocus();
 
+  /// Set editable mode
+  void setEditable(FXbool edit=TRUE);
+
   /// Return TRUE if text field may be edited
   FXbool isEditable() const;
 
-  /// Change text field editability
-  void setEditable(FXbool edit=TRUE);
+  /// Set overstrike mode
+  void setOverstrike(FXbool over=TRUE);
+
+  /// Return TRUE if overstrike mode in effect
+  FXbool isOverstrike() const;
 
   /// Set cursor position
   void setCursorPos(FXint pos);
@@ -243,8 +250,8 @@ public:
   /// Return anchor position
   FXint getAnchorPos() const { return anchor; }
 
-  /// Set the text for this label
-  void setText(const FXString& text);
+  /// Change the text and move cursor to end
+  void setText(const FXString& text,FXbool notify=FALSE);
 
   /// Get the text for this label
   FXString getText() const { return contents; }

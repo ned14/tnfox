@@ -3,7 +3,7 @@
 *                  S t r i n g   D i c t i o n a r y    C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStringDict.h,v 1.12 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXStringDict.h,v 1.16 2006/01/22 17:58:10 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXSTRINGDICT_H
 #define FXSTRINGDICT_H
@@ -39,19 +39,22 @@ class FXAPI FXStringDict : public FXDict {
 protected:
   virtual void *createData(const void*);
   virtual void deleteData(void*);
-private:
-  FXStringDict(const FXStringDict&);
-  FXStringDict &operator=(const FXStringDict&);
 public:
 
   /// Construct a string dictionary
   FXStringDict();
 
+  /// Copy constructor
+  FXStringDict(const FXStringDict& orig);
+
+  /// Assignment operator
+  FXStringDict &operator=(const FXStringDict& orig);
+
   /// Insert a new string indexed by key, with given mark flag
-  const FXchar* insert(const FXchar* ky,const FXchar* str,FXbool mrk=FALSE){ return (const FXchar*)FXDict::insert(ky,str,mrk); }
+  const FXchar* insert(const FXchar* ky,const FXchar* str,bool mrk=false){ return (const FXchar*)FXDict::insert(ky,str,mrk); }
 
   /// Replace or insert a new string indexed by key, unless given mark is lower that the existing mark
-  const FXchar* replace(const FXchar* ky,const FXchar* str,FXbool mrk=FALSE){ return (const FXchar*)FXDict::replace(ky,str,mrk); }
+  const FXchar* replace(const FXchar* ky,const FXchar* str,bool mrk=false){ return (const FXchar*)FXDict::replace(ky,str,mrk); }
 
   /// Remove entry indexed by key
   const FXchar* remove(const FXchar* ky){ return (const FXchar*)FXDict::remove(ky); }
@@ -69,4 +72,3 @@ public:
 }
 
 #endif
-

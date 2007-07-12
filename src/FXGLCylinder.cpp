@@ -3,7 +3,7 @@
 *                      O p e n G L   C y l i n d e r   O b j e c t              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * Contributed by: Angel-Ventura Mendo Gomez <ventura@labri.u-bordeaux.fr>       *
 *********************************************************************************
@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLCylinder.cpp,v 1.24 2005/01/16 16:06:07 fox Exp $                    *
+* $Id: FXGLCylinder.cpp,v 1.27 2006/01/22 17:58:28 fox Exp $                    *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -29,7 +29,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -60,7 +60,7 @@
 #define FXGLCYLINDER_STACKS_NUMBER		20
 #define FXGLCYLINDER_LOOPS			4
 
-
+using namespace FX;
 
 /*******************************************************************************/
 

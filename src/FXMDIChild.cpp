@@ -3,7 +3,7 @@
 *          M u l t i p l e   D o c u m e n t   C h i l d   W i n d o w          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.cpp,v 1.88 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXMDIChild.cpp,v 1.96.2.3 2007/04/10 21:05:07 fox Exp $                      *
 ********************************************************************************/
 #ifndef FX_DISABLEMDI
 
@@ -27,7 +27,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -74,7 +74,7 @@
 #define TITLESPACE       120                        // Width of title when minimized
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -460,9 +460,7 @@ void FXMDIChild::setFocus(){
 
 
 // If window can have focus
-FXbool FXMDIChild::canFocus() const {
-  return TRUE;
-  }
+bool FXMDIChild::canFocus() const { return true; }
 
 
 // Change cursor based on location over window
@@ -519,13 +517,14 @@ void FXMDIChild::drawRubberBox(FXint x,FXint y,FXint w,FXint h){
 
 // Draw animation morphing from old to new rectangle
 void FXMDIChild::animateRectangles(FXint ox,FXint oy,FXint ow,FXint oh,FXint nx,FXint ny,FXint nw,FXint nh){
-  if(xid && getApp()->getAnimSpeed()){
+  FXlong pause=getApp()->getAnimSpeed()*1000000L;
+  if(xid && pause){
     FXDCWindow dc(getParent());
     FXint bx,by,bw,bh,s,t;
-    dc.clipChildren(FALSE);
+    dc.clipChildren(false);
     dc.setFunction(BLT_SRC_XOR_DST);
     dc.setForeground(getParent()->getBackColor());
-    FXuint step=1+5000/getApp()->getAnimSpeed();
+    FXuint step=500;
     for(s=0,t=10000; s<=10000; s+=step,t-=step){
       bx=(nx*s+ox*t)/10000;
       by=(ny*s+oy*t)/10000;
@@ -533,10 +532,10 @@ void FXMDIChild::animateRectangles(FXint ox,FXint oy,FXint ow,FXint oh,FXint nx,
       bh=(nh*s+oh*t)/10000;
       if(BORDERWIDTH*2<bw && BORDERWIDTH*2<bh){
         dc.drawHashBox(bx,by,bw,bh,BORDERWIDTH);
-        getApp()->flush(TRUE);
-        fxsleep(10000);
+        getApp()->flush(true);
+        fxsleep(pause);
         dc.drawHashBox(bx,by,bw,bh,BORDERWIDTH);
-        getApp()->flush(TRUE);
+        getApp()->flush(true);
         }
       }
     }
@@ -1131,14 +1130,14 @@ void FXMDIChild::setTitle(const FXString& name){
   }
 
 
-// Delegate all other messages to child window
+// Delegate all unhandled messages to content window or MDI child's target,
+// except for those messages with ID's which belong to the MDI child itself.
 long FXMDIChild::onDefault(FXObject* sender,FXSelector sel,void* ptr){
-
-  // Try to handle in child
-  if(contentWindow() && contentWindow()->tryHandle(sender,sel,ptr)) return 1;
-
-  // Bounce to target
-  return target && target->tryHandle(sender,sel,ptr);
+  if(FXMDIChild::ID_LAST<=FXSELID(sel)){
+    if(contentWindow() && contentWindow()->tryHandle(sender,sel,ptr)) return 1;
+    return target && target->tryHandle(sender,sel,ptr);
+    }
+  return 0;
   }
 
 

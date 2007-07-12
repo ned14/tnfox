@@ -376,7 +376,7 @@ def getTnFOXSources(prefix="", getWPOfiles=False):
     # These aren't to be WPOed
     dontWPO=["FXExceptionDialog.cxx", "FXFunctorTarget.cxx", "FXHandedInterface.cxx", "FXHandedMsgBox.cxx", "FXPrimaryButton.cxx", "TnFXApp.cxx"]
     # These are to be WPOed
-    doWPO=["FXColorNames.cpp", "fxfilematch.cpp", "fxparsegeometry.cpp", "fxutils.cpp", "vsscanf.cpp"]
+    doWPO=["fxascii.cpp", "FXColorNames.cpp", "FXDir.cpp", "FXFile.cpp", "fxfilematch.cpp", "FXIO.cpp", "fxio.cpp", "fxparsegeometry.cpp", "FXPath.cpp", "FXStat.cpp", "FXSystem.cpp", "fxunicode.cpp", "fxutils.cpp", "vsscanf.cpp"]
     idx=0
     while idx<len(filelist):
         type=filelist[idx][-4:]

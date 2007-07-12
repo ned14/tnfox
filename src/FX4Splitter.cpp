@@ -3,7 +3,7 @@
 *                       F o u r - W a y   S p l i t t e r                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX4Splitter.cpp,v 1.43 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FX4Splitter.cpp,v 1.52 2006/02/20 03:32:13 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -44,15 +44,13 @@
     resizes, each sub pane gets proportionally resized also.
   - Should we send SEL_CHANGED and SEL_COMMAND also when splitter arrangement
     was changed programmatically?
-  - If we're just re-sizing a split, do we need to incur a GUI-Update?
+  - Slightly complex code which takes care of expanding subsets of panels judiciously
+    added 2/8/2006.
 */
 
 
 // Splitter styles
 #define FOURSPLITTER_MASK     FOURSPLITTER_TRACKING
-
-// Fudge
-#define FUDGE    10
 
 // Modes
 #define NOWHERE      0
@@ -61,7 +59,7 @@
 #define ONCENTER     (ONVERTICAL|ONHORIZONTAL)
 
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -77,8 +75,8 @@ FXDEFMAP(FX4Splitter) FX4SplitterMap[]={
   FXMAPFUNC(SEL_FOCUS_DOWN,0,FX4Splitter::onFocusDown),
   FXMAPFUNC(SEL_FOCUS_LEFT,0,FX4Splitter::onFocusLeft),
   FXMAPFUNC(SEL_FOCUS_RIGHT,0,FX4Splitter::onFocusRight),
-  FXMAPFUNCS(SEL_UPDATE,FX4Splitter::ID_EXPAND_ALL,FX4Splitter::ID_EXPAND_BOTTOMRIGHT,FX4Splitter::onUpdExpand),
-  FXMAPFUNCS(SEL_COMMAND,FX4Splitter::ID_EXPAND_ALL,FX4Splitter::ID_EXPAND_BOTTOMRIGHT,FX4Splitter::onCmdExpand),
+  FXMAPFUNCS(SEL_UPDATE,FX4Splitter::ID_EXPAND_NONE,FX4Splitter::ID_EXPAND_ALL,FX4Splitter::onUpdExpand),
+  FXMAPFUNCS(SEL_COMMAND,FX4Splitter::ID_EXPAND_NONE,FX4Splitter::ID_EXPAND_ALL,FX4Splitter::onCmdExpand),
   };
 
 
@@ -91,7 +89,6 @@ FX4Splitter::FX4Splitter(){
   flags|=FLAG_ENABLED|FLAG_SHOWN;
   splitx=0;
   splity=0;
-  expanded=-1;
   barsize=4;
   fhor=5000;
   fver=5000;
@@ -102,14 +99,12 @@ FX4Splitter::FX4Splitter(){
 
 
 // Make a splitter; it has no interior padding, and no borders
-FX4Splitter::FX4Splitter(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h):
-  FXComposite(p,opts,x,y,w,h){
+FX4Splitter::FX4Splitter(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXint h):FXComposite(p,opts,x,y,w,h){
   defaultCursor=getApp()->getDefaultCursor(DEF_ARROW_CURSOR);
   dragCursor=defaultCursor;
   flags|=FLAG_ENABLED|FLAG_SHOWN;
   splitx=0;
   splity=0;
-  expanded=-1;
   barsize=4;
   fhor=5000;
   fver=5000;
@@ -120,8 +115,7 @@ FX4Splitter::FX4Splitter(FXComposite* p,FXuint opts,FXint x,FXint y,FXint w,FXin
 
 
 // Make a splitter; it has no interior padding, and no borders
-FX4Splitter::FX4Splitter(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
-  FXComposite(p,opts,x,y,w,h){
+FX4Splitter::FX4Splitter(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):FXComposite(p,opts,x,y,w,h){
   defaultCursor=getApp()->getDefaultCursor(DEF_ARROW_CURSOR);
   dragCursor=defaultCursor;
   flags|=FLAG_ENABLED|FLAG_SHOWN;
@@ -129,7 +123,6 @@ FX4Splitter::FX4Splitter(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts
   message=sel;
   splitx=0;
   splity=0;
-  expanded=-1;
   barsize=4;
   fhor=5000;
   fver=5000;
@@ -147,91 +140,145 @@ FXWindow *FX4Splitter::getTopLeft() const {
 
 // Get top right child
 FXWindow *FX4Splitter::getTopRight() const {
-  if(!getFirst()) return NULL;
-  return getFirst()->getNext();
+  if(!getTopLeft()) return NULL;
+  return getTopLeft()->getNext();
   }
 
 
 // Get bottom left child
 FXWindow *FX4Splitter::getBottomLeft() const {
-  if(!getFirst() || !getFirst()->getNext()) return NULL;
-  return getFirst()->getNext()->getNext();
+  if(!getTopRight()) return NULL;
+  return getTopRight()->getNext();
   }
 
 
 // Get bottom right child
 FXWindow *FX4Splitter::getBottomRight() const {
-  if(!getFirst() || !getFirst()->getNext() || !getFirst()->getNext()->getNext()) return NULL;
-  return getFirst()->getNext()->getNext()->getNext();
+  if(!getBottomLeft()) return NULL;
+  return getBottomLeft()->getNext();
   }
 
 
 // Get default width
 FXint FX4Splitter::getDefaultWidth(){
-  register FXint tlw,blw,trw,brw,bs;
-  register FXWindow *tl,*tr,*bl,*br;
-  tlw=blw=trw=brw=bs=0;
-  tl=getTopLeft();
-  tr=getTopRight();
-  bl=getBottomLeft();
-  br=getBottomRight();
-  if(tl) tlw=tl->getDefaultWidth();
-  if(bl) blw=bl->getDefaultWidth();
-  if(tr) trw=tr->getDefaultWidth();
-  if(br) brw=br->getDefaultWidth();
-  if((tl && tr) || (bl && br)) bs=barsize;
-  return bs+FXMAX(tlw,blw)+FXMAX(trw,brw);
+  FXWindow *tl=getTopLeft();
+  FXWindow *tr=getTopRight();
+  FXWindow *bl=getBottomLeft();
+  FXWindow *br=getBottomRight();
+  FXint tlw=0,blw=0,trw=0,brw=0,set=0;
+  if(tl && tl->shown()){ tlw=tl->getDefaultWidth(); set|=ExpandTopLeft; }
+  if(tr && tr->shown()){ trw=tr->getDefaultWidth(); set|=ExpandTopRight; }
+  if(bl && bl->shown()){ blw=bl->getDefaultWidth(); set|=ExpandBottomLeft; }
+  if(br && br->shown()){ brw=br->getDefaultWidth(); set|=ExpandBottomRight; }
+  switch(set){
+    case ExpandTopLeft: return tlw;
+    case ExpandTopRight: return trw;
+    case ExpandBottomRight: return brw;
+    case ExpandBottomLeft: return blw;
+
+    case ExpandTopLeft|ExpandTopRight: return trw+tlw+barsize;
+    case ExpandBottomLeft|ExpandBottomRight: return brw+blw+barsize;
+
+    case ExpandBottomLeft|ExpandTopLeft: return FXMAX(tlw,blw);
+    case ExpandBottomLeft|ExpandTopRight: return FXMAX(blw,trw);
+    case ExpandBottomRight|ExpandTopLeft: return FXMAX(brw,tlw);
+    case ExpandBottomRight|ExpandTopRight: return FXMAX(brw,trw);
+
+    case ExpandBottomLeft|ExpandTopLeft|ExpandTopRight: return FXMAX(trw+tlw+barsize,blw);
+    case ExpandBottomRight|ExpandTopLeft|ExpandTopRight: return FXMAX(trw+tlw+barsize,brw);
+    case ExpandTopLeft|ExpandBottomLeft|ExpandBottomRight: return FXMAX(brw+blw+barsize,tlw);
+    case ExpandTopRight|ExpandBottomLeft|ExpandBottomRight: return FXMAX(brw+blw+barsize,trw);
+
+    case ExpandTopLeft|ExpandBottomLeft|ExpandTopRight|ExpandBottomRight: return barsize+FXMAX(tlw,blw)+FXMAX(trw,brw);
+    }
+  return 0;
   }
 
 
 // Get default height
 FXint FX4Splitter::getDefaultHeight(){
-  register FXint tlh,blh,trh,brh,bs;
-  register FXWindow *tl,*tr,*bl,*br;
-  tlh=blh=trh=brh=bs=0;
-  tl=getTopLeft();
-  tr=getTopRight();
-  bl=getBottomLeft();
-  br=getBottomRight();
-  if(tl) tlh=tl->getDefaultHeight();
-  if(bl) blh=bl->getDefaultHeight();
-  if(tr) trh=tr->getDefaultHeight();
-  if(br) brh=br->getDefaultHeight();
-  if((tl && bl) || (tr && br)) bs=barsize;
-  return bs+FXMAX(tlh,trh)+FXMAX(blh,brh);
+  FXWindow *tl=getTopLeft();
+  FXWindow *tr=getTopRight();
+  FXWindow *bl=getBottomLeft();
+  FXWindow *br=getBottomRight();
+  FXint tlh=0,blh=0,trh=0,brh=0,set=0;
+  if(tl && tl->shown()){ tlh=tl->getDefaultHeight(); set|=ExpandTopLeft; }
+  if(tr && tr->shown()){ trh=tr->getDefaultHeight(); set|=ExpandTopRight; }
+  if(bl && bl->shown()){ blh=bl->getDefaultHeight(); set|=ExpandBottomLeft; }
+  if(br && br->shown()){ brh=br->getDefaultHeight(); set|=ExpandBottomRight; }
+  switch(set){
+    case ExpandTopLeft: return tlh;
+    case ExpandTopRight: return trh;
+    case ExpandBottomRight: return brh;
+    case ExpandBottomLeft: return blh;
+
+    case ExpandTopLeft|ExpandTopRight: return FXMAX(tlh,trh);
+    case ExpandBottomLeft|ExpandBottomRight: return FXMAX(blh,brh);
+
+    case ExpandBottomLeft|ExpandTopLeft: return blh+tlh+barsize;
+    case ExpandBottomLeft|ExpandTopRight: return blh+trh+barsize;
+    case ExpandBottomRight|ExpandTopLeft: return brh+tlh+barsize;
+    case ExpandBottomRight|ExpandTopRight: return brh+trh+barsize;
+
+    case ExpandBottomLeft|ExpandTopLeft|ExpandTopRight: return FXMAX(tlh,trh)+blh+barsize;
+    case ExpandBottomRight|ExpandTopLeft|ExpandTopRight: return FXMAX(tlh,trh)+brh+barsize;
+    case ExpandTopLeft|ExpandBottomLeft|ExpandBottomRight: return FXMAX(blh,brh)+tlh+barsize;
+    case ExpandTopRight|ExpandBottomLeft|ExpandBottomRight: return FXMAX(blh,brh)+trh+barsize;
+
+    case ExpandTopLeft|ExpandBottomLeft|ExpandTopRight|ExpandBottomRight: return barsize+FXMAX(tlh,trh)+FXMAX(blh,brh);
+    }
+  return 0;
   }
 
 
 // Recompute layout
 void FX4Splitter::layout(){
-  register FXint totw,toth,bottomh,rightw;
-  FXWindow *win[4];
-  FXASSERT(expanded<4);
-  win[0]=getTopLeft();
-  win[1]=getTopRight();
-  win[2]=getBottomLeft();
-  win[3]=getBottomRight();
-  if(expanded<0){
-    totw=width-barsize;
-    toth=height-barsize;
-    FXASSERT(0<=fhor && fhor<=10000);
-    FXASSERT(0<=fver && fver<=10000);
-    splitx=(fhor*totw)/10000;
-    splity=(fver*toth)/10000;
-    rightw=totw-splitx;
-    bottomh=toth-splity;
-    if(win[0]){ win[0]->position(0,0,splitx,splity); win[0]->show(); }
-    if(win[1]){ win[1]->position(splitx+barsize,0,rightw,splity); win[1]->show(); }
-    if(win[2]){ win[2]->position(0,splity+barsize,splitx,bottomh); win[2]->show(); }
-    if(win[3]){ win[3]->position(splitx+barsize,splity+barsize,rightw,bottomh); win[3]->show(); }
+  FXWindow *tl=getTopLeft();
+  FXWindow *tr=getTopRight();
+  FXWindow *bl=getBottomLeft();
+  FXWindow *br=getBottomRight();
+  FXuint set=getExpanded();
+  FXint tsx,bsx,osy;
+
+  FXASSERT(0<=fhor && fhor<=10000);
+  FXASSERT(0<=fver && fver<=10000);
+
+  // Proposed split location
+  splitx=(fhor*(width-barsize))/10000;
+  splity=(fver*(height-barsize))/10000;
+
+  tsx=bsx=splitx;
+  osy=splity;
+
+  switch(set){
+    case ExpandTopLeft: tsx=bsx=width; osy=height; break;
+    case ExpandTopRight: tsx=bsx=-barsize; osy=height; break;
+    case ExpandBottomRight: tsx=bsx=-barsize; osy=-barsize; break;
+    case ExpandBottomLeft: tsx=bsx=width; osy=-barsize; break;
+
+    case ExpandTopLeft|ExpandTopRight: tsx=bsx=splitx; osy=height; break;
+    case ExpandBottomLeft|ExpandBottomRight: tsx=bsx=splitx; osy=-barsize; break;
+
+    case ExpandBottomLeft|ExpandTopLeft: tsx=bsx=width; osy=splity; break;
+    case ExpandBottomLeft|ExpandTopRight: tsx=-barsize; bsx=width; osy=splity; break;
+    case ExpandBottomRight|ExpandTopLeft: tsx=width; bsx=-barsize; osy=splity; break;
+    case ExpandBottomRight|ExpandTopRight: tsx=bsx=-barsize; osy=splity; break;
+
+    case ExpandBottomLeft|ExpandTopLeft|ExpandTopRight: tsx=splitx; bsx=width; osy=splity; break;
+    case ExpandBottomRight|ExpandTopLeft|ExpandTopRight: tsx=splitx; bsx=-barsize; osy=splity; break;
+    case ExpandTopLeft|ExpandBottomLeft|ExpandBottomRight: tsx=width; bsx=splitx; osy=splity; break;
+    case ExpandTopRight|ExpandBottomLeft|ExpandBottomRight: tsx=-barsize; bsx=splitx; osy=splity; break;
+
+    case ExpandTopLeft|ExpandBottomLeft|ExpandTopRight|ExpandBottomRight: tsx=bsx=splitx; osy=splity; break;
     }
-  else{
-    if(win[0] && expanded!=0) win[0]->hide();
-    if(win[1] && expanded!=1) win[1]->hide();
-    if(win[2] && expanded!=2) win[2]->hide();
-    if(win[3] && expanded!=3) win[3]->hide();
-    if(win[expanded]){ win[expanded]->position(0,0,width,height); win[expanded]->show(); }
-    }
+
+  // Arrange the kids
+  if(tl) tl->position(0,0,tsx,osy);
+  if(tr) tr->position(tsx+barsize,0,width-tsx-barsize,osy);
+  if(bl) bl->position(0,osy+barsize,bsx,height-osy-barsize);
+  if(br) br->position(bsx+barsize,osy+barsize,width-bsx-barsize,height-osy-barsize);
+
+  // Layout ok now
   flags&=~FLAG_DIRTY;
   }
 
@@ -239,10 +286,10 @@ void FX4Splitter::layout(){
 // Determine split mode
 FXuchar FX4Splitter::getMode(FXint x,FXint y){
   register FXuchar mm=ONCENTER;
-  if(x<splitx-FUDGE) mm&=~ONVERTICAL;
-  if(y<splity-FUDGE) mm&=~ONHORIZONTAL;
-  if(x>=splitx+barsize+FUDGE) mm&=~ONVERTICAL;
-  if(y>=splity+barsize+FUDGE) mm&=~ONHORIZONTAL;
+  if(x<splitx) mm&=~ONVERTICAL;
+  if(y<splity) mm&=~ONHORIZONTAL;
+  if(x>=splitx+barsize) mm&=~ONVERTICAL;
+  if(y>=splity+barsize) mm&=~ONHORIZONTAL;
   return mm;
   }
 
@@ -258,26 +305,25 @@ void FX4Splitter::moveSplit(FXint x,FXint y){
   }
 
 
+// Draw the horizontal split
+void FX4Splitter::drawSplit(FXint x,FXint y,FXuint m){
+  FXDCWindow dc(this);
+  dc.clipChildren(FALSE);
+  dc.setFunction(BLT_NOT_DST);
+  if(m&ONVERTICAL){
+    dc.fillRectangle(x,0,barsize,height);
+    }
+  if(m&ONHORIZONTAL){
+    dc.fillRectangle(0,y,width,barsize);
+    }
+  }
+
+
 // Adjust layout
 void FX4Splitter::adjustLayout(){
-  FXWindow *win;
-  FXint bottomh,rightw;
   fhor=(width>barsize) ? (10000*splitx+(width-barsize-1))/(width-barsize) : 0;
   fver=(height>barsize) ? (10000*splity+(height-barsize-1))/(height-barsize) : 0;
-  rightw=width-barsize-splitx;
-  bottomh=height-barsize-splity;
-  if((win=getTopLeft())!=NULL){
-    win->position(0,0,splitx,splity);
-    }
-  if((win=getTopRight())!=NULL){
-    win->position(splitx+barsize,0,rightw,splity);
-    }
-  if((win=getBottomLeft())!=NULL){
-    win->position(0,splity+barsize,splitx,bottomh);
-    }
-  if((win=getBottomRight())!=NULL){
-    win->position(splitx+barsize,splity+barsize,rightw,bottomh);
-    }
+  recalc();
   }
 
 
@@ -292,10 +338,9 @@ long FX4Splitter::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
       offx=ev->win_x-splitx;
       offy=ev->win_y-splity;
       if(!(options&FOURSPLITTER_TRACKING)){
-        drawSplit(splitx,splity);
+        drawSplit(splitx,splity,mode);
         }
       flags&=~FLAG_UPDATE;
-      flags|=FLAG_PRESSED;
       }
     return 1;
     }
@@ -305,23 +350,23 @@ long FX4Splitter::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 
 // Button being released
 long FX4Splitter::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
-  FXuint flgs=flags;
+  FXuint f=flags;
+  FXuint m=mode;
   if(isEnabled()){
     ungrab();
     flags|=FLAG_UPDATE;
     flags&=~FLAG_CHANGED;
-    flags&=~FLAG_PRESSED;
     mode=NOWHERE;
     if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONRELEASE,message),ptr)) return 1;
-    if(flgs&FLAG_PRESSED){
+    if(m){
       if(!(options&FOURSPLITTER_TRACKING)){
-        drawSplit(splitx,splity);
+        drawSplit(splitx,splity,m);
         adjustLayout();
-        if(flgs&FLAG_CHANGED){
+        if(f&FLAG_CHANGED){
           if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
           }
         }
-      if(flgs&FLAG_CHANGED){
+      if(f&FLAG_CHANGED){
         if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),NULL);
         }
       }
@@ -334,54 +379,51 @@ long FX4Splitter::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
 // Button being released
 long FX4Splitter::onMotion(FXObject*,FXSelector,void* ptr){
   FXEvent* ev=(FXEvent*)ptr;
-  FXuchar ff;
-
-  // Moving split
-  if(flags&FLAG_PRESSED){
-    FXint oldsplitx=splitx;
-    FXint oldsplity=splity;
-    if(mode==ONCENTER){
+  FXint oldsplitx=splitx;
+  FXint oldsplity=splity;
+  switch(mode){
+    case ONCENTER:
       moveSplit(ev->win_x-offx,ev->win_y-offy);
-      }
-    else if(mode==ONVERTICAL){
+      break;
+    case ONVERTICAL:
       moveSplit(ev->win_x-offx,splity);
-      }
-    else if(mode==ONHORIZONTAL){
+      break;
+    case ONHORIZONTAL:
       moveSplit(splitx,ev->win_y-offy);
-      }
-    if((oldsplitx!=splitx) || (oldsplity!=splity)){
-      if(!(options&FOURSPLITTER_TRACKING)){
-        drawSplit(oldsplitx,oldsplity);
-        drawSplit(splitx,splity);
+      break;
+    default:
+      switch(getMode(ev->win_x,ev->win_y)){
+        case ONCENTER:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
+          break;
+        case ONVERTICAL:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
+          break;
+        case ONHORIZONTAL:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
+          break;
+        default:
+          setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+          setDragCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
+          break;
         }
-      else{
-        adjustLayout();
-        if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
-        }
-      flags|=FLAG_CHANGED;
+      return 1;
+    }
+  if((oldsplitx!=splitx) || (oldsplity!=splity)){
+    flags|=FLAG_CHANGED;
+    if(!(options&FOURSPLITTER_TRACKING)){
+      drawSplit(oldsplitx,oldsplity,mode);
+      drawSplit(splitx,splity,mode);
       }
-    return 1;
+    else{
+      adjustLayout();
+      if(target) target->tryHandle(this,FXSEL(SEL_CHANGED,message),NULL);
+      }
     }
-
-  // Change cursor based on position
-  ff=getMode(ev->win_x,ev->win_y);
-  if(ff==ONCENTER){
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_XSPLIT_CURSOR));
-    }
-  else if(ff==ONVERTICAL){
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_HSPLIT_CURSOR));
-    }
-  else if(ff==ONHORIZONTAL){
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_VSPLIT_CURSOR));
-    }
-  else{
-    setDefaultCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
-    setDragCursor(getApp()->getDefaultCursor(DEF_ARROW_CURSOR));
-    }
-  return 0;
+  return 1;
   }
 
 
@@ -467,7 +509,7 @@ long FX4Splitter::onFocusRight(FXObject*,FXSelector,void* ptr){
 
 // Show the pane(s)
 long FX4Splitter::onCmdExpand(FXObject*,FXSelector sel,void*){
-  FXint ex=FXSELID(sel)-ID_EXPAND_ALL-1;
+  FXuint ex=FXSELID(sel)-ID_EXPAND_NONE;
   setExpanded(ex);
   return 1;
   }
@@ -475,23 +517,9 @@ long FX4Splitter::onCmdExpand(FXObject*,FXSelector sel,void*){
 
 // Update show pane
 long FX4Splitter::onUpdExpand(FXObject* sender,FXSelector sel,void*){
-  register FXint ex=FXSELID(sel)-ID_EXPAND_ALL-1;
-  sender->handle(this,(expanded==ex)?FXSEL(SEL_COMMAND,ID_CHECK):FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
+  register FXuint ex=FXSELID(sel)-ID_EXPAND_NONE;
+  sender->handle(this,(getExpanded()==ex)?FXSEL(SEL_COMMAND,ID_CHECK):FXSEL(SEL_COMMAND,ID_UNCHECK),NULL);
   return 1;
-  }
-
-
-// Draw the horizontal split
-void FX4Splitter::drawSplit(FXint x,FXint y){
-  FXDCWindow dc(this);
-  dc.clipChildren(FALSE);
-  dc.setFunction(BLT_NOT_DST);
-  if(mode&ONVERTICAL){
-    dc.fillRectangle(x,0,barsize,height);
-    }
-  if(mode&ONHORIZONTAL){
-    dc.fillRectangle(0,y,width,barsize);
-    }
   }
 
 
@@ -520,7 +548,6 @@ void FX4Splitter::setVSplit(FXint s){
 // Save object to stream
 void FX4Splitter::save(FXStream& store) const {
   FXComposite::save(store);
-  store << expanded;
   store << barsize;
   store << fhor;
   store << fver;
@@ -531,7 +558,6 @@ void FX4Splitter::save(FXStream& store) const {
 // Load object from stream
 void FX4Splitter::load(FXStream& store){
   FXComposite::load(store);
-  store >> expanded;
   store >> barsize;
   store >> fhor;
   store >> fver;
@@ -551,17 +577,37 @@ void FX4Splitter::setSplitterStyle(FXuint style){
 
 
 // Expand one or all of the four panes
-void FX4Splitter::setExpanded(FXint ex){
-  if(ex>=4){ fxerror("%s::setExpanded: index out of range\n",getClassName()); }
-  if(expanded!=ex){
-    expanded=ex;
-    recalc();
-    }
+void FX4Splitter::setExpanded(FXuint set){
+  FXWindow *tl=getTopLeft();
+  FXWindow *tr=getTopRight();
+  FXWindow *bl=getBottomLeft();
+  FXWindow *br=getBottomRight();
+  if(tl){ if(set&ExpandTopLeft) tl->show(); else tl->hide(); }
+  if(tr){ if(set&ExpandTopRight) tr->show(); else tr->hide(); }
+  if(bl){ if(set&ExpandBottomLeft) bl->show(); else bl->hide(); }
+  if(br){ if(set&ExpandBottomRight) br->show(); else br->hide(); }
+  recalc();
+  }
+
+
+// Get set of expanded children
+FXuint FX4Splitter::getExpanded() const {
+  FXWindow *tl=getTopLeft();
+  FXWindow *tr=getTopRight();
+  FXWindow *bl=getBottomLeft();
+  FXWindow *br=getBottomRight();
+  FXuint set=0;
+  if(tl && tl->shown()) set|=ExpandTopLeft;
+  if(tr && tr->shown()) set|=ExpandTopRight;
+  if(bl && bl->shown()) set|=ExpandBottomLeft;
+  if(br && br->shown()) set|=ExpandBottomRight;
+  return set;
   }
 
 
 // Change bar size
 void FX4Splitter::setBarSize(FXint bs){
+  if(bs<1) bs=1;
   if(bs!=barsize){
     barsize=bs;
     recalc();

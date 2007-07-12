@@ -3,7 +3,7 @@
 *                           W i z a r d   W i d g e t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXWizard.cpp,v 1.14 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXWizard.cpp,v 1.19 2006/01/22 17:58:52 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -66,7 +66,7 @@
 #define HORZ_PAD      12
 #define VERT_PAD      2
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -108,11 +108,11 @@ void FXWizard::construct(){
   backicon=new FXGIFIcon(getApp(),arrowprev);
   finishicon=new FXGIFIcon(getApp(),entericon);
   buttons=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X|PACK_UNIFORM_WIDTH|PACK_UNIFORM_HEIGHT,0,0,0,0,0,0,0,0);
-  finish=new FXButton(buttons,"&Finish",finishicon,this,ID_ACCEPT,ICON_AFTER_TEXT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
-  advance=new FXButton(buttons,"&Next",nexticon,this,ID_NEXT,BUTTON_INITIAL|BUTTON_DEFAULT|ICON_AFTER_TEXT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
-  retreat=new FXButton(buttons,"&Back",backicon,this,ID_BACK,ICON_BEFORE_TEXT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD+10,HORZ_PAD+10,VERT_PAD,VERT_PAD);
+  finish=new FXButton(buttons,tr("&Finish"),finishicon,this,ID_ACCEPT,ICON_AFTER_TEXT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
+  advance=new FXButton(buttons,tr("&Next"),nexticon,this,ID_NEXT,BUTTON_INITIAL|BUTTON_DEFAULT|ICON_AFTER_TEXT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
+  retreat=new FXButton(buttons,tr("&Back"),backicon,this,ID_BACK,ICON_BEFORE_TEXT|FRAME_RAISED|FRAME_THICK|LAYOUT_CENTER_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD+10,HORZ_PAD+10,VERT_PAD,VERT_PAD);
   new FXFrame(buttons,LAYOUT_FIX_WIDTH|LAYOUT_RIGHT,0,0,10,0);
-  cancel=new FXButton(buttons,"&Cancel",NULL,this,ID_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
+  cancel=new FXButton(buttons,tr("&Cancel"),NULL,this,ID_CANCEL,BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_FILL_Y|LAYOUT_RIGHT,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
   new FXHorizontalSeparator(this,SEPARATOR_GROOVE|LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X);
   sidebar=new FXImageFrame(this,NULL,FRAME_GROOVE|LAYOUT_SIDE_LEFT|LAYOUT_CENTER_Y);
   panels=new FXSwitcher(this,LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0);
@@ -188,10 +188,12 @@ FXImage* FXWizard::getImage() const {
 // Save object to stream
 void FXWizard::save(FXStream& store) const {
   FXDialogBox::save(store);
+  store << buttons;
   store << sidebar;
   store << advance;
   store << retreat;
   store << finish;
+  store << cancel;
   store << panels;
   store << finishicon;
   store << nexticon;
@@ -202,10 +204,12 @@ void FXWizard::save(FXStream& store) const {
 // Load object from stream
 void FXWizard::load(FXStream& store){
   FXDialogBox::load(store);
+  store >> buttons;
   store >> sidebar;
   store >> advance;
   store >> retreat;
   store >> finish;
+  store >> cancel;
   store >> panels;
   store >> finishicon;
   store >> nexticon;
@@ -218,6 +222,7 @@ FXWizard::~FXWizard(){
   delete finishicon;
   delete nexticon;
   delete backicon;
+  buttons=(FXHorizontalFrame*)-1L;
   sidebar=(FXImageFrame*)-1L;
   advance=(FXButton*)-1L;
   retreat=(FXButton*)-1L;

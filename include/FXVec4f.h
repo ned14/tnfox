@@ -3,7 +3,7 @@
 *       S i n g l e - P r e c i s i o n   4 - E l e m e n t   V e c t o r       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,15 +19,16 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec4f.h,v 1.17.2.1 2006/03/21 07:08:29 fox Exp $                           *
+* $Id: FXVec4f.h,v 1.32 2006/01/22 17:58:12 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXVEC4F_H
 #define FXVEC4F_H
 
-#include "FXVec3f.h"
-#include <math.h>
 
 namespace FX {
+
+
+class FXMat4f;
 
 
 /// Single-precision 4-element vector
@@ -42,7 +43,7 @@ public:
   /// Default constructor
   FXVec4f(){}
 
-  /// Copy constructor
+  /// Initialize from another vector
   FXVec4f(const FXVec4f& v){x=v.x;y=v.y;z=v.z;w=v.w;}
 
   /// Construct with 3-vector and optional scalar
@@ -73,6 +74,15 @@ public:
   /// Assignment from array of floats
   FXVec4f& operator=(const FXfloat v[]){x=v[0];y=v[1];z=v[2];w=v[3];return *this;}
 
+  /// Set value from another vector
+  FXVec4f& set(const FXVec4f& v){x=v.x;y=v.y;z=v.z;w=v.w;return *this;}
+
+  /// Set value from array of floats
+  FXVec4f& set(const FXfloat v[]){x=v[0];y=v[1];z=v[2];w=v[3];return *this;}
+
+  /// Set value from components
+  FXVec4f& set(FXfloat xx,FXfloat yy,FXfloat zz,FXfloat ww){x=xx;y=yy;z=zz;w=ww;return *this;}
+
   /// Assigning operators
   FXVec4f& operator*=(FXfloat n){x*=n;y*=n;z*=n;w*=n;return *this;}
   FXVec4f& operator/=(FXfloat n){x/=n;y/=n;z/=n;w/=n;return *this;}
@@ -89,14 +99,15 @@ public:
   operator FXColor() const;
 
   /// Unary
-  friend inline FXVec4f operator+(const FXVec4f& v);
-  friend inline FXVec4f operator-(const FXVec4f& v);
+  FXVec4f operator+() const { return *this; }
+  FXVec4f operator-() const { return FXVec4f(-x,-y,-z,-w); }
 
-  /// Adding
-  friend inline FXVec4f operator+(const FXVec4f& a,const FXVec4f& b);
+  /// Vector and vector
+  FXVec4f operator+(const FXVec4f& v) const { return FXVec4f(x+v.x,y+v.y,z+v.z,w+v.w); }
+  FXVec4f operator-(const FXVec4f& v) const { return FXVec4f(x-v.x,y-v.y,z-v.z,w-v.w); }
 
-  /// Subtracting
-  friend inline FXVec4f operator-(const FXVec4f& a,const FXVec4f& b);
+  /// Vector and matrix
+  FXVec4f operator*(const FXMat4f& m) const;
 
   /// Scaling
   friend inline FXVec4f operator*(const FXVec4f& a,FXfloat n);
@@ -105,43 +116,42 @@ public:
   friend inline FXVec4f operator/(FXfloat n,const FXVec4f& a);
 
   /// Dot product
-  friend inline FXfloat operator*(const FXVec4f& a,const FXVec4f& b);
+  FXfloat operator*(const FXVec4f& v) const { return x*v.x+y*v.y+z*v.z+w*v.w; }
 
   /// Test if zero
-  friend inline int operator!(const FXVec4f& a);
+  bool operator!() const { return x==0.0f && y==0.0f && z==0.0f && w==0.0f; }
 
   /// Equality tests
-  friend inline int operator==(const FXVec4f& a,const FXVec4f& b);
-  friend inline int operator!=(const FXVec4f& a,const FXVec4f& b);
+  bool operator==(const FXVec4f& v) const {return x==v.x && y==v.y && z==v.z && w==v.w; }
+  bool operator!=(const FXVec4f& v) const {return x!=v.x || y!=v.y || z!=v.z || w!=v.w; }
 
-  friend inline int operator==(const FXVec4f& a,FXfloat n);
-  friend inline int operator!=(const FXVec4f& a,FXfloat n);
-
-  friend inline int operator==(FXfloat n,const FXVec4f& a);
-  friend inline int operator!=(FXfloat n,const FXVec4f& a);
+  friend inline bool operator==(const FXVec4f& a,FXfloat n);
+  friend inline bool operator!=(const FXVec4f& a,FXfloat n);
+  friend inline bool operator==(FXfloat n,const FXVec4f& a);
+  friend inline bool operator!=(FXfloat n,const FXVec4f& a);
 
   /// Inequality tests
-  friend inline int operator<(const FXVec4f& a,const FXVec4f& b);
-  friend inline int operator<=(const FXVec4f& a,const FXVec4f& b);
-  friend inline int operator>(const FXVec4f& a,const FXVec4f& b);
-  friend inline int operator>=(const FXVec4f& a,const FXVec4f& b);
+  bool operator<(const FXVec4f& v) const { return x<v.x && y<v.y && z<v.z && w<v.w; }
+  bool operator<=(const FXVec4f& v) const { return x<=v.x && y<=v.y && z<=v.z && w<=v.w; }
+  bool operator>(const FXVec4f& v) const { return x>v.x && y>v.y && z>v.z && w>v.w; }
+  bool operator>=(const FXVec4f& v) const { return x>=v.x && y>=v.y && z>=v.z && w>=v.w; }
 
-  friend inline int operator<(const FXVec4f& a,FXfloat n);
-  friend inline int operator<=(const FXVec4f& a,FXfloat n);
-  friend inline int operator>(const FXVec4f& a,FXfloat n);
-  friend inline int operator>=(const FXVec4f& a,FXfloat n);
+  friend inline bool operator<(const FXVec4f& a,FXfloat n);
+  friend inline bool operator<=(const FXVec4f& a,FXfloat n);
+  friend inline bool operator>(const FXVec4f& a,FXfloat n);
+  friend inline bool operator>=(const FXVec4f& a,FXfloat n);
 
-  friend inline int operator<(FXfloat n,const FXVec4f& a);
-  friend inline int operator<=(FXfloat n,const FXVec4f& a);
-  friend inline int operator>(FXfloat n,const FXVec4f& a);
-  friend inline int operator>=(FXfloat n,const FXVec4f& a);
+  friend inline bool operator<(FXfloat n,const FXVec4f& a);
+  friend inline bool operator<=(FXfloat n,const FXVec4f& a);
+  friend inline bool operator>(FXfloat n,const FXVec4f& a);
+  friend inline bool operator>=(FXfloat n,const FXVec4f& a);
 
   /// Length and square of length
-  friend inline FXfloat veclen2(const FXVec4f& a);
-  friend inline FXfloat veclen(const FXVec4f& a);
+  FXfloat length2() const { return x*x+y*y+z*z+w*w; }
+  FXfloat length() const { return sqrtf(length2()); }
 
-  /// Normalize vector
-  friend FXAPI FXVec4f vecnormalize(const FXVec4f& a);
+  /// Clamp values of vector between limits
+  FXVec4f& clamp(FXfloat lo,FXfloat hi){x=FXCLAMP(lo,x,hi);y=FXCLAMP(lo,y,hi);z=FXCLAMP(lo,z,hi);w=FXCLAMP(lo,w,hi);return *this;}
 
   /// Lowest or highest components
   friend inline FXVec4f veclo(const FXVec4f& a,const FXVec4f& b);
@@ -154,10 +164,13 @@ public:
   friend FXAPI FXVec4f vecplane(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c);
 
   /// Signed distance normalized plane and point
-  friend FXAPI FXfloat vecdistance(const FXVec4f& plane,const FXVec3f& p);
+  FXfloat vecdistance(const FXVec3f& p) const;
 
   /// Return true if edge a-b crosses plane
-  friend FXAPI FXbool veccrosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b);
+  bool veccrosses(const FXVec3f& a,const FXVec3f& b) const;
+
+  /// Normalize vector
+  friend FXAPI FXVec4f vecnormalize(const FXVec4f& v);
 
   /// Save to a stream
   friend FXAPI FXStream& operator<<(FXStream& store,const FXVec4f& v);
@@ -167,49 +180,25 @@ public:
   };
 
 
-inline FXVec4f operator+(const FXVec4f& v){return v;}
-inline FXVec4f operator-(const FXVec4f& v){return FXVec4f(-v.x,-v.y,-v.z,-v.w);}
-
-inline FXVec4f operator+(const FXVec4f& a,const FXVec4f& b){return FXVec4f(a.x+b.x,a.y+b.y,a.z+b.z,a.w+b.w);}
-inline FXVec4f operator-(const FXVec4f& a,const FXVec4f& b){return FXVec4f(a.x-b.x,a.y-b.y,a.z-b.z,a.w-b.w);}
-
 inline FXVec4f operator*(const FXVec4f& a,FXfloat n){return FXVec4f(a.x*n,a.y*n,a.z*n,a.w*n);}
 inline FXVec4f operator*(FXfloat n,const FXVec4f& a){return FXVec4f(n*a.x,n*a.y,n*a.z,n*a.w);}
 inline FXVec4f operator/(const FXVec4f& a,FXfloat n){return FXVec4f(a.x/n,a.y/n,a.z/n,a.w/n);}
 inline FXVec4f operator/(FXfloat n,const FXVec4f& a){return FXVec4f(n/a.x,n/a.y,n/a.z,n/a.w);}
 
-inline FXfloat operator*(const FXVec4f& a,const FXVec4f& b){return a.x*b.x+a.y*b.y+a.z*b.z+a.w*b.w;}
+inline bool operator==(const FXVec4f& a,FXfloat n){return a.x==n && a.y==n && a.z==n && a.w==n;}
+inline bool operator!=(const FXVec4f& a,FXfloat n){return a.x!=n || a.y!=n || a.z!=n || a.w!=n;}
+inline bool operator==(FXfloat n,const FXVec4f& a){return n==a.x && n==a.y && n==a.z && n==a.w;}
+inline bool operator!=(FXfloat n,const FXVec4f& a){return n!=a.x || n!=a.y || n!=a.z || n!=a.w;}
 
-inline int operator!(const FXVec4f& a){return a.x==0.0f && a.y==0.0f && a.z==0.0f && a.w==0.0f;}
+inline bool operator<(const FXVec4f& a,FXfloat n){return a.x<n && a.y<n && a.z<n && a.w<n;}
+inline bool operator<=(const FXVec4f& a,FXfloat n){return a.x<=n && a.y<=n && a.z<=n && a.w<=n;}
+inline bool operator>(const FXVec4f& a,FXfloat n){return a.x>n && a.y>n && a.z>n && a.w>n;}
+inline bool operator>=(const FXVec4f& a,FXfloat n){return a.x>=n && a.y>=n && a.z>=n && a.w>=n;}
 
-inline int operator==(const FXVec4f& a,const FXVec4f& b){return a.x==b.x && a.y==b.y && a.z==b.z && a.w==b.w;}
-inline int operator!=(const FXVec4f& a,const FXVec4f& b){return a.x!=b.x || a.y!=b.y || a.z!=b.z || a.w!=b.w;}
-
-inline int operator==(const FXVec4f& a,FXfloat n){return a.x==n && a.y==n && a.z==n && a.w==n;}
-inline int operator!=(const FXVec4f& a,FXfloat n){return a.x!=n || a.y!=n || a.z!=n || a.w!=n;}
-
-inline int operator==(FXfloat n,const FXVec4f& a){return n==a.x && n==a.y && n==a.z && n==a.w;}
-inline int operator!=(FXfloat n,const FXVec4f& a){return n!=a.x || n!=a.y || n!=a.z || n!=a.w;}
-
-inline int operator<(const FXVec4f& a,const FXVec4f& b){return a.x<b.x && a.y<b.y && a.z<b.z && a.w<b.w;}
-inline int operator<=(const FXVec4f& a,const FXVec4f& b){return a.x<=b.x && a.y<=b.y && a.z<=b.z && a.w<=b.w;}
-inline int operator>(const FXVec4f& a,const FXVec4f& b){return a.x>b.x && a.y>b.y && a.z>b.z && a.w>b.w;}
-inline int operator>=(const FXVec4f& a,const FXVec4f& b){return a.x>=b.x && a.y>=b.y && a.z>=b.z && a.w>=b.w;}
-
-inline int operator<(const FXVec4f& a,FXfloat n){return a.x<n && a.y<n && a.z<n && a.w<n;}
-inline int operator<=(const FXVec4f& a,FXfloat n){return a.x<=n && a.y<=n && a.z<=n && a.w<=n;}
-inline int operator>(const FXVec4f& a,FXfloat n){return a.x>n && a.y>n && a.z>n && a.w>n;}
-inline int operator>=(const FXVec4f& a,FXfloat n){return a.x>=n && a.y>=n && a.z>=n && a.w>=n;}
-
-inline int operator<(FXfloat n,const FXVec4f& a){return n<a.x && n<a.y && n<a.z && n<a.w;}
-inline int operator<=(FXfloat n,const FXVec4f& a){return n<=a.x && n<=a.y && n<=a.z && n<=a.w;}
-inline int operator>(FXfloat n,const FXVec4f& a){return n>a.x && n>a.y && n>a.z && n>a.w;}
-inline int operator>=(FXfloat n,const FXVec4f& a){return n>=a.x && n>=a.y && n>=a.z && n>=a.w;}
-
-inline FXfloat veclen2(const FXVec4f& a){ return a.x*a.x+a.y*a.y+a.z*a.z+a.w*a.w; }
-inline FXfloat veclen(const FXVec4f& a){ return sqrtf(veclen2(a)); }
-
-extern FXAPI FXVec4f vecnormalize(const FXVec4f& a);
+inline bool operator<(FXfloat n,const FXVec4f& a){return n<a.x && n<a.y && n<a.z && n<a.w;}
+inline bool operator<=(FXfloat n,const FXVec4f& a){return n<=a.x && n<=a.y && n<=a.z && n<=a.w;}
+inline bool operator>(FXfloat n,const FXVec4f& a){return n>a.x && n>a.y && n>a.z && n>a.w;}
+inline bool operator>=(FXfloat n,const FXVec4f& a){return n>=a.x && n>=a.y && n>=a.z && n>=a.w;}
 
 inline FXVec4f veclo(const FXVec4f& a,const FXVec4f& b){return FXVec4f(FXMIN(a.x,b.x),FXMIN(a.y,b.y),FXMIN(a.z,b.z),FXMIN(a.w,b.w));}
 inline FXVec4f vechi(const FXVec4f& a,const FXVec4f& b){return FXVec4f(FXMAX(a.x,b.x),FXMAX(a.y,b.y),FXMAX(a.z,b.z),FXMAX(a.w,b.w));}
@@ -219,9 +208,7 @@ extern FXAPI FXVec4f vecplane(const FXVec3f& vec,FXfloat dist);
 extern FXAPI FXVec4f vecplane(const FXVec3f& vec,const FXVec3f& p);
 extern FXAPI FXVec4f vecplane(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c);
 
-extern FXAPI FXfloat vecdistance(const FXVec4f& plane,const FXVec3f& p);
-
-extern FXAPI FXbool veccrosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b);
+extern FXAPI FXVec4f vecnormalize(const FXVec4f& v);
 
 extern FXAPI FXStream& operator<<(FXStream& store,const FXVec4f& v);
 extern FXAPI FXStream& operator>>(FXStream& store,FXVec4f& v);

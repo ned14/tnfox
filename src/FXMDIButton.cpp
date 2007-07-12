@@ -3,7 +3,7 @@
 *             M u l t i p l e   D o c u m e n t   B u t t o n                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIButton.cpp,v 1.24 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXMDIButton.cpp,v 1.28 2006/01/22 17:58:33 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEMDI
 
@@ -27,7 +27,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -61,7 +61,7 @@
 #define MENUBUTTONWINDOW_WIDTH  16
 #define MENUBUTTONWINDOW_HEIGHT 14
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -336,7 +336,7 @@ FXIMPLEMENT(FXMDIWindowButton,FXMenuButton,FXMDIWindowButtonMap,ARRAYNUMBER(FXMD
 
 // Make window button
 FXMDIWindowButton::FXMDIWindowButton(FXComposite* p,FXPopup* pup,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):
-  FXMenuButton(p,NULL,NULL,pup,opts,x,y,w,h,0,0,0,0){
+  FXMenuButton(p,FXString::null,NULL,pup,opts,x,y,w,h,0,0,0,0){
   tip="Menu";
   target=tgt;
   message=sel;

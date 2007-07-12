@@ -3,7 +3,7 @@
 *                   M a i n   F O X   I n c l u d e   F i l e                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fx.h,v 1.90.2.1 2005/02/16 05:40:09 fox Exp $                                *
+* $Id: fx.h,v 1.104 2006/01/22 17:58:13 fox Exp $                               *
 ********************************************************************************/
 #ifndef FX_H
 #define FX_H
@@ -34,6 +34,8 @@
 // FOX defines
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
+#include "fxunicode.h"
 
 
 #ifndef FX_DISABLEGUI
@@ -41,10 +43,14 @@
 // FOX classes
 #include "FXHash.h"
 #include "FXException.h"
-//#include "FXThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
-//#include "FXFileStream.h"
-//#include "FXMemoryStream.h"
+#include "FXIO.h"
+#include "FXFile.h"
+#include "FXPipe.h"
+#include "FXSocket.h"
+#include "FXFileStream.h"
+#include "FXMemoryStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
@@ -52,7 +58,11 @@
 #include "FXObject.h"
 #include "FXDelegator.h"
 #include "FXDict.h"
-#include "FXFile.h"
+#include "FXPath.h"
+#include "FXSystem.h"
+#include "FXStat.h"
+#include "FXDir.h"
+#include "FXDate.h"
 #include "FXURL.h"
 #include "FXStringDict.h"
 #include "FXSettings.h"
@@ -112,7 +122,9 @@
 #include "FXLabel.h"
 #include "FX7Segment.h"
 #include "FXDial.h"
+#include "FXKnob.h"
 #include "FXColorBar.h"
+#include "FXColorRing.h"
 #include "FXColorWell.h"
 #include "FXColorWheel.h"
 #include "FXTextField.h"
@@ -201,6 +213,7 @@
 #include "FXProgressBar.h"
 #include "FXReplaceDialog.h"
 #include "FXRuler.h"
+#include "FXRulerView.h"
 #include "FXSearchDialog.h"
 #include "FXInputDialog.h"
 #include "FXProgressDialog.h"
@@ -221,6 +234,13 @@
 #include "FXDebugTarget.h"
 #include "FXSplashWindow.h"
 
+#else
+#include "FXIO.h"
+#include "FXFile.h"
+#include "FXPath.h"
+#include "FXSystem.h"
+#include "FXStat.h"
+#include "FXDir.h"
 #endif
 
 

@@ -3,7 +3,7 @@
 *                         D o c k T i t l e   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Jeroen van der Zijp.   All Rights Reserved.             *
+* Copyright (C) 2005,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDockTitle.cpp,v 1.2 2005/02/04 03:41:00 fox Exp $                      *
+* $Id: FXDockTitle.cpp,v 1.6 2006/01/22 17:58:23 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -121,16 +121,16 @@ long FXDockTitle::onPaint(FXObject*,FXSelector,void* ptr){
   dc.fillRectangle(border,border,width-(border<<1),height-(border<<1));
   if(!caption.empty()){
     dc.setFont(font);
-    tw=font->getTextWidth(caption.text(),caption.length()); 
+    tw=font->getTextWidth(caption.text(),caption.length());
     th=font->getFontHeight();
-    if(options&JUSTIFY_LEFT) tx=padleft+border; 
-    else if(options&JUSTIFY_RIGHT) tx=width-padright-border-tw; 
-    else tx=border+padleft+(width-padleft-padright-(border<<1)-tw)/2; 
+    if(options&JUSTIFY_LEFT) tx=padleft+border;
+    else if(options&JUSTIFY_RIGHT) tx=width-padright-border-tw;
+    else tx=border+padleft+(width-padleft-padright-(border<<1)-tw)/2;
     if(options&JUSTIFY_TOP) ty=border+padtop;
     else if(options&JUSTIFY_BOTTOM) ty=height-padbottom-border-th;
-    else ty=border+padtop+(height-padbottom-padtop-(border<<1)-th)/2; 
+    else ty=border+padtop+(height-padbottom-padtop-(border<<1)-th)/2;
     dc.setForeground(captionColor);
-    dc.drawText(tx,ty+font->getFontAscent(),caption.text(),caption.length());
+    dc.drawText(tx,ty+font->getFontAscent(),caption);
     }
   drawFrame(dc,0,0,width,height);
   return 1;

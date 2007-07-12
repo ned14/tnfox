@@ -3,7 +3,7 @@
 *                      S c r o l l A r e a   W i d g e t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollArea.cpp,v 1.45 2005/01/16 16:06:07 fox Exp $                    *
+* $Id: FXScrollArea.cpp,v 1.49 2006/01/22 17:58:40 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -61,7 +61,7 @@
 #define AUTOSCROLL_FUDGE  11       // Proximity to wall at which we start autoscrolling
 #define SCROLLER_MASK     (HSCROLLER_ALWAYS|HSCROLLER_NEVER|VSCROLLER_ALWAYS|VSCROLLER_NEVER|SCROLLERS_DONT_TRACK)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -298,12 +298,12 @@ void FXScrollArea::setScrollStyle(FXuint style){
   FXuint opts=(options&~SCROLLER_MASK) | (style&SCROLLER_MASK);
   if(options!=opts){
     if(opts&SCROLLERS_DONT_TRACK){
-      horizontal->setScrollbarStyle(horizontal->getScrollbarStyle()|SCROLLBAR_WHEELJUMP);
-      vertical->setScrollbarStyle(vertical->getScrollbarStyle()|SCROLLBAR_WHEELJUMP);
+      horizontal->setScrollBarStyle(horizontal->getScrollBarStyle()|SCROLLBAR_WHEELJUMP);
+      vertical->setScrollBarStyle(vertical->getScrollBarStyle()|SCROLLBAR_WHEELJUMP);
       }
     else{
-      horizontal->setScrollbarStyle(horizontal->getScrollbarStyle()&~SCROLLBAR_WHEELJUMP);
-      vertical->setScrollbarStyle(vertical->getScrollbarStyle()&~SCROLLBAR_WHEELJUMP);
+      horizontal->setScrollBarStyle(horizontal->getScrollBarStyle()&~SCROLLBAR_WHEELJUMP);
+      vertical->setScrollBarStyle(vertical->getScrollBarStyle()&~SCROLLBAR_WHEELJUMP);
       }
     options=opts;
     recalc();

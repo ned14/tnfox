@@ -3,7 +3,7 @@
 *                           O p e n G L   O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLObject.cpp,v 1.33 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXGLObject.cpp,v 1.37.2.3 2006/07/28 00:56:30 fox Exp $                      *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -27,7 +27,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -59,7 +59,7 @@
   - Group objects should do focus traversal.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -77,8 +77,6 @@ FXStream &operator>>(FXStream &s, FXGLColor &o)
 
 // Object implementation
 FXIMPLEMENT(FXGLObject,FXObject,NULL,0)
-
-
 
 
 // Get bounding box

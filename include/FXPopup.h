@@ -3,7 +3,7 @@
 *                     P o p u p   W i n d o w   W i d g e t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPopup.h,v 1.33 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXPopup.h,v 1.35 2006/01/22 17:58:07 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXPOPUP_H
 #define FXPOPUP_H
@@ -55,7 +55,7 @@ protected:
   FXint     border;
 protected:
   FXPopup();
-  virtual FXbool doesOverrideRedirect() const;
+  virtual bool doesOverrideRedirect() const;
   void drawBorderRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
   void drawRaisedRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
   void drawSunkenRectangle(FXDCWindow& dc,FXint x,FXint y,FXint w,FXint h);
@@ -91,9 +91,7 @@ public:
   long onCmdChoice(FXObject*,FXSelector,void*);
 public:
   enum {
-	ID_CANCEL=FXShell::ID_LAST,
-	ID_ACCEPT,
-    ID_CHOICE,
+    ID_CHOICE=FXShell::ID_LAST,
     ID_LAST=ID_CHOICE+1000
     };
 public:
@@ -188,7 +186,7 @@ public:
   /// Change shrinkwrap mode
   void setShrinkWrap(FXbool sw);
 
-  virtual FXbool doesSaveUnder() const;
+  virtual bool doesSaveUnder() const;
 
   /// Destructor
   virtual ~FXPopup();
@@ -197,4 +195,3 @@ public:
 }
 
 #endif
-

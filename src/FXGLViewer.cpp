@@ -3,7 +3,7 @@
 *                           O p e n G L   V i e w e r                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLViewer.cpp,v 1.150 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXGLViewer.cpp,v 1.156.2.1 2006/08/02 01:31:08 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
@@ -143,7 +143,7 @@
 // Pick tolerance
 #define PICK_TOL       3
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -968,7 +968,7 @@ void FXGLViewer::updateTransform(){
   transform.rot(rotation);
   transform.scale(scale);
   transform.trans(-center);
-  itransform=invert(transform);
+  itransform=transform.invert();
 //   FXTRACE((150,"itrans=%11.8f %11.8f %11.8f %11.8f\n",itransform[0][0],itransform[0][1],itransform[0][2],itransform[0][3]));
 //   FXTRACE((150,"       %11.8f %11.8f %11.8f %11.8f\n",itransform[1][0],itransform[1][1],itransform[1][2],itransform[1][3]));
 //   FXTRACE((150,"       %11.8f %11.8f %11.8f %11.8f\n",itransform[2][0],itransform[2][1],itransform[2][2],itransform[2][3]));
@@ -1214,7 +1214,7 @@ FXVec3f FXGLViewer::spherePoint(FXint px,FXint py){
 
 // Turn camera; simpler now that arc() is changed
 FXQuatf FXGLViewer::turn(FXint fx,FXint fy,FXint tx,FXint ty){
-  return arc(spherePoint(fx,fy),spherePoint(tx,ty));
+  return FXQuatf(spherePoint(fx,fy),spherePoint(tx,ty));
   }
 
 
@@ -2380,7 +2380,7 @@ long FXGLViewer::onCmdPrintImage(FXObject*,FXSelector,void*){
 //      }
 
     // Open print dialog
-    FXPrintDialog dlg(this,"Print Scene");
+    FXPrintDialog dlg(this,tr("Print Scene"));
 
     // Run dialog
     if(dlg.execute()){
@@ -2394,7 +2394,7 @@ long FXGLViewer::onCmdPrintImage(FXObject*,FXSelector,void*){
 
       // Try open printer
       if(!pdc.beginPrint(printer)){
-        FXMessageBox::error(this,MBOX_OK,"Printer Error","Unable to print");
+        FXMessageBox::error(this,MBOX_OK,tr("Printer Error").text(),tr("Unable to print.").text());
         return 1;
         }
 
@@ -2637,7 +2637,7 @@ long FXGLViewer::onClipboardRequest(FXObject* sender,FXSelector sel,void* ptr){
 
   // Requested data from clipboard
   if(event->target==objectType){
-    FXTRACE((1,"requested objectType\n"));
+    FXTRACE((100,"requested objectType\n"));
 //    FXMemoryStream stream;
 //    stream.open(NULL,0,FXStreamSave);
 //    stream.takeBuffer(data,len);

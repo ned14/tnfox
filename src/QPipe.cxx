@@ -27,6 +27,7 @@
 #include "QTrans.h"
 #include "FXProcess.h"
 #include "FXFile.h"
+#include "FXStat.h"
 #include "FXRollback.h"
 #include "FXACL.h"
 #include <stdlib.h>
@@ -325,7 +326,7 @@ bool QPipe::open(FXuint mode)
 		if(mode & IO_ReadOnly)
 		{
 			FXString readname(fullname+'w');
-			if(!FXFile::exists(readname)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
+			if(!FXStat::exists(readname)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
 			p->acl=FXACL(readname, FXACL::Pipe); doneACL=true;
 			FXERRHOSFN(p->readh=::open(readname.text(), O_RDONLY|O_NONBLOCK, 0), readname);
 			FXERRHOS(::fcntl(p->readh, F_SETFD, ::fcntl(p->readh, F_GETFD, 0)|FD_CLOEXEC));
@@ -333,7 +334,7 @@ bool QPipe::open(FXuint mode)
 		if(mode & IO_WriteOnly)
 		{
 			FXString writename(fullname+'r');
-			if(!FXFile::exists(writename)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
+			if(!FXStat::exists(writename)) FXERRGNF(QTrans::tr("QPipe", "Pipe not found"), 0);
 			if(!doneACL) p->acl=FXACL(writename, FXACL::Pipe);
 		}
 #endif

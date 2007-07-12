@@ -3,7 +3,7 @@
 *                      C o l o r   N a m e   F u n c t i o n s                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,18 +19,19 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorNames.cpp,v 1.25 2005/01/16 16:06:06 fox Exp $                    *
+* $Id: FXColorNames.cpp,v 1.28 2006/01/22 17:58:20 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
+#include "fxascii.h"
 #include "fxpriv.h"
 #include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -734,7 +735,7 @@ FXColor fxcolorfromname(const FXchar* colorname){
   FXint l,h,m,eq,r,g,b,a;
   if(colorname){
     while((c=*colorname++)!='\0' && tail<&name[99]){
-      if(!isspace((FXuchar)c)) *tail++=c;
+      if(!Ascii::isSpace(c)) *tail++=c;
       }
     *tail='\0';
     if(name[0]=='#'){

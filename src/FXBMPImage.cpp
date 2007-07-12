@@ -3,7 +3,7 @@
 *                            B M P   I m a g e   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBMPImage.cpp,v 1.30 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXBMPImage.cpp,v 1.35 2006/01/22 17:58:18 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -47,7 +47,7 @@
   - Only free image if owned!
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -56,6 +56,10 @@ namespace FX {
 
 // Suggested file extension
 const FXchar *FXBMPImage::fileExt="bmp";
+
+
+// Suggested mime type
+const FXchar *FXBMPImage::mimeType="image/x-bmp";
 
 
 // Object implementation
@@ -74,22 +78,22 @@ FXBMPImage::FXBMPImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXI
 
 
 // Save pixel data only
-FXbool FXBMPImage::savePixels(FXStream& store) const {
+bool FXBMPImage::savePixels(FXStream& store) const {
   if(fxsaveBMP(store,data,width,height)){
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load pixel data only
-FXbool FXBMPImage::loadPixels(FXStream& store){
+bool FXBMPImage::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadBMP(store,pixels,w,h)){
     setData(pixels,IMAGE_OWNED,w,h);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

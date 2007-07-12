@@ -3,7 +3,7 @@
 *                  R a d i o   B u t t o n    W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRadioButton.h,v 1.25 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXRadioButton.h,v 1.29 2006/01/22 17:58:08 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXRADIOBUTTON_H
 #define FXRADIOBUTTON_H
@@ -47,8 +47,9 @@ enum {
 * When pressed, the radio button sets its state to TRUE and sends a SEL_COMMAND
 * to its target, and the message data set to the state of the radio button,
 * of the type FXbool.
-* If the radio button is contained inside a group box, the other radio buttons
-* in the group box will be set to FALSE and will send a message as well.
+* A group of radio buttons can be made mutually exclusive by linking them
+* to a common data target.  Alternatively, an application can implement a
+* common SEL_UPDATED handler to check and uncheck radio buttons as appropriate.
 */
 class FXAPI FXRadioButton : public FXLabel {
   FXDECLARE(FXRadioButton)
@@ -88,7 +89,7 @@ public:
   FXRadioButton(FXComposite* p,const FXString& text,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=RADIOBUTTON_NORMAL,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD);
 
   /// Returns true because a radio button can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Get default width
   virtual FXint getDefaultWidth();
@@ -97,7 +98,7 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Set radio button state (TRUE, FALSE or MAYBE)
-  void setCheck(FXbool s=TRUE);
+  void setCheck(FXbool s=TRUE,FXbool notify=FALSE);
 
   /// Get radio button state (TRUE, FALSE or MAYBE)
   FXbool getCheck() const { return check; }

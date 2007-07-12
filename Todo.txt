@@ -7,6 +7,9 @@ second section because of an "Access Denied" error (which is silently eaten
 and only reported by TnFOX to the console). Cause: totally unknown, it
 appears to be a misfeature of NT long reported by others all over the internet.
 This problem does not apply if either file is not write access.
+  2. Currently, a bug in FOX causes the SetDIBits() function to occasionally
+fail. This affects FXImage::render(), FXIcon::render() and anything which uses
+them.
 
 
 KUbuntu 6.10 x64 Failures: (Linux kernel v2.6.17):

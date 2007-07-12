@@ -3,7 +3,7 @@
 *              D i r e c t o r y   S e l e c t i o n   W i d g e t              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirSelector.h,v 1.20 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXDirSelector.h,v 1.21 2006/01/22 17:58:00 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 
@@ -28,9 +28,6 @@
 
 #ifndef FXPACKER_H
 #include "FXPacker.h"
-#endif
-#ifndef FXRECENTFILES_H
-#include "FXRecentFiles.h"
 #endif
 
 namespace FX {
@@ -158,4 +155,3 @@ public:
 
 #endif
 #endif
-

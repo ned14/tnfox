@@ -3,7 +3,7 @@
 *                          H e a d e r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,16 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXHeader.h,v 1.65.2.1 2005/02/22 23:17:37 fox Exp $                          *
+* $Id: FXHeader.h,v 1.70.2.2 2006/11/17 16:02:31 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXHEADER_H
 #define FXHEADER_H
 
 #ifndef FXFRAME_H
 #include "FXFrame.h"
-#endif
-#ifndef FXOBJECTLIST_H
-#include "FXObjectList.h"
 #endif
 
 namespace FX {
@@ -60,6 +57,9 @@ protected:
   FXint     size;       // Item size
   FXint     pos;        // Item position
   FXuint    state;      // Item state flags
+private:
+  FXHeaderItem(const FXHeaderItem&);
+  FXHeaderItem& operator=(const FXHeaderItem&);
 protected:
   FXHeaderItem(){}
   virtual void draw(const FXHeader* header,FXDC& dc,FXint x,FXint y,FXint w,FXint h);
@@ -163,6 +163,7 @@ public:
   };
 
 
+/// List of FXHeaderItem's
 typedef FXObjectListOf<FXHeaderItem> FXHeaderItemList;
 
 
@@ -250,18 +251,18 @@ public:
   /// Return the current position
   FXint getPosition() const { return pos; }
 
-  /// Return item at given index
-  FXHeaderItem *getItem(FXint index) const;
-
-  /// Replace the item with a [possibly subclassed] item
-  FXint setItem(FXint index,FXHeaderItem* item,FXbool notify=FALSE);
-
   /**
   * Return item-index given coordinate offset, or -1 if coordinate
   * is before first item in header, or nitems if coordinate is after
   * last item in header.
   */
   FXint getItemAt(FXint coord) const;
+
+  /// Return item at given index
+  FXHeaderItem *getItem(FXint index) const;
+
+  /// Replace the item with a [possibly subclassed] item
+  FXint setItem(FXint index,FXHeaderItem* item,FXbool notify=FALSE);
 
   /// Replace items text, icon, and user-data pointer
   FXint setItem(FXint index,const FXString& text,FXIcon *icon=NULL,FXint size=0,void* ptr=NULL,FXbool notify=FALSE);
@@ -289,6 +290,9 @@ public:
 
   /// Prepend new item with given text and optional icon, and user-data pointer
   FXint prependItem(const FXString& text,FXIcon *icon=NULL,FXint size=0,void* ptr=NULL,FXbool notify=FALSE);
+
+  /// Extract item from list
+  FXHeaderItem* extractItem(FXint index,FXbool notify=FALSE);
 
   /// Remove item at index
   void removeItem(FXint index,FXbool notify=FALSE);
@@ -406,4 +410,3 @@ public:
 }
 
 #endif
-

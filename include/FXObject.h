@@ -3,7 +3,7 @@
 *                         T o p l e v el   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXObject.h,v 1.33 2005/01/22 21:55:40 fox Exp $                          *
+* $Id: FXObject.h,v 1.35.2.1 2006/08/05 00:58:29 fox Exp $                          *
 ********************************************************************************/
 #if !defined(FXOBJECT_H) && !defined(FX_DISABLEGUI)
 #define FXOBJECT_H
 
-#include "FXStream.h"
 #include "QTrans.h"
+#include "FXStream.h"
+
 
 namespace FX {
 
@@ -69,7 +70,7 @@ public:
   FXMetaClass(const FXchar* name,FXObject *(fac)(),const FXMetaClass* base,const void* ass,FXuint nass,FXuint assz);
 
   /// Check if metaclass is subclass of some other metaclass
-  FXbool isSubClassOf(const FXMetaClass* metaclass) const;
+  bool isSubClassOf(const FXMetaClass* metaclass) const;
 
   /// Make instance of some object
   FXObject* makeInstance() const;
@@ -142,16 +143,16 @@ public:
 #define FXDEFMAP(classname) static const classname::FXMapEntry
 
 /// Define range of function types
-#define FXMAPTYPES(typelo,typehi,func) {MKUINT(MINKEY,typelo),MKUINT(MAXKEY,typehi),&func}
+#define FXMAPTYPES(typelo,typehi,func) {FXSEL(typelo,FX::MINKEY),FXSEL(typehi,FX::MAXKEY),&func}
 
 /// Define range of function types
-#define FXMAPTYPE(type,func) {MKUINT(MINKEY,type),MKUINT(MAXKEY,type),&func}
+#define FXMAPTYPE(type,func) {FXSEL(type,FX::MINKEY),FXSEL(type,FX::MAXKEY),&func}
 
 /// Define range of functions
-#define FXMAPFUNCS(type,keylo,keyhi,func) {MKUINT(keylo,type),MKUINT(keyhi,type),&func}
+#define FXMAPFUNCS(type,keylo,keyhi,func) {FXSEL(type,keylo),FXSEL(type,keyhi),&func}
 
 /// Define one function
-#define FXMAPFUNC(type,key,func) {MKUINT(key,type),MKUINT(key,type),&func}
+#define FXMAPFUNC(type,key,func) {FXSEL(type,key),FXSEL(type,key),&func}
 
 
 /**
@@ -176,7 +177,7 @@ public:
   const FXchar* getClassName() const;
 
   /// Check if object is member of metaclass
-  FXbool isMemberOf(const FXMetaClass* metaclass) const;
+  bool isMemberOf(const FXMetaClass* metaclass) const;
 
   /// Try handle message safely
   virtual long tryHandle(FXObject* sender,FXSelector sel,void* ptr);

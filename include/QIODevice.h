@@ -80,7 +80,7 @@ CR/LF translation facilities are provided by applyCRLF() and removeCRLF(). These
 were broken first time I wrote them and I find it surprising how difficult it
 actually is to implement this 100% correctly. They are public as GUI code will
 want to apply CR/LF before exporting text to the clipboard and remove it when
-importing.
+importing. The same functions can also perform Unicode conversions.
 
 Data destruction is performed by shredData(). This uses an algorithm which
 thoroughly shreds the specified region, ensuring that the data cannot be

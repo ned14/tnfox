@@ -24,7 +24,7 @@
 ********************************************************************************/
 #include "fxdefs.h"
 #include "FXFileStream.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "FXException.h"
 
 
@@ -40,13 +40,13 @@ FXFileStream::FXFileStream(const FXObject* cont):FXStream(0, cont)
 }
 
 // Try open file stream
-FXbool FXFileStream::open(const FXString& filename,FXStreamDirection save_or_load,FXuval size){
+bool FXFileStream::open(const FXString& filename,FXStreamDirection save_or_load,FXuval size){
 
   // Stream should not yet be open
   if(dir!=FXStreamDead){ fxerror("FXFileStream::open: stream is already open.\n"); }
 
-  FXFile *d;
-  FXERRHM(d=new FXFile(filename));
+  QFile *d;
+  FXERRHM(d=new QFile(filename));
   setDevice(d);
 
   if(save_or_load==FXStreamLoad)
@@ -64,7 +64,7 @@ FXbool FXFileStream::open(const FXString& filename,FXStreamDirection save_or_loa
 
 
 // Close file stream
-FXbool FXFileStream::close(){
+bool FXFileStream::close(){
   device()->close();
   return FXStream::close();
   }

@@ -3,7 +3,7 @@
 *                   F i l e   S e l e c t i o n   D i a l o g                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDialog.h,v 1.31 2005/02/08 03:23:28 fox Exp $                      *
+* $Id: FXFileDialog.h,v 1.34 2006/01/23 06:03:15 fox Exp $                      *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 
@@ -32,7 +32,7 @@
 
 namespace FX {
 
-class FXStream;
+
 class FXFileSelector;
 
 
@@ -107,6 +107,9 @@ public:
   /// Change pattern text for pattern number
   void setPatternText(FXint patno,const FXString& text);
 
+  /// Return number of patterns
+  FXint getNumPatterns() const;
+
   /// Allow pattern entry
   void allowPatternEntry(FXbool allow);
 
@@ -172,6 +175,12 @@ public:
 
   /// Return File List style
   FXuint getFileBoxStyle() const;
+
+  /// Allow or disallow navigation
+  void allowNavigation(FXbool navigable);
+  
+  /// Is navigation allowed?
+  FXbool allowNavigation() const;
 
   /// Open existing filename
   static FXString getOpenFilename(FXWindow* owner,const FXString& caption,const FXString& path,const FXString& patterns="*",FXint initial=0);

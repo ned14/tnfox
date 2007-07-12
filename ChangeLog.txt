@@ -27,15 +27,17 @@ FXException
 * Made FXProcess::mappedFiles() cached
 * Fixed up memory locking code to lock per VirtualAlloc region
 * Disabled signals to threads (without it, gprof won't run)
+* Merged FOX v1.6.4
 + Added kqueue implementation to FXFSMonitor
 + Ported TnFOX to Apple MacOS X (Intel only)
-* Merged FOX v1.4.34
+* Merged FOX v1.6.6
 * Substantially improved python bindings
 + Made FXAtomicInt, and therefore TnFOX, portable to all GCC supported
 architectures
 + Added modular building of TnFOX
 * Renamed FXSQLDB* to TnFXSQLDB*
 + Updated build system so it will compile on generic architectures
+* Merged FOX v1.6.9
 + Added Pol::destructiveCopyNoDelete and Pol::noCopyNoDelete
 + Added support and use of restrict keyword
 * Fixed up linking tests against a static TnFOX library
@@ -48,13 +50,14 @@ functions and classes Array, Array2, normalrand, normaldist, mean,
 variance, stddev, distribution to Maths namespace
 + Added 64 bit overloads for fxbitscan() and fxbitscanrev()
 + Added Maths::InfinityValue and Maths::NaNValue
+* Merged FOX v1.6.18
+* Merged FOX v1.6.25
 * Fixed problem with newer scons (> v0.96.95) which prevented correct
 detection of build environment
 * Updated doxygen config to v1.5.2
 + Added incorporation of current SVN revision into source
 * Added FXProcess::buildInfo() and broke out hostOS() and
 hostOSDescription()
-+ Added FXApp::isAutomatedTest()
 + Added QChildProcess
 * Changed semantics of QIODeviceS::waitForData() as obvious usage was
 causing data corruption (the null termination on signalled)
@@ -67,11 +70,10 @@ causing data corruption (the null termination on signalled)
 processes won't inherit them. This duplicates the Win32 behaviour.
 + Added automated test suite
 + Added Windows Vista support
-* Merged FOX v1.4.35
+* Merged FOX v1.6.28
 * Updated translations
 
-
-v0.86 2nd April 2006
+v0.86 3rd April 2006
 -=-=-=-=-=-=-=-=-=-=
 B FXMemMap was unintentially broken on Linux for shared memory usage
 B FXMemMap wasn't detecting mmap() failures at all on POSIX!
@@ -129,6 +131,7 @@ B QMemMap wasn't opening existing shared memory with read ACL access
 B Fixed deadlock when creating thread during thread creation upcall
 R *** Issued snapshot 4
 B Fixed some compilation errors in QPtrVector
+R *** Issued snapshot 5
 B Fixed assertion failure in FXDebugTarget
 B QBlkSocket wasn't reporting read nor write errors on win32
 
@@ -259,16 +262,25 @@ iterator operators.
 R *** Issued snapshot 4
 * Now enables thread caching win32 allocator variant when available
 * Merged FOX v1.4.29
+* Merged FOX v1.6.0 RC3. Extensive changes have been made.
+R *** Issued snapshot 5
 + Added fastbuffer option to QBuffer
 + Added QThread::processorAffinity() and setProcessorAffinity()
 * Added some ambiguity busters for when including fx.h and misc headers.
 Changed None to NoEncryption for QSSLKey and QSSLPKey
++ Added the FOX test suite provided kindly by jayn <at> io <dot> com
 * Added GCC 4.1 compatibility, specifically a number of aliasing constructs
 were made safe and warnings fixed
++ Added UTF-16 and UTF-32 to UTF-8 text translation by reworking
+QIODevice::applyCRLF() and QIODevice::removeCRLF() and all i/o classes
+using them via IO_Translate
++ Added auto-UTF detection code to QIODevice::determineUnicodeType() and
+added unicode type state to all QIODevice's. i/o devices now examine text
+data and set their unicode type on open
++ Added FXIO::TextTranslation to mirror IO_Translate and added to Adie
 * Updated to doxygen 1.4.6
 * Integrated sqlite v3.3.4
 * Updated to boost 1.33.1
-* Merged fox v1.4.32
 + Added UDP support to QBlkSocket plus a UDP test to TestDeviceIO
 + Added script for installing TnFOX docs into Visual Studio
 + Added noGUI support to python bindings (very useful for debugging)
@@ -277,6 +289,9 @@ Yakovenko for doing most of the work!
 + Added QMemArray::swap()
 + Added class QBZip2Device
 * Updated embedded translation file
+* Merged FOX v1.6.1
+* Added FXERRH_ISFOXEXCEPTION and made all FOX exceptions print to stderr
+and call abort()
 
 
 v0.85 13th Feb 2005:

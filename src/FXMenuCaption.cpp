@@ -3,7 +3,7 @@
 *                       M e n u   C a p t i o n   W i d g e t                   *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMenuCaption.cpp,v 1.46 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXMenuCaption.cpp,v 1.53.2.1 2006/12/11 15:57:26 fox Exp $                   *
 ********************************************************************************/
 #ifndef FX_DISABLEMENUS
 
@@ -28,13 +28,14 @@
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
 #include "FXRegistry.h"
+#include "FXAccelTable.h"
 #include "FXApp.h"
 #include "FXDCWindow.h"
 #include "FXFont.h"
@@ -60,7 +61,7 @@
 #define TRAILSPACE  16
 #define MENU_MASK   (MENU_AUTOGRAY|MENU_AUTOHIDE)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -70,6 +71,7 @@ namespace FX {
 FXDEFMAP(FXMenuCaption) FXMenuCaptionMap[]={
   FXMAPFUNC(SEL_PAINT,0,FXMenuCaption::onPaint),
   FXMAPFUNC(SEL_UPDATE,0,FXMenuCaption::onUpdate),
+  FXMAPFUNC(SEL_QUERY_TIP,0,FXMenuCaption::onQueryTip),
   FXMAPFUNC(SEL_QUERY_HELP,0,FXMenuCaption::onQueryHelp),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_SETSTRINGVALUE,FXMenuCaption::onCmdSetStringValue),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_GETSTRINGVALUE,FXMenuCaption::onCmdGetStringValue),
@@ -77,6 +79,8 @@ FXDEFMAP(FXMenuCaption) FXMenuCaptionMap[]={
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_GETICONVALUE,FXMenuCaption::onCmdGetIconValue),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_SETHELPSTRING,FXMenuCaption::onCmdSetHelp),
   FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_GETHELPSTRING,FXMenuCaption::onCmdGetHelp),
+  FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_SETTIPSTRING,FXMenuCaption::onCmdSetTip),
+  FXMAPFUNC(SEL_COMMAND,FXMenuCaption::ID_GETTIPSTRING,FXMenuCaption::onCmdGetTip),
   };
 
 
@@ -95,12 +99,12 @@ FXMenuCaption::FXMenuCaption(FXComposite* p,const FXString& text,FXIcon* ic,FXui
   FXWindow(p,opts,0,0,0,0){
   FXString string=text.section('\t',0);
   flags|=FLAG_SHOWN;
-  label=fxstripHotKey(string);
+  label=stripHotKey(string);
   help=text.section('\t',2);
   icon=ic;
   font=getApp()->getNormalFont();
-  hotkey=fxparseHotKey(string);
-  hotoff=fxfindHotKey(string);
+  hotkey=parseHotKey(string);
+  hotoff=findHotKey(string);
   addHotKey(hotkey);
   textColor=getApp()->getForeColor();
   seltextColor=getApp()->getSelMenuTextColor();
@@ -164,6 +168,31 @@ FXint FXMenuCaption::getDefaultHeight(){
   }
 
 
+// Set tip using a message
+long FXMenuCaption::onCmdSetTip(FXObject*,FXSelector,void* ptr){
+  setTipText(*((FXString*)ptr));
+  return 1;
+  }
+
+
+// Get tip using a message
+long FXMenuCaption::onCmdGetTip(FXObject*,FXSelector,void* ptr){
+  *((FXString*)ptr)=getTipText();
+  return 1;
+  }
+
+
+// We were asked about tip text
+long FXMenuCaption::onQueryTip(FXObject* sender,FXSelector sel,void* ptr){
+  if(FXWindow::onQueryTip(sender,sel,ptr)) return 1;
+  if((flags&FLAG_TIP) && !tip.empty()){
+    sender->handle(this,FXSEL(SEL_COMMAND,ID_SETSTRINGVALUE),(void*)&tip);
+    return 1;
+    }
+  return 0;
+  }
+
+
 // Set help using a message
 long FXMenuCaption::onCmdSetHelp(FXObject*,FXSelector,void* ptr){
   setHelpText(*((FXString*)ptr));
@@ -215,9 +244,9 @@ long FXMenuCaption::onPaint(FXObject*,FXSelector,void* ptr){
     dc.setFont(font);
     dc.setForeground(textColor);
     yy=font->getFontAscent()+(height-font->getFontHeight())/2;
-    dc.drawText(xx,yy,label.text(),label.length());
+    dc.drawText(xx,yy,label);
     if(0<=hotoff){
-      dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],1),1);
+      dc.fillRectangle(xx+1+font->getTextWidth(&label[0],hotoff),yy+1,font->getTextWidth(&label[hotoff],wclen(&label[hotoff])),1);
       }
     }
   return 1;
@@ -260,13 +289,15 @@ void FXMenuCaption::setHelpText(const FXString& text){
 
 // Change text, and scan this text to replace accelerators
 void FXMenuCaption::setText(const FXString& text){
-  FXString string=fxstripHotKey(text);
-  if(label!=string){
+  FXString string=stripHotKey(text);
+  FXHotKey hkey=parseHotKey(text);
+  FXint hoff=findHotKey(text);
+  if(label!=string || hkey!=hotkey || hotoff!=hoff){
+    label.adopt(string);
     remHotKey(hotkey);
-    hotkey=fxparseHotKey(text);
-    hotoff=fxfindHotKey(text);
+    hotkey=hkey;
+    hotoff=hoff;
     addHotKey(hotkey);
-    label=string;
     recalc();
     update();
     }
@@ -363,6 +394,7 @@ void FXMenuCaption::save(FXStream& store) const {
   FXWindow::save(store);
   store << label;
   store << help;
+  store << tip;
   store << icon;
   store << font;
   store << hotoff;
@@ -380,6 +412,7 @@ void FXMenuCaption::load(FXStream& store){
   FXWindow::load(store);
   store >> label;
   store >> help;
+  store >> tip;
   store >> icon;
   store >> font;
   store >> hotoff;

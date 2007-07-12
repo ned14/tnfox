@@ -3,9 +3,7 @@
 *                       U R L   M a n i p u l a t i o n                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
-*********************************************************************************
-* Contributed by: Sean Hubbell                                                  *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -21,26 +19,29 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXURL.cpp,v 1.23 2005/01/16 16:06:07 fox Exp $                           *
+* $Id: FXURL.cpp,v 1.32 2006/01/22 17:58:50 fox Exp $                           *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxpriv.h"
+#include "fxascii.h"
 #include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
-#include "FXFile.h"
+#include "FXPath.h"
 #include "FXURL.h"
 
 
 
 /*
   Notes:
-  - There will be a LOT more here some day...
-  - Certain characters in a file name should be encoded in the url.
-  - the result of gethostname should be fed into gethostbyname() to obtain
+
+  - Functions contributed by Sean Hubbell and Sander Jansen.
+
+  - The result of gethostname should be fed into gethostbyname() to obtain
     the official host name.
+
   - About drive letters in URL's, Daniel Gehriger has some some
     empirical tests, and determined the following:
 
@@ -60,12 +61,18 @@
     The conclusion seems to be we should probably try to handle all
     of these possibilities, although keeping the `:' seems favorable.
 
+  - For now we don't encode any reserved characters. They need to be encoded
+    if they're not part of the scheme. I don't have a way of figuring
+    out if they're part of a scheme or not.
 
 */
+
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
+
 
 // Return host name
 FXString FXURL::hostname(){
@@ -82,8 +89,8 @@ FXString FXURL::fileToURL(const FXString& file){
 #ifndef WIN32
   return "file:"+file;        // UNIX is easy
 #else
-  FXString absfile=FXFile::absolute(file).substitute(PATHSEP,'/');
-  if(isalpha((FXuchar)absfile[0]) && absfile[1]==':') return "file://"+FXURL::hostname()+"/"+absfile;     // Drive letter
+  FXString absfile=FXPath::absolute(file).substitute(PATHSEP,'/');
+  if(Ascii::isLetter(absfile[0]) && absfile[1]==':') return "file://"+FXURL::hostname()+"/"+absfile;     // Drive letter
   return "file://"+FXURL::hostname()+absfile;
   //if(isalpha(absfile[0]) && absfile[1]==':') return "file:///"+absfile;     // Drive letter
   //return "file://"+absfile;
@@ -119,14 +126,58 @@ FXString FXURL::fileFromURL(const FXString& url){
         result=localurl.mid(path,2000);
         }
       }
-    if(result[0]==PATHSEP && isalpha((FXuchar)result[1]) && (result[2]==':' || result[2]=='|')){
-      result.remove(0,1);
+    if(result[0]==PATHSEP && Ascii::isLetter(result[1]) && (result[2]==':' || result[2]=='|')){
+      result.erase(0,1);
       if(result[1]=='|') result[1]=':';
       }
     return result;
     }
   return "";
 #endif
+  }
+
+
+// Decode url string
+FXString FXURL::decode(const FXString& url){
+  register FXint p=0;
+  register FXint c;
+  FXString result;
+  while(p<url.length()){
+    c=url[p++];
+    if(c=='%'){
+      if(Ascii::isHexDigit(url[p])){
+        c=Ascii::digitValue(url[p++]);
+        if(Ascii::isHexDigit(url[p])){
+          c=(c<<4)+Ascii::digitValue(url[p++]);
+          }
+        }
+      }
+    result.append(c);
+    }
+  return result;
+  }
+
+
+#define URL_UNSAFE   "$-_.+!*'(),"          // Always Encode
+#define URL_RESERVED ";/?:@=&"              // Only encode if not used as reserved by scheme
+
+
+// Encode url string
+FXString FXURL::encode(const FXString& url){
+  register FXint p=0;
+  register FXint c;
+  FXString result;
+  while(p<url.length()){
+    c=url[p++];
+    if(!Ascii::isAlphaNumeric(c) && (c<=' ' || c>='{') && strchr(URL_UNSAFE URL_RESERVED,c)){
+      result.append('%');
+      result.append(FXString::HEX[(c>>4)&15]);
+      result.append(FXString::HEX[c&15]);
+      continue;
+      }
+    result.append(c);
+    }
+  return result;
   }
 
 }

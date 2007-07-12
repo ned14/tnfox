@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStream.cpp,v 1.53 2004/11/08 15:35:10 fox Exp $                        *
+* $Id: FXStream.cpp,v 1.66.2.3 2006/09/13 18:18:52 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -116,6 +116,16 @@ FXStream::~FXStream(){
   }
 
 
+FXuval FXStream::writeBuffer(FXuval){
+  return 0;
+  }
+
+
+FXuval FXStream::readBuffer(FXuval){
+  return 0;
+  }
+
+
 void FXStream::setError(FXStreamStatus err)
 {
 	code=err;
@@ -134,7 +144,7 @@ void FXStream::setSpace(FXuval)
 
 
 // Open for save or load
-FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar* data){
+bool FXStream::open(FXStreamDirection save_or_load,FXuval size,FXuchar* data){
 #ifndef FX_DISABLEGUI
   if(save_or_load!=FXStreamSave && save_or_load!=FXStreamLoad){fxerror("FXStream::open: illegal stream direction.\n");}
   if(!dir){
@@ -175,15 +185,15 @@ FXbool FXStream::open(FXStreamDirection save_or_load,unsigned long size,FXuchar*
     // So far, so good
     code=FXStreamOK;
 
-    return TRUE;
+    return true;
     }
 #endif
-  return FALSE;
+  return false;
   }
 
 
 // Close store; return TRUE if no errors have been encountered
-FXbool FXStream::close(){
+bool FXStream::close(){
 #ifndef FX_DISABLEGUI
   if(dir){
     hash->clear();
@@ -198,28 +208,28 @@ FXbool FXStream::close(){
     return code==FXStreamOK;
     }
 #endif
-  return FALSE;
+  return false;
   }
 
 
 // Flush buffer
-FXbool FXStream::flush(){
+bool FXStream::flush(){
   // Does nothing as underlying i/o devices do the buffering
   return code==FXStreamOK;
   }
 
 
-FXulong FXStream::position() const
+FXlong FXStream::position() const
 {
-	return dev->at();
+	return (FXlong) dev->at();
 }
 
 // Move to position
-FXbool FXStream::position(FXfval newpos,FXWhence whence)
+bool FXStream::position(FXlong newpos,FXWhence whence)
 {
-	if(FXFromCurrent==whence) newpos+=dev->at();
-	else if(FXFromEnd==whence) newpos=dev->size()-newpos;
-	return dev->at(newpos);
+	if(FXFromCurrent==whence) newpos+=(FXlong) dev->at();
+	else if(FXFromEnd==whence) newpos=(FXlong) dev->size()-newpos;
+	return dev->at((FXfval) newpos);
 }
 
 void FXStream::setDevice(QIODevice *_dev)
@@ -374,11 +384,13 @@ FXStream& FXStream::load(FXulong* p,unsigned long n){
 // Add object without saving or loading
 FXStream& FXStream::addObject(const FXObject* v){
 #ifndef FX_DISABLEGUI
-  if(dir==FXStreamSave){
-    hash->insert((void*)v,(void*)(FXuval)seq++);
-    }
-  else if(dir==FXStreamLoad){
-    hash->insert((void*)(FXuval)seq++,(void*)v);
+  if(v){
+    if(dir==FXStreamSave){
+      hash->insert((void*)v,(void*)(FXuval)seq++);
+      }
+    else if(dir==FXStreamLoad){
+      hash->insert((void*)(FXuval)seq++,(void*)v);
+      }
     }
 #endif
   return *this;
@@ -415,7 +427,7 @@ FXStream& FXStream::saveObject(const FXObject* v){
     *this << tag;                               // Save tag
     *this << zero;
     save(name,tag);
-    FXTRACE((100,"saveObject(%s)\n",v->getClassName()));
+    FXTRACE((100,"%08ld: saveObject(%s)\n",(FXuval)pos,v->getClassName()));
     v->save(*this);
     }
 #endif
@@ -462,7 +474,7 @@ FXStream& FXStream::loadObject(FXObject*& v){
       }
     v=cls->makeInstance();                      // Build some object!!
     hash->insert((void*)(FXuval)seq++,(void*)v); // Add to table
-    FXTRACE((100,"loadObject(%s)\n",v->getClassName()));
+    FXTRACE((100,"%08ld: loadObject(%s)\n",(FXuval)pos,v->getClassName()));
     v->load(*this);
     }
 #endif

@@ -3,7 +3,7 @@
 *                      U T F - 3 2  T e x t   C o d e c                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 2002,2006 by L.Johnson & J.van der Zijp.  All Rights Reserved.  *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXUTF32Codec.h,v 1.4 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXUTF32Codec.h,v 1.10 2006/01/22 17:58:12 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXUTF32CODEC_H
 #define FXUTF32CODEC_H
@@ -29,55 +29,57 @@
 #endif
 
 
-//////////////////////////////  UNDER DEVELOPMENT  //////////////////////////////
-
-
 namespace FX {
 
-/**
- * Codec for UTF-32
- */
-class FXUTF32Codec : public FXTextCodec {
+
+/// Codec for UTF-32BE
+class FXAPI FXUTF32BECodec : public FXTextCodec {
+  FXDECLARE(FXUTF32BECodec)
 public:
-
-  /// Constructor
-  FXUTF32Codec(){}
-
-  /**
-   * Convert a sequence of wide characters from Unicode to UTF-32.
-   * Reads at most n wide characters from src and writes at most m
-   * bytes into dest. Returns the number of characters actually
-   * written into dest.
-   *
-   * On exit, the src and dest pointers are updated to point to the next
-   * available character (or byte) for reading (writing).
-   */
-  virtual unsigned long fromUnicode(FXuchar*& dest,unsigned long m,const FXwchar*& src,unsigned long n);
-
-  /**
-   * Convert a sequence of bytes in UTF-32 encoding to a sequence
-   * of wide characters (Unicode). Reads at most n bytes from src and
-   * writes at most m characters into dest. Returns the number of characters
-   * actually read from src.
-   *
-   * On exit, the src and dest pointers are updated to point to the next
-   * available byte (or character) for writing (reading).
-   */
-  virtual unsigned long toUnicode(FXwchar*& dest,unsigned long m,const FXuchar*& src,unsigned long n);
-
-  /**
-  * Return the IANA mime name for this codec.
-  */
+  FXUTF32BECodec(){}
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+  virtual const FXchar* name() const;
   virtual const FXchar* mimeName() const;
-
-  /**
-  * Return the Management Information Base (MIBenum) for the character set.
-  */
   virtual FXint mibEnum() const;
+  virtual const FXchar* const* aliases() const;
+  virtual ~FXUTF32BECodec(){}
+  };
 
-  /// Destructor
+
+/// Codec for UTF-32LE
+class FXAPI FXUTF32LECodec : public FXTextCodec {
+  FXDECLARE(FXUTF32LECodec)
+public:
+  FXUTF32LECodec(){}
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+  virtual const FXchar* name() const;
+  virtual const FXchar* mimeName() const;
+  virtual FXint mibEnum() const;
+  virtual const FXchar* const* aliases() const;
+  virtual ~FXUTF32LECodec(){}
+  };
+
+
+/// Codec for UTF-32
+class FXAPI FXUTF32Codec : public FXTextCodec {
+  FXDECLARE(FXUTF32Codec)
+public:
+  FXUTF32Codec(){}
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+  virtual FXint mb2utflen(const FXchar* src,FXint nsrc) const;
+  virtual FXint mb2utf(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const;
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+  virtual FXint utf2mblen(const FXchar* src,FXint nsrc) const;
+  virtual FXint utf2mb(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const;
+  virtual const FXchar* name() const;
+  virtual const FXchar* mimeName() const;
+  virtual FXint mibEnum() const;
+  virtual const FXchar* const* aliases() const;
   virtual ~FXUTF32Codec(){}
   };
+
 
 }
 

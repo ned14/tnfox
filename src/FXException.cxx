@@ -218,7 +218,7 @@ void FXException::doStackWalk() throw()
 	// Use RtlCaptureContext() if we have it as it saves an exception throw
 	static VOID (WINAPI *RtlCaptureContextAddr)(PCONTEXT)=(VOID (WINAPI *)(PCONTEXT)) -1;
 	if((VOID (WINAPI *)(PCONTEXT)) -1==RtlCaptureContextAddr)
-		RtlCaptureContextAddr=(VOID (WINAPI *)(PCONTEXT)) GetProcAddress(GetModuleHandle("kernel32"), "RtlCaptureContext");
+		RtlCaptureContextAddr=(VOID (WINAPI *)(PCONTEXT)) GetProcAddress(GetModuleHandle(L"kernel32"), "RtlCaptureContext");
 	if(RtlCaptureContextAddr)
 		RtlCaptureContextAddr(&ct);
 	else

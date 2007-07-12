@@ -1,9 +1,11 @@
+#ifdef FX_FOXCOMPAT
+
 /********************************************************************************
 *                                                                               *
 *             D y n a m i c   L i n k   L i b r a r y   S u p p o r t           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,10 +21,8 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDLL.cpp,v 1.15.2.1 2006/03/01 01:23:37 fox Exp $                           *
+* $Id: FXDLL.cpp,v 1.21 2006/03/01 02:13:21 fox Exp $                           *
 ********************************************************************************/
-#ifdef FX_FOXCOMPAT
-
 #include "FXProcess.h"
 #include "xincs.h"
 #ifndef WIN32

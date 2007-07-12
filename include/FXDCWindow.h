@@ -3,7 +3,7 @@
 *  D e v i c e   C o n t e x t   F o r   W i n d o w s   a n d   I m a g e s    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.h,v 1.42 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXDCWindow.h,v 1.46 2006/01/22 17:58:00 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXDCWINDOW_H
 #define FXDCWINDOW_H
@@ -30,7 +30,7 @@
 
 namespace FX {
 
-struct FXEvent;
+
 class FXApp;
 class FXDrawable;
 class FXImage;
@@ -50,6 +50,7 @@ class FXVisual;
 * locked on a drawable at any one time.
 */
 class FXAPI FXDCWindow : public FXDC {
+  friend class FXFont;
 protected:
   FXDrawable *surface;        // Drawable surface
   FXVisual   *visual;         // Visual of drawable
@@ -160,6 +161,9 @@ public:
   /// Draw area from source
   virtual void drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy);
 
+  /// Draw area stretched area from source
+  virtual void drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy,FXint dw,FXint dh);
+
   /// Draw image
   virtual void drawImage(const FXImage* image,FXint dx,FXint dy);
 
@@ -172,7 +176,11 @@ public:
   virtual void drawIconSunken(const FXIcon* icon,FXint dx,FXint dy);
 
   /// Draw string with base line starting at x, y
+  virtual void drawText(FXint x,FXint y,const FXString& string);
   virtual void drawText(FXint x,FXint y,const FXchar* string,FXuint length);
+
+  /// Draw text starting at x, y over filled background
+  virtual void drawImageText(FXint x,FXint y,const FXString& string);
   virtual void drawImageText(FXint x,FXint y,const FXchar* string,FXuint length);
 
   /// Set foreground/background drawing color
@@ -243,4 +251,3 @@ public:
 }
 
 #endif
-

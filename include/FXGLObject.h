@@ -3,7 +3,7 @@
 *                           O p e n G L   O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLObject.h,v 1.26 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXGLObject.h,v 1.28.2.3 2006/11/17 16:02:31 fox Exp $                        *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -29,19 +29,13 @@
 #ifndef FXOBJECT_H
 #include "FXObject.h"
 #endif
-#include "FXObjectList.h"
-#include "FXVec3f.h"
-#include "FXRangef.h"
 
 namespace FX {
 
-class FXRange;
+
 class FXGLViewer;
 class FXGLObject;
 
-
-// List of objects
-typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 
 /// OpenGL color object
 class FXAPI FXGLColor
@@ -111,14 +105,14 @@ public:
   };
 
 
-// Suppress warning about FXGLGroup::list not being exported
-#ifdef _MSC_VER
-#if _MSC_VER >= 1200
-#pragma warning( push )
-#endif
-#pragma warning( disable : 4251 )
-#endif
+/// List of GL objects
+typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif
 
 /// Group object
 class FXAPI FXGLGroup : public FXGLObject {
@@ -179,7 +173,7 @@ public:
   void remove(FXGLObject* obj){ list.remove(obj); }
 
   /// Remove child object at given position
-  void remove(FXint pos){ list.remove(pos); }
+  void erase(FXint pos){ list.erase(pos); }
 
   /// Remove all children
   void clear(){ list.clear(); }
@@ -192,12 +186,8 @@ public:
   virtual ~FXGLGroup();
   };
 
-
-// Restore previous warning levels
 #ifdef _MSC_VER
-#if _MSC_VER >= 1200
-#pragma warning( pop )
-#endif
+#pragma warning(pop)
 #endif
 
 }

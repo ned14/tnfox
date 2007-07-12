@@ -3,7 +3,7 @@
 *                 R e g u l a r   E x p r e s s i o n   C l a s s               *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,11 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRex.cpp,v 1.85 2005/01/16 16:06:07 fox Exp $                           *
+* $Id: FXRex.cpp,v 1.98 2006/03/18 01:05:58 fox Exp $                           *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
+#include "fxunicode.h"
 #include "FXHash.h"
 #include "FXStream.h"
 #include "FXString.h"
@@ -39,15 +41,15 @@
 
   This is however an ab-initio implementation, with the following goals:
 
-        o Full C++ implementation, no simple C++ wapper.
+        o Full C++ implementation, no simple C++ wrapper.
         o Trade speed and memory in favor of speed, but keep it compact where
           possible.
         o Thread-safe:
             - No global variables used during parsing or execution.
             - Multiple threads could use same single FXRex at the same time.
         o Perl-like syntax for character classes.
-        o Additional features such as lazy/greedy closures, counting repeats,
-          back references, trailing context.
+        o Additional features such as lazy/greedy/possessive closures, counting
+          repeats, back references, trailing context.
         o Forward and backward subject string scanning mode.
         o Single line/multi line matching modes.
         o 8-bit safe (you can use it to grep binary data!).
@@ -113,7 +115,7 @@
         o The common case of 1 single branch now no longer needs a branch opcode
           and corresponding jump opcode at all!
 
-        o When an alternative is found, we insert a branch node in front, and a jump
+        o When an alternative is found, we insert a branch node in front and a jump
           node behind the already generated code.  This can be done easily as
           branches and jumps within the shifted block of code are relative, and have
           already been resolved!
@@ -124,100 +126,304 @@
         o Its easier to dig out some info from the program, and in fact so easy
           that this digging can be moved to the execute phase.
 
-   When a repeat is prefixed in front of a simple single-character match, counted
-   repeats are simplified: {1}, {1,1} is eliminated, {}, {0,} becomes *, {1,} becomes
-   +, and {0,1} becomes ?.
+  When a repeat is prefixed in front of a simple single-character match, counted
+  repeats are simplified: {1}, {1,1} is eliminated, {}, {0,} becomes *, {1,} becomes
+  +, and {0,1} becomes ?.
 
-   Because single-character repeats are prefixed with a repeat instruction, there is
-   no recursion needed; single character repeats are therefore very fast.
+  Because single-character repeats are prefixed with a repeat instruction, there is
+  no recursion needed; single character repeats are therefore very fast.
 
-   Complex repeats are implemented using branches loop constructs and may involve
-   recursions (in fact only the fixed repeat is non-recursive!).  Hence complex repeats
-   should be avoided when single-character repeats will suffice.
+  Complex repeats are implemented using branch loop constructs and may involve
+  recursions (in fact only the fixed repeat is non-recursive!).  Hence complex repeats
+  should be avoided when single-character repeats will suffice.
 
-   OP_BRANCH and OP_BRANCHREV implement alternatives. For OP_BRANCH, first the inline
-   code immediately following the offset is executed; if the inline code fails, OP_BRANCH
-   takes a jump to the new location and tries the alternative.
+  OP_BRANCH and OP_BRANCHREV implement alternatives. For OP_BRANCH, first the inline
+  code immediately following the offset is executed; if the inline code fails, OP_BRANCH
+  takes a jump to the new location and tries the alternative.
 
-   For OP_BRANCHREV, it works the opposite way: OP_BRANCHREV takes the alternative
-   first, before trying the inline code.
+  For OP_BRANCHREV, it works the opposite way: OP_BRANCHREV takes the alternative
+  first, before trying the inline code.
 
-   Having both OP_BRANCH and OP_BRANCHREV substantially simplifies the design of
-   complex, greedy or lazy matches:- the greedy and lazy match turn out to have the
-   same code structure, except we're using OP_BRANCHREV for the lazy matches and
-   OP_BRANCH for the greedy ones.
+  Having both OP_BRANCH and OP_BRANCHREV substantially simplifies the design of
+  complex, greedy or lazy matches:- the greedy and lazy match turn out to have the
+  same code structure, except we're using OP_BRANCHREV for the lazy matches and
+  OP_BRANCH for the greedy ones.
 
-   OP_JUMP is an unconditional jump to a new location. OP_JUMPLT and OP_JUMPGT jump
-   when the loop counter is less than or greater than the given value, respectively.
+  OP_JUMP is an unconditional jump to a new location. OP_JUMPLT and OP_JUMPGT jump
+  when the loop counter is less than or greater than the given value, respectively.
 
+
+  Atomic Matching Groups
+  ======================
+
+  For example, trying to match pattern "\d+foo" against subject string "123456bar",
+  the matcher will eat all digits up till "6", and then backtrack by trying digits
+  up till 5, and so on.  A atomic subgroup match will simply fail if the sub-pattern
+  fails to match at the end.  This can be written as: "(?>\d+)foo".  Atomic groups
+  are thus more efficient since no repeated tries are being made.
+
+
+  Greedy, Lazy, and Possessive Matches
+  ====================================
+
+  Greedy: the "a*" in pattern "a*ardvark" matching subject string "aardvark" will match
+  "aa", then backtrack and match "a", after which the match succeeds.
+
+  Lazy: the "a*?" in pattern "a*?ardvark" will first match "", then try match "a" after
+  which the match succeeds.
+
+  Possessive: the "a*+" in pattern "a*+ardvark" will match "aa", then fail without
+  backing off.
+
+  Possessive matches and Atomic matching groups are closely related in terms of
+  controlling the recursion depth of the matcher.
 
 
   Syntax:
   =======
 
+      Special Constructs
+
+      (?i X )   Match sub pattern case insensitive
+      (?I X )   Match sub pattern case sensitive
+      (?n X )   Match sub pattern with newlines
+      (?N X )   Match sub pattern with no newlines
+      (?: X )   Non-capturing parentheses
+      (?= X )   Zero width positive lookahead
+      (?! X )   Zero width negative lookahead
+      (?<= X )  Zero width positive lookbehind
+      (?<! X )  Zero width negative lookbehind
+      (?> X )   Atomic grouping (possessive match)
+
+      Logical Operators
+
+      X Y       X followed by Y
+      X | Y     Either X or Y
+      ( X )     Sub pattern (capturing if REX_CAPTURE)
+
+      Greedy Quantifiers
+
+      X *       Match 0 or more
+      X +       Match 1 or more
+      X ?       Match 0 or 1
+      X {}      Match 0 or more
+      X {n}     Match n times
+      X {,m}    Match no more than m times
+      X {n,}    Match n or more
+      X {n,m}   Match at least n but no more than m times
+
+      Lazy Quantifiers
+
+      X *?      Match 0 or more
+      X +?      Match 1 or more
+      X ??      Match 0 or 1
+      X {}?     Match 0 or more times
+      X {n}?    Match n times
+      X {,m}?   Match no more than m times
+      X {n,}?   Match n or more
+      X {n,m}?  Match at least n but no more than m times
+
+      Possessive (non-backtracking) Quantifiers
+
+      X *+      Match 0 or more
+      X ++      Match 1 or more
+      X ?+      Match 0 or 1
+      X {}+     Match 0 or more times
+      X {n}+    Match n times
+      X {,m}+   Match no more than m times
+      X {n,}+   Match n or more
+      X {n,m}+  Match at least n but no more than m times
+
+      Boundary Matching
       ^         Match begin of line [if at begin of pattern]
       $         Match end of line [if at end of pattern]
+      \<        Begin of word
+      \>        End of word
+      \b        Word boundary
+      \B        Word interior
+      \A        Match only beginning of string
+      \Z        Match only and end of string
+
+      Character Classes
+
+      [abc]     Match a, b, or c
+      [^abc]    Match any but a, b, or c
+      [a-zA-Z]  Match upper- or lower-case a through z
+      []]       Matches ]
+      [-]       Matches -
+
+      Predefined character classes
+
       .         Match any character
-      |         Alternation
-      ( ... )   Grouping sub pattern
-      (?i ... ) Match sub pattern case insensitive
-      (?I ... ) Match sub pattern case sensitive
-      (?n ... ) Match sub pattern with newlines
-      (?N ... ) Match sub pattern with no newlines
-      (?: ... ) Non-capturing parentheses
-      (?= ... ) Zero width positive lookahead
-      (?! ... ) Zero width negative lookahead
-      []        Character class
-
-      *         Match 0 or more [greedy]
-      +         Match 1 or more [greedy]
-      ?         Match 0 or 1 [greedy]
-      {}        Match 0 or more [greedy]
-      {n}       Match n times [greedy]
-      {,m}      Match no more than m times [greedy]
-      {n,}      Match n or more [greedy]
-      {n,m}     Match at least n but no more than m times [greedy]
-
-      *?        Match 0 or more [lazy]
-      +?        Match 1 or more [lazy]
-      ??        Match 0 or 1 [lazy]
-      {}?       Match 0 or more times [lazy]
-      {n}?      Match n times [lazy]
-      {,m}?     Match no more than m times [lazy]
-      {n,}?     Match n or more [lazy]
-      {n,m}?    Match at least n but no more than m times [lazy]
-
-      \a        Alarm, bell
-      \e        Escape character
-      \t        Tab
-      \f        Form feed
-      \n        Newline
-      \r        Return
-      \v        Vertical tab
-      \cx       Control character
-      \033      Octal
-      \x1b      Hex
+      \d        Digit [0-9]
+      \D        Non-digit
+      \s        Space
+      \S        Non-space
       \w        Word character [a-zA-Z_0-9]
       \W        Non-word character
       \l        Letter [a-zA-Z]
       \L        Non-letter
-      \s        Space
-      \S        Non-space
-      \d        Digit [0-9]
-      \D        Non-digit
       \h        Hex digit [0-9a-fA-F]
       \H        Non-hex digit
-      \b        Word boundary
-      \B        Word interior
       \u        Single uppercase character
       \U        Single lowercase character
       \p        Punctuation (not including '_')
       \P        Non punctuation
-      \<        Begin of word
-      \>        End of word
-      \A        Match only beginning of string
-      \Z        Match only and end of string
-      \1 ... \9 Back reference
+
+      Characters
+
+      x           Any character
+      \\          Back slash character
+      \033        Octal
+      \x1b        Hex
+      \u1FD1      Unicode U+1FD1 (GREEK SMALL LETTER IOTA WITH MACRON))
+      \U00010450  Wide unicode U+10450 (SHAVIAN LETTER PEEP)
+      \a          Alarm, bell
+      \e          Escape character
+      \t          Tab
+      \f          Form feed
+      \n          Newline
+      \r          Return
+      \v          Vertical tab
+      \cx         Control character
+
+      Back References
+
+      \1        Reference to 1st capturing group
+      \2        Reference to 2nd capturing group
+      ...
+      \9        Reference to 9th capturing group
+
+      POSIX character classes (US-ASCII only)
+
+      \P{name}    Matches anything BUT what \p{name} matches
+
+      \p{Lower}   A lower-case alphabetic character: [a-z]
+      \p{Upper}   An upper-case alphabetic character: [A-Z]
+      \p{ASCII}   All ASCII: [\x00-\x7F]
+      \p{Alpha}   An alphabetic character:[\p{Lower}\p{Upper}]
+      \p{Digit}   A decimal digit: [0-9]
+      \p{Alnum}   An alphanumeric character: [\p{Alpha}\p{Digit}]
+      \p{Punct}   Punctuation: One of !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+      \p{Graph}   A visible character: [\p{Alnum}\p{Punct}]
+      \p{Print}   A printable character: [\p{Graph}]
+      \p{Blank}   A space or a tab: [ \t]
+      \p{Cntrl}   A control character: [\x00-\x1F\x7F]
+      \p{XDigit}  A hexadecimal digit: [0-9a-fA-F]
+      \p{Space}   A whitespace character: [ \t\n\x0B\f\r]
+
+
+      Unicode general character categories
+
+      \p{C}     Other (Cc | Cf | Cn | Co | Cs)
+      \p{Cc}    Control
+      \p{Cf}    Format
+      \p{Cn}    Unassigned
+      \p{Co}    Private use
+      \p{Cs}    Surrogate
+
+      \p{L}     Letter (Ll | Lm | Lo | Lt | Lu)
+      \p{Ll}    Lower case letter
+      \p{Lm}    Modifier letter
+      \p{Lo}    Other letter
+      \p{Lt}    Title case letter
+      \p{Lu}    Upper case letter
+
+      \p{M}     Mark (Mc | Me | Mn)
+      \p{Mc}    Spacing mark
+      \p{Me }   Enclosing mark
+      \p{Mn}    Non-spacing mark
+
+      \p{N}     Number (Nd | Nl | No)
+      \p{Nd}    Decimal number
+      \p{Nl}    Letter number
+      \p{No}    Other number
+
+      \p{P}     Punctuation (Pc | Pd | Pe | Pf | Pi | Po | Ps)
+      \p{Pc}    Connector punctuation
+      \p{Pd}    Dash punctuation
+      \p{Pe}    Close punctuation
+      \p{Pf}    Final punctuation
+      \p{Pi}    Initial punctuation
+      \p{Po}    Other punctuation
+      \p{Ps}    Open punctuation
+
+      \p{S}     Symbol (Sc | Sk | Sm | So)
+      \p{Sc}    Currency symbol
+      \p{Sk}    Modifier symbol
+      \p{Sm}    Mathematical symbol
+      \p{So}    Other symbol
+
+      \p{Z}     Separator (Zl | Zp | Zs)
+      \p{Zl}    Line separator
+      \p{Zp}    Paragraph separator
+      \p{Zs}    Space separator
+
+
+      Unicode script categories
+
+      \p{Arab}  Arabic
+      \p{Armn}  Armenian
+      \p{Beng}  Bengali
+      \p{Bopo}  Bopomofo
+      \p{Brai}  Braille
+      \p{Bugi}  Buginese
+      \p{Buhd}  Buhid
+      \p{Cans}  Canadian_Aboriginal
+      \p{Cher}  Cherokee
+      \p{Copt}  Coptic (Qaac)
+      \p{Cprt}  Cypriot
+      \p{Cyrl}  Cyrillic
+      \p{Deva}  Devanagari
+      \p{Dsrt}  Deseret
+      \p{Ethi}  Ethiopic
+      \p{Geor}  Georgian
+      \p{Glag}  Glagolitic
+      \p{Goth}  Gothic
+      \p{Grek}  Greek
+      \p{Gujr}  Gujarati
+      \p{Guru}  Gurmukhi
+      \p{Hang}  Hangul
+      \p{Hani}  Han
+      \p{Hano}  Hanunoo
+      \p{Hebr}  Hebrew
+      \p{Hira}  Hiragana
+      \p{Hrkt}  Katakana_Or_Hiragana
+      \p{Ital}  Old_Italic
+      \p{Kana}  Katakana
+      \p{Khar}  Kharoshthi
+      \p{Khmr}  Khmer
+      \p{Knda}  Kannada
+      \p{Laoo}  Lao
+      \p{Latn}  Latin
+      \p{Limb}  Limbu
+      \p{Linb}  Linear_B
+      \p{Mlym}  Malayalam
+      \p{Mong}  Mongolian
+      \p{Mymr}  Myanmar
+      \p{Ogam}  Ogham
+      \p{Orya}  Oriya
+      \p{Osma}  Osmanya
+      \p{Qaai}  Inherited
+      \p{Runr}  Runic
+      \p{Shaw}  Shavian
+      \p{Sinh}  Sinhala
+      \p{Sylo}  Syloti_Nagri
+      \p{Syrc}  Syriac
+      \p{Tagb}  Tagbanwa
+      \p{Tale}  Tai_Le
+      \p{Talu}  New_Tai_Lue
+      \p{Taml}  Tamil
+      \p{Telu}  Telugu
+      \p{Tfng}  Tifinagh
+      \p{Tglg}  Tagalog
+      \p{Thaa}  Thaana
+      \p{Thai}  Thai
+      \p{Tibt}  Tibetan
+      \p{Ugar}  Ugaritic
+      \p{Xpeo}  Old_Persian
+      \p{Yiii}  Yi
+      \p{Zyyy}  Common
 
 
   Grammar:
@@ -244,6 +450,7 @@
     are known NOT to match "".
   - Note the \uXXXX is going to be used for UNICODE perhaps:
     See: http://www.unicode.org/unicode/reports/tr18.
+  - Implement possessive and atomic groups
 */
 
 
@@ -264,13 +471,11 @@
 #define ISIN(set,ch) (set[((FXuchar)(ch))>>5]&(1<<(((FXuchar)(ch))&31)))
 #define CLEAR(set)   (set[0]=set[1]=set[2]=set[3]=set[4]=set[5]=set[6]=set[7]=0)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace {
-
-using namespace FX;
 
 // Opcodes of the engine
 enum {
@@ -316,24 +521,28 @@ enum {
   OP_BRANCHREV     =  39,           // Branch: jump before trying following code
   OP_STAR          =  40,           // Greedy * (simple)
   OP_MIN_STAR      =  41,           // Lazy * (simple)
-  OP_PLUS          =  42,           // Greedy + (simple)
-  OP_MIN_PLUS      =  43,           // Lazy + (simple)
-  OP_QUEST         =  44,           // Greedy ? (simple)
-  OP_MIN_QUEST     =  45,           // Lazy ? (simple)
-  OP_REP           =  46,           // Greedy counted repeat (simple)
-  OP_MIN_REP       =  47,           // Lazy counted repeat (simple)
-  OP_LOOK_NEG      =  48,           // Negative look ahead
-  OP_LOOK_POS      =  49,           // Positive look ahead
-  OP_UPPER         =  50,           // Match upper case
-  OP_LOWER         =  51,           // Match lower case
-  OP_SUB_BEG       =  52,           // Start of substring i
-  OP_SUB_END       =  62,           // End of substring i
-  OP_REF           =  72,           // Back reference to substring i
-  OP_REF_CI        =  82,           // Match substring i case insensitive
-  OP_ZERO          =  92,           // Zero count i
-  OP_INCR          = 102,           // Increment count i
-  OP_JUMPLT        = 112,           // Jump if count i less than value
-  OP_JUMPGT        = 122            // JUmp if count i greater than value
+  OP_POS_STAR      =  42,           // Possessive * (simple)
+  OP_PLUS          =  43,           // Greedy + (simple)
+  OP_MIN_PLUS      =  44,           // Lazy + (simple)
+  OP_POS_PLUS      =  45,           // Possessive + (simple)
+  OP_QUEST         =  46,           // Greedy ? (simple)
+  OP_MIN_QUEST     =  47,           // Lazy ? (simple)
+  OP_POS_QUEST     =  48,           // Possessive ? (simple)
+  OP_REP           =  49,           // Greedy counted repeat (simple)
+  OP_MIN_REP       =  50,           // Lazy counted repeat (simple)
+  OP_POS_REP       =  51,           // Possessive counted repeat (simple)
+  OP_LOOK_NEG      =  52,           // Negative look ahead
+  OP_LOOK_POS      =  53,           // Positive look ahead
+  OP_UPPER         =  54,           // Match upper case
+  OP_LOWER         =  55,           // Match lower case
+  OP_SUB_BEG       =  56,           // Start of substring i
+  OP_SUB_END       =  66,           // End of substring i
+  OP_REF           =  76,           // Back reference to substring i
+  OP_REF_CI        =  86,           // Match substring i case insensitive
+  OP_ZERO          =  96,           // Zero count i
+  OP_INCR          = 106,           // Increment count i
+  OP_JUMPLT        = 116,           // Jump if count i less than value
+  OP_JUMPGT        = 126            // JUmp if count i greater than value
   };
 
 
@@ -358,13 +567,13 @@ struct FXExecute {
   FXint          mode;              // Match mode
 
   // Attempt to match
-  FXbool attempt(const FXchar* string);
+  bool attempt(const FXchar* string);
 
   // Match at current string position
-  FXbool match(const FXint* prog);
+  bool match(const FXint* prog);
 
   // Execute
-  FXbool execute(const FXchar* fm,const FXchar* to);
+  bool execute(const FXchar* fm,const FXchar* to);
   };
 
 
@@ -585,17 +794,26 @@ void dump(FXint *prog){
       case OP_MIN_STAR:
         fxmessage("OP_MIN_STAR\n");
         break;
+      case OP_POS_STAR:
+        fxmessage("OP_POS_STAR\n");
+        break;
       case OP_PLUS:
         fxmessage("OP_PLUS\n");
         break;
       case OP_MIN_PLUS:
         fxmessage("OP_MIN_PLUS\n");
         break;
+      case OP_POS_PLUS:
+        fxmessage("OP_POS_PLUS\n");
+        break;
       case OP_QUEST:
         fxmessage("OP_QUEST\n");
         break;
       case OP_MIN_QUEST:
         fxmessage("OP_MIN_QUEST\n");
+        break;
+      case OP_POS_QUEST:
+        fxmessage("OP_POS_QUEST\n");
         break;
       case OP_REP:
         min=*prog++;
@@ -606,6 +824,11 @@ void dump(FXint *prog){
         min=*prog++;
         max=*prog++;
         fxmessage("OP_MIN_REP   {%d,%d}\n",min,max);
+        break;
+      case OP_POS_REP:
+        min=*prog++;
+        max=*prog++;
+        fxmessage("OP_POS_REP   {%d,%d}\n",min,max);
         break;
       case OP_LOOK_NEG:
         fxmessage("OP_LOOK_NEG  %-10p\n",*prog ? prog+*prog : 0);
@@ -725,17 +948,15 @@ x:fxmessage("end\n");
 
 #endif
 
-
 /*******************************************************************************/
 
 // FXCompile members
 
 // Parse hex escape code
 FXint hex(const FXchar*& pat){
-  register FXint ch,n,c;
-  for(ch=0,n=2; isxdigit((FXuchar)*pat) && n; n--){
-    c=(FXuchar)toupper((FXuchar)*pat++);
-    ch=(ch<<4)+(('A'<=c)?c-'A'+10:c-'0');
+  register FXint ch,n;
+  for(ch=0,n=2; Ascii::isHexDigit(*pat) && n; n--){
+    ch=(ch<<4)+Ascii::digitValue(*pat++);
     }
   return ch;
   }
@@ -744,7 +965,7 @@ FXint hex(const FXchar*& pat){
 // Parse octal escape code
 FXint oct(const FXchar*& pat){
   register FXint ch,n;
-  for(ch=0,n=3; '0'<=((FXuchar)*pat) && ((FXuchar)*pat)<='7' && n; n--){
+  for(ch=0,n=3; '0'<=*pat && *pat<='7' && n; n--){
     ch=(ch<<3)+(*pat++-'0');
     }
   return ch;
@@ -774,8 +995,8 @@ FXRexError FXCompile::verbatim(FXint& flags){
     len=0;
     do{
       ch=*pat++;
-      if(mode&REX_ICASE) ch=tolower((FXuchar)ch);
-      buf[len++]=ch;
+      if(mode&REX_ICASE) ch=Ascii::toLower(ch);
+      buf[len++]=(FXuchar)ch;
       }
     while(*pat!='\0' && len<MAXCHARS);
     if(len==1){
@@ -834,14 +1055,24 @@ FXRexError FXCompile::piece(FXint& flags){
   FXint ch,rep_min,rep_max,lazy,flg,*ptr;
   FXRexError err;
   ptr=pc;
+
+  // Process atom
   err=atom(flg);
+
+  // Error in atom
   if(err!=REGERR_OK) return err;
-  if((ch=*pat)=='*' || ch=='+' || ch=='?' || ch=='{'){    // Followed by repetition
-    if(!(flg&FLG_WIDTH)) return REGERR_NOATOM;            // Repeats may not match empty
+
+  // Followed by repetition
+  if((ch=*pat)=='*' || ch=='+' || ch=='?' || ch=='{'){
+
+    // Repeats may not match empty
+    if(!(flg&FLG_WIDTH)) return REGERR_NOATOM;
+
     pat++;
-    lazy=0;
     rep_min=1;
     rep_max=1;
+
+    // Handle repetition type
     switch(ch){
       case '*':                                           // Repeat 0-INF
         rep_min=0;
@@ -859,7 +1090,7 @@ FXRexError FXCompile::piece(FXint& flags){
         rep_min=0;
         rep_max=ONEINDIG;
         if(*pat!='}'){
-          while(isdigit((FXuchar)*pat)){
+          while(Ascii::isDigit(*pat)){
             rep_min=10*rep_min+(*pat-'0');
             pat++;
             }
@@ -869,7 +1100,7 @@ FXRexError FXCompile::piece(FXint& flags){
             rep_max=ONEINDIG;
             if(*pat!='}'){
               rep_max=0;
-              while(isdigit((FXuchar)*pat)){
+              while(Ascii::isDigit(*pat)){
                 rep_max=10*rep_max+(*pat-'0');
                 pat++;
                 }
@@ -881,9 +1112,23 @@ FXRexError FXCompile::piece(FXint& flags){
         if(*pat!='}') return REGERR_BRACE;                      // Unmatched brace
         pat++;
         break;
+      default:
+        return REGERR_TOKEN;
       }
-    if(*pat=='?'){ pat++; lazy=1; }   // Lazy
-    if(rep_min==0) flg&=~FLG_WIDTH;   // If zero repetitions are allowed, then may have no width
+
+    // Handle greedy, lazy, or possessive forms
+    if(*pat=='?'){      // Lazy
+      lazy=1; pat++;
+      }
+    else if(*pat=='+'){ // Possessive
+      lazy=2; pat++;
+      }
+    else{               // Greedy
+      lazy=0;
+      }
+
+    // If zero repetitions are allowed, then may have no width
+    if(rep_min==0) flg&=~FLG_WIDTH;
 
     // Handle only non-trivial cases
     if(!(rep_min==1 && rep_max==1)){
@@ -906,6 +1151,7 @@ FXRexError FXCompile::piece(FXint& flags){
 
       // For complex repeats we build loop constructs
       else{
+        FXASSERT(lazy!=2);                              // FIXME not yet implemented
         if(rep_min==0 && rep_max==ONEINDIG){
           /*    ________
           **   |        \
@@ -1016,6 +1262,9 @@ FXRexError FXCompile::atom(FXint& flags){
           append(OP_SUCCEED);
           patch(ptr,pc);                          // If trailing context matches (fails), go here!
           flg=FLG_WORST;                          // Look ahead has no width!
+          }
+        else if(ch=='>'){                         // Atomic group
+          // FIXME
           }
         else if(ch=='i' || ch=='I' || ch=='n' || ch=='N'){
           save=mode;                              // Save flags
@@ -1277,7 +1526,7 @@ FXRexError FXCompile::atom(FXint& flags){
                 pat+=2;
                 ch=*pat++;
                 if(ch=='\0') return REGERR_NOATOM;// Unexpected pattern end
-                ch=toupper(ch)-'@';
+                ch=Ascii::toUpper(ch)-'@';
                 break;
               case '0':                           // Octal digit
                 pat+=2;
@@ -1304,10 +1553,10 @@ FXRexError FXCompile::atom(FXint& flags){
           }
 
         // Make lower case?
-        if(mode&REX_ICASE) ch=tolower((FXuchar)ch);
+        if(mode&REX_ICASE) ch=Ascii::toLower(ch);
 
         // Add to buffer
-        buf[len++]=ch;
+        buf[len++]=(FXuchar)ch;
         }
       while(*pat!='\0' && *pat!='*' && *pat!='+' && *pat!='?' && *pat!='{' && len<MAXCHARS);
 
@@ -1338,18 +1587,26 @@ x:    if(1<len && (*pat=='*' || *pat=='+' || *pat=='?' || *pat=='{')){
   }
 
 
-// TRUE if character is a word character
+// True if character is a word character
 inline int isword(int ch){
-  return isalnum((FXuchar)ch) || ch=='_';
+  return Ascii::isAlphaNumeric(ch) || ch=='_';
   }
 
 
-// TRUE if character is punctuation (delimiter) character
+// True if character is punctuation (delimiter) character
 inline int isdelim(int ch){
-  return ispunct(ch) && ch!='_';
+  return Ascii::isPunct(ch) && ch!='_';
   }
 
 
+// The new character class structure:
+//
+//          <N>
+//   ( <lo_1> <hi_1> )
+//   ( <lo_2> <hi_2> )
+//      ...    ...
+//   ( <lo_N> <hi_N> )
+//
 // Parse character class
 FXRexError FXCompile::charset(){
   register FXint first,last,op,i;
@@ -1378,27 +1635,27 @@ in: last=*pat++;
           first=-1;
           continue;
         case 's':
-          for(i=0; i<256; i++){ if(isspace(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(Ascii::isSpace(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'S':
-          for(i=0; i<256; i++){ if(!isspace(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(!Ascii::isSpace(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'd':
-          for(i=0; i<256; i++){ if(isdigit(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(Ascii::isDigit(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'D':
-          for(i=0; i<256; i++){ if(!isdigit(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(!Ascii::isDigit(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'h':
-          for(i=0; i<256; i++){ if(isxdigit(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(Ascii::isHexDigit(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'H':
-          for(i=0; i<256; i++){ if(!isxdigit(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(!Ascii::isHexDigit(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'p':
@@ -1410,19 +1667,19 @@ in: last=*pat++;
           first=-1;
           continue;
         case 'l':
-          for(i=0; i<256; i++){ if(isalpha((FXuchar)i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(Ascii::isLetter(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'L':
-          for(i=0; i<256; i++){ if(!isalpha(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(!Ascii::isLetter(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'u':
-          for(i=0; i<256; i++){ if(isupper(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(Ascii::isUpper(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'U':
-          for(i=0; i<256; i++){ if(islower(i)) INCL(set,i); }
+          for(i=0; i<256; i++){ if(Ascii::isLower(i)) INCL(set,i); }
           first=-1;
           continue;
         case 'a':                             // Bell
@@ -1452,7 +1709,7 @@ in: last=*pat++;
         case 'c':                             // Control character
           last=*pat++;
           if(last=='\0') return REGERR_NOATOM;// Unexpected pattern end
-          last=toupper(last)-'@';
+          last=Ascii::toUpper(last)-'@';
           break;
         case '0':                             // Octal digit
           last=oct(pat);
@@ -1466,8 +1723,8 @@ in: last=*pat++;
       }
     if(first==-1){
       if(mode&REX_ICASE){
-        INCL(set,tolower(last));
-        INCL(set,toupper(last));
+        INCL(set,Ascii::toLower(last));
+        INCL(set,Ascii::toUpper(last));
         }
       else{
         INCL(set,last);
@@ -1481,8 +1738,8 @@ in: last=*pat++;
       if(first>=last) return REGERR_RANGE;    // Bad range
       if(mode&REX_ICASE){
         for(i=first; i<=last; i++){
-          INCL(set,tolower(i));
-          INCL(set,toupper(i));
+          INCL(set,Ascii::toLower(i));
+          INCL(set,Ascii::toUpper(i));
           }
         }
       else{
@@ -1645,7 +1902,7 @@ void FXCompile::patch(FXint *fm,FXint *to){
 // FXExecute members
 
 // The workhorse
-FXbool FXExecute::match(const FXint* prog){
+bool FXExecute::match(const FXint* prog){
   register FXint no,keep,rep_min,rep_max,greed,op;
   register const FXchar *save,*beg,*end;
   register FXchar ch;
@@ -1653,219 +1910,239 @@ FXbool FXExecute::match(const FXint* prog){
     op=*prog++;
     switch(op){
       case OP_END:
-        return TRUE;
+        return true;
       case OP_FAIL:           // Fail (sub) pattern
-        return FALSE;
+        return false;
       case OP_SUCCEED:        // Succeed (sub) pattern
-        return TRUE;
+        return true;
       case OP_JUMP:
         prog+=*prog;
         break;
       case OP_BRANCH:         // Jump after trying following code
         save=str;
-        if(match(prog+1)) return TRUE;
+        if(match(prog+1)) return true;
         str=save;
         prog+=*prog;
         break;
       case OP_BRANCHREV:      // Jump before trying following code
         save=str;
-        if(match(prog+*prog)) return TRUE;
+        if(match(prog+*prog)) return true;
         str=save;
         prog++;
         break;
       case OP_LINE_BEG:       // Must be at begin of line
-        if((str==str_beg && (mode&REX_NOT_BOL)) || (str_beg<str && *(str-1)!='\n')) return FALSE;
+        if((str==str_beg && (mode&REX_NOT_BOL)) || (str_beg<str && *(str-1)!='\n')) return false;
         break;
       case OP_LINE_END:       // Must be at end of line
-        if((str==str_end && (mode&REX_NOT_EOL)) || (str<str_end && *str!='\n')) return FALSE;
+        if((str==str_end && (mode&REX_NOT_EOL)) || (str<str_end && *str!='\n')) return false;
         break;
       case OP_WORD_BEG:       // Must be at begin of word
-        if(str_beg<str && isword((FXuchar) *(str-1))) return FALSE;
-        if(str_end<=str || !isword((FXuchar) *str)) return FALSE;
+        if(str_beg<str && isword((FXuchar) *(str-1))) return false;
+        if(str_end<=str || !isword((FXuchar) *str)) return false;
         break;
       case OP_WORD_END:       // Must be at end of word
-        if(str<str_end && isword((FXuchar) *str)) return FALSE;
-        if(str<=str_beg || !isword((FXuchar) *(str-1))) return FALSE;
+        if(str<str_end && isword((FXuchar) *str)) return false;
+        if(str<=str_beg || !isword((FXuchar) *(str-1))) return false;
         break;
       case OP_WORD_BND:       // Must be at word boundary
-        if(!(((str==str_beg || !isword((FXuchar) *(str-1))) && (str<str_end && isword((FXuchar) *str))) || ((str==str_end || !isword((FXuchar) *str)) && (str_beg<str && isword((FXuchar) *(str-1)))))) return FALSE;
+        if(!(((str==str_beg || !isword((FXuchar) *(str-1))) && (str<str_end && isword((FXuchar) *str))) || ((str==str_end || !isword((FXuchar) *str)) && (str_beg<str && isword((FXuchar) *(str-1)))))) return false;
         break;
       case OP_WORD_INT:       // Must be inside a word
-        if(str==str_beg || !isword((FXuchar) *(str-1))) return FALSE;
-        if(str==str_end || !isword((FXuchar) *str)) return FALSE;
+        if(str==str_beg || !isword((FXuchar) *(str-1))) return false;
+        if(str==str_end || !isword((FXuchar) *str)) return false;
         break;
       case OP_STR_BEG:        // Must be at begin of entire string
-        if(str!=str_beg) return FALSE;
+        if(str!=str_beg) return false;
         break;
       case OP_STR_END:        // Must be at end of entire string
-        if(str!=str_end) return FALSE;
+        if(str!=str_end) return false;
         break;
       case OP_ANY_OF:         // Match a character in a set
-        if(str==str_end || !ISIN(prog,*str)) return FALSE;
+        if(str==str_end || !ISIN(prog,*str)) return false;
         prog+=8;
         str++;
         break;
       case OP_ANY_BUT:        // Match a character NOT in a set
-        if(str==str_end || ISIN(prog,*str)) return FALSE;
+        if(str==str_end || ISIN(prog,*str)) return false;
         prog+=8;
         str++;
         break;
       case OP_CHAR:           // Match single character
-        if(str==str_end || *prog != *str) return FALSE;
+        if(str==str_end || *prog != *str) return false;
         prog++;
         str++;
         break;
       case OP_CHAR_CI:        // Match single character, disregard case
-        if(str==str_end || *prog != tolower((FXuchar)*str)) return FALSE;
+        if(str==str_end || *prog != Ascii::toLower(*str)) return false;
         prog++;
         str++;
         break;
       case OP_CHARS:          // Match a run of 1 or more characters
         no=*prog++;
-        if(str+no>str_end) return FALSE;
+        if(str+no>str_end) return false;
         do{
-          if(*prog++ != (FXuchar)*str++) return FALSE;
+          if(*prog++ != (FXuchar)*str++) return false;
           }
         while(--no);
         break;
       case OP_CHARS_CI:       // Match a run of 1 or more characters, disregard case
         no=*prog++;
-        if(str+no>str_end) return FALSE;
+        if(str+no>str_end) return false;
         do{
-          if(*prog++ != tolower((FXuchar)*str++)) return FALSE;
+          if(*prog++ != Ascii::toLower(*str++)) return false;
           }
         while(--no);
         break;
       case OP_SPACE:          // Match space
-        if(str==str_end || *str=='\n' || !isspace((FXuchar) *str)) return FALSE;
+        if(str==str_end || *str=='\n' || !Ascii::isSpace(*str)) return false;
         str++;
         break;
       case OP_SPACE_NL:       // Match space including newline
-        if(str==str_end || !isspace((FXuchar) *str)) return FALSE;
+        if(str==str_end || !Ascii::isSpace(*str)) return false;
         str++;
         break;
       case OP_NOT_SPACE:      // Match non-space
-        if(str==str_end || isspace((FXuchar) *str)) return FALSE;
+        if(str==str_end || Ascii::isSpace(*str)) return false;
         str++;
         break;
       case OP_DIGIT:          // Match a digit 0..9
-        if(str==str_end || !isdigit((FXuchar) *str)) return FALSE;
+        if(str==str_end || !Ascii::isDigit(*str)) return false;
         str++;
         break;
       case OP_NOT_DIGIT:      // Match a non-digit
-        if(str==str_end || *str=='\n' || isdigit((FXuchar) *str)) return FALSE;
+        if(str==str_end || *str=='\n' || Ascii::isDigit(*str)) return false;
         str++;
         break;
       case OP_NOT_DIGIT_NL:   // Match a non-digit including newline
-        if(str==str_end || isdigit((FXuchar) *str)) return FALSE;
+        if(str==str_end || Ascii::isDigit(*str)) return false;
         str++;
         break;
       case OP_HEX:            // Match a hex digit 0..9A-Fa-f
-        if(str==str_end || !isxdigit((FXuchar) *str)) return FALSE;
+        if(str==str_end || !Ascii::isHexDigit(*str)) return false;
         str++;
         break;
       case OP_NOT_HEX:        // Match a non-hex digit
-        if(str==str_end || *str=='\n' || isxdigit((FXuchar) *str)) return FALSE;
+        if(str==str_end || *str=='\n' || Ascii::isHexDigit(*str)) return false;
         str++;
         break;
       case OP_NOT_HEX_NL:     // Match a non-hex digit including newline
-        if(str==str_end || isxdigit((FXuchar) *str)) return FALSE;
+        if(str==str_end || Ascii::isHexDigit(*str)) return false;
         str++;
         break;
       case OP_PUNCT:          // Match a punctuation
-        if(str==str_end || !isdelim((FXuchar) *str)) return FALSE;
+        if(str==str_end || !isdelim((FXuchar) *str)) return false;
         str++;
         break;
       case OP_NOT_PUNCT:      // Match a non-punctuation
-        if(str==str_end || *str=='\n' || isdelim((FXuchar) *str)) return FALSE;
+        if(str==str_end || *str=='\n' || isdelim((FXuchar) *str)) return false;
         str++;
         break;
       case OP_NOT_PUNCT_NL:   // Match a non-punctuation including newline
-        if(str==str_end || isdelim((FXuchar) *str)) return FALSE;
+        if(str==str_end || isdelim((FXuchar) *str)) return false;
         str++;
         break;
       case OP_LETTER:         // Match a letter a..z, A..Z
-        if(str==str_end || !isalpha((FXuchar) *str)) return FALSE;
+        if(str==str_end || !Ascii::isLetter(*str)) return false;
         str++;
         break;
       case OP_NOT_LETTER:     // Match a non-letter
-        if(str==str_end || *str=='\n' || isalpha((FXuchar) *str)) return FALSE;
+        if(str==str_end || *str=='\n' || Ascii::isLetter(*str)) return false;
         str++;
         break;
       case OP_NOT_LETTER_NL:  // Match a non-letter including newline
-        if(str==str_end || isalpha((FXuchar) *str)) return FALSE;
+        if(str==str_end || Ascii::isLetter(*str)) return false;
         str++;
         break;
       case OP_WORD:           // Match a word character a..z,A..Z,0..9,_
-        if(str==str_end || !isword((FXuchar) *str)) return FALSE;
+        if(str==str_end || !isword((FXuchar) *str)) return false;
         str++;
         break;
       case OP_NOT_WORD:       // Match a non-word character
-        if(str==str_end || *str=='\n' || isword((FXuchar) *str)) return FALSE;
+        if(str==str_end || *str=='\n' || isword((FXuchar) *str)) return false;
         str++;
         break;
       case OP_NOT_WORD_NL:    // Match a non-word character including newline
-        if(str==str_end || isword((FXuchar) *str)) return FALSE;
+        if(str==str_end || isword((FXuchar) *str)) return false;
         str++;
         break;
       case OP_UPPER:          // Match if uppercase
-        if(str==str_end || !isupper((FXuchar) *str)) return FALSE;
+        if(str==str_end || !Ascii::isUpper(*str)) return false;
         str++;
         break;
       case OP_LOWER:          // Match if lowercase
-        if(str==str_end || !islower((FXuchar) *str)) return FALSE;
+        if(str==str_end || !Ascii::isLower(*str)) return false;
         str++;
         break;
       case OP_ANY:            // Match any character
-        if(str==str_end || *str=='\n') return FALSE;
+        if(str==str_end || *str=='\n') return false;
         str++;
         break;
-      case OP_ANY_NL:          // Matches any character including newline
-        if(str==str_end) return FALSE;
+      case OP_ANY_NL:         // Matches any character including newline
+        if(str==str_end) return false;
         str++;
         break;
-      case OP_PLUS:         // Simple repetitions of one character
-        rep_min=1;
-        rep_max=ONEINDIG;
-        greed=1;
-        goto rep;
-      case OP_MIN_PLUS:
+      case OP_MIN_PLUS:       // Lazy one or more repetitions
         rep_min=1;
         rep_max=ONEINDIG;
         greed=0;
         goto rep;
-      case OP_QUEST:
-        rep_min=0;
-        rep_max=1;
+      case OP_POS_PLUS:       // Possessive one or more repetitions
+        rep_min=1;
+        rep_max=ONEINDIG;
+        greed=2;
+        goto rep;
+      case OP_PLUS:           // Greedy one or more repetitions
+        rep_min=1;
+        rep_max=ONEINDIG;
         greed=1;
         goto rep;
-      case OP_MIN_QUEST:
+      case OP_MIN_QUEST:      // Lazy zero or one
         rep_min=0;
         rep_max=1;
         greed=0;
         goto rep;
-      case OP_REP:
-        rep_min=*prog++;
-        rep_max=*prog++;
+      case OP_POS_QUEST:      // Possessive zero or one
+        rep_min=0;
+        rep_max=1;
+        greed=2;
+        goto rep;
+      case OP_QUEST:          // Greedy zero or one
+        rep_min=0;
+        rep_max=1;
         greed=1;
         goto rep;
-      case OP_MIN_REP:
+      case OP_MIN_REP:        // Lazy bounded repeat
         rep_min=*prog++;
         rep_max=*prog++;
         greed=0;
         goto rep;
-      case OP_MIN_STAR:
+      case OP_POS_REP:        // Possessive bounded repeat
+        rep_min=*prog++;
+        rep_max=*prog++;
+        greed=2;
+        goto rep;
+      case OP_REP:            // Greedy bounded repeat
+        rep_min=*prog++;
+        rep_max=*prog++;
+        greed=1;
+        goto rep;
+      case OP_MIN_STAR:       // Lazy zero or more repetitions
         rep_min=0;
         rep_max=ONEINDIG;
         greed=0;
         goto rep;
-      case OP_STAR:         // Star is the most popular so make that the fall-through case...
+      case OP_POS_STAR:       // Possessive zero or more repetitions
+        rep_min=0;
+        rep_max=ONEINDIG;
+        greed=2;
+        goto rep;
+      case OP_STAR:           // Greedy zero or more repetitions
         rep_min=0;
         rep_max=ONEINDIG;
         greed=1;
 
         // We need to match more characters than are available
-rep:    if(str+rep_min>str_end) return FALSE;
+rep:    if(str+rep_min>str_end) return false;
         beg=str;
         end=beg+rep_max;
         if(end>str_end) end=str_end;
@@ -1874,13 +2151,13 @@ rep:    if(str+rep_min>str_end) return FALSE;
         // Find out how much could be matched
         op=*prog++;
         switch(op){
-          case OP_CHAR:
+          case OP_CHAR:         // For UTF8 we should have OP_CHAR2, OP_CHAR3, ... OP_CHAR6, for  possible UTF8 lengths
             ch=*prog++;
             while(save<end && *save==ch) save++;
             break;
           case OP_CHAR_CI:
             ch=*prog++;
-            while(save<end && tolower((FXuchar) *save)==ch && *save!='\n') save++;
+            while(save<end && Ascii::toLower(*save)==ch && *save!='\n') save++;
             break;
           case OP_CHARS:
             ch=*++prog;
@@ -1889,7 +2166,7 @@ rep:    if(str+rep_min>str_end) return FALSE;
             break;
           case OP_CHARS_CI:
             ch=*++prog;
-            while(save<end && tolower((FXuchar) *save)==ch) save++;
+            while(save<end && Ascii::toLower(*save)==ch) save++;
             prog+=3;
             break;
           case OP_ANY_OF:
@@ -1901,31 +2178,31 @@ rep:    if(str+rep_min>str_end) return FALSE;
             prog+=8;
             break;
           case OP_SPACE:
-            while(save<end && *save!='\n' && isspace((FXuchar) *save)) save++;
+            while(save<end && *save!='\n' && Ascii::isSpace(*save)) save++;
             break;
           case OP_SPACE_NL:
-            while(save<end && isspace((FXuchar) *save)) save++;
+            while(save<end && Ascii::isSpace(*save)) save++;
             break;
           case OP_NOT_SPACE:
-            while(save<end && !isspace((FXuchar) *save)) save++;
+            while(save<end && !Ascii::isSpace(*save)) save++;
             break;
           case OP_DIGIT:
-            while(save<end && isdigit((FXuchar) *save)) save++;
+            while(save<end && Ascii::isDigit(*save)) save++;
             break;
           case OP_NOT_DIGIT:
-            while(save<end && *save!='\n' && !isdigit((FXuchar) *save)) save++;
+            while(save<end && *save!='\n' && !Ascii::isDigit(*save)) save++;
             break;
           case OP_NOT_DIGIT_NL:
-            while(save<end && !isdigit((FXuchar) *save)) save++;
+            while(save<end && !Ascii::isDigit(*save)) save++;
             break;
           case OP_HEX:
-            while(save<end && isxdigit((FXuchar) *save)) save++;
+            while(save<end && Ascii::isHexDigit(*save)) save++;
             break;
           case OP_NOT_HEX:
-            while(save<end && *save!='\n' && !isxdigit((FXuchar) *save)) save++;
+            while(save<end && *save!='\n' && !Ascii::isHexDigit(*save)) save++;
             break;
           case OP_NOT_HEX_NL:
-            while(save<end && !isxdigit((FXuchar) *save)) save++;
+            while(save<end && !Ascii::isHexDigit(*save)) save++;
             break;
           case OP_PUNCT:
             while(save<end && isdelim((FXuchar) *save)) save++;
@@ -1937,13 +2214,13 @@ rep:    if(str+rep_min>str_end) return FALSE;
             while(save<end && !isdelim((FXuchar) *save)) save++;
             break;
           case OP_LETTER:
-            while(save<end && isalpha((FXuchar) *save)) save++;
+            while(save<end && Ascii::isLetter(*save)) save++;
             break;
           case OP_NOT_LETTER:
-            while(save<end && *save!='\n' && !isalpha((FXuchar) *save)) save++;
+            while(save<end && *save!='\n' && !Ascii::isLetter(*save)) save++;
             break;
           case OP_NOT_LETTER_NL:
-            while(save<end && !isalpha((FXuchar) *save)) save++;
+            while(save<end && !Ascii::isLetter(*save)) save++;
             break;
           case OP_WORD:
             while(save<end && isword((FXuchar) *save)) save++;
@@ -1955,10 +2232,10 @@ rep:    if(str+rep_min>str_end) return FALSE;
             while(save<end && !isword((FXuchar) *save)) save++;
             break;
           case OP_UPPER:
-            while(save<end && isupper((FXuchar) *save)) save++;
+            while(save<end && Ascii::isUpper(*save)) save++;
             break;
           case OP_LOWER:
-            while(save<end && islower((FXuchar) *save)) save++;
+            while(save<end && Ascii::isLower(*save)) save++;
             break;
           case OP_ANY:
             while(save<end && *save!='\n') save++;
@@ -1972,30 +2249,31 @@ rep:    if(str+rep_min>str_end) return FALSE;
           }
 
         // Matched fewer than the minimum desired so bail out
-        if(save<beg+rep_min) return FALSE;
+        if(save<beg+rep_min) return false;
 
         // We must match between beg and end characters
         beg+=rep_min;
         end=save;
 
-        // Greedily match the most characters
-        if(greed){
-          while(beg<=end){
-            str=end;
-            if(match(prog)) return TRUE;
-            end--;
-            }
+        switch(greed){
+          case 0:                     // Lazily match the fewest characters
+            while(beg<=end){
+              str=beg;
+              if(match(prog)) return true;
+              beg++;
+              }
+            return false;
+          case 1:                     // Greedily match the most characters
+            while(beg<=end){
+              str=end;
+              if(match(prog)) return true;
+              end--;
+              }
+            return false;
+          case 2:                     // Possessive match
+            return match(prog);
           }
-
-        // Lazily match the fewest characters
-        else{
-          while(beg<=end){
-            str=beg;
-            if(match(prog)) return TRUE;
-            beg++;
-            }
-          }
-        return FALSE;
+        return false;
       case OP_SUB_BEG+0:              // Capturing open parentheses
       case OP_SUB_BEG+1:
       case OP_SUB_BEG+2:
@@ -2010,9 +2288,9 @@ rep:    if(str+rep_min>str_end) return FALSE;
         if(no>=npar) break;           // Match w/o capture if array too small
         keep=sub_beg[no];             // Keep old value
         sub_beg[no]=str-str_beg;      // Tentatively set new value
-        if(match(prog)) return TRUE;  // Match the rest
+        if(match(prog)) return true;  // Match the rest
         sub_beg[no]=keep;             // Restore old value
-        return FALSE;
+        return false;
       case OP_SUB_END+0:              // Capturing close parentheses
       case OP_SUB_END+1:
       case OP_SUB_END+2:
@@ -2027,9 +2305,9 @@ rep:    if(str+rep_min>str_end) return FALSE;
         if(no>=npar) break;           // Match w/o capture if array too small
         keep=sub_end[no];
         sub_end[no]=str-str_beg;      // Remember capture end for future back reference
-        if(match(prog)) return TRUE;
+        if(match(prog)) return true;
         sub_end[no]=keep;             // Restore old value
-        return FALSE;
+        return false;
       case OP_REF+0:                  // Back reference to capturing parentheses
       case OP_REF+1:
       case OP_REF+2:
@@ -2041,15 +2319,15 @@ rep:    if(str+rep_min>str_end) return FALSE;
       case OP_REF+8:
       case OP_REF+9:
         no=op-OP_REF;
-        if(no>=npar) return FALSE;                    // Arrays were too small
-        if(sub_beg[no]<0) return FALSE;               // Not captured yet
-        if(sub_end[no]<0) return FALSE;               // Not captured yet
+        if(no>=npar) return false;                    // Arrays were too small
+        if(sub_beg[no]<0) return false;               // Not captured yet
+        if(sub_end[no]<0) return false;               // Not captured yet
         beg=str_beg+sub_beg[no];
         end=str_beg+sub_end[no];
         if(beg<end){                                  // Empty capture matches!
-          if(str+(end-beg)>str_end) return FALSE;     // Not enough characters left
+          if(str+(end-beg)>str_end) return false;     // Not enough characters left
           do{
-            if(*beg != *str) return FALSE;            // No match
+            if(*beg != *str) return false;            // No match
             beg++;
             str++;
             }
@@ -2067,15 +2345,15 @@ rep:    if(str+rep_min>str_end) return FALSE;
       case OP_REF_CI+8:
       case OP_REF_CI+9:
         no=op-OP_REF_CI;
-        if(no>=npar) return FALSE;                    // Arrays were too small
-        if(sub_beg[no]<0) return FALSE;               // Not captured yet
-        if(sub_end[no]<0) return FALSE;               // Not captured yet
+        if(no>=npar) return false;                    // Arrays were too small
+        if(sub_beg[no]<0) return false;               // Not captured yet
+        if(sub_end[no]<0) return false;               // Not captured yet
         beg=str_beg+sub_beg[no];
         end=str_beg+sub_end[no];
         if(beg<end){                                  // Empty capture matches!
-          if(str+(end-beg)>str_end) return FALSE;     // Not enough characters left
+          if(str+(end-beg)>str_end) return false;     // Not enough characters left
           do{
-            if(*beg != tolower((FXuchar)*str)) return FALSE;            // No match
+            if(*beg != Ascii::toLower(*str)) return false;            // No match
             beg++;
             str++;
             }
@@ -2087,7 +2365,7 @@ rep:    if(str+rep_min>str_end) return FALSE;
         save=str;
         keep=match(prog+1);
         str=save;
-        if((op-OP_LOOK_NEG)!=keep) return FALSE;      // Didn't get what we expected
+        if((op-OP_LOOK_NEG)!=keep) return false;      // Didn't get what we expected
         prog=prog+*prog;              // Jump to code after OP_SUCCEED
         break;
       case OP_ZERO+0:                 // Initialize counter for counting repeat
@@ -2149,12 +2427,12 @@ rep:    if(str+rep_min>str_end) return FALSE;
         break;
       }
     }
-  return FALSE;
+  return false;
   }
 
 
 // regtry - try match at specific point; 0 failure, 1 success
-FXbool FXExecute::attempt(const FXchar* string){
+bool FXExecute::attempt(const FXchar* string){
   register FXint i=npar;
   str=string;
   do{--i;sub_beg[i]=sub_end[i]=-1;}while(i);          // Possibly move this to FXExecute::execute?
@@ -2162,15 +2440,15 @@ FXbool FXExecute::attempt(const FXchar* string){
     if(string!=str || !(mode&REX_NOT_EMPTY)){         // Match if non-empty or empty is allowed!
       sub_beg[0]=string-str_beg;
       sub_end[0]=str-str_beg;
-      return TRUE;
+      return true;
       }
     }
-  return FALSE;
+  return false;
   }
 
 
 // Match subject string, returning number of matches found
-FXbool FXExecute::execute(const FXchar* fm,const FXchar* to){
+bool FXExecute::execute(const FXchar* fm,const FXchar* to){
   register FXchar ch;
 
   // Simple case
@@ -2183,31 +2461,31 @@ FXbool FXExecute::execute(const FXchar* fm,const FXchar* to){
       }
     if(code[1]==OP_LINE_BEG){                         // Anchored at BOL
       while(fm<=to){
-        if(((to==str_beg)||(*(to-1)=='\n')) && attempt(to)) return TRUE;
+        if(((to==str_beg)||(*(to-1)=='\n')) && attempt(to)) return true;
         to--;
         }
-      return FALSE;
+      return false;
       }
     if(code[1]==OP_CHAR || code[1]==OP_CHARS){        // Known starting character
       ch=(code[1]==OP_CHAR)?code[2]:code[3];
       if(to==str_end) to--;
       while(fm<=to){
-        if(*to==ch && attempt(to)) return TRUE;
+        if(*to==ch && attempt(to)) return true;
         to--;
         }
-      return FALSE;
+      return false;
       }
     if(code[1]==OP_CHAR_CI || code[1]==OP_CHARS_CI){  // Known starting character, ignoring case
       ch=(code[1]==OP_CHAR_CI)?code[2]:code[3];
       if(to==str_end) to--;
       while(fm<=to){
-        if(tolower((FXuchar)*to)==ch && attempt(to)) return TRUE;
+        if(Ascii::toLower(*to)==ch && attempt(to)) return true;
         to--;
         }
-      return FALSE;
+      return false;
       }
     while(fm<=to){                                    // General case
-      if(attempt(to)) return TRUE;
+      if(attempt(to)) return true;
       to--;
       }
     }
@@ -2219,35 +2497,35 @@ FXbool FXExecute::execute(const FXchar* fm,const FXchar* to){
       }
     if(code[1]==OP_LINE_BEG){                         // Anchored at BOL
       while(fm<=to){
-        if(((fm==str_beg)||(*(fm-1)=='\n')) && attempt(fm)) return TRUE;
+        if(((fm==str_beg)||(*(fm-1)=='\n')) && attempt(fm)) return true;
         fm++;
         }
-      return FALSE;
+      return false;
       }
     if(code[1]==OP_CHAR || code[1]==OP_CHARS){        // Known starting character
       ch=(code[1]==OP_CHAR)?code[2]:code[3];
       if(to==str_end) to--;
       while(fm<=to){
-        if(*fm==ch && attempt(fm)) return TRUE;
+        if(*fm==ch && attempt(fm)) return true;
         fm++;
         }
-      return FALSE;
+      return false;
       }
     if(code[1]==OP_CHAR_CI || code[1]==OP_CHARS_CI){  // Known starting character, ignoring case
       ch=(code[1]==OP_CHAR_CI)?code[2]:code[3];
       if(to==str_end) to--;
       while(fm<=to){
-        if(tolower((FXuchar)*fm)==ch && attempt(fm)) return TRUE;
+        if(Ascii::toLower(*fm)==ch && attempt(fm)) return true;
         fm++;
         }
-      return FALSE;
+      return false;
       }
     while(fm<=to){                                   // General case
-      if(attempt(fm)) return TRUE;
+      if(attempt(fm)) return true;
       fm++;
       }
     }
-  return FALSE;
+  return false;
   }
 
 }
@@ -2388,9 +2666,8 @@ FXRexError FXRex::parse(const FXString& pattern,FXint mode){
 /*******************************************************************************/
 
 
-
 // Match subject string, returning number of matches found
-FXbool FXRex::match(const FXchar* string,FXint len,FXint* beg,FXint* end,FXint mode,FXint npar,FXint fm,FXint to) const {
+bool FXRex::match(const FXchar* string,FXint len,FXint* beg,FXint* end,FXint mode,FXint npar,FXint fm,FXint to) const {
   if(!string || len<0 || npar<1 || NSUBEXP<npar){ fxerror("FXRex::match: bad argument.\n"); }
   if(fm<0) fm=0;
   if(to>len) to=len;
@@ -2409,12 +2686,12 @@ FXbool FXRex::match(const FXchar* string,FXint len,FXint* beg,FXint* end,FXint m
     ms.mode=mode;
     return ms.execute(string+fm,string+to);
     }
-  return FALSE;
+  return false;
   }
 
 
 // Search for match in string
-FXbool FXRex::match(const FXString& string,FXint* beg,FXint* end,FXint mode,FXint npar,FXint fm,FXint to) const {
+bool FXRex::match(const FXString& string,FXint* beg,FXint* end,FXint mode,FXint npar,FXint fm,FXint to) const {
   return match(string.text(),string.length(),beg,end,mode,npar,fm,to);
   }
 
@@ -2448,14 +2725,14 @@ FXString FXRex::substitute(const FXString& string,FXint* beg,FXint* end,const FX
 
 
 // Equality
-FXbool operator==(const FXRex &r1,const FXRex &r2){
-  return r1.code==r2.code || (r1.code[0]==r2.code[0] && memcmp(r1.code,r2.code,sizeof(FXint)*r1.code[0])==0);
+bool FXRex::operator==(const FXRex& rex) const {
+  return code==rex.code || (code[0]==rex.code[0] && memcmp(code,rex.code,sizeof(FXint)*code[0])==0);
   }
 
 
 // Inequality
-FXbool operator!=(const FXRex &r1,const FXRex &r2){
-  return !(r1==r2);
+bool FXRex::operator!=(const FXRex& rex) const {
+  return !operator==(rex);
   }
 
 

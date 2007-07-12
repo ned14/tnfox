@@ -3,7 +3,7 @@
 *                        G L  C o n t e x t   C l a s s                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLContext.cpp,v 1.33 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXGLContext.cpp,v 1.38 2006/01/22 17:58:28 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -27,7 +27,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -66,7 +66,7 @@
 
 //#define DISPLAY(app) ((Display*)((app)->display))
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -111,7 +111,7 @@ void FXGLContext::create(){
       FXTRACE((100,"FXGLContext::create %p\n",this));
 
       // The visual should be OpenGL capable
-      if(!visual->info){ fxerror("FXGLContext::create(): visual unsuitable for OpenGL.\n"); }
+      if(!visual->getInfo()){ fxerror("FXGLContext::create(): visual unsuitable for OpenGL.\n"); }
 
       // Find another member of the group which is already created, and get its context
       if(sgnext!=this){
@@ -126,7 +126,7 @@ void FXGLContext::create(){
 #ifndef WIN32
 
       // Make context
-      ctx=glXCreateContext((Display*)getApp()->getDisplay(),(XVisualInfo*)visual->info,(GLXContext)sharedctx,TRUE);
+      ctx=glXCreateContext((Display*)getApp()->getDisplay(),(XVisualInfo*)visual->getInfo(),(GLXContext)sharedctx,TRUE);
       if(!ctx){ fxerror("FXGLContext::create(): glXCreateContext() failed.\n"); }
 
       xid=1;
@@ -138,14 +138,14 @@ void FXGLContext::create(){
       // afterwards, the window is no longer needed and will be deleted.
       // Yes, I'm painfully aware that this sucks, but we intend to keep the
       // logical model clean come hell or high water....
-      HWND wnd=CreateWindow("FXPopup",NULL,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS|WS_CLIPCHILDREN|WS_POPUP,0,0,2,2,GetDesktopWindow(),0,(HINSTANCE)(getApp()->display),this);
+      HWND wnd=CreateWindow(TEXT("FXPopup"),NULL,WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS|WS_CLIPCHILDREN|WS_POPUP,0,0,2,2,GetDesktopWindow(),0,(HINSTANCE)(getApp()->display),this);
       if(!wnd){ fxerror("FXGLContext::create(): CreateWindow() failed.\n"); }
 
       // Get the window's device context
       HDC hdc=GetDC((HWND)wnd);
 
       // Set the pixel format
-      if(!SetPixelFormat(hdc,visual->pixelformat,(PIXELFORMATDESCRIPTOR*)visual->info)){
+      if(!SetPixelFormat(hdc,(FXint)(FXival)visual->getVisual(),(PIXELFORMATDESCRIPTOR*)visual->getInfo())){
         fxerror("FXGLContext::create(): SetPixelFormat() failed.\n");
         }
 

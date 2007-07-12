@@ -23,9 +23,12 @@
 #include "QFileInfo.h"
 #include "FXException.h"
 #include "FXRollback.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "FXACL.h"
 #include "QTrans.h"
+#include "FXStat.h"
+#include "FXPath.h"
+#include "FXWinLinks.h"
 #ifndef USE_POSIX
 #define USE_WINAPI
 #include "WindowsGubbins.h"
@@ -67,7 +70,7 @@ QFileInfo::QFileInfo(const FXString &path) : p(0)
 	refresh();
 	unconstr.dismiss();
 }
-QFileInfo::QFileInfo(const FXFile &file) : p(0)
+QFileInfo::QFileInfo(const QFile &file) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QFileInfoPrivate(file.name()));
@@ -137,7 +140,7 @@ void QFileInfo::setFile(const FXString &path)
 	p->pathname=path;
 	refresh();
 }
-void QFileInfo::setFile(const FXFile &file)
+void QFileInfo::setFile(const QFile &file)
 {
 	p->pathname=file.name();
 	refresh();
@@ -150,32 +153,32 @@ void QFileInfo::setFile(const QDir &dir, const FXString &leafname)
 bool QFileInfo::exists() const
 {
 	if(p->cached) return p->exists;
-	return FXFile::exists(p->pathname)!=0;
+	return FXStat::exists(p->pathname)!=0;
 }
 void QFileInfo::refresh()
 {
 	if(p->cached)
 	{
-		if((p->exists=FXFile::exists(p->pathname)!=0))
+		if((p->exists=FXStat::readMetadata(p->pathname, &p->flags, &p->size, &p->created, &p->lastModified, &p->lastAccessed, &p->compressedSize, &p->hardLinks)))
 		{
-			p->readable=FXFile::isReadable(p->pathname)!=0;
-			p->writeable=FXFile::isWritable(p->pathname)!=0;
-			p->executable=FXFile::isExecutable(p->pathname)!=0;
-			p->linkedto=FXFile::symlink(p->pathname);
-			FXFile::readMetadata(p->pathname, &p->flags, &p->size, &p->created, &p->lastModified, &p->lastAccessed, &p->compressedSize, &p->hardLinks);
+			if(p->flags & FXStat::IsLink)
+				p->linkedto=FXWinJunctionPoint::read(p->pathname);
 			// We may not be allowed to read the permissions, so
 			// handle failure gracefully
 			try
 			{
-				p->permissions=FXACL(p->pathname, isFile() ? FXACL::File : FXACL::Directory);
+				p->permissions=FXACL(p->pathname, (p->flags & FXStat::IsFile) ? FXACL::File : FXACL::Directory);
 			}
 			catch(FXException &)
 			{	// Give it a null ACL owned by root
-				p->permissions=FXACL(isFile() ? FXACL::File : FXACL::Directory, FXACLEntity::root());
+				p->permissions=FXACL((p->flags & FXStat::IsFile) ? FXACL::File : FXACL::Directory, FXACLEntity::root());
 			}
+			p->readable=p->permissions.check(FXACL::Permissions().setRead());
+			p->writeable=p->permissions.check(FXACL::Permissions().setWrite());
+			p->executable=p->permissions.check(FXACL::Permissions().setExecute());
 			// It's possible that file has been deleted during our metadata
 			// scan, so make very sure
-			if(!(p->exists=FXFile::exists(p->pathname)!=0))
+			if(!(p->exists=FXStat::exists(p->pathname)!=0))
 			{
 				p->readable=p->writeable=p->executable=false;
 				p->linkedto=FXString::nullStr();
@@ -200,15 +203,15 @@ const FXString &QFileInfo::filePath() const
 }
 FXString QFileInfo::fileName() const
 {
-	return FXFile::name(p->pathname);
+	return FXPath::name(p->pathname);
 }
 FXString QFileInfo::absFilePath() const
 {
-	return FXFile::absolute(p->pathname);
+	return FXPath::absolute(p->pathname);
 }
 FXString QFileInfo::baseName(bool complete) const
 {
-	FXString ret=FXFile::name(p->pathname);
+	FXString ret=FXPath::name(p->pathname);
 	FXint dotpos=(complete) ? ret.rfind('.') : ret.find('.');
 	if(-1==dotpos) dotpos=ret.length();
 	else dotpos-=1;
@@ -216,7 +219,7 @@ FXString QFileInfo::baseName(bool complete) const
 }
 FXString QFileInfo::extension(bool complete) const
 {
-	FXString ret=FXFile::name(p->pathname);
+	FXString ret=FXPath::name(p->pathname);
 	FXint dotpos=(complete) ? ret.rfind('.') : ret.find('.');
 	if(-1==dotpos) dotpos=0;
 	else dotpos+=1;
@@ -224,56 +227,56 @@ FXString QFileInfo::extension(bool complete) const
 }
 FXString QFileInfo::dirPath(bool absPath) const
 {
-	return absPath ? FXFile::absolute(FXFile::directory(p->pathname)) : FXFile::directory(p->pathname);
+	return absPath ? FXPath::absolute(FXPath::directory(p->pathname)) : FXPath::directory(p->pathname);
 }
 bool QFileInfo::isReadable() const
 {
-	return p->cached ? p->readable : FXFile::isReadable(p->pathname)!=0;
+	return p->cached ? p->readable : FXStat::isReadable(p->pathname)!=0;
 }
 bool QFileInfo::isWriteable() const
 {
-	return p->cached ? p->writeable : FXFile::isWritable(p->pathname)!=0;
+	return p->cached ? p->writeable : FXStat::isWritable(p->pathname)!=0;
 }
 bool QFileInfo::isExecutable() const
 {
-	return p->cached ? p->executable : FXFile::isExecutable(p->pathname)!=0;
+	return p->cached ? p->executable : FXStat::isExecutable(p->pathname)!=0;
 }
 FXuint QFileInfo::metaFlags() const
 {
-	return p->cached ? p->flags : FXFile::metaFlags(p->pathname);
+	return p->cached ? p->flags : FXStat::metaFlags(p->pathname);
 }
 bool QFileInfo::isHidden() const
 {
-	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsHidden);
+	return !!((p->cached ? p->flags : FXStat::metaFlags(p->pathname)) & FXStat::IsHidden);
 }
 bool QFileInfo::isRelative() const
 {
-	return !FXFile::isAbsolute(p->pathname);
+	return !FXPath::isAbsolute(p->pathname);
 }
 bool QFileInfo::convertToAbs()
 {
 	if(isRelative())
 	{
-		p->pathname=FXFile::absolute(p->pathname);
+		p->pathname=FXPath::absolute(p->pathname);
 		return true;
 	}
 	return false;
 }
 bool QFileInfo::isFile() const
 {
-	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsFile);
+	return !!((p->cached ? p->flags : FXStat::metaFlags(p->pathname)) & FXStat::IsFile);
 }
 bool QFileInfo::isDir() const
 {
-	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsDirectory);
+	return !!((p->cached ? p->flags : FXStat::metaFlags(p->pathname)) & FXStat::IsDirectory);
 }
 bool QFileInfo::isSymLink() const
 {
-	return !!((p->cached ? p->flags : FXFile::metaFlags(p->pathname)) & FXFile::IsLink);
+	return !!((p->cached ? p->flags : FXStat::metaFlags(p->pathname)) & FXStat::IsLink);
 }
 FXString QFileInfo::readLink() const
 {
-	return p->cached ? p->linkedto : FXFile::symlink(p->pathname);
+	return p->cached ? p->linkedto : FXWinJunctionPoint::read(p->pathname);
 }
 const FXACLEntity &QFileInfo::owner() const
 {
@@ -281,12 +284,12 @@ const FXACLEntity &QFileInfo::owner() const
 }
 const FXACL &QFileInfo::permissions() const
 {
-	if(!p->cached) const_cast<QFileInfoPrivate *>(p)->permissions=FXFile::permissions(p->pathname);
+	if(!p->cached) const_cast<QFileInfoPrivate *>(p)->permissions=QFile::permissions(p->pathname);
 	return p->permissions;
 }
 bool QFileInfo::permission(FXACL::Perms what) const
 {
-	if(!p->cached) const_cast<QFileInfoPrivate *>(p)->permissions=FXFile::permissions(p->pathname);
+	if(!p->cached) const_cast<QFileInfoPrivate *>(p)->permissions=QFile::permissions(p->pathname);
 	return p->permissions.check(what);
 }
 FXString QFileInfo::permissionsAsString() const
@@ -295,7 +298,7 @@ FXString QFileInfo::permissionsAsString() const
 }
 FXfval QFileInfo::size() const
 {
-	return p->cached ? p->size : FXFile::size(p->pathname);
+	return p->cached ? p->size : FXStat::size(p->pathname);
 }
 FXString QFileInfo::sizeAsString() const
 {
@@ -303,7 +306,7 @@ FXString QFileInfo::sizeAsString() const
 }
 FXTime QFileInfo::created() const
 {
-	return p->cached ? p->created : FXFile::created(p->pathname);
+	return p->cached ? p->created : FXStat::created(p->pathname);
 }
 FXString QFileInfo::createdAsString(const FXString &format, bool inLocalTime) const
 {
@@ -313,7 +316,7 @@ FXString QFileInfo::createdAsString(const FXString &format, bool inLocalTime) co
 }
 FXTime QFileInfo::lastModified() const
 {
-	return p->cached ? p->lastModified : FXFile::modified(p->pathname);
+	return p->cached ? p->lastModified : FXStat::modified(p->pathname);
 }
 FXString QFileInfo::lastModifiedAsString(const FXString &format, bool inLocalTime) const
 {
@@ -323,7 +326,7 @@ FXString QFileInfo::lastModifiedAsString(const FXString &format, bool inLocalTim
 }
 FXTime QFileInfo::lastRead() const
 {
-	return p->cached ? p->lastAccessed : FXFile::accessed(p->pathname);
+	return p->cached ? p->lastAccessed : FXStat::accessed(p->pathname);
 }
 FXString QFileInfo::lastReadAsString(const FXString &format, bool inLocalTime) const
 {

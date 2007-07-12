@@ -831,7 +831,7 @@ long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 				}
 			}
 		}
-		FXFile oh(htmlpath);
+		QFile oh(htmlpath);
 		FXuint div=100/(items.count()+1);
 		oh.open(IO_WriteOnly);
 		WRTXT("<html>\n<body>\n");

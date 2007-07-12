@@ -3,7 +3,7 @@
 *                             P o i n t    C l a s s                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,17 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPoint.h,v 1.8.2.1 2006/03/21 07:08:29 fox Exp $                            *
+* $Id: FXPoint.h,v 1.13 2006/01/22 17:58:07 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXPOINT_H
 #define FXPOINT_H
 
+#ifndef FXSIZE_H
 #include "FXSize.h"
+#endif
 
 namespace FX {
+
 
 /// Point
 class FXAPI FXPoint {
@@ -41,34 +44,36 @@ public:
   FXPoint(const FXPoint& p):x(p.x),y(p.y){ }
   FXPoint(FXshort xx,FXshort yy):x(xx),y(yy){ }
 
+  /// Test if zero
+  bool operator!() const { return x==0 && y==0; }
+
   /// Equality
-  friend inline FXbool operator==(const FXPoint& p,const FXPoint& q);
-  friend inline FXbool operator!=(const FXPoint& p,const FXPoint& q);
+  bool operator==(const FXPoint& p) const { return x==p.x && y==p.y; }
+  bool operator!=(const FXPoint& p) const { return x!=p.x || y!=p.y; }
 
   /// Assignment
   FXPoint& operator=(const FXPoint& p){ x=p.x; y=p.y; return *this; }
-  FXPoint& operator=(const FXSize& s){ x=s.w; y=s.h; return *this; }
+
+  /// Set value from another point
+  FXPoint& set(const FXPoint& p){ x=p.x; y=p.y; return *this; }
+
+  /// Set value from components
+  FXPoint& set(FXshort xx,FXshort yy){ x=xx; y=yy; return *this; }
 
   /// Assignment operators
   FXPoint& operator+=(const FXPoint& p){ x+=p.x; y+=p.y; return *this; }
-  FXPoint& operator+=(const FXSize& s){ x+=s.w; y+=s.h; return *this; }
   FXPoint& operator-=(const FXPoint& p){ x-=p.x; y-=p.y; return *this; }
-  FXPoint& operator-=(const FXSize& s){ x-=s.w; y-=s.h; return *this; }
   FXPoint& operator*=(FXshort c){ x*=c; y*=c; return *this; }
   FXPoint& operator/=(FXshort c){ x/=c; y/=c; return *this; }
 
   /// Negation
   FXPoint operator-(){ return FXPoint(-x,-y); }
 
-  /// Other operators
-  friend inline FXPoint operator+(const FXPoint& p,const FXPoint& q);
-  friend inline FXPoint operator+(const FXPoint& p,const FXSize& s);
-  friend inline FXPoint operator+(const FXSize& s,const FXPoint& p);
+  /// Addition operators
+  FXPoint operator+(const FXPoint& p) const { return FXPoint(x+p.x,y+p.y); }
+  FXPoint operator-(const FXPoint& p) const { return FXPoint(x-p.x,y-p.y); }
 
-  friend inline FXPoint operator-(const FXPoint& p,const FXPoint& q);
-  friend inline FXPoint operator-(const FXPoint& p,const FXSize& s);
-  friend inline FXPoint operator-(const FXSize& s,const FXPoint& p);
-
+  /// Scale operators
   friend inline FXPoint operator*(const FXPoint& p,FXshort c);
   friend inline FXPoint operator*(FXshort c,const FXPoint& p);
   friend inline FXPoint operator/(const FXPoint& p,FXshort c);
@@ -82,17 +87,6 @@ public:
   };
 
 
-inline FXbool operator==(const FXPoint& p,const FXPoint& q){ return p.x==q.x && p.y==q.y; }
-inline FXbool operator!=(const FXPoint& p,const FXPoint& q){ return p.x!=q.x || p.y!=q.y; }
-
-inline FXPoint operator+(const FXPoint& p,const FXPoint& q){ return FXPoint(p.x+q.x,p.y+q.y); }
-inline FXPoint operator+(const FXPoint& p,const FXSize& s){ return FXPoint(p.x+s.w,p.y+s.h); }
-inline FXPoint operator+(const FXSize& s,const FXPoint& p){ return FXPoint(s.w+p.x,s.h+p.y); }
-
-inline FXPoint operator-(const FXPoint& p,const FXPoint& q){ return FXPoint(p.x-q.x,p.y-q.y); }
-inline FXPoint operator-(const FXPoint& p,const FXSize& s){ return FXPoint(p.x-s.w,p.y-s.h); }
-inline FXPoint operator-(const FXSize& s,const FXPoint& p){ return FXPoint(s.w-p.x,s.h-p.y); }
-
 inline FXPoint operator*(const FXPoint& p,FXshort c){ return FXPoint(p.x*c,p.y*c); }
 inline FXPoint operator*(FXshort c,const FXPoint& p){ return FXPoint(c*p.x,c*p.y); }
 inline FXPoint operator/(const FXPoint& p,FXshort c){ return FXPoint(p.x/c,p.y/c); }
@@ -104,4 +98,3 @@ extern FXAPI FXStream& operator>>(FXStream& store,FXPoint& p);
 }
 
 #endif
-

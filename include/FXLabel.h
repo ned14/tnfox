@@ -3,7 +3,7 @@
 *                            L a b e l   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXLabel.h,v 1.29 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXLabel.h,v 1.31 2006/03/01 02:13:21 fox Exp $                           *
 ********************************************************************************/
 #ifndef FXLABEL_H
 #define FXLABEL_H
@@ -67,14 +67,14 @@ class FXFont;
 class FXAPI FXLabel : public FXFrame {
   FXDECLARE(FXLabel)
 protected:
-  FXString label;
-  FXIcon*  icon;
-  FXFont*  font;
-  FXHotKey hotkey;
-  FXint    hotoff;
-  FXColor  textColor;
-  FXString tip;
-  FXString help;
+  FXString label;       // Text on the label
+  FXIcon*  icon;        // Icon on the label
+  FXFont*  font;        // Label font
+  FXHotKey hotkey;      // Hotkey
+  FXint    hotoff;      // Offset in string
+  FXColor  textColor;   // Text color
+  FXString tip;         // Tooltip
+  FXString help;        // Help message
 protected:
   FXLabel();
   FXint labelHeight(const FXString& text) const;

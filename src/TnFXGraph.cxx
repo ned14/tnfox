@@ -359,7 +359,7 @@ void TnFX2DGraph::int_prepareItems(FXGLViewer *viewer)
 	}
 
 	for(; end<no(); end++)
-		remove(end);
+		erase(end);
 }
 
 

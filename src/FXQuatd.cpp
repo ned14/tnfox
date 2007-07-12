@@ -3,7 +3,7 @@
 *              D o u b l e - P r e c i s i o n  Q u a t e r n i o n             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXQuatd.cpp,v 1.19.2.1 2005/06/22 06:15:59 fox Exp $                         *
+* $Id: FXQuatd.cpp,v 1.28 2006/01/22 17:58:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -34,7 +34,7 @@
 #include "FXMat3d.h"
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -52,6 +52,12 @@ FXQuatd::FXQuatd(FXdouble roll,FXdouble pitch,FXdouble yaw){
   }
 
 
+// Construct quaternion from two unit vectors
+FXQuatd::FXQuatd(const FXVec3d& fr,const FXVec3d& to){
+  arc(fr,to);
+  }
+
+
 // Construct quaternion from axes
 FXQuatd::FXQuatd(const FXVec3d& ex,const FXVec3d& ey,const FXVec3d& ez){
   setAxes(ex,ey,ez);
@@ -64,10 +70,25 @@ FXQuatd::FXQuatd(const FXMat3d& mat){
   }
 
 
+// Adjust quaternion length
+FXQuatd& FXQuatd::adjust(){
+  register FXdouble t=x*x+y*y+z*z+w*w;
+  register FXdouble f;
+  if(t>0.0){
+    f=1.0/sqrt(t);
+    x*=f;
+    y*=f;
+    z*=f;
+    w*=f;
+    }
+  return *this;
+  }
+
+
 // Set axis and angle
 void FXQuatd::setAxisAngle(const FXVec3d& axis,FXdouble phi){
   register FXdouble a=0.5*phi;
-  register FXdouble s=sin(a)/veclen(axis);
+  register FXdouble s=sin(a)/axis.length();
   x=axis.x*s;
   y=axis.y*s;
   z=axis.z*s;
@@ -95,7 +116,7 @@ void FXQuatd::getAxisAngle(FXVec3d& axis,FXdouble& phi) const {
   }
 
 
-// Set quaternion from roll (x), pitch(y) yaw (z)
+// Set quaternion from roll (x), pitch (y), yaw (z)
 void FXQuatd::setRollPitchYaw(FXdouble roll,FXdouble pitch,FXdouble yaw){
   register FXdouble sr,cr,sp,cp,sy,cy;
   register FXdouble rr=0.5*roll;
@@ -111,13 +132,93 @@ void FXQuatd::setRollPitchYaw(FXdouble roll,FXdouble pitch,FXdouble yaw){
   }
 
 
-// Obtain yaw, pitch, and roll
+// Set quaternion from yaw (z), pitch (y), roll (x)
+void FXQuatd::setYawPitchRoll(FXdouble yaw,FXdouble pitch,FXdouble roll){
+  register FXdouble sr,cr,sp,cp,sy,cy;
+  register FXdouble rr=0.5*roll;
+  register FXdouble pp=0.5*pitch;
+  register FXdouble yy=0.5*yaw;
+  sr=sin(rr); cr=cos(rr);
+  sp=sin(pp); cp=cos(pp);
+  sy=sin(yy); cy=cos(yy);
+  x=sr*cp*cy+cr*sp*sy;
+  y=cr*sp*cy-sr*cp*sy;
+  z=cr*cp*sy+sr*sp*cy;
+  w=cr*cp*cy-sr*sp*sy;
+  }
+
+
+// Set quaternion from roll (x), yaw (z), pitch (y)
+void FXQuatd::setRollYawPitch(FXdouble roll,FXdouble yaw,FXdouble pitch){
+  register FXdouble sr,cr,sp,cp,sy,cy;
+  register FXdouble rr=0.5*roll;
+  register FXdouble pp=0.5*pitch;
+  register FXdouble yy=0.5*yaw;
+  sr=sin(rr); cr=cos(rr);
+  sp=sin(pp); cp=cos(pp);
+  sy=sin(yy); cy=cos(yy);
+  x=cp*cy*sr+sp*sy*cr;
+  y=sp*cy*cr+cp*sy*sr;
+  z=cp*sy*cr-sp*cy*sr;
+  w=cp*cy*cr-sp*sy*sr;
+  }
+
+
+// Set quaternion from pitch (y), roll (x),yaw (z)
+void FXQuatd::setPitchRollYaw(FXdouble pitch,FXdouble roll,FXdouble yaw){
+  register FXdouble sr,cr,sp,cp,sy,cy;
+  register FXdouble rr=0.5*roll;
+  register FXdouble pp=0.5*pitch;
+  register FXdouble yy=0.5*yaw;
+  sr=sin(rr); cr=cos(rr);
+  sp=sin(pp); cp=cos(pp);
+  sy=sin(yy); cy=cos(yy);
+  x=cy*sr*cp-sy*cr*sp;
+  y=cy*cr*sp+sy*sr*cp;
+  z=cy*sr*sp+sy*cr*cp;
+  w=cy*cr*cp-sy*sr*sp;
+  }
+
+
+// Set quaternion from pitch (y), yaw (z), roll (x)
+void FXQuatd::setPitchYawRoll(FXdouble pitch,FXdouble yaw,FXdouble roll){
+  register FXdouble sr,cr,sp,cp,sy,cy;
+  register FXdouble rr=0.5*roll;
+  register FXdouble pp=0.5*pitch;
+  register FXdouble yy=0.5*yaw;
+  sr=sin(rr); cr=cos(rr);
+  sp=sin(pp); cp=cos(pp);
+  sy=sin(yy); cy=cos(yy);
+  x=sr*cy*cp-cr*sy*sp;
+  y=cr*cy*sp-sr*sy*cp;
+  z=sr*cy*sp+cr*sy*cp;
+  w=cr*cy*cp+sr*sy*sp;
+  }
+
+
+// Set quaternion from yaw (z), roll (x), pitch (y)
+void FXQuatd::setYawRollPitch(FXdouble yaw,FXdouble roll,FXdouble pitch){
+  register FXdouble sr,cr,sp,cp,sy,cy;
+  register FXdouble rr=0.5*roll;
+  register FXdouble pp=0.5*pitch;
+  register FXdouble yy=0.5*yaw;
+  sr=sin(rr); cr=cos(rr);
+  sp=sin(pp); cp=cos(pp);
+  sy=sin(yy); cy=cos(yy);
+  x=cp*sr*cy+sp*cr*sy;
+  y=sp*cr*cy-cp*sr*sy;
+  z=cp*cr*sy-sp*sr*cy;
+  w=cp*cr*cy+sp*sr*sy;
+  }
+
+
+// Obtain roll, pitch, yaw
 // Math is from "3D Game Engine Design" by David Eberly pp 19-20.
 // However, instead of testing asin(Sy) against -PI/2 and PI/2, I
 // test Sy against -1 and 1; this is numerically more stable, as
 // asin doesn't like arguments outside [-1,1].
 void FXQuatd::getRollPitchYaw(FXdouble& roll,FXdouble& pitch,FXdouble& yaw) const {
-  register FXdouble s=2.0*(w*y-x*z);
+  register FXdouble s=-2.0f*(x*z-w*y);
   if(s<1.0){
     if(-1.0<s){
       roll=atan2(2.0*(y*z+w*x),1.0-2.0*(x*x+y*y));
@@ -125,131 +226,131 @@ void FXQuatd::getRollPitchYaw(FXdouble& roll,FXdouble& pitch,FXdouble& yaw) cons
       yaw=atan2(2.0*(x*y+w*z),1.0-2.0*(y*y+z*z));
       }
     else{
-      roll=-atan2(2.0*(x*y-w*z),1.0-2.0*(x*x+z*z));
+      roll=0.0;
       pitch=-1.57079632679489661923;
-      yaw=0.0;
+      yaw=-atan2(-2.0*(x*y-w*z),2.0*(x*z+w*y));
       }
     }
   else{
-    roll=atan2(2.0*(x*y-w*z),1.0-2.0*(x*x+z*z));
+    roll=0.0;
     pitch=1.57079632679489661923;
-    yaw=0.0;
+    yaw=atan2(-2.0*(x*y-w*z),2.0*(x*z+w*y));
     }
   }
 
 
-FXQuatd& FXQuatd::adjust(){
-  register FXdouble t=x*x+y*y+z*z+w*w;
-  register FXdouble f;
-  if(t>0.0){
-    f=1.0/sqrt(t);
-    x*=f;
-    y*=f;
-    z*=f;
-    w*=f;
-    }
-  return *this;
-  }
-
-
-// Exponentiate unit quaternion
-// Given q = theta*(x*i+y*j+z*k), where length of (x,y,z) is 1,
-// then exp(q) = sin(theta)*(x*i+y*j+z*k)+cos(theta).
-FXQuatd exp(const FXQuatd& q){
-  register FXdouble theta=sqrt(q.x*q.x+q.y*q.y+q.z*q.z);
-  register FXdouble scale;
-  FXQuatd result(q.x,q.y,q.z,cos(theta));
-  if(theta>0.000001){
-    scale=sin(theta)/theta;
-    result.x*=scale;
-    result.y*=scale;
-    result.z*=scale;
-    }
-  return result;
-  }
-
-
-// Take logarithm of unit quaternion
-// Given q = sin(theta)*(x*i+y*j+z*k)+cos(theta), length of (x,y,z) is 1,
-// then log(q) = theta*(x*i+y*j+z*k).
-FXQuatd log(const FXQuatd& q){
-  register FXdouble scale=sqrt(q.x*q.x+q.y*q.y+q.z*q.z);
-  register FXdouble theta=atan2(scale,q.w);
-  FXQuatd result(q.x,q.y,q.z,0.0);
-  if(scale>0.0){
-    scale=theta/scale;
-    result.x*=scale;
-    result.y*=scale;
-    result.z*=scale;
-    }
-  return result;
-  }
-
-
-// Invert quaternion
-FXQuatd invert(const FXQuatd& q){
-  register FXdouble n=q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w;
-  return FXQuatd(-q.x/n,-q.y/n,-q.z/n,q.w/n);
-  }
-
-
-// Invert unit quaternion
-FXQuatd unitinvert(const FXQuatd& q){
-  return FXQuatd(-q.x,-q.y,-q.z,q.w);
-  }
-
-
-// Conjugate quaternion
-FXQuatd conj(const FXQuatd& q){
-  return FXQuatd(-q.x,-q.y,-q.z,q.w);
-  }
-
-
-// Multiply quaternions
-FXQuatd operator*(const FXQuatd& p,const FXQuatd& q){
-  return FXQuatd(p.w*q.x+p.x*q.w+p.y*q.z-p.z*q.y,
-                 p.w*q.y+p.y*q.w+p.z*q.x-p.x*q.z,
-                 p.w*q.z+p.z*q.w+p.x*q.y-p.y*q.x,
-                 p.w*q.w-p.x*q.x-p.y*q.y-p.z*q.z);
-  }
-
-
-// Rotation of a vector by a quaternion; this is defined as q.v.q*
-// where q* is the conjugate of q.
-FXVec3d operator*(const FXQuatd& quat,const FXVec3d& vec){
-  return vec*toMatrix(quat);
-  }
-
-
-// Construct quaternion from arc a->b on unit sphere.
-FXQuatd arc(const FXVec3d& f,const FXVec3d& t){
-  register FXdouble dot,div;
-  dot=f.x*t.x+f.y*t.y+f.z*t.z;
-  FXASSERT(-1.0<=dot && dot<=1.0);
-  div=sqrt((dot+1.0)*2.0);
-  FXASSERT(0.0<div);
-  return FXQuatd((f.y*t.z-f.z*t.y)/div,(f.z*t.x-f.x*t.z)/div,(f.x*t.y-f.y*t.x)/div,div*0.5);
-  }
-
-
-// Spherical lerp
-FXQuatd lerp(const FXQuatd& u,const FXQuatd& v,FXdouble f){
-  register FXdouble alpha,beta,theta,sin_t,cos_t;
-  register FXint flip=0;
-  cos_t = u.x*v.x+u.y*v.y+u.z*v.z+u.w*v.w;
-  if(cos_t<0.0){ cos_t = -cos_t; flip=1; }
-  if((1.0-cos_t)<0.000001){
-    beta = 1.0-f;
-    alpha = f;
+// Obtain yaw, pitch, and roll
+void FXQuatd::getYawPitchRoll(FXdouble& yaw,FXdouble& pitch,FXdouble& roll) const {
+  register FXdouble s=2.0*(x*z+w*y);
+  if(s<1.0){
+    if(-1.0<s){
+      yaw=atan2(-2.0*(x*y-w*z),1.0-2.0*(y*y+z*z));
+      pitch=asin(s);
+      roll=atan2(-2.0*(y*z-w*x),1.0-2.0*(x*x+y*y));
+      }
+    else{
+      yaw=0.0;
+      pitch=-1.57079632679489661923;
+      roll=-atan2(2.0*(x*y+w*z),1.0-2.0*(x*x+z*z));
+      }
     }
   else{
-    theta = acos(cos_t);
-    sin_t = sin(theta);
-    beta = sin(theta-f*theta)/sin_t;
-    alpha = sin(f*theta)/sin_t;
+    yaw=0.0;
+    pitch=1.57079632679489661923;
+    roll=atan2(2.0*(x*y+w*z),1.0-2.0*(x*x+z*z));
     }
-  if(flip) alpha = -alpha;
-  return FXQuatd(beta*u.x+alpha*v.x, beta*u.y+alpha*v.y, beta*u.z+alpha*v.z, beta*u.w+alpha*v.w);
+  }
+
+
+// Obtain roll, yaw, pitch
+void FXQuatd::getRollYawPitch(FXdouble& roll,FXdouble& yaw,FXdouble& pitch) const {
+  register FXdouble s=2.0*(x*y+w*z);
+  if(s<1.0){
+    if(-1.0<s){
+      roll=atan2(-2.0*(y*z-w*x),1.0-2.0*(x*x+z*z));
+      yaw=asin(s);
+      pitch=atan2(-2.0*(x*z-w*y),1.0-2.0*(y*y+z*z));
+      }
+    else{
+      roll=0.0;
+      yaw=-1.57079632679489661923;
+      pitch=-atan2(2.0*(y*z+w*x),1.0-2.0*(x*x+y*y));
+      }
+    }
+  else{
+    roll=0.0;
+    yaw=1.57079632679489661923;
+    pitch=atan2(2.0*(y*z+w*x),1.0-2.0*(x*x+y*y));
+    }
+  }
+
+
+// Obtain pitch, roll, yaw
+void FXQuatd::getPitchRollYaw(FXdouble& pitch,FXdouble& roll,FXdouble& yaw) const {
+  register FXdouble s=2.0*(y*z+w*x);
+  if(s<1.0){
+    if(-1.0<s){
+      pitch=atan2(-2.0*(x*z-w*y),1.0-2.0*(x*x+y*y));
+      roll=asin(s);
+      yaw=atan2(-2.0*(x*y-w*z),1.0-2.0*(x*x+z*z));
+      }
+    else{
+      pitch=0.0;
+      roll=-1.57079632679489661923;
+      yaw=-atan2(2.0*(x*z+w*y),1.0-2.0*(y*y+z*z));
+      }
+    }
+  else{
+    pitch=0.0;
+    roll=1.57079632679489661923;
+    yaw=atan2(2.0*(x*z+w*y),1.0-2.0*(y*y+z*z));
+    }
+  }
+
+
+// Obtain pitch, yaw, roll
+void FXQuatd::getPitchYawRoll(FXdouble& pitch,FXdouble& yaw,FXdouble& roll) const {
+  register FXdouble s=-2.0*(x*y-w*z);
+  if(s<1.0){
+    if(-1.0<s){
+      pitch=atan2(2.0*(x*z+w*y),1.0-2.0*(y*y+z*z));
+      yaw=asin(s);
+      roll=atan2(2.0*(y*z+w*x),1.0-2.0*(x*x+z*z));
+      }
+    else{
+      pitch=0.0;
+      yaw=-1.57079632679489661923;
+      roll=-atan2(-2.0*(x*z-w*y),1.0-2.0*(x*x+y*y));
+      }
+    }
+  else{
+    pitch=0.0;
+    yaw=1.57079632679489661923;
+    roll=atan2(-2.0*(x*z-w*y),1.0-2.0*(x*x+y*y));
+    }
+  }
+
+
+// Obtain yaw, roll, pitch
+void FXQuatd::getYawRollPitch(FXdouble& yaw,FXdouble& roll,FXdouble& pitch) const {
+  register FXdouble s=-2.0*(y*z-w*x);
+  if(s<1.0){
+    if(-1.0<s){
+      yaw=atan2(2.0*(x*y+w*z),1.0-2.0*(x*x+z*z));
+      roll=asin(s);
+      pitch=atan2(2.0*(x*z+w*y),1.0-2.0*(x*x+y*y));
+      }
+    else{
+      yaw=0.0;
+      roll=-1.57079632679489661923;
+      pitch=-atan2(-2.0*(x*y-w*z),1.0-2.0*(y*y+z*z));
+      }
+    }
+  else{
+    yaw=0.0;
+    roll=1.57079632679489661923;
+    pitch=atan2(-2.0*(x*y-w*z),1.0-2.0*(y*y+z*z));
+    }
   }
 
 
@@ -339,15 +440,149 @@ FXVec3d FXQuatd::getZAxis() const {
   }
 
 
-// Convert quaternion to 3x3 matrix
-FXMat3d toMatrix(const FXQuatd& quat){
-  return FXMat3d(quat);
+// Exponentiate unit quaternion
+// Given q = theta*(x*i+y*j+z*k), where length of (x,y,z) is 1,
+// then exp(q) = sin(theta)*(x*i+y*j+z*k)+cos(theta).
+FXQuatd FXQuatd::exp() const {
+  register FXdouble theta=sqrt(x*x+y*y+z*z);
+  register FXdouble scale;
+  FXQuatd result(x,y,z,cos(theta));
+  if(theta>0.000001){
+    scale=sin(theta)/theta;
+    result.x*=scale;
+    result.y*=scale;
+    result.z*=scale;
+    }
+  return result;
   }
 
 
-// Convert 3x3 matrix to quaternion
-FXQuatd fromMatrix(const FXMat3d& mat){
-  return FXQuatd(mat[0],mat[1],mat[2]);
+// Take logarithm of unit quaternion
+// Given q = sin(theta)*(x*i+y*j+z*k)+cos(theta), length of (x,y,z) is 1,
+// then log(q) = theta*(x*i+y*j+z*k).
+FXQuatd FXQuatd::log() const {
+  register FXdouble scale=sqrt(x*x+y*y+z*z);
+  register FXdouble theta=atan2(scale,w);
+  FXQuatd result(x,y,z,0.0);
+  if(scale>0.0){
+    scale=theta/scale;
+    result.x*=scale;
+    result.y*=scale;
+    result.z*=scale;
+    }
+  return result;
+  }
+
+
+// Invert quaternion
+FXQuatd FXQuatd::invert() const {
+  register FXdouble n=x*x+y*y+z*z+w*w;
+  return FXQuatd(-x/n,-y/n,-z/n,w/n);
+  }
+
+
+// Invert unit quaternion
+FXQuatd FXQuatd::unitinvert() const {
+  return FXQuatd(-x,-y,-z,w);
+  }
+
+
+// Conjugate quaternion
+FXQuatd FXQuatd::conj() const {
+  return FXQuatd(-x,-y,-z,w);
+  }
+
+
+// Construct quaternion from arc a->b on unit sphere.
+//
+// Explanation: a quaternion which rotates by angle theta about unit axis a
+// is specified as:
+//
+//   q = (a * sin(theta/2), cos(theta/2)).
+//
+// Assuming is f and t are unit length, we have:
+//
+//  sin(theta) = | f x t |
+//
+// and
+//
+//  cos(theta) = f . t
+//
+// Using sin(2 * x) = 2 * sin(x) * cos(x), we get:
+//
+//  a * sin(theta/2) = (f x t) * sin(theta/2) / (2 * sin(theta/2) * cos(theta/2))
+//
+//                   = (f x t) / (2 * cos(theta/2))
+//
+// Using cos^2(x)=(1 + cos(2 * x)) / 2, we get:
+//
+//  4 * cos^2(theta/2) = 2 + 2 * cos(theta)
+//
+//                     = 2 + 2 * (f . t)
+// Ergo:
+//
+//  2 * cos(theta/2)   = sqrt(2 + 2 * (f . t))
+//
+FXQuatd& FXQuatd::arc(const FXVec3d& f,const FXVec3d& t){
+  register FXdouble dot=f.x*t.x+f.y*t.y+f.z*t.z,div;
+  if(dot> 0.999999){            // Unit quaternion
+    x= 0.0;
+    y= 0.0;
+    z= 0.0;
+    w= 1.0;
+    }
+  else if(dot<-0.999999){       // 180 quaternion
+    x= 0.0;
+    y= 0.0;
+    z=-1.0;
+    w= 0.0;
+    }
+  else{
+    div=sqrt((dot+1.0)*2.0);
+    x=(f.y*t.z-f.z*t.y)/div;
+    y=(f.z*t.x-f.x*t.z)/div;
+    z=(f.x*t.y-f.y*t.x)/div;
+    w=div*0.5;
+    }
+  return *this;
+  }
+
+
+// Spherical lerp
+FXQuatd& FXQuatd::lerp(const FXQuatd& u,const FXQuatd& v,FXdouble f){
+  register FXdouble alpha,beta,theta,sin_t,cos_t;
+  register FXint flip=0;
+  cos_t = u.x*v.x+u.y*v.y+u.z*v.z+u.w*v.w;
+  if(cos_t<0.0){ cos_t = -cos_t; flip=1; }
+  if((1.0-cos_t)<0.000001){
+    beta = 1.0-f;
+    alpha = f;
+    }
+  else{
+    theta = acos(cos_t);
+    sin_t = sin(theta);
+    beta = sin(theta-f*theta)/sin_t;
+    alpha = sin(f*theta)/sin_t;
+    }
+  if(flip) alpha = -alpha;
+  x=beta*u.x+alpha*v.x;
+  y=beta*u.y+alpha*v.y;
+  z=beta*u.z+alpha*v.z;
+  w=beta*u.w+alpha*v.w;
+  return *this;
+  }
+
+
+// Multiply quaternions
+FXQuatd FXQuatd::operator*(const FXQuatd& q) const {
+  return FXQuatd(w*q.x+x*q.w+y*q.z-z*q.y, w*q.y+y*q.w+z*q.x-x*q.z, w*q.z+z*q.w+x*q.y-y*q.x, w*q.w-x*q.x-y*q.y-z*q.z);
+  }
+
+
+// Rotation of a vector by a quaternion; this is defined as q.v.q*
+// where q* is the conjugate of q.
+FXVec3d FXQuatd::operator*(const FXVec3d& v) const {
+  return v*FXMat3d(*this);
   }
 
 

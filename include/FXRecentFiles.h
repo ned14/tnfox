@@ -3,7 +3,7 @@
 *                     R e c e n t   F i l e s   L i s t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRecentFiles.h,v 1.21 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXRecentFiles.h,v 1.24 2006/01/22 17:58:08 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXRECENTFILES_H
 #define FXRECENTFILES_H
@@ -29,6 +29,9 @@
 #endif
 
 namespace FX {
+
+
+class FXApp;
 
 
 /**
@@ -44,10 +47,11 @@ namespace FX {
 */
 class FXAPI FXRecentFiles : public FXObject {
   FXDECLARE(FXRecentFiles)
-protected:
-  FXString    group;          // MRU File group
+private:
+  FXApp      *app;            // Backlink to application
   FXObject   *target;         // Target object to send message
   FXSelector  message;        // Message to send
+  FXString    group;          // MRU File group
   FXint       maxfiles;       // Maximum number of files to track
 private:
   FXRecentFiles(const FXRecentFiles&);
@@ -70,15 +74,22 @@ public:
     ID_FILE_7,
     ID_FILE_8,
     ID_FILE_9,
-    ID_FILE_10
+    ID_FILE_10,
+    ID_LAST
     };
 public:
 
-  /// Make new Recent Files Group with default groupname
+  /// Make new recent files group, using global application instance
   FXRecentFiles();
 
-  /// Make new Recent Files Group with groupname gp
-  FXRecentFiles(const FXString& gp,FXObject *tgt=NULL,FXSelector sel=0);
+  /// Make new recent files group with default groupname
+  FXRecentFiles(FXApp* a);
+
+  /// Make new recent files group with groupname gp
+  FXRecentFiles(FXApp* a,const FXString& gp,FXObject *tgt=NULL,FXSelector sel=0);
+
+  /// Get application
+  FXApp* getApp() const { return app; }
 
   /// Change number of files we're tracking
   void setMaxFiles(FXint mx){ maxfiles=mx; }
@@ -132,4 +143,3 @@ public:
 }
 
 #endif
-

@@ -3,7 +3,7 @@
 *                      U T F - 1 6  T e x t   C o d e c                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Lyle Johnson.   All Rights Reserved.               *
+* Copyright (C) 2002,2006 by L.Johnson & J.van der Zijp.  All Rights Reserved.  *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXUTF16Codec.h,v 1.4 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXUTF16Codec.h,v 1.10 2006/01/22 17:58:12 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXUTF16CODEC_H
 #define FXUTF16CODEC_H
@@ -29,58 +29,53 @@
 #endif
 
 
-//////////////////////////////  UNDER DEVELOPMENT  //////////////////////////////
-
-
 namespace FX {
 
-/**
- * Codec for UTF-16
- */
-class FXUTF16Codec : public FXTextCodec {
+/// Codec for UTF-16BE
+class FXAPI FXUTF16BECodec : public FXTextCodec {
+  FXDECLARE(FXUTF16BECodec)
 public:
-
-  /// Constructor
-  FXUTF16Codec(){}
-
-  /**
-   * Convert a sequence of wide characters from Unicode to UTF-16.
-   * Reads at most n wide characters from src and writes at most m
-   * bytes into dest. Returns the number of characters actually
-   * written into dest.
-   *
-   * On exit, the src and dest pointers are updated to point to the next
-   * available character (or byte) for reading (writing).
-   */
-  virtual unsigned long fromUnicode(FXuchar*& dest,unsigned long m,const FXwchar*& src,unsigned long n);
-
-  /**
-   * Insert byte-order mark (BOM) into the stream
-   */
-  unsigned long insertBOM(FXuchar*& dest,unsigned long m);
-
-  /**
-   * Convert a sequence of bytes in UTF-16 encoding to a sequence
-   * of wide characters (Unicode). Reads at most n bytes from src and
-   * writes at most m characters into dest. Returns the number of characters
-   * actually read from src.
-   *
-   * On exit, the src and dest pointers are updated to point to the next
-   * available byte (or character) for writing (reading).
-   */
-  virtual unsigned long toUnicode(FXwchar*& dest,unsigned long m,const FXuchar*& src,unsigned long n);
-
-  /**
-  * Return the IANA mime name for this codec.
-  */
+  FXUTF16BECodec(){}
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+  virtual const FXchar* name() const;
   virtual const FXchar* mimeName() const;
-
-  /**
-  * Return the Management Information Base (MIBenum) for the character set.
-  */
   virtual FXint mibEnum() const;
+  virtual const FXchar* const* aliases() const;
+  virtual ~FXUTF16BECodec(){}
+  };
 
-  /// Destructor
+
+/// Codec for UTF-16LE
+class FXAPI FXUTF16LECodec : public FXTextCodec {
+  FXDECLARE(FXUTF16LECodec)
+public:
+  FXUTF16LECodec(){}
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+  virtual const FXchar* name() const;
+  virtual const FXchar* mimeName() const;
+  virtual FXint mibEnum() const;
+  virtual const FXchar* const* aliases() const;
+  virtual ~FXUTF16LECodec(){}
+  };
+
+
+/// Codec for UTF-16
+class FXAPI FXUTF16Codec : public FXTextCodec {
+  FXDECLARE(FXUTF16Codec)
+public:
+  FXUTF16Codec(){}
+  virtual FXint mb2wc(FXwchar& wc,const FXchar* src,FXint nsrc) const;
+  virtual FXint mb2utflen(const FXchar* src,FXint nsrc) const;
+  virtual FXint mb2utf(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const;
+  virtual FXint wc2mb(FXchar* dst,FXint ndst,FXwchar wc) const;
+  virtual FXint utf2mblen(const FXchar* src,FXint nsrc) const;
+  virtual FXint utf2mb(FXchar* dst,FXint ndst,const FXchar* src,FXint nsrc) const;
+  virtual const FXchar* name() const;
+  virtual const FXchar* mimeName() const;
+  virtual FXint mibEnum() const;
+  virtual const FXchar* const* aliases() const;
   virtual ~FXUTF16Codec(){}
   };
 

@@ -3,7 +3,7 @@
 *                          P P M   I n p u t / O u t p u t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2003,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2003,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxppmio.cpp,v 1.10 2005/01/16 16:06:07 fox Exp $                          *
+* $Id: fxppmio.cpp,v 1.13.2.1 2006/08/01 18:04:46 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -36,33 +36,33 @@
   - No support for values greater than 255.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
 
 
-extern FXAPI FXbool fxcheckPPM(FXStream& store);
-extern FXAPI FXbool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height);
-extern FXAPI FXbool fxsavePPM(FXStream& store,const FXColor *data,FXint width,FXint height);
+extern FXAPI bool fxcheckPPM(FXStream& store);
+extern FXAPI bool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxsavePPM(FXStream& store,const FXColor *data,FXint width,FXint height);
 
 
 // Read one integer
 static FXint getint(FXStream& store){
   register FXint num=0;
   FXuchar c;
-  while(!store.atEnd()){
+  while(!store.eof()){
     store >> c;
     if('0'<=c && c<='9') break;
     if(c=='#'){
-      while(!store.atEnd()){
+      while(!store.eof()){
         store >> c;
         if(c=='\n') break;
         }
       }
     }
-  while(!store.atEnd()){
+  while(!store.eof()){
     num=num*10+c-'0';
     store >> c;
     if(c<'0' || c>'9') break;
@@ -72,7 +72,7 @@ static FXint getint(FXStream& store){
 
 
 // Check if stream contains a PPM
-FXbool fxcheckPPM(FXStream& store){
+bool fxcheckPPM(FXStream& store){
   FXuchar signature[2];
   store.load(signature,2);
   store.position(-2,FXFromCurrent);
@@ -81,7 +81,7 @@ FXbool fxcheckPPM(FXStream& store){
 
 
 // Load image from stream
-FXbool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
+bool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   register FXint npixels,i,j,maxvalue=1;
   register FXuchar *pp;
   FXuchar magic,format,byte,r,g,b;
@@ -93,30 +93,30 @@ FXbool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
   // Check magic byte
   store >> magic;
-  if(magic!='P') return FALSE;
+  if(magic!='P') return false;
 
   // Check format
   // "P1" = ascii bitmap, "P2" = ascii greymap, "P3" = ascii pixmap,
   // "P4" = raw bitmap, "P5" = raw greymap, "P6" = raw pixmap
   store >> format;
-  if(format<'1' || format>'6') return FALSE;
+  if(format<'1' || format>'6') return false;
 
   // Get size
   width=getint(store);
   height=getint(store);
-  if(width<1 || height<1) return FALSE;
+  if(width<1 || height<1) return false;
   npixels=width*height;
 
   // Get maximum value
   if(format!='1' && format!='4'){
     maxvalue=getint(store);
-    if(maxvalue<=0 || maxvalue>=256) return FALSE;
+    if(maxvalue<=0 || maxvalue>=256) return false;
     }
 
-  FXTRACE((1,"fxloadPPM: width=%d height=%d type=%c \n",width,height,format));
+  //FXTRACE((1,"fxloadPPM: width=%d height=%d type=%c \n",width,height,format));
 
   // Allocate buffer
-  if(!FXCALLOC(&data,FXColor,npixels)) return FALSE;
+  if(!FXCALLOC(&data,FXColor,npixels)) return false;
 
   // Read it
   pp=(FXuchar*)data;
@@ -195,7 +195,7 @@ FXbool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       break;
     }
 
-  return TRUE;
+  return true;
   }
 
 
@@ -203,13 +203,13 @@ FXbool fxloadPPM(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
 
 // Save a bmp file to a stream
-FXbool fxsavePPM(FXStream& store,const FXColor *data,FXint width,FXint height){
+bool fxsavePPM(FXStream& store,const FXColor *data,FXint width,FXint height){
   register const FXuchar *pp=(const FXuchar*)data;
   register FXint i,j,nsize;
   FXchar size[20];
 
   // Must make sense
-  if(!pp || width<=0 || height<=0) return FALSE;
+  if(!pp || width<=0 || height<=0) return false;
 
   // Save header
   store.save("P6\n",3);
@@ -226,7 +226,7 @@ FXbool fxsavePPM(FXStream& store,const FXColor *data,FXint width,FXint height){
       pp++;
       }
     }
-  return TRUE;
+  return true;
   }
 
 }

@@ -3,7 +3,7 @@
 *                      P r o g r e s s   D i a l o g   B o x                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2001,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXProgressDialog.cpp,v 1.22 2005/01/16 16:06:07 fox Exp $                *
+* $Id: FXProgressDialog.cpp,v 1.26 2006/01/22 17:58:37 fox Exp $                *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -54,7 +54,7 @@
 #define HORZ_PAD 20
 #define VERT_PAD 2
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -85,7 +85,7 @@ FXProgressDialog::FXProgressDialog(){
 // Create progress dialog box
 FXProgressDialog::FXProgressDialog(FXWindow* owner,const FXString& caption,const FXString& label,FXuint opts,FXint x,FXint y,FXint w,FXint h):
   FXDialogBox(owner,caption,opts,x,y,FXMAX(w,300),h,10,10,10,10, 10,10){
-  cancel=new FXButton(this,"&Cancel",NULL,this,ID_CANCEL,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_SIDE_BOTTOM|LAYOUT_CENTER_X,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
+  cancel=new FXButton(this,tr("&Cancel"),NULL,this,ID_CANCEL,BUTTON_INITIAL|BUTTON_DEFAULT|FRAME_RAISED|FRAME_THICK|LAYOUT_SIDE_BOTTOM|LAYOUT_CENTER_X,0,0,0,0,HORZ_PAD,HORZ_PAD,VERT_PAD,VERT_PAD);
   separator=new FXHorizontalSeparator(this,SEPARATOR_GROOVE|LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X);
   FXHorizontalFrame* toppart=new FXHorizontalFrame(this,LAYOUT_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y,0,0,0,0, 0,0,0,0, 10,10);
   progress=new FXProgressBar(toppart,NULL,0,PROGRESSBAR_PERCENTAGE|PROGRESSBAR_DIAL|LAYOUT_CENTER_Y|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT,0,0,64,64,0,0,0,0);

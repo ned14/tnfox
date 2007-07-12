@@ -3,7 +3,7 @@
 *                           T a b  B a r   W i d g e t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTabBar.h,v 1.10 2005/01/16 16:06:06 fox Exp $                           *
+* $Id: FXTabBar.h,v 1.15 2006/01/22 17:58:10 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXTABBAR_H
 #define FXTABBAR_H
@@ -49,11 +49,15 @@ enum {
 * In a the horizontal arrangement, the tab bar can have the tab
 * items on the top or on the bottom.  In the vertical arrangement,
 * the tabs can be on the left or on the right.
+* When one of the tab items is pressed, the tab bar's setCurrent()
+* is called with notify=TRUE.  Thus causes the tab bar to send a
+* SEL_COMMAND message to its target.
 */
 class FXAPI FXTabBar : public FXPacker {
   FXDECLARE(FXTabBar)
 protected:
   FXint current;        // Current tab index
+  FXint shift;          // Shift amount
 protected:
   FXTabBar(){}
 private:
@@ -104,9 +108,9 @@ public:
   virtual void layout();
 
   /**
-  * Change currently active tab item;
-  * this raises the active tab item slightly above the neighboring
-  * tab items.
+  * Change currently active tab item; this raises the active tab item
+  * slightly above the neighboring tab items.  If notify=TRUE then the
+  * tab bar will also send a SEL_COMMAND message to its target.
   */
   virtual void setCurrent(FXint panel,FXbool notify=FALSE);
 
@@ -129,4 +133,3 @@ public:
 }
 
 #endif
-

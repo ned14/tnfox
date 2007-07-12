@@ -3,7 +3,7 @@
 *                          D i c t i o n a r y    C l a s s                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStringDict.cpp,v 1.10 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXStringDict.cpp,v 1.17 2006/02/07 01:17:26 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -35,7 +35,7 @@
 */
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -47,7 +47,32 @@ FXIMPLEMENT(FXStringDict,FXDict,NULL,0)
 
 // Construct string dict
 FXStringDict::FXStringDict(){
-  FXTRACE((100,"FXStringDict::FXStringDict %p\n",this));
+  }
+
+
+// Copy constructor
+FXStringDict::FXStringDict(const FXStringDict& orig):FXDict(orig){
+  register FXint i;
+  for(i=0; i<orig.total; i++){
+    if(0<=dict[i].hash){
+      dict[i].data=createData(orig.dict[i].data);
+      }
+    }
+  }
+
+
+// Assignment operator
+FXStringDict& FXStringDict::operator=(const FXStringDict& orig){
+  register FXint i;
+  if(&orig!=this){
+    FXDict::operator=(orig);
+    for(i=0; i<orig.total; i++){
+      if(0<=orig.dict[i].hash){
+        dict[i].data=createData(orig.dict[i].data);
+        }
+      }
+    }
+  return *this;
   }
 
 
@@ -65,7 +90,6 @@ void FXStringDict::deleteData(void* ptr){
 
 // Destructor
 FXStringDict::~FXStringDict(){
-  FXTRACE((100,"FXStringDict::~FXStringDict %p\n",this));
   clear();
   }
 

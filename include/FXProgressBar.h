@@ -3,7 +3,7 @@
 *                      P r o g r e s s B a r   W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXProgressBar.h,v 1.21 2005/01/16 16:06:06 fox Exp $                     *
+* $Id: FXProgressBar.h,v 1.22 2006/01/22 17:58:07 fox Exp $                     *
 ********************************************************************************/
 #ifndef FXPROGRESSBAR_H
 #define FXPROGRESSBAR_H
@@ -30,7 +30,6 @@
 
 namespace FX {
 
-class FXFont;
 
 /// Progress bar styles
 enum {
@@ -158,4 +157,3 @@ public:
 }
 
 #endif
-

@@ -3,7 +3,7 @@
 *                             I m a g e    O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXImage.cpp,v 1.142 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXImage.cpp,v 1.148.2.1 2006/04/14 01:21:00 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -169,7 +169,7 @@
 #define MAX_MAPSIZE 256
 #endif
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -287,17 +287,16 @@ void FXImage::destroy(){
   }
 
 
-// Scan the image and return FALSE if fully opaque
-FXbool FXImage::hasAlpha() const {
+// Scan the image and return false if fully opaque
+bool FXImage::hasAlpha() const {
   if(data){
     register FXint i=width*height-1;
     do{
-      if(((const FXuchar*)(data+i))[3]<255) return TRUE;
+      if(((const FXuchar*)(data+i))[3]<255) return true;
       }
     while(--i>=0);
-    return FALSE;
     }
-  return MAYBE;
+  return false;
   }
 
 
@@ -306,7 +305,7 @@ FXbool FXImage::hasAlpha() const {
 // Find shift amount
 static inline FXuint findshift(unsigned long mask){
   register FXuint sh=0;
-  while(!(mask&(1<<sh))) sh++;
+  while(!(mask&(1UL<<sh))) sh++;
   return sh;
   }
 
@@ -326,7 +325,7 @@ void FXImage::restore(){
     register FXuint  redshift,greenshift,blueshift;
     register FXPixel redmask,greenmask,bluemask;
     register int size,dd,i;
-    register FXbool shmi=FALSE;
+    register bool shmi=false;
     register XImage *xim=NULL;
     register Visual *vis;
     register FXint x,y;
@@ -376,7 +375,7 @@ void FXImage::restore(){
           if(shminfo.shmid==-1){ xim->data=NULL; XDestroyImage(xim); xim=NULL; shmi=0; }
           if(shmi){
             shminfo.shmaddr=xim->data=(char*)shmat(shminfo.shmid,0,0);
-            shminfo.readOnly=FALSE;
+            shminfo.readOnly=false;
             XShmAttach(DISPLAY(getApp()),&shminfo);
             FXTRACE((150,"RGBPixmap XSHM attached at memory=%p (%d bytes)\n",xim->data,xim->bytes_per_line*xim->height));
             XShmGetImage(DISPLAY(getApp()),xid,xim,0,0,AllPlanes);
@@ -555,7 +554,9 @@ void FXImage::restore(){
       bmi.bmiHeader.biClrImportant=0;
 
       // DIB format pads to multiples of 4 bytes...
-      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXImageException("unable to restore image"); }
+//      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXImageException("unable to restore image"); }
+      pixels=(FXuchar*)VirtualAlloc(0,bytes_per_line*height,MEM_COMMIT,PAGE_READWRITE);
+      if(!pixels){ throw FXMemoryException("unable to restore image"); }
 
       // Make device context
       hdcmem=::CreateCompatibleDC(NULL);
@@ -575,7 +576,8 @@ void FXImage::restore(){
           }
         pix+=skip;
         }
-      FXFREE(&pixels);
+//      FXFREE(&pixels);
+      VirtualFree(pixels,0,MEM_RELEASE);
       ::DeleteDC(hdcmem);
       }
     }
@@ -583,143 +585,6 @@ void FXImage::restore(){
 
 
 #endif
-
-/*
-// BitmapToDIB()
-//
-// Parameters:
-//
-// HBITMAP hBitmap  - specifies the bitmap to convert
-//
-// HPALETTE hPal    - specifies the palette to use with the bitmap
-//
-// Return Value:
-//
-// HDIB             - identifies the device-dependent bitmap
-//
-// Description:
-//
-// This function creates a DIB from a bitmap using the specified palette.
-HDIB BitmapToDIB(HBITMAP hBitmap, HPALETTE hPal){
-  BITMAP              bm;         // bitmap structure
-  BITMAPINFOHEADER    bi;         // bitmap header
-  LPBITMAPINFOHEADER  lpbi;       // pointer to BITMAPINFOHEADER
-  DWORD               dwLen;      // size of memory block
-  HANDLE              hDIB, h;    // handle to DIB, temp handle
-  HDC                 hDC;        // handle to DC
-  WORD                biBits;     // bits per pixel
-
-  // Check if bitmap handle is valid
-  if(!hBitmap) return NULL;
-
-  // Fill in BITMAP structure, return NULL if it didn't work
-  if(!GetObject(hBitmap,sizeof(bm),(LPSTR)&bm)) return NULL;
-
-  // If no palette is specified, use default palette
-  if(hPal==NULL) hPal=GetStockObject(DEFAULT_PALETTE);
-
-  // Calculate bits per pixel
-  biBits=bm.bmPlanes*bm.bmBitsPixel;
-
-  // make sure bits per pixel is valid
-  if (biBits <= 1) biBits = 1;
-  else if (biBits <= 4) biBits = 4;
-  else if (biBits <= 8) biBits = 8;
-  else biBits = 24;                           // If greater than 8-bit, force to 24-bit
-
-  // Initialize BITMAPINFOHEADER
-  bi.biSize = sizeof(BITMAPINFOHEADER);
-  bi.biWidth = bm.bmWidth;
-  bi.biHeight = bm.bmHeight;
-  bi.biPlanes = 1;
-  bi.biBitCount = biBits;
-  bi.biCompression = BI_RGB;
-  bi.biSizeImage = 0;
-  bi.biXPelsPerMeter = 0;
-  bi.biYPelsPerMeter = 0;
-  bi.biClrUsed = 0;
-  bi.biClrImportant = 0;
-
-  // Calculate size of memory block required to store BITMAPINFO
-  dwLen=bi.biSize+PaletteSize((LPSTR)&bi);
-
-  // Get a DC
-  hDC=GetDC(NULL);
-
-  // Select and realize our palette
-  hPal=SelectPalette(hDC,hPal,FALSE);
-  RealizePalette(hDC);
-
-  // Alloc memory block to store our bitmap
-  hDIB=GlobalAlloc(GHND,dwLen);
-
-  // If we couldn't get memory block
-  if(!hDIB){                    // Clean up and return NULL
-    SelectPalette(hDC, hPal, TRUE);
-    RealizePalette(hDC);
-    ReleaseDC(NULL, hDC);
-    return NULL;
-    }
-
-  // Lock memory and get pointer to it
-  lpbi=(LPBITMAPINFOHEADER)GlobalLock(hDIB);
-
-  // Use our bitmap info to fill BITMAPINFOHEADER
-  *lpbi=bi;
-
-  // Call GetDIBits with a NULL lpBits param, so it will calculate the biSizeImage field for us
-  GetDIBits(hDC,hBitmap,0,(UINT)bi.biHeight,NULL,(LPBITMAPINFO)lpbi,DIB_RGB_COLORS);
-
-  // Get the info returned by GetDIBits and unlock memory block
-  bi=*lpbi;
-  GlobalUnlock(hDIB);
-
-  // If the driver did not fill in the biSizeImage field, make one up
-  if(bi.biSizeImage==0) bi.biSizeImage=WIDTHBYTES((DWORD)bm.bmWidth*biBits)*bm.bmHeight;
-
-  // Realloc the buffer big enough to hold all the bits
-  dwLen=bi.biSize+PaletteSize((LPSTR)&bi)+bi.biSizeImage;
-  if(h=GlobalReAlloc(hDIB,dwLen,0)){
-    hDIB=h;
-    }
-  else{
-    // Clean up and return NULL
-    GlobalFree(hDIB);
-    hDIB=NULL;
-    SelectPalette(hDC,hPal,TRUE);
-    RealizePalette(hDC);
-    ReleaseDC(NULL,hDC);
-    return NULL;
-    }
-
-  // Lock memory block and get pointer to it
-  lpbi=(LPBITMAPINFOHEADER)GlobalLock(hDIB);
-
-  // Call GetDIBits with a NON-NULL lpBits param, and actualy get the bits this time
-  if(GetDIBits(hDC,hBitmap,0,(UINT)bi.biHeight,(LPSTR)lpbi+(WORD)lpbi->biSize+PaletteSize((LPSTR)lpbi),(LPBITMAPINFO)lpbi,DIB_RGB_COLORS)==0){
-    // Clean up and return NULL
-    GlobalUnlock(hDIB);
-    hDIB=NULL;
-    SelectPalette(hDC,hPal,TRUE);
-    RealizePalette(hDC);
-    ReleaseDC(NULL,hDC);
-    return NULL;
-    }
-
-  bi=*lpbi;
-
-  // Clean up
-  GlobalUnlock(hDIB);
-  SelectPalette(hDC,hPal,TRUE);
-  RealizePalette(hDC);
-  ReleaseDC(NULL,hDC);
-
-  // Return handle to the DIB
-  return hDIB;
-  }
-*/
-
-
 
 
 #ifndef WIN32
@@ -1358,7 +1223,7 @@ void FXImage::render_mono_1_dither(void *xim,FXuchar *img){
 // Render into pixmap
 void FXImage::render(){
   if(xid){
-    register FXbool shmi=FALSE;
+    register bool shmi=false;
     register XImage *xim=NULL;
     register Visual *vis;
     register int dd;
@@ -1398,7 +1263,7 @@ void FXImage::render(){
           if(shminfo.shmid==-1){ xim->data=NULL; XDestroyImage(xim); xim=NULL; shmi=0; }
           if(shmi){
             shminfo.shmaddr=xim->data=(char*)shmat(shminfo.shmid,0,0);
-            shminfo.readOnly=FALSE;
+            shminfo.readOnly=false;
             XShmAttach(DISPLAY(getApp()),&shminfo);
             FXTRACE((150,"RGBPixmap XSHM attached at memory=%p (%d bytes)\n",xim->data,xim->bytes_per_line*xim->height));
             }
@@ -1571,7 +1436,9 @@ void FXImage::render(){
 
       // DIB format pads to multiples of 4 bytes...
       bytes_per_line=(width*3+3)&~3;
-      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXMemoryException("unable to render image"); }
+//      if(!FXMALLOC(&pixels,FXuchar,bytes_per_line*height)){ throw FXMemoryException("unable to render image"); }
+      pixels=(FXuchar*)VirtualAlloc(0,bytes_per_line*height,MEM_COMMIT,PAGE_READWRITE);
+      if(!pixels){ throw FXMemoryException("unable to render image"); }
       skip=-bytes_per_line-width*3;
       src=(FXuchar*)data;
       dst=pixels+height*bytes_per_line+width*3;
@@ -1601,7 +1468,8 @@ void FXImage::render(){
         throw FXImageException("unable to render image");
         }
       GdiFlush();
-      FXFREE(&pixels);
+      VirtualFree(pixels,0,MEM_RELEASE);
+//      FXFREE(&pixels);
       ::DeleteDC(hdcmem);
       }
     }
@@ -1609,60 +1477,7 @@ void FXImage::render(){
 
 #endif
 
-/*
-      // Set up the Windows bitmap header
 
-      BITMAPINFOHEADER bmi;
-      bmi.biSize = sizeof(BITMAPINFOHEADER);    // Size of structure
-      bmi.biWidth = m_Image.columns();          // Bitmaps width in pixels
-      bmi.biHeight = (-1)*m_Image.rows();       // Bitmaps height n pixels
-      bmi.biPlanes = 1;                         // Number of planes in the image
-      bmi.biBitCount = 32;                      // The number of bits per pixel
-      bmi.biCompression = BI_RGB;               // The type of compression used
-      bmi.biSizeImage = 0;                      // The size of the image in bytes
-      bmi.biXPelsPerMeter = 0;                  // Horizontal resolution
-      bmi.biYPelsPerMeter = 0;                  // Veritical resolution
-      bmi.biClrUsed = 0;                        // Number of colors actually used
-      bmi.biClrImportant = 0;                   // Colors most important
-
-      // Extract the pixels from Magick++ image object and convert to a DIB section
-      PixelPacket *pPixels = m_Image.getPixels(0,0,m_Image.columns(),m_Image.rows());
-      RGBQUAD *prgbaDIB = 0;
-      HBITMAP hBitmap = CreateDIBSection(
-         pDC->m_hDC,            // handle to device context
-         (BITMAPINFO *)&bmi,    // pointer to structure containing bitmap size, format, and color data
-         DIB_RGB_COLORS,        // color data type indicator: RGB values or palette indices
-         (void**)&prgbaDIB,     // pointer to variable to receive a pointer to the bitmap's bit values
-         NULL,                  // optional handle to a file mapping object
-         0                      // offset to the bitmap bit values within the file mapping object
-         );
-
-
-      if ( !hBitmap ) return;
-      unsigned long nPixels = m_Image.columns() * m_Image.rows();
-      RGBQUAD *pDestPixel = prgbaDIB;
-#if QuantumDepth == 8
-      // Form of PixelPacket is identical to RGBQUAD when QuantumDepth==8
-      memcpy((void*)pDestPixel,(const void*)pPixels,sizeof(PixelPacket)*nPixels);
-#elif QuantumDepth == 16
-      // Transfer pixels, scaling to Quantum
-      for( unsigned long nPixelCount = nPixels; nPixelCount ; nPixelCount-- )
-        {
-          pDestPixel->rgbRed = ScaleQuantumToChar(pPixels->red);
-          pDestPixel->rgbGreen = ScaleQuantumToChar(pPixels->green);
-          pDestPixel->rgbBlue = ScaleQuantumToChar(pPixels->blue);
-          pDestPixel->rgbReserved = 0;
-          ++pDestPixel;
-          ++pPixels;
-        }
-#endif
-      // Now copy the bitmap to device.
-        HDC     hMemDC = CreateCompatibleDC( pDC->m_hDC );
-        SelectObject( hMemDC, hBitmap );
-        BitBlt( pDC->m_hDC, 0, 0, m_Image.columns(), m_Image.rows(), hMemDC, 0, 0, SRCCOPY );
-        DeleteObject( hMemDC );
-    }
-*/
 /*
     register FXuint r=FXREDVAL(color);
     register FXuint g=FXGREENVAL(color);
@@ -2003,7 +1818,7 @@ void FXImage::scale(FXint w,FXint h,FXint quality){
 
 
 // Mirror image horizontally and/or vertically
-void FXImage::mirror(FXbool horizontal,FXbool vertical){
+void FXImage::mirror(bool horizontal,bool vertical){
   FXTRACE((100,"%s::mirror(%d,%d)\n",getClassName(),horizontal,vertical));
   if(horizontal || vertical){
     if(data){
@@ -2657,21 +2472,21 @@ void FXImage::setOptions(FXuint opts){
 
 
 // Save pixel data only
-FXbool FXImage::savePixels(FXStream& store) const {
+bool FXImage::savePixels(FXStream& store) const {
   FXuint size=width*height;
   store.save(data,size);
-  return TRUE;
+  return true;
   }
 
 
 // Load pixel data only
-FXbool FXImage::loadPixels(FXStream& store){
+bool FXImage::loadPixels(FXStream& store){
   FXuint size=width*height;
   if(options&IMAGE_OWNED){FXFREE(&data);}
-  if(!FXMALLOC(&data,FXColor,size)) return FALSE;
+  if(!FXMALLOC(&data,FXColor,size)) return false;
   store.load(data,size);
   options|=IMAGE_OWNED;
-  return TRUE;
+  return true;
   }
 
 

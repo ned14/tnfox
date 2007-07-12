@@ -3,7 +3,7 @@
 *                   C a n v a s   W i n d o w   O b j e c t                     *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCanvas.cpp,v 1.31 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXCanvas.cpp,v 1.35 2006/01/22 17:58:20 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -36,7 +36,7 @@
 #include "FXApp.h"
 #include "FXCanvas.h"
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -71,7 +71,7 @@ FXCanvas::FXCanvas(FXComposite* p,FXObject* tgt,FXSelector sel,FXuint opts,FXint
 
 
 // It can be focused on
-FXbool FXCanvas::canFocus() const { return TRUE; }
+bool FXCanvas::canFocus() const { return true; }
 
 
 // Canvas is an object drawn by another

@@ -3,7 +3,7 @@
 *                       F o u r - W a y   S p l i t t e r                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FX4Splitter.h,v 1.26 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FX4Splitter.h,v 1.30 2006/02/20 03:32:12 fox Exp $                       *
 ********************************************************************************/
 #ifndef FX4SPLITTER_H
 #define FX4SPLITTER_H
@@ -57,7 +57,6 @@ class FXAPI FX4Splitter : public FXComposite {
 private:
   FXint     splitx;         // Current x split
   FXint     splity;         // Current y split
-  FXint     expanded;       // Panes which are expanded
   FXint     barsize;        // Size of the splitter bar
   FXint     fhor;           // Horizontal split fraction
   FXint     fver;           // Vertical split fraction
@@ -68,7 +67,7 @@ protected:
   FX4Splitter();
   FXuchar getMode(FXint x,FXint y);
   void moveSplit(FXint x,FXint y);
-  void drawSplit(FXint x,FXint y);
+  void drawSplit(FXint x,FXint y,FXuint m);
   void adjustLayout();
 private:
   FX4Splitter(const FX4Splitter&);
@@ -85,11 +84,29 @@ public:
   long onUpdExpand(FXObject*,FXSelector,void*);
 public:
   enum {
-    ID_EXPAND_ALL=FXComposite::ID_LAST,
-    ID_EXPAND_TOPLEFT,
-    ID_EXPAND_TOPRIGHT,
-    ID_EXPAND_BOTTOMLEFT,
-    ID_EXPAND_BOTTOMRIGHT,
+    ExpandNone        = 0,                                  /// None expanded
+    ExpandTopLeft     = 1,                                  /// Expand top left child
+    ExpandTopRight    = 2,                                  /// Expand top right child
+    ExpandBottomLeft  = 4,                                  /// Expand bottom left child
+    ExpandBottomRight = 8,                                  /// Expand bottom right child
+    ExpandTop         = ExpandTopLeft|ExpandTopRight,       /// Expand top children
+    ExpandBottom      = ExpandBottomLeft|ExpandBottomRight, /// Expand bottom children
+    ExpandLeft        = ExpandTopLeft|ExpandBottomLeft,     /// Expand left children
+    ExpandRight       = ExpandTopRight|ExpandBottomRight,   /// Expand right children
+    ExpandAll         = ExpandLeft|ExpandRight              /// Expand all children
+    };
+public:
+  enum {
+    ID_EXPAND_NONE=FXComposite::ID_LAST+ExpandNone,
+    ID_EXPAND_TOP=ID_EXPAND_NONE+ExpandTop,
+    ID_EXPAND_BOTTOM=ID_EXPAND_NONE+ExpandBottom,
+    ID_EXPAND_LEFT=ID_EXPAND_NONE+ExpandLeft,
+    ID_EXPAND_RIGHT=ID_EXPAND_NONE+ExpandRight,
+    ID_EXPAND_TOPLEFT=ID_EXPAND_NONE+ExpandTopLeft,
+    ID_EXPAND_TOPRIGHT=ID_EXPAND_NONE+ExpandTopRight,
+    ID_EXPAND_BOTTOMLEFT=ID_EXPAND_NONE+ExpandBottomLeft,
+    ID_EXPAND_BOTTOMRIGHT=ID_EXPAND_NONE+ExpandBottomRight,
+    ID_EXPAND_ALL=ID_EXPAND_NONE+ExpandAll,
     ID_LAST
     };
 public:
@@ -145,11 +162,11 @@ public:
   /// Get splitter bar width
   FXint getBarSize() const { return barsize; }
 
-  /// Expand child (ex=0..3), or restore to 4-way split (ex=-1)
-  void setExpanded(FXint ex);
+  /// Change set of expanded children
+  void setExpanded(FXuint set=FX4Splitter::ExpandAll);
 
-  /// Get expanded child, or -1 if not expanded
-  FXint getExpanded() const { return expanded; }
+  /// Get set of expanded children
+  FXuint getExpanded() const;
 
   /// Save to stream
   virtual void save(FXStream& store) const;

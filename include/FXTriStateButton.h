@@ -3,7 +3,7 @@
 *               T r i - S t a t e    B u t t o n    W i d g e t                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Charles Warren.   All Rights Reserved.             *
+* Copyright (C) 2002,2006 by Charles Warren.   All Rights Reserved.             *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTriStateButton.h,v 1.5 2005/01/16 16:06:06 fox Exp $                   *
+* $Id: FXTriStateButton.h,v 1.6 2006/01/22 17:58:11 fox Exp $                   *
 ********************************************************************************/
 #ifndef FXTRISTATEBUTTON_H
 #define FXTRISTATEBUTTON_H
@@ -110,4 +110,3 @@ public:
 }
 
 #endif
-

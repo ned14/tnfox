@@ -3,7 +3,7 @@
 *       S i n g l e - P r e c i s i o n   3 - E l e m e n t   V e c t o r       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec3f.cpp,v 1.9 2005/01/16 16:06:07 fox Exp $                          *
+* $Id: FXVec3f.cpp,v 1.15 2006/01/22 17:58:51 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -29,10 +29,12 @@
 #include "FXObject.h"
 #include "FXVec2f.h"
 #include "FXVec3f.h"
+#include "FXVec4f.h"
+#include "FXMat3f.h"
+#include "FXMat4f.h"
 
 
-
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -58,9 +60,9 @@ FXVec3f::operator FXColor() const {
   }
 
 
-FXVec3f vecnormalize(const FXVec3f& a){
-  register FXfloat t=veclen(a);
-  if(t>0.0f){ return FXVec3f(a.x/t,a.y/t,a.z/t); }
+FXVec3f vecnormalize(const FXVec3f& v){
+  register FXfloat t=v.length();
+  if(t>0.0f){ return FXVec3f(v.x/t,v.y/t,v.z/t); }
   return FXVec3f(0.0f,0.0f,0.0f);
   }
 
@@ -74,6 +76,19 @@ FXVec3f vecnormal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c){
 // Compute approximate normal from four points a,b,c,d
 FXVec3f vecnormal(const FXVec3f& a,const FXVec3f& b,const FXVec3f& c,const FXVec3f& d){
   return vecnormalize((c-a)^(d-b));
+  }
+
+
+// Vector times matrix
+FXVec3f FXVec3f::operator*(const FXMat3f& m) const {
+  return FXVec3f(x*m[0][0]+y*m[1][0]+z*m[2][0], x*m[0][1]+y*m[1][1]+z*m[2][1], x*m[0][2]+y*m[1][2]+z*m[2][2]);
+  }
+
+
+// Vector times matrix
+FXVec3f FXVec3f::operator*(const FXMat4f& m) const {
+  FXASSERT(m[0][3]==0.0f && m[1][3]==0.0f && m[2][3]==0.0f && m[3][3]==1.0f);
+  return FXVec3f(x*m[0][0]+y*m[1][0]+z*m[2][0]+m[3][0], x*m[0][1]+y*m[1][1]+z*m[2][1]+m[3][1], x*m[0][2]+y*m[1][2]+z*m[2][2]+m[3][2]);
   }
 
 

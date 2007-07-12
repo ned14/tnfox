@@ -134,7 +134,7 @@ void QHostAddress::setAddress(const FXuchar *ip6addr)
 
 bool QHostAddress::setAddress(const FXString &str)
 {
-	if(3==str.count('.'))
+	if(3==str.contains('.'))
 	{	// IPv4
 		int a,b,c,d;
 		int ret=sscanf(str.text(), "%d.%d.%d.%d", &a,&b,&c,&d);

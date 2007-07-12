@@ -25,7 +25,7 @@
 
 #include "FXSecure.h"
 #include "FXProcess.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include "QMemMap.h"
 #include "QThread.h"
 #include "QTrans.h"
@@ -177,7 +177,7 @@ static RandomnessPrivate *myrandomness;
 class RandomnessPrivate : public QThread, public QMutex
 {
 #ifdef USE_POSIX
-	FXFile random;
+	QFile random;
 #else
 	QMemMap shrdmem;
 	struct SharedMemLayout
@@ -317,7 +317,7 @@ public:
 		QMtxHold h(this);
 #ifdef USE_POSIX
 		random.open(IO_ReadOnly);
-		FXRBOp unopen=FXRBObj(random, &FXFile::close);
+		FXRBOp unopen=FXRBObj(random, &QFile::close);
 		FXERRH(length==random.readBlock((char *) buffer, length), QTrans::tr("FX::Secure::Randomness", "Failed to read /dev/urandom"), FXSECURE_RANDOMNESS_READFAILURE, 0);
 #else
 		FXERRH(length<=RANDOMNESS_SIZE, QTrans::tr("FX::Secure::Randomness", "Too much random data requested"), FXSECURE_RANDOMNESS_TOOBIG, 0);
@@ -342,7 +342,7 @@ public:
 #ifdef USE_POSIX
 		// Can't stat() /dev/random, so must open and seek
 		random.open(IO_ReadOnly);
-		FXRBOp unopen=FXRBObj(random, &FXFile::close);
+		FXRBOp unopen=FXRBObj(random, &QFile::close);
 		char buffer[4096];
 		return random.readBlock(buffer, sizeof(buffer));
 #else

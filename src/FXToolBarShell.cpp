@@ -3,7 +3,7 @@
 *                    T o o l   B a r   S h e l l   W i d g e t                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBarShell.cpp,v 1.12 2005/01/16 16:06:07 fox Exp $                  *
+* $Id: FXToolBarShell.cpp,v 1.16 2006/01/22 17:58:48 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -49,7 +49,7 @@
 
 #define FRAME_MASK        (FRAME_SUNKEN|FRAME_RAISED|FRAME_THICK)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -68,7 +68,7 @@ FXIMPLEMENT(FXToolBarShell,FXTopWindow,FXToolBarShellMap,ARRAYNUMBER(FXToolBarSh
 
 // Make toolbar shell
 FXToolBarShell::FXToolBarShell(FXWindow* owner,FXuint opts,FXint x,FXint y,FXint w,FXint h,FXint hs,FXint vs):
-  FXTopWindow(owner,NULL,NULL,NULL,(opts|DECOR_SHRINKABLE|DECOR_STRETCHABLE)&~(DECOR_TITLE|DECOR_MINIMIZE|DECOR_MAXIMIZE|DECOR_CLOSE|DECOR_BORDER|DECOR_MENU),x,y,w,h,0,0,0,0,hs,vs){
+  FXTopWindow(owner,FXString::null,NULL,NULL,(opts|DECOR_SHRINKABLE|DECOR_STRETCHABLE)&~(DECOR_TITLE|DECOR_MINIMIZE|DECOR_MAXIMIZE|DECOR_CLOSE|DECOR_BORDER|DECOR_MENU),x,y,w,h,0,0,0,0,hs,vs){
   baseColor=getApp()->getBaseColor();
   hiliteColor=getApp()->getHiliteColor();
   shadowColor=getApp()->getShadowColor();

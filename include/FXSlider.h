@@ -3,7 +3,7 @@
 *                           S l i d e r   W i d g e t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSlider.h,v 1.40 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXSlider.h,v 1.44 2006/01/22 17:58:09 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSLIDER_H
 #define FXSLIDER_H
@@ -81,13 +81,15 @@ private:
   FXSlider &operator=(const FXSlider&);
 public:
   long onPaint(FXObject*,FXSelector,void*);
+  long onMotion(FXObject*,FXSelector,void*);
+  long onMouseWheel(FXObject*,FXSelector,void*);
   long onLeftBtnPress(FXObject*,FXSelector,void*);
   long onLeftBtnRelease(FXObject*,FXSelector,void*);
   long onMiddleBtnPress(FXObject*,FXSelector,void*);
   long onMiddleBtnRelease(FXObject*,FXSelector,void*);
-  long onMouseWheel(FXObject*,FXSelector,void*);
+  long onKeyPress(FXObject*,FXSelector,void*);
+  long onKeyRelease(FXObject*,FXSelector,void*);
   long onUngrabbed(FXObject*,FXSelector,void*);
-  long onMotion(FXObject*,FXSelector,void*);
   long onAutoSlide(FXObject*,FXSelector,void*);
   long onCmdSetValue(FXObject*,FXSelector,void*);
   long onCmdSetIntValue(FXObject*,FXSelector,void*);
@@ -120,6 +122,9 @@ public:
   /// Return default height
   virtual FXint getDefaultHeight();
 
+  /// Returns true because a slider can receive focus
+  virtual bool canFocus() const;
+
   /// Perform layout
   virtual void layout();
 
@@ -130,13 +135,13 @@ public:
   virtual void disable();
 
   /// Change slider value
-  void setValue(FXint value);
+  void setValue(FXint value,FXbool notify=FALSE);
 
   /// Return slider value
   FXint getValue() const { return pos; }
 
   /// Change the slider's range
-  void setRange(FXint lo,FXint hi);
+  void setRange(FXint lo,FXint hi,FXbool notify=FALSE);
 
   /// Get the slider's current range
   void getRange(FXint& lo,FXint& hi) const { lo=range[0]; hi=range[1]; }
@@ -202,4 +207,3 @@ public:
 }
 
 #endif
-

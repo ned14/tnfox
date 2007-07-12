@@ -3,7 +3,7 @@
 *         P a r s e   G e o m e t r y   F r o m   C o m m a n d   L i n e       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxparsegeometry.cpp,v 1.5 2005/01/16 16:06:07 fox Exp $                  *
+* $Id: fxparsegeometry.cpp,v 1.6 2006/01/22 17:58:53 fox Exp $                  *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -34,7 +34,7 @@
     overridden.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 

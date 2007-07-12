@@ -3,8 +3,8 @@
 *       P e r s i s t e n t   S t o r a g e   S t r e a m   C l a s s e s       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2004 by Jeroen van der Zijp.   All Rights Reserved.        *
-* TnFOX Extensions (C) 2003 Niall Douglas                                       *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
+* TnFOX Extensions (C) 2003-2006 Niall Douglas                                       *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -20,7 +20,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXStream.h,v 1.37 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXStream.h,v 1.42 2006/01/22 17:58:10 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXSTREAM_H
 #define FXSTREAM_H
@@ -159,8 +159,8 @@ protected:
   FXStreamDirection  dir;       // Direction of current transfer
   FXStreamStatus     code;      // Status code
   FXuint             seq;       // Sequence number
-  FXbool             owns;      // Stream owns buffer
-  FXbool             swap;      // Swap bytes on readin
+  bool               owns;      // Stream owns buffer
+  bool               swap;      // Swap bytes on readin
 
 protected: // TnFOX stuff
   QIODevice         *dev;       // i/o device
@@ -213,6 +213,20 @@ public:
   //! Moves the file pointer backwards by the specified amount of bytes, returning the new file pointer
   FXfval rewind(FXint amount);
 
+protected:
+
+  /**
+  * Write at least count bytes from the buffer;
+  * returns number of bytes available to be written.
+  */
+  virtual FXuval writeBuffer(FXuval count);
+
+  /**
+  * Read at least count bytes into the buffer;
+  * returns number of bytes available to be read.
+  */
+  virtual FXuval readBuffer(FXuval count);
+
 public:
 
   /** \deprecated For FOX compatibility only
@@ -231,19 +245,19 @@ public:
   * If data is not NULL, it is expected to point to an external data buffer
   * of length size; otherwise stream will use an internally managed buffer.
   */
-  FXDEPRECATEDEXT FXbool open(FXStreamDirection save_or_load,unsigned long size=8192,FXuchar* data=NULL);
-
-  /** \deprecated For FOX compatibility only
-
-  Close; return TRUE if OK
-  */
-  virtual FXDEPRECATEDEXT FXbool close();
+  FXDEPRECATEDEXT bool open(FXStreamDirection save_or_load,FXuval size=8192,FXuchar* data=NULL);
 
   /** \deprecated For FOX compatibility only
   
   Flush buffer
   */
-  virtual FXDEPRECATEDEXT FXbool flush();
+  virtual FXDEPRECATEDEXT bool flush();
+
+  /** \deprecated For FOX compatibility only
+
+  Close; return true if OK
+  */
+  virtual bool close();
 
   /** \deprecated For FOX compatibility only
 
@@ -263,8 +277,8 @@ public:
   */
   FXDEPRECATEDEXT FXStreamStatus status() const { return code; }
 
-  /// Return TRUE if at end of file or error
-  FXbool eof() const { return atEnd(); }
+  /// Return true if at end of file or error
+  bool eof() const { return atEnd(); }
 
   /** \deprecated For FOX compatibility only
   
@@ -285,28 +299,30 @@ public:
   FXDEPRECATEDEXT const FXObject* container() const { return parent; }
 
   /// Get position
-  FXfval position() const;
+  FXlong position() const;
 
   /// Move to position relative to head, tail, or current location
-  virtual FXbool position(FXfval offset,FXWhence whence=FXFromStart);
+  virtual bool position(FXlong offset,FXWhence whence=FXFromStart);
 
   /// Change swap bytes flag. -1 sets machine default (ie; do swap on big endian machines)
   void swapBytes(FXint s){ swap=(s<0) ? !FOX_BIGENDIAN : (s!=0); }
 
-  /// Get swap bytes flag
-  FXbool swapBytes() const { return swap; }
+  /**
+  * Get state of the swap bytes flag.
+  */
+  bool swapBytes() const { return swap; }
 
   /**
-  * Set stream to big endian mode if TRUE.  Byte swapping will
+  * Set stream to big endian mode if true.  Byte swapping will
   * be enabled if the machine native byte order is not equal to
   * the desired byte order.
   */
-  void setBigEndian(FXbool big){ swap=(big^FOX_BIGENDIAN); }
+  void setBigEndian(bool big){ swap=(big^FOX_BIGENDIAN); }
 
   /**
-  * Return TRUE if big endian mode.
+  * Return true if big endian mode.
   */
-  FXbool isBigEndian() const { return (swap^FOX_BIGENDIAN); }
+  bool isBigEndian() const { return (swap^FOX_BIGENDIAN); }
 private:
   void int_throwPrematureEOF();
 public:

@@ -3,7 +3,7 @@
 *                        G I F   I n p u t / O u t p u t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: fxgifio.cpp,v 1.72.2.2 2005/12/30 07:21:26 fox Exp $                         *
+* $Id: fxgifio.cpp,v 1.79 2006/01/22 17:58:52 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -52,16 +52,16 @@
 */
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
 namespace FX {
 
 
-extern FXAPI FXbool fxcheckGIF(FXStream& store);
-extern FXAPI FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
-extern FXAPI FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FXbool fast=TRUE);
+extern FXAPI bool fxcheckGIF(FXStream& store);
+extern FXAPI bool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height);
+extern FXAPI bool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,bool fast=true);
 
 
 // Codes found in the GIF specification
@@ -84,7 +84,7 @@ const FXuchar TAG_SUF         = 0x61;   // Version suffix
 
 
 // Check if stream contains a GIF
-FXbool fxcheckGIF(FXStream& store){
+bool fxcheckGIF(FXStream& store){
   FXuchar signature[3];
   store.load(signature,3);
   store.position(-3,FXFromCurrent);
@@ -93,7 +93,7 @@ FXbool fxcheckGIF(FXStream& store){
 
 
 // Load image from stream
-FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
+bool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   const   FXint Yinit[4]={0,4,2,1};
   const   FXint Yinc[4]={8,8,4,2};
   FXint   imwidth,imheight,interlace,ncolors,npixels,maxpixels,i;
@@ -131,7 +131,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   store >> c3;
 
   // Check signature
-  if(c1!=TAG_SIG1 || c2!=TAG_SIG2 || c3!=TAG_SIG3) return FALSE;
+  if(c1!=TAG_SIG1 || c2!=TAG_SIG2 || c3!=TAG_SIG3) return false;
 
   // Load version
   store >> c1;
@@ -139,7 +139,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
   store >> c3;
 
   // Check version
-  if(c1!=TAG_VER || (c2!=TAG_OLD && c2!=TAG_NEW) || c3!=TAG_SUF) return FALSE;
+  if(c1!=TAG_VER || (c2!=TAG_OLD && c2!=TAG_NEW) || c3!=TAG_SUF) return false;
 
   // Get screen descriptor
   store >> c1 >> c2;    // Skip screen width
@@ -177,7 +177,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       // Graphic Control Extension
       if(c2==TAG_GRAPHIC){
         store >> sbsize;
-        if(sbsize!=TAG_GRAPHICSIZE) return FALSE;
+        if(sbsize!=TAG_GRAPHICSIZE) return false;
         store >> flags;         // Flags
         store >> c3 >> c3;      // Delay time
         store >> alpha;         // Alpha color index; we suspect alpha<ncolors not always true...
@@ -193,7 +193,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
         store >> sbsize;
         store.position(store.position()+sbsize);
         }
-      while(sbsize>0 && !store.atEnd());    // FIXME this logic still flawed
+      while(sbsize>0 && !store.eof());    // FIXME this logic still flawed
       continue;
       }
 
@@ -231,7 +231,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       maxpixels=imwidth*imheight;
 
       // Allocate memory
-      if(!FXMALLOC(&data,FXColor,maxpixels)) return FALSE;
+      if(!FXMALLOC(&data,FXColor,maxpixels)) return false;
 
       // Set up pointers; we're using the first 3/4 of the
       // data array for the compressed data, and the latter 1/4 for
@@ -269,11 +269,11 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       ptr=buf;
       do{
         store >> sbsize;
-        if(ptr+sbsize>pix){ FXFREE(&data); return FALSE; }
+        if(ptr+sbsize>pix){ FXFREE(&data); return false; }
         store.load(ptr,sbsize);
         ptr+=sbsize;
         }
-      while(sbsize>0 && !store.atEnd());    // FIXME this logic still flawed
+      while(sbsize>0 && !store.eof());    // FIXME this logic still flawed
 
       // Initialize
       BitOffset=XC=YC=Pass=OutCount=OldCode=FinChar=npixels=0;
@@ -342,15 +342,14 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
         else{
 
           // If we're at maxcode and didn't get a clear, stop loading
-          if(FreeCode>=4096){ FXFREE(&data); return FALSE; }
+          if(FreeCode>=4096){ FXFREE(&data); return false; }
 
           CurCode=InCode=Code;
 
-          // If greater or equal to FreeCode, not in the hash table yet;
-          // repeat the last character decoded
+          // If greater or equal to FreeCode, not in the hash table yet; repeat the last character decoded
           if(CurCode>=FreeCode){
             CurCode=OldCode;
-            if(OutCount>4096){ FXFREE(&data); return FALSE; }
+            if(OutCount>4096){ FXFREE(&data); return false; }
             OutCode[OutCount++]=FinChar;
             }
 
@@ -363,7 +362,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
             CurCode=Prefix[CurCode];
             }
 
-          if(OutCount>4096){ FXFREE(&data); return FALSE; }
+          if(OutCount>4096){ FXFREE(&data); return false; }
 
           // The last code in the chain is treated as raw data
           FinChar=CurCode&BitMask;
@@ -377,7 +376,9 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
           npixels+=OutCount;
           if(!interlace){
-            for(i=OutCount-1; i>=0; i--) *ptr++=OutCode[i];
+            for(i=OutCount-1; i>=0; i--){
+              *ptr++=OutCode[i];
+              }
             }
           else{
             for(i=OutCount-1; i>=0; i--){
@@ -436,15 +437,15 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
       // Skip image terminator to fully read all bytes
       store >> c1;
 
-      return TRUE;
+      return true;
       }
 
     // Non of the above, we fail!
-    return FALSE;
+    return false;
     }
 
   // Shouldn't get here, but to satisfy compiler
-  return FALSE;
+  return false;
   }
 
 
@@ -452,7 +453,7 @@ FXbool fxloadGIF(FXStream& store,FXColor*& data,FXint& width,FXint& height){
 
 
 // Save a gif file to a stream
-FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FXbool fast){
+bool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,bool fast){
   FXuint   clearcode,endcode,freecode,findcode,prefix,current,outaccu,initcodesize,codesize,hash,step;
   FXint    maxpixels,ncolors,bitsperpixel,colormapsize,outbits,src,dst,i;
   FXuchar  c1,c2,alpha,*pixels,*output;
@@ -461,13 +462,13 @@ FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FX
   FXushort codetab[5003];
 
   // Must make sense
-  if(!data || width<=0 || height<=0) return FALSE;
+  if(!data || width<=0 || height<=0) return false;
 
   // How many pixels
   maxpixels=width*height;
 
   // Allocate temp buffer for pixels
-  if(!FXMALLOC(&output,FXuchar,(maxpixels<<1))) return FALSE;
+  if(!FXMALLOC(&output,FXuchar,(maxpixels<<1))) return false;
   pixels=output+maxpixels;
 
   // First, try EZ quantization, because it is exact; a previously
@@ -563,7 +564,7 @@ FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FX
   freecode=clearcode+2;
 
   // Output clear code
-  FXASSERT(clearcode<(1<<codesize));
+  FXASSERT(clearcode<(1u<<codesize));
   outaccu=clearcode;
   outbits=codesize;
 
@@ -598,7 +599,7 @@ FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FX
       }
 
     // Output prefix code
-    FXASSERT(prefix<(1<<codesize));
+    FXASSERT(prefix<(1u<<codesize));
     FXASSERT(outbits+codesize<=32);
     outaccu|=prefix<<outbits;
     outbits+=codesize;
@@ -608,14 +609,14 @@ FXbool fxsaveGIF(FXStream& store,const FXColor *data,FXint width,FXint height,FX
 
     // If still room, enter into hash table
     if(freecode<4096){                  // Add to hash table
-      if(freecode>=(1<<codesize) && codesize<12) codesize++;
+      if(freecode>=(1u<<codesize) && codesize<12u) codesize++;
       codetab[hash]=freecode++;
       hashtab[hash]=findcode;
       }
 
     // Else issue clear code
     else{
-      FXASSERT(clearcode<(1<<codesize));
+      FXASSERT(clearcode<(1u<<codesize));
       FXASSERT(outbits+codesize<=32);
       outaccu|=clearcode<<outbits;
       outbits+=codesize;
@@ -631,13 +632,13 @@ nxt:continue;
     }
 
   // Output final prefix code
-  FXASSERT(prefix<(1<<codesize));
+  FXASSERT(prefix<(1u<<codesize));
   FXASSERT(outbits+codesize<=32);
   outaccu|=prefix<<outbits;
   outbits+=codesize;
 
   // Output end code
-  FXASSERT(endcode<(1<<codesize));
+  FXASSERT(endcode<(1u<<codesize));
   FXASSERT(outbits+codesize<=32);
   outaccu|=endcode<<outbits;
   outbits+=codesize;
@@ -662,7 +663,7 @@ nxt:continue;
 
   // Free storage
   FXFREE(&output);
-  return TRUE;
+  return true;
   }
 
 

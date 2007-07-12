@@ -3,7 +3,7 @@
 *                            P C X   I m a g e   O b j e c t                    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by Janusz Ganczarski.   All Rights Reserved.          *
+* Copyright (C) 2001,2006 by Janusz Ganczarski.   All Rights Reserved.          *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPCXImage.cpp,v 1.21 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXPCXImage.cpp,v 1.26 2006/01/22 17:58:36 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -46,7 +46,7 @@
   - Use corner color as transparency color, unless override.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -55,6 +55,10 @@ namespace FX {
 
 // Suggested file extension
 const FXchar *FXPCXImage::fileExt="pcx";
+
+
+// Suggested mime type
+const FXchar *FXPCXImage::mimeType="image/x-pcx";
 
 
 // Object implementation
@@ -73,22 +77,22 @@ FXPCXImage::FXPCXImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXI
 
 
 // Save pixel data only
-FXbool FXPCXImage::savePixels(FXStream& store) const {
+bool FXPCXImage::savePixels(FXStream& store) const {
   if(fxsavePCX(store,data,width,height)){
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load pixel data only
-FXbool FXPCXImage::loadPixels(FXStream& store){
+bool FXPCXImage::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadPCX(store,pixels,w,h)){
     setData(pixels,IMAGE_OWNED,w,h);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

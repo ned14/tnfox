@@ -3,7 +3,7 @@
 *                       C o m b o   B o x   O b j e c t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXComboBox.cpp,v 1.59 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXComboBox.cpp,v 1.66.2.2 2007/06/07 20:17:57 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -69,8 +69,7 @@
   - Need some way to size the FXList automatically to the number of items.
   - If you leave the list then getCurrentItem() returns the last item under
     cursor which is not the same item shown in FXComboBox.
-  - Combobox should also issue notify message, probably.
-    FXComboBox::getItem() and FXComboBox::getItemText() are the same; this
+  - FXComboBox::getItem() and FXComboBox::getItemText() are the same; this
     should probably change.
   - No reaction to up and down arrow while disabled.
 */
@@ -92,7 +91,9 @@ FXDEFMAP(FXComboBox) FXComboBoxMap[]={
   FXMAPFUNC(SEL_FOCUS_SELF,0,FXComboBox::onFocusSelf),
   FXMAPFUNC(SEL_UPDATE,FXComboBox::ID_TEXT,FXComboBox::onUpdFmText),
   FXMAPFUNC(SEL_CLICKED,FXComboBox::ID_LIST,FXComboBox::onListClicked),
+  FXMAPFUNC(SEL_COMMAND,FXComboBox::ID_LIST,FXComboBox::onListClicked),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,FXComboBox::ID_TEXT,FXComboBox::onTextButton),
+  FXMAPFUNC(SEL_MOUSEWHEEL,FXComboBox::ID_TEXT,FXComboBox::onMouseWheel),
   FXMAPFUNC(SEL_CHANGED,FXComboBox::ID_TEXT,FXComboBox::onTextChanged),
   FXMAPFUNC(SEL_COMMAND,FXComboBox::ID_TEXT,FXComboBox::onTextCommand),
   FXMAPFUNC(SEL_COMMAND,FXWindow::ID_SETVALUE,FXComboBox::onFwdToText),
@@ -120,7 +121,7 @@ FXComboBox::FXComboBox(FXComposite *p,FXint cols,FXObject* tgt,FXSelector sel,FX
   pane=new FXPopup(this,FRAME_LINE);
   list=new FXList(pane,this,FXComboBox::ID_LIST,LIST_BROWSESELECT|LIST_AUTOSELECT|LAYOUT_FILL_X|LAYOUT_FILL_Y|SCROLLERS_TRACK|HSCROLLER_NEVER);
   if(options&COMBOBOX_STATIC) list->setScrollStyle(SCROLLERS_TRACK|HSCROLLING_OFF);
-  button=new FXMenuButton(this,NULL,NULL,pane,FRAME_RAISED|FRAME_THICK|MENUBUTTON_DOWN|MENUBUTTON_ATTACH_RIGHT, 0,0,0,0, 0,0,0,0);
+  button=new FXMenuButton(this,FXString::null,NULL,pane,FRAME_RAISED|FRAME_THICK|MENUBUTTON_DOWN|MENUBUTTON_ATTACH_RIGHT, 0,0,0,0, 0,0,0,0);
   button->setXOffset(border);
   button->setYOffset(border);
   flags&=~FLAG_UPDATE;  // Never GUI update
@@ -212,11 +213,11 @@ long FXComboBox::onFwdToText(FXObject* sender,FXSelector sel,void* ptr){
 
 
 // Forward clicked message from list to target
-long FXComboBox::onListClicked(FXObject*,FXSelector,void* ptr){
-  button->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);    // Unpost the list
-  if(0<=((FXint)(FXival)ptr)){
+long FXComboBox::onListClicked(FXObject*,FXSelector sel,void* ptr){
+  button->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
+  if(FXSELTYPE(sel)==SEL_COMMAND){
     field->setText(list->getItemText((FXint)(FXival)ptr));
-    field->selectAll();
+    if(!(options&COMBOBOX_STATIC)) field->selectAll();          // Select if editable
     if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());
     }
   return 1;
@@ -278,8 +279,7 @@ long FXComboBox::onFocusUp(FXObject*,FXSelector,void*){
     if(index<0) index=getNumItems()-1;
     else if(0<index) index--;
     if(0<=index && index<getNumItems()){
-      setCurrentItem(index);
-      if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+      setCurrentItem(index,TRUE);
       }
     return 1;
     }
@@ -294,8 +294,29 @@ long FXComboBox::onFocusDown(FXObject*,FXSelector,void*){
     if(index<0) index=0;
     else if(index<getNumItems()-1) index++;
     if(0<=index && index<getNumItems()){
-      setCurrentItem(index);
-      if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
+      setCurrentItem(index,TRUE);
+      }
+    return 1;
+    }
+  return 0;
+  }
+
+
+// Mouse wheel
+long FXComboBox::onMouseWheel(FXObject*,FXSelector,void* ptr){
+  FXEvent* event=(FXEvent*)ptr;
+  if(isEnabled()){
+    FXint index=getCurrentItem();
+    if(event->code<0){
+      if(index<0) index=0;
+      else if(index<getNumItems()-1) index++;
+      }
+    else if(event->code>0){
+      if(index<0) index=getNumItems()-1;
+      else if(0<index) index--;
+      }
+    if(0<=index && index<getNumItems()){
+      setCurrentItem(index,TRUE);
       }
     return 1;
     }
@@ -364,14 +385,18 @@ FXbool FXComboBox::isItemCurrent(FXint index) const {
 
 
 // Change current item
-void FXComboBox::setCurrentItem(FXint index){
-  list->setCurrentItem(index);
-  list->makeItemVisible(index);
-  if(0<=index){
-    setText(list->getItemText(index));
-    }
-  else{
-    setText(FXString::null);
+void FXComboBox::setCurrentItem(FXint index,FXbool notify){
+  FXint current=list->getCurrentItem();
+  if(current!=index){
+    list->setCurrentItem(index);
+    list->makeItemVisible(index);
+    if(0<=index){
+      setText(list->getItemText(index));
+      }
+    else{
+      setText(FXString::null);
+      }
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)getText().text());}
     }
   }
 
@@ -582,6 +607,18 @@ void FXComboBox::setComboStyle(FXuint mode){
 // Get combobox style
 FXuint FXComboBox::getComboStyle() const {
   return (options&COMBOBOX_MASK);
+  }
+
+
+// Set text justify style
+void FXComboBox::setJustify(FXuint style){
+  field->setJustify(style);
+  }
+
+
+// Get text justify style
+FXuint FXComboBox::getJustify() const {
+  return field->getJustify();
   }
 
 

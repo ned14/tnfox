@@ -3,7 +3,7 @@
 *                          P N G   I m a g e   O b j e c t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPNGImage.cpp,v 1.33 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXPNGImage.cpp,v 1.38 2006/01/22 17:58:37 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -43,7 +43,7 @@
   - FXPNGImage has an alpha channel.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -54,14 +54,18 @@ namespace FX {
 const FXchar *FXPNGImage::fileExt="png";
 
 
+// Suggested mime type
+const FXchar *FXPNGImage::mimeType="image/png";
+
+
 // Object implementation
 FXIMPLEMENT(FXPNGImage,FXImage,NULL,0)
 
 
 #ifdef HAVE_PNG_H
-const FXbool FXPNGImage::supported=TRUE;
+const bool FXPNGImage::supported=true;
 #else
-const FXbool FXPNGImage::supported=FALSE;
+const bool FXPNGImage::supported=false;
 #endif
 
 
@@ -77,22 +81,22 @@ FXPNGImage::FXPNGImage(FXApp* a,const void *pix,FXuint opts,FXint w,FXint h):FXI
 
 
 // Save the pixels only
-FXbool FXPNGImage::savePixels(FXStream& store) const {
+bool FXPNGImage::savePixels(FXStream& store) const {
   if(fxsavePNG(store,data,width,height)){
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load pixels only
-FXbool FXPNGImage::loadPixels(FXStream& store){
+bool FXPNGImage::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadPNG(store,pixels,w,h)){
     setData(pixels,IMAGE_OWNED,w,h);
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

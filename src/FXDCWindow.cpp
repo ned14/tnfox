@@ -3,7 +3,7 @@
 *  D e v i c e   C o n t e x t   F o r   W i n d o w s   a n d   I m a g e s    *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDCWindow.cpp,v 1.128 2005/02/03 22:06:11 fox Exp $                     *
+* $Id: FXDCWindow.cpp,v 1.163.2.3 2007/02/23 21:22:31 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXObject.h"
@@ -53,6 +53,7 @@
 #include "FXRegion.h"
 #include "FXDC.h"
 #include "FXDCWindow.h"
+
 
 /*
   Notes:
@@ -140,7 +141,7 @@
 
 #define DISPLAY(app) ((Display*)((app)->display))
 
-
+using namespace FX;
 
 namespace FX {
 
@@ -506,36 +507,117 @@ void FXDCWindow::fillComplexPolygonRel(const FXPoint* points,FXuint npoints){
   }
 
 
-// Draw text
+// Set text font
+void FXDCWindow::setFont(FXFont *fnt){
+  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
+  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
+#ifndef HAVE_XFT_H
+  XSetFont(DISPLAY(getApp()),(GC)ctx,fnt->id());
+  flags|=GCFont;
+#endif
+  font=fnt;
+  }
+
+
+/*
+
+ We eventually want subclassable fonts.
+ FXDCWindow knows about surface, but does not know about font type.
+ Thus, drawText() here should vector to new API's in FXFont.
+ New API gets FXDC* (or FXDC&) so that it can obtain colors, &c.
+ Thus, all knowledge of font-technology is kept inside FXFont.
+ Knowledge of FXDCWindow surface is kept inside FXDCWindow.
+
+ But FXDC may have some responsibility for layout of characters.
+
+ Of course, certain font types can only draw on certain DC types...
+
+
+void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
+  if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
+  if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
+  font->drawText(this,x,y,string,length);
+  }
+*/
+
+
+
+#define FS ((XFontStruct*)(font->font))
+
+
+static FXint utf2db(XChar2b *dst,const FXchar *src,FXint n){
+  register FXint len,p;
+  register FXwchar w;
+  for(p=len=0; p<n; p+=wclen(src+p),len++){
+    w=wc(src+p);
+    dst[len].byte1=(w>>8);
+    dst[len].byte2=(w&255);
+    }
+  return len;
+  }
+
+
+// Draw string with base line starting at x, y
 void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
 #ifdef HAVE_XFT_H
   XftColor color;
-
-  // Does the same as XftColorAllocValue only without the server round-trip:
-  // we already have all the colors in FXVisual's dither tables.
   color.pixel=devfg;
   color.color.red=FXREDVAL(fg)*257;
   color.color.green=FXGREENVAL(fg)*257;
   color.color.blue=FXBLUEVAL(fg)*257;
   color.color.alpha=FXALPHAVAL(fg)*257;
-  XftDrawString8((XftDraw*)xftDraw,&color,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
+  XftDrawStringUtf8((XftDraw*)xftDraw,&color,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
 #else
-  XDrawString(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,(char*)string,length);
+  register FXint count,escapement,defwidth,ww,size,i;
+  register FXdouble ang,ux,uy;
+  register FXuchar r,c;
+  XChar2b sbuffer[4096];
+  count=utf2db(sbuffer,string,FXMIN(length,4096));
+  if(font->getAngle()){
+    ang=font->getAngle()*0.00027270769562411399179;
+    defwidth=FS->min_bounds.width;
+    ux=cos(ang);
+    uy=sin(ang);
+    if(FS->per_char){
+      r=FS->default_char>>8;
+      c=FS->default_char&255;
+      size=(FS->max_char_or_byte2-FS->min_char_or_byte2+1);
+      if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+        defwidth=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width;
+        }
+      for(i=escapement=0; i<count; i++){
+        XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        r=sbuffer[i].byte1;
+        c=sbuffer[i].byte2;
+        escapement+=defwidth;
+        if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+          if((ww=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width)!=0) escapement+=ww-defwidth;
+          }
+        }
+      }
+    else{
+      for(i=escapement=0; i<count; i++){
+        XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        escapement+=defwidth;
+        }
+      }
+    }
+  else{
+    XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,sbuffer,count);
+    }
 #endif
   }
 
 
-// Draw image text
+// Draw text starting at x, y over filled background
 void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawImageText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawImageText: no font selected.\n"); }
 #ifdef HAVE_XFT_H
   XGlyphInfo extents;
   XftColor fgcolor,bgcolor;
-
-  // Same method as above
   fgcolor.pixel=devfg;
   fgcolor.color.red=FXREDVAL(fg)*257;
   fgcolor.color.green=FXGREENVAL(fg)*257;
@@ -552,12 +634,63 @@ void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint lengt
 
   // Erase around text [FIXME wrong location]
   XftDrawRect((XftDraw*)xftDraw,&bgcolor,x,y-font->getFontAscent(),extents.width,extents.height);
-
-  // Draw text
-  XftDrawString8((XftDraw*)xftDraw,&fgcolor,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
+//  XftDrawRect((XftDraw*)xftDraw,&bgcolor,x+cache->xoff,y-xftfs->ascent,cache->x2off-cache->xoff,xftfs->ascent+xftfs->descent);
+//XftDrawRect((XftDraw*)xftDraw,&bgcolor,x+cache->xoff,y-((XftFont*)font->font)->ascent,cache->x2off-cache->xoff,((XftFont*)font->font)->ascent+((XftFont*)font->font)->descent);
+  XftDrawStringUtf8((XftDraw*)xftDraw,&fgcolor,(XftFont*)font->font,x,y,(const FcChar8*)string,length);
 #else
-  XDrawImageString(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,(char*)string,length);
+  register FXint count,escapement,defwidth,ww,size,i;
+  register FXdouble ang,ux,uy;
+  register FXuchar r,c;
+  XChar2b sbuffer[4096];
+  count=utf2db(sbuffer,string,FXMIN(length,4096));
+  if(font->getAngle()){
+    ang=font->getAngle()*0.00027270769562411399179;
+    defwidth=FS->min_bounds.width;
+    ux=cos(ang);
+    uy=sin(ang);
+    if(FS->per_char){
+      r=FS->default_char>>8;
+      c=FS->default_char&255;
+      size=(FS->max_char_or_byte2-FS->min_char_or_byte2+1);
+      if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+        defwidth=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width;
+        }
+      for(i=escapement=0; i<count; i++){
+        XDrawString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        r=sbuffer[i].byte1;
+        c=sbuffer[i].byte2;
+        escapement+=defwidth;
+        if(FS->min_char_or_byte2<=c && c<=FS->max_char_or_byte2 && FS->min_byte1<=r && r<=FS->max_byte1){
+          if((ww=FS->per_char[(r-FS->min_byte1)*size+(c-FS->min_char_or_byte2)].width)!=0) escapement+=ww-defwidth;
+          }
+        }
+      }
+    else{
+      for(i=escapement=0; i<count; i++){
+        XDrawImageString16(DISPLAY(getApp()),surface->id(),(GC)ctx,(FXint)(x+escapement*ux),(FXint)(y-escapement*uy),&sbuffer[i],1);
+        escapement+=defwidth;
+        }
+      }
+    }
+  else{
+    XDrawImageString16(DISPLAY(getApp()),surface->id(),(GC)ctx,x,y,sbuffer,count);
+    }
 #endif
+  }
+
+#undef FS
+
+
+
+// Draw string with base line starting at x, y
+void FXDCWindow::drawText(FXint x,FXint y,const FXString& string){
+  drawText(x,y,string.text(),string.length());
+  }
+
+
+// Draw text starting at x, y over filled background
+void FXDCWindow::drawImageText(FXint x,FXint y,const FXString& string){
+  drawImageText(x,y,string.text(),string.length());
   }
 
 
@@ -566,6 +699,29 @@ void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FX
   if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
   if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
   XCopyArea(DISPLAY(getApp()),source->id(),surface->id(),(GC)ctx,sx,sy,sw,sh,dx,dy);
+  }
+
+
+// Draw area stretched area from source; FIXME this works but it's like molasses!
+void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy,FXint dw,FXint dh){
+  register FXint i,j,x,y,xs,ys;
+  if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
+  if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
+  xs=(sw<<16)/dw;
+  ys=(sh<<16)/dh;
+  i=0;
+  y=ys>>1;
+  do{
+    j=0;
+    x=xs>>1;
+    do{
+      XCopyArea(DISPLAY(getApp()),source->id(),surface->id(),(GC)ctx,sx+(x>>16),sy+(y>>16),1,1,dx+j,dy+i);
+      x+=xs;
+      }
+    while(++j<dw);
+    y+=ys;
+    }
+  while(++i<dh);
   }
 
 
@@ -908,7 +1064,7 @@ void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   if(clip.h<=0) clip.h=0;
   XSetClipRectangles(DISPLAY(getApp()),(GC)ctx,0,0,(XRectangle*)&clip,1,Unsorted);
 #ifdef HAVE_XFT_H
-  XftDrawSetClipRectangles((XftDraw*)xftDraw, 0, 0, (XRectangle*)&clip, 1);
+  XftDrawSetClipRectangles((XftDraw*)xftDraw,0,0,(XRectangle*)&clip,1);
 #endif
   flags|=GCClipMask;
   }
@@ -925,7 +1081,7 @@ void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   if(clip.h<=0) clip.h=0;
   XSetClipRectangles(DISPLAY(getApp()),(GC)ctx,0,0,(XRectangle*)&clip,1,Unsorted);
 #ifdef HAVE_XFT_H
-  XftDrawSetClipRectangles((XftDraw*)xftDraw, 0, 0, (XRectangle*)&clip, 1);
+  XftDrawSetClipRectangles((XftDraw*)xftDraw,0,0,(XRectangle*)&clip,1);
 #endif
   flags|=GCClipMask;
   }
@@ -937,7 +1093,7 @@ void FXDCWindow::clearClipRectangle(){
   clip=rect;
   XSetClipRectangles(DISPLAY(getApp()),(GC)ctx,0,0,(XRectangle*)&clip,1,Unsorted);
 #ifdef HAVE_XFT_H
-  XftDrawSetClipRectangles((XftDraw*)xftDraw, 0, 0, (XRectangle*)&clip, 1);
+  XftDrawSetClipRectangles((XftDraw*)xftDraw,0,0,(XRectangle*)&clip,1);
 #endif
   flags|=GCClipMask;
   }
@@ -973,27 +1129,21 @@ void FXDCWindow::clearClipMask(){
   }
 
 
-// Set text font
-void FXDCWindow::setFont(FXFont *fnt){
-  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
-  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
-#ifndef HAVE_XFT_H
-  XSetFont(DISPLAY(getApp()),(GC)ctx,fnt->id());
-  flags|=GCFont;
-#endif
-  font=fnt;
-  }
-
-
 // Set clip child windows
 void FXDCWindow::clipChildren(FXbool yes){
   if(!surface){ fxerror("FXDCWindow::clipChildren: window has not yet been created.\n"); }
   if(yes){
     XSetSubwindowMode(DISPLAY(getApp()),(GC)ctx,ClipByChildren);
+#ifdef HAVE_XFT_H
+    XftDrawSetSubwindowMode((XftDraw*)xftDraw,ClipByChildren);
+#endif
     flags&=~GCSubwindowMode;
     }
   else{
     XSetSubwindowMode(DISPLAY(getApp()),(GC)ctx,IncludeInferiors);
+#ifdef HAVE_XFT_H
+    XftDrawSetSubwindowMode((XftDraw*)xftDraw,IncludeInferiors);
+#endif
     flags|=GCSubwindowMode;
     }
   }
@@ -1063,7 +1213,10 @@ void FXDCWindow::begin(FXDrawable *drawable){
   rect.h=clip.h=drawable->getHeight();
 
   // Select and realize palette, if necessary
-  if(visual->colormap){oldpalette=SelectPalette((HDC)ctx,(HPALETTE)visual->colormap,FALSE);RealizePalette((HDC)ctx);}
+  if(visual->colormap){
+    oldpalette=::SelectPalette((HDC)ctx,(HPALETTE)visual->colormap,false);
+    ::RealizePalette((HDC)ctx);
+    }
 
   devfg=~0;
   devbg=0;
@@ -1073,7 +1226,7 @@ void FXDCWindow::begin(FXDrawable *drawable){
   lb.lbStyle=BS_SOLID;
   lb.lbColor=PALETTERGB(0,0,0);
   lb.lbHatch=0;
-  oldpen=SelectObject((HDC)ctx,ExtCreatePen(PS_GEOMETRIC|PS_SOLID|PS_ENDCAP_FLAT|PS_JOIN_MITER,1,&lb,0,NULL));
+  oldpen=::SelectObject((HDC)ctx,ExtCreatePen(PS_GEOMETRIC|PS_SOLID|PS_ENDCAP_FLAT|PS_JOIN_MITER,1,&lb,0,NULL));
 
   // Create our default brush (solid white, for fills)
   lb.lbStyle=BS_SOLID;
@@ -1082,10 +1235,10 @@ void FXDCWindow::begin(FXDrawable *drawable){
   oldbrush=SelectObject((HDC)ctx,CreateBrushIndirect(&lb));
 
   // Text alignment
-  SetTextAlign((HDC)ctx,TA_BASELINE|TA_LEFT);
+  ::SetTextAlign((HDC)ctx,TA_BASELINE|TA_LEFT);
 
   // Polygon fill mode
-  SetPolyFillMode((HDC)ctx,ALTERNATE);
+  ::SetPolyFillMode((HDC)ctx,ALTERNATE);
 
   // Reset flags
   needsNewBrush=FALSE;
@@ -1098,9 +1251,11 @@ void FXDCWindow::begin(FXDrawable *drawable){
 // End unlocks the drawable surface
 void FXDCWindow::end(){
   if(ctx){
-    DeleteObject(SelectObject((HDC)ctx,oldpen));
-    DeleteObject(SelectObject((HDC)ctx,oldbrush));
-    if(visual->colormap){SelectPalette((HDC)ctx,(HPALETTE)oldpalette,FALSE);}
+    ::DeleteObject(::SelectObject((HDC)ctx,oldpen));
+    ::DeleteObject(::SelectObject((HDC)ctx,oldbrush));
+    if(visual->colormap){
+      SelectPalette((HDC)ctx,(HPALETTE)oldpalette,false);
+      }
     surface->ReleaseDC((HDC)ctx);
     if(needsClipReset){
       LONG_PTR dwFlags=GetWindowLongPtr((HWND)surface->id(),GWL_STYLE);
@@ -1127,7 +1282,7 @@ FXColor FXDCWindow::readPixel(FXint x,FXint y){
 // Draw pixel in current foreground color
 void FXDCWindow::drawPoint(FXint x,FXint y){
   if(!surface){ fxerror("FXDCWindow::drawPoint: DC not connected to drawable.\n"); }
-  SetPixel((HDC)ctx,x,y,devfg);
+  ::SetPixel((HDC)ctx,x,y,devfg);
   }
 
 
@@ -1136,7 +1291,7 @@ void FXDCWindow::drawPoints(const FXPoint* points,FXuint npoints){
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::drawPoints: DC not connected to drawable.\n"); }
   for(i=0; i<npoints; i++){
-    SetPixel((HDC)ctx,points[i].x,points[i].y,devfg);
+    ::SetPixel((HDC)ctx,points[i].x,points[i].y,devfg);
     }
   }
 
@@ -1149,7 +1304,7 @@ void FXDCWindow::drawPointsRel(const FXPoint* points,FXuint npoints){
   for(i=0; i<npoints; i++){
     x+=points[i].x;
     y+=points[i].y;
-    SetPixel((HDC)ctx,x,y,devfg);
+    ::SetPixel((HDC)ctx,x,y,devfg);
     }
   }
 
@@ -1159,15 +1314,15 @@ void FXDCWindow::drawLine(FXint x1,FXint y1,FXint x2,FXint y2){
   if(!surface){ fxerror("FXDCWindow::drawLine: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
   if(needsPath){
-    BeginPath((HDC)ctx);
+    ::BeginPath((HDC)ctx);
     }
   POINT pts[2];
   pts[0].x=x1; pts[0].y=y1;
   pts[1].x=x2; pts[1].y=y2;
-  Polyline((HDC)ctx,pts,2);
+  ::Polyline((HDC)ctx,pts,2);
   if(needsPath){
-    EndPath((HDC)ctx);
-    StrokePath((HDC)ctx);
+    ::EndPath((HDC)ctx);
+    ::StrokePath((HDC)ctx);
     }
   }
 
@@ -1179,22 +1334,22 @@ void FXDCWindow::drawLines(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::drawLines: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
   if(needsPath){
-    BeginPath((HDC)ctx);
+    ::BeginPath((HDC)ctx);
     }
   if(1360<=npoints){
-    MoveToEx((HDC)ctx,points[0].x,points[0].y,NULL);
-    for(i=1; i<npoints; i++) LineTo((HDC)ctx,points[i].x,points[i].y);
+    ::MoveToEx((HDC)ctx,points[0].x,points[0].y,NULL);
+    for(i=1; i<npoints; i++) ::LineTo((HDC)ctx,points[i].x,points[i].y);
     }
   else{
     for(i=0; i<npoints; i++){
       pts[i].x=points[i].x;
       pts[i].y=points[i].y;
       }
-    Polyline((HDC)ctx,pts,npoints);
+    ::Polyline((HDC)ctx,pts,npoints);
     }
   if(needsPath){
-    EndPath((HDC)ctx);
-    StrokePath((HDC)ctx);
+    ::EndPath((HDC)ctx);
+    ::StrokePath((HDC)ctx);
     }
   }
 
@@ -1207,14 +1362,14 @@ void FXDCWindow::drawLinesRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::drawLinesRel: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
   if(needsPath){
-    BeginPath((HDC)ctx);
+    ::BeginPath((HDC)ctx);
     }
   if(1360<=npoints){
-    MoveToEx((HDC)ctx,points[0].x,points[0].y,NULL);
+    ::MoveToEx((HDC)ctx,points[0].x,points[0].y,NULL);
     for(i=1; i<npoints; i++){
       x+=points[i].x;
       y+=points[i].y;
-      LineTo((HDC)ctx,x,y);
+      ::LineTo((HDC)ctx,x,y);
       }
     }
   else{
@@ -1222,11 +1377,11 @@ void FXDCWindow::drawLinesRel(const FXPoint* points,FXuint npoints){
       x+=points[i].x; pts[i].x=x;
       y+=points[i].y; pts[i].y=y;
       }
-    Polyline((HDC)ctx,pts,npoints);
+    ::Polyline((HDC)ctx,pts,npoints);
     }
   if(needsPath){
-    EndPath((HDC)ctx);
-    StrokePath((HDC)ctx);
+    ::EndPath((HDC)ctx);
+    ::StrokePath((HDC)ctx);
     }
   }
 
@@ -1238,16 +1393,16 @@ void FXDCWindow::drawLineSegments(const FXSegment* segments,FXuint nsegments){
   if(!surface){ fxerror("FXDCWindow::drawLineSegments: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
   if(needsPath){
-    BeginPath((HDC)ctx);
+    ::BeginPath((HDC)ctx);
     }
   for(i=0; i<nsegments; i++){
     pts[0].x=segments[i].x1; pts[0].y=segments[i].y1;
     pts[1].x=segments[i].x2; pts[1].y=segments[i].y2;
-    Polyline((HDC)ctx,pts,2);
+    ::Polyline((HDC)ctx,pts,2);
     }
   if(needsPath){
-    EndPath((HDC)ctx);
-    StrokePath((HDC)ctx);
+    ::EndPath((HDC)ctx);
+    ::StrokePath((HDC)ctx);
     }
   }
 
@@ -1256,9 +1411,9 @@ void FXDCWindow::drawLineSegments(const FXSegment* segments,FXuint nsegments){
 void FXDCWindow::drawRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::drawRectangle: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
-  HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
-  Rectangle((HDC)ctx,x,y,x+w+1,y+h+1);
-  SelectObject((HDC)ctx,hBrush);
+  HBRUSH hbrush=(HBRUSH)::SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
+  ::Rectangle((HDC)ctx,x,y,x+w+1,y+h+1);
+  ::SelectObject((HDC)ctx,hbrush);
   }
 
 
@@ -1267,11 +1422,11 @@ void FXDCWindow::drawRectangles(const FXRectangle* rectangles,FXuint nrectangles
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::drawRectangles: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
-  HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
+  HBRUSH hbrush=(HBRUSH)::SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
   for(i=0; i<nrectangles; i++){
-    Rectangle((HDC)ctx,rectangles[i].x,rectangles[i].y,rectangles[i].x+rectangles[i].w+1,rectangles[i].y+rectangles[i].h+1);
+    ::Rectangle((HDC)ctx,rectangles[i].x,rectangles[i].y,rectangles[i].x+rectangles[i].w+1,rectangles[i].y+rectangles[i].h+1);
     }
-  SelectObject((HDC)ctx,hBrush);
+  ::SelectObject((HDC)ctx,hbrush);
   }
 
 
@@ -1279,11 +1434,11 @@ void FXDCWindow::drawRectangles(const FXRectangle* rectangles,FXuint nrectangles
 void FXDCWindow::drawRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh){
   if(!surface){ fxerror("FXDCWindow::drawRoundRectangle: DC not connected to drawable.\n"); }
   if(needsNewPen) updatePen();
-  HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
+  HBRUSH hbrush=(HBRUSH)::SelectObject((HDC)ctx,(HBRUSH)GetStockObject(NULL_BRUSH));
   if(ew+ew>w) ew=w>>1;
   if(eh+eh>h) eh=h>>1;
-  RoundRect((HDC)ctx,x,y,x+w+1,y+h+1,ew,eh);
-  SelectObject((HDC)ctx,hBrush);
+  ::RoundRect((HDC)ctx,x,y,x+w+1,y+h+1,ew,eh);
+  ::SelectObject((HDC)ctx,hbrush);
   }
 
 
@@ -1303,15 +1458,15 @@ void FXDCWindow::drawArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   int xEnd=int(x+0.5*w+w*cos(ang2*PI/(180.0*64.0)));
   int yEnd=int(y+0.5*h-h*sin(ang2*PI/(180.0*64.0)));
   if(needsPath){
-    BeginPath((HDC)ctx);
+    ::BeginPath((HDC)ctx);
     }
   if(reversed)
-    Arc((HDC)ctx,x,y,x+w,y+h,xEnd,yEnd,xStart,yStart);
+    ::Arc((HDC)ctx,x,y,x+w,y+h,xEnd,yEnd,xStart,yStart);
   else
-    Arc((HDC)ctx,x,y,x+w,y+h,xStart,yStart,xEnd,yEnd);
+    ::Arc((HDC)ctx,x,y,x+w,y+h,xStart,yStart,xEnd,yEnd);
   if(needsPath){
-    EndPath((HDC)ctx);
-    StrokePath((HDC)ctx);
+    ::EndPath((HDC)ctx);
+    ::StrokePath((HDC)ctx);
     }
   }
 
@@ -1334,12 +1489,12 @@ void FXDCWindow::drawEllipse(FXint x,FXint y,FXint w,FXint h){
   w+=1;
   h+=1;
   if(needsPath){
-    BeginPath((HDC)ctx);
+    ::BeginPath((HDC)ctx);
     }
-  Arc((HDC)ctx,x,y,x+w,y+h,x+(w>>1),y+(h>>1),x+(w>>1),y+(h>>1));
+  ::Arc((HDC)ctx,x,y,x+w,y+h,x+(w>>1),y+(h>>1),x+(w>>1),y+(h>>1));
   if(needsPath){
-    EndPath((HDC)ctx);
-    StrokePath((HDC)ctx);
+    ::EndPath((HDC)ctx);
+    ::StrokePath((HDC)ctx);
     }
   }
 
@@ -1348,9 +1503,9 @@ void FXDCWindow::drawEllipse(FXint x,FXint y,FXint w,FXint h){
 void FXDCWindow::fillRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::fillRectangle: DC not connected to drawable.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
-  Rectangle((HDC)ctx,x,y,x+w+1,y+h+1);
-  SelectObject((HDC)ctx,hPen);
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  ::Rectangle((HDC)ctx,x,y,x+w+1,y+h+1);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1359,11 +1514,11 @@ void FXDCWindow::fillRectangles(const FXRectangle* rectangles,FXuint nrectangles
   register FXuint i;
   if(!surface){ fxerror("FXDCWindow::fillRectangles: DC not connected to drawable.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<nrectangles; i++){
-    Rectangle((HDC)ctx,rectangles[i].x,rectangles[i].y,rectangles[i].x+rectangles[i].w+1,rectangles[i].y+rectangles[i].h+1);
+    ::Rectangle((HDC)ctx,rectangles[i].x,rectangles[i].y,rectangles[i].x+rectangles[i].w+1,rectangles[i].y+rectangles[i].h+1);
     }
-  SelectObject((HDC)ctx,hPen);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1371,11 +1526,11 @@ void FXDCWindow::fillRectangles(const FXRectangle* rectangles,FXuint nrectangles
 void FXDCWindow::fillRoundRectangle(FXint x,FXint y,FXint w,FXint h,FXint ew,FXint eh){
   if(!surface){ fxerror("FXDCWindow::fillRoundRectangle: DC not connected to drawable.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   if(ew+ew>w) ew=w>>1;
   if(eh+eh>h) eh=h>>1;
-  RoundRect((HDC)ctx,x,y,x+w+1,y+h+1,ew,eh);
-  SelectObject((HDC)ctx,hPen);
+  ::RoundRect((HDC)ctx,x,y,x+w+1,y+h+1,ew,eh);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1392,12 +1547,12 @@ void FXDCWindow::fillChord(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2
   int yStart=int(y+0.5*h-h*sin(ang1*PI/(180.0*64.0)));
   int xEnd=int(x+0.5*w+w*cos(ang2*PI/(180.0*64.0)));
   int yEnd=int(y+0.5*h-h*sin(ang2*PI/(180.0*64.0)));
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   if(reversed)
-    Chord((HDC)ctx,x,y,x+w,y+h,xEnd,yEnd,xStart,yStart);
+    ::Chord((HDC)ctx,x,y,x+w,y+h,xEnd,yEnd,xStart,yStart);
   else
-    Chord((HDC)ctx,x,y,x+w,y+h,xStart,yStart,xEnd,yEnd);
-  SelectObject((HDC)ctx,hPen);
+    ::Chord((HDC)ctx,x,y,x+w,y+h,xStart,yStart,xEnd,yEnd);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1426,14 +1581,15 @@ void FXDCWindow::fillArc(FXint x,FXint y,FXint w,FXint h,FXint ang1,FXint ang2){
   int yStart=int(y+0.5*h-h*sin(ang1*PI/(180.0*64.0)));
   int xEnd=int(x+0.5*w+w*cos(ang2*PI/(180.0*64.0)));
   int yEnd=int(y+0.5*h-h*sin(ang2*PI/(180.0*64.0)));
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   if(reversed)
-    Pie((HDC)ctx,x,y,x+w,y+h,xEnd,yEnd,xStart,yStart);
+    ::Pie((HDC)ctx,x,y,x+w,y+h,xEnd,yEnd,xStart,yStart);
   else
-    Pie((HDC)ctx,x,y,x+w,y+h,xStart,yStart,xEnd,yEnd);
-  SelectObject((HDC)ctx,hPen);
+    ::Pie((HDC)ctx,x,y,x+w,y+h,xStart,yStart,xEnd,yEnd);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
+//Ellipse((HDC)ctx,x,y,x+w,y+h);
 
 // Fill arcs
 void FXDCWindow::fillArcs(const FXArc* arcs,FXuint narcs){
@@ -1451,9 +1607,9 @@ void FXDCWindow::fillEllipse(FXint x,FXint y,FXint w,FXint h){
   if(needsNewBrush) updateBrush();
   w+=1;
   h+=1;
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
-  Pie((HDC)ctx,x,y,x+w,y+h,x+(w>>1),y+(h>>1),x+(w>>1),y+(h>>1));
-  SelectObject((HDC)ctx,hPen);
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  ::Pie((HDC)ctx,x,y,x+w,y+h,x+(w>>1),y+(h>>1),x+(w>>1),y+(h>>1));
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1464,13 +1620,13 @@ void FXDCWindow::fillPolygon(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillPolygon: DC not connected to drawable.\n"); }
   if(npoints>=1360){ fxerror("FXDCWindow::fillPolygon: too many points.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<npoints; i++){
     pts[i].x=points[i].x;
     pts[i].y=points[i].y;
     }
-  Polygon((HDC)ctx,pts,npoints);
-  SelectObject((HDC)ctx,hPen);
+  ::Polygon((HDC)ctx,pts,npoints);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1481,13 +1637,13 @@ void FXDCWindow::fillConcavePolygon(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillConcavePolygon: DC not connected to drawable.\n"); }
   if(npoints>=1360){ fxerror("FXDCWindow::fillConcavePolygon: too many points.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<npoints; i++){
     pts[i].x=points[i].x;
     pts[i].y=points[i].y;
     }
-  Polygon((HDC)ctx,pts,npoints);
-  SelectObject((HDC)ctx,hPen);
+  ::Polygon((HDC)ctx,pts,npoints);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1498,13 +1654,13 @@ void FXDCWindow::fillComplexPolygon(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillComplexPolygon: DC not connected to drawable.\n"); }
   if(npoints>=1360){ fxerror("FXDCWindow::fillComplexPolygon: too many points.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<npoints; i++){
     pts[i].x=points[i].x;
     pts[i].y=points[i].y;
     }
-  Polygon((HDC)ctx,pts,npoints);
-  SelectObject((HDC)ctx,hPen);
+  ::Polygon((HDC)ctx,pts,npoints);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1516,13 +1672,13 @@ void FXDCWindow::fillPolygonRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillPolygonRel: DC not connected to drawable.\n"); }
   if(npoints>=1360){ fxerror("FXDCWindow::fillPolygonRel: too many points.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<npoints; i++){
     x+=points[i].x; pts[i].x=x;
     y+=points[i].y; pts[i].y=y;
     }
-  Polygon((HDC)ctx,pts,npoints);
-  SelectObject((HDC)ctx,hPen);
+  ::Polygon((HDC)ctx,pts,npoints);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1534,13 +1690,13 @@ void FXDCWindow::fillConcavePolygonRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillConcavePolygonRel: DC not connected to drawable.\n"); }
   if(npoints>=1360){ fxerror("FXDCWindow::fillConcavePolygonRel: too many points.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<npoints; i++){
     x+=points[i].x; pts[i].x=x;
     y+=points[i].y; pts[i].y=y;
     }
-  Polygon((HDC)ctx,pts,npoints);
-  SelectObject((HDC)ctx,hPen);
+  ::Polygon((HDC)ctx,pts,npoints);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
@@ -1552,33 +1708,65 @@ void FXDCWindow::fillComplexPolygonRel(const FXPoint* points,FXuint npoints){
   if(!surface){ fxerror("FXDCWindow::fillComplexPolygonRel: DC not connected to drawable.\n"); }
   if(npoints>=1360){ fxerror("FXDCWindow::fillComplexPolygonRel: too many points.\n"); }
   if(needsNewBrush) updateBrush();
-  HPEN hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
+  HPEN hpen=(HPEN)::SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
   for(i=0; i<npoints; i++){
     x+=points[i].x; pts[i].x=x;
     y+=points[i].y; pts[i].y=y;
     }
-  Polygon((HDC)ctx,pts,npoints);
-  SelectObject((HDC)ctx,hPen);
+  ::Polygon((HDC)ctx,pts,npoints);
+  ::SelectObject((HDC)ctx,hpen);
   }
 
 
-// Draw string (only foreground bits)
+// Set text font
+void FXDCWindow::setFont(FXFont *fnt){
+  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
+  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
+  SelectObject((HDC)ctx,fnt->id());
+  font=fnt;
+  }
+
+
+// Draw string with base line starting at x, y
 void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
-  int iBkMode=SetBkMode((HDC)ctx,TRANSPARENT);
-  TextOut((HDC)ctx,x,y,string,length);
-  SetBkMode((HDC)ctx,iBkMode);
+  FXnchar sbuffer[4097];
+  FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
+  FXASSERT(count<=length);
+  FXint bkmode=::SetBkMode((HDC)ctx,TRANSPARENT);
+  sbuffer[count]=0xfeff;  // TextOut() requires termination to plot unicode chars properly
+  ::TextOutW((HDC)ctx,x,y,sbuffer,count+1);
+  ::SetBkMode((HDC)ctx,bkmode);
   }
 
 
-// Draw string (both foreground and background bits)
+// Draw text starting at x, y over filled background
 void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawImageText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawImageText: no font selected.\n"); }
-  int iBkMode=SetBkMode((HDC)ctx,OPAQUE);
-  TextOut((HDC)ctx,x,y,string,length);
-  SetBkMode((HDC)ctx,iBkMode);
+  FXnchar sbuffer[4097];
+  FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
+  FXASSERT(count<=length);
+  FXint bkmode=::SetBkMode((HDC)ctx,OPAQUE);
+  sbuffer[count]=0xfeff;  // TextOut() requires termination to plot unicode chars properly
+  ::TextOutW((HDC)ctx,x,y,sbuffer,count+1);
+//    RECT r;
+//    r.left=clip.x; r.top=clip.y; r.right=clip.x+clip.w; r.bottom=clip.y+clip.h;
+//    ExtTextOutW((HDC)ctx,x,y,ETO_OPAQUE|ETO_CLIPPED,&r,sbuffer,count,NULL);
+  ::SetBkMode((HDC)ctx,bkmode);
+  }
+
+
+// Draw string with base line starting at x, y
+void FXDCWindow::drawText(FXint x,FXint y,const FXString& string){
+  drawText(x,y,string.text(),string.length());
+  }
+
+
+// Draw text starting at x, y over filled background
+void FXDCWindow::drawImageText(FXint x,FXint y,const FXString& string){
+  drawImageText(x,y,string.text(),string.length());
   }
 
 
@@ -1591,51 +1779,109 @@ void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FX
   HDC shdc=(HDC)source->GetDC();
   switch(rop){
     case BLT_CLR:                     // D := 0
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,BLACKNESS);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,BLACKNESS);
       break;
     case BLT_SRC_AND_DST:             // D := S & D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCAND);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCAND);
       break;
     case BLT_SRC_AND_NOT_DST:         // D := S & ~D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCERASE);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCERASE);
       break;
     case BLT_SRC:                     // D := S
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCCOPY);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCCOPY);
       break;
     case BLT_NOT_SRC_AND_DST:         // D := ~S & D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0x220326);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0x220326);
       break;
     case BLT_DST:                     // D := D
       break;
     case BLT_SRC_XOR_DST:             // D := S ^ D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCINVERT);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCINVERT);
       break;
     case BLT_SRC_OR_DST:              // D := S | D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCPAINT);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,SRCPAINT);
       break;
     case BLT_NOT_SRC_AND_NOT_DST:     // D := ~S & ~D  ==  D := ~(S | D)
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,NOTSRCERASE);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,NOTSRCERASE);
       break;
     case BLT_NOT_SRC_XOR_DST:         // D := ~S ^ D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0x990066); // Not sure about this one
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0x990066); // Not sure about this one
       break;
     case BLT_NOT_DST:                 // D := ~D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,DSTINVERT);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,DSTINVERT);
       break;
     case BLT_SRC_OR_NOT_DST:          // D := S | ~D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0xDD0228);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0xDD0228);
       break;
     case BLT_NOT_SRC:                 // D := ~S
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,NOTSRCCOPY);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,NOTSRCCOPY);
       break;
     case BLT_NOT_SRC_OR_DST:          // D := ~S | D
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,MERGEPAINT);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,MERGEPAINT);
       break;
     case BLT_NOT_SRC_OR_NOT_DST:      // D := ~S | ~D  ==  ~(S & D)
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0x7700E6);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,0x7700E6);
       break;
     case BLT_SET:                     // D := 1
-      BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,WHITENESS);
+      ::BitBlt((HDC)ctx,dx,dy,sw,sh,shdc,sx,sy,WHITENESS);
+      break;
+    }
+  source->ReleaseDC(shdc);
+  }
+
+
+// Draw area stretched area from source
+void FXDCWindow::drawArea(const FXDrawable* source,FXint sx,FXint sy,FXint sw,FXint sh,FXint dx,FXint dy,FXint dw,FXint dh){
+  if(!surface){ fxerror("FXDCWindow::drawArea: DC not connected to drawable.\n"); }
+  if(!source || !source->id()){ fxerror("FXDCWindow::drawArea: illegal source specified.\n"); }
+  HDC shdc=(HDC)source->GetDC();
+  switch(rop){
+    case BLT_CLR:                     // D := 0
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,BLACKNESS);
+      break;
+    case BLT_SRC_AND_DST:             // D := S & D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCAND);
+      break;
+    case BLT_SRC_AND_NOT_DST:         // D := S & ~D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCERASE);
+      break;
+    case BLT_SRC:                     // D := S
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCCOPY);
+      break;
+    case BLT_NOT_SRC_AND_DST:         // D := ~S & D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0x220326);
+      break;
+    case BLT_DST:                     // D := D
+      break;
+    case BLT_SRC_XOR_DST:             // D := S ^ D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCINVERT);
+      break;
+    case BLT_SRC_OR_DST:              // D := S | D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,SRCPAINT);
+      break;
+    case BLT_NOT_SRC_AND_NOT_DST:     // D := ~S & ~D ==  D := ~(S | D)
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,NOTSRCERASE);
+      break;
+    case BLT_NOT_SRC_XOR_DST:         // D := ~S ^ D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0x990066); // Not sure about this one
+      break;
+    case BLT_NOT_DST:                 // D := ~D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,DSTINVERT);
+      break;
+    case BLT_SRC_OR_NOT_DST:          // D := S | ~D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0xDD0228);
+      break;
+    case BLT_NOT_SRC:                 // D := ~S
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,NOTSRCCOPY);
+      break;
+    case BLT_NOT_SRC_OR_DST:          // D := ~S | D
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,MERGEPAINT);
+      break;
+    case BLT_NOT_SRC_OR_NOT_DST:      // D := ~S | ~D ==  ~(S & D)
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,0x7700E6);
+      break;
+    case BLT_SET:                     // D := 1
+      ::StretchBlt((HDC)ctx,dx,dy,dw,dh,shdc,sx,sy,sw,sh,WHITENESS);
       break;
     }
   source->ReleaseDC(shdc);
@@ -1649,51 +1895,51 @@ void FXDCWindow::drawImage(const FXImage* image,FXint dx,FXint dy){
   HDC dcMem=(HDC)image->GetDC();
   switch(rop){
     case BLT_CLR:                     // D := 0
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,BLACKNESS);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,BLACKNESS);
       break;
     case BLT_SRC_AND_DST:             // D := S & D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCAND);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCAND);
       break;
     case BLT_SRC_AND_NOT_DST:         // D := S & ~D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCERASE);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCERASE);
       break;
     case BLT_SRC:                     // D := S
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCCOPY);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCCOPY);
       break;
     case BLT_NOT_SRC_AND_DST:         // D := ~S & D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0x220326);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0x220326);
       break;
     case BLT_DST:                     // D := D
       break;
     case BLT_SRC_XOR_DST:             // D := S ^ D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCINVERT);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCINVERT);
       break;
     case BLT_SRC_OR_DST:              // D := S | D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCPAINT);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,SRCPAINT);
       break;
     case BLT_NOT_SRC_AND_NOT_DST:     // D := ~S & ~D  ==  D := ~(S | D)
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,NOTSRCERASE);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,NOTSRCERASE);
       break;
     case BLT_NOT_SRC_XOR_DST:         // D := ~S ^ D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0x990066); // Not sure about this one
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0x990066); // Not sure about this one
       break;
     case BLT_NOT_DST:                 // D := ~D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,DSTINVERT);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,DSTINVERT);
       break;
     case BLT_SRC_OR_NOT_DST:          // D := S | ~D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0xDD0228);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0xDD0228);
       break;
     case BLT_NOT_SRC:                 // D := ~S
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,NOTSRCCOPY);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,NOTSRCCOPY);
       break;
     case BLT_NOT_SRC_OR_DST:          // D := ~S | D
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,MERGEPAINT);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,MERGEPAINT);
       break;
     case BLT_NOT_SRC_OR_NOT_DST:      // D := ~S | ~D  ==  ~(S & D)
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0x7700E6);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,0x7700E6);
       break;
     case BLT_SET:                     // D := 1
-      BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,WHITENESS);
+      ::BitBlt((HDC)ctx,dx,dy,image->width,image->height,dcMem,0,0,WHITENESS);
       break;
     }
   image->ReleaseDC(dcMem);
@@ -1707,51 +1953,51 @@ void FXDCWindow::drawBitmap(const FXBitmap* bitmap,FXint dx,FXint dy) {
   HDC dcMem=(HDC)bitmap->GetDC();
   switch(rop){
     case BLT_CLR:                     // D := 0
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,BLACKNESS);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,BLACKNESS);
       break;
     case BLT_SRC_AND_DST:             // D := S & D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCAND);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCAND);
       break;
     case BLT_SRC_AND_NOT_DST:         // D := S & ~D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCERASE);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCERASE);
       break;
     case BLT_SRC:                     // D := S
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCCOPY);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCCOPY);
       break;
     case BLT_NOT_SRC_AND_DST:         // D := ~S & D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0x220326);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0x220326);
       break;
     case BLT_DST:                     // D := D
       break;
     case BLT_SRC_XOR_DST:             // D := S ^ D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCINVERT);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCINVERT);
       break;
     case BLT_SRC_OR_DST:              // D := S | D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCPAINT);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,SRCPAINT);
       break;
     case BLT_NOT_SRC_AND_NOT_DST:     // D := ~S & ~D  ==  D := ~(S | D)
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,NOTSRCERASE);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,NOTSRCERASE);
       break;
     case BLT_NOT_SRC_XOR_DST:         // D := ~S ^ D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0x990066); // Not sure about this one
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0x990066); // Not sure about this one
       break;
     case BLT_NOT_DST:                 // D := ~D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,DSTINVERT);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,DSTINVERT);
       break;
     case BLT_SRC_OR_NOT_DST:          // D := S | ~D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0xDD0228);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0xDD0228);
       break;
     case BLT_NOT_SRC:                 // D := ~S
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,NOTSRCCOPY);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,NOTSRCCOPY);
       break;
     case BLT_NOT_SRC_OR_DST:          // D := ~S | D
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,MERGEPAINT);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,MERGEPAINT);
       break;
     case BLT_NOT_SRC_OR_NOT_DST:      // D := ~S | ~D  ==  ~(S & D)
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0x7700E6);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,0x7700E6);
       break;
     case BLT_SET:                     // D := 1
-      BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,WHITENESS);
+      ::BitBlt((HDC)ctx,dx,dy,bitmap->width,bitmap->height,dcMem,0,0,WHITENESS);
       break;
     }
   bitmap->ReleaseDC(dcMem);
@@ -1762,22 +2008,23 @@ void FXDCWindow::drawBitmap(const FXBitmap* bitmap,FXint dx,FXint dy) {
 void FXDCWindow::drawIcon(const FXIcon* icon,FXint dx,FXint dy){
   if(!surface){ fxerror("FXDCWindow::drawIcon: DC not connected to drawable.\n"); }
   if(!icon || !icon->id() || !icon->shape){ fxerror("FXDCWindow::drawIcon: illegal icon specified.\n"); }
-  HDC hdcSrc=(HDC)icon->GetDC();
+  HDC hdcsrc=(HDC)icon->GetDC();
   if(icon->getOptions()&IMAGE_OPAQUE){
-    BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcSrc,0,0,SRCCOPY);
+    ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcsrc,0,0,SRCCOPY);
     }
   else{
-    HDC hdcMsk=CreateCompatibleDC((HDC)ctx);
-    SelectObject(hdcMsk,icon->shape);
-    COLORREF crOldBack=SetBkColor((HDC)ctx,RGB(255,255,255));
-    COLORREF crOldText=SetTextColor((HDC)ctx,RGB(0,0,0));
-    BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcMsk,0,0,SRCAND);
-    BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcSrc,0,0,SRCPAINT);
-    DeleteDC(hdcMsk);
-    SetBkColor((HDC)ctx,crOldBack);
-    SetTextColor((HDC)ctx,crOldText);
+    HDC hdcmsk=::CreateCompatibleDC((HDC)ctx);
+    HBITMAP holdbmp=(HBITMAP)::SelectObject(hdcmsk,(HBITMAP)icon->shape);
+    COLORREF coldback=::SetBkColor((HDC)ctx,RGB(255,255,255));
+    COLORREF coldtext=::SetTextColor((HDC)ctx,RGB(0,0,0));
+    ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcmsk,0,0,SRCAND);
+    ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcsrc,0,0,SRCPAINT);
+    ::SelectObject(hdcmsk,holdbmp);
+    ::DeleteDC(hdcmsk);
+    ::SetBkColor((HDC)ctx,coldback);
+    ::SetTextColor((HDC)ctx,coldtext);
     }
-  icon->ReleaseDC(hdcSrc);
+  icon->ReleaseDC(hdcsrc);
   }
 
 
@@ -1786,37 +2033,45 @@ void FXDCWindow::drawIcon(const FXIcon* icon,FXint dx,FXint dy){
 void FXDCWindow::drawIconShaded(const FXIcon* icon,FXint dx,FXint dy){
   if(!surface){ fxerror("FXDCWindow::drawIconShaded: DC not connected to drawable.\n"); }
   if(!icon || !icon->id() || !icon->shape){ fxerror("FXDCWindow::drawIconShaded: illegal icon specified.\n"); }
-  HDC hdcSrc=(HDC)icon->GetDC();
-  HDC hdcMsk=CreateCompatibleDC((HDC)ctx);
   FXColor selbackColor=getApp()->getSelbackColor();
-  SelectObject(hdcMsk,icon->shape);
-  COLORREF crOldBack=SetBkColor((HDC)ctx,RGB(255,255,255));
-  COLORREF crOldText=SetTextColor((HDC)ctx,RGB(0,0,0));
+  HDC hdcsrc=(HDC)icon->GetDC();
+  HDC hdcmsk=::CreateCompatibleDC((HDC)ctx);
+
+  // Set shape mask
+  HBITMAP holdbmp=(HBITMAP)::SelectObject(hdcmsk,(HBITMAP)icon->shape);
+
+  // Set colors
+  COLORREF coldback=::SetBkColor((HDC)ctx,RGB(255,255,255));
+  COLORREF coldtext=::SetTextColor((HDC)ctx,RGB(0,0,0));
 
   // Paint icon
-  BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcMsk,0,0,SRCAND);
-  BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcSrc,0,0,SRCPAINT);
+  ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcmsk,0,0,SRCAND);
+  ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcsrc,0,0,SRCPAINT);
 
-  HBRUSH hBrush=CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]);
-  HBRUSH hOldBrush=(HBRUSH)SelectObject((HDC)ctx,hBrush);
-  SetBrushOrgEx((HDC)ctx,dx,dy,NULL);
+  // Select brush
+  HBRUSH hbrush=::CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]);
+  HBRUSH holdbrush=(HBRUSH)::SelectObject((HDC)ctx,hbrush);
+  ::SetBrushOrgEx((HDC)ctx,dx,dy,NULL);
 
   // Make black where pattern is 0 and shape is 0 [DPSoa]
-  BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcMsk,0,0,0x00A803A9);
+  ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcmsk,0,0,0x00A803A9);
 
-  SetTextColor((HDC)ctx,RGB(FXREDVAL(selbackColor),FXGREENVAL(selbackColor),FXBLUEVAL(selbackColor)));
-  SetBkColor((HDC)ctx,RGB(0,0,0));
+  // Set colors
+  ::SetTextColor((HDC)ctx,RGB(FXREDVAL(selbackColor),FXGREENVAL(selbackColor),FXBLUEVAL(selbackColor)));
+  ::SetBkColor((HDC)ctx,RGB(0,0,0));
 
   // Make selbackcolor where pattern is 0 and shape is 0 [DPSoo]
-  BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcMsk,0,0,0x00FE02A9);
+  ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcmsk,0,0,0x00FE02A9);
 
-  SelectObject((HDC)ctx,hOldBrush);
-  DeleteObject(hBrush);
-  DeleteDC(hdcMsk);
-  SetBkColor((HDC)ctx,crOldBack);
-  SetTextColor((HDC)ctx,crOldText);
-  SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
-  icon->ReleaseDC(hdcSrc);
+  // Resetore ctx
+  ::SelectObject(hdcmsk,holdbmp);
+  ::DeleteDC(hdcmsk);
+  ::SelectObject((HDC)ctx,holdbrush);
+  ::DeleteObject(hbrush);
+  ::SetBkColor((HDC)ctx,coldback);
+  ::SetTextColor((HDC)ctx,coldtext);
+  ::SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
+  icon->ReleaseDC(hdcsrc);
   }
 
 
@@ -1825,72 +2080,81 @@ void FXDCWindow::drawIconShaded(const FXIcon* icon,FXint dx,FXint dy){
 void FXDCWindow::drawIconSunken(const FXIcon* icon,FXint dx,FXint dy){
   if(!surface){ fxerror("FXDCWindow::drawIconSunken: DC not connected to drawable.\n"); }
   if(!icon || !icon->id() || !icon->shape){ fxerror("FXDCWindow::drawIconSunken: illegal icon specified.\n"); }
-  HDC hdcSrc=(HDC)icon->GetDC();
-  HDC hdcMono=CreateCompatibleDC((HDC)ctx);
-  SelectObject(hdcMono,icon->etch);
+  FXColor shadowColor=getApp()->getShadowColor();
+  FXColor hiliteColor=getApp()->getHiliteColor();
+  HDC hdcsrc=(HDC)icon->GetDC();
+  HDC hdcmono=::CreateCompatibleDC((HDC)ctx);
 
-  // Apparently, BkColor and TextColor apply to the source
-  COLORREF crOldBack=SetBkColor((HDC)ctx,RGB(255,255,255));
-  COLORREF crOldText=SetTextColor((HDC)ctx,RGB(0,0,0));
+  // Set etch mask
+  HBITMAP holdbmp=(HBITMAP)::SelectObject(hdcmono,(HBITMAP)icon->etch);
+
+  // Set colors
+  COLORREF coldback=::SetBkColor((HDC)ctx,RGB(255,255,255));
+  COLORREF coldtext=::SetTextColor((HDC)ctx,RGB(0,0,0));
 
   // While brush colors apply to the pattern
-  FXColor hiliteColor=getApp()->getHiliteColor();
-  HBRUSH hbrHilite=CreateSolidBrush(RGB(FXREDVAL(hiliteColor),FXGREENVAL(hiliteColor),FXBLUEVAL(hiliteColor)));
-  HBRUSH oldBrush=(HBRUSH)SelectObject((HDC)ctx,hbrHilite);
+  HBRUSH hbrhilite=::CreateSolidBrush(RGB(FXREDVAL(hiliteColor),FXGREENVAL(hiliteColor),FXBLUEVAL(hiliteColor)));
+  HBRUSH holdbrush=(HBRUSH)::SelectObject((HDC)ctx,hbrhilite);
 
   // BitBlt the black bits in the monochrome bitmap into highlight colors
   // in the destination DC (offset a bit). This BitBlt(), and the next one,
   // use an unnamed raster op (0xB8074a) whose effect is D := ((D ^ P) & S) ^ P.
   // Or at least I think it is ;) The code = PSDPxax, so that's correct JVZ
-  BitBlt((HDC)ctx,dx+1,dy+1,icon->getWidth(),icon->getHeight(),hdcMono,0,0,0xB8074A);
-  FXColor shadowColor=getApp()->getShadowColor();
-  HBRUSH hbrShadow=CreateSolidBrush(RGB(FXREDVAL(shadowColor),FXGREENVAL(shadowColor),FXBLUEVAL(shadowColor)));
-  SelectObject((HDC)ctx,hbrShadow);
+  ::BitBlt((HDC)ctx,dx+1,dy+1,icon->getWidth(),icon->getHeight(),hdcmono,0,0,0xB8074A);
+  HBRUSH hbrshadow=::CreateSolidBrush(RGB(FXREDVAL(shadowColor),FXGREENVAL(shadowColor),FXBLUEVAL(shadowColor)));
+  ::SelectObject((HDC)ctx,hbrshadow);
 
   // Now BitBlt the black bits in the monochrome bitmap into the
   // shadow color on the destination DC.
-  BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcMono,0,0,0xB8074A);
-  DeleteDC(hdcMono);
-  SelectObject((HDC)ctx,oldBrush);
-  DeleteObject(hbrHilite);
-  DeleteObject(hbrShadow);
-  SetBkColor((HDC)ctx,crOldBack);
-  SetTextColor((HDC)ctx,crOldText);
-  icon->ReleaseDC(hdcSrc);
+  ::BitBlt((HDC)ctx,dx,dy,icon->getWidth(),icon->getHeight(),hdcmono,0,0,0xB8074A);
+
+  // Resetore ctx
+  ::SelectObject(hdcmono,holdbmp);
+  ::DeleteDC(hdcmono);
+  ::SelectObject((HDC)ctx,holdbrush);
+  ::DeleteObject(hbrhilite);
+  ::DeleteObject(hbrshadow);
+  ::SetBkColor((HDC)ctx,coldback);
+  ::SetTextColor((HDC)ctx,coldtext);
+  icon->ReleaseDC(hdcsrc);
   }
 
 
 // Draw hash box
 void FXDCWindow::drawHashBox(FXint x,FXint y,FXint w,FXint h,FXint b){
   if(!surface){ fxerror("FXDCWindow::drawHashBox: DC not connected to drawable.\n"); }
-  HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]));
-  COLORREF crOldBack=SetBkColor((HDC)ctx,RGB(255,255,255));
-  COLORREF crOldText=SetTextColor((HDC)ctx,RGB(0,0,0));
-  PatBlt((HDC)ctx,x,y,w-b,b,PATINVERT);
-  PatBlt((HDC)ctx,x+w-b,y,b,h-b,PATINVERT);
-  PatBlt((HDC)ctx,x+b,y+h-b,w-b,b,PATINVERT);
-  PatBlt((HDC)ctx,x,y+b,b,h-b,PATINVERT);
-  DeleteObject(SelectObject((HDC)ctx,hBrush));
-  SetBkColor((HDC)ctx,crOldBack);
-  SetTextColor((HDC)ctx,crOldText);
+  HBRUSH hbrush=::CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]);
+  HBRUSH holdbrush=(HBRUSH)::SelectObject((HDC)ctx,hbrush);
+  COLORREF coldback=::SetBkColor((HDC)ctx,RGB(255,255,255));
+  COLORREF coldtext=::SetTextColor((HDC)ctx,RGB(0,0,0));
+  ::PatBlt((HDC)ctx,x,y,w-b,b,PATINVERT);
+  ::PatBlt((HDC)ctx,x+w-b,y,b,h-b,PATINVERT);
+  ::PatBlt((HDC)ctx,x+b,y+h-b,w-b,b,PATINVERT);
+  ::PatBlt((HDC)ctx,x,y+b,b,h-b,PATINVERT);
+  ::SelectObject((HDC)ctx,holdbrush);
+  ::DeleteObject(hbrush);
+  ::SetBkColor((HDC)ctx,coldback);
+  ::SetTextColor((HDC)ctx,coldtext);
   }
 
 
 // Draw focus rectangle
 void FXDCWindow::drawFocusRectangle(FXint x,FXint y,FXint w,FXint h){
   if(!surface){ fxerror("FXDCWindow::drawFocusRectangle: DC not connected to drawable.\n"); }
-  HBRUSH hBrush=(HBRUSH)SelectObject((HDC)ctx,CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]));
-  COLORREF crOldBack=SetBkColor((HDC)ctx,RGB(255,255,255));
-  COLORREF crOldText=SetTextColor((HDC)ctx,RGB(0,0,0));
-  SetBrushOrgEx((HDC)ctx,x,y,NULL);
-  PatBlt((HDC)ctx,x,y,w-1,1,PATINVERT);
-  PatBlt((HDC)ctx,x+w-1,y,1,h-1,PATINVERT);
-  PatBlt((HDC)ctx,x+1,y+h-1,w-1,1,PATINVERT);
-  PatBlt((HDC)ctx,x,y+1,1,h-1,PATINVERT);
-  DeleteObject(SelectObject((HDC)ctx,hBrush));
-  SetBkColor((HDC)ctx,crOldBack);
-  SetTextColor((HDC)ctx,crOldText);
-  SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
+  HBRUSH hbrush=::CreatePatternBrush((HBITMAP)getApp()->stipples[STIPPLE_GRAY]);
+  HBRUSH holdbrush=(HBRUSH)::SelectObject((HDC)ctx,hbrush);
+  COLORREF coldback=::SetBkColor((HDC)ctx,RGB(255,255,255));
+  COLORREF coldtext=::SetTextColor((HDC)ctx,RGB(0,0,0));
+  ::SetBrushOrgEx((HDC)ctx,x,y,NULL);
+  ::PatBlt((HDC)ctx,x,y,w-1,1,PATINVERT);
+  ::PatBlt((HDC)ctx,x+w-1,y,1,h-1,PATINVERT);
+  ::PatBlt((HDC)ctx,x+1,y+h-1,w-1,1,PATINVERT);
+  ::PatBlt((HDC)ctx,x,y+1,1,h-1,PATINVERT);
+  ::SelectObject((HDC)ctx,holdbrush);
+  ::DeleteObject(hbrush);
+  ::SetBkColor((HDC)ctx,coldback);
+  ::SetTextColor((HDC)ctx,coldtext);
+  ::SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
   }
 
 
@@ -1920,7 +2184,9 @@ void FXDCWindow::updatePen(){
       lb.lbHatch=0;
       break;
     case FILL_TILED:
-      FXASSERT(FALSE);
+      lb.lbStyle=BS_SOLID;
+      lb.lbColor=devfg;
+      lb.lbHatch=0;
       break;
     case FILL_STIPPLED:
       if(stipple){
@@ -1985,37 +2251,37 @@ void FXDCWindow::updatePen(){
   // Line style
   if(style==LINE_SOLID){
     penstyle|=PS_SOLID;
-    DeleteObject(SelectObject((HDC)ctx,ExtCreatePen(penstyle,width,&lb,0,NULL)));
+    ::DeleteObject(::SelectObject((HDC)ctx,::ExtCreatePen(penstyle,width,&lb,0,NULL)));
     }
   else if(dashoff==0 && dashlen==2 && dashpat[0]==1 && dashpat[1]==1){
     penstyle|=PS_DOT;
-    DeleteObject(SelectObject((HDC)ctx,ExtCreatePen(penstyle,width,&lb,0,NULL)));
+    ::DeleteObject(::SelectObject((HDC)ctx,::ExtCreatePen(penstyle,width,&lb,0,NULL)));
     }
   else if(dashoff==0 && dashlen==2 && dashpat[0]==3 && dashpat[1]==1){
     penstyle|=PS_DASH;
-    DeleteObject(SelectObject((HDC)ctx,ExtCreatePen(penstyle,width,&lb,0,NULL)));
+    ::DeleteObject(::SelectObject((HDC)ctx,::ExtCreatePen(penstyle,width,&lb,0,NULL)));
     }
   else if(dashoff==0 && dashlen==4 && dashpat[0]==3 && dashpat[1]==1 && dashpat[2]==1 && dashpat[3]==1){
     penstyle|=PS_DASHDOT;
-    DeleteObject(SelectObject((HDC)ctx,ExtCreatePen(penstyle,width,&lb,0,NULL)));
+    ::DeleteObject(::SelectObject((HDC)ctx,::ExtCreatePen(penstyle,width,&lb,0,NULL)));
     }
   else if(dashoff==0 && dashlen==6 && dashpat[0]==3 && dashpat[1]==1 && dashpat[2]==1 && dashpat[3]==1 && dashpat[4]==1 && dashpat[5]==1){
     penstyle|=PS_DASHDOTDOT;
-    DeleteObject(SelectObject((HDC)ctx,ExtCreatePen(penstyle,width,&lb,0,NULL)));
+    ::DeleteObject(::SelectObject((HDC)ctx,::ExtCreatePen(penstyle,width,&lb,0,NULL)));
     }
   else{
     penstyle|=PS_USERSTYLE;
     for(i=0; i<dashlen; i++){ dashes[i]=dashpat[(i+dashoff)%dashlen]; }
-    DeleteObject(SelectObject((HDC)ctx,ExtCreatePen(penstyle,width,&lb,dashlen,dashes)));
+    ::DeleteObject(::SelectObject((HDC)ctx,::ExtCreatePen(penstyle,width,&lb,dashlen,dashes)));
     }
   if(fill==FILL_STIPPLED){
-    SetBkMode((HDC)ctx,TRANSPARENT);         // Alas, only works for BS_HATCHED...
+    ::SetBkMode((HDC)ctx,TRANSPARENT);         // Alas, only works for BS_HATCHED...
     }
   else{
-    SetBkMode((HDC)ctx,OPAQUE);
+    ::SetBkMode((HDC)ctx,OPAQUE);
     }
   if(fill!=FILL_SOLID){
-    SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
+    ::SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
     }
   needsPath=(width>1);
   needsNewPen=FALSE;
@@ -2029,10 +2295,18 @@ void FXDCWindow::updateBrush(){
       lb.lbStyle=BS_SOLID;
       lb.lbColor=devfg;
       lb.lbHatch=0;
+      ::DeleteObject(::SelectObject((HDC)ctx,::CreateBrushIndirect(&lb)));
       break;
     case FILL_TILED:
-      FXASSERT(FALSE);
-      lb.lbColor=devfg;
+      if(tile){
+        ::DeleteObject(::SelectObject((HDC)ctx,::CreatePatternBrush((HBITMAP)tile->id())));
+        }
+      else{
+        lb.lbStyle=BS_SOLID;
+        lb.lbColor=devfg;
+        lb.lbHatch=0;
+        ::DeleteObject(::SelectObject((HDC)ctx,::CreateBrushIndirect(&lb)));
+        }
       break;
     case FILL_STIPPLED:
       if(stipple){
@@ -2050,6 +2324,7 @@ void FXDCWindow::updateBrush(){
         lb.lbColor=devfg;
         lb.lbHatch=FXStipplePattern2Hatch(pattern);
         }
+      ::DeleteObject(::SelectObject((HDC)ctx,::CreateBrushIndirect(&lb)));
       break;
     case FILL_OPAQUESTIPPLED:
       if(stipple){
@@ -2067,17 +2342,17 @@ void FXDCWindow::updateBrush(){
         lb.lbColor=devfg;
         lb.lbHatch=FXStipplePattern2Hatch(pattern);
         }
+      ::DeleteObject(::SelectObject((HDC)ctx,::CreateBrushIndirect(&lb)));
       break;
     }
-  DeleteObject(SelectObject((HDC)ctx,CreateBrushIndirect(&lb)));
   if(fill==FILL_STIPPLED){
-    SetBkMode((HDC)ctx,TRANSPARENT);         // Alas, only works for BS_HATCHED...
+    ::SetBkMode((HDC)ctx,TRANSPARENT);         // Alas, only works for BS_HATCHED...
     }
   else{
-    SetBkMode((HDC)ctx,OPAQUE);
+    ::SetBkMode((HDC)ctx,OPAQUE);
     }
   if(fill!=FILL_SOLID){
-    SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
+    ::SetBrushOrgEx((HDC)ctx,tx,ty,NULL);
     }
   needsNewBrush=FALSE;
   }
@@ -2089,7 +2364,7 @@ void FXDCWindow::setForeground(FXColor clr){
   devfg=visual->getPixel(clr);
   needsNewPen=TRUE;
   needsNewBrush=TRUE;
-  SetTextColor((HDC)ctx,devfg);
+  ::SetTextColor((HDC)ctx,devfg);
   fg=clr;
   }
 
@@ -2098,7 +2373,7 @@ void FXDCWindow::setForeground(FXColor clr){
 void FXDCWindow::setBackground(FXColor clr){
   if(!surface){ fxerror("FXDCWindow::setBackground: DC not connected to drawable.\n"); }
   devbg=visual->getPixel(clr);
-  SetBkColor((HDC)ctx,devbg);
+  ::SetBkColor((HDC)ctx,devbg);
   bg=clr;
   }
 
@@ -2162,9 +2437,9 @@ void FXDCWindow::setFillStyle(FXFillStyle fillstyle){
 void FXDCWindow::setFillRule(FXFillRule fillrule){
   if(!surface){ fxerror("FXDCWindow::setFillRule: DC not connected to drawable.\n"); }
   if(fillrule==RULE_EVEN_ODD)
-    SetPolyFillMode((HDC)ctx,ALTERNATE);
+    ::SetPolyFillMode((HDC)ctx,ALTERNATE);
   else
-    SetPolyFillMode((HDC)ctx,WINDING);
+    ::SetPolyFillMode((HDC)ctx,WINDING);
   rule=fillrule;
   }
 
@@ -2177,51 +2452,51 @@ void FXDCWindow::setFunction(FXFunction func){
   // Also set ROP2 code for lines
   switch(rop){
     case BLT_CLR:                     // D := 0
-      SetROP2((HDC)ctx,R2_BLACK);
+      ::SetROP2((HDC)ctx,R2_BLACK);
       break;
     case BLT_SRC_AND_DST:             // D := S & D
-      SetROP2((HDC)ctx,R2_MASKPEN);
+      ::SetROP2((HDC)ctx,R2_MASKPEN);
       break;
     case BLT_SRC_AND_NOT_DST:         // D := S & ~D
-      SetROP2((HDC)ctx,R2_MASKPENNOT);
+      ::SetROP2((HDC)ctx,R2_MASKPENNOT);
       break;
     case BLT_SRC:                     // D := S
-      SetROP2((HDC)ctx,R2_COPYPEN);
+      ::SetROP2((HDC)ctx,R2_COPYPEN);
       break;
     case BLT_NOT_SRC_AND_DST:         // D := ~S & D
-      SetROP2((HDC)ctx,R2_MASKNOTPEN);
+      ::SetROP2((HDC)ctx,R2_MASKNOTPEN);
       break;
     case BLT_DST:                     // D := D
       break;
     case BLT_SRC_XOR_DST:             // D := S ^ D
-      SetROP2((HDC)ctx,R2_XORPEN);
+      ::SetROP2((HDC)ctx,R2_XORPEN);
       break;
     case BLT_SRC_OR_DST:              // D := S | D
-      SetROP2((HDC)ctx,R2_MERGEPEN);
+      ::SetROP2((HDC)ctx,R2_MERGEPEN);
       break;
     case BLT_NOT_SRC_AND_NOT_DST:     // D := ~S & ~D  ==  D := ~(S | D)
-      SetROP2((HDC)ctx,R2_NOTMERGEPEN);
+      ::SetROP2((HDC)ctx,R2_NOTMERGEPEN);
       break;
     case BLT_NOT_SRC_XOR_DST:         // D := ~S ^ D
-      SetROP2((HDC)ctx,R2_NOTXORPEN); // Is this the right one?
+      ::SetROP2((HDC)ctx,R2_NOTXORPEN); // Is this the right one?
       break;
     case BLT_NOT_DST:                 // D := ~D
-      SetROP2((HDC)ctx,R2_NOT);
+      ::SetROP2((HDC)ctx,R2_NOT);
       break;
     case BLT_SRC_OR_NOT_DST:          // D := S | ~D
-      SetROP2((HDC)ctx,R2_MERGEPENNOT);
+      ::SetROP2((HDC)ctx,R2_MERGEPENNOT);
       break;
     case BLT_NOT_SRC:                 // D := ~S
-      SetROP2((HDC)ctx,R2_NOTCOPYPEN);
+      ::SetROP2((HDC)ctx,R2_NOTCOPYPEN);
       break;
     case BLT_NOT_SRC_OR_DST:          // D := ~S | D
-      SetROP2((HDC)ctx,R2_MERGENOTPEN);
+      ::SetROP2((HDC)ctx,R2_MERGENOTPEN);
       break;
     case BLT_NOT_SRC_OR_NOT_DST:      // D := ~S | ~D  ==  ~(S & D)
-      SetROP2((HDC)ctx,R2_NOTMASKPEN);
+      ::SetROP2((HDC)ctx,R2_NOTMASKPEN);
       break;
     case BLT_SET:                     // D := 1
-      SetROP2((HDC)ctx,R2_WHITE);
+      ::SetROP2((HDC)ctx,R2_WHITE);
       break;
     }
   }
@@ -2273,10 +2548,10 @@ void FXDCWindow::setClipRegion(const FXRegion& region){
   clip.h=FXMIN(rectangle.y+rectangle.h,rect.y+rect.h)-clip.y;
   if(clip.w<=0) clip.w=0;
   if(clip.h<=0) clip.h=0;
-  HRGN hrgn=CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
-  CombineRgn(hrgn,hrgn,(HRGN)region.region,RGN_AND);
-  SelectClipRgn((HDC)ctx,hrgn);
-  DeleteObject(hrgn);
+  HRGN hrgn=::CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
+  ::CombineRgn(hrgn,hrgn,(HRGN)region.region,RGN_AND);
+  ::SelectClipRgn((HDC)ctx,hrgn);
+  ::DeleteObject(hrgn);
   }
 
 
@@ -2289,9 +2564,9 @@ void FXDCWindow::setClipRectangle(FXint x,FXint y,FXint w,FXint h){
   clip.h=FXMIN(y+h,rect.y+rect.h)-clip.y;
   if(clip.w<=0) clip.w=0;
   if(clip.h<=0) clip.h=0;
-  HRGN hrgn=CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
-  SelectClipRgn((HDC)ctx,hrgn);
-  DeleteObject(hrgn);
+  HRGN hrgn=::CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
+  ::SelectClipRgn((HDC)ctx,hrgn);
+  ::DeleteObject(hrgn);
   }
 
 
@@ -2304,9 +2579,9 @@ void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
   clip.h=FXMIN(rectangle.y+rectangle.h,rect.y+rect.h)-clip.y;
   if(clip.w<=0) clip.w=0;
   if(clip.h<=0) clip.h=0;
-  HRGN hrgn=CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
-  SelectClipRgn((HDC)ctx,hrgn);
-  DeleteObject(hrgn);
+  HRGN hrgn=::CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
+  ::SelectClipRgn((HDC)ctx,hrgn);
+  ::DeleteObject(hrgn);
   }
 
 
@@ -2314,9 +2589,9 @@ void FXDCWindow::setClipRectangle(const FXRectangle& rectangle){
 void FXDCWindow::clearClipRectangle(){
   if(!surface){ fxerror("FXDCWindow::clearClipRectangle: DC not connected to drawable.\n"); }
   clip=rect;
-  HRGN hrgn=CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
-  SelectClipRgn((HDC)ctx,hrgn);
-  DeleteObject(hrgn);
+  HRGN hrgn=::CreateRectRgn(clip.x,clip.y,clip.x+clip.w,clip.y+clip.h);
+  ::SelectClipRgn((HDC)ctx,hrgn);
+  ::DeleteObject(hrgn);
   }
 
 
@@ -2341,15 +2616,6 @@ void FXDCWindow::clearClipMask(){
   }
 
 
-// Set text font
-void FXDCWindow::setFont(FXFont *fnt){
-  if(!surface){ fxerror("FXDCWindow::setFont: DC not connected to drawable.\n"); }
-  if(!fnt || !fnt->id()){ fxerror("FXDCWindow::setFont: illegal or NULL font specified.\n"); }
-  SelectObject((HDC)ctx,fnt->id());
-  font=fnt;
-  }
-
-
 // Window will clip against child windows
 void FXDCWindow::clipChildren(FXbool yes){
   if(!surface){ fxerror("FXDCWindow::clipChildren: window has not yet been created.\n"); }
@@ -2363,60 +2629,60 @@ void FXDCWindow::clipChildren(FXbool yes){
   if(yes){
     if(!(dwFlags&WS_CLIPCHILDREN)){
       if((HWND)surface->id()!=GetDesktopWindow()){
-        hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
-        hBrush=(HBRUSH)SelectObject((HDC)ctx,GetStockObject(NULL_BRUSH));
-        hFont=(HFONT)SelectObject((HDC)ctx,GetStockObject(SYSTEM_FONT));
-        textcolor=GetTextColor((HDC)ctx);
-        backcolor=GetBkColor((HDC)ctx);
-        fillmode=GetPolyFillMode((HDC)ctx);
+        hPen=(HPEN)SelectObject((HDC)ctx,::GetStockObject(NULL_PEN));
+        hBrush=(HBRUSH)::SelectObject((HDC)ctx,::GetStockObject(NULL_BRUSH));
+        hFont=(HFONT)::SelectObject((HDC)ctx,::GetStockObject(SYSTEM_FONT));
+        textcolor=::GetTextColor((HDC)ctx);
+        backcolor=::GetBkColor((HDC)ctx);
+        fillmode=::GetPolyFillMode((HDC)ctx);
 
-        ReleaseDC((HWND)surface->id(),(HDC)ctx);
-        SetWindowLongPtr((HWND)surface->id(),GWL_STYLE,dwFlags|WS_CLIPCHILDREN);
-        ctx=GetDC((HWND)surface->id());
+        ::ReleaseDC((HWND)surface->id(),(HDC)ctx);
+        ::SetWindowLongPtr((HWND)surface->id(),GWL_STYLE,dwFlags|WS_CLIPCHILDREN);
+        ctx=::GetDC((HWND)surface->id());
 
-        SelectObject((HDC)ctx,hFont);
-        SelectObject((HDC)ctx,hPen);
-        SelectObject((HDC)ctx,hBrush);
+        ::SelectObject((HDC)ctx,hFont);
+        ::SelectObject((HDC)ctx,hPen);
+        ::SelectObject((HDC)ctx,hBrush);
 
         if(visual->colormap){
-          SelectPalette((HDC)ctx,(HPALETTE)visual->colormap,FALSE);
-          RealizePalette((HDC)ctx);
+          ::SelectPalette((HDC)ctx,(HPALETTE)visual->colormap,false);
+          ::RealizePalette((HDC)ctx);
           }
-        SetTextAlign((HDC)ctx,TA_BASELINE|TA_LEFT);
-        SetTextColor((HDC)ctx,textcolor);
-        SetBkColor((HDC)ctx,backcolor);
-        SetPolyFillMode((HDC)ctx,fillmode);
-        needsClipReset=FALSE;
+        ::SetTextAlign((HDC)ctx,TA_BASELINE|TA_LEFT);
+        ::SetTextColor((HDC)ctx,textcolor);
+        ::SetBkColor((HDC)ctx,backcolor);
+        ::SetPolyFillMode((HDC)ctx,fillmode);
+        needsClipReset=false;
         }
       }
     }
   else{
     if(dwFlags&WS_CLIPCHILDREN){
       if((HWND)surface->id()!=GetDesktopWindow()){
-        hPen=(HPEN)SelectObject((HDC)ctx,GetStockObject(NULL_PEN));
-        hBrush=(HBRUSH)SelectObject((HDC)ctx,GetStockObject(NULL_BRUSH));
-        hFont=(HFONT)SelectObject((HDC)ctx,GetStockObject(SYSTEM_FONT));
-        textcolor=GetTextColor((HDC)ctx);
-        backcolor=GetBkColor((HDC)ctx);
-        fillmode=GetPolyFillMode((HDC)ctx);
+        hPen=(HPEN)::SelectObject((HDC)ctx,::GetStockObject(NULL_PEN));
+        hBrush=(HBRUSH)::SelectObject((HDC)ctx,::GetStockObject(NULL_BRUSH));
+        hFont=(HFONT)::SelectObject((HDC)ctx,::GetStockObject(SYSTEM_FONT));
+        textcolor=::GetTextColor((HDC)ctx);
+        backcolor=::GetBkColor((HDC)ctx);
+        fillmode=::GetPolyFillMode((HDC)ctx);
 
-        ReleaseDC((HWND)surface->id(),(HDC)ctx);
-        SetWindowLongPtr((HWND)surface->id(),GWL_STYLE,dwFlags&~WS_CLIPCHILDREN);
-        ctx=GetDC((HWND)surface->id());
+        ::ReleaseDC((HWND)surface->id(),(HDC)ctx);
+        ::SetWindowLong((HWND)surface->id(),GWL_STYLE,dwFlags&~WS_CLIPCHILDREN);
+        ctx=::GetDC((HWND)surface->id());
 
-        SelectObject((HDC)ctx,hFont);
-        SelectObject((HDC)ctx,hPen);
-        SelectObject((HDC)ctx,hBrush);
+        ::SelectObject((HDC)ctx,hFont);
+        ::SelectObject((HDC)ctx,hPen);
+        ::SelectObject((HDC)ctx,hBrush);
 
         if(visual->colormap){
-          SelectPalette((HDC)ctx,(HPALETTE)visual->colormap,FALSE);
-          RealizePalette((HDC)ctx);
+          ::SelectPalette((HDC)ctx,(HPALETTE)visual->colormap,false);
+          ::RealizePalette((HDC)ctx);
           }
-        SetTextAlign((HDC)ctx,TA_BASELINE|TA_LEFT);
-        SetTextColor((HDC)ctx,textcolor);
-        SetBkColor((HDC)ctx,backcolor);
-        SetPolyFillMode((HDC)ctx,fillmode);
-        needsClipReset=TRUE;
+        ::SetTextAlign((HDC)ctx,TA_BASELINE|TA_LEFT);
+        ::SetTextColor((HDC)ctx,textcolor);
+        ::SetBkColor((HDC)ctx,backcolor);
+        ::SetPolyFillMode((HDC)ctx,fillmode);
+        needsClipReset=true;
         }
       }
     }

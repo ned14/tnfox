@@ -3,7 +3,7 @@
 *                             B i t m a p    O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXBitmap.h,v 1.33 2005/01/16 16:06:06 fox Exp $                          *
+* $Id: FXBitmap.h,v 1.37 2006/01/22 17:57:59 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXBITMAP_H
 #define FXBITMAP_H
@@ -85,14 +85,30 @@ public:
   */
   FXBitmap(FXApp* a,const void *pix=NULL,FXuint opts=0,FXint w=1,FXint h=1);
 
-  /// To get to the pixel data
-  FXuchar* getData() const { return data; }
+  /// Change options
+  void setOptions(FXuint opts);
 
   /// To get to the option flags
   FXuint getOptions() const { return options; }
 
-  /// Change options
-  void setOptions(FXuint opts);
+  /**
+  * Populate the bitmap with new pixel data of the same size; it will assume
+  * ownership of the pixel data if image BITMAP_OWNED option is passed.
+  * The server-side representation of the image, if it exists, is not updated.
+  * This can be done by calling render().
+  */
+  virtual void setData(FXuchar *pix,FXuint opts=0);
+
+  /**
+  * Populate the bitmap with new pixel data of a new size; it will assume ownership
+  * of the pixel data if image BITMAP_OWNED option is passed.  The size of the server-
+  * side representation of the image, if it exists, is adjusted but the contents are
+  * not updated yet. This can be done by calling render().
+  */
+  virtual void setData(FXuchar *pix,FXuint opts,FXint w,FXint h);
+
+  /// To get to the pixel data
+  FXuchar* getData() const { return data; }
 
   /// Get pixel at x,y
   FXbool getPixel(FXint x,FXint y) const { return (FXbool)((data[y*bytewidth+(x>>3)]>>(x&7))&1); }
@@ -120,6 +136,11 @@ public:
   * The client-side pixel buffer is not affected.
   */
   virtual void destroy();
+
+  /**
+  * Retrieves pixels from the server-side bitmap.
+  */
+  virtual void restore();
 
   /**
   * Render the server-side representation of the bitmap from client-side
@@ -170,10 +191,10 @@ public:
   virtual void load(FXStream& store);
 
   /// Save pixel data only
-  virtual FXbool savePixels(FXStream& store) const;
+  virtual bool savePixels(FXStream& store) const;
 
   /// Load pixel data only
-  virtual FXbool loadPixels(FXStream& store);
+  virtual bool loadPixels(FXStream& store);
 
   /// Cleanup
   virtual ~FXBitmap();
@@ -182,3 +203,4 @@ public:
 }
 
 #endif
+

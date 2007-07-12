@@ -13,7 +13,7 @@ prior written permission */
 #include "FXCursor.h"
 #include "FXPNGImage.h"
 #include "FXWindow.h"
-#include "FXFile.h"
+#include "QFile.h"
 #include <qmemarray.h>
 #include <qptrvector.h>
 #include <qptrdict.h>
@@ -115,7 +115,7 @@ static void initHourglass(FXApp *app)
 			FXRBOp uni=FXRBNew(i);
 			templates.append(i);
 			uni.dismiss();
-			FXFile f(ipath);
+			QFile f(ipath);
 			f.open(IO_ReadOnly);
 			FXStream s(&f);
 			i->loadPixels(s);

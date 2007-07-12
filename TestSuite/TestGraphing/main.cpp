@@ -364,7 +364,7 @@ public:
 		{
 			if(dialog.execute())
 			{
-				FXFile fh(dialog.getFilename());
+				QFile fh(dialog.getFilename());
 				// Need to repaint the screen fully first
 				getApp()->runWhileEvents();
 				fh.open(IO_WriteOnly);

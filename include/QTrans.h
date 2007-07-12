@@ -108,6 +108,8 @@ public:
 	QTransString &arg(double num, FXint fieldwidth=0, FXchar fmt='g', int prec=-1);
 	/*! \overload */
 	operator FXString() { return translate(); }
+	/*! For FOX use only */
+	const FXchar *text();
 
 	//! Stores the translatable string's text plus id to identify this translation
 	void save(FXStream &s) const;

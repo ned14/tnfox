@@ -3,7 +3,7 @@
 *                            V i s u a l   C l a s s                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGLVisual.cpp,v 1.61 2005/01/31 17:53:07 fox Exp $                      *
+* $Id: FXGLVisual.cpp,v 1.69.2.2 2007/02/22 15:45:56 fox Exp $                      *
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
@@ -27,7 +27,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -89,7 +89,7 @@
 
 #define DISPLAY(app) ((Display*)((app)->display))
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -291,6 +291,57 @@ void FXGLVisual::create(){
         fxerror("%s::create: Unable to obtain OpenGL version numbers.\n",getClassName());
         }
 
+/*
+#if defined(GLX_VERSION_1_3)
+      const char *glxexts="";
+      glxexts=glXQueryExtensionsString(DISPLAY(getApp()),DefaultScreen(DISPLAY(getApp())));
+      GLXFBConfig *fbconfigs;
+      int nfbconfigs,value;
+      fbconfigs=glXGetFBConfigs(DISPLAY(getApp()),DefaultScreen(DISPLAY(getApp())),&nfbconfigs);
+      FXTRACE((1,"nfbconfigs: %d\n",nfbconfigs));
+      for(int i=0; i<nfbconfigs; i++){
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_FBCONFIG_ID,&value);
+        FXTRACE((1,"GLX_FBCONFIG_ID=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_RENDER_TYPE,&value);
+        FXTRACE((1,"GLX_RENDER_TYPE=%s %s\n",(value&GLX_RGBA_BIT)?"GLX_RGBA_BIT":"",(value&GLX_COLOR_INDEX_BIT)?"GLX_COLOR_INDEX_BIT":""));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_DRAWABLE_TYPE,&value);
+        FXTRACE((1,"GLX_DRAWABLE_TYPE=%s %s %s\n",(value&GLX_WINDOW_BIT)?"GLX_WINDOW_BIT":"",(value&GLX_PIXMAP_BIT)?"GLX_PIXMAP_BIT":"",(value&GLX_PBUFFER_BIT)?"GLX_PBUFFER_BIT":""));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_X_RENDERABLE,&value);
+        FXTRACE((1,"GLX_X_RENDERABLE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_X_VISUAL_TYPE,&value);
+        FXTRACE((1,"GLX_X_VISUAL_TYPE=0x%04x\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_VISUAL_ID,&value);
+        FXTRACE((1,"GLX_VISUAL_ID=0x%02x\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_RED_SIZE,&value);
+        FXTRACE((1,"GLX_RED_SIZE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_GREEN_SIZE,&value);
+        FXTRACE((1,"GLX_GREEN_SIZE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_BLUE_SIZE,&value);
+        FXTRACE((1,"GLX_BLUE_SIZE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_ALPHA_SIZE,&value);
+        FXTRACE((1,"GLX_ALPHA_SIZE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_DEPTH_SIZE,&value);
+        FXTRACE((1,"GLX_DEPTH_SIZE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_STENCIL_SIZE,&value);
+        FXTRACE((1,"GLX_STENCIL_SIZE=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_LEVEL,&value);
+        FXTRACE((1,"GLX_LEVEL=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_DOUBLEBUFFER,&value);
+        FXTRACE((1,"GLX_DOUBLEBUFFER=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_STEREO,&value);
+        FXTRACE((1,"GLX_STEREO=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_MAX_PBUFFER_WIDTH,&value);
+        FXTRACE((1,"GLX_MAX_PBUFFER_WIDTH=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_MAX_PBUFFER_HEIGHT,&value);
+        FXTRACE((1,"GLX_MAX_PBUFFER_HEIGHT=%d\n",value));
+        glXGetFBConfigAttrib(DISPLAY(getApp()),fbconfigs[i],GLX_MAX_PBUFFER_PIXELS,&value);
+        FXTRACE((1,"GLX_MAX_PBUFFER_PIXELS=%d\n",value));
+        FXTRACE((1,"\n"));
+        }
+      FXTRACE((1,"glx extensions: %s\n",glxexts));
+#endif
+*/
+
       // Scan for all visuals of given screen
       vitemplate.screen=DefaultScreen(DISPLAY(getApp()));
       vi=XGetVisualInfo(DISPLAY(getApp()),VisualScreenMask,&vitemplate,&nvi);
@@ -491,7 +542,7 @@ void FXGLVisual::create(){
       int bestvis,dmatch,bestmatch;
       int dred,dgreen,dblue,ddepth,dalpha,dstencil;
       int daccred,daccgreen,daccblue,daccalpha;
-      int nvi,i;
+      int chosen,nvi,i;
 
       // Get some window handle
       hdc=GetDC(GetDesktopWindow());
@@ -510,6 +561,10 @@ void FXGLVisual::create(){
 
         // Get info about this visual
         DescribePixelFormat(hdc,i,sizeof(PIXELFORMATDESCRIPTOR),&pfd);
+
+        // Make sure this visual is valid
+        chosen=ChoosePixelFormat(hdc,&pfd);
+        if(chosen!=i) continue;
 
         // Draw to window is required
         if(!(pfd.dwFlags&PFD_DRAW_TO_WINDOW)) continue;
@@ -649,7 +704,7 @@ void FXGLVisual::create(){
         FXTRACE((150,"  accelerated = %d\n",glaccel));
 
         // May the best visual win
-        if(dmatch<bestmatch){
+        if(dmatch<=bestmatch){
           bestmatch=dmatch;
           bestvis=i;
           }
@@ -662,11 +717,11 @@ void FXGLVisual::create(){
       FXTRACE((150,"Best Pixel Format (%d) match value = %d\n",bestvis,bestmatch));
 
       // Get the true h/w capabilities
-      pixelformat=bestvis;
+      visual=(void*)(FXival)bestvis;
       FXMALLOC(&info,PIXELFORMATDESCRIPTOR,1);
       ((PIXELFORMATDESCRIPTOR*)info)->nSize=sizeof(PIXELFORMATDESCRIPTOR);
       ((PIXELFORMATDESCRIPTOR*)info)->nVersion=1;
-      DescribePixelFormat(hdc,pixelformat,sizeof(PIXELFORMATDESCRIPTOR),(PIXELFORMATDESCRIPTOR*)info);
+      DescribePixelFormat(hdc,bestvis,sizeof(PIXELFORMATDESCRIPTOR),(PIXELFORMATDESCRIPTOR*)info);
 
       // Make a palette for it if needed
       if(((PIXELFORMATDESCRIPTOR*)info)->dwFlags&PFD_NEED_PALETTE){
@@ -1017,7 +1072,7 @@ FXGLVisual::~FXGLVisual(){
 /*******************************************************************************/
 
 
-#if defined(HAVE_XFT_H) && defined(HAVE_GL_H)  
+#if defined(HAVE_XFT_H) && defined(HAVE_GL_H)
 
 // Xft version
 static void glXUseXftFont(XftFont* font,int first,int count,int listBase){
@@ -1117,6 +1172,12 @@ void glUseFXFont(FXFont* font,int first,int count,int list){
 #else
   HDC hdc=wglGetCurrentDC();
   HFONT oldfont=(HFONT)SelectObject(hdc,(HFONT)font->id());
+// Replace wglUseFontBitmaps() with wglUseFontBitmapsW()
+// Change glCallLists() parameter:
+//   len=utf2ncs(sbuffer,text.text(),text.length());
+//   glCallLists(len,GL_UNSIGNED_SHORT,(GLushort*)sbuffer);
+// Figure out better values for "first" and "count".
+//FXbool result=wglUseFontBitmaps(hdc,first,count,list);
   FXbool result=wglUseFontOutlines(hdc,first,count,list,0.01f,0,WGL_FONT_POLYGONS,NULL);
   SelectObject(hdc,oldfont);
 #endif

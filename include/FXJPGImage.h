@@ -3,7 +3,7 @@
 *                      J P E G   I m a g e   O b j e c t                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by David Tyree.   All Rights Reserved.                *
+* Copyright (C) 2000,2006 by David Tyree.   All Rights Reserved.                *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXJPGImage.h,v 1.16 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXJPGImage.h,v 1.20 2006/01/24 13:53:11 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXJPGIMAGE_H
 #define FXJPGIMAGE_H
@@ -43,16 +43,14 @@ private:
   FXJPGImage &operator=(const FXJPGImage&);
 public:
   static const FXchar *fileExt;
+  static const FXchar *mimeType;
 public:
 
   /// Construct an image from memory stream formatted in JPEG format
-  FXJPGImage(FXApp *a,const void *pix=NULL,FXuint opts=0,FXint w=1,FXint h=1);
+  FXJPGImage(FXApp *a,const void *pix=NULL,FXuint opts=0,FXint w=1,FXint h=1,FXint q=75);
 
-  /// Save pixels into stream in JPEG format
-  virtual FXbool loadPixels(FXStream& store);
-
-  /// Load pixels from stream in JPEG format
-  virtual FXbool savePixels(FXStream& store) const;
+  /// True if format is supported
+  static const bool supported;
 
   /// Set image quality to save with
   void setQuality(FXint q){ quality=q; }
@@ -60,8 +58,11 @@ public:
   /// Get image quality setting
   FXint getQuality() const { return quality; }
 
-  /// True if format is supported
-  static const FXbool supported;
+  /// Save pixels into stream in JPEG format
+  virtual bool loadPixels(FXStream& store);
+
+  /// Load pixels from stream in JPEG format
+  virtual bool savePixels(FXStream& store) const;
 
   /// Destroy
   virtual ~FXJPGImage();
@@ -71,7 +72,7 @@ public:
 /**
 * Check if stream contains a JPG, return TRUE if so.
 */
-extern FXAPI FXbool fxcheckJPG(FXStream& store);
+extern FXAPI bool fxcheckJPG(FXStream& store);
 
 
 /**
@@ -79,13 +80,13 @@ extern FXAPI FXbool fxcheckJPG(FXStream& store);
 * Upon successful return, the pixel array and size are returned.
 * If an error occurred, the pixel array is set to NULL.
 */
-extern FXAPI FXbool fxloadJPG(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& quality);
+extern FXAPI bool fxloadJPG(FXStream& store,FXColor*& data,FXint& width,FXint& height,FXint& quality);
 
 
 /**
 * Save an JPEG (Joint Photographics Experts Group) file to a stream.
 */
-extern FXAPI FXbool fxsaveJPG(FXStream& store,const FXColor* data,FXint width,FXint height,FXint quality);
+extern FXAPI bool fxsaveJPG(FXStream& store,const FXColor* data,FXint width,FXint height,FXint quality);
 
 }
 

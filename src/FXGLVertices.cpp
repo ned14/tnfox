@@ -201,7 +201,7 @@ inline void FXGLVertices::renderLines(FXGLViewer *viewer, bool isHit, bool compl
       }
     if(complex){
       FXVec3f vector=vertices[n+1]-vertices[n];
-      FXfloat len=veclen(vector);
+      FXfloat len=vector.length();
       if(!(options & VERTICES_POINTS) || len>=pointSize*0.8f){
         glPushMatrix();
         glTranslatef(vertices[n].x,vertices[n].y,vertices[n].z);
@@ -209,7 +209,7 @@ inline void FXGLVertices::renderLines(FXGLViewer *viewer, bool isHit, bool compl
         // Cylinder points in Z direction, so we need to rotate so it follows vector
         FXVec3f vectornormal(vecnormalize(vector));
         FXVec3f axis(vectornormal^zaxis);
-        FXfloat angle=((FXfloat) RTOD)*asinf(veclen(axis));
+        FXfloat angle=((FXfloat) RTOD)*asinf(axis.length());
         //FXfloat dotproduct=vectornormal*axis;
         if(vector.z<0) angle+=180;
         glRotatef(angle,axis.x,axis.y,axis.z);

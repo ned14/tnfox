@@ -3,7 +3,7 @@
 *          M u l t i p l e   D o c u m e n t   C l i e n t   W i n d o w        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIClient.cpp,v 1.57 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXMDIClient.cpp,v 1.62.2.1 2006/05/10 13:18:13 fox Exp $                     *
 ********************************************************************************/
 #ifndef FX_DISABLEMDI
 
@@ -27,7 +27,7 @@
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -98,7 +98,7 @@
 #define CLIENT_MIN_HEIGHT 16
 
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -589,7 +589,9 @@ long FXMDIClient::onUpdActivatePrev(FXObject* sender,FXSelector,void*){
   }
 
 
-// Delegate all other messages to active child
+// Delegate all other messages to active child; we can't block any
+// messages here as some are meant fot the FXMDIChild and some for
+// the FXMDIChild's content or target.
 long FXMDIClient::onDefault(FXObject* sender,FXSelector sel,void* ptr){
   return active && active->handle(sender,sel,ptr);
   }

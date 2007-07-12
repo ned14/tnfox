@@ -3,7 +3,7 @@
 *                          P i c k e r   B u t t o n                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2001,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXPicker.cpp,v 1.18 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXPicker.cpp,v 1.21.2.1 2006/10/19 19:15:19 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -43,7 +43,7 @@
   Notes:
 */
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -107,11 +107,15 @@ long FXPicker::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
   handle(this,FXSEL(SEL_FOCUS_SELF,0),ptr);
   flags&=~FLAG_TIP;
   if(isEnabled()){
-    if(state!=STATE_DOWN){
+    if(state==STATE_UP){
       grab();
       setState(STATE_DOWN);
       flags&=~FLAG_UPDATE;
       }
+    else{
+      setState(STATE_UP);
+      }
+/*      
     else{
       ungrab();
       flags|=FLAG_UPDATE;
@@ -119,6 +123,7 @@ long FXPicker::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
       FXPoint point(event->root_x,event->root_y);
       if(target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)&point); }
       }
+*/      
     return 1;
     }
   return 0;
@@ -126,7 +131,17 @@ long FXPicker::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
 
 
 // Released mouse button
-long FXPicker::onLeftBtnRelease(FXObject*,FXSelector,void*){
+long FXPicker::onLeftBtnRelease(FXObject*,FXSelector,void* ptr){
+  FXEvent* event=(FXEvent*)ptr;
+  if(isEnabled()){
+    if(state==STATE_UP){
+      ungrab();
+      flags|=FLAG_UPDATE;
+      FXPoint point(event->root_x,event->root_y);
+      if(target){ target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)&point); }
+      }
+    return 1;
+    }
   return 0;
   }
 

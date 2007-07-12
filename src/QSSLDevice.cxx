@@ -28,7 +28,7 @@
 #include "QThread.h"
 #include "QTrans.h"
 #include "FXRollback.h"
-#include "FXFile.h"
+#include "FXPath.h"
 #include "FXNetwork.h"
 #include "QBuffer.h"
 #include "FXErrCodes.h"

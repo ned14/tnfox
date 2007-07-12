@@ -3,7 +3,7 @@
 *                        C o l o r W h e e l   W i d g e t                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2001,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2001,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorWheel.h,v 1.26 2005/01/16 16:06:06 fox Exp $                      *
+* $Id: FXColorWheel.h,v 1.31 2006/01/22 17:57:59 fox Exp $                      *
 ********************************************************************************/
 #ifndef FXCOLORWHEEL_H
 #define FXCOLORWHEEL_H
@@ -35,7 +35,7 @@ class FXImage;
 
 
 /**
-* A Color Wheel is a widget which controls the hue and saturation values of a
+* A ColorWheel is a widget which controls the hue and saturation values of a
 * color.  It is most often used together with a Color Bar which controls the
 * brighness.
 */
@@ -44,10 +44,10 @@ class FXAPI FXColorWheel : public FXFrame {
 protected:
   FXImage  *dial;         // HSV dial image
   FXfloat   hsv[3];       // Hue, saturation, value
-  FXint     spotx;        // Spot x location
-  FXint     spoty;        // Spot Y location
   FXint     dialx;        // Dial x location
   FXint     dialy;        // Dial Y location
+  FXint     spotx;        // Spot x location
+  FXint     spoty;        // Spot Y location
   FXString  tip;          // Tooltip value
   FXString  help;         // Help value
 protected:
@@ -73,7 +73,7 @@ public:
   long onQueryTip(FXObject*,FXSelector,void*);
 public:
 
-  /// Construct color well with initial color clr
+  /// Construct color wheel with initial color clr
   FXColorWheel(FXComposite* p,FXObject* tgt=NULL,FXSelector sel=0,FXuint opts=FRAME_NORMAL,FXint x=0,FXint y=0,FXint w=0,FXint h=0,FXint pl=DEFAULT_PAD,FXint pr=DEFAULT_PAD,FXint pt=DEFAULT_PAD,FXint pb=DEFAULT_PAD);
 
   /// Create server-side resources
@@ -109,14 +109,17 @@ public:
   /// Return value
   FXfloat getVal() const { return hsv[2]; }
 
+  /// Set hue, saturation, value
+  void setHueSatVal(FXfloat h,FXfloat s,FXfloat v);
+
   /// Set status line help text for this color well
-  void setHelpText(const FXString& text);
+  void setHelpText(const FXString& text){ help=text; }
 
   /// Get status line help text for this color well
   const FXString& getHelpText() const { return help; }
 
   /// Set tool tip message for this color well
-  void setTipText(const FXString& text);
+  void setTipText(const FXString& text){ tip=text; }
 
   /// Get tool tip message for this color well
   const FXString& getTipText() const { return tip; }

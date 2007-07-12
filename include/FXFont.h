@@ -3,7 +3,7 @@
 *                               F o n t   O b j e c t                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFont.h,v 1.47 2005/01/16 16:06:06 fox Exp $                            *
+* $Id: FXFont.h,v 1.66 2006/01/22 17:58:02 fox Exp $                            *
 ********************************************************************************/
 #ifndef FXFONT_H
 #define FXFONT_H
@@ -29,35 +29,6 @@
 #endif
 
 namespace FX {
-
-
-/// Font style hints which influence the matcher
-enum FXFontHint {
-  FONTPITCH_DEFAULT    = 0,         /// Default pitch
-  FONTPITCH_FIXED      = 1,         /// Fixed pitch, mono-spaced
-  FONTPITCH_VARIABLE   = 2,         /// Variable pitch, proportional spacing
-  FONTHINT_DONTCARE    = 0,         /// Don't care which font
-  FONTHINT_DECORATIVE  = 4,         /// Fancy fonts
-  FONTHINT_MODERN      = 8,         /// Monospace typewriter font
-  FONTHINT_ROMAN       = 16,        /// Variable width times-like font, serif
-  FONTHINT_SCRIPT      = 32,        /// Script or cursive
-  FONTHINT_SWISS       = 64,        /// Helvetica/swiss type font, sans-serif
-  FONTHINT_SYSTEM      = 128,       /// System font
-  FONTHINT_X11         = 256,       /// X11 Font string
-  FONTHINT_SCALABLE    = 512,       /// Scalable fonts
-  FONTHINT_POLYMORPHIC = 1024       /// Polymorphic fonts
-  };
-
-
-/// Font slant
-enum FXFontSlant {
-  FONTSLANT_DONTCARE        = 0,        /// Don't care about slant
-  FONTSLANT_REGULAR         = 1,        /// Regular straight up
-  FONTSLANT_ITALIC          = 2,        /// Italics
-  FONTSLANT_OBLIQUE         = 3,        /// Oblique slant
-  FONTSLANT_REVERSE_ITALIC  = 4,        /// Reversed italic
-  FONTSLANT_REVERSE_OBLIQUE = 5         /// Reversed oblique
-  };
 
 
 /// Font character set encoding
@@ -112,6 +83,8 @@ enum FXFontEncoding {
   FONTENCODING_CP1258       = 1258,     /// Windows Vietnam
   FONTENCODING_CP874        = 874,      /// Windows Thai
 
+  FONTENCODING_UNICODE      = 9999,
+
   FONTENCODING_LATIN1       = FONTENCODING_ISO_8859_1,   /// Latin 1 (West European)
   FONTENCODING_LATIN2       = FONTENCODING_ISO_8859_2,   /// Latin 2 (East European)
   FONTENCODING_LATIN3       = FONTENCODING_ISO_8859_3,   /// Latin 3 (South European)
@@ -141,53 +114,20 @@ enum FXFontEncoding {
   };
 
 
-/// Font weight
-enum FXFontWeight {
-  FONTWEIGHT_DONTCARE   = 0,        /// Don't care about weight
-  FONTWEIGHT_THIN       = 100,      /// Thin
-  FONTWEIGHT_EXTRALIGHT = 200,      /// Extra light
-  FONTWEIGHT_LIGHT      = 300,      /// Light
-  FONTWEIGHT_NORMAL     = 400,      /// Normal or regular weight
-  FONTWEIGHT_REGULAR    = 400,      /// Normal or regular weight
-  FONTWEIGHT_MEDIUM     = 500,      /// Medium bold face
-  FONTWEIGHT_DEMIBOLD   = 600,      /// Demi bold face
-  FONTWEIGHT_BOLD       = 700,      /// Bold face
-  FONTWEIGHT_EXTRABOLD  = 800,      /// Extra
-  FONTWEIGHT_HEAVY      = 900,      /// Heavy
-  FONTWEIGHT_BLACK      = 900       /// Black
-  };
-
-
-/// Font relative setwidth
-enum FXFontSetWidth {
-  FONTSETWIDTH_DONTCARE       = 0,    /// Don't care about set width
-  FONTSETWIDTH_ULTRACONDENSED = 10,   /// Ultra condensed printing
-  FONTSETWIDTH_EXTRACONDENSED = 20,   /// Extra condensed
-  FONTSETWIDTH_CONDENSED      = 30,   /// Condensed
-  FONTSETWIDTH_NARROW         = 30,   /// Narrow
-  FONTSETWIDTH_COMPRESSED     = 30,   /// Compressed
-  FONTSETWIDTH_SEMICONDENSED  = 40,   /// Semi-condensed
-  FONTSETWIDTH_MEDIUM         = 50,   /// Medium printing
-  FONTSETWIDTH_NORMAL         = 50,   /// Normal printing
-  FONTSETWIDTH_REGULAR        = 50,   /// Regulat printing
-  FONTSETWIDTH_SEMIEXPANDED   = 60,   /// Semi expanded
-  FONTSETWIDTH_EXPANDED       = 70,   /// Expanded
-  FONTSETWIDTH_WIDE           = 80,   /// Wide
-  FONTSETWIDTH_EXTRAEXPANDED  = 80,   /// Extra expanded
-  FONTSETWIDTH_ULTRAEXPANDED  = 90    /// Ultra expanded
-  };
-
-
 /// Font style
 struct FXFontDesc {
-  FXchar          face[104];                /// Face name
-  FXuint          size;                     /// Size in deci-points
-  FXuint          weight;                   /// Weight [light, normal, bold, ...]
-  FXuint          slant;                    /// Slant [normal, italic, oblique, ...]
-  FXuint          setwidth;                 /// Set width [normal, condensed, expanded, ...]
-  FXuint          encoding;                 /// Encoding of character set
-  FXuint          flags;                    /// Flags
+  FXchar          face[116];                /// Face name
+  FXushort        size;                     /// Size in deci-points
+  FXushort        weight;                   /// Weight [light, normal, bold, ...]
+  FXushort        slant;                    /// Slant [normal, italic, oblique, ...]
+  FXushort        setwidth;                 /// Set width [normal, condensed, expanded, ...]
+  FXushort        encoding;                 /// Encoding of character set
+  FXushort        flags;                    /// Flags
   };
+
+
+class FXDC;
+class FXDCWindow;
 
 
 /// Font class
@@ -197,31 +137,87 @@ class FXAPI FXFont : public FXId {
 protected:
   FXString  wantedName;         // Desired font font name
   FXString  actualName;         // Matched font font name
-  FXuint    wantedSize;         // Font size (points*10)
-  FXuint    actualSize;         // Actual size that was matched
-  FXuint    wantedWeight;       // Font weight
-  FXuint    actualWeight;       // Font weight
-  FXuint    wantedSlant;        // Font slant
-  FXuint    actualSlant;        // Font slant
-  FXuint    wantedSetwidth;     // Relative setwidth
-  FXuint    actualSetwidth;     // Relative setwidth
-  FXuint    wantedEncoding;     // Character set encoding
-  FXuint    actualEncoding;     // Character set encoding
-  FXuint    hints;              // Matching hints
+  FXushort  wantedSize;         // Font size (points*10)
+  FXushort  actualSize;         // Actual size that was matched
+  FXushort  wantedWeight;       // Font weight
+  FXushort  actualWeight;       // Font weight
+  FXushort  wantedSlant;        // Font slant
+  FXushort  actualSlant;        // Font slant
+  FXushort  wantedSetwidth;     // Relative setwidth
+  FXushort  actualSetwidth;     // Relative setwidth
+  FXushort  wantedEncoding;     // Character set encoding
+  FXushort  actualEncoding;     // Character set encoding
+  FXushort  hints;              // Matching hint flags
+  FXushort  flags;              // Actual flags
+  FXshort   angle;              // Angle
   void     *font;               // Info about the font
 private:
 #ifdef WIN32
-  FXID      dc;                   // Dummy
+  FXID      dc;
 #endif
 protected:
   FXFont();
-#ifndef WIN32
-  const char* findbestfont(char* fontname);
-  char* findmatch(char* fontname,const char* forge,const char* family);
-#endif
+  void* match(const FXString& wantfamily,const FXString& wantforge,FXuint wantsize,FXuint wantweight,FXuint wantslant,FXuint wantsetwidth,FXuint wantencoding,FXuint wanthints,FXint res);
 private:
   FXFont(const FXFont&);
   FXFont &operator=(const FXFont&);
+public:
+
+  /// Font pitch hints
+  enum {
+    Fixed          = 1,         /// Fixed pitch, mono-spaced
+    Variable       = 2          /// Variable pitch, proportional spacing
+    };
+
+  /// Font style hints
+  enum {
+    Decorative     = 4,         /// Fancy fonts
+    Modern         = 8,         /// Monospace typewriter font
+    Roman          = 16,        /// Variable width times-like font, serif
+    Script         = 32,        /// Script or cursive
+    Swiss          = 64,        /// Helvetica/swiss type font, sans-serif
+    System         = 128,       /// System font
+    X11            = 256,       /// Raw X11 font string
+    Scalable       = 512,       /// Scalable fonts
+    Polymorphic    = 1024,      /// Polymorphic fonts, e.g. parametric weight, slant, etc.
+    Rotatable      = 2048       /// Rotatable fonts
+    };
+
+  /// Font slant options
+  enum {
+    ReverseOblique = 1,         /// Reversed oblique
+    ReverseItalic  = 2,         /// Reversed italic
+    Straight       = 5,         /// Straight, not slanted
+    Italic         = 8,         /// Italics
+    Oblique        = 9          /// Oblique slant
+    };
+
+  /// Font weight options
+  enum {
+    Thin           = 10,        /// Thin
+    ExtraLight     = 20,        /// Extra light
+    Light          = 30,        /// Light
+    Normal         = 40,        /// Normal or regular weight
+    Medium         = 50,        /// Medium bold face
+    DemiBold       = 60,        /// Demi bold face
+    Bold           = 70,        /// Bold face
+    ExtraBold      = 80,        /// Extra
+    Black          = 90         /// Black
+    };
+
+  /// Condensed or expanded options
+  enum {
+    UltraCondensed = 50,        /// Ultra condensed printing
+    ExtraCondensed = 63,        /// Extra condensed
+    Condensed      = 75,        /// Condensed
+    SemiCondensed  = 87,        /// Semi-condensed
+    NonExpanded    = 100,       /// Regular printing
+    SemiExpanded   = 113,       /// Semi expanded
+    Expanded       = 125,       /// Expanded
+    ExtraExpanded  = 150,       /// Extra expanded
+    UltraExpanded  = 200        /// Ultra expanded
+    };
+
 public:
 
   /**
@@ -231,7 +227,7 @@ public:
   *
   * For example:
   *
-  *     "helvetica [bitstream],120,bold,i,normal,iso8859-1,0"
+  *     "helvetica [bitstream],120,bold,italic,normal,iso8859-1,0"
   *
   * Typically, at least the font name, and size must be given for
   * normal font matching.  As a special case, raw X11 fonts can also be
@@ -239,10 +235,7 @@ public:
   *
   *     "9x15bold"
   *
-  * Finally, an old FOX 1.0 style font string may be passed as well:
-  *
-  *     "[helvetica] 90 700 1 1 0 0"
-  *
+  * Note: use of the raw X11 fonts is stronly discouraged.
   */
   FXFont(FXApp* a,const FXString& string);
 
@@ -252,7 +245,7 @@ public:
   * The font name may be comprised of a family name and optional foundry name enclosed in
   * square brackets, for example, "helvetica [bitstream]".
   */
-  FXFont(FXApp* a,const FXString& face,FXuint sz,FXuint wt=FONTWEIGHT_NORMAL,FXuint sl=FONTSLANT_REGULAR,FXuint enc=FONTENCODING_DEFAULT,FXuint setw=FONTSETWIDTH_DONTCARE,FXuint h=0);
+  FXFont(FXApp* a,const FXString& face,FXuint size,FXuint weight=FXFont::Normal,FXuint slant=FXFont::Straight,FXuint encoding=FONTENCODING_DEFAULT,FXuint setwidth=FXFont::NonExpanded,FXuint h=0);
 
   /// Construct font from font description
   FXFont(FXApp* a,const FXFontDesc& fontdesc);
@@ -265,6 +258,12 @@ public:
 
   /// Destroy the font
   virtual void destroy();
+
+  /// Return family part of name
+  FXString getFamily() const;
+
+  /// Return foundry part of name
+  FXString getFoundry() const;
 
   /// Get font family name
   const FXString& getName() const { return wantedName; }
@@ -305,16 +304,20 @@ public:
   /// Get hints
   FXuint getHints() const { return hints; }
 
-  /// Change font description
-  void setFontDesc(const FXFontDesc& fontdesc);
+  /// Get flags
+  FXuint getFlags() const { return flags; }
 
   /// Get font description
   void getFontDesc(FXFontDesc& fontdesc) const;
 
-  /**
-  * Change the font to the specified font description string.
-  */
-  FXbool setFont(const FXString& string);
+  /// Change font description
+  virtual void setFontDesc(const FXFontDesc& fontdesc);
+
+  /// Return angle
+  FXint getAngle() const { return angle; }
+
+  /// Set to new angle, in degrees*64 relative to positive x axis
+  virtual void setAngle(FXint ang);
 
   /**
   * Return the font description as a string suitable for
@@ -322,60 +325,68 @@ public:
   */
   FXString getFont() const;
 
+  /**
+  * Change the font to the specified font description string.
+  */
+  virtual void setFont(const FXString& string);
+
   /// Find out if the font is monotype or proportional
-  FXbool isFontMono() const;
+  virtual FXbool isFontMono() const;
 
   /// See if font has glyph for ch
-  FXbool hasChar(FXint ch) const;
+  virtual FXbool hasChar(FXwchar ch) const;
 
   /// Get first character glyph in font
-  FXint getMinChar() const;
+  virtual FXwchar getMinChar() const;
 
   /// Get last character glyph in font
-  FXint getMaxChar() const;
+  virtual FXwchar getMaxChar() const;
 
   /// Left bearing
-  FXint leftBearing(FXchar ch) const;
+  virtual FXint leftBearing(FXwchar ch) const;
 
   /// Right bearing
-  FXint rightBearing(FXchar ch) const;
+  virtual FXint rightBearing(FXwchar ch) const;
 
   /// Width of widest character in font
-  FXint getFontWidth() const;
+  virtual FXint getFontWidth() const;
 
   /// Height of highest character in font
-  FXint getFontHeight() const;
+  virtual FXint getFontHeight() const;
 
   /// Ascent from baseline
-  FXint getFontAscent() const;
+  virtual FXint getFontAscent() const;
 
   /// Descent from baseline
-  FXint getFontDescent() const;
+  virtual FXint getFontDescent() const;
 
   /// Get font leading [that is lead-ing as in Pb!]
-  FXint getFontLeading() const;
+  virtual FXint getFontLeading() const;
 
   /// Get font line spacing
-  FXint getFontSpacing() const;
+  virtual FXint getFontSpacing() const;
+
+  /// Calculate width of single wide character in this font
+  virtual FXint getCharWidth(const FXwchar ch) const;
 
   /// Calculate width of given text in this font
-  FXint getTextWidth(const FXchar *text,FXuint n) const;
+  virtual FXint getTextWidth(const FXString& string) const;
 
   /// Calculate width of given text in this font
-  FXint getTextWidth(const FXString& text) const;
+  virtual FXint getTextWidth(const FXchar* string,FXuint length) const;
 
   /// Calculate height of given text in this font
-  FXint getTextHeight(const FXchar *text,FXuint n) const;
+  virtual FXint getTextHeight(const FXString& string) const;
 
   /// Calculate height of given text in this font
-  FXint getTextHeight(const FXString& text) const;
+  virtual FXint getTextHeight(const FXchar *string,FXuint length) const;
 
   /**
-   * List all fonts matching hints. If listFonts() returns TRUE then
-   * fonts points to a newly-allocated array of length numfonts. It
-   * is the caller's responsibility to free this array using FXFREE().
-   */
-  static FXbool listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& face,FXuint wt=FONTWEIGHT_DONTCARE,FXuint sl=FONTSLANT_DONTCARE,FXuint sw=FONTSETWIDTH_DONTCARE,FXuint en=FONTENCODING_DEFAULT,FXuint h=0);
+  * List all fonts matching hints. If listFonts() returns TRUE then
+  * fonts points to a newly-allocated array of length numfonts. It
+  * is the caller's responsibility to free this array using FXFREE().
+  */
+  static FXbool listFonts(FXFontDesc*& fonts,FXuint& numfonts,const FXString& face,FXuint wt=0,FXuint sl=0,FXuint sw=0,FXuint en=0,FXuint h=0);
 
   /// Save font data into stream
   virtual void save(FXStream& store) const;
@@ -387,13 +398,6 @@ public:
   virtual ~FXFont();
   };
 
-
-
-/// DEPRECATED: Parse font description from a string
-extern FXAPI FXbool fxparsefontdesc(FXFontDesc& fontdesc,const FXchar* string);
-
-/// DEPRECATED: Unparse font description into a string
-extern FXAPI FXbool fxunparsefontdesc(FXchar *string,const FXFontDesc& fontdesc);
 
 }
 

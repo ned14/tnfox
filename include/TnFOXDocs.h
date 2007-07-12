@@ -36,7 +36,7 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.4.35), and the extensions listed below are designed to not interfere with that process where
+from v1.6.28), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
 is (C) 2001-2007 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
@@ -166,14 +166,13 @@ When combined with FX::QTrans, human-language translation is now easy as pie! Si
 user-visible string literals with <tt>tr()</tt>, extract into a text file using the provided
 utility CppMunge.py and add your translations. You can then choose to embed the file, or place it next
 to the executable. You can even place translations within DLL's and arbitrarily load and unload them!
-\note Until FOX finalises support for Unicode, QTrans is limited to Latin-1.
 
 <li><b>FX::FXStream now works with a FX::QIODevice & 64 bit file i/o is now used throughout</b><br>
 A FXfval now holds a file pointer or size, ready for the transition to 128 bit disc i/o around
 2025. The i/o structure is now based around a Qt-compatible QIODevice which is much much
 more flexible than the old FOX structure and for backwards compatibility
 FOX's FX::FXFileStream, FX::FXMemoryStream & FX::FXGZStream have been rewritten to use
-FX::FXFile + FX::FXStream, FX::QBuffer + FX::FXStream & FX::QGZipDevice + FX::FXStream
+FX::QFile + FX::FXStream, FX::QBuffer + FX::FXStream & FX::QGZipDevice + FX::FXStream
 combinations respectively (note that their use in new code is deprecated).
 
 <li><b>Enhanced i/o facilities</b><br>
@@ -351,7 +350,7 @@ General questions:
 <li>\ref BuildingNoFOXCompatDiffs
 <li>\ref BuildingTnDiffs
 <li>\ref BuildingNoGUIDiffs
-<li>\ref HowEfficient
+<li>\ref LotsOfBloat
 </ol>
 
 Build questions:
@@ -429,7 +428,8 @@ FreeBSD questions:
 	\li All the FX::TnFXSQLDB classes
 	\li All the stuff in FX::Secure
 	\li FX::FXACL, FX::FXFSMonitor, FX::FXRollback, FX::FXProcess, FX::FXNetwork
-	\li And from FOX, FX::fxfilematch(), FX::FXString and FX::FXStream (the FOX
+	\li And from FOX, FX::FXDir, FX::QFile, FX::fxfilematch(), FX::FXIO, FX::FXPath,
+	FX::FXStat, FX::FXSystem, FX::FXString and FX::FXStream (the FOX
 	compatibility API does nothing however). You also get the contents of fxutils
 	(which is all the misc functions in fxdefs.h)
 
@@ -443,68 +443,31 @@ FreeBSD questions:
 	executables less than 1.5Mb (not bad considering the clib is in there too)
 
   <li>
-    \subsection HowEfficient How efficient are TnFOX's facilities?
+    \subsection LotsOfBloat TnFOX has a far bigger binary than FOX!
 
-	TnFOX is designed to maximise the performance of your code. As of v0.80, sufficient
-	facilities have been both finished and optimised that I can finally provide you with
-	some statistics. All statistics are for a dual Athlon 1700 running Microsoft Windows
-	2000 with a release build by MSVC:
+	Well, TnFOX also comes with a lot of extra stuff! There is about a third extra code in TnFOX
+	over normal FOX, and much of it is template heavy. Here are some figures:
 	\code
-TestDeviceIO with 128Mb test file:
-
-Reading test file and writing into a FXFile ...
-That took 3.969000 seconds, average speed=33023Kb/sec
-Reading test file and writing into a QMemMap ...
-That took 1.125000 seconds, average speed=116508Kb/sec
-Reading test file and writing into a QBuffer ...
-That took 0.812000 seconds, average speed=161418Kb/sec
-Writing lots of data to a QLocalPipe ...
-That took 1.203000 seconds, average speed=108954Kb/sec
-Writing lots of data to a QPipe ...
-That took 1.328000 seconds, average speed=98698Kb/sec
-Writing lots of data to a FXSocket ...
-That took 1.609000 seconds, average speed=81461Kb/sec
-
-
-
-TestSSL with 128Mb test file:
-
-Reading test file and writing into a FXFile ...
-Encryption took 1.312000 seconds, average speed=12487Kb/sec
-Decryption took 0.782000 seconds, average speed=20951Kb/sec
-Reading test file and writing into a QMemMap ...
-Encryption took 0.860000 seconds, average speed=19051Kb/sec
-Decryption took 0.906000 seconds, average speed=18083Kb/sec
-Reading test file and writing into a QBuffer ...
-Encryption took 0.594000 seconds, average speed=27582Kb/sec
-Decryption took 0.766000 seconds, average speed=21389Kb/sec
-Writing lots of data to a QPipe ...
-SSL used ADH-AES256-SHA at 256 bits (ADH-AES256-SHA          SSLv3 Kx=DH       Au=None Enc=AES(256)  Mac=SHA1)
-That took 0.875000 seconds, average speed=18724Kb/sec
-Writing lots of data to a FXSocket ...
-SSL used ADH-AES256-SHA at 256 bits (ADH-AES256-SHA          SSLv3 Kx=DH       Au=None Enc=AES(256)  Mac=SHA1)
-That took 1.110000 seconds, average speed=14760Kb/sec
-
-
-
-TestIPC:
-Wrote raw file at 36469.671675Kb/sec
-Read raw file at 51807.114625Kb/sec
-
-Pipe
-Read through TFileBySyncDev at 37449.142857Kb/sec
-Wrote through TFileBySyncDev at 39936.624010Kb/sec
-
-Socket
-Read through TFileBySyncDev at 6842.347045Kb/sec
-Wrote through TFileBySyncDev at 20660.781841Kb/sec
-
-Encrypted socket
-Read through TFileBySyncDev at 7811.203814Kb/sec
-Wrote through TFileBySyncDev at 10538.028622Kb/sec
+	                          msvc7.1 (x86)    gcc4.0.2 (x64)
+	FOX v1.6 [1]            : 2.59Mb           4.1Mb
+	TnFOX v0.86 (no GUI)    : 0.95Mb           1.6Mb
+	TnFOX v0.86 (minimal)   : 2.97Mb (+15%)    5.7Mb (+39%)
+	TnFOX v0.86 (everything): 4.40Mb (+70%)    6.3Mb (+54%)
 	\endcode
-	Linux and FreeBSD statistics are likely to be better or similar to this,
-	however as I run mine inside VMWare it's pointless to quote them here.
+	[1]: This is FOX compiled with the same options on both platforms
+
+	As you can see, GCC produces code between 68% and 91% larger for the same source.
+	Newer versions of GCC should catch up with MSVC over time (indeed, it's already
+	50-60% better than with v3.3!)
+
+	The optional parts are as follows:
+	<ul>
+	 <li>Embedded copy of OpenSSL. To remove, edit sconslib.py
+	 <li>Embedded copies of zlib, libpng, libjpeg, libtiff. To remove, edit sconslib.py
+	 <li>Embedded copy of sqlite3. To remove, edit sconslib.py or delete \c src/sqlite3
+	 <li>FOX compatibility layer. To remove, edit config.py
+	 <li>All the GUI code. To remove, edit config.py
+    </ul>
 </ol>
 
 \section buildqs Build Questions:
@@ -541,7 +504,7 @@ Wrote through TFileBySyncDev at 10538.028622Kb/sec
 	write access only to the owner of the file. On POSIX \c umask() is completely ignored
 	and on NT this is very different to the default of granting Everyone full control.
 	Quite simply, this behaviour is by default much more secure for both you and your
-	users. If it's a problem, you can always use the FXFile::setPermissions() method to
+	users. If it's a problem, you can always use the QFile::setPermissions() method to
 	alter the permissions of a created file or indeed via the static method any arbitrary
 	file.
 
@@ -986,6 +949,11 @@ specifying translations. The file format is basically as follows:
 "<next literal>":
 	...
 \endcode
+As of v0.86 of TnFOX (v1.6 FOX based builds only), you can write this file in
+UTF-8, UTF-16 or UTF-32 and TnFOX will automatically detect which format it is
+in. Therefore, you can use any text editor you like (including the special TnFOX
+edition of Adie which can save out in any of these formats).
+
 More powerful operators are the <tt>%1, %2, %3 ...</tt> which let you specialise
 a translation based on parameter insert value eg;
 \code
@@ -1010,7 +978,7 @@ something like this:
 	ES: "El modo de operacion no es iqual que antes"
 	srcfile="QBuffer.cxx":class="QBuffer":
 		ES: up
-	srcfile="FXFile.cxx":class="FXFile":
+	srcfile="QFile.cxx":class="QFile":
 		ES: up
 	srcfile="QGZipDevice.cxx":class="QGZipDevice":
 		ES: up
@@ -1899,7 +1867,7 @@ as well as the documentation for FX::FXException.
 
 Managing access control is tough to do across systems portably as they vary so
 much. Yet TnFOX's FX::FXACL and FX::FXACLEntity enable most of the native access control
-security features available on both Windows NT and POSIX Unix for files (FX::FXFile),
+security features available on both Windows NT and POSIX Unix for files (FX::QFile),
 directories, named pipes (FX::QPipe) and memory mapped sections (FX::QMemMap).
 
 Via the OpenSSL library, TnFOX also provides a range of strong encryption
@@ -1950,7 +1918,7 @@ Firstly, there exist API compatible classes for the following Qt classes:
 
 <table>
 <tr><td>FX::QBuffer (QBuffer)		<td>FX::QBlkSocket (QSocketDevice)	<td>FX::QDir (QDir)
-<tr><td>FX::FXFile (QFile)			<td>FX::QFileInfo (QFileInfo)	<td>FX::QHostAddress (QHostAddress)
+<tr><td>FX::QFile (QFile)			<td>FX::QFileInfo (QFileInfo)	<td>FX::QHostAddress (QHostAddress)
 <tr><td>FX::QIODevice (QIODevice)	<td>FX::QMutex (QMutex)		<td>FX::FXStream (QDataStream)
 <tr><td>FX::FXString (QString)		<td>FX::QThread (QThread)		<td>FX::QTrans (tr())
 <tr><td>FX::QWaitCondition (QWaitCondition)<td>FX::QByteArray		<td>FX::QCache
@@ -2025,12 +1993,13 @@ doesn't know any better and so neither should your code.
 than FOX's which is only per-second granularity. This can cause some trivial
 compile errors which were deliberately caused as often you must slightly
 adjust your code to use FX::FXTime::as_time_t().
-\li All the file metadata functions in FX::FXFile return metadata for symbolic
+\li All the file metadata functions in FX::QFile return metadata for symbolic
 links, not for what the link points to. This can subtly break some FOX code (but
 it was necessary to add NTFS junction support).
 \li FOX's threading support was added substantially after TnFOX's and are not
-compatible. You must \b either use the Q-prefixed classes such as FX::QThread
-OR the FX-prefixed classes such as FX::FXThread (which is deprecated).
+compatible. Through the FOX compatibility layer, a FOX compatible API is provided
+which thunks through to TnFOX's threading code. Note however that thread cancellation
+is not supported when using this emulation.
 \li The exception types FX::FXWindowException, FX::FXImageException and FX::FXFontException
 are FOR COMPATIBILITY WITH FOX ONLY. They are NOT LIKE NORMAL TNFOX EXCEPTIONS
 in that they are thrown from within FOX code which is not exception safe. While
@@ -2083,15 +2052,9 @@ stack going through FOX code (eg; a GUI event handler) then you must surround
 that code with the FXEXCEPTION_FOXCALLING1 and FXEXCEPTION_FOXCALLING2 macros.
 These trap any exceptions thrown and show a FX::FXExceptionDialog.
 
-Summary of what is not supported from FOX v1.4.x:
+Summary of what is not supported from FOX v1.6.x:
 \li Some FX::FXStream methods. You'll never normally notice these
 \li The application wide mutex. It's a bad idea anyway.
-\li FXCondition (rewrite your code to use FX::QWaitCondition, it's more
-useful anyway)
-\li FXSemaphore (rewrite your code to use FX::FXAtomicInt with a
-FX::QWaitCondition. Also consider FX::FXZeroedWait)
-\li FXMemMap (rewrite your code to use TnFOX's FX::QMemMap, it's also superior
-anyway)
 
 You should also see \ref BuildingNoFOXCompatDiffs
 */
@@ -2575,6 +2538,7 @@ file.
   <li>FX::FXComboBox, chooses from a drop down menu
   <li>FX::FXDial, chooses a number by rotation of a dial
   <li>FX::FXFontSelector, chooses a font
+  <li>FX::FXKnob, chooses a number via a rotatable knob
   <li>FX::FXListBox, chooses from a drop down list
   <li>FX::FXOptionMenu, chooses from a drop down menu of options
   <li>FX::FXPicker, chooses an arbitrary location on the screen
@@ -2585,6 +2549,8 @@ file.
   <li>FX::FXTreeListBox, chooses from a tree organised drop down list
 
   <li>FX::FXColorSelector, chooses a colour
+  <li>FX::FXColorList, chooses a colour from a list
+  <li>FX::FXColorRing, chooses a colour using an intuitive ring & triangle device
   <li>FX::FXColorBar, chooses by slider a colour by HSV
   <li>FX::FXColorWell, chooses from a list of settable colours
   <li>FX::FXColorWheel, chooses a colour by HSV from a disc
@@ -2629,6 +2595,7 @@ file.
 <li>FX::FXMatrix, places its children in a grid
 <li>FX::FXMDIChild, maintains its children within a "work area"
 <li>FX::FXPacker, places its children against the sides
+<li>FX::FXRulerView, manages its children whilst showing a ruler
 <li>FX::FXSplitter, splits its children into two areas
 <li>FX::FXSpring, allows springy distance between siblings
 <li>FX::FXSwitcher, places its children all on top of each other (thus
@@ -2700,6 +2667,7 @@ describes such a font.
 <li>FX::FXAccelTable, maps key combinations to targets & messages
 <li>FX::FXCommand, a command and undoable action
 <li>FX::FXCommandGroup, a group of FX::FXCommand
+<li>FX::FXComposeContext, used to permit use of input methods
 <li>FX::FXMenuCommand, a command in a menu
 <li>FX::FXUndoList, a list of undoable actions
 
@@ -2719,9 +2687,12 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXEvent, an event within the GUI
 <li>FX::FXEventLoop, the base class of an event dispatch loop
 <li>FX::FXEventLoop_Static, a per-event loop static variable
+
+<li>FX::FXDate, a gregorian date container
 <li>FX::FXTime, microsecond accurate locale-capable time
 
 <li>FX::FXRex, regular expression support
+<li>FX::FXExpression, mathematical expression parser
 
 <li>FX::FXACL, an access control list for a securable entity
 <li>FX::FXACLEntity, an entity who can have permissions set for them
@@ -2783,6 +2754,7 @@ for connecting many things to and you can change all their connections with one 
 <li>FX::FXSize, a 2d size
 <li>Single precision:
   <ol>
+  <li>FX::FXExtentf, a 2d box
   <li>FX::FXMat3f, a 3x3 matrix
   <li>FX::FXMat4f, a 4x4 matrix
   <li>FX::FXRangef, a 3d box
@@ -2793,6 +2765,7 @@ for connecting many things to and you can change all their connections with one 
   </ol>
 <li>Double precision:
   <ol>
+  <li>FX::FXExtentd, a 2d box
   <li>FX::FXMat3d, a 3x3 matrix
   <li>FX::FXMat4d, a 4x4 matrix
   <li>FX::FXRanged, a 3d box

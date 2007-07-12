@@ -3,7 +3,7 @@
 *                         C o l o r W e l l   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXColorWell.h,v 1.33 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXColorWell.h,v 1.35 2006/01/22 17:57:59 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXCOLORWELL_H
 #define FXCOLORWELL_H
@@ -125,7 +125,7 @@ public:
   virtual FXint getDefaultHeight();
 
   /// Returns true because a color well can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();

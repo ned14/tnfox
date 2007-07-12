@@ -3,7 +3,7 @@
 *                         T o o l   T i p   W i d g e t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolTip.cpp,v 1.20 2005/01/16 16:06:07 fox Exp $                       *
+* $Id: FXToolTip.cpp,v 1.24.2.4 2007/03/08 01:51:53 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxpriv.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -51,7 +52,7 @@
 #define HSPACE  4
 #define VSPACE  2
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -91,11 +92,15 @@ FXToolTip::FXToolTip(FXApp* a,FXuint opts,FXint x,FXint y,FXint w,FXint h):
 
 
 // Tooltips do override-redirect
-FXbool FXToolTip::doesOverrideRedirect() const { return TRUE; }
+bool FXToolTip::doesOverrideRedirect() const {
+  return true;
+  }
 
 
 // Tooltips do save-unders
-FXbool FXToolTip::doesSaveUnder() const { return TRUE; }
+bool FXToolTip::doesSaveUnder() const {
+  return true;
+  }
 
 
 #ifdef WIN32
@@ -190,19 +195,51 @@ long FXToolTip::onPaint(FXObject*,FXSelector,void* ptr){
 
 // Place the tool tip
 void FXToolTip::place(FXint x,FXint y){
-  FXint rx=getRoot()->getX();
-  FXint ry=getRoot()->getY();
-  FXint rw=getRoot()->getWidth();
-  FXint rh=getRoot()->getHeight();
-  FXint w=getDefaultWidth();
-  FXint h=getDefaultHeight();
-  FXint px,py;
+  FXint rx,ry,rw,rh,px,py,w,h;
+  w=getDefaultWidth();
+  h=getDefaultHeight();
+#ifndef WIN32
+  rx=getRoot()->getX();
+  ry=getRoot()->getY();
+  rw=getRoot()->getWidth();
+  rh=getRoot()->getHeight();
+#else
+  RECT rect;
+  MYMONITORINFO minfo;
+  HANDLE monitor;
+
+  rect.left=x;
+  rect.right=x+w;
+  rect.top=y;
+  rect.bottom=y+h;
+
+  // Get monitor info if we have this API
+  monitor=fxMonitorFromRect(&rect,MONITOR_DEFAULTTOPRIMARY);
+  if(monitor){
+    memset(&minfo,0,sizeof(minfo));
+    minfo.cbSize=sizeof(minfo);
+    fxGetMonitorInfo(monitor,&minfo);
+    rx=minfo.rcWork.left;
+    ry=minfo.rcWork.top;
+    rw=minfo.rcWork.right-minfo.rcWork.left;
+    rh=minfo.rcWork.bottom-minfo.rcWork.top;
+    }
+
+  // Otherwise use the work-area
+  else{
+    SystemParametersInfo(SPI_GETWORKAREA,sizeof(RECT),&rect,0);
+    rx=rect.left;
+    ry=rect.top;
+    rw=rect.right-rect.left;
+    rh=rect.bottom-rect.top;
+    }
+#endif
   px=x+16-w/3;
   py=y+20;
-  if(px+w>rw) px=rw-w;
   if(px<rx) px=rx;
-  if(py+h+50>rh){ py=y-h-10; }
   if(py<ry) py=ry;
+  if(px+w>rx+rw) px=rx+rw-w;
+  if(py+h+50>ry+rh){ py=y-h-10; }
   position(px,py,w,h);
   }
 

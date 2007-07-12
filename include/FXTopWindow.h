@@ -3,7 +3,7 @@
 *                 T o p - L e v e l   W i n d o w   W i d g e t                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.h,v 1.57.2.1 2005/10/25 11:33:11 fox Exp $                       *
+* $Id: FXTopWindow.h,v 1.62 2006/01/22 17:58:11 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXTOPWINDOW_H
 #define FXTOPWINDOW_H
@@ -77,6 +77,12 @@ class FXIcon;
 * there is no objection to proceed with the closing of the window, and
 * return 1 otherwise.  After the SEL_CLOSE message has been sent and
 * no objection was raised, the window will delete itself.
+* When the session is closed, the window will send a SEL_SESSION_NOTIFY
+* message to its target, allowing the application to write any unsaved
+* data to the disk.  If the target returns 0, then the system will proceed
+* to close the session.  Subsequently a SEL_SESSION_CLOSED will be received
+* which causes the window to be closed with prejudice by calling the
+* function close(FALSE).
 * When receiving a SEL_UPDATE, the target can update the title string
 * of the window, so that the title of the window reflects the name
 * of the document, for example.
@@ -99,10 +105,8 @@ protected:
   FXint     padright;                 // Right margin
   FXint     hspacing;                 // Horizontal child spacing
   FXint     vspacing;                 // Vertical child spacing
-  FXint     offx;
-  FXint     offy;
 protected:
-  FXTopWindow(){}
+  FXTopWindow();
   void settitle();
   void seticons();
   void setdecorations();
@@ -113,13 +117,14 @@ private:
   FXTopWindow& operator=(const FXTopWindow&);
 #ifdef WIN32
   virtual const char* GetClass() const;
-  static void* makeicon(FXIcon* icon);
 #endif
 public:
   long onFocusUp(FXObject*,FXSelector,void*);
   long onFocusDown(FXObject*,FXSelector,void*);
   long onFocusLeft(FXObject*,FXSelector,void*);
   long onFocusRight(FXObject*,FXSelector,void*);
+  long onSessionNotify(FXObject*,FXSelector,void*);
+  long onSessionClosed(FXObject*,FXSelector,void*);
   long onCmdMaximize(FXObject*,FXSelector,void*);
   long onCmdMinimize(FXObject*,FXSelector,void*);
   long onCmdRestore(FXObject*,FXSelector,void*);
@@ -144,6 +149,9 @@ public:
 
   /// Detach the server-side resources for this window
   virtual void detach();
+
+  /// Destroy the server-side resources for this window
+  virtual void destroy();
 
   /// Perform layout
   virtual void layout();
@@ -196,7 +204,13 @@ public:
   /// Restore window to normal, return TRUE if restored
   virtual FXbool restore(FXbool notify=FALSE);
 
-  /// Close the window, return TRUE if actually closed
+  /**
+  * Close the window, return TRUE if actually closed.  If notify=TRUE, the target
+  * will receive a SEL_CLOSE message to determine if it is OK to close the window.
+  * If the target ignores the SEL_CLOSE message or returns 0, the window will
+  * be closed, and subsequently deleted.  When the last main window has been
+  * closed, the application will receive an ID_QUIT message and will be closed.
+  */
   virtual FXbool close(FXbool notify=FALSE);
 
   /// Return TRUE if maximized

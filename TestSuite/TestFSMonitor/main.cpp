@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 	FXFSMonitor::add(".", FXFSMonitor::ChangeHandler(handler));
 	QThread::sleep(1);
 	fxmessage("Making changes ...\n");
-	FXFile file("MyTestFile.txt");
+	QFile file("MyTestFile.txt");
 	fxmessage("About to open file ...\n");
 	file.open(IO_ReadWrite);
 	file.truncate(1024);
@@ -97,10 +97,10 @@ int main(int argc, char *argv[])
 	file.close();
 	fxmessage("MyTestFile.txt set to 4096 bytes long and closed\n");
 	QThread::sleep(1);
-	FXFile::move("MyTestFile.txt", "MyTestFile2.txt");
+	FXFile::rename("MyTestFile.txt", "MyTestFile2.txt");
 	fxmessage("File renamed from MyTestFile.txt to MyTestFile2.txt\n");
 	QThread::sleep(1);
-	FXFile::setPermissions("MyTestFile2.txt", FXACL(FXACL::File));
+	QFile::setPermissions("MyTestFile2.txt", FXACL(FXACL::File));
 	fxmessage("Changed permissions on MyTestFile2.txt\n");
 	QThread::sleep(1);
 	FXFile::remove("MyTestFile.txt");

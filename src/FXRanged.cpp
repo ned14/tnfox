@@ -3,7 +3,7 @@
 *           D o u b l e - P r e c i s i o n    R a n g e    C l a s s           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRanged.cpp,v 1.10 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: FXRanged.cpp,v 1.15 2006/01/22 17:58:38 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -78,6 +78,12 @@ FXdouble FXRanged::diameter() const {
   }
 
 
+// Get radius of box
+FXdouble FXRanged::radius() const {
+  return diameter()*0.5;
+  }
+
+
 // Get diagonal of box
 FXVec3d FXRanged::diagonal() const {
   return upper-lower;
@@ -91,30 +97,31 @@ FXVec3d FXRanged::center() const {
 
 
 // Test if empty
-FXbool FXRanged::empty() const {
+bool FXRanged::empty() const {
   return upper.x<lower.x || upper.y<lower.y || upper.z<lower.z;
   }
 
-// Test if box contains point i,j,k
-FXbool FXRanged::contains(FXdouble x,FXdouble y,FXdouble z) const {
+
+// Test if box contains point x,y,z
+bool FXRanged::contains(FXdouble x,FXdouble y,FXdouble z) const {
   return lower.x<=x && x<=upper.x && lower.y<=y && y<=upper.y && lower.z<=z && z<=upper.z;
   }
 
 
 // Test if box contains point p
-FXbool FXRanged::contains(const FXVec3d& p) const {
+bool FXRanged::contains(const FXVec3d& p) const {
   return lower.x<=p.x && p.x<=upper.x && lower.y<=p.y && p.y<=upper.y && lower.z<=p.z && p.z<=upper.z;
   }
 
 
 // Test if box contains another box
-FXbool FXRanged::contains(const FXRanged& bounds) const {
+bool FXRanged::contains(const FXRanged& bounds) const {
   return lower.x<=bounds.lower.x && bounds.upper.x<=upper.x && lower.y<=bounds.lower.y && bounds.upper.y<=upper.y && lower.z<=bounds.lower.z && bounds.upper.z<=upper.z;
   }
 
 
 // Test if box contains sphere
-FXbool FXRanged::contains(const FXSphered& sphere) const {
+bool FXRanged::contains(const FXSphered& sphere) const {
   return lower.x<=sphere.center.x-sphere.radius && sphere.center.x+sphere.radius<=upper.x && lower.y<=sphere.center.y-sphere.radius && sphere.center.y+sphere.radius<=upper.y && lower.z<=sphere.center.z-sphere.radius && sphere.center.z+sphere.radius<=upper.z;
   }
 
@@ -155,8 +162,8 @@ FXRanged& FXRanged::include(const FXSphered& sphere){
 
 
 // Test if overlap
-FXbool overlap(const FXRanged& a,const FXRanged& b){
-  return a.upper.x>b.lower.x && a.lower.x<b.upper.x && a.upper.y>b.lower.y && a.lower.y<b.upper.y && a.upper.z>b.lower.z && a.lower.z<b.upper.z;
+bool overlap(const FXRanged& a,const FXRanged& b){
+  return a.upper.x>=b.lower.x && a.lower.x<=b.upper.x && a.upper.y>=b.lower.y && a.lower.y<=b.upper.y && a.upper.z>=b.lower.z && a.lower.z<=b.upper.z;
   }
 
 
@@ -217,13 +224,13 @@ FXint FXRanged::intersect(const FXVec4d& plane) const {
 
 
 // Intersect box with ray u-v
-FXbool FXRanged::intersect(const FXVec3d& u,const FXVec3d& v){
+bool FXRanged::intersect(const FXVec3d& u,const FXVec3d& v){
   register FXdouble d,ni,fi,t;
   register FXdouble f= DBL_MAX;
   register FXdouble n=-DBL_MAX;
   d = v.x-u.x;
   if(d==0.0){
-    if((upper.x<u.x) || (u.x<lower.x)) return FALSE;
+    if((upper.x<u.x) || (u.x<lower.x)) return false;
     }
   else{
     ni = (lower.x-u.x)/d;
@@ -231,11 +238,11 @@ FXbool FXRanged::intersect(const FXVec3d& u,const FXVec3d& v){
     if(ni>fi) FXSWAP(ni,fi,t);
     if(ni>n) n=ni;
     if(fi<f) f=fi;
-    if(n>f) return FALSE;
+    if(n>f) return false;
     }
   d = v.y-u.y;
   if(d==0.0){
-    if((upper.y<u.y) || (u.y<lower.y)) return FALSE;
+    if((upper.y<u.y) || (u.y<lower.y)) return false;
     }
   else{
     ni = (lower.y-u.y)/d;
@@ -243,11 +250,11 @@ FXbool FXRanged::intersect(const FXVec3d& u,const FXVec3d& v){
     if(ni>fi) FXSWAP(ni,fi,t);
     if(ni>n) n=ni;
     if(fi<f) f=fi;
-    if(n>f) return FALSE;
+    if(n>f) return false;
     }
   d = v.z-u.z;
   if(d==0.0){
-    if((upper.z<u.z) || (u.z<lower.z)) return FALSE;
+    if((upper.z<u.z) || (u.z<lower.z)) return false;
     }
   else{
     ni = (lower.z-u.z)/d;
@@ -255,9 +262,9 @@ FXbool FXRanged::intersect(const FXVec3d& u,const FXVec3d& v){
     if(ni>fi) FXSWAP(ni,fi,t);
     if(ni>n) n=ni;
     if(fi<f) f=fi;
-    if(n>f) return FALSE;
+    if(n>f) return false;
     }
-  return TRUE;
+  return true;
   }
 
 

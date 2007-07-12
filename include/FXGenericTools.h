@@ -25,7 +25,7 @@
 #include "FXString.h"
 #include "FXPolicies.h"
 #include "FXException.h"
-//#include "FXPath.h"
+#include "FXPath.h"
 #include <typeinfo>
 #include <assert.h>
 

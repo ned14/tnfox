@@ -3,7 +3,7 @@
 *                         C u r s o r - O b j e c t                             *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXCursor.h,v 1.25.2.1 2005/04/10 03:24:47 fox Exp $                          *
+* $Id: FXCursor.h,v 1.28 2006/01/22 17:58:00 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXCURSOR_H
 #define FXCURSOR_H
@@ -96,7 +96,7 @@ public:
   FXint getHotY() const { return hoty; }
 
   /// Check if there is color in the cursor
-  FXbool isColor() const;
+  bool isColor() const;
 
   /// Create cursor
   virtual void create();
@@ -111,10 +111,10 @@ public:
   virtual void release();
 
   /// Save pixel data only
-  virtual FXbool savePixels(FXStream& store) const;
+  virtual bool savePixels(FXStream& store) const;
 
   /// Load pixel data only
-  virtual FXbool loadPixels(FXStream& store);
+  virtual bool loadPixels(FXStream& store);
 
   /// Save cursor to a stream
   virtual void save(FXStream& store) const;

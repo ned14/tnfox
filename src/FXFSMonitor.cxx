@@ -44,7 +44,8 @@
 #include "FXString.h"
 #include "FXProcess.h"
 #include "FXRollback.h"
-#include "FXFile.h"
+#include "FXPath.h"
+#include "FXStat.h"
 #include "QDir.h"
 #include "QFileInfo.h"
 #include "QTrans.h"
@@ -699,9 +700,9 @@ bool FXFSMon::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
 
 void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 {
-	FXString path=FXFile::absolute(_path);
+	FXString path=FXPath::absolute(_path);
 #ifdef USE_FAM
-	FXERRH(FXFile::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
+	FXERRH(FXStat::exists(path), QTrans::tr("FXFSMonitor", "Path not found"), FXFSMONITOR_PATHNOTFOUND, 0);
 	if(fxfsmon->nofam)
 	{	// Try starting it again
 		if(FAMOpen(&fxfsmon->fc)<0) return;

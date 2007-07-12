@@ -3,7 +3,7 @@
 *                          R e c t a n g l e    C l a s s                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRectangle.cpp,v 1.13 2005/01/16 16:06:07 fox Exp $                     *
+* $Id: FXRectangle.cpp,v 1.16 2006/01/22 17:58:39 fox Exp $                     *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -31,7 +31,7 @@
 #include "FXPoint.h"
 #include "FXRectangle.h"
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -52,6 +52,7 @@ FXRectangle& FXRectangle::grow(FXshort margin){
   }
 
 
+// Grow by different amounts horizontally and vertically
 FXRectangle& FXRectangle::grow(FXshort hormargin,FXshort vermargin){
   x-=hormargin;
   y-=vermargin;
@@ -61,6 +62,7 @@ FXRectangle& FXRectangle::grow(FXshort hormargin,FXshort vermargin){
   }
 
 
+// Grow by different amounts on all sides
 FXRectangle& FXRectangle::grow(FXshort leftmargin,FXshort rightmargin,FXshort topmargin,FXshort bottommargin){
   x-=leftmargin;
   y-=topmargin;
@@ -80,6 +82,7 @@ FXRectangle& FXRectangle::shrink(FXshort margin){
   }
 
 
+// Shrink by different amounts horizontally and vertically
 FXRectangle& FXRectangle::shrink(FXshort hormargin,FXshort vermargin){
   x+=hormargin;
   y+=vermargin;
@@ -89,6 +92,7 @@ FXRectangle& FXRectangle::shrink(FXshort hormargin,FXshort vermargin){
   }
 
 
+// Shrink by different amounts on all sides
 FXRectangle& FXRectangle::shrink(FXshort leftmargin,FXshort rightmargin,FXshort topmargin,FXshort bottommargin){
   x+=leftmargin;
   y+=topmargin;
@@ -115,21 +119,21 @@ FXRectangle& FXRectangle::operator*=(const FXRectangle &r){
 
 
 // Union between rectangles
-FXRectangle operator+(const FXRectangle& p,const FXRectangle& q){
-  register FXshort xx=_min(p.x,q.x);
-  register FXshort ww=_max(p.x+p.w,q.x+q.w)-xx;
-  register FXshort yy=_min(p.y,q.y);
-  register FXshort hh=_max(p.y+p.h,q.y+q.h)-yy;
+FXRectangle FXRectangle::operator+(const FXRectangle& r) const {
+  register FXshort xx=_min(x,r.x);
+  register FXshort ww=_max(x+w,r.x+r.w)-xx;
+  register FXshort yy=_min(y,r.y);
+  register FXshort hh=_max(y+h,r.y+r.h)-yy;
   return FXRectangle(xx,yy,ww,hh);
   }
 
 
 // Intersection between rectangles
-FXRectangle operator*(const FXRectangle& p,const FXRectangle& q){
-  register FXshort xx=_max(p.x,q.x);
-  register FXshort ww=_min(p.x+p.w,q.x+q.w)-xx;
-  register FXshort yy=_max(p.y,q.y);
-  register FXshort hh=_min(p.y+p.h,q.y+q.h)-yy;
+FXRectangle FXRectangle::operator*(const FXRectangle& r) const {
+  register FXshort xx=_max(x,r.x);
+  register FXshort ww=_min(x+w,r.x+r.w)-xx;
+  register FXshort yy=_max(y,r.y);
+  register FXshort hh=_min(y+h,r.y+r.h)-yy;
   return FXRectangle(xx,yy,ww,hh);
   }
 

@@ -3,7 +3,7 @@
 *          M u l t i p l e   D o c u m e n t   C h i l d   W i n d o w          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXMDIChild.h,v 1.40 2005/01/16 16:06:06 fox Exp $                        *
+* $Id: FXMDIChild.h,v 1.42 2006/01/22 17:58:05 fox Exp $                        *
 ********************************************************************************/
 #ifndef FX_DISABLEMDI
 
@@ -32,12 +32,12 @@
 
 namespace FX {
 
-class FXIcon;
+
 class FXMDIClient;
 class FXMenuButton;
 class FXButton;
 class FXFont;
-class FXPopup;
+
 
 /// MDI Child Window styles
 enum {
@@ -185,7 +185,7 @@ public:
   virtual void setFocus();
 
   /// MDI Child can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move this window to the specified position in the parent's coordinates
   virtual void move(FXint x,FXint y);

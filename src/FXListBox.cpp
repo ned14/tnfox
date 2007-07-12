@@ -3,7 +3,7 @@
 *                        L i s t   B o x   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,14 +19,14 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXListBox.cpp,v 1.54.2.1 2005/03/24 01:52:45 fox Exp $                       *
+* $Id: FXListBox.cpp,v 1.63.2.2 2007/06/07 20:17:57 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -61,7 +61,7 @@
 
 #define LISTBOX_MASK        (0)
 
-
+using namespace FX;
 
 
 /*******************************************************************************/
@@ -74,12 +74,14 @@ FXDEFMAP(FXListBox) FXListBoxMap[]={
   FXMAPFUNC(SEL_FOCUS_UP,0,FXListBox::onFocusUp),
   FXMAPFUNC(SEL_FOCUS_DOWN,0,FXListBox::onFocusDown),
   FXMAPFUNC(SEL_UPDATE,FXListBox::ID_LIST,FXListBox::onListUpdate),
-  FXMAPFUNC(SEL_CHANGED,FXListBox::ID_LIST,FXListBox::onListChanged),
   FXMAPFUNC(SEL_CLICKED,FXListBox::ID_LIST,FXListBox::onListClicked),
+  FXMAPFUNC(SEL_COMMAND,FXListBox::ID_LIST,FXListBox::onListClicked),
+  FXMAPFUNC(SEL_CHANGED,FXListBox::ID_LIST,FXListBox::onListChanged),
   FXMAPFUNC(SEL_LEFTBUTTONPRESS,FXListBox::ID_FIELD,FXListBox::onFieldButton),
-  FXMAPFUNC(SEL_COMMAND,FXWindow::ID_SETVALUE,FXListBox::onCmdSetValue),
-  FXMAPFUNC(SEL_COMMAND,FXWindow::ID_SETINTVALUE,FXListBox::onCmdSetIntValue),
-  FXMAPFUNC(SEL_COMMAND,FXWindow::ID_GETINTVALUE,FXListBox::onCmdGetIntValue),
+  FXMAPFUNC(SEL_MOUSEWHEEL,FXListBox::ID_FIELD,FXListBox::onMouseWheel),
+  FXMAPFUNC(SEL_COMMAND,FXListBox::ID_SETVALUE,FXListBox::onCmdSetValue),
+  FXMAPFUNC(SEL_COMMAND,FXListBox::ID_SETINTVALUE,FXListBox::onCmdSetIntValue),
+  FXMAPFUNC(SEL_COMMAND,FXListBox::ID_GETINTVALUE,FXListBox::onCmdGetIntValue),
   };
 
 
@@ -97,7 +99,7 @@ FXListBox::FXListBox(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXi
   field->setBackColor(getApp()->getBackColor());
   pane=new FXPopup(this,FRAME_LINE);
   list=new FXList(pane,this,FXListBox::ID_LIST,LIST_BROWSESELECT|LIST_AUTOSELECT|LAYOUT_FILL_X|LAYOUT_FILL_Y|SCROLLERS_TRACK|HSCROLLING_OFF);
-  button=new FXMenuButton(this,NULL,NULL,pane,FRAME_RAISED|FRAME_THICK|MENUBUTTON_DOWN|MENUBUTTON_ATTACH_RIGHT, 0,0,0,0, 0,0,0,0);
+  button=new FXMenuButton(this,FXString::null,NULL,pane,FRAME_RAISED|FRAME_THICK|MENUBUTTON_DOWN|MENUBUTTON_ATTACH_RIGHT, 0,0,0,0, 0,0,0,0);
   button->setXOffset(border);
   button->setYOffset(border);
   flags&=~FLAG_UPDATE;  // Never GUI update
@@ -199,29 +201,29 @@ long FXListBox::onCmdSetIntValue(FXObject*,FXSelector,void* ptr){
   }
 
 
-// Forward clicked message from list to target
-long FXListBox::onListClicked(FXObject*,FXSelector,void* ptr){
-  FXint index=(FXint)(FXival)ptr;
-  button->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);    // Unpost the list
-  if(0<=index){
-    field->setText(getItemText(index));
-    field->setIcon(getItemIcon(index));
-    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)index);
-    }
-  return 1;
+// Forward GUI update of list to target; but only if pane is not popped
+long FXListBox::onListUpdate(FXObject*,FXSelector,void*){
+  return target && !isPaneShown() && target->tryHandle(this,FXSEL(SEL_UPDATE,message),NULL);
   }
 
 
-// List has changed
+// Item in list widget changed
 long FXListBox::onListChanged(FXObject*,FXSelector,void* ptr){
   return target && target->tryHandle(this,FXSEL(SEL_CHANGED,message),ptr);
   }
 
 
-// Forward GUI update of list to target; but only if pane is not popped
-long FXListBox::onListUpdate(FXObject*,FXSelector,void*){
-  return target && !isPaneShown() && target->tryHandle(this,FXSEL(SEL_UPDATE,message),NULL);
+// Forward clicked message from list to target
+long FXListBox::onListClicked(FXObject*,FXSelector sel,void* ptr){
+  button->handle(this,FXSEL(SEL_COMMAND,ID_UNPOST),NULL);
+  if(FXSELTYPE(sel)==SEL_COMMAND){
+    field->setText(getItemText((FXint)(FXival)ptr));
+    field->setIcon(getItemIcon((FXint)(FXival)ptr));
+    if(target) target->tryHandle(this,FXSEL(SEL_COMMAND,message),ptr);
+    }
+  return 1;
   }
+
 
 
 // Pressed left button in text field
@@ -244,8 +246,7 @@ long FXListBox::onFocusUp(FXObject*,FXSelector,void*){
     if(index<0) index=getNumItems()-1;
     else if(0<index) index--;
     if(0<=index && index<getNumItems()){
-      setCurrentItem(index);
-      if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)index);}
+      setCurrentItem(index,TRUE);
       }
     return 1;
     }
@@ -260,8 +261,29 @@ long FXListBox::onFocusDown(FXObject*,FXSelector,void*){
     if(index<0) index=0;
     else if(index<getNumItems()-1) index++;
     if(0<=index && index<getNumItems()){
-      setCurrentItem(index);
-      if(target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)index);}
+      setCurrentItem(index,TRUE);
+      }
+    return 1;
+    }
+  return 0;
+  }
+
+
+// Mouse wheel
+long FXListBox::onMouseWheel(FXObject*,FXSelector,void* ptr){
+  FXEvent* event=(FXEvent*)ptr;
+  if(isEnabled()){
+    FXint index=getCurrentItem();
+    if(event->code<0){
+      if(index<0) index=0;
+      else if(index<getNumItems()-1) index++;
+      }
+    else if(event->code>0){
+      if(index<0) index=getNumItems()-1;
+      else if(0<index) index--;
+      }
+    if(0<=index && index<getNumItems()){
+      setCurrentItem(index,TRUE);
       }
     return 1;
     }
@@ -294,16 +316,20 @@ FXbool FXListBox::isItemCurrent(FXint index) const {
 
 
 // Change current item
-void FXListBox::setCurrentItem(FXint index){
-  list->setCurrentItem(index);
-  list->makeItemVisible(index);
-  if(0<=index){
-    field->setIcon(list->getItemIcon(index));
-    field->setText(list->getItemText(index));
-    }
-  else{
-    field->setIcon(NULL);
-    field->setText(" ");
+void FXListBox::setCurrentItem(FXint index,FXbool notify){
+  FXint current=list->getCurrentItem();
+  if(current!=index){
+    list->setCurrentItem(index);
+    list->makeItemVisible(index);
+    if(0<=index){
+      field->setIcon(list->getItemIcon(index));
+      field->setText(list->getItemText(index));
+      }
+    else{
+      field->setIcon(NULL);
+      field->setText(" ");
+      }
+    if(notify && target){target->tryHandle(this,FXSEL(SEL_COMMAND,message),(void*)(FXival)index);}
     }
   }
 
@@ -416,9 +442,29 @@ FXint FXListBox::moveItem(FXint newindex,FXint oldindex){
   }
 
 
+// Extract item from list
+FXListItem* FXListBox::extractItem(FXint index){
+  register FXint current=list->getCurrentItem();
+  register FXListItem *result=list->extractItem(index);
+  if(index==current){
+    current=list->getCurrentItem();
+    if(0<=current){
+      field->setIcon(list->getItemIcon(current));
+      field->setText(list->getItemText(current));
+      }
+    else{
+      field->setIcon(NULL);
+      field->setText(" ");
+      }
+    }
+  recalc();
+  return result;
+  }
+
+
 // Remove given item
 void FXListBox::removeItem(FXint index){
-  FXint current=list->getCurrentItem();
+  register FXint current=list->getCurrentItem();
   list->removeItem(index);
   if(index==current){
     current=list->getCurrentItem();
@@ -458,7 +504,7 @@ FXint FXListBox::findItemByData(const void *ptr,FXint start,FXuint flgs) const {
 
 // Set item text
 void FXListBox::setItemText(FXint index,const FXString& txt){
-  if(isItemCurrent(index))field->setText(txt);
+  if(isItemCurrent(index)) field->setText(txt);
   list->setItemText(index,txt);
   recalc();
   }
@@ -472,7 +518,7 @@ FXString FXListBox::getItemText(FXint index) const {
 
 // Set item icon
 void FXListBox::setItemIcon(FXint index,FXIcon* icon,FXbool owned){
-  if(isItemCurrent(index))field->setIcon(icon);
+  if(isItemCurrent(index)) field->setIcon(icon);
   list->setItemIcon(index,icon,owned);
   recalc();
   }

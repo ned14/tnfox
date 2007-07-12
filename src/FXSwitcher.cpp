@@ -3,7 +3,7 @@
 *                      S w i t c h   P a n e l   C l a s s                      *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXSwitcher.cpp,v 1.32 2005/01/16 16:06:07 fox Exp $                      *
+* $Id: FXSwitcher.cpp,v 1.35 2006/01/22 17:58:43 fox Exp $                      *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -50,7 +50,7 @@
 // Switcher styles
 #define SWITCHER_MASK (SWITCHER_HCOLLAPSE|SWITCHER_VCOLLAPSE)
 
-
+using namespace FX;
 
 /*******************************************************************************/
 

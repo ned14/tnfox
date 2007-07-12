@@ -3,7 +3,7 @@
 *                      C l i p p i n g   R e g i o n                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegion.cpp,v 1.27 2005/01/16 16:06:07 fox Exp $                        *
+* $Id: FXRegion.cpp,v 1.31 2006/01/22 17:58:39 fox Exp $                        *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -38,6 +38,8 @@
 
 */
 
+
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -78,7 +80,7 @@ FXRegion::FXRegion(const FXRectangle& rect){
 
 
 // Construct polygon region
-FXRegion::FXRegion(const FXPoint* points,FXuint npoints,FXbool winding){
+FXRegion::FXRegion(const FXPoint* points,FXuint npoints,bool winding){
 #ifndef WIN32
   region=XPolygonRegion((XPoint*)points,npoints,winding?WindingRule:EvenOddRule);
 #else
@@ -121,7 +123,7 @@ FXRegion& FXRegion::operator=(const FXRegion& r){
 
 
 // Return TRUE if region is empty
-FXbool FXRegion::empty() const {
+bool FXRegion::empty() const {
 #ifndef WIN32
   return XEmptyRegion((Region)region);
 #else
@@ -131,7 +133,7 @@ FXbool FXRegion::empty() const {
 
 
 // Return TRUE if region contains point
-FXbool FXRegion::contains(FXint x,FXint y) const {
+bool FXRegion::contains(FXint x,FXint y) const {
 #ifndef WIN32
   return XPointInRegion((Region)region,x,y);
 #else
@@ -141,7 +143,7 @@ FXbool FXRegion::contains(FXint x,FXint y) const {
 
 // Return TRUE if region contains rectangle
 // Contributed by Daniel Gehriger <gehriger@linkcad.com>.
-FXbool FXRegion::contains(FXint x,FXint y,FXint w,FXint h) const {
+bool FXRegion::contains(FXint x,FXint y,FXint w,FXint h) const {
 #ifndef WIN32
   return XRectInRegion((Region)region,x,y,w,h);
 #else
@@ -180,6 +182,26 @@ FXRegion& FXRegion::offset(FXint dx,FXint dy){
   OffsetRgn((HRGN)region,dx,dy);
 #endif
   return *this;
+  }
+
+
+// Return TRUE if region equal to this one
+bool FXRegion::operator==(const FXRegion& r) const {
+#ifndef WIN32
+  return XEqualRegion((Region)region,(Region)r.region);
+#else
+  return EqualRgn((HRGN)region,(HRGN)r.region)!=0;
+#endif
+  }
+
+
+// Return TRUE if region not equal to this one
+bool FXRegion::operator!=(const FXRegion& r) const {
+#ifndef WIN32
+  return !XEqualRegion((Region)region,(Region)r.region);
+#else
+  return EqualRgn((HRGN)region,(HRGN)r.region)==0;
+#endif
   }
 
 
@@ -239,71 +261,51 @@ FXRegion& FXRegion::operator^=(const FXRegion& r){
   }
 
 
-// Union of region r1 and region r2
-FXRegion operator+(const FXRegion& r1,const FXRegion& r2){
+// Union region r with this one
+FXRegion FXRegion::operator+(const FXRegion& r) const {
   FXRegion res;
 #ifndef WIN32
-  XUnionRegion((Region)r1.region,(Region)r2.region,(Region)res.region);
+  XUnionRegion((Region)region,(Region)r.region,(Region)res.region);
 #else
-  CombineRgn((HRGN)res.region,(HRGN)r1.region,(HRGN)r2.region,RGN_OR);
+  CombineRgn((HRGN)res.region,(HRGN)region,(HRGN)r.region,RGN_OR);
 #endif
   return res;
   }
 
 
-// Intersection of region r1 and region r2
-FXRegion operator*(const FXRegion& r1,const FXRegion& r2){
+// Intersect region r with this one
+FXRegion FXRegion::operator*(const FXRegion& r) const {
   FXRegion res;
 #ifndef WIN32
-  XIntersectRegion((Region)r1.region,(Region)r2.region,(Region)res.region);
+  XIntersectRegion((Region)region,(Region)r.region,(Region)res.region);
 #else
-  CombineRgn((HRGN)res.region,(HRGN)r1.region,(HRGN)r2.region,RGN_AND);
+  CombineRgn((HRGN)res.region,(HRGN)region,(HRGN)r.region,RGN_AND);
 #endif
   return res;
   }
 
 
-// Substract region r2 from region r1
-FXRegion operator-(const FXRegion& r1,const FXRegion& r2){
+// Subtract region r from this one
+FXRegion FXRegion::operator-(const FXRegion& r) const {
   FXRegion res;
 #ifndef WIN32
-  XSubtractRegion((Region)r1.region,(Region)r2.region,(Region)res.region);
+  XSubtractRegion((Region)region,(Region)r.region,(Region)res.region);
 #else
-  CombineRgn((HRGN)res.region,(HRGN)r1.region,(HRGN)r2.region,RGN_DIFF);
+  CombineRgn((HRGN)res.region,(HRGN)region,(HRGN)r.region,RGN_DIFF);
 #endif
   return res;
   }
 
 
-// Xor of region r1 and region r2
-FXRegion operator^(const FXRegion& r1,const FXRegion& r2){
+// Xor region r with this one
+FXRegion FXRegion::operator^(const FXRegion& r) const {
   FXRegion res;
 #ifndef WIN32
-  XXorRegion((Region)r1.region,(Region)r2.region,(Region)res.region);
+  XXorRegion((Region)region,(Region)r.region,(Region)res.region);
 #else
-  CombineRgn((HRGN)res.region,(HRGN)r1.region,(HRGN)r2.region,RGN_XOR);
+  CombineRgn((HRGN)res.region,(HRGN)region,(HRGN)r.region,RGN_XOR);
 #endif
   return res;
-  }
-
-
-// Return TRUE if region equal to this one
-FXbool operator==(const FXRegion& r1,const FXRegion& r2){
-#ifndef WIN32
-  return XEqualRegion((Region)r1.region,(Region)r2.region);
-#else
-  return EqualRgn((HRGN)r1.region,(HRGN)r2.region);
-#endif
-  }
-
-
-// Return TRUE if region not equal to this one
-FXbool operator!=(const FXRegion& r1,const FXRegion& r2){
-#ifndef WIN32
-  return !XEqualRegion((Region)r1.region,(Region)r2.region);
-#else
-  return !EqualRgn((HRGN)r1.region,(HRGN)r2.region);
-#endif
   }
 
 

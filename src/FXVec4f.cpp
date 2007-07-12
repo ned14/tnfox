@@ -3,7 +3,7 @@
 *       S i n g l e - P r e c i s i o n   4 - E l e m e n t   V e c t o r       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1994,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1994,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXVec4f.cpp,v 1.10 2005/01/16 16:06:07 fox Exp $                          *
+* $Id: FXVec4f.cpp,v 1.17 2006/01/22 17:58:51 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -30,8 +30,11 @@
 #include "FXVec2f.h"
 #include "FXVec3f.h"
 #include "FXVec4f.h"
+#include "FXQuatf.h"
+#include "FXMat4f.h"
 
 
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -60,9 +63,9 @@ FXVec4f::operator FXColor() const {
 
 
 // Normalize vector
-FXVec4f vecnormalize(const FXVec4f& a){
-  register FXfloat t=veclen(a);
-  if(t>0.0f){ return FXVec4f(a.x/t,a.y/t,a.z/t,a.w/t); }
+FXVec4f vecnormalize(const FXVec4f& v){
+  register FXfloat t=v.length();
+  if(t>0.0f){ return FXVec4f(v.x/t,v.y/t,v.z/t,v.w/t); }
   return FXVec4f(0.0f,0.0f,0.0f,0.0f);
   }
 
@@ -96,14 +99,20 @@ FXVec4f vecplane(const FXVec4f& vec){
 
 
 // Signed distance normalized plane and point
-FXfloat vecdistance(const FXVec4f& plane,const FXVec3f& p){
-  return plane.x*p.x+plane.y*p.y+plane.z*p.z+plane.w;
+FXfloat FXVec4f::vecdistance(const FXVec3f& p) const {
+  return x*p.x+y*p.y+z*p.z+w;
   }
 
 
 // Return true if edge a-b crosses plane
-FXbool veccrosses(const FXVec4f& plane,const FXVec3f& a,const FXVec3f& b){
-  return (vecdistance(plane,a)>=0.0f) ^ (vecdistance(plane,b)>=0.0f);
+bool FXVec4f::veccrosses(const FXVec3f& a,const FXVec3f& b) const {
+  return (vecdistance(a)>=0.0f) ^ (vecdistance(b)>=0.0f);
+  }
+
+
+// Vector times matrix
+FXVec4f FXVec4f::operator*(const FXMat4f& m) const {
+  return FXVec4f(x*m[0][0]+y*m[1][0]+z*m[2][0]+w*m[3][0], x*m[0][1]+y*m[1][1]+z*m[2][1]+w*m[3][1], x*m[0][2]+y*m[1][2]+z*m[2][2]+w*m[3][2], x*m[0][3]+y*m[1][3]+z*m[2][3]+w*m[3][3]);
   }
 
 

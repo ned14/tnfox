@@ -3,7 +3,7 @@
 *                  F i l e - A s s o c i a t i o n   T a b l e                  *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1998,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1998,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXFileDict.h,v 1.26 2005/02/05 06:56:08 fox Exp $                        *
+* $Id: FXFileDict.h,v 1.31 2006/01/22 17:58:01 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXFILEDICT_H
 #define FXFILEDICT_H
@@ -30,10 +30,6 @@
 
 namespace FX {
 
-class FXStream;
-class FXIcon;
-class FXApp;
-class FXSettings;
 
 class FXIconDict;
 
@@ -48,7 +44,7 @@ struct FXFileAssoc {
   FXIcon    *miniicon;          /// Mini normal icon
   FXIcon    *miniiconopen;      /// Mini open icon
   FXDragType dragtype;          /// Registered drag type
-  FXuint     flags;             /// Flags
+  FXuint     flags;             /// Flags; 1=cd, 2=term
   };
 
 
@@ -63,11 +59,11 @@ struct FXFileAssoc {
 * each entry under the FILETYPES registry section comprises the command line,
 * extension name, large icon, small icon, and mime type:
 *
-*   command ';' extension ';' bigicon [ ':' bigiconopen ] ';' icon [ ':' iconopen ] ';' mime
+*   command ';' extension ';' bigicon [ ':' bigiconopen ] ';' icon [ ':' iconopen ] ';' mime [ ';' flags ]
 *
 * For example, the binding for "jpg" could be:
 *
-*   xv %s &;JPEG Image;bigimage.xpm;miniimage.xpm;image/jpeg
+*   xv %s &;JPEG Image;bigimage.xpm;miniimage.xpm;image/jpeg;term
 *
 * The association for a file name is determined by first looking at the entire
 * file name, then at the whole extension, and then at sub-extensions.
@@ -81,6 +77,10 @@ struct FXFileAssoc {
 * uses a fallback associations: for files, the fallback association is determined
 * by the binding "defaultfilebinding".  For directories, the "defaultdirbinding"
 * is used, and for executables the "defaultexecbinding" is used.
+* The flags field is used for a number of bit-flags; two flags are currently
+* defined: 'cd' and 'term'.  The first one is intended to cause a launcher
+* to execute the application in the shown directory; the second one is meant
+* to indicate that the application is to be ran inside a new terminal.
 */
 class FXAPI FXFileDict : public FXDict {
   FXDECLARE(FXFileDict)
@@ -123,6 +123,12 @@ public:
   */
   FXFileDict(FXApp* app,FXSettings* db);
 
+  /// Change settings database
+  void setSettings(FXSettings* s){ settings=s; }
+
+  /// Return settings database
+  FXSettings* getSettings() const { return settings; }
+
   /// Change icon dictionary
   void setIconDict(FXIconDict *icns){ icons=icns; }
 
@@ -163,11 +169,8 @@ public:
   /// Remove file association
   FXFileAssoc* remove(const FXchar* ext);
 
-  /// Find file association already in dictionary
-  FXFileAssoc* find(const FXchar* ext){ return (FXFileAssoc*)FXDict::find(ext); }
-
   /// Find file association from registry
-  FXFileAssoc* associate(const FXchar* key);
+  FXFileAssoc* find(const FXchar* ext);
 
   /**
   * Determine binding for the given file.
@@ -222,4 +225,3 @@ public:
 }
 
 #endif
-

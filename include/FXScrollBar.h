@@ -3,7 +3,7 @@
 *                       S c r o l l   B a r   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXScrollBar.h,v 1.13 2005/01/16 16:06:06 fox Exp $                       *
+* $Id: FXScrollBar.h,v 1.15 2006/01/22 17:58:09 fox Exp $                       *
 ********************************************************************************/
 #ifndef FXSCROLLBAR_H
 #define FXSCROLLBAR_H
@@ -47,9 +47,12 @@ enum {
 * visible.  The range is the total size of the document, the page is the part
 * of the document which is visible.  The size of the scrollbar thumb is adjusted
 * to give feedback of the relative sizes of each.
-* The scroll bar may be manipulated by the left mouse (normal scrolling), right
-* mouse (vernier or fine-scrolling), or middle mouse (same as the left mouse only
-* the scroll position can hop to the place where the click is made).
+* The scroll bar may be manipulated by the left mouse button (normal scrolling), by the
+* middle mouse button (same as the left mouse only the scroll position can jump to the
+* place where the click is made), or by the right mouse button (vernier- or fine-scrolling).
+* Holding down the control key while scrolling with the left or middle mouse button also
+* enables vernier-scrolling mode.  The vernier-scrolling mode is very useful for accurate
+* positioning in large documents.
 * Finally, if the mouse sports a wheel, the scroll bar can be manipulated by means
 * of the mouse wheel as well.  Holding down the Control-key during wheel motion
 * will cause the scrolling to go faster than normal.
@@ -65,6 +68,7 @@ protected:
   FXint      page;            // Page size
   FXint      line;            // Line size
   FXlong     pos;             // Position
+  FXint      barsize;         // Bar size
   FXint      thumbsize;       // Thumb size
   FXint      thumbpos;        // Thumb position
   FXColor    hiliteColor;     // Hightlight color
@@ -149,10 +153,10 @@ public:
   /// Return line increment
   FXint getLine() const { return line; }
 
-  /// Change current scroll position
+  /// Change scroll position
   void setPosition(FXlong p);
 
-  /// return scroll position
+  /// Return current scroll position
   FXlong getPosition() const { return pos; }
 
   /// Change highlight color
@@ -161,29 +165,35 @@ public:
   /// Return highlight color
   FXColor getHiliteColor() const { return hiliteColor; }
 
-  /// Change shadow color
+  /// Change the shadow color
   void setShadowColor(FXColor clr);
 
-  /// Return shadow color
+  /// Return the shadow color
   FXColor getShadowColor() const { return shadowColor; }
 
-  /// Return border color
+  /// Change the border color
   void setBorderColor(FXColor clr);
 
-  /// Change border color
+  /// Return the border color
   FXColor getBorderColor() const { return borderColor; }
 
-  /// Return arrow color
+  /// Change the arrow color
   void setArrowColor(FXColor clr);
 
-  /// Return arrow color
+  /// Return the arrow color
   FXColor getArrowColor() const { return arrowColor; }
 
   /// Change the scrollbar style
-  FXuint getScrollbarStyle() const;
+  void setScrollBarStyle(FXuint style);
 
-  /// Get the current scrollbar style
-  void setScrollbarStyle(FXuint style);
+  /// Return the scrollbar style
+  FXuint getScrollBarStyle() const;
+
+  /// Change the bar size
+  void setBarSize(FXint size);
+
+  /// Return the bar size
+  FXint getBarSize() const { return barsize; }
 
   /// Save to stream
   virtual void save(FXStream& store) const;

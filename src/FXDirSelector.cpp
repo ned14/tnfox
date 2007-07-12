@@ -3,7 +3,7 @@
 *              D i r e c t o r y   S e l e c t i o n   W i d g e t              *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXDirSelector.cpp,v 1.35 2005/01/16 16:06:07 fox Exp $                   *
+* $Id: FXDirSelector.cpp,v 1.51 2006/01/22 17:58:23 fox Exp $                   *
 ********************************************************************************/
 #ifndef FX_DISABLEFILEDIRDIALOGS
 #include "xincs.h"
@@ -27,13 +27,17 @@
 #include "fxdefs.h"
 #include "fxkeys.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
 #include "FXPoint.h"
 #include "FXRectangle.h"
+#include "FXSystem.h"
+#include "FXPath.h"
+#include "FXStat.h"
 #include "FXFile.h"
+#include "FXDir.h"
 #include "FXObjectList.h"
 #include "FXSettings.h"
 #include "FXRegistry.h"
@@ -87,6 +91,9 @@
 #define DIRSTYLEMASK (TREELIST_SHOWS_LINES|TREELIST_SHOWS_BOXES|TREELIST_ROOT_BOXES)
 
 
+
+using namespace FX;
+
 /*******************************************************************************/
 
 namespace FX {
@@ -119,16 +126,16 @@ FXIMPLEMENT(FXDirSelector,FXPacker,FXDirSelectorMap,ARRAYNUMBER(FXDirSelectorMap
 
 
 // Make directory selector widget
-FXDirSelector::FXDirSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):FXPacker(p,opts,x,y,w,h),mrufiles("Visited Directories"){
-  FXString currentdirectory=FXFile::getCurrentDirectory();
+FXDirSelector::FXDirSelector(FXComposite *p,FXObject* tgt,FXSelector sel,FXuint opts,FXint x,FXint y,FXint w,FXint h):FXPacker(p,opts,x,y,w,h),mrufiles(p->getApp(),"Visited Directories"){
+  FXString currentdirectory=FXSystem::getCurrentDirectory();
   FXAccelTable *table=getShell()->getAccelTable();
   target=tgt;
   message=sel;
   FXHorizontalFrame *buttons=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X|PACK_UNIFORM_WIDTH);
-  accept=new FXButton(buttons,"&OK",NULL,NULL,0,LAYOUT_RIGHT|FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);
-  cancel=new FXButton(buttons,"&Cancel",NULL,NULL,0,LAYOUT_RIGHT|FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);
+  accept=new FXButton(buttons,tr("&OK"),NULL,NULL,0,BUTTON_INITIAL|BUTTON_DEFAULT|LAYOUT_RIGHT|FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);
+  cancel=new FXButton(buttons,tr("&Cancel"),NULL,NULL,0,BUTTON_DEFAULT|LAYOUT_RIGHT|FRAME_RAISED|FRAME_THICK,0,0,0,0,20,20);
   FXHorizontalFrame *field=new FXHorizontalFrame(this,LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X);
-  new FXLabel(field,"&Directory:",NULL,JUSTIFY_LEFT|LAYOUT_CENTER_Y);
+  new FXLabel(field,tr("&Directory:"),NULL,JUSTIFY_LEFT|LAYOUT_CENTER_Y);
   dirname=new FXTextField(field,25,this,ID_DIRNAME,LAYOUT_FILL_X|LAYOUT_CENTER_Y|FRAME_SUNKEN|FRAME_THICK);
   FXHorizontalFrame *frame=new FXHorizontalFrame(this,LAYOUT_SIDE_TOP|LAYOUT_FILL_X|LAYOUT_FILL_Y|FRAME_SUNKEN|FRAME_THICK,0,0,0,0,0,0,0,0);
   dirbox=new FXDirList(frame,this,ID_DIRLIST,LAYOUT_FILL_X|LAYOUT_FILL_Y|LAYOUT_TOP|TREELIST_SHOWS_LINES|TREELIST_SHOWS_BOXES|TREELIST_BROWSESELECT);
@@ -234,21 +241,21 @@ long FXDirSelector::onCmdOpened(FXObject*,FXSelector,void* ptr){
 
 // Back to home directory
 long FXDirSelector::onCmdHome(FXObject*,FXSelector,void*){
-  setDirectory(FXFile::getHomeDirectory());
+  setDirectory(FXSystem::getHomeDirectory());
   return 1;
   }
 
 
 // Back to current working directory
 long FXDirSelector::onCmdWork(FXObject*,FXSelector,void*){
-  setDirectory(FXFile::getCurrentDirectory());
+  setDirectory(FXSystem::getCurrentDirectory());
   return 1;
   }
 
 
 // User clicked up directory button
 long FXDirSelector::onCmdDirectoryUp(FXObject*,FXSelector,void*){
-  setDirectory(FXFile::upLevel(getDirectory()));
+  setDirectory(FXPath::upLevel(getDirectory()));
   return 1;
   }
 
@@ -272,14 +279,14 @@ long FXDirSelector::onCmdNew(FXObject*,FXSelector,void*){
   FXGIFIcon newdirectoryicon(getApp(),bigfolder);
   FXString dir=dirbox->getDirectory();
   FXString name="DirectoryName";
-  if(FXInputDialog::getString(name,this,"Create New Directory","Create new directory in: "+dir,&newdirectoryicon)){
-    FXString dirname=FXFile::absolute(dir,name);
-    if(FXFile::exists(dirname)){
-      FXMessageBox::error(this,MBOX_OK,"Already Exists","File or directory %s already exists.\n",dirname.text());
+  if(FXInputDialog::getString(name,this,tr("Create New Directory").text(),"Create new directory in: "+dir,&newdirectoryicon)){
+    FXString dirname=FXPath::absolute(dir,name);
+    if(FXStat::exists(dirname)){
+      FXMessageBox::error(this,MBOX_OK,tr("Already Exists").text(),"File or directory %s already exists.\n",dirname.text());
       return 1;
       }
-    if(!FXFile::createDirectory(dirname,0777)){
-      FXMessageBox::error(this,MBOX_OK,"Cannot Create","Cannot create directory %s.\n",dirname.text());
+    if(!FXDir::create(dirname)){
+      FXMessageBox::error(this,MBOX_OK,tr("Cannot Create").text(),"Cannot create directory %s.\n",dirname.text());
       return 1;
       }
     setDirectory(dirname);
@@ -291,7 +298,7 @@ long FXDirSelector::onCmdNew(FXObject*,FXSelector,void*){
 // Update create new directory
 long FXDirSelector::onUpdNew(FXObject* sender,FXSelector,void*){
   FXString dir=dirbox->getDirectory();
-  sender->handle(this,FXFile::isWritable(dir)?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
+  sender->handle(this,FXStat::isWritable(dir)?FXSEL(SEL_COMMAND,ID_ENABLE):FXSEL(SEL_COMMAND,ID_DISABLE),NULL);
   return 1;
   }
 
@@ -299,14 +306,14 @@ long FXDirSelector::onUpdNew(FXObject* sender,FXSelector,void*){
 // Copy file or directory
 long FXDirSelector::onCmdCopy(FXObject*,FXSelector,void*){
   FXString oldname=dirbox->getCurrentFile();
-  FXString newname=FXFile::directory(oldname)+PATHSEPSTRING "CopyOf"+FXFile::name(oldname);
-  FXInputDialog inputdialog(this,"Copy File","Copy file from location:\n\n"+oldname+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
+  FXString newname=FXPath::directory(oldname)+PATHSEPSTRING "CopyOf"+FXPath::name(oldname);
+  FXInputDialog inputdialog(this,tr("Copy File"),"Copy file from location:\n\n"+oldname+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
   inputdialog.setText(newname);
   inputdialog.setNumColumns(60);
   if(inputdialog.execute()){
     newname=inputdialog.getText();
-    if(!FXFile::copy(oldname,newname,FALSE)){
-      FXMessageBox::error(this,MBOX_OK,"Error Copying File","Unable to copy file:\n\n%s  to:  %s.",oldname.text(),newname.text());
+    if(!FXFile::copyFiles(oldname,newname,FALSE)){
+      FXMessageBox::error(this,MBOX_OK,tr("Error Copying File").text(),"Unable to copy file:\n\n%s  to:  %s.",oldname.text(),newname.text());
       }
     }
   return 1;
@@ -317,13 +324,13 @@ long FXDirSelector::onCmdCopy(FXObject*,FXSelector,void*){
 long FXDirSelector::onCmdMove(FXObject*,FXSelector,void*){
   FXString oldname=dirbox->getCurrentFile();
   FXString newname=oldname;
-  FXInputDialog inputdialog(this,"Move File","Move file from location:\n\n"+oldname+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
+  FXInputDialog inputdialog(this,tr("Move File"),"Move file from location:\n\n"+oldname+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
   inputdialog.setText(newname);
   inputdialog.setNumColumns(60);
   if(inputdialog.execute()){
     newname=inputdialog.getText();
-    if(!FXFile::copy(oldname,newname,FALSE)){
-      FXMessageBox::error(this,MBOX_OK,"Error Moving File","Unable to move file:\n\n%s  to:  %s.",oldname.text(),newname.text());
+    if(!FXFile::moveFiles(oldname,newname,FALSE)){
+      FXMessageBox::error(this,MBOX_OK,tr("Error Moving File").text(),"Unable to move file:\n\n%s  to:  %s.",oldname.text(),newname.text());
       }
     }
   return 1;
@@ -333,14 +340,14 @@ long FXDirSelector::onCmdMove(FXObject*,FXSelector,void*){
 // Link file or directory
 long FXDirSelector::onCmdLink(FXObject*,FXSelector,void*){
   FXString oldname=dirbox->getCurrentFile();
-  FXString newname=FXFile::directory(oldname)+PATHSEPSTRING "LinkTo"+FXFile::name(oldname);
-  FXInputDialog inputdialog(this,"Link File","Link file from location:\n\n"+oldname+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
+  FXString newname=FXPath::directory(oldname)+PATHSEPSTRING "LinkTo"+FXPath::name(oldname);
+  FXInputDialog inputdialog(this,tr("Link File"),"Link file from location:\n\n"+oldname+"\n\nto location:",NULL,INPUTDIALOG_STRING,0,0,0,0);
   inputdialog.setText(newname);
   inputdialog.setNumColumns(60);
   if(inputdialog.execute()){
     newname=inputdialog.getText();
-    if(!FXFile::symlink(oldname,newname,FALSE)){
-      FXMessageBox::error(this,MBOX_YES_NO,"Error Linking File","Unable to link file:\n\n%s  to:  %s.",oldname.text(),newname.text());
+    if(!FXFile::symlink(oldname,newname)){
+      FXMessageBox::error(this,MBOX_YES_NO,tr("Error Linking File").text(),"Unable to link file:\n\n%s  to:  %s.",oldname.text(),newname.text());
       }
     }
   return 1;
@@ -350,9 +357,9 @@ long FXDirSelector::onCmdLink(FXObject*,FXSelector,void*){
 // Delete file or directory
 long FXDirSelector::onCmdDelete(FXObject*,FXSelector,void*){
   FXString fullname=dirbox->getCurrentFile();
-  if(MBOX_CLICKED_YES==FXMessageBox::warning(this,MBOX_YES_NO,"Deleting file","Are you sure you want to delete the file:\n\n%s",fullname.text())){
-    if(!FXFile::remove(fullname)){
-      FXMessageBox::error(this,MBOX_YES_NO,"Error Deleting File","Unable to delete file:\n\n%s.",fullname.text());
+  if(MBOX_CLICKED_YES==FXMessageBox::warning(this,MBOX_YES_NO,tr("Deleting file").text(),"Are you sure you want to delete the file:\n\n%s",fullname.text())){
+    if(!FXFile::removeFiles(fullname,TRUE)){
+      FXMessageBox::error(this,MBOX_YES_NO,tr("Error Deleting File").text(),"Unable to delete file:\n\n%s.",fullname.text());
       }
     }
   return 1;
@@ -372,41 +379,41 @@ long FXDirSelector::onPopupMenu(FXObject*,FXSelector,void* ptr){
   if(event->moved) return 1;
 
   FXMenuPane filemenu(this);
-  new FXMenuCommand(&filemenu,"Up one level",updiricon,this,ID_DIRECTORY_UP);
-  new FXMenuCommand(&filemenu,"Home directory",homeicon,this,ID_HOME);
-  new FXMenuCommand(&filemenu,"Work directory",workicon,this,ID_WORK);
+  new FXMenuCommand(&filemenu,tr("Up one level"),updiricon,this,ID_DIRECTORY_UP);
+  new FXMenuCommand(&filemenu,tr("Home directory"),homeicon,this,ID_HOME);
+  new FXMenuCommand(&filemenu,tr("Work directory"),workicon,this,ID_WORK);
   new FXMenuSeparator(&filemenu);
 
   FXMenuPane sortmenu(this);
-  new FXMenuCascade(&filemenu,"Sorting",NULL,&sortmenu);
-  new FXMenuCheck(&sortmenu,"Reverse",dirbox,FXDirList::ID_SORT_REVERSE);
-  new FXMenuCheck(&sortmenu,"Ignore case",dirbox,FXDirList::ID_SORT_CASE);
-  new FXMenuCheck(&sortmenu,"Hidden files",dirbox,FXDirList::ID_TOGGLE_HIDDEN);
+  new FXMenuCascade(&filemenu,tr("Sorting"),NULL,&sortmenu);
+  new FXMenuCheck(&sortmenu,tr("Reverse"),dirbox,FXDirList::ID_SORT_REVERSE);
+  new FXMenuCheck(&sortmenu,tr("Ignore case"),dirbox,FXDirList::ID_SORT_CASE);
+  new FXMenuCheck(&sortmenu,tr("Hidden files"),dirbox,FXDirList::ID_TOGGLE_HIDDEN);
 
   FXMenuPane bookmenu(this);
-  new FXMenuCascade(&filemenu,"Bookmarks",NULL,&bookmenu);
-  new FXMenuCommand(&bookmenu,"Set bookmark",markicon,this,ID_BOOKMARK);
-  new FXMenuCommand(&bookmenu,"Clear bookmarks",clearicon,&mrufiles,FXRecentFiles::ID_CLEAR);
+  new FXMenuCascade(&filemenu,tr("Bookmarks"),NULL,&bookmenu);
+  new FXMenuCommand(&bookmenu,tr("Set bookmark"),markicon,this,ID_BOOKMARK);
+  new FXMenuCommand(&bookmenu,tr("Clear bookmarks"),clearicon,&mrufiles,FXRecentFiles::ID_CLEAR);
   FXMenuSeparator* sep1=new FXMenuSeparator(&bookmenu);
   sep1->setTarget(&mrufiles);
   sep1->setSelector(FXRecentFiles::ID_ANYFILES);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_1);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_2);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_3);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_4);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_5);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_6);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_7);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_8);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_9);
-  new FXMenuCommand(&bookmenu,NULL,NULL,&mrufiles,FXRecentFiles::ID_FILE_10);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_1);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_2);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_3);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_4);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_5);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_6);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_7);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_8);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_9);
+  new FXMenuCommand(&bookmenu,FXString::null,NULL,&mrufiles,FXRecentFiles::ID_FILE_10);
 
   new FXMenuSeparator(&filemenu);
-  new FXMenuCommand(&filemenu,"New directory...",newicon,this,ID_NEW);
-  new FXMenuCommand(&filemenu,"Copy...",copyicon,this,ID_COPY);
-  new FXMenuCommand(&filemenu,"Move...",moveicon,this,ID_MOVE);
-  new FXMenuCommand(&filemenu,"Link...",linkicon,this,ID_LINK);
-  new FXMenuCommand(&filemenu,"Delete...",deleteicon,this,ID_DELETE);
+  new FXMenuCommand(&filemenu,tr("New directory..."),newicon,this,ID_NEW);
+  new FXMenuCommand(&filemenu,tr("Copy..."),copyicon,this,ID_COPY);
+  new FXMenuCommand(&filemenu,tr("Move..."),moveicon,this,ID_MOVE);
+  new FXMenuCommand(&filemenu,tr("Link..."),linkicon,this,ID_LINK);
+  new FXMenuCommand(&filemenu,tr("Delete..."),deleteicon,this,ID_DELETE);
 
   filemenu.create();
   filemenu.popup(NULL,event->root_x,event->root_y);

@@ -3,7 +3,7 @@
 *                        T o o l B a r   W i d g e t                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2004,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2004,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXToolBar.cpp,v 1.41.2.1 2005/02/22 23:17:37 fox Exp $                       *
+* $Id: FXToolBar.cpp,v 1.48.2.1 2006/06/20 13:13:06 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXString.h"
 #include "FXSize.h"
@@ -515,15 +515,15 @@ void FXToolBar::layout(){
 
 
 // Dock the bar before other window
-void FXToolBar::dock(FXDockSite* docksite,FXWindow* before){
-  FXDockBar::dock(docksite,before);
+void FXToolBar::dock(FXDockSite* docksite,FXWindow* before,FXbool notify){
+  FXDockBar::dock(docksite,before,notify);
   setDockingSide(getParent()->getLayoutHints());
   }
 
 
 // Dock the bar near position in dock site
-void FXToolBar::dock(FXDockSite* docksite,FXint localx,FXint localy){
-  FXDockBar::dock(docksite,localx,localy);
+void FXToolBar::dock(FXDockSite* docksite,FXint localx,FXint localy,FXbool notify){
+  FXDockBar::dock(docksite,localx,localy,notify);
   setDockingSide(getParent()->getLayoutHints());
   }
 
@@ -563,7 +563,10 @@ void FXToolBar::setDockingSide(FXuint side){
         if((options&LAYOUT_RIGHT) && (options&LAYOUT_CENTER_X)) side|=LAYOUT_FIX_Y;
         else if(options&LAYOUT_RIGHT) side|=LAYOUT_BOTTOM;
         else if(options&LAYOUT_CENTER_X) side|=LAYOUT_CENTER_Y;
-        if(options&LAYOUT_FILL_X) side|=LAYOUT_FILL_Y;
+        if(options&LAYOUT_FILL_X){
+          if(options&LAYOUT_FILL_Y) side|=LAYOUT_FILL_X;
+          side|=LAYOUT_FILL_Y;
+          }
         }
       else{                               // Was vertical already
         side|=(options&(LAYOUT_BOTTOM|LAYOUT_CENTER_Y|LAYOUT_FILL_Y));
@@ -576,7 +579,10 @@ void FXToolBar::setDockingSide(FXuint side){
         if((options&LAYOUT_BOTTOM) && (options&LAYOUT_CENTER_Y)) side|=LAYOUT_FIX_X;
         else if(options&LAYOUT_BOTTOM) side|=LAYOUT_RIGHT;
         else if(options&LAYOUT_CENTER_Y) side|=LAYOUT_CENTER_X;
-        if(options&LAYOUT_FILL_Y) side|=LAYOUT_FILL_X;
+        if(options&LAYOUT_FILL_Y){
+          if(options&LAYOUT_FILL_X) side|=LAYOUT_FILL_Y;
+          side|=LAYOUT_FILL_X;
+          }
         }
       else{
         side|=(options&(LAYOUT_RIGHT|LAYOUT_CENTER_X|LAYOUT_FILL_X));

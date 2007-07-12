@@ -3,7 +3,7 @@
 *                        G I F   I c o n   O b j e c t                          *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1997,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1997,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,13 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXGIFIcon.cpp,v 1.27 2005/01/16 16:06:07 fox Exp $                       *
+* $Id: FXGIFIcon.cpp,v 1.32 2006/01/22 17:58:27 fox Exp $                       *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
 #include "FXHash.h"
-#include "QThread.h"
+#include "FXThread.h"
 #include "FXStream.h"
 #include "FXMemoryStream.h"
 #include "FXString.h"
@@ -46,7 +46,7 @@
   - If that doesn't work, you can force a specific transparency color.
 */
 
-
+using namespace FX;
 
 /*******************************************************************************/
 
@@ -55,6 +55,10 @@ namespace FX {
 
 // Suggested file extension
 const FXchar *FXGIFIcon::fileExt="gif";
+
+
+// Suggested mime type
+const FXchar *FXGIFIcon::mimeType="image/gif";
 
 
 // Object implementation
@@ -73,23 +77,23 @@ FXGIFIcon::FXGIFIcon(FXApp* a,const void *pix,FXColor clr,FXuint opts,FXint w,FX
 
 
 // Save object to stream
-FXbool FXGIFIcon::savePixels(FXStream& store) const {
+bool FXGIFIcon::savePixels(FXStream& store) const {
   if(fxsaveGIF(store,data,width,height)){
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 
 // Load object from stream
-FXbool FXGIFIcon::loadPixels(FXStream& store){
+bool FXGIFIcon::loadPixels(FXStream& store){
   FXColor *pixels; FXint w,h;
   if(fxloadGIF(store,pixels,w,h)){
     setData(pixels,IMAGE_OWNED,w,h);
     if(options&IMAGE_ALPHAGUESS) transp=guesstransp();
-    return TRUE;
+    return true;
     }
-  return FALSE;
+  return false;
   }
 
 

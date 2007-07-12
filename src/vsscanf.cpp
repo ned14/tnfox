@@ -3,7 +3,7 @@
 *                   V a r a r g s   S c a n f   R o u t i n e s                 *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2002,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,11 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: vsscanf.cpp,v 1.16 2005/01/16 16:06:07 fox Exp $                         *
+* $Id: vsscanf.cpp,v 1.20.2.2 2007/01/29 20:22:29 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
 #include "fxdefs.h"
+#include "fxascii.h"
 
 
 /*
@@ -38,6 +39,9 @@
   - Rewrite in terms of strtol, strtoul strtod; these are available since we're
     already using them and have heard no complaints.
 */
+
+using namespace FX;
+
 
 #ifndef HAVE_VSSCANF
 
@@ -113,8 +117,8 @@ static int __v_scanf(arg_scanf* fn,const char *format,va_list arg_ptr){
       case '\v':
       case '\n':
       case '\r':
-        while(*format && isspace(*format)) ++format;
-        while(isspace(tpch)) tpch=A_GETC(fn);
+        while(*format && Ascii::isSpace(*format)) ++format;
+        while(Ascii::isSpace(tpch)) tpch=A_GETC(fn);
         break;
       case '%':                                         // Format string %
         _div=0;
@@ -172,7 +176,7 @@ in_scan:ch=*format++;
           case 'i':                                     // 'i' may be decimal, octal, or hex
             v=0;
             consumedsofar=consumed;
-            while(isspace(tpch)) tpch=A_GETC(fn);
+            while(Ascii::isSpace(tpch)) tpch=A_GETC(fn);
             neg=0;
             if(tpch=='-'){
               tpch=A_GETC(fn);
@@ -219,7 +223,7 @@ scan_hex:       tpch=A_GETC(fn);
                 ph=(short*)va_arg(arg_ptr,short*);
                 *ph=(short)v;
                 }
-              else{
+              else{     // FIXME handle flag_longlong
                 pi=(int*)va_arg(arg_ptr,int*);
                 *pi=(int)v;
                 }
@@ -231,7 +235,7 @@ scan_hex:       tpch=A_GETC(fn);
           case 'f':
           case 'g':
             d=0.0;
-            while(isspace(tpch)) tpch=A_GETC(fn);
+            while(Ascii::isSpace(tpch)) tpch=A_GETC(fn);
             neg=0;
             if(tpch=='-'){
               tpch=A_GETC(fn);
@@ -240,14 +244,14 @@ scan_hex:       tpch=A_GETC(fn);
             else if(tpch=='+'){
               tpch=A_GETC(fn);
               }
-            while(isdigit(tpch)){
+            while(Ascii::isDigit(tpch)){
               d=d*10.0+(tpch-'0');
               tpch=A_GETC(fn);
               }
             if(tpch=='.'){
               factor=.1;
               tpch=A_GETC(fn);
-              while(isdigit(tpch)){
+              while(Ascii::isDigit(tpch)){
                 d=d+(factor*(tpch-'0'));
                 factor/=10;
                 tpch=A_GETC(fn);
@@ -271,7 +275,7 @@ scan_hex:       tpch=A_GETC(fn);
                 tpch=prec;
                 goto exp_out;
                 }
-              while(isdigit(tpch)){
+              while(Ascii::isDigit(tpch)){
                 exp=exp*10+(tpch-'0');
                 tpch=A_GETC(fn);
                 }
@@ -307,8 +311,8 @@ exp_out:    if(neg) d=-d;
             break;
           case 's':                                     // String
             if(!flag_discard) s=(char *)va_arg(arg_ptr,char*);
-            while(isspace(tpch)) tpch=A_GETC(fn);
-            while (width && (tpch!=-1) && (!isspace(tpch))){
+            while(Ascii::isSpace(tpch)) tpch=A_GETC(fn);
+            while (width && (tpch!=-1) && (!Ascii::isSpace(tpch))){
               if(!flag_discard) *s=tpch;
               if(tpch) ++s; else break;
               --width;

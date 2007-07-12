@@ -3,7 +3,7 @@
 *                      C l i p p i n g   R e g i o n                            *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2000,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 2000,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,17 +19,12 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXRegion.h,v 1.16.2.1 2006/03/21 07:08:29 fox Exp $                          *
+* $Id: FXRegion.h,v 1.20 2006/01/22 17:58:08 fox Exp $                          *
 ********************************************************************************/
 #ifndef FXREGION_H
 #define FXREGION_H
 
-#include "fxdefs.h"
-
 namespace FX {
-
-class FXPoint;
-class FXRectangle;
 
 /// Region
 class FXAPI FXRegion {
@@ -53,25 +48,31 @@ public:
   FXRegion(FXint x,FXint y,FXint w,FXint h);
 
   /// Construct polygon region
-  FXRegion(const FXPoint* points,FXuint npoints,FXbool winding=FALSE);
+  FXRegion(const FXPoint* points,FXuint npoints,bool winding=false);
 
   /// Assign region r to this one
   FXRegion &operator=(const FXRegion& r);
 
-  /// Return TRUE if region is empty
-  FXbool empty() const;
+  /// Return true if region is empty
+  bool empty() const;
 
-  /// Return TRUE if region contains point
-  FXbool contains(FXint x,FXint y) const;
+  /// Return true if region contains point
+  bool contains(FXint x,FXint y) const;
 
-  /// Return TRUE if region contains rectangle
-  FXbool contains(FXint x,FXint y,FXint w,FXint h) const;
+  /// Return true if region contains rectangle
+  bool contains(FXint x,FXint y,FXint w,FXint h) const;
 
   /// Return bounding box
   FXRectangle bounds() const;
 
   /// Offset region by dx,dy
   FXRegion& offset(FXint dx,FXint dy);
+
+  /// Return true if region equal to this one
+  bool operator==(const FXRegion& r) const;
+
+  /// Return true if region not equal to this one
+  bool operator!=(const FXRegion& r) const;
 
   /// Union region r with this one
   FXRegion& operator+=(const FXRegion& r);
@@ -85,23 +86,17 @@ public:
   /// Xor region r with this one
   FXRegion& operator^=(const FXRegion& r);
 
-  /// Union of region r1 and region r2
-  friend FXAPI FXRegion operator+(const FXRegion& r1,const FXRegion& r2);
+  /// Union of this region and region r
+  FXRegion operator+(const FXRegion& r) const;
 
-  /// Intersection of region r1 and region r2
-  friend FXAPI FXRegion operator*(const FXRegion& r1,const FXRegion& r2);
+  /// Intersection of this region and region r
+  FXRegion operator*(const FXRegion& r) const;
 
-  /// Subtract region r2 from region r1
-  friend FXAPI FXRegion operator-(const FXRegion& r1,const FXRegion& r2);
+  /// Subtract region r from this region
+  FXRegion operator-(const FXRegion& r) const;
 
-  /// Xor of region r1 and region r2
-  friend FXAPI FXRegion operator^(const FXRegion& r1,const FXRegion& r2);
-
-  /// Return TRUE if region equal to this one
-  friend FXAPI FXbool operator==(const FXRegion& r1,const FXRegion& r2);
-
-  /// Return TRUE if region not equal to this one
-  friend FXAPI FXbool operator!=(const FXRegion& r1,const FXRegion& r2);
+  /// Xor of this region and region r
+  FXRegion operator^(const FXRegion& r) const;
 
   /// Reset region to empty
   void reset();
@@ -110,15 +105,6 @@ public:
  ~FXRegion();
   };
 
-
-extern FXAPI FXRegion operator+(const FXRegion& r1,const FXRegion& r2);
-extern FXAPI FXRegion operator*(const FXRegion& r1,const FXRegion& r2);
-extern FXAPI FXRegion operator-(const FXRegion& r1,const FXRegion& r2);
-extern FXAPI FXRegion operator^(const FXRegion& r1,const FXRegion& r2);
-extern FXAPI FXbool operator==(const FXRegion& r1,const FXRegion& r2);
-extern FXAPI FXbool operator!=(const FXRegion& r1,const FXRegion& r2);
-
 }
 
 #endif
-

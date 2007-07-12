@@ -3,7 +3,7 @@
 *                         I c o n   L i s t   W i d g e t                       *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 1999,2005 by Jeroen van der Zijp.   All Rights Reserved.        *
+* Copyright (C) 1999,2006 by Jeroen van der Zijp.   All Rights Reserved.        *
 *********************************************************************************
 * This library is free software; you can redistribute it and/or                 *
 * modify it under the terms of the GNU Lesser General Public                    *
@@ -19,16 +19,13 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXIconList.h,v 1.88.2.1 2005/04/10 03:24:47 fox Exp $                        *
+* $Id: FXIconList.h,v 1.95.2.4 2006/11/17 16:02:31 fox Exp $                        *
 ********************************************************************************/
 #ifndef FXICONLIST_H
 #define FXICONLIST_H
 
 #ifndef FXSCROLLAREA_H
 #include "FXScrollArea.h"
-#endif
-#ifndef FXOBJECTLIST_H
-#include "FXObjectList.h"
 #endif
 
 namespace FX {
@@ -68,6 +65,9 @@ protected:
   FXIcon   *miniIcon;
   void     *data;
   FXuint    state;
+private:
+  FXIconItem(const FXIconItem&);
+  FXIconItem& operator=(const FXIconItem&);
 protected:
   FXIconItem():bigIcon(NULL),miniIcon(NULL),data(NULL),state(0){}
   virtual void draw(const FXIconList* list,FXDC& dc,FXint x,FXint y,FXint w,FXint h) const;
@@ -168,6 +168,7 @@ public:
 typedef FXint (*FXIconListSortFunc)(const FXIconItem*,const FXIconItem*);
 
 
+/// List of FXIconItem's
 typedef FXObjectListOf<FXIconItem> FXIconItemList;
 
 
@@ -207,6 +208,7 @@ protected:
   FXint              current;           // Current item
   FXint              extent;            // Extent item
   FXint              cursor;            // Cursor item
+  FXint              viewable;          // Visible item
   FXFont            *font;              // Font
   FXIconListSortFunc sortfunc;          // Item sort function
   FXColor            textColor;         // Text color
@@ -226,12 +228,14 @@ protected:
   FXbool             state;             // State of item
 protected:
   FXIconList();
-  virtual FXIconItem *createItem(const FXString& text,FXIcon *big,FXIcon* mini,void* ptr);
-  virtual void moveContents(FXint x,FXint y);
-  void drawLasso(FXint x0,FXint y0,FXint x1,FXint y1);
   void recompute();
   void getrowscols(FXint& nr,FXint& nc,FXint w,FXint h) const;
+  void drawLasso(FXint x0,FXint y0,FXint x1,FXint y1);
   void lassoChanged(FXint ox,FXint oy,FXint ow,FXint oh,FXint nx,FXint ny,FXint nw,FXint nh,FXbool notify);
+  virtual void moveContents(FXint x,FXint y);
+  virtual FXIconItem *createItem(const FXString& text,FXIcon *big,FXIcon* mini,void* ptr);
+  static FXint compareSection(const FXchar *p,const FXchar* q,FXint s);
+  static FXint compareSectionCase(const FXchar *p,const FXchar* q,FXint s);
 private:
   FXIconList(const FXIconList&);
   FXIconList &operator=(const FXIconList&);
@@ -319,7 +323,7 @@ public:
   virtual FXint getContentHeight();
 
   /// Icon list can receive focus
-  virtual FXbool canFocus() const;
+  virtual bool canFocus() const;
 
   /// Move the focus to this window
   virtual void setFocus();
@@ -416,6 +420,9 @@ public:
 
   /// Move item from oldindex to newindex
   FXint moveItem(FXint newindex,FXint oldindex,FXbool notify=FALSE);
+
+  /// Extract item from list
+  FXIconItem* extractItem(FXint index,FXbool notify=FALSE);
 
   /// Remove item from list
   void removeItem(FXint index,FXbool notify=FALSE);
