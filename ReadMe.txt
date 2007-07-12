@@ -16,6 +16,13 @@ with this release.
 See per-platform documentation and Todo.txt for a list of known bugs.
 
 
+Automated Regression Test Suite:
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+This can be found inside TestSuite with AllTests being the control program.
+TestResults.sqlite3 holds a copy of the current test results and
+testresults.html is a HTML version of pass & failures.
+
+
 Installation:
 -=-=-=-=-=-=-
 If you're installing the binary only on POSIX, simply do:
