@@ -11,7 +11,7 @@
 
 // TnFOX version
 #define TNFOX_MAJOR 0
-#define TNFOX_MINOR 87
+#define TNFOX_MINOR 90
 
 
 #endif

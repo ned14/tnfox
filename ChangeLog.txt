@@ -1,3 +1,10 @@
+v0.90 ?
+-=-=-=-=-=-=-=-=-=-=-
+T (svnr) description
+
+* (1036) Moved v1.4 branch into branches, replaced trunk with v1.6 branch
+* (1037) Bumped TnFOX to v0.90
+
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-
 B Fixed deadlock in FXFSMonitor

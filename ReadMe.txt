@@ -1,4 +1,4 @@
-TnFOX v0.87 11th July 2007:
+TnFOX v0.90 ?:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas
