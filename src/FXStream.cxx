@@ -284,7 +284,7 @@ FXStream& FXStream::save(const FXushort* p,unsigned long n){
   if(swap && n)
   {
 	  FXushort *_p=(FXushort *) memcpy(alloca(n*sizeof(FXushort)), p, n*sizeof(FXushort));
-	  for(unsigned long i=0; i<n; i++) fxendianswap2(&_p[i]);
+	  for(unsigned long i=0; i<n; i++) fxendianswap(_p[i]);
 	  p=_p;
   }
   dev->writeBlock((char *) p,n<<1);
@@ -296,7 +296,7 @@ FXStream& FXStream::save(const FXuint* p,unsigned long n){
   if(swap && n)
   {
 	  FXuint *_p=(FXuint *) memcpy(alloca(n*sizeof(FXuint)), p, n*sizeof(FXuint));
-	  for(unsigned long i=0; i<n; i++) fxendianswap4(&_p[i]);
+	  for(unsigned long i=0; i<n; i++) fxendianswap(_p[i]);
 	  p=_p;
   }
   dev->writeBlock((char *) p,n<<2);
@@ -308,7 +308,7 @@ FXStream& FXStream::save(const FXfloat* p,unsigned long n){
   if(swap && n)
   {
 	  FXfloat *_p=(FXfloat *) memcpy(alloca(n*sizeof(FXfloat)), p, n*sizeof(FXfloat));
-	  for(unsigned long i=0; i<n; i++) fxendianswap4(&_p[i]);
+	  for(unsigned long i=0; i<n; i++) fxendianswap(*(FXuint *)&_p[i]);
 	  p=_p;
   }
   dev->writeBlock((char *) p,n<<2);
@@ -320,7 +320,7 @@ FXStream& FXStream::save(const FXdouble* p,unsigned long n){
   if(swap && n)
   {
 	  FXdouble *_p=(FXdouble *) memcpy(alloca(n*sizeof(FXdouble)), p, n*sizeof(FXdouble));
-	  for(unsigned long i=0; i<n; i++) fxendianswap8(&_p[i]);
+	  for(unsigned long i=0; i<n; i++) fxendianswap(*(FXulong *)&_p[i]);
 	  p=_p;
   }
   dev->writeBlock((char *) p,n<<3);
@@ -332,7 +332,7 @@ FXStream& FXStream::save(const FXulong* p,unsigned long n){
   if(swap && n)
   {
 	  FXulong *_p=(FXulong *) memcpy(alloca(n*sizeof(FXulong)), p, n*sizeof(FXulong));
-	  for(unsigned long i=0; i<n; i++) fxendianswap8(&_p[i]);
+	  for(unsigned long i=0; i<n; i++) fxendianswap(_p[i]);
 	  p=_p;
   }
   dev->writeBlock((char *) p,n<<3);
@@ -346,35 +346,35 @@ FXStream& FXStream::save(const FXulong* p,unsigned long n){
 FXStream& FXStream::load(FXushort* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(n<<1!=dev->readBlock((char *) p,n<<1)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap&&n){do{fxendianswap2(p++);}while(--n);}
+  if(swap&&n){do{fxendianswap(*p++);}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXuint* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(n<<2!=dev->readBlock((char *) p,n<<2)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap&&n){do{fxendianswap4(p++);}while(--n);}
+  if(swap&&n){do{fxendianswap(*p++);}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXfloat* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(n<<2!=dev->readBlock((char *) p,n<<2)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap&&n){do{fxendianswap4(p++);}while(--n);}
+  if(swap&&n){do{fxendianswap(*(FXuint *)(p++));}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXdouble* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap&&n){do{fxendianswap8(p++);}while(--n);}
+  if(swap&&n){do{fxendianswap(*(FXulong *)(p++));}while(--n);}
   return *this;
   }
 
 FXStream& FXStream::load(FXulong* p,unsigned long n){
   FXASSERT(n==0 || (n>0 && p!=NULL));
   if(n<<3!=dev->readBlock((char *) p,n<<3)) FXERRGIO(QTrans::tr("FXStream", "Premature EOF encountered"));
-  if(swap&&n){do{fxendianswap8(p++);}while(--n);}
+  if(swap&&n){do{fxendianswap(*p++);}while(--n);}
   return *this;
   }
 

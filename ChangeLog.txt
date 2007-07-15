@@ -1,12 +1,16 @@
 v0.90 ?
 -=-=-=-=-=-=-=-=-=-=-
 T (svnr) description
+B (1041) fxendianswap4() wasn't reliable on GCC
 
 * (1036) Moved v1.4 branch into branches, replaced trunk with v1.6 branch
 * (1037) Bumped TnFOX to v0.90
 * (1038) Restored FXString::fill() which for some reason Jeroen removed
 * (1039) Made QFile much more conservative when asking for permissions when
 opening for read access
+* (1041) Renamed all fxendianswapX() to fxendianswap() with typed parameter.
+This avoids the compiler having to go to memory and thus makes far better
+use of registers (which the x86 bswap instruction uses anyway)
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

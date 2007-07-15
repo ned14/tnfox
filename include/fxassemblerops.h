@@ -3,7 +3,7 @@
 *                        Assembler optimised operations                         *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2005-2007 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -139,20 +139,17 @@ inline FXuint fxbitscanrev(FXulong x) throw()
 #endif
 	return m;
 }
-inline void fxendianswap2(void *_p)
+inline void fxendianswap(FXushort &v) throw()
 {	// Can't improve on this
-	FXuchar *p=(FXuchar *) _p, t;
-	t=p[0]; p[0]=p[1]; p[1]=t;
+	v=((v & 0xff)<<8)|(v>>8);
 }
-inline void fxendianswap4(void *_p)
-{	// Even with misalignment penalties, this is faster
-	FXuint *p=(FXuint *) _p;
-	*p=_byteswap_ulong(*p);			// Invokes bswap x86 instruction
+inline void fxendianswap(FXuint &v) throw()
+{
+	v=_byteswap_ulong(v);			// Invokes bswap x86 instruction
 }
-inline void fxendianswap8(void *_p)
-{	// Even with misalignment penalties, this is definitely faster
-	FXulong *p=(FXulong *) _p;
-	*p=_byteswap_uint64(*p);		// Invokes bswap x86 instruction
+inline void fxendianswap(FXulong &v) throw()
+{
+	v=_byteswap_uint64(v);			// Invokes bswap x86 instruction
 }
 #elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 namespace FX {
@@ -219,52 +216,32 @@ inline FXuint fxbitscanrev(FXulong x) throw()
 #endif
 	return (FXuint) m;
 }
-inline void fxendianswap2(void *_p)
+inline void fxendianswap(FXushort &v) throw()
 {	// Can't improve on this
-	FXuchar *p=(FXuchar *) _p, t;
-	t=p[0]; p[0]=p[1]; p[1]=t;
+	v=((v & 0xff)<<8)|(v>>8);
 }
-inline void fxendianswap4(void *_p)
-{	// Even with misalignment penalties, this is faster
-	FXuint &p=*(FXuint *)_p;
+inline void fxendianswap(FXuint &v) throw()
+{
 	__asm__("bswapl %0\n\t"
-			: "=r" (p)
-			: "r"  (p));
-/*	__asm
-	{
-		mov edx, [_p]
-		mov eax, [edx]
-		bswap eax
-		mov [edx], eax
-	}*/
+			: "=r" (v)
+			: "0"  (v));
 }
-inline void fxendianswap8(void *_p)
-{	// Even with misalignment penalties, this is definitely faster
-	FXulong &p=*(FXulong *)_p;
+inline void fxendianswap(FXulong &v) throw()
+{
 #if defined(__x86_64__)
 	__asm__("bswapq %0\n\t"
-			: "=r" (p)
-			: "r"  (p));
+			: "=r" (v)
+			: "r"  (v));
 #else
 	__asm__("bswapl %%eax\n\t"
 			"bswapl %%edx\n\t"
 			"movl %%eax, %%ecx\n\t"
 			"movl %%edx, %%eax\n\t"
 			"movl %%ecx, %%edx\n\t"
-			: "=A" (p)
-			: "A"  (p)
-			: "ecx");
+			: "=A" (v)
+			: "0"  (v)
+			: "%ecx");
 #endif
-/*	__asm
-	{
-		mov edx, [_p]
-		mov eax, [edx]
-		mov ecx, [edx+4]
-		bswap eax
-		bswap ecx
-		mov [edx+4], eax
-		mov [edx], ecx
-	}*/
 }
 #else
 namespace FX {
@@ -358,30 +335,29 @@ inline FXuint fxbitscanrev(FXulong x) throw()
 }
 
 /*! \ingroup fxassemblerops
-Endian swaps the two bytes pointed to by \em p
+Endian swaps the two bytes at \em v
 */
-inline void fxendianswap2(void *_p)
-{
-	FXuchar *p=(FXuchar *) _p, t;
-	t=p[0]; p[0]=p[1]; p[1]=t;
+inline void fxendianswap(FXushort &v) throw()
+{	// Can't improve on this
+	v=((v & 0xff)<<8)|(v>>8);
 }
 
 /*! \ingroup fxassemblerops
-Endian swaps the four bytes pointed to by \em p
+Endian swaps the four bytes at \em v
 */
-inline void fxendianswap4(void *_p)
+inline void fxendianswap(FXuint &v) throw()
 {
-	FXuchar *p=(FXuchar *) _p, t;
+	FXuchar *p=(FXuchar *) &v, t;
 	t=p[0]; p[0]=p[3]; p[3]=t;
 	t=p[1]; p[1]=p[2]; p[2]=t;
 }
 
 /*! \ingroup fxassemblerops
-Endian swaps the eight bytes pointed to by \em p
+Endian swaps the eight bytes at \em v
 */
-inline void fxendianswap8(void *_p)
+inline void fxendianswap(FXulong &v) throw()
 {
-	FXuchar *p=(FXuchar *) _p, t;
+	FXuchar *p=(FXuchar *) &v, t;
 	t=p[0]; p[0]=p[7]; p[7]=t;
 	t=p[1]; p[1]=p[6]; p[6]=t;
 	t=p[2]; p[2]=p[5]; p[5]=t;

@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=True
+debugmode=False
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
@@ -75,8 +75,8 @@ if sys.platform=="win32":
         architecture_version=0
     else:
         architecture="x86"
-        architecture_version=4
-        x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        architecture_version=7
+        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
         x86_3dnow=0             # =0 (disable), =1 (3dnow)
 else:
     import platform
@@ -85,8 +85,8 @@ else:
         architecture_version=0
     else:
         architecture="x86"
-        architecture_version=4
-        x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        architecture_version=7
+        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
         x86_3dnow=0             # =0 (disable), =1 (3dnow)
 
 

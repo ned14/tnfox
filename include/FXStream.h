@@ -336,7 +336,7 @@ public:
   friend inline FXStream& operator<<(FXStream& s, const FXushort& _v)
   {
     FXushort v=_v;
-    if(s.swap){fxendianswap2(&v);}
+    if(s.swap){fxendianswap(v);}
     s.dev->writeBlock((char *) &v,2);
     return s;
   }
@@ -344,22 +344,22 @@ public:
   friend inline FXStream& operator<<(FXStream& s, const FXuint& _v)
   {
     FXuint v=_v;
-    if(s.swap){fxendianswap4(&v);}
+    if(s.swap){fxendianswap(v);}
     s.dev->writeBlock((char *) &v,4);
     return s;
   }
   friend inline FXStream& operator<<(FXStream& s, const FXint& v){ return s << reinterpret_cast<const FXuint&>(v); }
   friend inline FXStream& operator<<(FXStream& s, const FXfloat& _v)
   {
-    FXfloat v=_v;
-    if(s.swap){fxendianswap4(&v);}
+    FXuint v=*(FXuint *)&_v;
+    if(s.swap){fxendianswap(v);}
     s.dev->writeBlock((char *) &v,4);
     return s;
   }
   friend inline FXStream& operator<<(FXStream& s, const FXdouble& _v)
   {
-    FXdouble v=_v;
-    if(s.swap){fxendianswap8(&v);}
+    FXulong v=*(FXulong *)&_v;
+    if(s.swap){fxendianswap(v);}
     s.dev->writeBlock((char *) &v,8);
     return s;
   }
@@ -367,7 +367,7 @@ public:
   friend inline FXStream& operator<<(FXStream& s, const FXulong& _v)
   {
     FXulong v=_v;
-    if(s.swap){fxendianswap8(&v);}
+    if(s.swap){fxendianswap(v);}
     s.dev->writeBlock((char *) &v,8);
     return s;
   }
@@ -410,34 +410,34 @@ public:
   friend inline FXStream& operator>>(FXStream& s, FXushort& v)
   {
     if(2!=s.dev->readBlock((char *) &v,2)) s.int_throwPrematureEOF();
-    if(s.swap){fxendianswap2(&v);}
+    if(s.swap){fxendianswap(v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXshort& v){ return s >> reinterpret_cast<FXushort&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXuint& v)
   {
     if(4!=s.dev->readBlock((char *) &v,4)) s.int_throwPrematureEOF();
-    if(s.swap){fxendianswap4(&v);}
+    if(s.swap){fxendianswap(v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXint& v){ return s >> reinterpret_cast<FXuint&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXfloat& v)
   {
     if(4!=s.dev->readBlock((char *) &v,4)) s.int_throwPrematureEOF();
-    if(s.swap){fxendianswap4(&v);}
+    if(s.swap){fxendianswap(*(FXuint *)&v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXdouble& v)
   {
     if(8!=s.dev->readBlock((char *) &v,8)) s.int_throwPrematureEOF();
-    if(s.swap){fxendianswap8(&v);}
+    if(s.swap){fxendianswap(*(FXulong *)&v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, FXlong& v){ return s >> reinterpret_cast<FXulong&>(v); }
   friend inline FXStream& operator>>(FXStream& s, FXulong& v)
   {
     if(8!=s.dev->readBlock((char *) &v,8)) s.int_throwPrematureEOF();
-    if(s.swap){fxendianswap8(&v);}
+    if(s.swap){fxendianswap(v);}
     return s;
   }
   friend inline FXStream& operator>>(FXStream& s, bool& v)

@@ -75,6 +75,7 @@ else:
                #"-fno-inline",
                #"-finline-limit=0"
                ]
+    if tcommonopts: env['CCWPOOPTS']=["-ggdb"]
 env['CPPFLAGS']+=cppflags
 
 # Linkage

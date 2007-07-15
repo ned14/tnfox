@@ -223,14 +223,14 @@ FXuval QIODevice::applyCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRIC
 				FXnchar *t=(FXnchar *)(output+o);
 				*t=13;
 				if(FOX_BIGENDIAN==(utftype & 1))
-					fxendianswap2(t);
+					fxendianswap(*(FXushort *)t);
 			}
 			else if(UTF32==utftype)
 			{
 				FXwchar *t=(FXwchar *)(output+o);
 				*t=13;
 				if(FOX_BIGENDIAN==(utftype & 1))
-					fxendianswap4(t);
+					fxendianswap(*(FXuint *)t);
 			}
 			if(MSDOS==crlftype)
 			{
@@ -244,14 +244,14 @@ FXuval QIODevice::applyCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRIC
 					FXnchar *t=(FXnchar *)(output+o);
 					*t=10;
 					if(FOX_BIGENDIAN==(utftype & 1))
-						fxendianswap2(t);
+						fxendianswap(*(FXushort *)t);
 				}
 				else if(UTF32 & utftype)
 				{
 					FXwchar *t=(FXwchar *)(output+o);
 					*t=10;
 					if(FOX_BIGENDIAN==(utftype & 1))
-						fxendianswap4(t);
+						fxendianswap(*(FXuint *)t);
 				}
 			}
 		}
@@ -261,9 +261,9 @@ FXuval QIODevice::applyCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRIC
 			utf2ncs(t, (FXchar *) input+i, inlen);
 			if(FOX_BIGENDIAN==(utftype & 1))
 			{
-				fxendianswap2(t);
+				fxendianswap(*(FXushort *)t);
 				if(outlen>2)
-					fxendianswap2(t+1);
+					fxendianswap(*(FXushort *)(t+1));
 			}
 		}
 		else if(UTF32 & utftype)
@@ -271,7 +271,7 @@ FXuval QIODevice::applyCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRIC
 			FXwchar *t=(FXwchar *)(output+o);
 			*t=wc((FXchar *) input+i);
 			if(FOX_BIGENDIAN==(utftype & 1))
-				fxendianswap4(t);
+				fxendianswap(*(FXuint *)t);
 		}
 		else output[o]=input[i];
 		i+=inlen; o+=outlen;
@@ -301,8 +301,8 @@ FXuval QIODevice::removeCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRI
 			temp[1]=((FXnchar *)(input+i))[1];
 			if(FOX_BIGENDIAN==(utftype & 1))
 			{
-				fxendianswap2(&temp[0]);
-				fxendianswap2(&temp[1]);
+				fxendianswap(*(FXushort *)&temp[0]);
+				fxendianswap(*(FXushort *)&temp[1]);
 			}
 			thischarlen=wclen(temp)*sizeof(FXnchar);
 			if(i+thischarlen>inputlen) break;
@@ -315,8 +315,8 @@ FXuval QIODevice::removeCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRI
 			nextchar=((FXwchar *)(input+i))[1];
 			if(FOX_BIGENDIAN==(utftype & 1))
 			{
-				fxendianswap4(&thischar);
-				fxendianswap4(&nextchar);
+				fxendianswap(*(FXuint *)&thischar);
+				fxendianswap(*(FXuint *)&nextchar);
 			}
 			thischarlen=sizeof(FXwchar);
 			if(i+thischarlen>inputlen) break;
