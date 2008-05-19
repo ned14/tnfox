@@ -11,6 +11,8 @@ opening for read access
 * (1041) Renamed all fxendianswapX() to fxendianswap() with typed parameter.
 This avoids the compiler having to go to memory and thus makes far better
 use of registers (which the x86 bswap instruction uses anyway)
+* (1044) Bumped TnFOX back to v0.88 for a point release
+* (1045) Improved build documentation
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

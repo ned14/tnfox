@@ -2199,6 +2199,8 @@ Also the embedded copy of SQLite3 is not compiled in.
 
 /*! \page applemacosnotes Apple MacOS X specific notes
 
+<h3>WARNING: Last tested for TnFOX v0.87. Some things may have changed since</h3>
+
 This covers the rather special Unix variant that is Apple MacOS X. You'll need
 XCode installed along with the Apple X11 implementation plus at least scons
 v0.96.1 (which added MacOS X support).
@@ -2263,28 +2265,33 @@ and ME are not supported due to insufficient host OS facilities. Windows NT shou
 compatible - though there are quite a few unsupported calls.
 
 \section supported Supported configuration:
-<u>Win32</u><br>
+<h3>Win32</h3>
 MSVC6 is \b not supported, nor is MSVC7.0 (Visual Studio .NET). You need MSVC7.1 minimum
-(Visual Studio .NET 2003). GCC v3.2.2 to v4.1 is known to compile working binaries on Linux
-but is untested on Windows. The Digital Mars compiler has config files but currently the
-compiler itself is not yet up to the job (last tested summer 2004). Intel's C++ compiler
-v8 for Windows works fine, though its config is very out of date nowadays.
+(Visual Studio .NET 2003) and MSVC8 as well as MSVC9 work well. GCC v3.2.2 to v4.3 is known
+to compile working binaries on Linux but is untested on Windows. The Digital Mars compiler wasn't
+up to the job last summer 2004. Intel's C++ compiler v8 for Windows works fine, though its config
+is very out of date nowadays.
 
-<u>Win64</u><br>
-The only official compiler supporting x64
-is MSVC8 (Visual Studio 2005) so this is what I describe. You \em can make it work with beta compilers from the
-Platform SDK, but you NEED the MSVC7.1 STL (rather than the MSVC6 STL which comes with those
-test compilers) which is hard to get.
+<h3>Win64</h3>
+The only official compiler supporting x64 is MSVC8 (Visual Studio 2005) and MSVC9 so this is what
+I describe. You \em can make it work with beta compilers from the Platform SDK, but you NEED at least
+the MSVC7.1 STL (rather than the MSVC6 STL which comes with those test compilers) which is hard to get.
+Chances are that Intel's C++ compiler as well as GCC should produce working x64 code.
 
-To use, you need to ensure the environment variables point to the x64 compilers and libraries
-using the start menu shortcut in Visual Studio tools. Depending on how old your scons is,
-you may need to hack the msvc.py tool to read the values from \c os.environ rather than the
-registry (as it only can see the 32 bit tools currently). In theory, thereafter it just works.
-
-If you want to use the 64 bit tools from within the MSVC IDE, create a batch file setting up
-the environment and then launching the IDE with the \c /USEENV switch. This ensures that when
-the IDE calls scons, it passes the right environment for scons to use.
-
+<h3>The Quick & Easy method</h3>
+<ol>
+<li>Unpack the TnFOX distribution somewhere and add desired third party libraries (see below). Modify
+\c config.py as desired - note that by default, config.py will detect whether your command box is a
+32 bit or 64 bit binary and will build for that unless specifically overridden.
+<li>Install a recent Python (http://www.python.org/)
+<li>Install a recent SCons (http://www.scons.org/)
+<li>Make sure the PATH environment variable points at the python directory such that you can
+run scons from within a command box. Try the My Computer=>Properties=>Advanced=>Environment Variables.
+<li>For MSVC8 and later, there will be Start Menu options under Visual Studio Tools which set
+up a command box for either the x86 or x64 toolset (eg; Visual Studio 2008 x64 Win64 Command Prompt).
+<li>Type \c scons \c msvcproj which will auto-detect your MSVC installation and generate suitable
+MSVC project files which will invoke scons for you.
+</ol>
 As both FOX and TnFOX use very low-level and old API's in Windows, no libraries above those
 supplied by default with the system are required. It is recommended you have the latest
 service pack installed however.
@@ -2295,12 +2302,12 @@ As there's no system-provided place for header files and such to live, the SCons
 file manually looks in the directory in which the TnFOX directory is placed for the
 <a href="http://www.boost.org/">Boost library</a> and the <a
 href="http://www.openssl.org/">OpenSSL library</a>. The standard system-provided libraries on Unix
-must be placed in the \c TnFOX/Windows directory - these include the ZLib library (as
+must be placed in the \c TnFOX/windows directory - these include the ZLib library (as
 \c zlib), the graphics libraries for JPEG (as \c libjpeg), PNG (as \c libpng), TIFF
 (as \c libtiff) and BZip2 (as \c libbzip2). In all cases any version information is not used so openssl-0.9.8
 must be renamed to simply "openssl". Note that all libraries are linked in \b statically
 so don't go building DLL versions! (eg; use \c nt.mak instead of \c ntdll.mak when building
-OpenSSL).
+OpenSSL). If this seems like hassle, once you've done it you can forget about it thereafter.
 
 If any library cannot be found, support for it is disabled automatically. You should bear
 in mind that after compiling using the enclosed project files where necessary, you should
@@ -2363,15 +2370,16 @@ architectures (but likely covers all GCC supported architectures).
 TnFOX was developed against:
 \li An x86 RedHat 9 (2.4 kernel) installation with GCC v3.2. As of v0.85 this is no longer
 tested, but there is no reason why it shouldn't continue to work.
-\li An x64 SuSE Linux 10.0 (2.6 kernel) installation with GCC v4.1.
-\li An x86 FreeBSD v6.0 installation with GCC v4.0.2.
+\li An x64 KUbuntu Linux Hardy Heron (2.6 kernel) installation with GCC v4.3.
+\li An x86 FreeBSD v6.0 installation with GCC v4.0.2 (not tested since v0.86).
 
-GCC v3.2.2 should also work as should Intel's C++ compiler for Linux v8.
+GCC's as early as v3.2.2 should also work as should Intel's C++ compiler for Linux v8
+or later.
 
 Everything must have been built with threads enabled (X11, glibc, python). This
 is default on recent Linuces, it may not be so with your installation.
 
-On FreeBSD, the defaults aren't quite enough to compile out of the box. The generic
+On FreeBSD (last tested some time ago), the defaults aren't quite enough to compile out of the box. The generic
 kernel has the \c /proc filing system support compiled in but it isn't mounted by default -
 add "proc /proc procfs rw 0 0" to your \c /etc/fstab. You will also need to install
 the \c libtool package at the very least. Furthermore I found that GCC wasn't
@@ -2401,7 +2409,9 @@ Lastly you should probably review the FAQ entry \ref freebsdqs
 
 \section config Directory configuration:
 The graphics libraries for JPEG, PNG and TIFF plus zlib should be installed by
-default on almost every Unix installation. scons finds these automatically.
+default on almost every Unix installation. scons finds these automatically - all
+you need to do is make sure the headers are there by installing the \c -dev versions
+where necessary.
 
 Most systems already have OpenSSL installed - if not, go to <a href="http://www.openssl.org/">
 its website</a> and install yourself a copy.
