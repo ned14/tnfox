@@ -1,4 +1,4 @@
-TnFOX v0.90 ?:
+TnFOX v0.88 ?:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas

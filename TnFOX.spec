@@ -1,5 +1,5 @@
 %define name TnFOX
-%define version 0.90
+%define version 0.88
 %define release 1
 
 Summary: A secure robust threaded exception-aware portable GUI toolkit library

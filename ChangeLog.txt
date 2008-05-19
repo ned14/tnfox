@@ -1,4 +1,4 @@
-v0.90 ?
+v0.88 ?
 -=-=-=-=-=-=-=-=-=-=-
 T (svnr) description
 B (1041) fxendianswap4() wasn't reliable on GCC
