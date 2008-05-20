@@ -1,3 +1,8 @@
+Added test for NUMA & shared cache processor ids
+Add C++0x support for && copies
+
+
+
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
 NT v5.0 (x86) and v6.0 (x64) Failures:

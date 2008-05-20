@@ -348,10 +348,10 @@ FXbool fxisconsole(const FXchar *path){
     if(dwBytes!=IMAGE_SIZEOF_FILE_HEADER) goto x;
 
     // Read the optional header of file.
-    if(ReadFile(hImage,&optional_header,IMAGE_SIZEOF_NT_OPTIONAL_HEADER,&dwBytes,NULL)==0) goto x;
+    if(ReadFile(hImage,&optional_header,sizeof(IMAGE_OPTIONAL_HEADER),&dwBytes,NULL)==0) goto x;
 
     // Test bytes read
-    if(dwBytes!=IMAGE_SIZEOF_NT_OPTIONAL_HEADER) goto x;
+    if(dwBytes!=sizeof(IMAGE_OPTIONAL_HEADER)) goto x;
 
     // Switch on systems
     switch(optional_header.Subsystem){

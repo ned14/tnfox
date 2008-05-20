@@ -13,6 +13,15 @@ This avoids the compiler having to go to memory and thus makes far better
 use of registers (which the x86 bswap instruction uses anyway)
 * (1044) Bumped TnFOX back to v0.88 for a point release
 * (1045) Improved build documentation
+* (1046) Merged FOX v1.6.33
+* (xxxx) Updated build system as follows:
+  + Added detection code to set parallel job numbers based on available CPU
+  cores.
+  + Added SSE3+ support for GCC x86 and x64.
+  + Added cross-compiling support for ARM Thumb for my NAS box.
+  + Miscellaneous MSVC9 fixes
+* (xxxx) Replaced Linux implementation of FXProcess::noOfProcessors() with
+vastly improved version.
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

@@ -62,6 +62,16 @@ bool FXBZFileStream::open(const FXString& filename,FXStreamDirection save_or_loa
 }
 
 
+// Flush buffer
+bool FXBZFileStream::flush(){
+  bool status;
+  int action=ac;
+  if(ac!=BZ_FINISH) ac=BZ_FLUSH;
+  status=FXStream::flush();
+  ac=action;
+  return status;
+  }
+
 // Close file stream
 bool FXBZFileStream::close(){
   device()->close();

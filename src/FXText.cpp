@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXText.cpp,v 1.348.2.2 2007/05/17 02:56:16 fox Exp $                         *
+* $Id: FXText.cpp,v 1.348.2.3 2007/06/29 13:47:37 fox Exp $                         *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -497,23 +497,26 @@ void FXText::recalc(){
 
 // Make a valid position, at the start of a wide character
 FXint FXText::validPos(FXint pos) const {
+  register const FXchar *ptr=pos<gapstart ? buffer : buffer-gapstart+gapend;
   if(pos<=0) return 0;
   if(pos>=length) return length;
-  return wcvalidate(pos<gapstart ? buffer : buffer-gapstart+gapend,pos);
+  return (FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos), pos;
   }
 
 
 // Decrement; a wide character does not cross the gap, so if pos is at
 // or below below the gap, we read from the segment below the gap
 FXint FXText::dec(FXint pos) const {
-  return wcdec(pos<=gapstart ? buffer : buffer-gapstart+gapend,pos);
+  register const FXchar *ptr=pos<=gapstart ? buffer : buffer-gapstart+gapend;
+  return (--pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos<=0 || FXISUTF(ptr[pos]) || --pos), pos;
   }
 
 
 // Increment; since a wide character does not cross the gap, if we
 // start under the gap the last character accessed is below the gap
 FXint FXText::inc(FXint pos) const {
-  return wcinc(pos<gapstart ? buffer : buffer-gapstart+gapend,pos);
+  register const FXchar *ptr=pos<gapstart ? buffer : buffer-gapstart+gapend;
+  return (++pos>=length || FXISUTF(ptr[pos]) || ++pos>=length || FXISUTF(ptr[pos]) || ++pos>=length || FXISUTF(ptr[pos]) || ++pos>=length || FXISUTF(ptr[pos]) || ++pos>=length || FXISUTF(ptr[pos]) || ++pos), pos;
   }
 
 

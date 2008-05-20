@@ -1160,6 +1160,11 @@ FXuint FXProcess::noOfProcessors()
 #endif
 #ifdef USE_POSIX
 #ifdef __linux__
+#if 1
+	long int processors;
+	FXERRHOS(processors=sysconf(_SC_NPROCESSORS_ONLN));
+	return (FXuint) processors;
+#else
 	// I can't believe that reading in a text file is the way to do this! :(
 	static FXuint processors;
 	if(processors) return processors;
@@ -1173,6 +1178,7 @@ FXuint FXProcess::noOfProcessors()
 	FXString cpuinfo(buffer);
 	processors=cpuinfo.contains("processor");
 	return processors;
+#endif
 #endif
 #if defined(__FreeBSD__) || defined(__APPLE__)
 	int command[2]={CTL_HW, HW_NCPU };
