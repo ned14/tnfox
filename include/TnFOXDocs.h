@@ -3,7 +3,7 @@
 *                          Differences documentation                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -2263,6 +2263,15 @@ out this call in \c FXApp.cpp.
 This covers Windows 2000, Windows XP and Windows Vista, both 32 bit and 64 bit editions. Windows 95, 98
 and ME are not supported due to insufficient host OS facilities. Windows NT should be mostly
 compatible - though there are quite a few unsupported calls.
+
+Note that the default binaries of v0.88 of TnFOX on Windows incorporated into itself the following
+libraries:
+\li libbzip2 v1.0.5
+\li libjpeg v6b
+\li libpng v1.2.29
+\li libtiff v3.8.2
+\li zlib v1.2.3
+\li openssl v0.9.8g
 
 \section supported Supported configuration:
 <h3>Win32</h3>

@@ -14,6 +14,8 @@ use of registers (which the x86 bswap instruction uses anyway)
 * (1044) Bumped TnFOX back to v0.88 for a point release
 * (1045) Improved build documentation
 * (1046) Merged FOX v1.6.33
+* (1047) Added MSVC9 project files for Windows libraries
+* (1048) Merged SQLite v3.5.9
 * (xxxx) Updated build system as follows:
   + Added detection code to set parallel job numbers based on available CPU
   cores.

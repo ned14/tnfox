@@ -89,7 +89,6 @@ env['CPPFLAGS']=cppflags
 env['LINKFLAGS']=["/version:"+targetversion,
                   "/MAP:"+builddir+"\\TnFOXdll.map",
                   "/DEBUG",
-                  "/OPT:NOWIN98",
                   "/INCREMENTAL:NO",      # Incremental linking is just broken on all versions of MSVC
                   "/STACK:524288,65536"
                   ]

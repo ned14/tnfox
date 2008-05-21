@@ -3,7 +3,10 @@ TnFOX v0.88 ?:
 
 by Niall Douglas
 
-For full documentation, please consult the index.html file.
+For full documentation, please consult the index.html file. Note that TnFOX
+incorporates a number of third party libraries into itself (especially on
+Windows - see its build page in the documentation for details). On all
+platforms, it includes v3.3.17 of SQLite3.
 
 Issues:
 -=-=-=-
@@ -27,7 +30,7 @@ Installation:
 -=-=-=-=-=-=-
 If you're installing the binary only on POSIX, simply do:
 
-libtool --mode=install cp libTnFOX-0.87.la /usr/local/lib
+libtool --mode=install cp libTnFOX-0.88.la /usr/local/lib
 
 
 You will need a make tool called scons from http://www.scons.org/ v0.95 or
@@ -88,9 +91,9 @@ Testing regime:
 Before this release, every program in the TestSuite was compiled and tested
 in both debug and release modes on:
 
-1. Microsoft Windows XP SP2 x86 with MSVC7.1 (Visual Studio .NET 2003)
-2. Microsoft Windows Vista x64 with MSVC8.0 (Visual Studio .NET 2005)
-3. KUbuntu 6.1 x64 with GCC & libstdc++ 4.1
+1. Microsoft Windows XP SP2 x86 with MSVC9.0 (Visual Studio .NET 2008)
+2. Microsoft Windows Vista x64 with MSVC9.0 (Visual Studio .NET 2008)
+3. KUbuntu Hardy Heron x64 with GCC & libstdc++ 4.3
 4. Apple Mac OS X 10.4.8 x86 with XCode v2.3
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings

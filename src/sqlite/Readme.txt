@@ -8,10 +8,3 @@ configured and built on Linux, then all the unnecessary stuff removed.
 This way, SQLite is standardised and doesn't require TCL or any of
 the many other tools its build system requires to generate some of
 the sources.
-
-os_common.h has been modified to use TnFOX's memory allocator instead
-of the standard one. The following functions have been modified:
-
-void *sqlite3GenericMalloc(int n)
-void *sqlite3GenericRealloc(void *p, int n)
-void sqlite3GenericFree(void *p)

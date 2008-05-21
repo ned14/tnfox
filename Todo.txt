@@ -1,5 +1,6 @@
 Added test for NUMA & shared cache processor ids
 Add C++0x support for && copies
+Test cross compiling on Linux
 
 
 
