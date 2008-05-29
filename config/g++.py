@@ -1,8 +1,6 @@
 # GCC config
 
-env['CPPDEFINES']+=["USE_POSIX",
-                    "HAVE_CONSTTEMPORARIES"    # Workaround lack of non-const temporaries
-                    ]
+env['CPPDEFINES']+=["USE_POSIX"]
 if onDarwin:
     # You only get the thread cancelling pthread implementation this way
     env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
@@ -21,7 +19,7 @@ env['CPPPATH']+=["/usr/X11R6/include"]
 env['LIBPATH']+=["/usr/X11R6/"+libPathSpec(make64bit)]
 
 # Warnings
-cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
+cppflags=Split('-Wall -Wformat -Wno-reorder -Wno-non-virtual-dtor')
 if architecture=="x86":
     if x86_3dnow!=0:
           cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
@@ -29,7 +27,7 @@ if architecture=="x86":
     cppflags+=["-m32", "-march="+cppflagsopts[architecture_version-4] ]
     if x86_SSE!=0:
         cppflags+=["-mfpmath="+ ["387", "sse"][x86_SSE!=0] ]
-        if x86_SSE>1: cppflags+=["-msse%d" % x86_SSE]
+        if x86_SSE>1: cppflags+=["-msse%s" % str(x86_SSE)]
         else: cppflags+=["-msse"]
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
@@ -41,6 +39,9 @@ elif architecture=="macosx-ppc":
     cppflags+=["-arch", "ppc"]
 elif architecture=="macosx-i386":
     cppflags+=["-arch", "i386"]
+elif architecture=="arm":
+    cppflagsopts=["armv2", "armv3", "armv4", "armv5", "armv6"]
+    cppflags+=["-march="+cppflagsopts[architecture_version-2] ]
 
 cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
@@ -115,7 +116,7 @@ env['CPPDEFINES']+=[("STDC_HEADERS",1),
                     ("HAVE_SYS_PARAM_H",1),
                     ("HAVE_SYS_SELECT_H",1)
                     ]
-env['LIBS']+=[ "m", "stdc++" ]
+env['LIBS']+=[ "m" ]
 
 
 def CheckGCCHasVisibility(cc):
@@ -129,7 +130,18 @@ def CheckGCCHasVisibility(cc):
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
-conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
+def CheckGCCHasSufficientCPP0xFeatures(cc):
+    cc.Message("Checking for sufficient C++0x features...")
+    try:
+        temp=cc.env['CPPFLAGS']
+    except:
+        temp=[]
+    cc.env['CPPFLAGS']=temp+["-std=c++0x"]
+    result=cc.TryCompile('struct Foo { static const int gee=5; Foo(Foo &&a) { } };\nint main(void) { Foo foo; static_assert(Foo::gee==5, "Death in" __func__); return 0; }\n', '.cpp')
+    cc.env['CPPFLAGS']=temp
+    cc.Result(result)
+    return result
+conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility, "CheckGCCHasSufficientCPP0xFeatures" : CheckGCCHasSufficientCPP0xFeatures } )
 nothreads=True                # NOTE: Needs to be first to force use of kse over c_r on FreeBSD
 if conf.CheckCHeader("pthread.h"):
     oldcpppath=conf.env['CPPPATH'][:]
@@ -153,11 +165,13 @@ else:
     conf.env['CPPDEFINES']+=[("FOX_THREAD_SAFE",1)]
 del nothreads
 
+if not conf.CheckLib("stdc++", "__cxa_throw", language="C++"):
+    raise AssertionError, "TnFOX requires libstdc++"
 if not disableGUI:
     if not conf.CheckLib("X11", "XOpenDisplay"):
         raise AssertionError, "TnFOX requires X11"
     if not conf.CheckLib("Xext", "XShmAttach"):
-        raise AssertionError, "TnFOX requires X11"
+        raise AssertionError, "TnFOX requires X11 extensions"
 
     if conf.CheckCHeader(["X11/Xlib.h", "X11/Xcursor/Xcursor.h"]):
         conf.env['CPPDEFINES']+=[("HAVE_XCURSOR_H",1)]
@@ -186,14 +200,15 @@ if not disableGUI:
             conf.env['CPPPATH']=oldcpppath
             print "Disabling anti-aliased fonts support"
 
+    if conf.CheckCHeader(["X11/Xlib.h", "sys/shm.h", "sys/ipc.h", "X11/extensions/XShm.h"]):
+        conf.env['CPPDEFINES']+=["HAVE_XSHM_H"]
+    else:
+        print "Disabling shared memory support"
+
+
 if not conf.CheckLib("rt", "shm_open") and not conf.CheckLib("c", "shm_open"):
     raise AssertionError, "TnFOX requires POSIX shared memory support"
 
-if conf.CheckCHeader(["X11/Xlib.h", "sys/shm.h", "sys/ipc.h", "X11/extensions/XShm.h"]):
-    conf.env['CPPDEFINES']+=["HAVE_XSHM_H"]
-else:
-    print "Disabling shared memory support"
-    
 if conf.CheckLib("dl", "dlopen") or conf.CheckLib("c", "dlopen"):
     conf.env['CPPDEFINES']+=[("HAVE_LIBDL",1)]
 else:
@@ -223,10 +238,16 @@ if conf.CheckGCCHasVisibility():
 else:
     print "Disabling -fvisibility support"
 
+if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasSufficientCPP0xFeatures():
+    env['CPPDEFINES']+=["HAVE_CPP0XFEATURES"]
+    cppflags+=["-std=c++0x"]
+else:
+    env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
+
 if conf.CheckLibWithHeader("fam", "fam.h", "c"):
     conf.env['CPPDEFINES']+=[("HAVE_FAM",1)]
 else:
-    print "Disabling FAM support"
+    print "Disabling FAM support - WARNING Linux needs libfam or libgamin!"
 
 env=conf.Finish()
 

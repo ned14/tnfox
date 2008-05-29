@@ -73,7 +73,7 @@ protected:
 	//! Returns the context, text and hint
 	void contents(const char *&context, const char *&text, const char *&hint) const;
 public:
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 	QTransString(const QTransString &o);
 	QTransString &operator=(const QTransString &);

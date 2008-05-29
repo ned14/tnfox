@@ -3,7 +3,7 @@
 *                     E x c e p t i o n  H a n d l i n g                        *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -57,9 +57,15 @@ of a FXException
 */
 #ifdef FXEXCEPTION_DISABLESOURCEINFO
 #define FXEXCEPTION_FILE(p) (const char *) 0
+#define FXEXCEPTION_FUNCTION(p) (const char *) 0
 #define FXEXCEPTION_LINE(p) 0
 #else
 #define FXEXCEPTION_FILE(p) __FILE__
+#ifdef HAVE_CPP0XFEATURES
+#define FXEXCEPTION_FUNCTION(p) __func__
+#else
+#define FXEXCEPTION_FUNCTION(p) (const char *) 0
+#endif
 #define FXEXCEPTION_LINE(p) __LINE__
 #endif
 
@@ -68,7 +74,7 @@ The preferred way to create a FXException, this constructs one into \em e2
 with message \em msg, code \em code and \em flags being the usual exception flags
 \sa FX::FXExceptionFlags
 */
-#define FXERRMAKE(e2, msg, code, flags)		FX::FXException e2(FXEXCEPTION_FILE(e2), FXEXCEPTION_LINE(e2), msg, code, flags);
+#define FXERRMAKE(e2, msg, code, flags)		FX::FXException e2(FXEXCEPTION_FILE(e2), FXEXCEPTION_FUNCTION(e2), FXEXCEPTION_LINE(e2), msg, code, flags);
 
 //! Throws the specified exception
 #define FXERRH_THROW(e2)					{ FX::FXException::int_setThrownException(e2); throw e2; }
@@ -114,8 +120,8 @@ enum FXExceptionCodes
 for usual exceptions
 \sa FX::FXExceptionFlags
 */
-#define FXERRGOS(code, flags)				{ FX::FXException::int_throwOSError(FXEXCEPTION_FILE(code), FXEXCEPTION_LINE(code), code, flags); }
-#define FXERRGOSFN(code, flags, filename)	{ FX::FXException::int_throwOSError(FXEXCEPTION_FILE(code), FXEXCEPTION_LINE(code), code, flags, filename); }
+#define FXERRGOS(code, flags)				{ FX::FXException::int_throwOSError(FXEXCEPTION_FILE(code), FXEXCEPTION_FUNCTION(code), FXEXCEPTION_LINE(code), code, flags); }
+#define FXERRGOSFN(code, flags, filename)	{ FX::FXException::int_throwOSError(FXEXCEPTION_FILE(code), FXEXCEPTION_FUNCTION(code), FXEXCEPTION_LINE(code), code, flags, filename); }
 #ifdef DEBUG
 #define FXERRHOS(exp)				{ int __errcode=(exp); if(__errcode<0 || FX::FXException::int_testCondition()) FXERRGOS(errno, 0); }
 #define FXERRHOSFN(exp, filename)	{ int __errcode=(exp); if(__errcode<0 || FX::FXException::int_testCondition()) FXERRGOSFN(errno, 0, filename); }
@@ -129,7 +135,7 @@ MSVCRT which sets errno
 
 //@(
 //! Enters a section of code guarded against exceptions
-#define FXERRH_TRY			{ bool __retryerrorh; do { __retryerrorh=false; FX::FXException_TryHandler __newtryhandler(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); try
+#define FXERRH_TRY			{ bool __retryerrorh; do { __retryerrorh=false; FX::FXException_TryHandler __newtryhandler(FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0)); try
 //! Catches a specific exception
 #define FXERRH_CATCH(e2)	catch(e2)
 /*! \param owner Either a FXApp or FXWindow
@@ -376,21 +382,21 @@ class FXEXCEPTIONAPI(FXAPI) FXException
   FXExceptionPrivate *p;
 private:
   FXDLLLOCAL void doStackWalk() throw();
-  void init(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
+  void init(const char *_filename, const char *_function, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags);
 public:
   /*!
   Constructs FXException with the given parameters.
 
   You should always use FXERRMAKE() or a derivative of it instead of this directly
   */
-  FXException(const char *_filename, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags) : p(0)
-  { init(_filename, _lineno, _msg, _code, _flags); }
+  FXException(const char *_filename, const char *_function, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags) : p(0)
+  { init(_filename, _function, _lineno, _msg, _code, _flags); }
   /*! \overload 
   */
   FXException() : p(0) { }
   //! \deprecated For backward code compatibility only
-  FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init(0, 0, msg, 0, 0); }
-#ifndef HAVE_MOVECONSTRUCTORS
+  FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init(0, 0, 0, msg, 0, 0); }
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
   FXException(const FXException &other) : p(other.p)
   {
@@ -418,7 +424,7 @@ public:
   //! Sets whether this exception is fatal or not
   void setFatal(bool _fatal);
   //! Returns in which source file the exception happened
-  void sourceInfo(const char **FXRESTRICT file, int *FXRESTRICT lineno) const throw();
+  void sourceInfo(const char **FXRESTRICT file, const char **FXRESTRICT function, int *FXRESTRICT lineno) const throw();
   //! Returns the message this exception represents
   const FXString &message() const throw();
   //! Sets the message to be reported by this exception
@@ -464,14 +470,14 @@ public:
   // Internal and not to be publicly used
   static FXDLLLOCAL void int_enableNestedExceptionFramework(bool yes=true);
   static void int_setThrownException(FXException &e);
-  static void int_enterTryHandler(const char *srcfile, int lineno);
+  static void int_enterTryHandler(const char *srcfile, const char *function, int lineno);
   static void int_exitTryHandler() throw();
   static void int_incDestructorCnt();
   static bool int_nestedException(FXException &e);
   static void int_decDestructorCnt();
   static bool int_testCondition();
-  static void int_throwWinError(const char *file, int lineno, FXuint code, FXuint flags, const FXString &filename=FXString::nullStr());
-  static void int_throwOSError(const char *file, int lineno, int code, FXuint flags, const FXString &filename=FXString::nullStr());
+  static void int_throwWinError(const char *file, const char *function, int lineno, FXuint code, FXuint flags, const FXString &filename=FXString::nullStr());
+  static void int_throwOSError(const char *file, const char *function, int lineno, int code, FXuint flags, const FXString &filename=FXString::nullStr());
   friend FXAPI FXStream &operator<<(FXStream &s, const FXException &i);
   friend FXAPI FXStream &operator>>(FXStream &s, FXException &i);
 };
@@ -483,9 +489,9 @@ FXAPI FXStream &operator>>(FXStream &s, FXException &i);
 
 struct FXException_TryHandler
 {
-	FXException_TryHandler(const char *srcfile, int lineno)
+	FXException_TryHandler(const char *srcfile, const char *function, int lineno)
 	{
-		FXException::int_enterTryHandler(srcfile,lineno);
+		FXException::int_enterTryHandler(srcfile, function, lineno);
 	}
 	~FXException_TryHandler()
 	{
@@ -501,11 +507,11 @@ class FXEXCEPTIONAPI(FXAPI) FXRangeException : public FXException
 {
 public:
 	//! Use FXERRMAKE
-	FXRangeException(const char *_filename, int _lineno, const FXString &_msg)
-		: FXException(_filename, _lineno, _msg, FXEXCEPTION_BADRANGE, 0) { }
+	FXRangeException(const char *_filename, const char *_function, int _lineno, const FXString &_msg)
+		: FXException(_filename, _function, _lineno, _msg, FXEXCEPTION_BADRANGE, 0) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXRangeException(const FXchar *msg)
-		: FXException(0, 0, msg, FXEXCEPTION_BADRANGE, FXERRH_ISFOXEXCEPTION) { }
+		: FXException(0, 0, 0, msg, FXEXCEPTION_BADRANGE, FXERRH_ISFOXEXCEPTION) { }
 };
 /*! \return A FX::FXRangeException
 
@@ -513,7 +519,7 @@ Use this macro to generically indicate a parameter exceeding the permitted range
 failure in all code, this should greatly help intuitive writing of handlers for this
 common error
 */
-#define FXERRGRANGE(msg, flags)		{ FX::FXRangeException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(_int_temp_e); }
+#define FXERRGRANGE(msg, flags)		{ FX::FXRangeException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_FUNCTION(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXPointerException
 \brief An unexpected null pointer error
@@ -522,13 +528,13 @@ class FXEXCEPTIONAPI(FXAPI) FXPointerException : public FXException
 {
 public:
 	//! Use FXERRHPTR()
-	FXPointerException(const char *_filename, int _lineno, FXint _flags)
-		: FXException(_filename, _lineno, "Null pointer", FXEXCEPTION_NULLPOINTER, _flags) { }
+	FXPointerException(const char *_filename, const char *_function, int _lineno, FXint _flags)
+		: FXException(_filename, _function, _lineno, "Null pointer", FXEXCEPTION_NULLPOINTER, _flags) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXPointerException(const FXchar *msg)
-		: FXException(0, 0, msg, FXEXCEPTION_NULLPOINTER, FXERRH_ISFOXEXCEPTION) { }
+		: FXException(0, 0, 0, msg, FXEXCEPTION_NULLPOINTER, FXERRH_ISFOXEXCEPTION) { }
 };
-#define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
+#define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_FUNCTION(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXPointerException
 
 Use this macro to test for null pointers
@@ -546,12 +552,12 @@ class FXEXCEPTIONAPI(FXAPI) FXResourceException : public FXException
 {
 public:
 	//! Usually instantiated by other types
-	FXResourceException(const char *_filename, int _lineno, const FXString &_msg,
+	FXResourceException(const char *_filename, const char *_function, int _lineno, const FXString &_msg,
 		FXuint _code=FXEXCEPTION_NORESOURCE, FXuint _flags=0)
-		: FXException(_filename, _lineno, _msg, _code, _flags) { }
+		: FXException(_filename, _function, _lineno, _msg, _code, _flags) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXResourceException(const FXchar *msg)
-		: FXException(0, 0, msg, FXEXCEPTION_NORESOURCE, FXERRH_ISFOXEXCEPTION) { }
+		: FXException(0, 0, 0, msg, FXEXCEPTION_NORESOURCE, FXERRH_ISFOXEXCEPTION) { }
 };
 
 /*! \class FXMemoryException
@@ -561,13 +567,13 @@ class FXEXCEPTIONAPI(FXAPI) FXMemoryException : public FXResourceException
 {
 public:
 	//! Use FXERRHM() to instantiate
-	FXMemoryException(const char *_filename, int _lineno)
-		: FXResourceException(_filename, _lineno, "Out of memory", FXEXCEPTION_NOMEMORY, 0) { }
+	FXMemoryException(const char *_filename, const char *_function, int _lineno)
+		: FXResourceException(_filename, _function, _lineno, "Out of memory", FXEXCEPTION_NOMEMORY, 0) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXMemoryException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_NOMEMORY, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_NOMEMORY, FXERRH_ISFOXEXCEPTION) { }
 };
-#define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
+#define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXMemoryException
 
 Use this macro to wrap malloc, calloc and new eg;
@@ -590,14 +596,14 @@ class FXEXCEPTIONAPI(FXAPI) FXNotSupportedException : public FXException
 {
 public:
 	//! Use FXERRGNOTSUPP() to instantiate
-	FXNotSupportedException(const char *_filename, int _lineno, const FXString &msg)
-		: FXException(_filename, _lineno, msg, FXEXCEPTION_NOTSUPPORTED, FXERRH_ISNORETRY|FXERRH_ISDEBUG) { }
+	FXNotSupportedException(const char *_filename, const char *_function, int _lineno, const FXString &msg)
+		: FXException(_filename, _function, _lineno, msg, FXEXCEPTION_NOTSUPPORTED, FXERRH_ISNORETRY|FXERRH_ISDEBUG) { }
 };
 /*! \return A FX::FXNotSupportedException
 
 Use this macro to indicate that an operation is not supported
 */
-#define FXERRGNOTSUPP(msg)	{ FX::FXNotSupportedException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
+#define FXERRGNOTSUPP(msg)	{ FX::FXNotSupportedException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_FUNCTION(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXNotFoundException
 \brief A failure to find something (eg; a file, handle, etc)
@@ -606,8 +612,8 @@ class FXEXCEPTIONAPI(FXAPI) FXNotFoundException : public FXResourceException
 {
 public:
 	//! Use FXERRGNF() to instantiate
-	FXNotFoundException(const char *_filename, int _lineno, const FXString &_msg, FXint flags)
-		: FXResourceException(_filename, _lineno, _msg, FXEXCEPTION_NOTFOUND, flags|FXERRH_ISINFORMATIONAL) { }
+	FXNotFoundException(const char *_filename, const char *_function, int _lineno, const FXString &_msg, FXint flags)
+		: FXResourceException(_filename, _function, _lineno, _msg, FXEXCEPTION_NOTFOUND, flags|FXERRH_ISINFORMATIONAL) { }
 };
 /*! \return A FX::FXNotFoundException
 
@@ -615,7 +621,7 @@ Use this macro to generically indicate failures to find things. As this is a com
 failure in all code, this should greatly help intuitive writing of handlers for this
 common error
 */
-#define FXERRGNF(msg, flags)	{ FX::FXNotFoundException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(_int_temp_e); }
+#define FXERRGNF(msg, flags)	{ FX::FXNotFoundException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_FUNCTION(msg), FXEXCEPTION_LINE(msg), msg, flags); FXERRH_THROW(_int_temp_e); }
 
 /*! \class FXIOException
 \brief A failure to perform i/o
@@ -624,10 +630,10 @@ class FXEXCEPTIONAPI(FXAPI) FXIOException : public FXResourceException
 {
 public:
 	//! Use FXERRHIO() to instantiate
-	FXIOException(const char *_filename, int _lineno, const FXString &msg, FXuint code=FXEXCEPTION_IOERROR, FXuint flags=0)
-		: FXResourceException(_filename, _lineno, msg, code, flags) { }
+	FXIOException(const char *_filename, const char *_function, int _lineno, const FXString &msg, FXuint code=FXEXCEPTION_IOERROR, FXuint flags=0)
+		: FXResourceException(_filename, _function, _lineno, msg, code, flags) { }
 };
-#define FXERRGIO(msg)		{ FX::FXIOException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
+#define FXERRGIO(msg)		{ FX::FXIOException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_FUNCTION(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXIOException
 
 Use this macro to wrap standard C library type calls eg;
@@ -649,7 +655,7 @@ class FXEXCEPTIONAPI(FXAPI) FXConnectionLostException : public FXIOException
 public:
 	//! Use FXERRGCONLOST() to instantiate
 	FXConnectionLostException(const FXString &msg, FXuint flags)
-		: FXIOException(0, 0, msg, FXEXCEPTION_CONNECTIONLOST, flags|FXERRH_ISINFORMATIONAL) { }
+		: FXIOException(0, 0, 0, msg, FXEXCEPTION_CONNECTIONLOST, flags|FXERRH_ISINFORMATIONAL) { }
 };
 #define FXERRGCONLOST(msg, flags)		{ FX::FXConnectionLostException _int_temp_e(msg, flags); FXERRH_THROW(_int_temp_e); }
 
@@ -661,7 +667,7 @@ class FXEXCEPTIONAPI(FXAPI) FXNoPermissionException : public FXException
 public:
 	//! Use FXERRGNOPERM() to instantiate
 	FXNoPermissionException(const FXString &msg, FXuint code=FXEXCEPTION_NOPERMISSION, FXuint flags=0)
-		: FXException(0, 0, msg, code, flags|FXERRH_ISINFORMATIONAL) { }
+		: FXException(0, 0, 0, msg, code, flags|FXERRH_ISINFORMATIONAL) { }
 };
 #define FXERRGNOPERM(msg, flags)		{ FX::FXNoPermissionException _int_temp_e(msg, FXEXCEPTION_NOPERMISSION, flags); FXERRH_THROW(_int_temp_e); }
 
@@ -676,7 +682,7 @@ class FXEXCEPTIONAPI(FXAPI) FXWindowException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXWindowException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFOXEXCEPTION) { }
 };
 
 /*! \class FXImageException
@@ -690,7 +696,7 @@ class FXEXCEPTIONAPI(FXAPI) FXImageException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXImageException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFOXEXCEPTION) { }
 };
 
 /*! \class FXFontException
@@ -704,7 +710,7 @@ class FXEXCEPTIONAPI(FXAPI) FXFontException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXFontException(const FXchar *msg)
-		: FXResourceException(0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFOXEXCEPTION) { }
 };
 
 

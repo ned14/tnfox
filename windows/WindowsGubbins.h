@@ -37,13 +37,8 @@
 #include "windows.h"
 
 // Define a special kind of error handler for Win32
-#ifdef FXEXCEPTION_DISABLESOURCEINFO
-#define FXERRGWIN(code, flags)				{ FX::FXException::int_throwWinError(0, 0, code, flags); }
-#define FXERRGWINFN(code, flags, filename)	{ FX::FXException::int_throwWinError(0, 0, code, flags, filename); }
-#else
-#define FXERRGWIN(code, flags)				{ FX::FXException::int_throwWinError(__FILE__, __LINE__, code, flags); }
-#define FXERRGWINFN(code, flags, filename)	{ FX::FXException::int_throwWinError(__FILE__, __LINE__, code, flags, filename); }
-#endif
+#define FXERRGWIN(code, flags)				{ FX::FXException::int_throwWinError(FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0), code, flags); }
+#define FXERRGWINFN(code, flags, filename)	{ FX::FXException::int_throwWinError(FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0), code, flags, filename); }
 #ifdef DEBUG
 #define FXERRHWIN(exp)								{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FX::FXException::int_testCondition()) FXERRGWIN(GetLastError(), 0); }
 #define FXERRHWINFN(exp, filename)					{ DWORD __errcode=(DWORD)(exp); if(!__errcode || FX::FXException::int_testCondition()) FXERRGWINFN(GetLastError(), 0, filename); }

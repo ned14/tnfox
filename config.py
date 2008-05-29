@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=False
+debugmode=True
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
@@ -17,6 +17,12 @@ makeSMPBuild=True
 # source files. This can slightly increase code size and also drags
 # in a lot of extra system header files.
 inlineMutex=False  # not debugmode
+
+# Set to true to enable the next generation C++0x features on compilers which
+# support that (currently GCC v4.3 or later. Note that this is a profound
+# setting and changes compilation of all source code. It can yield significant
+# code speed & size improvements.
+enableCPP0xFeaturesIfAvailable=True
 
 # What to generate as the library
 # 0=generate just the DLL, 1=also generate a static library, 2=only generate a static library
@@ -59,6 +65,19 @@ SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 
 
+toolset=None             # Let scons pick which compiler/linker to use
+toolsprefix=''           # Useful for cross compiling eg; 'arm9tdmi'
+
+# For example, if you wanted to force a certain toolset below:
+#if sys.platform!="win32":
+#    architecture_version=6
+#    x86_SSE=1
+#    if sys.platform=="win32":
+#        toolset=["icl"]
+#    else:
+#        toolset=["intel"]
+
+
 
 ######## Processor architecture ########
 
@@ -70,7 +89,7 @@ SeparateTnLibs=(sys.platform=="win32" or sys.platform=="darwin")
 
 # The default, unless overriden below, is to choose x86 or x64
 if sys.platform=="win32":
-    if os.environ.has_key('PROCESSOR_ARCHITEW6432'):   # Only defined when in WOW64
+    if os.environ.has_key('PROCESSOR_ARCHITECTURE') and os.environ['PROCESSOR_ARCHITECTURE']=="AMD64":
         architecture="x64"
         architecture_version=0
     else:
@@ -86,7 +105,7 @@ else:
     else:
         architecture="x86"
         architecture_version=7
-        x86_SSE=2               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        x86_SSE=2               # =0 (disable), =1, 2, 3, 4.1, 4.2, etc for SSE variants
         x86_3dnow=0             # =0 (disable), =1 (3dnow)
 
 
@@ -106,17 +125,14 @@ else:
 #architecture="macosx-i386"
 #architecture_version=0
 
+# Define for an ARM build. You probably want to set toolsprefix too
+#architecture="arm"
+#architecture_version=4
+#toolsprefix="arm-linux-"
 
 
 
-toolset=None             # Let scons pick which compiler/linker to use
-#if sys.platform!="win32":
-#    architecture_version=6
-#    x86_SSE=1
-#    if sys.platform=="win32":
-#        toolset=["icl"]
-#    else:
-#        toolset=["intel"]
+
 
 ######## End Processor architecture ########
 

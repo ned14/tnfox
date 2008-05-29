@@ -152,8 +152,8 @@ namespace Maths {
 	template<typename type> struct NaNValue : public Impl::NaNValue<type> { };
 	//! Returns true if the floating point value is a NaN
 	template<typename type> inline bool isNaN(type val) throw();
-	template<> inline bool isNaN<float>(float val) throw() { return *((FXuint *) &val)==NaNValue<float>::value().integer; }
-	template<> inline bool isNaN<double>(double val) throw() { return *((FXulong *) &val)==NaNValue<double>::value().integer; }
+	template<> inline bool isNaN<float>(float val) throw() { union { float f; FXuint i; } v; v.f=val; return v.i==NaNValue<float>::value().integer; }
+	template<> inline bool isNaN<double>(double val) throw() { union { double f; FXulong i; } v; v.f=val; return v.i==NaNValue<double>::value().integer; }
 
 	/*! \class Array
 	\brief An N dimensional array
@@ -250,8 +250,8 @@ namespace Maths {
 	*/
 	class FRandomness
 	{
-		static const FXuint NN=312;
-		static const FXuint MM=156;
+		static const FXint NN=312;
+		static const FXint MM=156;
 		static const FXulong MATRIX_A=0xB5026F5AA96619E9ULL;
 		static const FXulong UM=0xFFFFFFFF80000000ULL;	/* Most significant 33 bits */
 		static const FXulong LM=0x7FFFFFFFULL;			/* Least significant 31 bits */

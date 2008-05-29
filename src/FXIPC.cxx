@@ -3,7 +3,7 @@
 *                        Inter Process Communication                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -486,7 +486,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						if(ae)
 						{
 							FXIPCMsg_Unhandled *uh=(FXIPCMsg_Unhandled *) msg;
-							FXERRHM(ae->erroroccurred=new FXException(0, 0, QTrans::tr("FXIPCChannel", "Unhandled message"), FXIPCCHANNEL_UNHANDLED, FXERRH_ISFROMOTHER));
+							FXERRHM(ae->erroroccurred=new FXException(0, 0, 0, QTrans::tr("FXIPCChannel", "Unhandled message"), FXIPCCHANNEL_UNHANDLED, FXERRH_ISFROMOTHER));
 						}
 					}
 					else if(FXIPCMsg_ErrorOccurred::id::code==msg->msgType())
@@ -494,7 +494,7 @@ bool FXIPCChannel::doReception(FXuint waitfor)
 						if(p->errorTrans && ae)
 						{
 							FXIPCMsg_ErrorOccurred *eo=(FXIPCMsg_ErrorOccurred *) msg;
-							FXERRHM(ae->erroroccurred=new FXException(0, 0, eo->message, eo->code, (eo->flags&~FXERRH_ISFATAL)|FXERRH_ISFROMOTHER));
+							FXERRHM(ae->erroroccurred=new FXException(0, 0, 0, eo->message, eo->code, (eo->flags&~FXERRH_ISFATAL)|FXERRH_ISFROMOTHER));
 						}
 					}
 					if(ae)

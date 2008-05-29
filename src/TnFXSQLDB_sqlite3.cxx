@@ -3,7 +3,7 @@
 *                            SQLite3 Database Support                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2005-2008 by Niall Douglas.   All Rights Reserved.                   *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -41,7 +41,7 @@ struct TnFXSQLDB_sqlite3Private
 const FXString TnFXSQLDB_sqlite3::MyName("SQLite3");
 static TnFXSQLDBRegistry::Register<TnFXSQLDB_sqlite3> sqlite3dbregister;
 
-void TnFXSQLDB_sqlite3::int_throwSQLite3Error(int errcode, const char *file, int lineno)
+void TnFXSQLDB_sqlite3::int_throwSQLite3Error(int errcode, const char *file, const char *function, int lineno)
 {
 	FXString errmsg(sqlite3_errmsg(p->handle));
 	if(SQLITE_PERM==errcode || SQLITE_READONLY==errcode)
@@ -54,22 +54,22 @@ void TnFXSQLDB_sqlite3::int_throwSQLite3Error(int errcode, const char *file, int
 	}
 	else if(SQLITE_IOERR==errcode)
 	{
-		FXIOException e(file, lineno, errmsg);
+		FXIOException e(file, function, lineno, errmsg);
 		FXERRH_THROW(e);
 	}
 	else if(SQLITE_NOTFOUND==errcode || SQLITE_CANTOPEN==errcode)
 	{
-		FXNotFoundException e(file, lineno, errmsg, 0);
+		FXNotFoundException e(file, function, lineno, errmsg, 0);
 		FXERRH_THROW(e);
 	}
 	else if(SQLITE_NOLFS==errcode)
 	{
-		FXNotSupportedException e(file, lineno, errmsg);
+		FXNotSupportedException e(file, function, lineno, errmsg);
 		FXERRH_THROW(e);
 	}
 	else
 	{
-		FXException e(file, lineno, errmsg, 0, 0);
+		FXException e(file, function, lineno, errmsg, 0, 0);
 		FXERRH_THROW(e);
 	}
 }
@@ -87,13 +87,13 @@ void TnFXSQLDB_sqlite3::int_waitOnSQLite3File()
 		return false; \
 	} \
 	else if(retcode>0 && retcode<SQLITE_ROW) \
-		prefix ->int_throwSQLite3Error(retcode, file, lineno); \
+		prefix ->int_throwSQLite3Error(retcode, file, function, lineno); \
 	return true;
-inline bool TnFXSQLDB_sqlite3::fxerrhsqlite3(int retcode, const char *file, int lineno)
+inline bool TnFXSQLDB_sqlite3::fxerrhsqlite3(int retcode, const char *file, const char *function, int lineno)
 {
 	FXERRHSQLITE3IMPL(this)
 }
-#define FXERRHSQLITE3(st) fxerrhsqlite3(st, FXEXCEPTION_FILE(st), FXEXCEPTION_LINE(st))
+#define FXERRHSQLITE3(st) fxerrhsqlite3(st, FXEXCEPTION_FILE(st), FXEXCEPTION_FUNCTION(st), FXEXCEPTION_LINE(st))
 
 
 TnFXSQLDB_sqlite3::TnFXSQLDB_sqlite3(const FXString &dbpath, const FXString &user, const QHostAddress &host, FXushort port) : TnFXSQLDB(Capabilities().setTransactions().setNoTypeConstraints(), MyName, dbpath, user, host, port), p(0)
@@ -134,7 +134,7 @@ namespace TnFXSQLDB_sqlite3Impl
 				}
 				else
 				{
-					((TnFXSQLDB_sqlite3 *) mydriver)->int_throwSQLite3Error(ret, __FILE__, __LINE__);
+					((TnFXSQLDB_sqlite3 *) mydriver)->int_throwSQLite3Error(ret, FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0));
 				}
 			}
 		}
@@ -404,7 +404,7 @@ namespace TnFXSQLDB_sqlite3Impl
 		QMemArray<stmth> stmths;
 		FXint mainstmth;
 		bool needsReset;
-		bool fxerrhsqlite3(int retcode, const char *file, int lineno)
+		bool fxerrhsqlite3(int retcode, const char *file, const char *function, int lineno)
 		{
 			FXERRHSQLITE3IMPL(((TnFXSQLDB_sqlite3 *) driver()))
 		}

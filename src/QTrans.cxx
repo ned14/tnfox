@@ -290,7 +290,7 @@ void QTransString::setLangIdFunc(QTransString::GetLangIdSpec *langidfunc) throw(
 	if(!(p->langidfunc=langidfunc)) p->langid=0;
 }
 
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 QTransString::QTransString(const QTransString &other) : p(other.p)
 {
@@ -307,7 +307,7 @@ QTransString::QTransString(QTransString &&o) : p(o.p)
 	o.p=0;
 }
 
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 QTransString &QTransString::operator=(const QTransString &other)
 {
@@ -454,7 +454,7 @@ struct DataInfo
 private:
 	DataInfo &operator=(const DataInfo &);
 public:
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 	DataInfo(const DataInfo &o)
 #else

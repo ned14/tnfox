@@ -3,7 +3,7 @@
 *                     E x c e p t i o n  H a n d l i n g                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2008 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -55,7 +55,7 @@ struct FXDLLLOCAL FXExceptionPrivate
   FXString message;
   FXuint code;
   FXuint flags;
-  const char *srcfilename;
+  const char *srcfilename, *srcfunction;
   int srclineno;
   FXulong threadId;
   mutable FXString *reporttxt;
@@ -80,12 +80,12 @@ struct FXException_TIB
 {
 	struct LevelEntry
 	{
-		const char *srcfile;						// Where the FXERRH_TRY block is in the source
+		const char *srcfile, *srcfunction;			// Where the FXERRH_TRY block is in the source
 		int lineno;
 		int nestingCount;							// How many FXEXCEPTIONDESTRUCT's we are from this FXERRH_TRY block
 		int uniqueId;								// Id of primary exception being thrown
 		QPtrList<FXExceptionPrivate> currentExceptions;	// A list of known copies of the primary exception currently being thrown
-		LevelEntry(const char *_srcfile, int _lineno) : srcfile(_srcfile), lineno(_lineno), nestingCount(0), uniqueId(0) { }
+		LevelEntry(const char *_srcfile, const char *_srcfunction, int _lineno) : srcfile(_srcfile), srcfunction(_srcfunction), lineno(_lineno), nestingCount(0), uniqueId(0) { }
 	};
 	QPtrList<LevelEntry> stack;					// One of these exist per nesting level of FXERRH_TRY blocks
 	struct GlobalErrorCreationCount
@@ -307,7 +307,7 @@ void FXException::doStackWalk() throw()
 #endif
 #endif
 
-void FXException::init(const char *_filename, int _lineno, const FXString &msg, FXuint _code, FXuint _flags)
+void FXException::init(const char *_filename, const char *_function, int _lineno, const FXString &msg, FXuint _code, FXuint _flags)
 {
 #ifdef DEBUG
 	if(FXEXCEPTION_INTTHREADCANCEL!=_code)
@@ -329,6 +329,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 	p->code=_code;
 	p->flags=_flags;
 	p->srcfilename=_filename;
+	p->srcfunction=_function;
 	p->srclineno=_lineno;
 	p->threadId=QThread::id();
 	p->reporttxt=0;
@@ -410,7 +411,7 @@ void FXException::init(const char *_filename, int _lineno, const FXString &msg, 
 #if 0
 FXException FXException::copy() const
 	: p->uniqueId(o.p->uniqueId), p->message(o.p->message), p->code(o.p->code), p->flags(o.p->flags),
-	p->srcfilename(o.p->srcfilename), p->srclineno(o.p->srclineno), p->threadId(QThread::id()), p->reporttxt(0), nestedlist(0),
+	p->srcfilename(o.p->srcfilename), p->srcfunction(o.p->srcfunction), p->srclineno(o.p->srclineno), p->threadId(QThread::id()), p->reporttxt(0), nestedlist(0),
 	stacklevel(o.stacklevel)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
@@ -450,7 +451,7 @@ FXException &FXException::operator=(FXException &o)
 
 FXException FXException::copy() const
 {
-	FXException ret(p->srcfilename, p->srclineno, p->message, p->code, p->flags);
+	FXException ret(p->srcfilename, p->srcfunction, p->srclineno, p->message, p->code, p->flags);
 	ret.p->uniqueId=p->uniqueId; ret.p->threadId=p->threadId;
 	if(p->reporttxt)
 	{
@@ -522,9 +523,10 @@ void FXException::setFatal(bool _fatal)
 		p->flags&=~FXERRH_ISFATAL;
 }
 
-void FXException::sourceInfo(const char **FXRESTRICT file, int *FXRESTRICT lineno) const throw()
+void FXException::sourceInfo(const char **FXRESTRICT file, const char **FXRESTRICT function, int *FXRESTRICT lineno) const throw()
 {
 	if(file) *file=p->srcfilename;
+	if(function) *function=p->srcfunction;
 	if(lineno) *lineno=p->srclineno;
 }
 
@@ -575,11 +577,11 @@ const FXString &FXException::report() const
 			else
 			{
 				if(p->flags & (FXERRH_ISFATAL|FXERRH_ISFOXEXCEPTION))
-					p->reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srclineno).arg(p->threadId));
+					p->reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4:%5 thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srcfunction).arg(p->srclineno).arg(p->threadId));
 				else if(p->flags & FXERRH_ISFROMOTHER)
-					p->reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srclineno).arg(p->threadId));
+					p->reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4:%5 thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srcfunction).arg(p->srclineno).arg(p->threadId));
 				else
-					p->reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4 thread %5)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srclineno).arg(p->threadId));
+					p->reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4:%5 thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srcfunction).arg(p->srclineno).arg(p->threadId));
 			}
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 			if(!(p->flags & FXERRH_ISINFORMATIONAL))
@@ -703,18 +705,18 @@ void FXException::int_setThrownException(FXException &e)
 	}
 }
 
-void FXException::int_enterTryHandler(const char *srcfile, int lineno)
+void FXException::int_enterTryHandler(const char *srcfile, const char *srcfunction, int lineno)
 {	// Called by FXERRH_TRY before each iteration of the tryable code
 	FXException_TIB *tib=0;
 	if(CheckTIB(&tib))
 	{
 		FXException_TIB::LevelEntry *le;
-		FXERRHM(le=new FXException_TIB::LevelEntry(srcfile, lineno));
+		FXERRHM(le=new FXException_TIB::LevelEntry(srcfile, srcfunction, lineno));
 		FXRBOp unle=FXRBNew(le);
 		tib->stack.append(le);
 		unle.dismiss();
-		//fxmessage("Thread %u entering try handler stack level %d (file %s line %d)\n",
-		//	(FXuint) QThread::id(), tib->stack.count()-1, srcfile, lineno);
+		//fxmessage("Thread %u entering try handler stack level %d (file %s line %s:%d)\n",
+		//	(FXuint) QThread::id(), tib->stack.count()-1, srcfile, srcfunction, lineno);
 	}
 }
 
@@ -851,14 +853,14 @@ bool FXException::setConstructionBreak(bool v)
 	return t;
 }
 
-void FXException::int_throwOSError(const char *file, int lineno, int code, FXuint flags, const FXString &filename)
+void FXException::int_throwOSError(const char *file, const char *function, int lineno, int code, FXuint flags, const FXString &filename)
 {
 	FXString errstr(strerror(code));
 	errstr.append(" ("+FXString::number(code)+")");
 	if(ENOENT==code || ENOTDIR==code)
 	{
 		errstr=QTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
-		FXNotFoundException e(file, lineno, errstr, flags);
+		FXNotFoundException e(file, function, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(EACCES==code)
@@ -869,11 +871,11 @@ void FXException::int_throwOSError(const char *file, int lineno, int code, FXuin
 	}
 	else
 	{
-		FXException e(file, lineno, errstr, FXEXCEPTION_OSSPECIFIC, flags);
+		FXException e(file, function, lineno, errstr, FXEXCEPTION_OSSPECIFIC, flags);
 		FXERRH_THROW(e);
 	}
 }
-void FXException::int_throwWinError(const char *file, int lineno, FXuint code, FXuint flags, const FXString &filename)
+void FXException::int_throwWinError(const char *file, const char *function, int lineno, FXuint code, FXuint flags, const FXString &filename)
 {
 #ifdef WIN32
 	if(ERROR_SUCCESS==code)
@@ -902,7 +904,7 @@ void FXException::int_throwWinError(const char *file, int lineno, FXuint code, F
 	if(ERROR_FILE_NOT_FOUND==code || ERROR_PATH_NOT_FOUND==code)
 	{
 		errstr=QTrans::tr("FXException", "File '%1' not found [Host OS Error: %2]").arg(filename).arg(errstr);
-		FXNotFoundException e(file, lineno, errstr, flags);
+		FXNotFoundException e(file, function, lineno, errstr, flags);
 		FXERRH_THROW(e);
 	}
 	else if(ERROR_ACCESS_DENIED==code || ERROR_EA_ACCESS_DENIED==code)
@@ -918,7 +920,7 @@ void FXException::int_throwWinError(const char *file, int lineno, FXuint code, F
 	}
 	else
 	{
-		FXException e(file, lineno, errstr, FXEXCEPTION_OSSPECIFIC, flags);
+		FXException e(file, function, lineno, errstr, FXEXCEPTION_OSSPECIFIC, flags);
 		FXERRH_THROW(e);
 	}
 #endif

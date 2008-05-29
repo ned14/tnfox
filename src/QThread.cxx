@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -762,7 +762,7 @@ static QPtrList<CreationUpcall> creationupcalls(true);
 class QThreadIntException : public FXException
 {
 public:
-	QThreadIntException() : FXException(0, 0, "Internal QThread cancellation exception", FXEXCEPTION_INTTHREADCANCEL, FXERRH_ISINFORMATIONAL) { }
+	QThreadIntException() : FXException(0, 0, 0, "Internal QThread cancellation exception", FXEXCEPTION_INTTHREADCANCEL, FXERRH_ISINFORMATIONAL) { }
 };
 
 static void cleanup_thread(void *t)

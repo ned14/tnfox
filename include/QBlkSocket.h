@@ -164,7 +164,7 @@ public:
 	//! Constructs a socket to connect to whatever addr resolves to by DNS (you still need to call open()) or a server on localhost
 	QBlkSocket(const FXString &addr, FXushort port, Type type=Stream);
 	//! Destructive copy constructor. Best to not use explicitly.
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 	QBlkSocket(const QBlkSocket &o);
 #else

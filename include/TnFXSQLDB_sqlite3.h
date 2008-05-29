@@ -3,7 +3,7 @@
 *                            SQLite3 Database Support                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005-2006 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2005-2008 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -84,7 +84,7 @@ class FXSQLMODULEAPI TnFXSQLDB_sqlite3 : public TnFXSQLDB
 	TnFXSQLDB_sqlite3Private *p;
 	TnFXSQLDB_sqlite3(const TnFXSQLDB_sqlite3 &);
 	TnFXSQLDB_sqlite3 &operator=(const TnFXSQLDB_sqlite3 &);
-	inline FXDLLLOCAL bool fxerrhsqlite3(int retcode, const char *file, int lineno);
+	inline FXDLLLOCAL bool fxerrhsqlite3(int retcode, const char *file, const char *function, int lineno);
 public:
 	static const FXString MyName;
 	//! Instantiates a driver accessing \em dbpath
@@ -97,7 +97,7 @@ public:
 	virtual void close();
 	virtual TnFXSQLDBStatementRef prepare(const FXString &text);
 
-	void FXDLLLOCAL int_throwSQLite3Error(int errcode, const char *file, int lineno);
+	void FXDLLLOCAL int_throwSQLite3Error(int errcode, const char *file, const char *function, int lineno);
 	void FXDLLLOCAL int_waitOnSQLite3File();
 };
 

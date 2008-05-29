@@ -91,7 +91,7 @@ namespace TnFXSQLDBIPCMsgsI
 				memcpy(data.blob, o.data.blob, data.length);
 			}
 		}
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 		DataContainer(const DataContainer &_o) : type(_o.type), mydata(_o.mydata)
 		{
 			DataContainer &o=const_cast<DataContainer &>(_o);

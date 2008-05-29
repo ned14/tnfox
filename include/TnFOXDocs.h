@@ -104,6 +104,7 @@ Generic programming tools provided by TnFOX
 \endlink
 \li \ref debugging
 \li \ref modularbuilding
+\li \ref cpp0xsupport
 
 \li \ref applemacosnotes
 \li \ref windowsnotes
@@ -2194,6 +2195,45 @@ But NOT FX::FXMenuButton nor FX::FXMenuPane
 Also the embedded copy of SQLite3 is not compiled in.
 
 */
+
+
+/*! \page cpp0xsupport C++0x Support in TnFOX
+
+For a very long time now, TnFOX has contained support for one particular C++0x
+feature (move constructors) but the code had always been \c #ifdef-ed out. As
+of v0.88 of TnFOX, GCC v4.3 finally has some very limited support for C++0x
+features and thus finally we can enable support. This is done by setting the
+\c enableCPP0xFeatures variable in \c config.py to \c True.
+
+Changing this is a profound setting - it enables many new coding paradigms.
+Almost all existing code is forward compatible, but some is not. In particular,
+code which uses one of the new keywords as a variable name will cease to compile
+and additionally some constructs will need reworking to function correctly.
+
+However, the benefits are many and huge. TnFOX has implemented move semantics
+for quite a few classes where it made sense since its inception. MSVC made this
+ok-ish through allowing non-const constructors which had to be hacked around
+in GCC (always praying that the optimiser wouldn't remove the move construst).
+The GCC implementation was effectively illegal and just worked by luck. Enabling
+the C++0x semantics finally fixes this, and furthermore lets the optimiser know
+what's going on which should help greatly. The move semantics in TnFOX always
+operated on a pointer, so speed increases will be nil - however, once C++0x
+support is added to the STL containers, some operations on value copy items will
+be immensely faster.
+
+As of v0.88 of TnFOX, the following C++0x features have been implemented. This
+list is limited by what the latest GCC has implemented:
+<ol>
+<li>Move constructors using rvalue references (N2118) have been implemented in
+most of the class objects which might end up in a container have move
+constructors where possible.
+<li>FXSTATIC_ASSERT() will use the new \c static_assert() function (N1720).
+This greatly improves error message reporting.
+<li>FX::FXException will use the new \c __func__ meta-variable (N2340) in error
+reporting.
+</ol>
+*/
+
 
 
 

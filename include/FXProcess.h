@@ -200,7 +200,7 @@ public:
 		dllHandle(void *_h) : h(_h) { }
 	public:
 		dllHandle() : h(0) { }
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 		dllHandle(const dllHandle &other) : h(other.h)
 		{

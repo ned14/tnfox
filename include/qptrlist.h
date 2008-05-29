@@ -545,7 +545,7 @@ public:
 	//! Creates an instance
 	QQuickList() : QPtrList<type>(true) { }
 	//! Destructively copies a list very quickly
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 	QQuickList(const QQuickList &_o) : QPtrList<type>(true)
 	{
@@ -569,7 +569,7 @@ public:
 		std::list<type *>::splice(std::list<type *>::begin(), o, o.begin(), o.end());
 	}
 	//! Destructively copies a FX::QPtrList very quickly
-#ifndef HAVE_MOVECONSTRUCTORS
+#ifndef HAVE_CPP0XFEATURES
 #ifdef HAVE_CONSTTEMPORARIES
 	explicit QQuickList(const QPtrList<type> &_o) : QPtrList<type>(true)
 	{
