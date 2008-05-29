@@ -223,7 +223,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     global SQLModule, GraphingModule
     if targetversion==0: targetversion=tnfoxversion
     compiler=ARGUMENTS.get("compiler", None)
-    global toolset
+    global toolset, toolsprefix
     if compiler:
         toolset=[compiler]
     if toolset:
@@ -238,6 +238,18 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     print "Using platform configuration",platformconfig,"..."
     onWindows=(env['PLATFORM']=="win32" or env['PLATFORM']=="win64")
     onDarwin=(env['PLATFORM']=="darwin")
+
+    # Force scons job number to be the processors on this machine
+    num_jobs=None
+    if onWindows:
+        num_jobs=1+int(os.environ['NUMBER_OF_PROCESSORS'])
+    elif os.sysconf_names.has_key('SC_NPROCESSORS_ONLN'):
+        num_jobs=1+int(os.sysconf('SC_NPROCESSORS_ONLN'))
+    if num_jobs:
+        print "Setting jobs to",num_jobs,"(use -j <n> to override)"
+        env.SetOption('num_jobs', num_jobs)
+        del num_jobs
+
     if onWindows:
         #print env['ENV']
         #print "Resetting $(INCLUDE) to",os.environ['INCLUDE']
@@ -327,7 +339,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
             env['CPPDEFINES']+=[("HAVE_SQLITE3_H", 1)]
             env['CPPPATH']+=[prefixpath+"src/sqlite"]
             sqlmoduleobjs+=[env.SharedObject(builddir+"/sqlite/sqlite3", prefixpath+"src/sqlite/sqlite3.c",
-                 CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("THREADSAFE", 1), ("HAVE_USLEEP", 1)])]
+                 CPPDEFINES=env['CPPDEFINES']+[("SQLITE_OMIT_UTF16", 1), ("SQLITE_THREADSAFE", 1), ("HAVE_USLEEP", 1)])]
         else:
             print "SQLite not found in TnFOX sources, disabling support!\n"
             SQLModuleSources=filter(lambda obj: "TnFXSQLDB_sqlite" in obj, SQLModuleSources)
