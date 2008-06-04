@@ -798,10 +798,6 @@ void QTrans::addData(QTransEmbeddedFile &data)
 						*colon=0;
 						FXString langid((FXchar *) &buffer[idx]); langid.trim(); langid.upper();
 						FXString trans; literalise(trans, colon+1, lineno);
-						if(!langid.length())
-						{
-							int a=1;
-						}
 						FXERRH(langid.length(), FXString("Language id cannot be null at line %1").arg(lineno), QTRANS_BADTRANSFILE, FXERRH_ISDEBUG);
 
 						QTransPrivate::LangTrans *langtrans;

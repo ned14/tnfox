@@ -258,10 +258,6 @@ void QBZip2Device::flush()
 		{
 			FXuval in=0;
 			FXchar buffer[4096];
-			if(867397<=offset)
-			{
-				int a=1;
-			}
 			if(isTranslated())
 			{
 				in=datalen-offset;

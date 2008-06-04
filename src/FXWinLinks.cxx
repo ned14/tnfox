@@ -122,7 +122,6 @@ FXStream &operator<<(FXStream &s, const FXWinShellLink::ItemIdListTag &i)
 					shortname.truncate(12);
 			}
 #endif
-			int cnt=0;
 			s.writeRawBytes(shortname.text(), shortname.length()+1);
 			if((shortname.length()+1)&1)
 				s << (FXuchar) 0;	// pas

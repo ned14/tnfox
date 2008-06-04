@@ -1437,7 +1437,7 @@ inline void QSSLDevice::int_genEBuffer() const
 		ret=EVP_EncryptUpdate(&p->estream, p->ebuffer, &outlen, buffer, (FXuint) p->noncelen);
 		memset(buffer, 0, p->noncelen);		// Ensure buffer is wiped on exit
 		FXERRHSSL(ret);
-		assert(outlen==p->noncelen);
+		assert(outlen==(int)p->noncelen);
 		p->ebufferIoIndex=cblock;
 	}
 }

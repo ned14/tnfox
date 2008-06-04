@@ -153,6 +153,7 @@
 #if defined(_MSC_VER) && !defined(__GCCXML__)
  #define FXFORCEINLINE __forceinline
  #define FXDEPRECATED __declspec(deprecated)
+ #define FXMEMALIGNED(v) __declspec(align(v))
  #if _MSC_VER>=1400
   #define FXMALLOCATTR __declspec(restrict)
   #define FXRESTRICT __restrict
@@ -160,6 +161,7 @@
 #elif defined(__GNUC__) && !defined(__GCCXML__)
  #define FXFORCEINLINE inline __attribute__ ((always_inline))
  #define FXDEPRECATED __attribute ((deprecated))
+ #define FXMEMALIGNED(v) __attribute__ ((aligned(v)))
  #define FXMALLOCATTR __attribute__ ((malloc))
  #define FXRESTRICT __restrict
 #else
@@ -167,6 +169,8 @@
  #define FXFORCEINLINE inline
 //! Marks a function as being deprecated
  #define FXDEPRECATED
+//! Marks a structure or variable as being aligned in memory
+ #define FXMEMALIGNED(v)
 #endif
 #ifndef FXMALLOCATTR
  #define FXMALLOCATTR

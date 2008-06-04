@@ -669,8 +669,8 @@ FXProcess::FXProcess() : p(0)
 {
 	int argc=0;
 
-	char *argv[]={ "" };
-	init(argc, argv);
+	const char *argv[]={ "" };
+	init(argc, (char **) argv);
 }
 
 FXProcess::FXProcess(int &argc, char *argv[]) : p(0)

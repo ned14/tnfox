@@ -38,7 +38,7 @@
   #define USE_WINAPI
   #define USE_OURMUTEX
   #include "WindowsGubbins.h"
-  #ifndef _M_AMD64
+  #if !(defined(_M_AMD64) || defined(_M_X64))
 // These are already defined on AMD64 builds
 extern "C"
 {

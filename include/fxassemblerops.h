@@ -32,13 +32,21 @@ There are little operations which one needs from time to time which can be
 relatively expensive or impossible to do in C. For these situations, TnFOX provides
 a series of small inline functions capable of providing them written in assembler
 on x86 (i486 or later only) and x64 but with fallback generic implementations in C.
+For x86 and x64 architectures, the relevent intrinsics for SSE and SSE2 are defined
+if the compiler is not compiling for a non-supporting processor.
 
-Using these functions can \em seriously improve the speed of your code.
+Using these functions can \em seriously improve the speed of your code. You should
+also check out FX::Maths for SIMD optimised maths.
 */
 
-#if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=400) || defined(_M_AMD64))
+#if defined(_MSC_VER) && ((defined(_M_IX86) && _M_IX86>=400) || (defined(_M_AMD64) || defined(_M_X64)))
 // Get the intrinsic definitions
+#if defined(_M_X64) || _M_IX86_FP>=1
 #include "xmmintrin.h"	// For mm_prefetch
+#endif
+#if defined(_M_X64) || _M_IX86_FP>=2
+#include "emmintrin.h"
+#endif
 #ifndef BitScanForward	// Try to avoid pulling in WinNT.h
 extern "C" unsigned char _BitScanForward(unsigned long *index, unsigned long mask);
 extern "C" unsigned char _BitScanReverse(unsigned long *index, unsigned long mask);
@@ -47,7 +55,7 @@ extern "C" unsigned char _BitScanReverse(unsigned long *index, unsigned long mas
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
 
-#if defined(_M_AMD64)
+#if defined(_M_AMD64) || defined(_M_X64)
 extern "C" unsigned char _BitScanForward64(unsigned long *index, unsigned __int64 mask);
 extern "C" unsigned char _BitScanReverse64(unsigned long *index, unsigned __int64 mask);
 #define BitScanForward64 _BitScanForward64
@@ -69,11 +77,15 @@ namespace FX {
 /* One has a choice of increments: 32 for P6, 64 for Athlon and 128 for P4, so we choose 64 */
 inline void fxprefetchmemT(const void *ptr) throw()
 {
+#if defined(_M_X64) || _M_IX86_FP>=1
 	_mm_prefetch((const char *) ptr, _MM_HINT_T2);
+#endif
 }
 inline void fxprefetchmemNT(const void *ptr) throw()
 {
+#if defined(_M_X64) || _M_IX86_FP>=1
 	_mm_prefetch((const char *) ptr, _MM_HINT_NTA);
+#endif
 }
 inline FXuint fxbitscan(FXuint x) throw()
 {
@@ -152,6 +164,13 @@ inline void fxendianswap(FXulong &v) throw()
 	v=_byteswap_uint64(v);			// Invokes bswap x86 instruction
 }
 #elif defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
+#if defined(__x86_64__) || defined(__SSE__)
+#include "xmmintrin.h"
+#endif
+#if defined(__x86_64__) || defined(__SSE2__)
+#include "emmintrin.h"
+#endif
+
 namespace FX {
 
 inline void fxprefetchmemT(const void *ptr) throw()

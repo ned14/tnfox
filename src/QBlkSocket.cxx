@@ -922,7 +922,7 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 #endif
 			readed=::recvfrom(p->handle, data, maxlen, 0, (sockaddr *) &sa6, &salen);
 			h.relock();
-			if(-1!=readed)
+			if((FXuval)-1!=readed)
 				readSockAddr(p->peer.addr, p->peer.port, &sa6);
 		}
 		FXERRHSKT(readed);

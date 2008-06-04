@@ -234,7 +234,7 @@ void FXException::doStackWalk() throw()
 	}
 
 	sf.AddrPC.Mode=sf.AddrStack.Mode=sf.AddrFrame.Mode=AddrModeFlat;
-#ifndef _M_AMD64
+#if !(defined(_M_AMD64) || defined(_M_X64))
 	sf.AddrPC.Offset   =ct.Eip;
 	sf.AddrStack.Offset=ct.Esp;
 	sf.AddrFrame.Offset=ct.Ebp;
@@ -251,7 +251,7 @@ void FXException::doStackWalk() throw()
 		IMAGEHLP_LINE64 ihl={ sizeof(IMAGEHLP_LINE64) };
 		DWORD64 offset;
 		if(!StackWalk64(
-#ifndef _M_AMD64
+#if !(defined(_M_AMD64) || defined(_M_X64))
 			IMAGE_FILE_MACHINE_I386,
 #else
 			IMAGE_FILE_MACHINE_AMD64,
@@ -362,7 +362,7 @@ void FXException::init(const char *_filename, const char *_function, int _lineno
 			{
 				if(0==which && (' '==strings[i2][idx] || '('==strings[i2][idx]))
 				{
-					int len=FXMIN(idx-start, sizeof(p->stack[i2].file));
+					int len=FXMIN(idx-start, (int) sizeof(p->stack[i2].file));
 					memcpy(p->stack[i2].file, strings[i2]+start, len);
 					p->stack[i2].file[len]=0;
 					which=(' '==strings[i2][idx]) ? 2 : 1;
@@ -375,7 +375,7 @@ void FXException::init(const char *_filename, const char *_function, int _lineno
 					FXString rawsymbol(functname.left(offset));
 					FXString symbol(rawsymbol.length() ? fxdemanglesymbol(rawsymbol, false) : rawsymbol);
 					symbol.append(functname.mid(offset));
-					int len=FXMIN(symbol.length(), sizeof(p->stack[i2].functname));
+					int len=FXMIN(symbol.length(), (int) sizeof(p->stack[i2].functname));
 					memcpy(p->stack[i2].functname, symbol.text(), len);
 					p->stack[i2].functname[len]=0;
 					which=2;

@@ -3153,10 +3153,6 @@ inline void FXString::getLowestInsert(FXint &pos, FXint &len)
 	{
 		pos=inserts[2*inserts[0]+1];
 		len=inserts[2*inserts[0]+2];
-		if('%'!=str[pos])
-		{
-			int a=1;
-		}
 		assert('%'==str[pos]);
 	}
 }
