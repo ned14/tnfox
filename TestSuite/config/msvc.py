@@ -71,7 +71,6 @@ env['CPPFLAGS']=cppflags
 env['LINKFLAGS']=["/version:"+tnfoxversion,
                   "/SUBSYSTEM:CONSOLE",
                   "/DEBUG",
-                  "/OPT:NOWIN98",
                   "/STACK:524288,65536"
                   ]
 if MSVCVersion>=800:

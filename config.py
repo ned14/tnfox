@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=True
+debugmode=False
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
@@ -75,7 +75,8 @@ toolsprefix=''           # Useful for cross compiling eg; 'arm9tdmi'
 #    if sys.platform=="win32":
 #        toolset=["icl"]
 #    else:
-#        toolset=["intel"]
+#        toolset=["intelc"]
+#toolset=["intelc"]
 
 
 

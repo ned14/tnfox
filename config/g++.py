@@ -19,7 +19,7 @@ env['CPPPATH']+=["/usr/X11R6/include"]
 env['LIBPATH']+=["/usr/X11R6/"+libPathSpec(make64bit)]
 
 # Warnings
-cppflags=Split('-Wall -Wformat -Wno-reorder -Wno-non-virtual-dtor')
+cppflags=Split('-Wall -Wno-reorder -Wno-non-virtual-dtor -Wno-unused-variable')
 if architecture=="x86":
     if x86_3dnow!=0:
           cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
