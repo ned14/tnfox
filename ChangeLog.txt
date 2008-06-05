@@ -22,7 +22,10 @@ vastly improved version.
 * (1050) Added a few C++0x features (move constructors, static_assert,
 __func__) for compilers which support them
 * (1051) Updated build system to set parallel job numbers based on available
-CPU cores.
+CPU cores
++ (1053) Added FXMEMALIGNED() for asking compiler to align variable data
++ (1054) Replaced Maths::Array with a SIMD optimised Maths::Vector plus
+added new vector benchmark & test
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

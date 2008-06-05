@@ -157,7 +157,8 @@ happily outperforms CORBA and is very flexible and easy to use whilst remaining 
 \li Anyone interested in performance. Both device i/o and SQL Database support are far faster than their
 comprehensive API's would suggest and the whole of TnFOX is regularly profiled and tuned after every
 major addition of new code. A lot of the code uses dynamically adjusted O(1) hash containers for
-excellent scaling and compile-time optimised sort algorithms.
+excellent scaling and compile-time optimised sort algorithms. Full & portable access is provided
+to hardware-optimised vector facilities on the host computer.
 
 
 \section diffs Detailed list of enhancements
@@ -224,6 +225,10 @@ information about files. FX::FXFSMonitor permits portable monitoring of director
 for changes. FX::FXProcess contains a wide variety of miscellaneous useful functions,
 and FX::FXWinShellLink + FX::FXWinJunctionPoint provide support for all possible
 forms of file shortcuts available on Windows (with full POSIX emulation!).
+
+A self-optimising metaprogramming implementation of hardware-assisted math operations
+is provided in the FX::Maths namespace. These make full use of any parallel mathematics
+hardware.
 
 <li><b>QList, QPtrList, QPtrListIterator, QValueList, QDict, QDictIterator, QIntDict, QIntDictIterator,
 QPtrDict, QPtrDictIterator, QPtrVector, QPtrVectorIterator, QMemArray, QByteArray, QStringList,
