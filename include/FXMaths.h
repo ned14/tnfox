@@ -269,6 +269,27 @@ namespace Maths {
 			// Arithmetic (int only)
 			 VECTOR2OP(%)   VECTOR2OP(&)   VECTOR2OP(|)   VECTOR2OP(^)   VECTOR2OP(<<)   VECTOR2OP(>>)  VECTOR1OP(~)
 			VECTORP2OP(%=) VECTORP2OP(&=) VECTORP2OP(|=) VECTORP2OP(^=) VECTORP2OP(<<=) VECTORP2OP(>>=)
+
+			//! Bitwise shifts the entire vector left
+			friend VectorBase lshiftvec(const VectorBase &a, int shift)
+			{
+				VectorBase ret;
+				FXuint offset=(shift/8)/sizeof(type);
+				shift-=(offset*sizeof(type))*8;
+				for(FXint n=A-1; n>=0; n--)
+					ret.data[n]=(a.data[n-offset]<<shift)|((0==n) ? 0 : (a.data[n-offset-1]>>(8*sizeof(type)-shift)));
+				return ret;
+			}
+			//! Bitwise shifts the entire vector right
+			friend VectorBase rshiftvec(const VectorBase &a, int shift)
+			{
+				VectorBase ret;
+				FXuint offset=(shift/8)/sizeof(type);
+				shift-=(offset*sizeof(type))*8;
+				for(FXuint n=0; n<A; n++)
+					ret.data[n]=(a.data[n+offset]>>shift)|((A==n+offset+1) ? 0 : (a.data[n+offset+1]<<(8*sizeof(type)-shift)));
+				return ret;
+			}
 		};
 #undef VECTOR1OP
 #undef VECTOR2OP
@@ -380,6 +401,8 @@ namespace Maths {
 			// Arithmetic (int only)
 			 VECTOR2OP(%)   VECTOR2OP(&)   VECTOR2OP(|)   VECTOR2OP(^)   VECTOR2OP(<<)   VECTOR2OP(>>)  VECTOR1OP(~)
 			VECTORP2OP(%=) VECTORP2OP(&=) VECTORP2OP(|=) VECTORP2OP(^=) VECTORP2OP(<<=) VECTORP2OP(>>=)
+
+			VECTOR2FUNC(lshiftvec) VECTOR2FUNC(rshiftvec)
 		};
 #undef VECTOR1OP
 #undef VECTOR2OP
@@ -437,7 +460,8 @@ namespace Maths {
 	type is not an arithmetical one, no operators are defined; if floating point, then
 	the standard arithmetic ones; if integer, then the standard plus logical operators.
 	When arithmetical, the additional friend functions have been provided: <tt>isZero(),
-	sqrt(), rcp(), rsqrt(), min(), max(), sum(), dot()</tt>.
+	min(), max(), sum(), dot()</tt>; for floating-point only: <tt>sqrt(), rcp(), rsqrt()</tt>;
+	for integer only: <tt>lshiftvec(), rshiftvec()</tt>.
 	These can be invoked via Koenig lookup so you can use them as though they were in
 	the C library.
 
@@ -458,9 +482,18 @@ namespace Maths {
 	For double precision on SSE2 only, rcp(), rsqrt() are no faster (nor slower) than
 	doing it manually - only on SSE do they have special instructions.
 
-	For integers on SSE only, multiplication, division, modulus are emulated (slowly)
-	as they don't have corresponding SSE instructions available.
-	
+	For integers on SSE2 only, multiplication, division, modulus, min(), max() are emulated (slowly)
+	as they don't have corresponding SSE instructions available. For SSE4 only,
+	multiplication, min(), max() is SSE optimised.
+
+	Note that the SSE2 optimised bit shift ignores all but the lowest member - for
+	future compatibility you should set all members of the shift quantity to be
+	identical. lshiftvec() and rshiftvec() treat the entire vector as higher indexed members
+	being higher bits. On little endian machines, this leads to shifts occurring
+	within their member types going "the wrong way" and then leaping to the next
+	member. \em Usually, you want this. \b Only bit shifts which are multiples of
+	eight are accelerated on SSE2.
+
 	See FX::Maths::VectorArray for an array of vectors letting you easily implement
 	a matrix. See also the FXVECTOROFVECTORS macro for how to declare to the compiler
 	when a vector should be implemented as a sequence of other vectors (this is how
@@ -748,12 +781,26 @@ namespace Maths {
 	// Now for the integer vectors, we can save ourselves some work by reusing Impl::VectorBase
 #define VECTOR2OP_A(op, sseop, sseending)  Vector operator op (const Vector &o) const { return _mm_ ##sseop## _ ##sseending (v, o.v); }
 #define VECTORP2OP_A(op, sseop, sseending) Vector &operator op (const Vector &o)      { v=_mm_ ##sseop## _ ##sseending (v, o.v); return *this; }
+#define VECTOR2OP_A2(op, sseop, sseending)  Vector operator op (const Vector &o) const { return _mm_ ##sseop## _ ##sseending (v, _mm_cvtsi32_si128(_mm_cvtsi128_si32(o.v))); }
+#define VECTORP2OP_A2(op, sseop, sseending) Vector &operator op (const Vector &o)      { v=_mm_ ##sseop## _ ##sseending (v, _mm_cvtsi32_si128(_mm_cvtsi128_si32(o.v))); return *this; }
 #define VECTOR2OP_B(op, sseop, sseending)  Vector operator op (const Vector &o) const { return _mm_ ##sseop## _si128(v, o.v); }
 #define VECTORP2OP_B(op, sseop, sseending) Vector &operator op (const Vector &o)      { v=_mm_ ##sseop## _si128(v, o.v); return *this; }
 #define VECTOR2OP_C(op, sseop, sseending)  Vector operator op (const Vector &o) const { return _mm_and_si128(int_ones(), _mm_cmp ##sseop## _ ##sseending (v, o.v)); }
 #define VECTOR2OP_D(op, sseop, sseending)  Vector operator op (const Vector &o) const { return _mm_andnot_si128(_mm_cmp ##sseop## _ ##sseending (v, o.v), int_ones()); }
 #define VECTOR2OP_E(op, sseop, sseending)  Vector operator op (const Vector &o) const { return _mm_xor_si128(int_ones(), _mm_cmpeq_ ##sseending (_mm_setzero_si128(), _mm_ ##sseop## _si128(v, o.v))); }
-#define VECTORINTEGER(vint, vsize, sseending) \
+#define VECTOR2FUNC(op, sseop, sseending)  friend Vector op(const Vector &a, const Vector &b) { return _mm_ ##sseop## _ ##sseending (a.v, b.v); }
+#if _M_IX86_FP>=4 || defined(__SSE4__)
+#define VECTOR2OP_A_SSE4ONLY(op, sseop, sseending)  VECTOR2OP_A(op, sseop, sseending)
+#define VECTORP2OP_A_SSE4ONLY(op, sseop, sseending) VECTORP2OP_A(op, sseop, sseending)
+#define VECTOR2FUNC_SSE4ONLY(op, sseop, sseending) VECTOR2FUNC(op, sseop, sseending)
+#define VECTORISZERO 1==_mm_testc_si128(a.v, _mm_setzero_si128())
+#else
+#define VECTOR2OP_A_SSE4ONLY(op, sseop, sseending)
+#define VECTORP2OP_A_SSE4ONLY(op, sseop, sseending) 
+#define VECTOR2FUNC_SSE4ONLY(op, sseop, sseending)
+#define VECTORISZERO 65535==_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_setzero_si128(), a.v))
+#endif
+#define VECTORINTEGER(vint, vsize, sseending, signage1, signage2) \
 	template<> class Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
 	{ \
 	private: \
@@ -792,9 +839,11 @@ namespace Maths {
 		Vector operator -() const { Vector ret((TYPE *)0); ret-=*this; return ret; } \
 		Vector operator !() const { return _mm_andnot_si128(_mm_cmpeq_ ##sseending (_mm_setzero_si128(), v), int_ones()); } \
 		Vector operator ~() const { return _mm_xor_si128(int_not(), v); } \
-		 VECTOR2OP_A(+,  add, sseending)  VECTOR2OP_A(-,  sub, sseending)  VECTOR2OP_A(<<,  sll, sseending)  VECTOR2OP_A(>>,  sra, sseending) \
-		VECTORP2OP_A(+=, add, sseending) VECTORP2OP_A(-=, sub, sseending) VECTORP2OP_A(<<=, sll, sseending) VECTORP2OP_A(>>=, sra, sseending) \
-		    \
+		VECTOR2OP_A(+,  add, sseending)  VECTOR2OP_A(-,  sub, sseending)   VECTOR2OP_A2(<<,  sll, sseending)  VECTOR2OP_A2(>>,  sr ## signage1, sseending) \
+		VECTORP2OP_A(+=, add, sseending) VECTORP2OP_A(-=, sub, sseending) VECTORP2OP_A2(<<=, sll, sseending) VECTORP2OP_A2(>>=, sr ## signage1, sseending) \
+		VECTOR2OP_A_SSE4ONLY(*, mullo, sseending) \
+		VECTORP2OP_A_SSE4ONLY(*, mullo, sseending) \
+ \
 		 VECTOR2OP_B( & ,  and, sseending)   VECTOR2OP_B( | ,  or, sseending)   VECTOR2OP_B( ^ ,  xor, sseending) \
 		VECTORP2OP_B( &= , and, sseending)  VECTORP2OP_B( |= , or, sseending)  VECTORP2OP_B( ^= , xor, sseending)  \
  \
@@ -802,26 +851,84 @@ namespace Maths {
 		VECTOR2OP_D( != , eq, sseending)  VECTOR2OP_D( <= , gt, sseending) VECTOR2OP_D( >= , lt, sseending) \
 		VECTOR2OP_E( && , and, sseending) VECTOR2OP_E( || , or, sseending) \
  \
+		VECTOR2FUNC_SSE4ONLY(min, min, signage2) VECTOR2FUNC_SSE4ONLY(max, max, signage2) \
 		friend bool isZero(const Vector &a) \
-		{	/* We can use a cunning trick here */ \
-			return 65535==_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_setzero_si128(), a.v)); \
+		{ \
+			return VECTORISZERO; \
+		} \
+		friend Vector lshiftvec(const Vector &a, int shift) \
+		{ \
+			if(shift&7) \
+				return lshiftvec(static_cast<const Vector::Base &>(a), shift); \
+			else switch(shift/8) \
+			{ \
+				case 0:  return a; \
+				case 1:  return _mm_slli_si128(a.v, 1); \
+				case 2:  return _mm_slli_si128(a.v, 2); \
+				case 3:  return _mm_slli_si128(a.v, 3); \
+				case 4:  return _mm_slli_si128(a.v, 4); \
+				case 5:  return _mm_slli_si128(a.v, 5); \
+				case 6:  return _mm_slli_si128(a.v, 6); \
+				case 7:  return _mm_slli_si128(a.v, 7); \
+				case 8:  return _mm_slli_si128(a.v, 8); \
+				case 9:  return _mm_slli_si128(a.v, 9); \
+				case 10: return _mm_slli_si128(a.v, 10); \
+				case 11: return _mm_slli_si128(a.v, 11); \
+				case 12: return _mm_slli_si128(a.v, 12); \
+				case 13: return _mm_slli_si128(a.v, 13); \
+				case 14: return _mm_slli_si128(a.v, 14); \
+				case 15: return _mm_slli_si128(a.v, 15); \
+			} \
+			return _mm_setzero_si128(); \
+		} \
+		friend Vector rshiftvec(const Vector &a, int shift) \
+		{ \
+			if(shift&7) \
+				return rshiftvec(static_cast<const Vector::Base &>(a), shift); \
+			else switch(shift/8) \
+			{ \
+				case 0:  return a; \
+				case 1:  return _mm_srli_si128(a.v, 1); \
+				case 2:  return _mm_srli_si128(a.v, 2); \
+				case 3:  return _mm_srli_si128(a.v, 3); \
+				case 4:  return _mm_srli_si128(a.v, 4); \
+				case 5:  return _mm_srli_si128(a.v, 5); \
+				case 6:  return _mm_srli_si128(a.v, 6); \
+				case 7:  return _mm_srli_si128(a.v, 7); \
+				case 8:  return _mm_srli_si128(a.v, 8); \
+				case 9:  return _mm_srli_si128(a.v, 9); \
+				case 10: return _mm_srli_si128(a.v, 10); \
+				case 11: return _mm_srli_si128(a.v, 11); \
+				case 12: return _mm_srli_si128(a.v, 12); \
+				case 13: return _mm_srli_si128(a.v, 13); \
+				case 14: return _mm_srli_si128(a.v, 14); \
+				case 15: return _mm_srli_si128(a.v, 15); \
+			} \
+			return _mm_setzero_si128(); \
 		} \
 	};
 //VECTORINTEGER(FXuchar, 16, epi8)
 //VECTORINTEGER(FXchar,  16, epi8)
-VECTORINTEGER(FXushort, 8, epi16)
-VECTORINTEGER(FXshort,  8, epi16)
-VECTORINTEGER(FXuint,   4, epi32)
-VECTORINTEGER(FXint,    4, epi32)
+VECTORINTEGER(FXushort, 8, epi16, l, epu16)
+VECTORINTEGER(FXshort,  8, epi16, a, epi16)
+VECTORINTEGER(FXuint,   4, epi32, l, epu32)
+VECTORINTEGER(FXint,    4, epi32, a, epi32)
 //VECTORINTEGER(FXulong,  2, epi64)
 //VECTORINTEGER(FXlong,   2, epi64)
 #undef VECTOR2OP_A
 #undef VECTORP2OP_A
+#undef VECTOR2OP_A2
+#undef VECTORP2OP_A2
 #undef VECTOR2OP_B
 #undef VECTORP2OP_B
 #undef VECTOR2OP_C
 #undef VECTOR2OP_D
 #undef VECTOR2OP_E
+#undef VECTOR2FUNC
+#undef VECTOR2OP_A_SSE4ONLY
+#undef VECTORP2OP_A_SSE4ONLY
+#undef VECTOR2FUNC_SSE4ONLY
+#undef VECTORISZERO
 #undef VECTORINTEGER
 #define VECTORINTEGER(vint, vsize) \
 	typedef Vector<vint, vsize> int_SSEOptimised_##vint; \
@@ -861,16 +968,13 @@ VECTORINTEGER(FXint,    4)
 		const Vector<type, A> &operator[](unsigned int i) const { assert(i<B); return data[i]; }
 	};
 
-	namespace FRandomnessPrivate
-	{
-	}
 	/*! \class FRandomness
 	\brief A fast quality source of pseudo entropy
 
 	Unlike FX::Secure::PRandomness, this class provides a much faster but
 	not cryptographically secure pseudo random generator. In this it is much
 	like FX::fxrandom(), except that instead of a 2^32 period this one has a
-	mathematically proven 2^216091 period and is considered a much higher quality
+	mathematically proven 2^216091 period and is considered a \b much higher quality
 	generator. Also, unlike FX::Secure::PRandomness, this class doesn't require
 	the OpenSSL library to be compiled in.
 
@@ -880,16 +984,18 @@ VECTORINTEGER(FXint,    4)
 	More specifically, this class is an implementation of the Mersenne Twister.
 	Previous to v0.88 of TnFOX, this was a generic 64 bit implementation as
 	detailed at http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html. Since
-	v0.88, a SIMD-based improved version has been added (you can reenable
-	the old version by modifying an \c #ifdef in FXMaths.h).
+	v0.88, a SIMD-based improved version has been added (the old version is still
+	used instead on big-endian machines).
 
 	You should be aware that each instance consumes about 2.5Kb of internal state
 	and thus shouldn't be copied around nor constructed & destructed repeatedly.
+	The old pre-v0.88 version could generate around 1Gb/sec of randomness on a
+	3.0Ghz Core 2 processor.
 
 	\code
 	\endcode
 	*/
-#if 1
+#if FOX_BIGENDIAN
 	/*
    A C-program for MT19937-64 (2004/9/29 version).
    Coded by Takuji Nishimura and Makoto Matsumoto.
@@ -1017,17 +1123,179 @@ VECTORINTEGER(FXint,    4)
 #else
 	class FRandomness
 	{
+		static const int MEXP=19937;
+		static const int N=(MEXP / 128 + 1);
+		typedef Vector<FXuint, 4> w128_t;
+		// From SFMT=params19937.h
+		static const int N32=(N * 4);
+		static const int POS1=122, SL2=1, SR2=1;
+		static const w128_t &SL1() throw() { static const w128_t v(18); return v; }
+		static const w128_t &SR1() throw() { static const w128_t v(11); return v; }
+		static const w128_t &MASK() throw() { static const FXuint d[4]={0xdfffffefU, 0xddfecb7fU, 0xbffaffffU, 0xbffffff6U}; static w128_t v(d); return v; }
+		static const w128_t &PARITY() throw() { static const FXuint d[4]={0x00000001U, 0x00000000U, 0x00000000U, 0x13c9e684U}; static w128_t v(d); return v; }
+
 		w128_t sfmt[N];
+		FXuval idx;
+		FXuint *psfmt32;
+		FXulong *psfmt64;
+
+		inline w128_t do_recursion(const w128_t &a, const w128_t &b, const w128_t &c, const w128_t &d) throw()
+		{
+			w128_t z(rshiftvec(c, SR2*8));
+			z^=a;
+			z^=d<<SL1();
+			z^=lshiftvec(a, SL2*8);
+			w128_t y(b>>SR1());
+			y&=MASK();
+			z^=y;
+			return z;
+		}
+		inline void gen_rand_all() throw()
+		{
+			int i;
+			w128_t r, r1, r2;
+
+			r1 = sfmt[N - 2];
+			r2 = sfmt[N - 1];
+			for (i = 0; i < N - POS1; i++)
+			{
+				sfmt[i] = r = do_recursion(sfmt[i], sfmt[i + POS1], r1, r2);
+				r1 = r2;
+				r2 = r;
+			}
+			for (; i < N; i++)
+			{
+				sfmt[i] = r = do_recursion(sfmt[i], sfmt[i + POS1 - N], r1, r2);
+				r1 = r2;
+				r2 = r;
+			}
+		}
+		void period_certification() throw()
+		{
+			int inner = 0;
+			int i, j;
+			FXuint work;
+			static const w128_t &parity=PARITY();
+
+			for (i = 0; i < 4; i++)
+				inner ^= psfmt32[i] & parity[i];
+			for (i = 16; i > 0; i >>= 1)
+				inner ^= inner >> i;
+			inner &= 1;
+			/* check OK */
+			if (inner == 1) {
+				return;
+			}
+			/* check NG, and modification */
+			for (i = 0; i < 4; i++) {
+				work = 1;
+				for (j = 0; j < 32; j++) {
+					if ((work & parity[i]) != 0) {
+						psfmt32[i] ^= work;
+						return;
+					}
+					work = work << 1;
+				}
+			}
+		}
+		inline FXuint func1(FXuint x) throw() {
+			return (x ^ (x >> 27)) * (FXuint)1664525UL;
+		}
+		inline FXuint func2(FXuint x) throw() {
+			return (x ^ (x >> 27)) * (FXuint)1566083941UL;
+		}
+
+		void init_by_array(FXuint *init_key, FXuint key_length) throw()
+		{
+			FXuint i, j, count;
+			FXuint r;
+			int lag;
+			int mid;
+			int size = N * 4;
+
+			if (size >= 623) {
+				lag = 11;
+			} else if (size >= 68) {
+				lag = 7;
+			} else if (size >= 39) {
+				lag = 5;
+			} else {
+				lag = 3;
+			}
+			mid = (size - lag) / 2;
+
+			memset(sfmt, 0x8b, sizeof(sfmt));
+			if (key_length + 1 > N32) {
+				count = key_length + 1;
+			} else {
+				count = N32;
+			}
+			r = func1(psfmt32[0] ^ psfmt32[mid] ^ psfmt32[N32 - 1]);
+			psfmt32[mid] += r;
+			r += key_length;
+			psfmt32[mid + lag] += r;
+			psfmt32[0] = r;
+
+			count--;
+			for (i = 1, j = 0; (j < count) && (j < key_length); j++) {
+				r = func1(psfmt32[i] ^ psfmt32[(i + mid) % N32] ^ psfmt32[(i + N32 - 1) % N32]);
+				psfmt32[(i + mid) % N32] += r;
+				r += init_key[j] + i;
+				psfmt32[(i + mid + lag) % N32] += r;
+				psfmt32[i] = r;
+				i = (i + 1) % N32;
+			}
+			for (; j < count; j++) {
+				r = func1(psfmt32[i] ^ psfmt32[(i + mid) % N32] ^ psfmt32[(i + N32 - 1) % N32]);
+				psfmt32[(i + mid) % N32] += r;
+				r += i;
+				psfmt32[(i + mid + lag) % N32] += r;
+				psfmt32[i] = r;
+				i = (i + 1) % N32;
+			}
+			for (j = 0; j < N32; j++) {
+				r = func2(psfmt32[i] + psfmt32[(i + mid) % N32] + psfmt32[(i + N32 - 1) % N32]);
+				psfmt32[(i + mid) % N32] ^= r;
+				r -= i;
+				psfmt32[(i + mid + lag) % N32] ^= r;
+				psfmt32[i] = r;
+				i = (i + 1) % N32;
+			}
+
+			idx = N32;
+			period_certification();
+		}
 	public:
 		//! Constructs, using seed \em seed
-		FRandomness(FXulong seed) throw() : mti(NN+1)
+		FRandomness(FXulong seed) throw() : idx(0), psfmt32((FXuint *)&sfmt), psfmt64((FXulong *)&sfmt)
 		{
+			init_by_array((FXuint*)&seed, 8);
+			/*int i;
+
+			psfmt32[0] = (FXuint) seed;
+			for (i = 1; i < N32; i++) {
+				psfmt32[i] = 1812433253UL * (psfmt32[i - 1] ^ (psfmt32[i - 1] >> 30)) + i;
+			}
+			idx = N32;
+			period_certification();*/
+		}
+		//! Constructs, using seed \em seed
+		FRandomness(FXuchar *seed, FXuval len) throw() : idx(0), psfmt32((FXuint *)&sfmt), psfmt64((FXulong *)&sfmt)
+		{
+			init_by_array((FXuint*)seed, (FXuint)(len/4));
 		}
 
         //! Generates a random number on [0, 2^64-1]-interval
 		FXulong int64() throw()
 		{
 			FXulong r;
+			assert(idx % 2 == 0);
+
+			if (idx >= N32)
+			{
+				gen_rand_all();
+				idx = 0;
+			}
 			r = psfmt64[idx / 2];
 			idx += 2;
 			return r;

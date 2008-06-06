@@ -26,6 +26,8 @@ CPU cores
 + (1053) Added FXMEMALIGNED() for asking compiler to align variable data
 + (1054) Replaced Maths::Array with a SIMD optimised Maths::Vector plus
 added new vector benchmark & test
++ (1055) Replaced Maths::FRandomness with a version written using the new
+Maths::Vector code
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-
