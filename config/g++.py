@@ -137,7 +137,7 @@ def CheckGCCHasSufficientCPP0xFeatures(cc):
     except:
         temp=[]
     cc.env['CPPFLAGS']=temp+["-std=c++0x"]
-    result=cc.TryCompile('struct Foo { static const int gee=5; Foo(Foo &&a) { } };\nint main(void) { Foo foo; static_assert(Foo::gee==5, "Death in" __func__); return 0; }\n', '.cpp')
+    result=cc.TryCompile('struct Foo { static const int gee=5; Foo(const char *) { } Foo(Foo &&a) { } };\nint main(void) { Foo foo(__func__); static_assert(Foo::gee==5, "Death!"); return 0; }\n', '.cpp')
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
@@ -240,7 +240,7 @@ else:
 
 if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasSufficientCPP0xFeatures():
     env['CPPDEFINES']+=["HAVE_CPP0XFEATURES"]
-    cppflags+=["-std=c++0x"]
+    env['CPPFLAGS']+=["-std=c++0x"]
 else:
     env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
 

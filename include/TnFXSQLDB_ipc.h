@@ -96,7 +96,6 @@ namespace TnFXSQLDBIPCMsgsI
 		{
 			DataContainer &o=const_cast<DataContainer &>(_o);
 #else
-#error Fixme!
 private:
 		DataContainer(const DataContainer &);	// disable copy constructor
 public:

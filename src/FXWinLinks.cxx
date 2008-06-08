@@ -28,6 +28,7 @@
 #include "fxver.h"
 #include "FXPath.h"
 #include "FXStat.h"
+#include <stdio.h>
 #include "FXErrCodes.h"
 #ifndef USE_POSIX
  #define USE_WINAPI

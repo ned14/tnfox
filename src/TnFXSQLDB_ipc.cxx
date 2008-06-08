@@ -53,11 +53,10 @@ struct TnFXSQLDB_ipcPrivate
 		{
 			Ack &o=const_cast<Ack &>(_o);
 #else
-#error Fixme!
 private:
 		Ack(const Ack &);	// disable copy constructor
 public:
-		Ack(Ack &&o) : ia(o.ia), i(o.i), ref(_o.ref), refdel(_o.refdel),
+		Ack(Ack &&o) : ia(o.ia), i(o.i), ref(o.ref), refdel(o.refdel),
 			handler(o.handler), iadel(o.iadel), idel(o.idel)
 		{
 #endif

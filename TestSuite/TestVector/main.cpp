@@ -403,12 +403,16 @@ int main( int argc, char *argv[] )
 	}
 	fxmessage("\n\nMaths::FRandomness test\n"
 		          "-=-=-=-=-=-=-=-=-=-=-=-\n");
+	if(FRandomness::usingSIMD)
 	{
 		FXuint ini[4] = {0x1234, 0x5678, 0x9abc, 0xdef0};
 		FRandomness rand((FXuchar *)ini, 16);
+		FXMEMALIGNED(16) FXulong array[500];
 		FXulong a;
+		rand.fill((FXuchar *) array, sizeof(array));
 		for (FXuint i = 0; i < 1000; i+=2) {
-			a=rand.int64();
+			a=array[i/2]; //rand.int64();
+			//fxmessage("%u %u ", (FXuint)(a&0xffffffff), (FXuint)((a>>32)&0xffffffff));
 			if((FXuint)(a&0xffffffff)!=MersenneTwisterProof[i] || (FXuint)((a>>32)&0xffffffff)!=MersenneTwisterProof[i+1])
 			{
 				fxmessage("Mersenne twister did not produce correct output!\n");
@@ -421,11 +425,12 @@ int main( int argc, char *argv[] )
 		FRandomness rand(1);
 		FXulong *data=(FXulong *) &Int::fastA;
 		FXulong start=FXProcess::getNsCount();
-		for(FXuint a=0; a<1024; a++)
-			for(FXuint n=0; n<TOTALITEMS*2; n++)
-				data[n]=rand.int64();
+		for(FXuint a=0; a<1024*20; a++)
+			rand.fill((FXuchar *) data, sizeof(Int::fastA));
+			//for(FXuint n=0; n<TOTALITEMS/2; n++)
+			//	data[n]=rand.int64();
 		FXulong end=FXProcess::getNsCount();
-		fxmessage("Can generate %fMb/sec of FRandomness\n", (TOTALITEMS*16.0/1024)/((end-start)/1000000000.0));
+		fxmessage("Can generate %fMb/sec of FRandomness\n", (sizeof(Int::fastA)*20.0/1024)/((end-start)/1000000000.0));
 	}
 
 	fxmessage("All Done!\n");

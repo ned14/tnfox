@@ -32,6 +32,7 @@
 #include "FXStream.h"
 #include "FXString.h"
 #include <assert.h>
+#include <stdio.h>
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
 static const char *_fxmemdbg_current_file_ = __FILE__;

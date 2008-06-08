@@ -26,6 +26,7 @@
 #include "QThread.h"
 #include "QTrans.h"
 #include <qcstring.h>
+#include <stdio.h>
 #include "FXErrCodes.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)

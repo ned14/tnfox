@@ -42,6 +42,7 @@
 #include <qvaluelist.h>
 #include <qsortedlist.h>
 #include <qmemarray.h>
+#include <stdio.h>
 #include <assert.h>
 
 // Decide which API to use

@@ -24,7 +24,7 @@
 
 #include "FXProcess.h"
 #include "QThread.h"
-#include "FXGenericTools.h"
+#include "FXStream.h"
 #include "qmemarray.h"
 #include <math.h>
 
@@ -511,6 +511,17 @@ namespace Maths {
 		//! Initialises all members to a certain value
 		explicit Vector(const type &d) : Base(d) { }
 	};
+	template<typename type, unsigned int A> FXStream &operator<<(FXStream &s, const Vector<type, A> &v)
+	{
+		for(FXuint n=0; n<A; n++) s << v[n];
+		return s;
+	}
+	template<typename type, unsigned int A> FXStream &operator<<(FXStream &s, Vector<type, A> &v)
+	{
+		type t;
+		for(FXuint n=0; n<A; n++) { s >> t; v.set(n, t); }
+		return s;
+	}
 //! Specialises a FX::Maths::Vector to be implemented as another vector
 #define FXVECTOROFVECTORS(VECTORTYPE, ELEMENTS) template<> class Vector<VECTORTYPE::TYPE, ELEMENTS> : public Impl::VectorOfVectors<VECTORTYPE, ELEMENTS/VECTORTYPE::DIMENSION, Vector<VECTORTYPE::TYPE, ELEMENTS> > \
 	{ \
@@ -990,7 +1001,9 @@ VECTORINTEGER(FXint,    4)
 	You should be aware that each instance consumes about 2.5Kb of internal state
 	and thus shouldn't be copied around nor constructed & destructed repeatedly.
 	The old pre-v0.88 version could generate around 1Gb/sec of randomness on a
-	3.0Ghz Core 2 processor.
+	3.0Ghz Core 2 processor. The new SIMD version is no worse on both MSVC and
+	GCC but this is entirely due to compiler stupidity as ICC will yield around
+	1400Mb/sec!
 
 	\code
 	\endcode
@@ -1061,6 +1074,8 @@ VECTORINTEGER(FXint,    4)
 		FXulong mt[NN];									/* The array for the state vector */
 		int mti;
 	public:
+		//! Indicates if implemented using SIMD
+		static const bool usingSIMD=false;
 		//! Constructs, using seed \em seed
 		FRandomness(FXulong seed) throw() : mti(NN+1)
 		{
@@ -1069,7 +1084,33 @@ VECTORINTEGER(FXint,    4)
 				mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
 		}
 
-        //! Generates a random number on [0, 2^64-1]-interval
+		FRandomness(FXuchar *_seed, FXuval len) throw() : mti(NN+1)
+		{
+			FXulong *init_key=(FXulong *) _seed, key_length=len;
+			unsigned long long i, j, k;
+			mt[0] = 19650218ULL;
+			for (mti=1; mti<NN; mti++) 
+				mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
+			i=1; j=0;
+			k = (NN>key_length ? NN : key_length);
+			for (; k; k--) {
+				mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 62)) * 3935559000370003845ULL))
+					+ init_key[j] + j; /* non linear */
+				i++; j++;
+				if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
+				if (j>=key_length) j=0;
+			}
+			for (k=NN-1; k; k--) {
+				mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 62)) * 2862933555777941757ULL))
+					- i; /* non linear */
+				i++;
+				if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
+			}
+			
+			mt[0] = 1ULL << 63; /* MSB is 1; assuring non-zero initial array */ 
+		}
+
+		//! Generates a random number on [0, 2^64-1]-interval
 		FXulong int64() throw()
 		{
 			int i;
@@ -1101,6 +1142,13 @@ VECTORINTEGER(FXint,    4)
 
 			return x;
 		}
+		
+		//! Generates lots of random data (make sure it's 16 byte aligned!)
+		void fill(FXuchar *d, FXuval len) throw()
+		{
+			for(FXuint n=0; n<(FXuint)len/8; n++)
+				((FXulong *)d)[n]=int64();
+		}
 
 		//! generates a random number on [0,1]-real-interval by division of 2^53-1
 		double real1() throw()
@@ -1124,15 +1172,13 @@ VECTORINTEGER(FXint,    4)
 	class FRandomness
 	{
 		static const int MEXP=19937;
-		static const int N=(MEXP / 128 + 1);
+		static const int N=(MEXP / 128 + 1);	// = 156
 		typedef Vector<FXuint, 4> w128_t;
 		// From SFMT=params19937.h
 		static const int N32=(N * 4);
-		static const int POS1=122, SL2=1, SR2=1;
-		static const w128_t &SL1() throw() { static const w128_t v(18); return v; }
-		static const w128_t &SR1() throw() { static const w128_t v(11); return v; }
-		static const w128_t &MASK() throw() { static const FXuint d[4]={0xdfffffefU, 0xddfecb7fU, 0xbffaffffU, 0xbffffff6U}; static w128_t v(d); return v; }
-		static const w128_t &PARITY() throw() { static const FXuint d[4]={0x00000001U, 0x00000000U, 0x00000000U, 0x13c9e684U}; static w128_t v(d); return v; }
+		static const int POS1=122, SL1=18, SR1=11, SL2=1, SR2=1;
+		static const FXuint *MASK() throw() { static const FXuint d[4]={0xdfffffefU, 0xddfecb7fU, 0xbffaffffU, 0xbffffff6U}; return d; }
+		static const FXuint *PARITY() throw() { static const FXuint d[4]={0x00000001U, 0x00000000U, 0x00000000U, 0x13c9e684U}; return d; }
 
 		w128_t sfmt[N];
 		FXuval idx;
@@ -1143,10 +1189,10 @@ VECTORINTEGER(FXint,    4)
 		{
 			w128_t z(rshiftvec(c, SR2*8));
 			z^=a;
-			z^=d<<SL1();
+			z^=d<<w128_t(SL1);
 			z^=lshiftvec(a, SL2*8);
-			w128_t y(b>>SR1());
-			y&=MASK();
+			w128_t y(b>>w128_t(SR1));
+			y&=w128_t(MASK());
 			z^=y;
 			return z;
 		}
@@ -1170,12 +1216,50 @@ VECTORINTEGER(FXint,    4)
 				r2 = r;
 			}
 		}
+		inline void gen_rand_array(w128_t *array, FXuint size) throw()
+		{
+			int i, j;
+			w128_t r, r1, r2;
+
+			r1 = sfmt[N - 2];
+			r2 = sfmt[N - 1];
+			for (i = 0; i < N - POS1; i++)
+			{
+				array[i] = r = do_recursion(sfmt[i], sfmt[i + POS1], r1, r2);
+				r1 = r2;
+				r2 = r;
+			}
+			for (; i < N; i++)
+			{
+				array[i] = r = do_recursion(sfmt[i], array[i + POS1 - N], r1, r2);
+				r1 = r2;
+				r2 = r;
+			}
+			/* main loop */
+			for (; i < size - N; i++)
+			{
+				array[i] = r = do_recursion(array[i - N], array[i + POS1 - N], r1, r2);
+				r1 = r2;
+				r2 = r;
+			}
+			int limit=2*N-size;
+			for(j = 0; j < limit; j++)
+			{
+				sfmt[j]=array[j + size - N];
+			}
+			for (; i < size; i++, j++)
+			{
+				sfmt[j] = array[i] = r = do_recursion(array[i - N], array[i + POS1 - N], r1, r2);
+				r1 = r2;
+				r2 = r;
+			}
+		}
 		void period_certification() throw()
 		{
 			int inner = 0;
 			int i, j;
 			FXuint work;
-			static const w128_t &parity=PARITY();
+			static const w128_t parity(PARITY());
 
 			for (i = 0; i < 4; i++)
 				inner ^= psfmt32[i] & parity[i];
@@ -1266,10 +1350,12 @@ VECTORINTEGER(FXint,    4)
 			period_certification();
 		}
 	public:
+		//! Indicates if implemented using SIMD
+		static const bool usingSIMD=true;
 		//! Constructs, using seed \em seed
 		FRandomness(FXulong seed) throw() : idx(0), psfmt32((FXuint *)&sfmt), psfmt64((FXulong *)&sfmt)
 		{
-			init_by_array((FXuint*)&seed, 8);
+			init_by_array((FXuint*)&seed, 2);
 			/*int i;
 
 			psfmt32[0] = (FXuint) seed;
@@ -1285,7 +1371,7 @@ VECTORINTEGER(FXint,    4)
 			init_by_array((FXuint*)seed, (FXuint)(len/4));
 		}
 
-        //! Generates a random number on [0, 2^64-1]-interval
+		//! Generates a random number on [0, 2^64-1]-interval
 		FXulong int64() throw()
 		{
 			FXulong r;
@@ -1299,6 +1385,12 @@ VECTORINTEGER(FXint,    4)
 			r = psfmt64[idx / 2];
 			idx += 2;
 			return r;
+		}
+		
+		//! Generates lots of random data (make sure it's 16 byte aligned!)
+		void fill(FXuchar *d, FXuval len) throw()
+		{
+			gen_rand_array((w128_t *) d, len/sizeof(w128_t));
 		}
 
 		//! generates a random number on [0,1]-real-interval by division of 2^53-1
