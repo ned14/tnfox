@@ -62,23 +62,29 @@ typedef std::type_info type_info;
 template<bool> struct StaticAssert;
 template<> struct StaticAssert<true>
 {
-	StaticAssert(int) { }
+	StaticAssert() { }
 };
+#define FXSTATIC_ASSERT2(expr, msg) \
+	FX::Generic::StaticAssert<(expr)!=0> ERROR_##msg
 /*! \ingroup generic
 A macro which provides compile-time assertion tests, causing the compiler to issue
 a useful message \em msg if the assertion fails. The message must be a legal C++ identifier
 though it can start with a number. You also must place it somewhere where code can
 be compiled as it relies on a scope to remove a temporarily created variable (which
-is optimised away on release builds).
+is optimised away on release builds). If you want it without the scope (eg; as a member
+variable) use FXSTATIC_ASSERT2().
+
+On C++0x compilers, this uses the new static_assert() feature.
 */
 #define FXSTATIC_ASSERT(expr, msg) \
 { \
-	FX::Generic::StaticAssert<(expr)!=0> ERROR_##msg(0); \
+	FXSTATIC_ASSERT2(expr, msg); \
 }
 
 template<typename foo> struct StaticError;
 #else
 #define FXSTATIC_ASSERT(expr, msg) static_assert((expr)!=0, #msg )
+#define FXSTATIC_ASSERT2(expr, msg) static_assert((expr)!=0, #msg )
 #endif
 
 /*! \struct NullType
@@ -92,13 +98,18 @@ struct NullType { };
 overloading and type specialisation - and thus compile-time determined code
 generation).
 */
-template<int n> struct IntToType { enum { value=n }; };
+template<int n> struct IntToType { static const int value=n; };
 /*! \struct TypeToType
 \ingroup generic
 \brief A small template which maps any type to a lightweight type suitable for
 overloading eg; functions
 */
 template<typename type> struct TypeToType { typedef type value; };
+/*! \struct Boolean
+\ingroup generic
+\brief A small template whose value is \em v. Useful for delayed static assertions.
+*/
+template<bool v, typename type=NullType> struct Boolean { static const bool value=v; };
 
 /*! \struct select
 \ingroup generic
@@ -525,7 +536,7 @@ namespace TL
 	*/
 	template<class typelist> struct length
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<> struct length<NullType> { static const int value=0; };
 	template<class A, class B> struct length< item<A, B> >
@@ -548,7 +559,7 @@ namespace TL
 	*/
 	template<class typelist, FXuint idx> struct atC
 	{
-		StaticError<typelist> ERROR_Out_Of_Bounds_Or_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Out_Of_Bounds_Or_Not_A_TypeList);
 	};
 	template<class A, class B> struct atC<item<A, B>, 0> { typedef A value; };
 	template<class A, class B, FXuint idx> struct atC<item<A, B>, idx>
@@ -561,7 +572,7 @@ namespace TL
 	*/
 	template<class typelist, typename type> struct find
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<typename type> struct find<NullType, type> { static const int value=-1; };
 	template<typename type, class next> struct find<item<type, next>, type> { static const int value=0; };
@@ -580,7 +591,7 @@ namespace TL
 	{
 		static const int value=find<typelist, type>::value;
 	private:
-		typename Generic::select<value==-1, StaticError<typelist>, NullType>::value ERROR_Type_Not_Found;
+		FXSTATIC_ASSERT2(value!=-1, ERROR_Type_Not_Found);
 	};
 	/*! \struct findParent
 	\ingroup TL
@@ -588,7 +599,7 @@ namespace TL
 	*/
 	template<class typelist, typename type> struct findParent
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<typename type> struct findParent<NullType, type> { static const int value=-1; };
 	template<typename type, class next> struct findParent<item<type, next>, type> { static const int value=0; };
@@ -608,7 +619,7 @@ namespace TL
 	{
 		static const int value=findParent<typelist, type>::value;
 	private:
-		typename Generic::select<value==-1, StaticError<typelist>, NullType>::value ERROR_Type_Not_Found;
+		FXSTATIC_ASSERT2(value!=-1, ERROR_Type_Not_Found);
 	};
 	/*! \struct append
 	\ingroup TL
@@ -616,7 +627,7 @@ namespace TL
 	*/
 	template<class typelist, typename type> struct append
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<> struct append<NullType, NullType> { typedef NullType value; };
 	template<typename type> struct append<NullType, type> { typedef typename create<type>::value value; };
@@ -634,7 +645,7 @@ namespace TL
 	*/
 	template<class typelist, typename type> struct remove
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<typename type> struct remove<NullType, type> { typedef NullType value; };
 	template<typename type, class next> struct remove<item<type, next>, type> { typedef next value; };
@@ -673,7 +684,7 @@ namespace TL
 	*/
 	template<typename typelist, template<class> class instance> struct apply
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<typename type, class next, template<class> class instance> struct apply<item<type, next>, instance>
 	{
@@ -696,7 +707,7 @@ namespace TL
 	*/
 	template<typename typelist, template<class> class filt> struct filter
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<typename type, class next, template<class> class filt> struct filter<item<type, next>, filt>
 	{
@@ -786,7 +797,7 @@ namespace TL
 	*/
 	template<typename typelist, template<class> class instance=instanceHolderH, int idx=0> struct instantiateH
 	{
-		StaticError<typelist> ERROR_Not_A_TypeList;
+		FXSTATIC_ASSERT2((Boolean<false, typelist>::value), ERROR_Not_A_TypeList);
 	};
 	template<typename type, class next, template<class> class instance, int idx> struct instantiateH<item<type, next>, instance, idx>
 		: public Private::instanceHHolder<idx, instance<type> >, public instantiateH<next, instance, idx+1>
@@ -816,7 +827,7 @@ namespace TL
 		// TODO: volatile specialisations & instantiateV
 		template<int i, class container> struct accessInstantiateH
 		{
-			StaticError<container> ERROR_Not_An_InstantiateH_Container;
+			FXSTATIC_ASSERT2((Boolean<false, container>::value), ERROR_Not_An_InstantiateH_Container);
 		};
 		template<int i, typename typelist, template<class> class instance> struct accessInstantiateH<i, instantiateH<typelist, instance, 0> >
 		{
@@ -2178,11 +2189,12 @@ s >> boolmap;
 */
 template<int len> struct MapBools
 {
+	FXSTATIC_ASSERT2(len<=sizeof(FXulong)*8, ERROR_Too_Many_Bools_To_Fit_Into_Integral_Type);
 	typedef typename Generic::select<(len>sizeof(FXuchar)*8),
 				typename Generic::select<(len>sizeof(FXushort)*8),
 					typename Generic::select<(len>sizeof(FXuint)*8),
-						StaticError< IntToType<len> >,
-						FXulong>::value,
+						FXulong,
+						FXuint>::value,
 					FXushort>::value,
 				FXuchar>::value
 			holdtype;
