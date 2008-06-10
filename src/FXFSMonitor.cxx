@@ -3,7 +3,7 @@
 *                            Filing system monitor                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -24,7 +24,11 @@
  #define USE_WINAPI
  #include "WindowsGubbins.h"
 #else
- #ifdef HAVE_FAM
+ #if defined(__linux__)
+  #include <sys/inotify.h>
+  #include <unistd.h>
+  #define USE_INOTIFY
+ #elif defined(HAVE_FAM)
   #include <fam.h>
   #include <sys/select.h>
   #include "tnfxselect.h"
@@ -34,7 +38,7 @@
   #include <xincs.h>
   #include <sys/event.h>
   #define USE_KQUEUES
-  #warning Using BSD kqueue's as FAM is not available - NOTE THAT THIS PROVIDES REDUCED FUNCTIONALITY!
+  #warning Using BSD kqueues as FAM is not available - NOTE THAT THIS PROVIDES REDUCED FUNCTIONALITY!
  #else
   #error FAM is not available and no alternative found!
  #endif
@@ -73,6 +77,9 @@ struct FXFSMon : public QMutex
 			FXAutoPtr<QDir> pathdir;
 #ifdef USE_WINAPI
 			HANDLE h;
+#endif
+#ifdef USE_INOTIFY
+			int h;
 #endif
 #ifdef USE_KQUEUES
 			struct kevent h;
@@ -127,7 +134,7 @@ struct FXFSMon : public QMutex
 			QPtrVector<Handler> handlers;
 			Path(Watcher *_parent, const FXString &_path)
 				: parent(_parent), handlers(true)
-#ifdef USE_WINAPI
+#if defined(USE_WINAPI) || defined(USE_INOTIFY)
 				, h(0)
 #endif
 			{
@@ -160,6 +167,9 @@ struct FXFSMon : public QMutex
 		void run();
 		void *cleanup();
 	};
+#ifdef USE_INOTIFY
+	int inotifyh;
+#endif
 #ifdef USE_KQUEUES
 	int kqueueh;
 #endif
@@ -177,6 +187,9 @@ static FXProcess_StaticInit<FXFSMon> fxfsmon("FXFSMonitor");
 
 FXFSMon::FXFSMon() : watchers(true)
 {
+#ifdef USE_INOTIFY
+	FXERRHOS(inotifyh=inotify_init());
+#endif
 #ifdef USE_KQUEUES
 	FXERRHOS(kqueueh=kqueue());
 #endif
@@ -205,6 +218,13 @@ FXFSMon::~FXFSMon()
 		w->wait();
 	}
 	watchers.clear();
+#ifdef USE_INOTIFY
+	if(inotifyh)
+	{
+		FXERRHOS(::close(inotifyh));
+		inotifyh=0;
+	}
+#endif
 #ifdef USE_KQUEUES
 	if(kqueueh)
 	{
@@ -275,6 +295,40 @@ void FXFSMon::Watcher::run()
 		}
 		if(p)
 			p->callHandlers();
+	}
+}
+#endif
+#ifdef USE_INOTIFY
+void FXFSMon::Watcher::run()
+{
+	int ret;
+	char buffer[4096];
+	for(;;)
+	{
+		FXERRH_TRY
+		{
+			if((ret=read(fxfsmon->inotifyh, buffer, sizeof(buffer))))
+			{
+				FXERRHOS(ret);
+				for(inotify_event *ev=(inotify_event *) buffer; ((char *)ev)-buffer<ret; ev+=ev->len+sizeof(inotify_event))
+				{
+#ifdef DEBUG
+					fxmessage("FXFSMonitor: inotify reports wd=%d, mask=%u, cookie=%u, name=%s\n", ev->wd, ev->mask, ev->cookie, ev->name);
+#endif
+					QMtxHold h(fxfsmon);
+					Path *p=pathByHandle.find(ev->wd);
+					assert(p);
+					if(p)
+						p->callHandlers();
+				}
+			}
+		}
+		FXERRH_CATCH(FXException &e)
+		{
+			fxwarning("FXFSMonitor Error: %s\n", e.report().text());
+			return;
+		}
+		FXERRH_ENDTRY
 	}
 }
 #endif
@@ -386,6 +440,13 @@ FXFSMon::Watcher::Path::~Path()
 	{
 		parent->pathByHandle.remove(h);
 		FXERRHWIN(FindCloseChangeNotification(h));
+		h=0;
+	}
+#endif
+#ifdef USE_INOTIFY
+	if(h)
+	{
+		FXERRHOS(inotify_rm_watch(fxfsmon->inotifyh, h));
 		h=0;
 	}
 #endif
@@ -628,6 +689,12 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 			/*|FILE_NOTIFY_CHANGE_LAST_WRITE*/|FILE_NOTIFY_CHANGE_SECURITY)));
 		p->h=h;
 		FXERRHWIN(SetEvent(w->latch));
+		w->pathByHandle.insert(h, p);
+#endif
+#ifdef USE_INOTIFY
+		int h;
+		FXERRHOS(h=inotify_add_watch(fxfsmon->inotifyh, path.text(), IN_ALL_EVENTS&~(IN_ACCESS|IN_CLOSE_NOWRITE|IN_OPEN)));
+		p->h=h;
 		w->pathByHandle.insert(h, p);
 #endif
 #ifdef USE_KQUEUES

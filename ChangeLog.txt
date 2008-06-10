@@ -28,6 +28,7 @@ CPU cores
 added new vector benchmark & test
 + (1055) Replaced Maths::FRandomness with a version written using the new
 Maths::Vector code
++ (1059) Rewritten FXFSMonitor to use inotify on Linux instead of FAM
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

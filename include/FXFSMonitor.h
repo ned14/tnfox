@@ -3,7 +3,7 @@
 *                            Filing system monitor                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -57,6 +57,12 @@ only that point, will size and metadata changes etc. be found and reported. kque
 \b can provide all the functionality we need, but they require an open file handle
 on each and every file in a directory being monitored which quickly causes the
 process to run out of available file handles.
+
+As of v0.88, libgamin (the supposedly better replacement for FAM) was hanging
+yet again and this time I couldn't work around it. Thus as of v0.88, on Linux
+FXFSMonitor is implemented using the kernel inotify interface available in
+2.6.13 onwards. On BSD, it still tries to use libfam/libgamin if it can due
+to the missing kqueue functionality, but finally we are free of FAM dependency!!!
 
 As Tn especially does a lot of file system monitoring, it has been designed
 to work around system limits - the limit of 64 maximum waitable objects on
