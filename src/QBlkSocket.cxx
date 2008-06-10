@@ -284,7 +284,7 @@ QBlkSocket::QBlkSocket(const FXString &addrname, FXushort port, QBlkSocket::Type
 	unconstr.dismiss();
 }
 
-#ifndef HAVE_CPP0XFEATURES
+#ifndef HAVE_CPP0XRVALUEREFS
 #ifdef HAVE_CONSTTEMPORARIES
 QBlkSocket::QBlkSocket(const QBlkSocket &other) : p(other.p), QIODeviceS(other)
 {

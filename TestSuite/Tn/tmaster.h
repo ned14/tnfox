@@ -183,7 +183,7 @@ class TEXPORT_TCOMMON TAccessDenied : public FXException
 public:
 	//! Use TERRGNOACCESS() to instantiate
 	TAccessDenied(const FXString &msg, FXuint flags)
-		: FXException(0, 0, msg, TACCESSDENIEDCODE, flags|FXERRH_ISINFORMATIONAL) { }
+		: FXException(0, 0, 0, msg, TACCESSDENIEDCODE, flags|FXERRH_ISINFORMATIONAL) { }
 };
 #define TERRGNOACCESS(msg, flags)		{ TAccessDenied e(msg, flags); FXERRH_THROW(e); }
 

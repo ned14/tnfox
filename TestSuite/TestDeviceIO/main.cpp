@@ -3,7 +3,7 @@
 *                              Test of i/o classes                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2008 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -106,13 +106,13 @@ int main(int argc, char *argv[])
 			bufferh.truncate(bufferh.size() & ~7);
 			for(bufferh.at(0); !sbufferh.atEnd(); )
 			{
-				FXulong c;
-				volatile FXulong c2, c3;
+				union { FXulong c3; FXuchar p[8]; };
+				FXulong c, c2;
 				sbufferh >> c;
 				c3=c2=c;
-				fxendianswap8((void *) &c2);
+				fxendianswap(c2);
 				{
-					volatile FXuchar *p=(volatile FXuchar *) &c3, t;
+					FXuchar t;
 					t=p[0]; p[0]=p[7]; p[7]=t;
 					t=p[1]; p[1]=p[6]; p[6]=t;
 					t=p[2]; p[2]=p[5]; p[5]=t;
@@ -403,9 +403,9 @@ int main(int argc, char *argv[])
 			utffile.at(0);
 			outfile.at(0);
 			read=utffile.readBlock(buffer, sizeof(buffer));
-			fxmessage("Read %u bytes from original\n", (FXuval) read);
+			fxmessage("Read %u bytes from original\n", (FXuint) read);
 			written=outfile.readBlock(buffer2, sizeof(buffer2));
-			fxmessage("Read %u bytes from copy\n", (FXuval) written);
+			fxmessage("Read %u bytes from copy\n", (FXuint) written);
 			if(read!=written)
 				fxmessage("FAILED: Source is not same file size as copy!\n");
 			else if(memcmp(buffer, buffer2, read))

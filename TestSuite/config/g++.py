@@ -125,7 +125,18 @@ def CheckGCCHasVisibility(cc):
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
-conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
+def CheckGCCHasCPP0xFeatures(cc):
+    cc.Message("Checking if GCC can enable C++0x features ...")
+    try:
+        temp=cc.env['CPPFLAGS']
+    except:
+        temp=[]
+    cc.env['CPPFLAGS']=temp+["-std=c++0x"]
+    result=cc.TryCompile('struct Foo { static const int gee=5; Foo(const char *) { } Foo(Foo &&a) { } };\nint main(void) { Foo foo(__func__); static_assert(Foo::gee==5, "Death!"); return 0; }\n', '.cpp')
+    cc.env['CPPFLAGS']=temp
+    cc.Result(result)
+    return result
+conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility, "CheckGCCHasCPP0xFeatures" : CheckGCCHasCPP0xFeatures } )
 
 # Disabled to allow GCC backtrace support
 #if conf.CheckGCCHasVisibility():
@@ -135,6 +146,10 @@ conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility } )
 #    env['CPPDEFINES']+=["GCC_HASCLASSVISIBILITY"]
 #else:
 #    print "Disabling -fvisibility support"
+
+if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasCPP0xFeatures():
+    env['CPPFLAGS']+=["-std=c++0x"]
+env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
 
 env=conf.Finish()
 

@@ -3,7 +3,7 @@ import os
 filelist=os.listdir(".")
 idx=0
 while idx<len(filelist):
-    if filelist[idx][:4]!="Test":
+    if filelist[idx][:4]!="Test" and filelist[idx]!="adie" and filelist[idx]!="AllTests":
         del filelist[idx]
     else: idx+=1
 

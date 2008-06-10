@@ -130,7 +130,7 @@ struct TFileBySyncDevPrivate : public QMutex
 		{
 			bool extending=target>buffers.count();
 			if(printstats)
-				fxmessage("Due to memory full change, dynamically adjusting buffers from %d to %d\n", buffers.count(), target);
+				fxmessage("Due to memory full change, dynamically adjusting buffers from %u to %u\n", (u32) buffers.count(), target);
 			buffers.resize(target);
 			if(extending)
 			{

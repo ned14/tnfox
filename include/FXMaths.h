@@ -1218,7 +1218,7 @@ VECTORINTEGER(FXint,    4)
 		}
 		inline void gen_rand_array(w128_t *array, FXuint size) throw()
 		{
-			int i, j;
+			FXuint i, j;
 			w128_t r, r1, r2;
 
 			r1 = sfmt[N - 2];
@@ -1229,7 +1229,7 @@ VECTORINTEGER(FXint,    4)
 				r1 = r2;
 				r2 = r;
 			}
-			for (; i < N; i++)
+			for (; i < (FXuint) N; i++)
 			{
 				array[i] = r = do_recursion(sfmt[i], array[i + POS1 - N], r1, r2);
 				r1 = r2;
@@ -1243,7 +1243,7 @@ VECTORINTEGER(FXint,    4)
 				r2 = r;
 			}
 			int limit=2*N-size;
-			for(j = 0; j < limit; j++)
+			for(j = 0; (int) j < limit; j++)
 			{
 				sfmt[j]=array[j + size - N];
 			}
@@ -1309,7 +1309,7 @@ VECTORINTEGER(FXint,    4)
 			mid = (size - lag) / 2;
 
 			memset(sfmt, 0x8b, sizeof(sfmt));
-			if (key_length + 1 > N32) {
+			if (key_length + 1 > (FXuint) N32) {
 				count = key_length + 1;
 			} else {
 				count = N32;
@@ -1337,7 +1337,7 @@ VECTORINTEGER(FXint,    4)
 				psfmt32[i] = r;
 				i = (i + 1) % N32;
 			}
-			for (j = 0; j < N32; j++) {
+			for (j = 0; j < (FXuint) N32; j++) {
 				r = func2(psfmt32[i] + psfmt32[(i + mid) % N32] + psfmt32[(i + N32 - 1) % N32]);
 				psfmt32[(i + mid) % N32] ^= r;
 				r -= i;
@@ -1377,7 +1377,7 @@ VECTORINTEGER(FXint,    4)
 			FXulong r;
 			assert(idx % 2 == 0);
 
-			if (idx >= N32)
+			if (idx >= (FXuint) N32)
 			{
 				gen_rand_all();
 				idx = 0;
@@ -1390,7 +1390,7 @@ VECTORINTEGER(FXint,    4)
 		//! Generates lots of random data (make sure it's 16 byte aligned!)
 		void fill(FXuchar *d, FXuval len) throw()
 		{
-			gen_rand_array((w128_t *) d, len/sizeof(w128_t));
+			gen_rand_array((w128_t *) d, (FXuint)(len/sizeof(w128_t)));
 		}
 
 		//! generates a random number on [0,1]-real-interval by division of 2^53-1

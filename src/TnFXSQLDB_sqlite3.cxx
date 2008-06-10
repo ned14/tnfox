@@ -25,6 +25,7 @@
 #include "TnFXSQLDB_sqlite3.h"
 #include "FXRollback.h"
 #include <qmemarray.h>
+#include <stdio.h>
 #include "sqlite3.h"
 #include "FXMemDbg.h"
 #if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)

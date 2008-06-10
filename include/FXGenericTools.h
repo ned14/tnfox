@@ -58,7 +58,7 @@ typedef ::type_info type_info;
 typedef std::type_info type_info;
 #endif
 
-#ifndef HAVE_CPP0XFEATURES
+#ifndef HAVE_CPP0XSTATICASSERT
 template<bool> struct StaticAssert;
 template<> struct StaticAssert<true>
 {
@@ -1543,7 +1543,7 @@ public:
 	{ FXERRHM((fnimpl=new FunctorHelper::ImplFn<Functor, ParsListAsFnType>((ParsListAsFnType) fnptr))); }
 	//! Constructs a functor with a predefined implementation. Note: takes ownership of pointer.
 	explicit Functor(ImplBase *_fnimpl) : fnimpl(_fnimpl) { }
-#ifndef HAVE_CPP0XFEATURES
+#ifndef HAVE_CPP0XRVALUEREFS
 #ifdef HAVE_CONSTTEMPORARIES
 	Functor(const Functor &other) : fnimpl(other.fnimpl)
 	{

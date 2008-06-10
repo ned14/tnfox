@@ -47,7 +47,7 @@ struct TnFXSQLDB_ipcPrivate
 		delMsgSpec iadel, idel;
 		Ack(FXIPCMsg *FXRESTRICT _ia, FXIPCMsg *FXRESTRICT _i, void *_ref, void (*_refdel)(void *), AckHandler _handler, delMsgSpec _iadel, delMsgSpec _idel)
 			: ia(_ia), i(_i), ref(_ref), refdel(_refdel), handler(_handler), iadel(_iadel), idel(_idel) { }
-#ifndef HAVE_CPP0XFEATURES
+#ifndef HAVE_CPP0XRVALUEREFS
 		Ack(const Ack &_o) : ia(_o.ia), i(_o.i), ref(_o.ref), refdel(_o.refdel),
 			handler(const_cast<AckHandler &>(_o.handler)), iadel(_o.iadel), idel(_o.idel)
 		{

@@ -61,11 +61,7 @@ of a FXException
 #define FXEXCEPTION_LINE(p) 0
 #else
 #define FXEXCEPTION_FILE(p) __FILE__
-#ifdef HAVE_CPP0XFEATURES
 #define FXEXCEPTION_FUNCTION(p) __func__
-#else
-#define FXEXCEPTION_FUNCTION(p) (const char *) 0
-#endif
 #define FXEXCEPTION_LINE(p) __LINE__
 #endif
 
@@ -396,7 +392,7 @@ public:
   FXException() : p(0) { }
   //! \deprecated For backward code compatibility only
   FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init(0, 0, 0, msg, 0, 0); }
-#ifndef HAVE_CPP0XFEATURES
+#ifndef HAVE_CPP0XRVALUEREFS
 #ifdef HAVE_CONSTTEMPORARIES
   FXException(const FXException &other) : p(other.p)
   {

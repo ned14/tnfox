@@ -577,11 +577,11 @@ const FXString &FXException::report() const
 			else
 			{
 				if(p->flags & (FXERRH_ISFATAL|FXERRH_ISFOXEXCEPTION))
-					p->reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4:%5 thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srcfunction).arg(p->srclineno).arg(p->threadId));
+					p->reporttxt=new FXString(QTrans::tr("FXException", "FATAL ERROR: %1 (code 0x%2 file %3 line %4 in %5() thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srclineno).arg(p->srcfunction).arg(p->threadId));
 				else if(p->flags & FXERRH_ISFROMOTHER)
-					p->reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4:%5 thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srcfunction).arg(p->srclineno).arg(p->threadId));
+					p->reporttxt=new FXString(QTrans::tr("FXException", "From other end of IPC channel: %1 (code 0x%2 file %3 line %4 in %5() thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srclineno).arg(p->srcfunction).arg(p->threadId));
 				else
-					p->reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4:%5 thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srcfunction).arg(p->srclineno).arg(p->threadId));
+					p->reporttxt=new FXString(QTrans::tr("FXException", "%1 (code 0x%2 file %3 line %4 in %5() thread %6)").arg(p->message).arg(p->code,0,16).arg(p->srcfilename).arg(p->srclineno).arg(p->srcfunction).arg(p->threadId));
 			}
 #ifndef FXEXCEPTION_DISABLESOURCEINFO
 			if(!(p->flags & FXERRH_ISINFORMATIONAL))

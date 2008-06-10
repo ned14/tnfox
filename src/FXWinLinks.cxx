@@ -28,12 +28,14 @@
 #include "fxver.h"
 #include "FXPath.h"
 #include "FXStat.h"
-#include <stdio.h>
+#include <ctype.h>
 #include "FXErrCodes.h"
 #ifndef USE_POSIX
  #define USE_WINAPI
  #include "WindowsGubbins.h"
  #include "WinIoCtl.h"
+#else
+#include <unistd.h>
 #endif
 #include "FXMemDbg.h"
 #if defined(DEBUG) && defined(FXMEMDBG_H)

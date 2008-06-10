@@ -250,7 +250,7 @@ inline void fxendianswap(FXulong &v) throw()
 #if defined(__x86_64__)
 	__asm__("bswapq %0\n\t"
 			: "=r" (v)
-			: "r"  (v));
+			: "0"  (v));
 #else
 	__asm__("bswapl %%eax\n\t"
 			"bswapl %%edx\n\t"

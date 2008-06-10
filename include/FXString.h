@@ -61,6 +61,14 @@ public:
   /// Copy construct
   FXString(const FXString& s);
 
+#ifdef HAVE_CPP0XRVALUEREFS
+  /// Move construct
+  FXString(FXString && s) : str(s.str), inserts(s.inserts) { s.str=nullStr().str; s.inserts=0; }
+
+  /// Move assignment
+  FXString &operator=(FXString && s) { str=s.str; inserts=s.inserts; s.str=nullStr().str; s.inserts=0; return *this; }
+#endif
+
   /// Construct and init from string
   FXString(const FXchar* s);
 

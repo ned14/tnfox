@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
 			testfile.open(IO_ReadWrite);
 			testfile.truncate(4*4096*round);	// 4Mb
 			char *data=(char *) testfile.mapIn();
+			assert(data);
 			FXuint before=FXProcess::getMsCount();
 			memset(data, 'N', (size_t) testfile.size());
 			testfile.flush();

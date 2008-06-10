@@ -19,7 +19,7 @@ makeSMPBuild=True
 inlineMutex=False  # not debugmode
 
 # Set to true to enable the next generation C++0x features on compilers which
-# support that (currently GCC v4.3 or later. Note that this is a profound
+# support that (currently GCC v4.3 or later). Note that this is a profound
 # setting and changes compilation of all source code. It can yield significant
 # code speed & size improvements.
 enableCPP0xFeaturesIfAvailable=True

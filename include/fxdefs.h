@@ -154,6 +154,9 @@
  #define FXFORCEINLINE __forceinline
  #define FXDEPRECATED __declspec(deprecated)
  #define FXMEMALIGNED(v) __declspec(align(v))
+ #if _MSC_VER>=1300
+  #define __func__ __FUNCTION__
+ #endif
  #if _MSC_VER>=1400
   #define FXMALLOCATTR __declspec(restrict)
   #define FXRESTRICT __restrict
@@ -864,10 +867,10 @@ extern FXAPI FXint wcdec(const FXchar* string,FXint pos) throw();
 /// Retreat to previous utf16 character start
 extern FXAPI FXint wcdec(const FXnchar *string,FXint pos) throw();
 
-// Return true if valid utf8 character sequence
+/// Return true if valid utf8 character sequence
 extern FXAPI bool isutfvalid(const FXchar* str) throw();
 
-// Return true if valid utf8 character sequence
+/// Return true if valid utf8 character sequence
 extern FXAPI bool isutfvalid(const FXnchar* str) throw();
 
 /// Length of utf8 representation of wide characters string str of length n

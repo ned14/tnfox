@@ -645,7 +645,7 @@ public:
 	lockedAccessor(type &_val, const QRWMutex *m) : val(_val), h(0) { if(m) { FXERRHM(h=new QMtxHold(m)); } }
 	//! \overload
 	lockedAccessor(type &_val, const QRWMutex &m) : val(_val), h(0) { FXERRHM(h=new QMtxHold(m)); }
-#ifndef HAVE_CPP0XFEATURES
+#ifndef HAVE_CPP0XRVALUEREFS
 #ifdef HAVE_CONSTTEMPORARIES
 	lockedAccessor(const lockedAccessor &_o) : h(_o.h), val(_o.val)
 	{

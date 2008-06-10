@@ -210,6 +210,17 @@ def CheckTnFOXIsLittleEndian(cc):
     cc.Result(result)
     return result
 
+def CheckCPP0x_N1720(cc):
+    cc.Message("Checking for C++0x feature N1720 (static assertions) ...")
+    result=cc.TryCompile('int main(void) { static_assert(true, "Death!"); return 0; }\n', '.cpp')
+    cc.Result(result)
+    return result
+def CheckCPP0x_N2118(cc):
+    cc.Message("Checking for C++0x feature N2118 (rvalue references) ...")
+    result=cc.TryCompile('struct Foo { Foo(int) { } Foo(Foo &&a) { } };\nint main(void) { Foo foo(0); return 0; }\n', '.cpp')
+    cc.Result(result)
+    return result
+
 def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0):
     prefixpath=os.path.abspath(prefixpath)+"/"
     platprefix=os.path.abspath(platprefix)+"/"
@@ -235,8 +246,18 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         if os.path.isfile(platformconfig): break
     if not os.path.isfile(platformconfig):
         raise IOError, "No platform config file for any of "+repr(env['TOOLS'])+" was found"
+    #env['CC']='icc'
+    #env['CXX']='icpc'
+    #env['LINK']='icpc'
+    #env['ENV']['INCLUDE']=os.environ['INCLUDE']
+    #env['ENV']['LIB']=os.environ['LIB']
+    #env['ENV']['PATH']=os.environ['PATH']
+    #platformconfig=platprefix+"config/intelc.py"
+
     print "Using platform configuration",platformconfig,"..."
     onWindows=(env['PLATFORM']=="win32" or env['PLATFORM']=="win64")
+    onLinux=('linux' in sys.platform)
+    onBSD=('bsd' in sys.platform)
     onDarwin=(env['PLATFORM']=="darwin")
 
     # Force scons job number to be the processors on this machine
@@ -286,7 +307,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if not os.path.exists(builddir):
         os.mkdir(builddir)
     # Configure options always taken by testing
-    confA=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64, "CheckCompilerIsBigEndian" : CheckCompilerIsBigEndian } )
+    confA=Configure(env, { "CheckCompilerPtr32" : CheckCompilerPtr32, "CheckCompilerPtr64" : CheckCompilerPtr64, "CheckCompilerIsBigEndian" : CheckCompilerIsBigEndian,
+                           "CheckCPP0x_N1720" : CheckCPP0x_N1720, "CheckCPP0x_N2118" : CheckCPP0x_N2118 } )
     if make64bit:
         assert confA.CheckCompilerPtr64()
     else:
@@ -295,6 +317,8 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         env['CPPDEFINES']+=[("FOX_BIGENDIAN",1)]
     else:
         env['CPPDEFINES']+=[("FOX_BIGENDIAN",0)]
+    if confA.CheckCPP0x_N1720(): env['CPPDEFINES']+=["HAVE_CPP0XSTATICASSERT"]
+    if confA.CheckCPP0x_N2118(): pass # Disabled for now # env['CPPDEFINES']+=["HAVE_CPP0XRVALUEREFS"]
     env=confA.Finish()
     del confA
 

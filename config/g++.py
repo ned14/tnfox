@@ -130,8 +130,8 @@ def CheckGCCHasVisibility(cc):
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
-def CheckGCCHasSufficientCPP0xFeatures(cc):
-    cc.Message("Checking for sufficient C++0x features...")
+def CheckGCCHasCPP0xFeatures(cc):
+    cc.Message("Checking if GCC can enable C++0x features ...")
     try:
         temp=cc.env['CPPFLAGS']
     except:
@@ -141,7 +141,7 @@ def CheckGCCHasSufficientCPP0xFeatures(cc):
     cc.env['CPPFLAGS']=temp
     cc.Result(result)
     return result
-conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility, "CheckGCCHasSufficientCPP0xFeatures" : CheckGCCHasSufficientCPP0xFeatures } )
+conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility, "CheckGCCHasCPP0xFeatures" : CheckGCCHasCPP0xFeatures } )
 nothreads=True                # NOTE: Needs to be first to force use of kse over c_r on FreeBSD
 if conf.CheckCHeader("pthread.h"):
     oldcpppath=conf.env['CPPPATH'][:]
@@ -238,16 +238,15 @@ if conf.CheckGCCHasVisibility():
 else:
     print "Disabling -fvisibility support"
 
-if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasSufficientCPP0xFeatures():
-    env['CPPDEFINES']+=["HAVE_CPP0XFEATURES"]
+if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasCPP0xFeatures():
     env['CPPFLAGS']+=["-std=c++0x"]
-else:
-    env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
+env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
 
-if conf.CheckLibWithHeader("fam", "fam.h", "c"):
-    conf.env['CPPDEFINES']+=[("HAVE_FAM",1)]
-else:
-    print "Disabling FAM support - WARNING Linux needs libfam or libgamin!"
+if onDarwin or onBSD:
+    if conf.CheckLibWithHeader("fam", "fam.h", "c"):
+        conf.env['CPPDEFINES']+=[("HAVE_FAM",1)]
+    else:
+        print "Disabling FAM support - WARNING BSD and Apple need FAM for full functionality"
 
 env=conf.Finish()
 
