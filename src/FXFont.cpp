@@ -1801,17 +1801,16 @@ FXint FXFont::getFontDescent() const {
 FXint FXFont::getCharWidth(const FXwchar ch) const {
   if(font){
 #if defined(WIN32)              ///// WIN32 /////
-    FXnchar sbuffer[3]={0,0xfeff,0xfeff};
+    FXnchar sbuffer[2];
     SIZE size;
-    // GetTextExtentPoint32W() requires termination to handle unicode chars properly
     sbuffer[0]=ch;
     if(0xFFFF<ch){                      // Deal with surrogate pair
       sbuffer[0]=(ch>>10)+LEAD_OFFSET;
       sbuffer[1]=(ch&0x3FF)+0xDC00;
-      GetTextExtentPoint32W((HDC)dc,sbuffer,3,&size);
+      GetTextExtentPoint32W((HDC)dc,sbuffer,2,&size);
       return size.cx;
       }
-    GetTextExtentPoint32W((HDC)dc,sbuffer,2,&size);
+    GetTextExtentPoint32W((HDC)dc,sbuffer,1,&size);
     return size.cx;
 #elif defined(HAVE_XFT_H)       ///// XFT /////
     XGlyphInfo extents;
@@ -1847,13 +1846,12 @@ FXint FXFont::getTextWidth(const FXchar *string,FXuint length) const {
   if(!string && length){ fxerror("%s::getTextWidth: NULL string argument\n",getClassName()); }
   if(font){
 #if defined(WIN32)              ///// WIN32 /////
-    FXnchar sbuffer[4097];
+    FXnchar sbuffer[4096];
     FXASSERT(dc!=NULL);
     FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
     FXASSERT(count<=length);
     SIZE size;
-    sbuffer[count]=0xfeff;   // GetTextExtentPoint32W() requires termination to handle unicode chars properly
-    GetTextExtentPoint32W((HDC)dc,sbuffer,count+1,&size);
+    GetTextExtentPoint32W((HDC)dc,sbuffer,count,&size);
     return size.cx;
 #elif defined(HAVE_XFT_H)       ///// XFT /////
     XGlyphInfo extents;

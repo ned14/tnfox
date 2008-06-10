@@ -1731,12 +1731,11 @@ void FXDCWindow::setFont(FXFont *fnt){
 void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawText: no font selected.\n"); }
-  FXnchar sbuffer[4097];
+  FXnchar sbuffer[4096];
   FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
   FXASSERT(count<=length);
   FXint bkmode=::SetBkMode((HDC)ctx,TRANSPARENT);
-  sbuffer[count]=0xfeff;  // TextOut() requires termination to plot unicode chars properly
-  ::TextOutW((HDC)ctx,x,y,sbuffer,count+1);
+  ::TextOutW((HDC)ctx,x,y,sbuffer,count);
   ::SetBkMode((HDC)ctx,bkmode);
   }
 
@@ -1745,12 +1744,11 @@ void FXDCWindow::drawText(FXint x,FXint y,const FXchar* string,FXuint length){
 void FXDCWindow::drawImageText(FXint x,FXint y,const FXchar* string,FXuint length){
   if(!surface){ fxerror("FXDCWindow::drawImageText: DC not connected to drawable.\n"); }
   if(!font){ fxerror("FXDCWindow::drawImageText: no font selected.\n"); }
-  FXnchar sbuffer[4097];
+  FXnchar sbuffer[4096];
   FXint count=utf2ncs(sbuffer,string,FXMIN(length,4096));
   FXASSERT(count<=length);
   FXint bkmode=::SetBkMode((HDC)ctx,OPAQUE);
-  sbuffer[count]=0xfeff;  // TextOut() requires termination to plot unicode chars properly
-  ::TextOutW((HDC)ctx,x,y,sbuffer,count+1);
+  ::TextOutW((HDC)ctx,x,y,sbuffer,count);
 //    RECT r;
 //    r.left=clip.x; r.top=clip.y; r.right=clip.x+clip.w; r.bottom=clip.y+clip.h;
 //    ExtTextOutW((HDC)ctx,x,y,ETO_OPAQUE|ETO_CLIPPED,&r,sbuffer,count,NULL);
