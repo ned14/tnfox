@@ -1177,8 +1177,8 @@ VECTORINTEGER(FXint,    4)
 		// From SFMT=params19937.h
 		static const int N32=(N * 4);
 		static const int POS1=122, SL1=18, SR1=11, SL2=1, SR2=1;
-		static const FXuint *MASK() throw() { static const FXuint d[4]={0xdfffffefU, 0xddfecb7fU, 0xbffaffffU, 0xbffffff6U}; return d; }
-		static const FXuint *PARITY() throw() { static const FXuint d[4]={0x00000001U, 0x00000000U, 0x00000000U, 0x13c9e684U}; return d; }
+		static const FXuint *MASK() throw() { static const FXMEMALIGNED(16) FXuint d[4]={0xdfffffefU, 0xddfecb7fU, 0xbffaffffU, 0xbffffff6U}; return d; }
+		static const FXuint *PARITY() throw() { static const FXMEMALIGNED(16) FXuint d[4]={0x00000001U, 0x00000000U, 0x00000000U, 0x13c9e684U}; return d; }
 
 		w128_t sfmt[N];
 		FXuval idx;
