@@ -279,7 +279,7 @@ bool QFile::open(FXuint mode)
 		ioIndex=0;
 		if(!(mode & IO_NoAutoUTF) && isReadable() && isTranslated())
 		{	// Have a quick peek to see what kind of text it is
-			FXuchar buffer[256];
+			FXuchar buffer[1024];
 			FXuval read;
 			if((read=QFile::readBlock((char *) buffer, sizeof(buffer))))
 				setUnicodeTranslation(determineUnicodeType(buffer, read));

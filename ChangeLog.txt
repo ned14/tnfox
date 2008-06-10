@@ -29,6 +29,7 @@ added new vector benchmark & test
 + (1055) Replaced Maths::FRandomness with a version written using the new
 Maths::Vector code
 + (1059) Rewritten FXFSMonitor to use inotify on Linux instead of FAM
++ (1060) Improved UTF detection via testing for used & unused code planes
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

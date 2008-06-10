@@ -124,26 +124,41 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 		s.setBigEndian(!(u & 1));
 		for(FXuval n=0; n<len-8; n+=inc)
 		{
+			FXwchar fullchar=0;
 			dev.at(n);
+			/* The basic heuristics are as follows:
+			   There are two bins of good and bad with good & bad totals in them.
+			   For each UTF possibility, bad is incremented by charsize*2 for every
+			   UTF invalid character seen. good is incremented by charsize*2 for
+			   every non-invalid character seen. Furthermore, good gets a big bump
+			   when a valid UTF escape sequence denoting a multicharacter glyph.
+			   
+			   A slight bias is provided for high bytes to be null for UTF-16 as
+			   that's how Latin1 appears and it is very common. A further bias
+			   is provided against UTF characters inside the private use space as
+			   these are surely highly uncommon.
+			*/
 			if(4==inc)
 			{
 				FXuint *c=(FXuint *) buffer;
 				s >> c[0];
+				fullchar=(FXwchar) c[0];
 				// By UTF-32 spec the top eleven bits must be clear
-				if(c[0] & 0xFFE00000) bad+=inc; else good+=inc;
+				if(c[0] & 0xFFE00000) bad+=inc*2; else good+=inc*2;
 			}
 			else if(2==inc)
 			{
 				FXushort *c=(FXushort *) buffer;
 				s >> c[0] >> c[1];
 				if(!c[0] || !isutfvalid((FXnchar *) c))
-					bad+=inc;
+					bad+=inc*2;
 				else
 				{
 					FXint len=wcinc((FXnchar *)(data+n), 0);
-					good+=inc;
+					fullchar=wc((FXnchar *) buffer);
+					good+=inc*2;
 					if(len>2)
-						good+=inc*4;
+						good+=inc*8;
 					if(!(c[0] & 0xff00))	// Prefer high byte empty
 						good+=1;
 					n+=len-inc;
@@ -152,15 +167,27 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 			else
 			{
 				if(!data[n] || !isutfvalid((char *) data+n))
-					bad+=inc;
+					bad+=inc*2;
 				else
 				{
 					FXint len=wcinc((char *) data+n, 0);
-					good+=inc;
+					fullchar=wc((char *) buffer);
+					good+=inc*2+1;		// Have a slight bias for UTF-8 over UTF-16 which looks identical
 					if(len>1)
-						good+=inc<<(1+len);
+						good+=inc<<(2+len);
 					n+=len-inc;
 				}
+			}
+			if(fullchar)
+			{	// Unicode guarantees code points to be below 0x110000 and 0xffff|0xfffe to be non-characters
+				if(fullchar>0x10ffff || (fullchar!=0xfffe && (fullchar & 0xfffe)==0xfffe)) bad+=inc*2;
+				// Penalise the currently unallocated planes
+				if((fullchar>=0x30000 && fullchar<=0xdfffd)) bad+=inc*2;
+				// Bias against the private use planes
+				if((fullchar>=0xe000 && fullchar<0xf8ff) // deliberately exclude 0xf8ff, the Apple character
+				   || (fullchar>=0xf0000 && fullchar<=0xffffd)
+				   || (fullchar>=0x100000 && fullchar<=0x10fffd)
+				   ) bad+=1;
 			}
 		}
 		//if(!bad) return (UnicodeType) u;

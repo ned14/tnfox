@@ -269,7 +269,13 @@ bool EventLoopC::getNextEventI(FXRawEvent& ev,bool blocking)
 			newevent.reset();
 			h.unlock();
 			if(getApp()->isInitialized())
-				XFlush((Display*) display);			// Need to do this manually as it's async from XNextEvent()
+			{	// Need to do this manually as it's async from XNextEvent()
+				int eventstogo=XEventsQueued((Display*)display,QueuedAfterFlush);
+#ifdef DEBUG
+				//fxmessage("Thread %luu flushing X11 queue containing %d events\n", QThread::id(), eventstogo);
+#endif
+				XFlush((Display*) display);
+			}
 			if(timers)
 			{
 				FXint togo=(FXint)((timers->due-FXApp::time())/1000000);
@@ -306,7 +312,16 @@ bool EventLoopC::peekEventI()
 bool EventLoopC::dispatchEvent(FXRawEvent& ev)
 {
 	//fxmessage("Client dispatching msg %d, repaints=%p, refresher=%p\n", ev.xany.type, repaints, refresher);
+#if defined(DEBUG) && defined(MANUAL_DISPATCH)
+	bool ret;
+	FXulong start=FXProcess::getNsCount();
+	ret=FXEventLoop::dispatchEvent(ev);
+	FXulong end=FXProcess::getNsCount();
+	//fxmessage("EventLoopC: Dispatching event %d took %f secs\n", ev.xany.type, (end-start)/1000000000.0);
+	return ret;
+#else
 	return FXEventLoop::dispatchEvent(ev);
+#endif
 }
 
 //*************************************************************************
