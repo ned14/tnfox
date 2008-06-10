@@ -1,5 +1,5 @@
 # TnFOX human language string literal translation file
-# Last updated: Tue, 10 Jul 2007 14:43:15 +0000
+# Last updated: Tue, 10 Jun 2008 14:34:20 +0000
 
 version=1:
 
@@ -82,8 +82,8 @@ langids="ES":
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
-"%1 (code 0x%2 file %3 line %4 thread %5)":
-	ES: "%1 (codigo 0x%2 archivo %3 linea %4 hilo %5)"
+"%1 (code 0x%2 file %3 line %4 in %5() thread %6)":
+	ES: "%1 (codigo 0x%2 archivo %3 linea %4 en %5() hilo %6)"
 	srcfile="FXException.cxx":class="FXException":
 		ES: up
 
@@ -251,8 +251,8 @@ langids="ES":
 	srcfile="QThread.cxx":class="QThreadLocalStorage":
 		ES: up
 
-"FATAL ERROR: %1 (code 0x%2 file %3 line %4 thread %5)":
-	ES: "ERROR MORTAL: %1 (codigo 0x%2 archivo %3 linea %4 hilo %5)"
+"FATAL ERROR: %1 (code 0x%2 file %3 line %4 in %5() thread %6)":
+	ES: "ERROR MORTAL: %1 (codigo 0x%2 archivo %3 linea %4 en %5() hilo %6)"
 	srcfile="FXException.cxx":class="FXException":
 		ES: up
 
@@ -312,8 +312,8 @@ langids="ES":
 	srcfile="QSSLDevice.cxx":class="QSSLDevice":
 		ES: up
 
-"From other end of IPC channel: %1 (code 0x%2 file %3 line %4 thread %5)":
-	ES: "De otro lado de canal IPC: %1 (codigo 0x%2 archivo %3 linea %4 hilo %5)"
+"From other end of IPC channel: %1 (code 0x%2 file %3 line %4 in %5() thread %6)":
+	ES: "De otro lado de canal IPC: %1 (codigo 0x%2 archivo %3 linea %4 en %5() hilo %6)"
 	srcfile="FXException.cxx":class="FXException":
 		ES: up
 
@@ -651,7 +651,7 @@ langids="ES":
 	srcfile="FXSQLDB.cxx":class="FXSQLDB::Statement::Cursor":
 		ES: up
 	srcfile="TnFXSQLDB.cxx":class="TnFXSQLDB::Statement::Cursor":
-		ES: "!TODO! enter translation here"
+		ES: up
 
 "This is a window either informing you of something or asking you a question":
 	ES: "Este es un ventana que dice algo a ti o pregunta te algo"
