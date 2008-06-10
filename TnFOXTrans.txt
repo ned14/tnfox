@@ -48,12 +48,12 @@ langids="ES":
 		ES: up
 
 "  -fxscreenscale=<%>     : Overrides the window layout scaling factor\n":
-	ES: "  -fxscreenscale=<%>     : Desautorizar el factor tamaño de composicion de ventanas\n"
+	ES: "  -fxscreenscale=<%>     : Desautorizar el factor tamaÃ±o de composicion de ventanas\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
 "  -fxscreensize=w,h      : Constrains the screen (debug only)\n":
-	ES: "  -fxscreensize=w,h      : Constreñir la pantella (solo modigo debug)\n"
+	ES: "  -fxscreensize=w,h      : ConstreÃ±ir la pantella (solo modigo debug)\n"
 	srcfile="FXProcess.cxx":class="FXProcess":
 		ES: up
 
@@ -373,7 +373,7 @@ langids="ES":
 		ES: up
 
 "Maximum message size exceeded (%1 with limit of %2)":
-	ES: "El tamaño maximo de mensaje rebasado (%1 con limite de %2)"
+	ES: "El tamaÃ±o maximo de mensaje rebasado (%1 con limite de %2)"
 	srcfile="FXIPC.cxx":class="FXIPCChannel":
 		ES: up
 
@@ -587,7 +587,7 @@ langids="ES":
 		ES: up
 
 "Shadow password file unavailable":
-	ES: "Archivo en la sombra de contraseñas no esta disponible"
+	ES: "Archivo en la sombra de contraseÃ±as no esta disponible"
 	srcfile="FXACL.cxx":class="FXACLEntity":
 		ES: up
 
