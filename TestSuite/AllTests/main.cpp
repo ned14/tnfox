@@ -3,7 +3,7 @@
 *                               Tests Everything                                *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2007 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2007-2008 by Niall Douglas.   All Rights Reserved.       *
 *   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL   *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -648,8 +648,14 @@ void TestWindow::appendOutput(QChildProcess &child, bool terminate)
 	char buffer[4096], *buff;
 	QIODeviceS *dev=&child;
 	bool timedout;
-	while(!(timedout=!QIODeviceS::waitForData(0, 1, &dev, 120*1000)))
+	FXuint start=FXProcess::getMsCount();
+	while(!(timedout=(FXProcess::getMsCount()-start>=120*1000)))
 	{
+		if(!QIODeviceS::waitForData(0, 1, &dev, 50))
+		{
+			getApp()->runModalWhileEvents();
+			continue;
+		}
 		FXuval read;
 		buff=buffer;
 		if((read=child.readBlock(buff, sizeof(buffer)-(buff-buffer))))
@@ -661,8 +667,7 @@ void TestWindow::appendOutput(QChildProcess &child, bool terminate)
 			buff=buffer+sizeof(buffer)-inputlen;
 			testresults.output->appendText((FXchar *) output, read);
 			testresults.output->makePositionVisible(testresults.output->getLength());
-			getApp()->runModalWhileEvents(this);
-			getApp()->runModalWhileEvents(this);
+			getApp()->runModalWhileEvents();
 		}
 		else break;
 	}
