@@ -35,6 +35,8 @@ Maths::Vector code
 to always read & write in that format
 + (1067) Added automated tool for translating TnFOX translation files via
 Google Translation
++ (1068) Replaced TnFOXTrans.txt with Google Translated version and added
+that to core DLL
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-
