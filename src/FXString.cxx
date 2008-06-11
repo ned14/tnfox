@@ -2616,13 +2616,13 @@ FXdouble FXDoubleVal(const FXString& s){
   }
 
 #if 0
-bool FXIsLongVal(const FXString &,const FXint base)
+bool FXIsLongVal(const FXString &,const FXint base){
   FXchar *end=s.str;
   strtoll(s.str,&end,base);
   return (s.str!=end);
   }
 
-bool FXIsDouble(const FXString &,const FXint base)
+bool FXIsDouble(const FXString &,const FXint base){
   FXchar *end=s.str;
   strtod(s.str,&end,base);
   return (s.str!=end);
