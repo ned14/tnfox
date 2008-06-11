@@ -2,6 +2,7 @@ v0.88 ?
 -=-=-=-=-=-=-=-=-=-=-
 T (svnr) description
 B (1041) fxendianswap4() wasn't reliable on GCC
+B (1062) Unicode string rendering on Windows had magically broken itself again :(
 
 * (1036) Moved v1.4 branch into branches, replaced trunk with v1.6 branch
 * (1037) Bumped TnFOX to v0.90
@@ -30,6 +31,10 @@ added new vector benchmark & test
 Maths::Vector code
 + (1059) Rewritten FXFSMonitor to use inotify on Linux instead of FAM
 + (1060) Improved UTF detection via testing for used & unused code planes
+* (1065) Converted TnFOXTrans.txt into UTF-8 format and adjusted CppMunge.py
+to always read & write in that format
++ (1067) Added automated tool for translating TnFOX translation files via
+Google Translation
 
 v0.87 11th July 2007:
 -=-=-=-=-=-=-=-=-=-=-

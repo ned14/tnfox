@@ -937,6 +937,17 @@ TnFOX provides what is probably the most powerful and intuitive automatic human
 language translation for any C++ library currently available. While it is mostly
 source compatible with Qt, it also provides a good deal more power.
 
+A tool is provided called \c TranslateViaGoogle.py which screen scrapes the
+output from Google Translations in order to automate the translations for you
+into all supported languages. Simply call with the output and input files
+and much of the work will be done for you - though you WILL need to manually
+refine the output afterwards. Google Translate will only do so many
+translations for you before it realises that it is an automated script and
+will refuse to provide any more - thus the tool can restart a partially
+completed automatic translation, or indeed it can fill in the blanks of a
+manually translated file. You need the \c BeautifulSoup Python package as
+a prerequisite for operation.
+
 Much of that power derives from the intuitive and powerful method of
 specifying translations. The file format is basically as follows:
 \code
@@ -2203,6 +2214,9 @@ Also the embedded copy of SQLite3 is not compiled in.
 
 
 /*! \page cpp0xsupport C++0x Support in TnFOX
+
+\note v0.88 could not get move constructors working properly in GCC v4.3 and
+so this particular feature has been disabled for now.
 
 For a very long time now, TnFOX has contained support for one particular C++0x
 feature (move constructors) but the code had always been \c #ifdef-ed out. As
