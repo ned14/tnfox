@@ -141,11 +141,14 @@
 #endif // FOXDLL
 
 // Throwable classes must always be visible on GCC in all binaries
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 #ifdef WIN32
   #define FXEXCEPTIONAPI(api) api
 #elif defined(GCC_HASCLASSVISIBILITY)
   #define FXEXCEPTIONAPI(api) FXEXPORT
-#else
+#endif
+#endif
+#ifndef FXEXCEPTIONAPI
   #define FXEXCEPTIONAPI(api)
 #endif
 

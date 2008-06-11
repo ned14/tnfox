@@ -957,7 +957,7 @@ VECTORINTEGER(FXint,    4)
 #endif
 #endif
 #endif
-	/*! \class VectoryArray
+	/*! \class VectorArray
 	\brief A static array of vectors
 	*/
 	template<typename type, unsigned int A, unsigned int B> class VectorArray
