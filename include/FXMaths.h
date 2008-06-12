@@ -34,6 +34,10 @@ namespace FX {
 \brief Defines a number of tools useful for maths
 */
 
+#if defined(__GNUC__) && (__GNUC__>4 || __GNUC_MINOR__>2)
+#warning TODO: Fix the alignment hack to work around GCC bug
+#endif
+
 namespace Maths {
 	/*! \namespace Maths
 	\brief Defines a set of tools for maths
@@ -213,7 +217,7 @@ namespace Maths {
 #define VECTORP2OP(op) VectorBase &operator op (const VectorBase &o)      {                 for(FXuint n=0; n<A; n++) Base::data[n] op o.data[n]; return *this; }
 #define VECTORFUNC(op) friend VectorBase op(const VectorBase &o)          { VectorBase ret; for(FXuint n=0; n<A; n++) ret.data[n]= Maths::op (o.data[n]); return ret; }
 #define VECTOR2FUNC(op) friend VectorBase op(const VectorBase &a, const VectorBase &b) { VectorBase ret; for(FXuint n=0; n<A; n++) ret.data[n]= op (a.data[n], b.data[n]); return ret; }
-		template<typename type, unsigned int A, class supertype, bool isInteger, typename SIMDType> class VectorBase<type, A, supertype, true, isInteger, SIMDType> : private TwoPowerMemAligner<sizeof(type)*A>, public VectorBase<type, A, supertype, false, false, SIMDType>
+		template<typename type, unsigned int A, class supertype, bool isInteger, typename SIMDType> class FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ VectorBase<type, A, supertype, true, isInteger, SIMDType> : private TwoPowerMemAligner<sizeof(type)*A>, public VectorBase<type, A, supertype, false, false, SIMDType>
 		{
 			typedef VectorBase<type, A, supertype, false, false, SIMDType> Base;
 		public:
@@ -535,7 +539,7 @@ namespace Maths {
 #if (defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))) || (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
 	// The x86 and x64 SSE specialisations
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=1) || (defined(__i386__) && defined(__SSE__))
-	template<> class Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
+	template<> FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ class Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
 		typedef float TYPE;
@@ -663,7 +667,7 @@ namespace Maths {
 	FXVECTOROFVECTORS(int_SSEOptimised_float4, 256);
 #endif
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=2) || (defined(__i386__) && defined(__SSE2__))
-	template<> class Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
+	template<> FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ class Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
 		typedef double TYPE;
@@ -812,7 +816,7 @@ namespace Maths {
 #define VECTORISZERO 65535==_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_setzero_si128(), a.v))
 #endif
 #define VECTORINTEGER(vint, vsize, sseending, signage1, signage2) \
-	template<> class Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
+	template<> FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ class Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
 	{ \
 	private: \
 		typedef Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> Base; \
