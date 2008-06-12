@@ -360,6 +360,7 @@ bool QFile::at(FXfval newpos)
 	if(isOpen() && ioIndex!=newpos && !p->amStdio)
 	{
 		QThread_DTHold dth;
+		assert(newpos<0xf000000000000000ULL);
 #ifdef WIN32
 		LARGE_INTEGER _newpos; _newpos.QuadPart=newpos;
 		FXERRHWIN(SetFilePointerEx((HANDLE) _get_osfhandle(p->handle), _newpos, NULL, FILE_BEGIN));
@@ -450,7 +451,7 @@ FXuval QFile::readBlock(char *data, FXuval maxlen)
 			FXuval inputlen=readed;
 			FXuval output=removeCRLF(temp.data(), (FXuchar *) data, maxlen, inputlen, unicodeTranslation());
 			// Adjust the file pointer to reprocess unprocessed input later
-			QFile::at(ioIndex-(readed-inputlen));
+			QFile::at(ioIndex-((FXfval) readed-(FXfval) inputlen));
 			memcpy(data, temp.data(), output);
 			readed=output;
 		}

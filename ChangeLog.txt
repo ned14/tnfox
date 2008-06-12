@@ -3,6 +3,8 @@ v0.88 12th June 2008:
 T (svnr) description
 B (1041) fxendianswap4() wasn't reliable on GCC
 B (1062) Unicode string rendering on Windows had magically broken itself again :(
+B (1072) QFile and QMemMap were offsetting the file pointer by ludicrous
+amounts when using CR/LF translation on 32 bit systems only
 
 * (1036) Moved v1.4 branch into branches, replaced trunk with v1.6 branch
 * (1037) Bumped TnFOX to v0.90

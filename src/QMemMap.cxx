@@ -897,7 +897,7 @@ FXuval QMemMap::readBlock(char *data, FXuval maxlen)
 			FXuval inputlen=readed;
 			FXuval output=removeCRLF(temp.data(), (FXuchar *) data, maxlen, inputlen, unicodeTranslation());
 			// Adjust the file pointer to reprocess unprocessed input later
-			setIoIndex(ioIndex-(readed-inputlen));
+			setIoIndex(ioIndex-((FXfval) readed-(FXfval) inputlen));
 			memcpy(data, temp.data(), output);
 			readed=output;
 		}
