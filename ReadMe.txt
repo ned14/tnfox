@@ -1,4 +1,4 @@
-TnFOX v0.88 ?:
+TnFOX v0.88 12th June 2008:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas
@@ -10,12 +10,17 @@ platforms, it includes v3.3.17 of SQLite3.
 
 Issues:
 -=-=-=-
-1: THE PYTHON BINDINGS WERE RECENTLY REIMPLEMENTED
+1: BUILDING HAS NOT BEEN TESTED ON APPLE MAC OS X
+This release has not been built on Apple Mac OS X due to a current lack
+of test hardware. There is no reason why it shouldn't work as well as
+v0.87 however.
+
+2: THE PYTHON BINDINGS WERE RECENTLY REIMPLEMENTED
 The new pyplusplus solution will be far superior in the long run, but as
 yet it's still not quite working. Hence the bindings have NOT been supplied
 with this release.
 
-2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
+3: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
 See per-platform documentation and Todo.txt for a list of known bugs.
 
 
@@ -91,10 +96,10 @@ Testing regime:
 Before this release, every program in the TestSuite was compiled and tested
 in both debug and release modes on:
 
-1. Microsoft Windows XP SP2 x86 with MSVC9.0 (Visual Studio .NET 2008)
-2. Microsoft Windows Vista x64 with MSVC9.0 (Visual Studio .NET 2008)
-3. KUbuntu Hardy Heron x64 with GCC & libstdc++ 4.3
-4. Apple Mac OS X 10.4.8 x86 with XCode v2.3
+1. Microsoft Windows XP SP2 x64 with MSVC9.0 (Visual Studio .NET 2008)
+2. KUbuntu Hardy Heron x86 with GCC & libstdc++ 4.2
+3. KUbuntu Hardy Heron x64 with GCC & libstdc++ 4.2
+4. Apple Mac OS X 10.4.8 x86 with XCode v2.3 [NOT THIS RELEASE]
 
 Up until v0.3 MSVC6 was supported. Unfortunately since then the failings
 in its compiler have forced me to drop it.
