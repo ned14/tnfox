@@ -326,6 +326,7 @@ static double Time(const char *desc, const Generic::BoundFunctorV &_routine)
 
 template<typename A, typename B> static bool verify(A &a, B &b)
 {
+	int z=TOTALITEMS;
 	for(FXuint n=0; n<TOTALITEMS/18; n++)
 		if(a[n][0]!=b[n][0] || a[n][1]!=b[n][1] || a[n][2]!=b[n][2] || a[n][3]!=b[n][3])
 			return false;
@@ -343,12 +344,19 @@ int main( int argc, char *argv[] )
 		using namespace FP;
 		float foo1[]={ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 		float foo2[]={ 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.6f, 1.7f, 1.8f, 1.9f, 2.0f };
+		fxmessage("sizeof(Vector<float, 18>)=%d\n", (int)sizeof(SlowArray::VECTORTYPE));
+		fxmessage("sizeof(Vector<float, 16>)=%d\n", (int)sizeof(FastArray::VECTORTYPE));
+		if(sizeof(SlowArray::VECTORTYPE)!=18*4) fxerror("sizeof(Vector<float, 18>) is not 72 bytes!\n");
+		if(sizeof(FastArray::VECTORTYPE)!=16*4) fxerror("sizeof(Vector<float, 16>) is not 64 bytes!\n");
 		fill(&slowA, foo1);
 		fill(&fastA, foo1);
 		fill(&slowB, foo1);
 		fill(&fastB, foo1);
 		fastt=Time("   vector<16>", Generic::BindFunc(fill<FastArray>, &fastC, foo2));
 		slowt=Time("   vector<18>", Generic::BindFunc(fill<SlowArray>, &slowC, foo2));
+		if(!verify(slowA, fastA)) { fxmessage("Buffer contents not the same!\n"); return 1; }
+		if(!verify(slowB, fastB)) { fxmessage("Buffer contents not the same!\n"); return 1; }
+		if(!verify(slowC, fastC)) { fxmessage("Buffer contents not the same!\n"); return 1; }
 		fxmessage("Filling vector<16> was %f times faster than vector<18>\n\n", fastt/slowt);
 
 		// Arithmetic test
@@ -376,6 +384,10 @@ int main( int argc, char *argv[] )
 		using namespace Int;
 		int foo1[]={ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 		int foo2[]={ 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
+		fxmessage("sizeof(Vector<int, 18>)=%d\n", (int)sizeof(SlowArray::VECTORTYPE));
+		fxmessage("sizeof(Vector<int, 16>)=%d\n", (int)sizeof(FastArray::VECTORTYPE));
+		if(sizeof(SlowArray::VECTORTYPE)!=18*4) fxerror("sizeof(Vector<int, 18>) is not 72 bytes!\n");
+		if(sizeof(FastArray::VECTORTYPE)!=16*4) fxerror("sizeof(Vector<int, 16>) is not 64 bytes!\n");
 		fill(&slowA, foo1);
 		fill(&fastA, foo1);
 		fill(&slowB, foo1);

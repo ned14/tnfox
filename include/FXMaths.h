@@ -34,10 +34,6 @@ namespace FX {
 \brief Defines a number of tools useful for maths
 */
 
-#if defined(__GNUC__) && (__GNUC__>4 || __GNUC_MINOR__>2)
-#warning TODO: Fix the alignment hack to work around GCC bug
-#endif
-
 namespace Maths {
 	/*! \namespace Maths
 	\brief Defines a set of tools for maths
@@ -173,7 +169,12 @@ namespace Maths {
 		template<> struct FXMEMALIGNED(512) TwoPowerMemAligner<512> { TwoPowerMemAligner() { assert(!((FXuval)this & 511)); } };
 		template<> struct FXMEMALIGNED(1024) TwoPowerMemAligner<1024> { TwoPowerMemAligner() { assert(!((FXuval)this & 1023)); } };
 #elif defined(__GNUC__)
-		// GCC's alignment support on x86 and x64 is nearly useless :(
+#if __GNUC__<4 || (__GNUC__==4 && __GNUC_MINOR__<3)
+#warning Before v4.3 GCC won't allow selective structure alignment - FX::Maths::Vector will not be aligned!
+#define FXVECTOR_BUGGYGCCALIGNMENTHACK FXMEMALIGNED(16)
+#else
+		// GCC's alignment support on x86 and x64 is nearly useless
+		// as it won't go above 16 bytes :(
 		template<> struct FXMEMALIGNED(4)   TwoPowerMemAligner<4>   { TwoPowerMemAligner() { assert(!((FXuval)this & 3)); } };
 		template<> struct FXMEMALIGNED(8)   TwoPowerMemAligner<8>   { TwoPowerMemAligner() { assert(!((FXuval)this & 7)); } };
 		template<> struct FXMEMALIGNED(16)  TwoPowerMemAligner<16>  { TwoPowerMemAligner() { assert(!((FXuval)this & 15)); } };
@@ -183,6 +184,10 @@ namespace Maths {
 		template<> struct FXMEMALIGNED(256) TwoPowerMemAligner<256> { TwoPowerMemAligner() { assert(!((FXuval)this & 15)); } };
 		template<> struct FXMEMALIGNED(512) TwoPowerMemAligner<512> { TwoPowerMemAligner() { assert(!((FXuval)this & 15)); } };
 		template<> struct FXMEMALIGNED(1024) TwoPowerMemAligner<1024> { TwoPowerMemAligner() { assert(!((FXuval)this & 15)); } };
+#endif
+#endif
+#ifndef FXVECTOR_BUGGYGCCALIGNMENTHACK
+#define FXVECTOR_BUGGYGCCALIGNMENTHACK
 #endif
 		template<typename type, unsigned int A, class supertype, bool _isArithmetic, bool _isInteger, typename SIMDType=char> class VectorBase
 		{
@@ -217,7 +222,7 @@ namespace Maths {
 #define VECTORP2OP(op) VectorBase &operator op (const VectorBase &o)      {                 for(FXuint n=0; n<A; n++) Base::data[n] op o.data[n]; return *this; }
 #define VECTORFUNC(op) friend VectorBase op(const VectorBase &o)          { VectorBase ret; for(FXuint n=0; n<A; n++) ret.data[n]= Maths::op (o.data[n]); return ret; }
 #define VECTOR2FUNC(op) friend VectorBase op(const VectorBase &a, const VectorBase &b) { VectorBase ret; for(FXuint n=0; n<A; n++) ret.data[n]= op (a.data[n], b.data[n]); return ret; }
-		template<typename type, unsigned int A, class supertype, bool isInteger, typename SIMDType> class FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ VectorBase<type, A, supertype, true, isInteger, SIMDType> : private TwoPowerMemAligner<sizeof(type)*A>, public VectorBase<type, A, supertype, false, false, SIMDType>
+		template<typename type, unsigned int A, class supertype, bool isInteger, typename SIMDType> class VectorBase<type, A, supertype, true, isInteger, SIMDType> : private TwoPowerMemAligner<sizeof(type)*A>, public VectorBase<type, A, supertype, false, false, SIMDType>
 		{
 			typedef VectorBase<type, A, supertype, false, false, SIMDType> Base;
 		public:
@@ -539,7 +544,7 @@ namespace Maths {
 #if (defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))) || (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
 	// The x86 and x64 SSE specialisations
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=1) || (defined(__i386__) && defined(__SSE__))
-	template<> FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ class Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
+	template<> FXVECTOR_BUGGYGCCALIGNMENTHACK class Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
 		typedef float TYPE;
@@ -667,7 +672,7 @@ namespace Maths {
 	FXVECTOROFVECTORS(int_SSEOptimised_float4, 256);
 #endif
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=2) || (defined(__i386__) && defined(__SSE2__))
-	template<> FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ class Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
+	template<> FXVECTOR_BUGGYGCCALIGNMENTHACK class Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
 		typedef double TYPE;
@@ -816,7 +821,7 @@ namespace Maths {
 #define VECTORISZERO 65535==_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_setzero_si128(), a.v))
 #endif
 #define VECTORINTEGER(vint, vsize, sseending, signage1, signage2) \
-	template<> FXMEMALIGNED(16) /* Work around a bug in GCC < 4.3 */ class Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
+	template<> FXVECTOR_BUGGYGCCALIGNMENTHACK class Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
 	{ \
 	private: \
 		typedef Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> Base; \
@@ -1000,19 +1005,18 @@ VECTORINTEGER(FXint,    4)
 	Previous to v0.88 of TnFOX, this was a generic 64 bit implementation as
 	detailed at http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html. Since
 	v0.88, a SIMD-based improved version has been added (the old version is still
-	used instead on big-endian machines).
+	used instead on big-endian machines or x86 with no SSE).
 
 	You should be aware that each instance consumes about 2.5Kb of internal state
 	and thus shouldn't be copied around nor constructed & destructed repeatedly.
 	The old pre-v0.88 version could generate around 1Gb/sec of randomness on a
-	3.0Ghz Core 2 processor. The new SIMD version is no worse on both MSVC and
-	GCC but this is entirely due to compiler stupidity as ICC will yield around
-	1400Mb/sec!
+	3.0Ghz Core 2 processor. The new SIMD version can more than double that,
+	even more so again when compiled with Intel's C++ compiler.
 
 	\code
 	\endcode
 	*/
-#if FOX_BIGENDIAN
+#if FOX_BIGENDIAN || (defined(_M_IX86) && _M_IX86_FP==0) || (defined(__i386__) && !defined(__SSE__))
 	/*
    A C-program for MT19937-64 (2004/9/29 version).
    Coded by Takuji Nishimura and Makoto Matsumoto.
