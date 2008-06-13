@@ -170,7 +170,7 @@ namespace Maths {
 		template<> struct FXMEMALIGNED(1024) TwoPowerMemAligner<1024> { TwoPowerMemAligner() { assert(!((FXuval)this & 1023)); } };
 #elif defined(__GNUC__)
 #if __GNUC__<4 || (__GNUC__==4 && __GNUC_MINOR__<3)
-#warning Before v4.3 GCC won't allow selective structure alignment - FX::Maths::Vector will not be aligned!
+#warning Before v4.3 GCC will not allow selective structure alignment - FX::Maths::Vector will not be aligned!
 #define FXVECTOR_BUGGYGCCALIGNMENTHACK FXMEMALIGNED(16)
 #else
 		// GCC's alignment support on x86 and x64 is nearly useless
@@ -544,7 +544,7 @@ namespace Maths {
 #if (defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))) || (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
 	// The x86 and x64 SSE specialisations
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=1) || (defined(__i386__) && defined(__SSE__))
-	template<> FXVECTOR_BUGGYGCCALIGNMENTHACK class Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
+	template<> class FXVECTOR_BUGGYGCCALIGNMENTHACK Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
 		typedef float TYPE;
@@ -672,7 +672,7 @@ namespace Maths {
 	FXVECTOROFVECTORS(int_SSEOptimised_float4, 256);
 #endif
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=2) || (defined(__i386__) && defined(__SSE2__))
-	template<> FXVECTOR_BUGGYGCCALIGNMENTHACK class Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
+	template<> class FXVECTOR_BUGGYGCCALIGNMENTHACK Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
 		typedef double TYPE;
@@ -821,7 +821,7 @@ namespace Maths {
 #define VECTORISZERO 65535==_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_setzero_si128(), a.v))
 #endif
 #define VECTORINTEGER(vint, vsize, sseending, signage1, signage2) \
-	template<> FXVECTOR_BUGGYGCCALIGNMENTHACK class Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
+	template<> class FXVECTOR_BUGGYGCCALIGNMENTHACK Vector<vint, vsize> : public Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> \
 	{ \
 	private: \
 		typedef Impl::VectorBase<vint, vsize, Vector<vint, vsize>, true, true, __m128i> Base; \
