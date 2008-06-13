@@ -391,14 +391,15 @@ int main(int argc, char *argv[])
 						"-=-=-=-=-=-=-=-=-=-=-\n");
 			QFile utffile("../../UTF-16BE-demo.txt"), outfile("../BigFile.txt");
 			char buffer[32768], buffer2[32768];
-			FXuval read, written;
+			FXuval read, written, totalread=0;
 			utffile.open(IO_ReadOnly|IO_Translate);
-			outfile.open(IO_ReadWrite|IO_Translate);
+			outfile.open(IO_ReadWrite|IO_Truncate|IO_Translate);
 			do
 			{
-				read=utffile.readBlock(buffer, 64);
+				//memset(buffer, 0xff, sizeof(buffer));
+				totalread+=(read=utffile.readBlock(buffer, 64));
 				written=outfile.writeBlock(buffer, read);
-				//fxmessage("Read %u bytes, written %u bytes\n", (FXuint) read, (FXuint) written);
+				//fxmessage("Read %u bytes, written %u bytes, diff=%d\n", (FXuint) read, (FXuint) written, read!=written);
 			} while(read);
 			utffile.at(0);
 			outfile.at(0);
@@ -406,10 +407,12 @@ int main(int argc, char *argv[])
 			fxmessage("Read %u bytes from original\n", (FXuint) read);
 			written=outfile.readBlock(buffer2, sizeof(buffer2));
 			fxmessage("Read %u bytes from copy\n", (FXuint) written);
+			if(totalread!=read)
+				fxerror("FAILED: Segmented reads should yield identical length as block reads (%u vs %u)!\n", (FXuint) totalread, (FXuint) read);
 			if(read!=written)
-				fxmessage("FAILED: Source is not same file size as copy!\n");
+				fxerror("FAILED: Source is not same file size as copy!\n");
 			else if(memcmp(buffer, buffer2, read))
-				fxmessage("FAILED: Source is not same as copy!\n");
+				fxerror("FAILED: Source is not same as copy!\n");
 			else
 			{	// Stipple it
 				FXuval r;
@@ -421,22 +424,25 @@ int main(int argc, char *argv[])
 				{
 					r=(FXuval)(16ULL*rand()/RAND_MAX);
 					oldpos1=utffile.at(); oldpos2=outfile.at();
-					r=utffile.readBlock(buffer, r);
-					outfile.writeBlock(buffer, r);
+					read=utffile.readBlock(buffer, r);
+					written=outfile.writeBlock(buffer, read);
+					//fxmessage("Read %u bytes of %u, written %u bytes, diff=%d\n", (FXuint) read, (FXuint) r, (FXuint) written, read!=written);
 					if(rand()>RAND_MAX/2)
 					{
 						//fxmessage("Rewinding to %u, %u\n", (FXuint) oldpos1, (FXuint) oldpos2);
 						utffile.at(oldpos1); outfile.at(oldpos2);
 					}
-				} while(oldpos1<read);
+				} while(oldpos1<totalread);
 				utffile.at(0);
 				outfile.at(0);
 				read=utffile.readBlock(buffer, sizeof(buffer));
 				written=outfile.readBlock(buffer2, sizeof(buffer2));
+				if(totalread!=written)
+					fxerror("FAILED: Segmented writes should yield identical length as block reads (%u vs %u)!\n", (FXuint) totalread, (FXuint) written);
 				if(read!=written)
-					fxmessage("FAILED: Source is not same file size as copy!\n");
+					fxerror("FAILED: Source is not same file size as copy!\n");
 				else if(memcmp(buffer, buffer2, read))
-					fxmessage("FAILED: Source is not same as copy!\n");
+					fxerror("FAILED: Source is not same as copy!\n");
 				else
 					fxmessage("Test passed!\n");
 			}

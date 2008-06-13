@@ -1,4 +1,4 @@
-TnFOX v0.88 12th June 2008:
+TnFOX v0.88 13th June 2008:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas

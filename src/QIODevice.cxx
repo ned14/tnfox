@@ -350,8 +350,8 @@ FXuval QIODevice::removeCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRI
 		}
 
 		if(13==thischar)
-		{
-			if(i+thischarlen>=inputlen)
+		{	// Don't process if our block ends with a 13 (as a 10 may follow next block)
+			if(i+thischarlen*2>inputlen)
 				break;
 			if(10==nextchar)
 			{	// Gobble the next char
@@ -369,6 +369,7 @@ FXuval QIODevice::removeCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRI
 			output[o++]=thischar;
 		i+=thischarlen;
 	}
+	assert(i<=inputlen);
 	inputlen=i;
 	return o;
 }
