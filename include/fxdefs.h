@@ -214,6 +214,30 @@
 #pragma warning(disable: 4706)		// Assignment within conditional expression
 #endif
 
+// We need std::move et al for move semantics
+#include <utility>
+#ifdef HAVE_CPP0XRVALUEREFS
+// Helper macro for move-enabled subclasses
+#define FXADDMOVEBASECLASS(_class, _baseclass) \
+  _class (_class &&o) : _baseclass(std::forward<_baseclass>(o)) { } \
+  _class &&operator=(_class &&o) { _baseclass::operator=(std::forward<_baseclass>(o)); return *this; }
+// Helper macro for move-only subclasses
+#define FXMOVEBASECLASS(_class, _baseclass) \
+private: \
+  _class (const _class &); \
+  _class &operator=(const _class &); \
+public: \
+  FXADDMOVEBASECLASS(_class, _baseclass)
+#else
+#define FXADDMOVEBASECLASS(_class, _baseclass)
+#define FXMOVEBASECLASS(_class, _baseclass)
+namespace std
+{
+  template<class T> T &move(T &a) { return a; }
+  template<class T> T &move(const T &a) { return const_cast<T &>(a); }
+  template<class T, class A> T &forward(A &a) { return a; }
+}
+#endif
 
 // Checking printf and scanf format strings
 #if defined(_CC_GNU_) || defined(__GNUG__) || defined(__GNUC__)

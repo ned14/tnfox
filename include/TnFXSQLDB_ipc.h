@@ -26,6 +26,7 @@
 #include "TnFXSQLDB.h"
 #include "FXIPC.h"
 #include "QSSLDevice.h"
+#include <qptrvector.h>
 
 // Stop CopyCursor macro from WinUser.h mucking up the code
 #undef CopyCursor
@@ -92,20 +93,32 @@ namespace TnFXSQLDBIPCMsgsI
 			}
 		}
 #ifndef HAVE_CPP0XRVALUEREFS
+#ifdef HAVE_CONSTTEMPORARIES
 		DataContainer(const DataContainer &_o) : type(_o.type), mydata(_o.mydata)
 		{
 			DataContainer &o=const_cast<DataContainer &>(_o);
 #else
+		DataContainer(DataContainer &o) : type(o.type), mydata(o.mydata)
+		{
+#endif
+#else
 private:
 		DataContainer(const DataContainer &);	// disable copy constructor
 public:
-		DataContainer(DataContainer &&o) : type(o.type), mydata(o.mydata)
+		DataContainer(DataContainer &&o) : type(std::move(o.type)), mydata(std::move(o.mydata))
 		{
 #endif
 			data=o.data;
 			o.data.blob=0;
 		}
+#ifndef HAVE_CPP0XRVALUEREFS
 		DataContainer &operator=(const DataContainer &_o)
+#else
+private:
+		DataContainer &operator=(const DataContainer &_o);
+public:
+		DataContainer &&operator=(const DataContainer &&_o)
+#endif
 		{	// Moves
 			DataContainer &o=const_cast<DataContainer &>(_o);
 			type=o.type;
@@ -234,7 +247,14 @@ public:
 		FXuint flags;
 		DataContainer data;
 		ColumnData(FXuint _flags=0, TnFXSQLDB::SQLDataType datatype=TnFXSQLDB::Null)
-			: flags(_flags), data(datatype) { }
+			: flags(_flags), data(std::move(datatype)) { }
+#ifdef HAVE_CPP0XRVALUEREFS
+private:
+		ColumnData(const ColumnData &);	// disable copy constructor
+		ColumnData &operator=(const ColumnData &);
+public:
+		ColumnData(ColumnData &&o) : flags(std::move(o.flags)), data(std::move(o.data)) { }
+#endif
 		void copy(const ColumnData &o)
 		{
 			flags=o.flags;
@@ -344,14 +364,14 @@ public:
 		FXuint flags;
 		FXuint columns;
 		FXint rows;						// Can be -1 if unknown
-		QMemArray<ColumnData> *data;
+		QPtrVector<ColumnData> *data;
 		FXint rowsToGo;					// Rows to go after this batch of columns (can be -1)
 		PrepareStatementAck() : FXIPCMsg(0), stmth(0), cursh(0), flags(0), columns(0), rows(0), data(0), rowsToGo(0) { }
 		PrepareStatementAck(FXuint _id, FXuint _stmth, FXuint _cursh=0, FXuint _flags=0, FXuint _columns=0, FXint _rows=0)
 			: FXIPCMsg(id::code, _id), stmth(_stmth), cursh(_cursh), flags(_flags), columns(_columns), rows(_rows), data(0), rowsToGo(-1) { }
 		~PrepareStatementAck() { FXDELETE(data); }
 		void   endianise(FXStream &s) const { s << stmth << parNames << cursh; if(cursh) s << flags << columns << rows << *data << rowsToGo; }
-		void deendianise(FXStream &s)       { s >> stmth >> parNames >> cursh; if(cursh) { FXERRHM(data=new QMemArray<ColumnData>); s >> flags >> columns >> rows >> *data >> rowsToGo; } }
+		void deendianise(FXStream &s)       { s >> stmth >> parNames >> cursh; if(cursh) { FXERRHM(data=new QPtrVector<ColumnData>(true)); s >> flags >> columns >> rows >> *data >> rowsToGo; } }
 	};
 	// Unprepares a statement
 	struct UnprepareStatement : public FXIPCMsg
@@ -408,13 +428,13 @@ public:
 		FXuint flags;
 		FXuint columns;
 		FXint rows;						// Can be -1 if unknown
-		QMemArray<ColumnData> *data;
+		QPtrVector<ColumnData> *data;
 		FXint rowsToGo;					// Rows to go after this batch of columns (can be -1)
 		ExecuteAck(FXuint _id=0, FXuint _cursh=0, FXuint _flags=0, FXuint _columns=0, FXint _rows=0, FXint _rowsToGo=0)
 			: FXIPCMsg(id::code, _id), cursh(_cursh), flags(_flags), columns(_columns), rows(_rows), data(0), rowsToGo(_rowsToGo) { }
 		~ExecuteAck() { FXDELETE(data); }
 		void   endianise(FXStream &s) const { s << cursh; if(cursh) s << flags << columns << rows << *data << rowsToGo; }
-		void deendianise(FXStream &s)       { s >> cursh; if(cursh) { FXERRHM(data=new QMemArray<ColumnData>); s >> flags >> columns >> rows >> *data >> rowsToGo; } }
+		void deendianise(FXStream &s)       { s >> cursh; if(cursh) { FXERRHM(data=new QPtrVector<ColumnData>(true)); s >> flags >> columns >> rows >> *data >> rowsToGo; } }
 	};
 	// Closes a cursor
 	struct CloseCursor : public FXIPCMsg
@@ -446,13 +466,13 @@ public:
 	{
 		typedef FXIPCMsgChunkCodeAlloc<CloseCursor::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, RequestRowsAck> regtype;
-		QMemArray<ColumnData> *data;
+		QPtrVector<ColumnData> *data;
 		FXint rowsToGo;					// Rows to go after this batch of columns (can be -1)
 		RequestRowsAck(FXuint _id=0, FXint _rowsToGo=0)
 			: FXIPCMsg(id::code, _id), data(0), rowsToGo(_rowsToGo) { }
 		~RequestRowsAck() { FXDELETE(data); }
 		void   endianise(FXStream &s) const { s << *data << rowsToGo; }
-		void deendianise(FXStream &s)       { FXERRHM(data=new QMemArray<ColumnData>); s >> *data >> rowsToGo; }
+		void deendianise(FXStream &s)       { FXERRHM(data=new QPtrVector<ColumnData>(true)); s >> *data >> rowsToGo; }
 	};
 	// Request the types of the results
 	struct RequestColTypes : public FXIPCMsg
@@ -493,12 +513,12 @@ public:
 	{
 		typedef FXIPCMsgChunkCodeAlloc<RequestColTypes::id::nextcode, false> id;
 		typedef FXIPCMsgRegister<id, RequestColHeadersAck> regtype;
-		QMemArray<ColumnData> *data;
+		QPtrVector<ColumnData> *data;
 		RequestColHeadersAck(FXuint _id=0)
 			: FXIPCMsg(id::code, _id), data(0) { }
 		~RequestColHeadersAck() { FXDELETE(data); }
 		void   endianise(FXStream &s) const { s << *data; }
-		void deendianise(FXStream &s)       { FXERRHM(data=new QMemArray<ColumnData>); s >> *data; }
+		void deendianise(FXStream &s)       { FXERRHM(data=new QPtrVector<ColumnData>(true)); s >> *data; }
 	};
 	// Copies a cursor
 	struct CopyCursor : public FXIPCMsg
@@ -756,7 +776,7 @@ class FXSQLMODULEAPI TnFXSQLDB_ipc : public TnFXSQLDB, public FXIPCChannelIndire
 		FXERRHM(ia=new msgacktype);
 		if(dest) { FXERRHM(destref=new FXRefingObject<reprtype>(dest)); }
 		sendMsg(PtrPtr(ia), i, 0);
-		addAsyncMsg(PtrPtr(ia), i, PtrPtr(destref), &delRef<FXRefingObject<reprtype> >, handler, msgacktype::regtype::delMsg, msgtype::regtype::delMsg);
+		addAsyncMsg(PtrPtr(ia), i, PtrPtr(destref), &delRef<FXRefingObject<reprtype> >, std::move(handler), msgacktype::regtype::delMsg, msgtype::regtype::delMsg);
 		PtrRelease(ia);
 		PtrRelease(destref);
 	}

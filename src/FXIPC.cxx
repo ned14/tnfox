@@ -647,7 +647,7 @@ void FXIPCChannel::installPreMsgReceivedFilter(FXIPCChannel::MsgFilterSpec filte
 {
 	QMtxHold h(this);
 	MsgFilterSpec *mf;
-	FXERRHM(mf=new MsgFilterSpec(filter));
+	FXERRHM(mf=new MsgFilterSpec(std::move(filter)));
 	FXRBOp unnew=FXRBNew(mf);
 	p->premsgfilters.append(mf);
 	unnew.dismiss();

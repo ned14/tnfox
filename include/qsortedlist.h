@@ -58,6 +58,7 @@ public:
 	~QSortedList()				{ clear(); }
 	QSortedList<type> &operator=(const QSortedList<type> &l)
 			{ return (QSortedList<type>&)QPtrList<type>::operator=(l); }
+	FXADDMOVEBASECLASS(QSortedList, QPtrList<type>)
 	bool operator==( const QSortedList<type> &list ) const
 	{ return QPtrList<type>::operator==( list ); }
 

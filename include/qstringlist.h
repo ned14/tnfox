@@ -42,6 +42,7 @@ class QStringList : public QValueList<FXString>
 public:
 	QStringList() : QValueList<FXString>() { }
 	QStringList(const QStringList &l) : QValueList<FXString>(l) { }
+	FXADDMOVEBASECLASS(QStringList, QValueList<FXString>)
 	FXString &operator[](size_type i) { return *at(i); }
 	const FXString &operator[](size_type i) const { return *at(i); }
 	QStringList &operator+=(const FXString &d) { QValueList<FXString>::operator+=(d); return *this; }

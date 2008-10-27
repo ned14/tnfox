@@ -71,6 +71,7 @@ public:
 	explicit QPtrList(bool wantAutoDel=false) : autodel(wantAutoDel), std::list<type *>() {}
 	explicit QPtrList(std::list<type *> &l) : autodel(false), std::list<type *>(l) {}
 	~QPtrList()	{ clear(); }
+	FXADDMOVEBASECLASS(QPtrList, std::list<type *>)
 	//! Returns if auto-deletion is enabled
 	bool autoDelete() const { return autodel; }
 	//! Sets if auto-deletion is enabled
@@ -563,10 +564,18 @@ public:
 #endif
 		std::list<type *>::splice(std::list<type *>::begin(), o, o.begin(), o.end());
 	}
+#ifndef HAVE_CPP0XRVALUEREFS
 	QQuickList &operator=(QQuickList &o)
+#else
+private:
+	QQuickList &operator=(QQuickList &o);
+public:
+	QQuickList &&operator=(QQuickList &&o)
+#endif
 	{
 		clear();
 		std::list<type *>::splice(std::list<type *>::begin(), o, o.begin(), o.end());
+		return *this;
 	}
 	//! Destructively copies a FX::QPtrList very quickly
 #ifndef HAVE_CPP0XRVALUEREFS

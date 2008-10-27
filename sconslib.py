@@ -318,7 +318,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     else:
         env['CPPDEFINES']+=[("FOX_BIGENDIAN",0)]
     if confA.CheckCPP0x_N1720(): env['CPPDEFINES']+=["HAVE_CPP0XSTATICASSERT"]
-    if confA.CheckCPP0x_N2118(): pass # Disabled for now # env['CPPDEFINES']+=["HAVE_CPP0XRVALUEREFS"]
+    if confA.CheckCPP0x_N2118(): env['CPPDEFINES']+=["HAVE_CPP0XRVALUEREFS", "__GXX_EXPERIMENTAL_CXX0X__"]
     env=confA.Finish()
     del confA
 

@@ -59,6 +59,7 @@ template<class type> class QValueList : public std::list<type>
 public:
 	QValueList() : std::list<type>() { }
 	QValueList(const std::list<type> &l) : std::list<type>(l) { }
+	FXADDMOVEBASECLASS(QValueList, std::list<type>)
 	void remove(const type &d) { std::list<type>::remove(d); }
 	uint removeAllOf(const type &d)
 	{

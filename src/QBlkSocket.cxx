@@ -294,7 +294,7 @@ QBlkSocket::QBlkSocket(QBlkSocket &o) : p(o.p), QIODeviceS(o)
 {
 #endif
 #else
-QBlkSocket::QBlkSocket(QBlkSocket &&o) : p(o.p), QIODeviceS(o)
+QBlkSocket::QBlkSocket(QBlkSocket &&o) : p(std::move(o.p)), QIODeviceS(std::forward<QIODeviceS>(o))
 {
 #endif
 	o.p=0;

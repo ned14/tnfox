@@ -754,7 +754,7 @@ struct CreationUpcall
 {
 	QThread::CreationUpcallSpec upcallv;
 	bool inThread;
-	CreationUpcall(QThread::CreationUpcallSpec &_upcallv, bool _inThread) : upcallv(_upcallv), inThread(_inThread) { }
+	CreationUpcall(QThread::CreationUpcallSpec _upcallv, bool _inThread) : upcallv(std::move(_upcallv)), inThread(_inThread) { }
 };
 static QMutex creationupcallslock;
 static QPtrList<CreationUpcall> creationupcalls(true);
@@ -1615,7 +1615,7 @@ void QThread::addCreationUpcall(QThread::CreationUpcallSpec upcallv, bool inThre
 {
 	QMtxHold h(creationupcallslock);
 	CreationUpcall *cu;
-	FXERRHM(cu=new CreationUpcall(upcallv, inThread));
+	FXERRHM(cu=new CreationUpcall(std::move(upcallv), inThread));
 	FXRBOp unnew=FXRBNew(cu);
 	creationupcalls.append(cu);
 	unnew.dismiss();

@@ -91,6 +91,7 @@ public:
 	QMemArray(type *a, uint n, bool _noDeleteExtArray=true) : extArray(a), extArrayLen(n), noDeleteExtArray(_noDeleteExtArray) { }
 	QMemArray(const QMemArray<type> &o) : extArray(o.extArray), extArrayLen(o.extArrayLen), noDeleteExtArray(o.noDeleteExtArray), std::vector<type>(o) { }
 	QMemArray<type> &operator=(const QMemArray<type> &o) { extArray=o.extArray; extArrayLen=o.extArrayLen; noDeleteExtArray=o.noDeleteExtArray; std::vector<type>::operator=(o); return *this; }
+	FXADDMOVEBASECLASS(QMemArray, std::vector<type>)
 
 	using std::vector<type>::capacity;
 	//using std::vector<type>::clear;

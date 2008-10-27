@@ -84,8 +84,10 @@ public:
 #else
 private:
 	QTransString(const QTransString &);	// disable copy constructor
+	QTransString &operator=(const QTransString &);
 public:
 	QTransString(QTransString &&o);
+	QTransString &&operator=(QTransString &&o);
 #endif
 	~QTransString();
 	/*! Inserts an argument into the lowest numbered %x. Specifying a negative number

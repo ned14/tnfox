@@ -672,12 +672,13 @@ public:
 #else
 private:
 	lockedAccessor(const lockedAccessor &);	// disable copy constructor
+	lockedAccessor &operator=(const lockedAccessor &_o);
 public:
 	lockedAccessor(lockedAccessor &&o) : h(o.h), val(o.val)
 	{
 		o.h=0;
 	}
-	lockedAccessor &operator=(lockedAccessor &&o)
+	lockedAccessor &&operator=(lockedAccessor &&o)
 	{
 		this->~lockedAccessor();
 		return *new(this) lockedAccessor(o);

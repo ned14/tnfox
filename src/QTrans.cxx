@@ -300,7 +300,7 @@ QTransString::QTransString(QTransString &o) : p(o.p)
 {
 #endif
 #else
-QTransString::QTransString(QTransString &&o) : p(o.p)
+QTransString::QTransString(QTransString &&o) : p(std::move(o.p))
 {
 #endif
 	// Assume that since only QTrans can create that it's always a destructive copy
@@ -317,7 +317,8 @@ QTransString &QTransString::operator=(QTransString &o)
 {
 #endif
 #else
-#error Unsure what to do here
+QTransString &&QTransString::operator=(QTransString &&o)
+{
 #endif
 	FXDELETE(p);
 	p=o.p;
@@ -463,7 +464,7 @@ public:
 #else
 	DataInfo(DataInfo &&o)
 #endif
-		: dev(o.dev), gzipdev(o.gzipdev), amBuffer(o.amBuffer), buffer(o.buffer), len(o.len)
+		: dev(std::move(o.dev)), gzipdev(std::move(o.gzipdev)), amBuffer(std::move(o.amBuffer)), buffer(std::move(o.buffer)), len(std::move(o.len))
 	{
 		DataInfo *other=(DataInfo *) &o;
 		other->dev=0; other->gzipdev=0; other->amBuffer=false; other->buffer=0; other->len=0;

@@ -37,43 +37,45 @@ namespace FX {
 */
 template<class type> class QPtrDict : public QDictBase<FXuval, type>
 {
+	typedef QDictBase<FXuval, type> Base;
 	FXuval conv(void *v) const
 	{
 		return reinterpret_cast<FXuval>(v);
 	}
 public:
 	//! Creates a hash table indexed by void pointers. Choose a prime for \em size
-	explicit QPtrDict(int size=13, bool wantAutoDel=false) : QDictBase<FXuval, type>(size, wantAutoDel) { }
-	~QPtrDict() { QDictBase<FXuval, type>::clear(); }
+	explicit QPtrDict(int size=13, bool wantAutoDel=false) : Base(size, wantAutoDel) { }
+	~QPtrDict() { Base::clear(); }
+	FXADDMOVEBASECLASS(QPtrDict, Base)
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(void *k, const type *d)
 	{
 		FXuval k_=conv(k);
-		QDictBase<FXuval, type>::insert((FXuint) k_, k_, const_cast<type *>(d));
+		Base::insert((FXuint) k_, k_, const_cast<type *>(d));
 	}
 	//! Replaces item \em d in the dictionary under key \em k
 	void replace(void *k, const type *d)
 	{
 		FXuval k_=conv(k);
-		QDictBase<FXuval, type>::replace((FXuint) k_, k_, const_cast<type *>(d));
+		Base::replace((FXuint) k_, k_, const_cast<type *>(d));
 	}
 	//! Deletes the most recently placed item in the dictionary under key \em k
 	bool remove(void *k)
 	{
 		FXuval k_=conv(k);
-		return QDictBase<FXuval, type>::remove((FXuint) k_, k_);
+		return Base::remove((FXuint) k_, k_);
 	}
 	//! Removes the most recently placed item in the dictionary under key \em k without auto-deletion
 	type *take(void *k)
 	{
 		FXuval k_=conv(k);
-		return QDictBase<FXuval, type>::take((FXuint) k_, k_);
+		return Base::take((FXuint) k_, k_);
 	}
 	//! Finds the most recently placed item in the dictionary under key \em k
 	type *find(void *k) const
 	{
 		FXuval k_=conv(k);
-		return QDictBase<FXuval, type>::find((FXuint) k_, k_);
+		return Base::find((FXuint) k_, k_);
 	}
 	//! \overload
 	type *operator[](void *k) const { return find(k); }
@@ -83,7 +85,7 @@ protected:
 
 template<class type> inline void QPtrDict<type>::deleteItem(type *d)
 {
-	if(QDictBase<FXuval, type>::autoDelete())
+	if(Base::autoDelete())
 	{
 		//fxmessage("QDB delete %p\n", d);
 		delete d;

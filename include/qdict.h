@@ -68,6 +68,7 @@ whether to do a case insensitive comparison :(
 */
 template<class type> class QDict : public QDictBase<FXString, type>
 {
+	typedef QDictBase<FXString, type> Base;
 	bool checkcase;
 	FXuint hash(const FXString &str) const
 	{	// Fast hash as QDictBase does its own hashing
@@ -85,11 +86,12 @@ public:
 	enum { HasSlowKeyCompare=true };
 	//! Creates a hash table indexed by FXString's. Choose a prime for \em size
 	explicit QDict(int size=13, bool caseSensitive=true, bool wantAutoDel=false)
-		: checkcase(caseSensitive), QDictBase<FXString, type>(size, wantAutoDel)
+		: checkcase(caseSensitive), Base(size, wantAutoDel)
 	{
 	}
-	QDict(const QDict<type> &o) : checkcase(o.checkcase), QDictBase<FXString, type>(o) { }
-	~QDict() { QDictBase<FXString, type>::clear(); }
+	QDict(const QDict<type> &o) : checkcase(o.checkcase), Base(o) { }
+	~QDict() { Base::clear(); }
+	FXADDMOVEBASECLASS(QDict, Base)
 	//! Returns if case sensitive key comparisons is enabled
 	bool caseSensitive() const throw() { return checkcase; }
 	//! Sets if case sensitive key comparisons is enabled
@@ -98,60 +100,60 @@ public:
 	void insert(const FXString &k, const type *d)
 	{
 		if(checkcase)
-			QDictBase<FXString, type>::insert(hash(k), k, const_cast<type *>(d));
+			Base::insert(hash(k), k, const_cast<type *>(d));
 		else
 		{
 			FXString key(k);
 			key.lower();
-			QDictBase<FXString, type>::insert(hash(key), key, const_cast<type *>(d));
+			Base::insert(hash(key), key, const_cast<type *>(d));
 		}
 	}
 	//! Replaces item \em d in the dictionary under key \em k
 	void replace(const FXString &k, const type *d)
 	{
 		if(checkcase)
-			QDictBase<FXString, type>::replace(hash(k), k, const_cast<type *>(d));
+			Base::replace(hash(k), k, const_cast<type *>(d));
 		else
 		{
 			FXString key(k);
 			key.lower();
-			QDictBase<FXString, type>::replace(hash(key), key, const_cast<type *>(d));
+			Base::replace(hash(key), key, const_cast<type *>(d));
 		}
 	}
 	//! Deletes the most recently placed item in the dictionary under key \em k
 	bool remove(const FXString &k)
 	{
 		if(checkcase)
-			return QDictBase<FXString, type>::remove(hash(k), k);
+			return Base::remove(hash(k), k);
 		else
 		{
 			FXString key(k);
 			key.lower();
-			return QDictBase<FXString, type>::remove(hash(key), key);
+			return Base::remove(hash(key), key);
 		}
 	}
 	//! Removes the most recently placed item in the dictionary under key \em k without auto-deletion
 	type *take(const FXString &k)
 	{
 		if(checkcase)
-			return QDictBase<FXString, type>::take(hash(k), k);
+			return Base::take(hash(k), k);
 		else
 		{
 			FXString key(k);
 			key.lower();
-			return QDictBase<FXString, type>::take(hash(key), key);
+			return Base::take(hash(key), key);
 		}
 	}
 	//! Finds the most recently placed item in the dictionary under key \em k
 	type *find(const FXString &k) const
 	{
 		if(checkcase)
-			return QDictBase<FXString, type>::find(hash(k), k);
+			return Base::find(hash(k), k);
 		else
 		{
 			FXString key(k);
 			key.lower();
-			return QDictBase<FXString, type>::find(hash(key), key);
+			return Base::find(hash(key), key);
 		}
 	}
 	//! \overload
@@ -162,7 +164,7 @@ protected:
 
 template<class type> inline void QDict<type>::deleteItem(type *d)
 {
-	if(QDictBase<FXString, type>::autoDelete())
+	if(Base::autoDelete())
 	{
 		//fxmessage("QDB delete %p\n", d);
 		delete d;

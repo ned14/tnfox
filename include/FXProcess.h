@@ -219,7 +219,14 @@ public:
 			o.h=0;
 		}
 		~dllHandle() { if(h) dllUnload(*this); }
+#ifndef HAVE_CPP0XRVALUEREFS
 		dllHandle &operator=(dllHandle &o)
+#else
+private:
+		dllHandle &operator=(dllHandle &o);
+public:
+		dllHandle &&operator=(dllHandle &&o)
+#endif
 		{
 			if(h)
 			{

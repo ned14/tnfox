@@ -1556,12 +1556,16 @@ public:
 private:
 	Functor(const Functor &);		// disable copy constructor
 public:
-	Functor(Functor &&o) : fnimpl(o.fnimpl)
+	Functor(Functor &&o) : fnimpl(std::move(o.fnimpl))
 	{
 #endif
 		o.fnimpl=0;
 	}
+#ifndef HAVE_CPP0XRVALUEREFS
 	Functor &operator=(Functor &o)
+#else
+	Functor &&operator=(Functor &&o)
+#endif
 	{
 		FXDELETE(fnimpl);
 		fnimpl=o.fnimpl;

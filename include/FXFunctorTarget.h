@@ -69,7 +69,7 @@ public:
 	};
 	FXFunctorTarget() {}
 	//! Constructs a messaging target calling \em functor
-	FXFunctorTarget(MsgHandlerSpec functor) : handler(functor) { }
+	FXFunctorTarget(MsgHandlerSpec functor) : handler(std::move(functor)) { }
 	//! Returns the functor called
 	const MsgHandlerSpec &functor() const { return handler; }
 	//! Sets the functor called

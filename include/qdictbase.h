@@ -111,6 +111,14 @@ public:
 		autodel=o.autodel; dict=o.dict; items=o.items; mysize=o.mysize; inserts=o.inserts; lookups=o.lookups;
 		return (*this);
 	}
+#ifdef HAVE_CPP0XRVALUEREFS
+	QDictBase(const QDictBase<keytype, type> &&o) : autodel(std::move(o.autodel)), dict(std::move(o.dict)), items(std::move(o.items)), mysize(std::move(o.mysize)), inserts(std::move(o.inserts)), lookups(std::move(o.lookups)) { }
+	QDictBase<keytype, type> &&operator=(const QDictBase<keytype, type> &&o)
+	{
+		autodel=std::move(o.autodel); dict=std::move(o.dict); items=std::move(o.items); mysize=std::move(o.mysize); inserts=std::move(o.inserts); lookups=std::move(o.lookups);
+		return (*this);
+	}
+#endif
 	//! Returns if auto-deletion is enabled
 	bool autoDelete() const { return autodel; }
 	//! Sets if auto-deletion is enabled

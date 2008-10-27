@@ -441,7 +441,11 @@ FXException FXException::copy() const
 }
 #endif
 
+#ifndef HAVE_CPP0XRVALUEREFS
 FXException &FXException::operator=(FXException &o)
+#else
+FXException &&FXException::operator=(FXException &&o)
+#endif
 {
 	FXDELETE(p);
 	p=o.p;

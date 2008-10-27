@@ -183,8 +183,7 @@ void QChildProcess::detach()
 {
 	if(!p->detached && isOpen())
 	{
-		FXProcess::FatalExitUpcallSpec kc(this, &QChildProcess::int_killChildI);
-		FXProcess::removeFatalExitUpcall(kc);
+		FXProcess::removeFatalExitUpcall(std::move(FXProcess::FatalExitUpcallSpec(this, &QChildProcess::int_killChildI)));
 		p->detached=true;
 	}
 }
@@ -390,8 +389,7 @@ bool QChildProcess::open(FXuint mode)
 		}
 		setFlags((mode & IO_ModeMask)|IO_Open);
 		p->detached=false;
-		FXProcess::FatalExitUpcallSpec kc(this, &QChildProcess::int_killChildI);
-		FXProcess::addFatalExitUpcall(kc);
+		FXProcess::addFatalExitUpcall(std::move(FXProcess::FatalExitUpcallSpec(this, &QChildProcess::int_killChildI)));
 	}
 	return true;
 }

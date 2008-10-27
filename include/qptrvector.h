@@ -75,6 +75,7 @@ public:
 	explicit QPtrVector(bool wantAutoDel=false) : autodel(wantAutoDel), std::vector<type *>() {}
 	explicit QPtrVector(std::vector<type *> &l) : autodel(false), std::vector<type *>(l) {}
 	~QPtrVector()	{ clear(); }
+	FXADDMOVEBASECLASS(QPtrVector, std::vector<type *>)
 	//! Returns if auto-deletion is enabled
 	bool autoDelete() const { return autodel; }
 	//! Sets if auto-deletion is enabled
@@ -311,7 +312,7 @@ public:
 	//! Returns the last item in the list
 	type *last() { return std::vector<type *>::empty() ? 0 : std::vector<type *>::back(); }
 	//! Compares two items (used by many methods above). Default returns -1 if a < b, +1 if a > b and 0 if a==b
-    virtual int compareItems(type *a, type *b) const { return (a<b) ? -1 : (a==b) ? 0 : -1; }
+	virtual int compareItems(type *a, type *b) const { return (a<b) ? -1 : (a==b) ? 0 : -1; }
 
 	typename std::vector<type *> &int_vector() { return static_cast<std::vector<type *> &>(*this); }
 	typename std::vector<type *>::iterator int_begin() { return std::vector<type *>::begin(); }

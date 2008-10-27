@@ -124,7 +124,7 @@ struct FXFSMon : public QMutex
 				Path *parent;
 				FXFSMonitor::ChangeHandler handler;
 				QPtrList<void> callvs;
-				Handler(Path *_parent, FXFSMonitor::ChangeHandler _handler) : parent(_parent), handler(_handler) { }
+				Handler(Path *_parent, FXFSMonitor::ChangeHandler _handler) : parent(_parent), handler(std::move(_handler)) { }
 				~Handler();
 				void invoke(const QValueList<Change> &changes, QThreadPool::handle callv);
 			private:
@@ -721,7 +721,7 @@ void FXFSMon::add(const FXString &path, FXFSMonitor::ChangeHandler handler)
 		unnew.dismiss();
 	}
 	Watcher::Path::Handler *h;
-	FXERRHM(h=new Watcher::Path::Handler(p, handler));
+	FXERRHM(h=new Watcher::Path::Handler(p, std::move(handler)));
 	FXRBOp unh=FXRBNew(h);
 	p->handlers.append(h);
 	unh.dismiss();
@@ -776,7 +776,7 @@ void FXFSMonitor::add(const FXString &_path, FXFSMonitor::ChangeHandler handler)
 		fxfsmon->nofam=false;
 	}
 #endif
-	fxfsmon->add(path, handler);
+	fxfsmon->add(path, std::move(handler));
 }
 
 bool FXFSMonitor::remove(const FXString &path, FXFSMonitor::ChangeHandler handler)
@@ -784,7 +784,7 @@ bool FXFSMonitor::remove(const FXString &path, FXFSMonitor::ChangeHandler handle
 #ifdef USE_FAM
 	if(fxfsmon->nofam) return false;
 #endif
-	return fxfsmon->remove(path, handler);
+	return fxfsmon->remove(path, std::move(handler));
 }
 
 }

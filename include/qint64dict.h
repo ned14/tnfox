@@ -38,35 +38,37 @@ namespace FX {
 */
 template<class type> class QInt64Dict : public QDictBase<FXlong, type>
 {
+	typedef QDictBase<FXlong, type> Base;
 	inline FXuint hash(FXlong k) const throw() { return (FXuint)((k>>32)^(k & 0xffffffff)); }
 public:
 	//! Creates a hash table indexed by FXlong's. Choose a prime for \em size
-	explicit QInt64Dict(int size=13, bool wantAutoDel=false) : QDictBase<FXlong, type>(size, wantAutoDel) { }
-	~QInt64Dict() { QDictBase<FXlong, type>::clear(); }
+	explicit QInt64Dict(int size=13, bool wantAutoDel=false) : Base(size, wantAutoDel) { }
+	~QInt64Dict() { Base::clear(); }
+	FXADDMOVEBASECLASS(QInt64Dict, Base)
 	//! Inserts item \em d into the dictionary under key \em k
 	void insert(FXlong k, const type *d)
 	{
-		QDictBase<FXlong, type>::insert(hash(k), k, const_cast<type *>(d));
+		Base::insert(hash(k), k, const_cast<type *>(d));
 	}
 	//! Replaces item \em d in the dictionary under key \em k
 	void replace(FXlong k, const type *d)
 	{
-		QDictBase<FXlong, type>::replace(hash(k), k, const_cast<type *>(d));
+		Base::replace(hash(k), k, const_cast<type *>(d));
 	}
 	//! Deletes the most recently placed item in the dictionary under key \em k
 	bool remove(FXlong k)
 	{
-		return QDictBase<FXlong, type>::remove(hash(k), k);
+		return Base::remove(hash(k), k);
 	}
 	//! Removes the most recently placed item in the dictionary under key \em k without auto-deletion
 	type *take(FXlong k)
 	{
-		return QDictBase<FXlong, type>::take(hash(k), k);
+		return Base::take(hash(k), k);
 	}
 	//! Finds the most recently placed item in the dictionary under key \em k
 	type *find(FXlong k) const
 	{
-		return QDictBase<FXlong, type>::find(hash(k), k);
+		return Base::find(hash(k), k);
 	}
 	//! \overload
 	type *operator[](FXlong k) const { return find(k); }
@@ -76,7 +78,7 @@ protected:
 
 template<class type> inline void QInt64Dict<type>::deleteItem(type *d)
 {
-	if(QDictBase<FXlong, type>::autoDelete())
+	if(Base::autoDelete())
 	{
 		//fxmessage("QDB delete %p\n", d);
 		delete d;

@@ -90,8 +90,7 @@ static struct SecureHeapInit : public QMutex
 	}
 	SecureHeapInit() : pageSizeM1(FXProcess::pageSize()-1)
 	{
-		FXProcess::FatalExitUpcallSpec wh(wipeHeap);
-		FXProcess::addFatalExitUpcall(wh);
+		FXProcess::addFatalExitUpcall(std::move(FXProcess::FatalExitUpcallSpec(wipeHeap)));
 	}
 	inline void lock(void *ptr, FXuval size)
 	{

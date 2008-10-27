@@ -50,6 +50,7 @@ public:
 	QByteArray(FXuval size) : QMemArray<unsigned char>(size) { }
 	//! Constructs an array using an external array
 	QByteArray(unsigned char *a, uint n, bool noDeleteExtArray=true) : QMemArray<unsigned char>(a, n, noDeleteExtArray) { }
+	FXADDMOVEBASECLASS(QByteArray, QMemArray<unsigned char>)
 };
 
 } // namespace

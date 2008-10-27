@@ -2349,7 +2349,7 @@ void FXProcess::overrideScreenSize(FXint w, FXint h)
 void FXProcess::addFatalExitUpcall(FXProcess::FatalExitUpcallSpec upcallv)
 {
 	FatalExitUpcallSpec *cu;
-	FXERRHM(cu=new FatalExitUpcallSpec(upcallv));
+	FXERRHM(cu=new FatalExitUpcallSpec(std::move(upcallv)));
 	FXRBOp unnew=FXRBNew(cu);
 	if(!exitupcalls)
 	{
