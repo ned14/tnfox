@@ -5,6 +5,8 @@ B (1080) TnFXSQLDBIPCMsgsI::ColumnData was being used inside a vector<> when
 it has move only semantics
 B (1081) QFileInfo::baseName() was returning one character too few. Thanks to CK
 for reporting this.
+B (1082) Copied fix from recent dlmalloc into nedmalloc - under high load bit
+pinning was being corrupted on multiprocessor machines
 
 + (1080) Fixed implementation of move semantics for C++0x compilers. Added move
 semantics to all container classes in TnFOX
