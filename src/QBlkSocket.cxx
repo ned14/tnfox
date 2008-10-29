@@ -529,7 +529,7 @@ void QBlkSocket::setLingerPeriod(FXint period)
 	{
 		struct linger l;
 		l.l_onoff=period>=0;
-		l.l_linger=(u_short) period;
+		l.l_linger=(unsigned short) period;
 		FXERRH(Stream==p->type, "Only available for stream sockets", QBLKSOCKET_NOTSTREAM, 0);
 		FXERRHSKT(::setsockopt(p->handle, SOL_SOCKET, SO_LINGER, (char *) &l, sizeof(l)));
 	}
@@ -810,7 +810,7 @@ bool QBlkSocket::reset()
 FXfval QBlkSocket::size() const
 {
 	QMtxHold h(p);
-	u_long waiting=0;
+	unsigned long waiting=0;
 	if(isOpen())
 	{
 		QThread_DTHold dth;

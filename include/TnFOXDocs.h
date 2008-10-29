@@ -2230,27 +2230,37 @@ code which uses one of the new keywords as a variable name will cease to compile
 and additionally some constructs will need reworking to function correctly.
 
 However, the benefits are many and huge. TnFOX has implemented move semantics
-for quite a few classes where it made sense since its inception. MSVC made this
-ok-ish through allowing non-const constructors which had to be hacked around
-in GCC (always praying that the optimiser wouldn't remove the move construst).
-The GCC implementation was effectively illegal and just worked by luck. Enabling
+for quite a few classes where it made sense since its inception, but it has always
+been a nasty hack which technically broke the ISO C++ coding standards - the fact
+it worked at all was more luck than design though of course it was and is a very
+common hack. MSVC had particular support through allowing non-const constructors
+which had to be implemented in GCC by deconsting the copy constructor parameter
+(always praying that the optimiser wouldn't remove the move construst). Enabling
 the C++0x semantics finally fixes this, and furthermore lets the optimiser know
-what's going on which should help greatly. The move semantics in TnFOX always
-operated on a pointer, so speed increases will be nil - however, once C++0x
-support is added to the STL containers, some operations on value copy items will
-be immensely faster.
-
+what's going on which should help greatly - in particular, we finally have proper
+syntax support for move-only objects and the compiler will correctly barf if you
+try something stupid. The move semantics in TnFOX always
+operated on a pointer, so speed increases in TnFOX only code will be nil - however,
+all the STL containers now have move support which makes all the Qt thunk
+emulations considerably quicker when working with value items. You need of course
+to add your own rvalue copy constructors in order to avail of move semantics -
+the STL and Qt thunk classes will default to normal lvalue copy constructors.
+ 
 As of v0.88 of TnFOX, the following C++0x features have been implemented. This
 list is limited by what the latest GCC has implemented:
 <ol>
 <li>Move constructors using rvalue references (N2118) have been implemented in
 most of the class objects which might end up in a container have move
-constructors where possible.
+constructors where possible. All Qt thunk classes and anything which can act
+as a container will use move construction where possible.
 <li>FXSTATIC_ASSERT() will use the new \c static_assert() function (N1720).
 This greatly improves error message reporting.
 <li>FX::FXException will use the new \c __func__ meta-variable (N2340) in error
 reporting.
 </ol>
+I would just love to add template typedefs and variadic template arguments, and
+they will come eventually outside rvalue support. For now, enjoy the performance
+increases and let me know if I have broken anything!
 */
 
 
@@ -2258,17 +2268,17 @@ reporting.
 
 /*! \page applemacosnotes Apple MacOS X specific notes
 
-<h3>WARNING: Last tested for TnFOX v0.87. Some things may have changed since</h3>
-
 This covers the rather special Unix variant that is Apple MacOS X. You'll need
 XCode installed along with the Apple X11 implementation plus at least scons
-v0.96.1 (which added MacOS X support).
+v0.96.1 (which added MacOS X support). v0.88.1 was tested on 10.5.4, XCode 3.1.1
+and scons v1.1.0.
 
 This page doesn't duplicate what's already said in \ref unixnotes so you should
-also read that.
+also read that. The very good news is that 10.5 is much improved over 10.4 thanks
+to much improved POSIX compatibility.
 
 \section supported Supported configuration:
-TnFOX was developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
+TnFOX was originally developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
 only. The PowerPC build has however been tested on x86 via Rosetta and appears to
 work just fine.
 
@@ -2288,18 +2298,16 @@ Merging code to be added later
 \endcode
 
 \section config Directory configuration:
-Unlike most Unices, MacOS X is missing libraries for JPEG, PNG and TIFF. You can
-download a \c /usr/local tree containing these from the TnFOX homepage after which
+Unlike most Unices, MacOS X is missing libraries for JPEG, PNG and TIFF. Ideally you should
+install macports or fink and have these added - I personally had to manually hack
+them into \c /usr/local because scons wouldn't find them anywhere else. Failing this,
+you can download a \c /usr/local tree containing these from the TnFOX homepage after which
 these libraries will be found and used.
 
-\section problems Problems:
+\section problems Problems with 10.4.x:
 \li Apple's X11 implementation provides Xft support, but will return no fonts available.
 Run 'sudo fc-cache' to fix this problem.
-\li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
-is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
-In particular, they won't monitor non-HFS partitions, so if you try running TestFSMonitor
-from a FAT partition, it will fail.
-\li MacOS X has shitty support for thread cancellation. It is inconsistent, unreliable,
+\li MacOS X 10.4 has shitty support for thread cancellation. It is inconsistent, unreliable,
 and generally downright buggy. In particular, it does not support thread cancellation
 during select(). This is a major problem for TnFOX as the POSIX threads spec says it
 should be, so TnFOX emulates correct behaviour using an internal per-thread pipe to
@@ -2314,6 +2322,12 @@ it's supposed to do.
 Specifically, because TnFOX sets \c XInitThreads(), the OpenGL code hangs in the internally
 called \c XLockDisplay(). If you really need OpenGL working, you will have to comment
 out this call in \c FXApp.cpp.
+ 
+\section problems Problems with 10.5.x: 
+\li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
+is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
+In particular, they won't monitor non-HFS partitions, so if you try running TestFSMonitor
+from a FAT partition, it will fail.
 
 */
 

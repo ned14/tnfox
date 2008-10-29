@@ -10,6 +10,7 @@ pinning was being corrupted on multiprocessor machines
 
 + (1080) Fixed implementation of move semantics for C++0x compilers. Added move
 semantics to all container classes in TnFOX
+* (1083) Initial set of fixes for Apple Mac OS X 10.5 support
 
 v0.88 13th June 2008:
 -=-=-=-=-=-=-=-=-=-=-

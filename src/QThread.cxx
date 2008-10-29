@@ -1440,9 +1440,9 @@ FXulong QThread::processorAffinity() const
 #endif
 #ifdef __FreeBSD__
 	// Not supported as yet
+#endif
+#endif
 	return p->processorAffinity;
-#endif
-#endif
 }
 
 void QThread::setProcessorAffinity(FXulong mask, bool recursive)

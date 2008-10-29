@@ -2,8 +2,10 @@
 
 env['CPPDEFINES']+=["USE_POSIX"]
 if onDarwin:
-    # You only get the thread cancelling pthread implementation this way
-    env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
+    import platform
+    if platform.mac_ver()[0][:5]=='10.4.':
+        # You only get the thread cancelling pthread implementation on 10.4 this way
+        env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
 if debugmode:
     env['CPPDEFINES']+=["_DEBUG"]
 else:
@@ -240,7 +242,8 @@ else:
 
 if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasCPP0xFeatures():
     env['CPPFLAGS']+=["-std=c++0x"]
-env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
+else:
+    env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
 
 if onDarwin or onBSD:
     if conf.CheckLibWithHeader("fam", "fam.h", "c"):
