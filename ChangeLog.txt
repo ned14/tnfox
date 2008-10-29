@@ -3,6 +3,8 @@ v0.88.1 28th October 2008:
 T (svnr) description
 B (1080) TnFXSQLDBIPCMsgsI::ColumnData was being used inside a vector<> when
 it has move only semantics
+B (1081) QFileInfo::baseName() was returning one character too few. Thanks to CK
+for reporting this.
 
 + (1080) Fixed implementation of move semantics for C++0x compilers. Added move
 semantics to all container classes in TnFOX

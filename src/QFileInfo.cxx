@@ -214,7 +214,6 @@ FXString QFileInfo::baseName(bool complete) const
 	FXString ret=FXPath::name(p->pathname);
 	FXint dotpos=(complete) ? ret.rfind('.') : ret.find('.');
 	if(-1==dotpos) dotpos=ret.length();
-	else dotpos-=1;
 	return ret.left(dotpos);
 }
 FXString QFileInfo::extension(bool complete) const
