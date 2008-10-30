@@ -2271,7 +2271,7 @@ increases and let me know if I have broken anything!
 This covers the rather special Unix variant that is Apple MacOS X. You'll need
 XCode installed along with the Apple X11 implementation plus at least scons
 v0.96.1 (which added MacOS X support). v0.88.1 was tested on 10.5.4, XCode 3.1.1
-and scons v1.1.0.
+and scons v0.96.90 (the v1.x series won't finish the build on Macs for some odd reason).
 
 This page doesn't duplicate what's already said in \ref unixnotes so you should
 also read that. The very good news is that 10.5 is much improved over 10.4 thanks
@@ -2280,12 +2280,12 @@ to much improved POSIX compatibility.
 \section supported Supported configuration:
 TnFOX was originally developed against Apple MacOS X v10.4.6 and XCode v2.3 on Intel x86
 only. The PowerPC build has however been tested on x86 via Rosetta and appears to
-work just fine.
+work just fine, but has not been extensively tested.
 
 You have two choices when building TnFOX on Apples - the first is the same as on
-other platforms where you set \c x86 or \c x64, however you MUST set architecture_version=7,
-x86_SSE=2 and x86_3dnow=0 in config.py as the Apple GCC won't output valid code for
-other architecture configurations.
+other platforms where you set \c x86 or \c x64, however if you choose x86 then you
+MUST set architecture_version=7, x86_SSE=2 and x86_3dnow=0 in config.py as the Apple
+GCC won't output valid code for other architecture configurations.
 
 The other choice is to specify one of the special architectures \c macosx-ppc/macosx-i386.
 If you want to build a Universal binary, then you must use these. Firstly you build one,
@@ -2318,18 +2318,18 @@ be used instead of the defaults. Failing to do this will cause random crashes an
 other weird behaviour.
 \li TestDLL fails on MacOS X due to \c dlclose() not kicking out a shared library like
 it's supposed to do.
-\li TestGraphing fails on MacOS X due to buggy support within the X11 OpenGL routines.
-Specifically, because TnFOX sets \c XInitThreads(), the OpenGL code hangs in the internally
-called \c XLockDisplay(). If you really need OpenGL working, you will have to comment
-out this call in \c FXApp.cpp.
- 
-\section problems Problems with 10.5.x: 
+
+\section problems2 Problems with both 10.4 and 10.5:
 \li MacOS X does not come with a FAM implementation, so the BSD fallback of kqueues
 is used. These unfortunately have limitations - see the doc page for FX::FXFSMonitor.
 In particular, they won't monitor non-HFS partitions, so if you try running TestFSMonitor
 from a FAT partition, it will fail.
-
-*/
+\li TestGraphing fails on MacOS X due to buggy support within the X11 OpenGL routines.
+Specifically, because TnFOX sets \c XInitThreads(), the OpenGL code hangs in the internally
+called \c XLockDisplay(). If you really need OpenGL working, you will have to comment
+out this call in \c FXApp.cpp and of course lose multithreaded GUI support.
+ 
+ */
 
 /*! \page windowsnotes Windows-specific notes
 

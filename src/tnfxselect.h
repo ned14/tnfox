@@ -21,9 +21,7 @@
 
 static inline int tnfxselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout)
 {
-#ifndef __APPLE__
-	return ::select(nfds, readfds, writefds, exceptfds, timeout);
-#else
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 	using namespace FX;
 	// For some unfathomable reason, Apple have not made select() always a thread cancellation
 	// point despite the POSIX standard requiring it. This thoroughly breaks most parts
@@ -43,5 +41,7 @@ static inline int tnfxselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set
 	if(ret>0 && readfds && FD_ISSET(h, readfds))
 		QThread::current()->checkForTerminate();
 	return ret;
+#else
+	return ::select(nfds, readfds, writefds, exceptfds, timeout);
 #endif
 }

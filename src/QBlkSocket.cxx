@@ -894,8 +894,9 @@ FXuval QBlkSocket::readBlock(char *data, FXuval maxlen)
 		h.unlock();
 		if(Stream==p->type)
 		{
-#ifdef __APPLE__
+#if defined(__APPLE__)
 			// Mac OS X has such inconsistent thread cancellation support :(
+			// 10.5 is much improved, but sockets still won't cancel
 			fd_set fds;
 			FD_ZERO(&fds);
 			FD_SET(p->handle, &fds);

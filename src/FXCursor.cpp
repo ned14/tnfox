@@ -200,18 +200,18 @@ void FXCursor::create(){
           src=(FXuchar*)data;
           end=src+width*height*4;
           do{
-#ifndef __APPLE__
-            dst[0]=src[2];      // B
-            dst[1]=src[1];      // G
-            dst[2]=src[0];      // R
-            dst[3]=src[3];      // A
-#else
-            // A bug in Apple's X11 implementation has alpha on
-            // the wrong end and BGR wrong way round
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
+            // A bug in Apple's 10.4 X11 implementation has alpha on
+			// the wrong end and BGR wrong way round
             dst[0]=src[3];      // A
             dst[3]=src[2];      // B
             dst[2]=src[1];      // G
             dst[1]=src[0];      // R
+#else
+            dst[0]=src[2];      // B
+            dst[1]=src[1];      // G
+            dst[2]=src[0];      // R
+            dst[3]=src[3];      // A
 #endif   
             dst+=4;
             src+=4;

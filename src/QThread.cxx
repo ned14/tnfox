@@ -69,7 +69,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 
 namespace FX {
 	
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 static inline void LatchWaiter(int *waiter)
 {	// Mustn't overfill the pipe
 	struct ::timeval delta;
@@ -612,7 +612,7 @@ public:
 	bool plsCancelDisabled;
 #endif
 #ifdef USE_POSIX
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 	int plsCancelWaiter[2];
 	bool plsCancelDisabled;
 #endif
@@ -652,7 +652,7 @@ public:
 		, threadh(0), plsCancelDisabled(false), plsCancelWaiter(0)
 #endif
 	{
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 		plsCancelWaiter[0]=plsCancelWaiter[1]=0;
 		plsCancelDisabled=false;
 		FXERRHOS(pipe(plsCancelWaiter));
@@ -690,7 +690,7 @@ public:
 			FXERRHOS(pthread_join(threadh, &result));
 			threadh=0;
 		}
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 		if(plsCancelWaiter[1])
 		{
 			FXERRHOS(::close(plsCancelWaiter[1]));
@@ -1229,7 +1229,7 @@ void QThread::start(bool waitTillStarted)
 	}
 #endif
 #ifdef USE_POSIX
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 	ResetWaiter(p->plsCancelWaiter);
 #endif
 	pthread_attr_t attr;
@@ -1304,7 +1304,7 @@ void QThread::requestTermination()
 		if(!p->plsCancelDisabled) FXERRHWIN(SetEvent(p->plsCancelWaiter)); 
 #endif
 #ifdef USE_POSIX
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 		if(!p->plsCancelDisabled) LatchWaiter(p->plsCancelWaiter);
 #endif
 		FXERRHOS(pthread_cancel(p->threadh));
@@ -1544,7 +1544,7 @@ void QThread::disableTermination()
 			FXERRHWIN(ResetEvent(p->plsCancelWaiter)); 
 #endif
 #ifdef USE_POSIX
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 			p->plsCancelDisabled=true;
 			ResetWaiter(p->plsCancelWaiter);
 #endif
@@ -1589,7 +1589,7 @@ void QThread::enableTermination()
 #endif
 #ifdef USE_POSIX
 			FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL));
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 			p->plsCancelDisabled=false;
 			if(p->plsCancel) LatchWaiter(p->plsCancelWaiter);
 #endif
@@ -1604,7 +1604,7 @@ void *QThread::int_cancelWaiterHandle()
 {
 #ifdef USE_WINAPI
 	return (void *) QThread::current()->p->plsCancelWaiter;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 	return (void *)(FXuval) QThread::current()->p->plsCancelWaiter[0];
 #else
 	return 0;

@@ -337,7 +337,7 @@ void FXFSMon::Watcher::run()
 {
 	int ret;
 	struct kevent kevs[16];
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 	// Register magic thread termination waiter handle with kqueue
 	int cancelWaiterHandle=(int)(FXuval) QThread::int_cancelWaiterHandle();
 	EV_SET(&cancelWaiter, cancelWaiterHandle, EVFILT_READ, EV_ADD | EV_CLEAR, 0, 0, 0);
@@ -345,14 +345,14 @@ void FXFSMon::Watcher::run()
 #endif
 	for(;;)
 	{
-#ifndef __APPLE__
+#if !(defined(__APPLE__) && defined(_APPLE_C_SOURCE))
 		QThread::current()->checkForTerminate();
 #endif
 		FXERRH_TRY
 		{	// Have it kick out once a second as it's not a cancellation point on FreeBSD
 			struct timespec timeout={1, 0};
 			if((ret=kevent(fxfsmon->kqueueh, NULL, 0, kevs, sizeof(kevs)/sizeof(struct kevent),
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 				NULL)))
 #else
 				&timeout)))
@@ -362,7 +362,7 @@ void FXFSMon::Watcher::run()
 				for(int n=0; n<ret; n++)
 				{
 					struct kevent *kev=&kevs[n];
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 					if(cancelWaiterHandle==kev->ident)
 						QThread::current()->checkForTerminate();
 #endif
@@ -425,7 +425,7 @@ void FXFSMon::Watcher::run()
 #endif
 void *FXFSMon::Watcher::cleanup()
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 	// Deregister magic thread termination waiter handle with kqueue
 	cancelWaiter.flags=EV_DELETE;
 	FXERRHOS(kevent(fxfsmon->kqueueh, &cancelWaiter, 1, NULL, 0, NULL));
