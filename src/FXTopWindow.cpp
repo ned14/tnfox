@@ -19,7 +19,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXTopWindow.cpp,v 1.175.2.7 2008/04/29 17:18:22 fox Exp $                    *
+* $Id: FXTopWindow.cpp,v 1.175.2.8 2008/05/08 02:00:07 fox Exp $                    *
 ********************************************************************************/
 #include "xincs.h"
 #include "fxver.h"
@@ -200,7 +200,7 @@ void FXTopWindow::create(){
 
     // Set icon for X-Windows
     seticons();
-      
+
     // Only shrinkable; size may not be above default size
     if((options&DECOR_SHRINKABLE) && !(options&DECOR_STRETCHABLE)){
       if(width>getDefaultWidth()) width=getDefaultWidth();
@@ -216,9 +216,9 @@ void FXTopWindow::create(){
 #ifdef WIN32
       RECT rect;
       SetRect(&rect,xpos,ypos,xpos+width,ypos+height);
-      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
-      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
-      AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
+      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
+      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      AdjustWindowRectEx(&rect,dwStyle,false,dwExStyle);        // Calculate based on *client* rectangle
       SetWindowPos((HWND)xid,NULL,rect.left,rect.top,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOZORDER|SWP_NOOWNERZORDER);
 #else
       Atom protocols[3];
@@ -916,9 +916,9 @@ void FXTopWindow::move(FXint x,FXint y){
 #ifdef WIN32
       RECT rect;
       SetRect(&rect,xpos,ypos,0,0);
-      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
-      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
-      AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
+      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
+      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      AdjustWindowRectEx(&rect,dwStyle,false,dwExStyle);        // Calculate based on *client* rectangle
       SetWindowPos((HWND)xid,NULL,rect.left,rect.top,0,0,SWP_NOSIZE|SWP_NOZORDER|SWP_NOOWNERZORDER);
 #else
       XWindowChanges cw;
@@ -940,21 +940,13 @@ void FXTopWindow::resize(FXint w,FXint h){
 #ifdef WIN32
       RECT rect;
       SetRect(&rect,0,0,width,height);
-      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
-      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
-      AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
+      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
+      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      AdjustWindowRectEx(&rect,dwStyle,false,dwExStyle);        // Calculate based on *client* rectangle
       SetWindowPos((HWND)xid,NULL,0,0,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOMOVE|SWP_NOZORDER|SWP_NOOWNERZORDER);
 #else
       XWindowChanges changes;
       XSizeHints size;
-      changes.x=0;
-      changes.y=0;
-      changes.width=width;
-      changes.height=height;
-      changes.border_width=0;
-      changes.sibling=None;
-      changes.stack_mode=Above;
-      XReconfigureWMWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())),CWWidth|CWHeight,&changes);
       size.flags=USSize|PSize|PWinGravity|USPosition|PPosition;
       size.x=xpos;
       size.y=ypos;
@@ -992,6 +984,14 @@ void FXTopWindow::resize(FXint w,FXint h){
         size.max_height=getDefaultHeight();
         }
       XSetWMNormalHints(DISPLAY(getApp()),xid,&size);
+      changes.x=0;
+      changes.y=0;
+      changes.width=width;
+      changes.height=height;
+      changes.border_width=0;
+      changes.sibling=None;
+      changes.stack_mode=Above;
+      XReconfigureWMWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())),CWWidth|CWHeight,&changes);
 #endif
       layout();
       }
@@ -1010,21 +1010,13 @@ void FXTopWindow::position(FXint x,FXint y,FXint w,FXint h){
 #ifdef WIN32
       RECT rect;
       SetRect(&rect,xpos,ypos,xpos+width,ypos+height);
-      LONG_PTR dwStyle=GetWindowLongPtr((HWND)xid,GWL_STYLE);
-      LONG_PTR dwExStyle=GetWindowLongPtr((HWND)xid,GWL_EXSTYLE);
-      AdjustWindowRectEx(&rect,dwStyle,FALSE,dwExStyle);
+      DWORD dwStyle=GetWindowLong((HWND)xid,GWL_STYLE);
+      DWORD dwExStyle=GetWindowLong((HWND)xid,GWL_EXSTYLE);
+      AdjustWindowRectEx(&rect,dwStyle,false,dwExStyle);        // Calculate based on *client* rectangle
       SetWindowPos((HWND)xid,NULL,rect.left,rect.top,FXMAX(rect.right-rect.left,1),FXMAX(rect.bottom-rect.top,1),SWP_NOZORDER|SWP_NOOWNERZORDER);
 #else
       XWindowChanges changes;
       XSizeHints size;
-      changes.x=xpos;
-      changes.y=ypos;
-      changes.width=width;
-      changes.height=height;
-      changes.border_width=0;
-      changes.sibling=None;
-      changes.stack_mode=Above;
-      XReconfigureWMWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())),CWX|CWY|CWWidth|CWHeight,&changes);
       size.flags=USSize|PSize|PWinGravity|USPosition|PPosition;
       size.x=xpos;
       size.y=ypos;
@@ -1062,6 +1054,14 @@ void FXTopWindow::position(FXint x,FXint y,FXint w,FXint h){
         size.max_height=getDefaultHeight();
         }
       XSetWMNormalHints(DISPLAY(getApp()),xid,&size);
+      changes.x=xpos;
+      changes.y=ypos;
+      changes.width=width;
+      changes.height=height;
+      changes.border_width=0;
+      changes.sibling=None;
+      changes.stack_mode=Above;
+      XReconfigureWMWindow(DISPLAY(getApp()),xid,DefaultScreen(DISPLAY(getApp())),CWX|CWY|CWWidth|CWHeight,&changes);
 #endif
       layout();
       }

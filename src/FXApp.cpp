@@ -21,7 +21,7 @@
 * License along with this library; if not, write to the Free Software           *
 * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.    *
 *********************************************************************************
-* $Id: FXApp.cpp,v 1.617.2.7 2007/03/29 18:01:45 fox Exp $                          *
+* $Id: FXApp.cpp,v 1.617.2.8 2008/05/08 12:54:16 fox Exp $                          *
 ********************************************************************************/
 #ifdef WIN32
 #if _WIN32_WINNT < 0x0400
@@ -4507,6 +4507,7 @@ Alt key seems to repeat.
 
     // Configure (size)
     case WM_SIZE:
+      if(wParam==SIZE_MINIMIZED) return 0;
       event.type=SEL_CONFIGURE;
       event.rect.x=window->getX();
       event.rect.y=window->getY();

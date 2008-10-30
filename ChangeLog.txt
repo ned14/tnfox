@@ -1,4 +1,4 @@
-v0.88.1 28th October 2008:
+v0.88.1 31st October 2008:
 -=-=-=-=-=-=-=-=-=-=-=-=-=
 T (svnr) description
 B (1080) TnFXSQLDBIPCMsgsI::ColumnData was being used inside a vector<> when
@@ -11,6 +11,8 @@ pinning was being corrupted on multiprocessor machines
 + (1080) Fixed implementation of move semantics for C++0x compilers. Added move
 semantics to all container classes in TnFOX
 * (1083) Initial set of fixes for Apple Mac OS X 10.5 support
+* (1084) Full port to Mac OS X 10.5
+* (1085) Merged FOX v1.6.34
 
 v0.88 13th June 2008:
 -=-=-=-=-=-=-=-=-=-=-
