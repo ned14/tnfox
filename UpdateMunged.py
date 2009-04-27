@@ -117,6 +117,7 @@ else:
     if sys.platform=="win32": cppmungeexec="CppMunge.py"
     else: cppmungeexec="python CppMunge.py"
     cppmungeloc=os.path.normpath(os.path.join(myloc, cppmungeexec))
+    if ' ' in cppmungeloc: cppmungeloc='"'+cppmungeloc+'"';
     commandoptions=options.commandline
     for item in updatelist:
         sourcepath, sourcemtime=item

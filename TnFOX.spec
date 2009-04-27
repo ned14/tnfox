@@ -1,5 +1,5 @@
 %define name TnFOX
-%define version 0.88
+%define version 0.89
 %define release 1
 
 Summary: A secure robust threaded exception-aware portable GUI toolkit library
@@ -11,7 +11,7 @@ Copyright: Jeroen van der Zijp, Niall Douglas and assorted others under the LGPL
 Group: Development/Tools
 BuildRoot: %{_tmppath}/%{name}-buildroot
 Prefix: %{_prefix}
-BuildArchitectures: i486
+BuildArchitectures: i486 x64
 Vendor: Niall Douglas
 Packager: Niall Douglas
 Requires: Python v2.3+, GCC v3.4+, SCons v0.94+, X11, OpenSSL, Boost.Python, GCC-XML

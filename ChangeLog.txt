@@ -1,3 +1,18 @@
+v0.89 ?
+-=-=-=-=-=-=-=-=-=-=-=-=-=
+T (svnr) description
+B (1088) nedmalloc aborted on Mac OS X when thread id had high bit set
+
+* (1089) Bumped TnFOX to v0.89
+* (xxxx) Updated to use OpenSSL v1.0
+* (xxxx) Updated to use scons v1.2 (Python v2.6)
+* (xxxx) Extended MSVC build system to enable use of SSE3 and SSE4 intrinsics.
+Also fixed some silly SSE3 and SSE4 compilation errors :(
+* (xxxx) Disabled global memory allocator replacement on Mac OS X as the 10.5
+system allocator is faster in every way
++ (xxxx) Added VIEWER_NICEST and VIEWER_LEFTZOOMS options to FXGLViewer
++ (xxxx) Added alignment option to memory allocators
+
 v0.88.1 31st October 2008:
 -=-=-=-=-=-=-=-=-=-=-=-=-=
 T (svnr) description

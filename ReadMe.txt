@@ -1,4 +1,4 @@
-TnFOX v0.88 13th June 2008:
+TnFOX v0.89 ?:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 by Niall Douglas
@@ -10,17 +10,13 @@ platforms, it includes v3.3.17 of SQLite3.
 
 Issues:
 -=-=-=-
-1: BUILDING HAS NOT BEEN TESTED ON APPLE MAC OS X
-This release has not been built on Apple Mac OS X due to a current lack
-of test hardware. There is no reason why it shouldn't work as well as
-v0.87 however.
-
-2: THE PYTHON BINDINGS WERE RECENTLY REIMPLEMENTED
+1: THE PYTHON BINDINGS WERE RECENTLY REIMPLEMENTED
 The new pyplusplus solution will be far superior in the long run, but as
-yet it's still not quite working. Hence the bindings have NOT been supplied
-with this release.
+yet it's still not quite working. Furthermore, py3k is just around the
+corner and Boost.Python is being updated to support it thanks to Google's
+Summer of Code. Hence the bindings have NOT been supplied with this release.
 
-3: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
+2: THERE ARE SOME KNOWN BUGS ON CERTAIN PLATFORMS
 See per-platform documentation and Todo.txt for a list of known bugs.
 
 
@@ -35,7 +31,7 @@ Installation:
 -=-=-=-=-=-=-
 If you're installing the binary only on POSIX, simply do:
 
-libtool --mode=install cp libTnFOX-0.88.la /usr/local/lib
+libtool --mode=install cp libTnFOX-0.89.la /usr/local/lib
 
 
 You will need a make tool called scons from http://www.scons.org/ v0.95 or
@@ -62,10 +58,6 @@ as an argument to scons.
 
 If on Windows, you may prefer to work from within your IDE - simply generate
 a MSVC project using "scons msvcproj" and get to work.
-
-Note that if you have a DUAL-CORE or multiprocessor machine, you can get
-much faster build times if you specify -j X to scons where X is the number
-of processors you have plus one.
 
 WARNING: Some optional facilities provided by FXSSLDevice use patented
 and/or legally controlled algorithms. Depending on the country you are

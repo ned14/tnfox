@@ -1,6 +1,6 @@
 # Simple config file, everything else is automatic
 
-debugmode=False
+debugmode=True
 #if os.environ("TNFOX_DEBUG"):
 #    debugmode=True
 #else:
@@ -95,8 +95,8 @@ if sys.platform=="win32":
         architecture_version=0
     else:
         architecture="x86"
-        architecture_version=4
-        x86_SSE=0               # =0 (disable), =1 (SSE) or =2 (SSE2)
+        architecture_version=7
+        x86_SSE=3               # =0 (disable), =1, 2, 3, 4 etc for SSE variants
         x86_3dnow=0             # =0 (disable), =1 (3dnow)
 else:
     import platform
@@ -105,8 +105,8 @@ else:
         architecture_version=0
     else:
         architecture="x86"
-        architecture_version=4
-        x86_SSE=0               # =0 (disable), =1, 2, 3, 4.1, 4.2, etc for SSE variants
+        architecture_version=7
+        x86_SSE=3               # =0 (disable), =1, 2, 3, 4 etc for SSE variants
         x86_3dnow=0             # =0 (disable), =1 (3dnow)
 
 
@@ -142,7 +142,7 @@ PYTHON_INCLUDE=None      # Sets where the python header  files can be found (=No
 PYTHON_LIB=None          # Sets where the python library files can be found (=None for get from environment)
 
 tnfoxname="TnFOX"
-tnfoxversion="0.88"      # Increment each release the interface is removed from
+tnfoxversion="0.89"      # Increment each release the interface is removed from
 tnfoxinterfaceidx=0      # Increment each release the interface is added to
 tnfoxsourceidx=0         # Increment each release the source has changed
 tnfoxbackcompatible=tnfoxinterfaceidx     # Probably correct

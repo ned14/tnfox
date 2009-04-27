@@ -208,6 +208,7 @@
 #pragma warning(disable: 4127)		// Conditional expression is constant
 #pragma warning(disable: 4189)		// Local variable initialised but not referenced
 #pragma warning(disable: 4239)		// Move semantics used
+#pragma warning(disable: 4348)		// Template default parameter redefined
 #pragma warning(disable: 4511)		// Copy constructor could not be generated
 #pragma warning(disable: 4512)		// Assignment operator could not be generated
 #pragma warning(disable: 4610)		// Constructor required to instance

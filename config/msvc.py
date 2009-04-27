@@ -57,7 +57,9 @@ else:
                    ]
 if architecture=="x86":
     if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
-    elif x86_SSE==2: cppflags+=[ "/arch:SSE2" ]
+    elif x86_SSE>=2: cppflags+=[ "/arch:SSE2" ]
+    if x86_SSE>=3: env['CPPDEFINES']+=[("__SSE3__", 1)]
+    if x86_SSE>=4: env['CPPDEFINES']+=[("__SSE4__", 1)]
 if debugmode:
     if env.GetOption('num_jobs')>1:
         cppflags+=["/Z7"]    # Put debug info into .obj files

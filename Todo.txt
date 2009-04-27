@@ -1,9 +1,4 @@
-Added test for NUMA & shared cache processor ids
-Add C++0x support for && copies
-Test cross compiling on Linux
-Upgrade to http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/index.html
-
-
+Add elliptic curve crypto to FXSSLDevice encryption options
 
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
