@@ -51,6 +51,7 @@ FXGLVertices::FXGLVertices(){
   vertices=NULL;
   pointSize=4.0f;
   lineSize=1.0f;
+  color=FXGLColor(1,1,1);
   colorGenerator=NULL;
   colorGeneratorData=NULL;
   }
@@ -64,6 +65,7 @@ FXGLVertices::FXGLVertices(FXfloat x,FXfloat y,FXfloat z,FXuint opts,FXVec3f *ve
   vertices=vert;
   pointSize=ps;
   lineSize=ls;
+  color=FXGLColor(1,1,1);
   colorGenerator=NULL;
   colorGeneratorData=NULL;
   }

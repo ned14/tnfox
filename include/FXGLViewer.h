@@ -51,7 +51,9 @@ enum {
   VIEWER_LIGHTING = 0x00008000,    /// Lighting is on
   VIEWER_FOG      = 0x00010000,    /// Fog mode on
   VIEWER_DITHER   = 0x00020000,    /// Dithering
-  VIEWER_ANTIALIAS= 0x00040000     /// Anti-aliasing
+  VIEWER_ANTIALIAS= 0x00040000,    /// Anti-aliasing
+  VIEWER_SMOOTH   = 0x00080000,    /// Edge smoothing
+  VIEWER_LEFTZOOMS= 0x00100000     /// Have left button zoom rather than rotate
   };
 
 

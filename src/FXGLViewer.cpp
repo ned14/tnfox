@@ -427,12 +427,13 @@ void FXGLViewer::glsetup(){
     // Initialize GL context
     glRenderMode(GL_RENDER);
 
-    // Fast hints
-    glHint(GL_POLYGON_SMOOTH_HINT,GL_FASTEST);
+    // Set hints
+	GLenum hint=((options & VIEWER_SMOOTH) ? GL_NICEST : GL_FASTEST);
+    glHint(GL_POLYGON_SMOOTH_HINT,hint);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT,GL_FASTEST);
     glHint(GL_FOG_HINT,GL_FASTEST);
-    glHint(GL_LINE_SMOOTH_HINT,GL_FASTEST);
-    glHint(GL_POINT_SMOOTH_HINT,GL_FASTEST);
+    glHint(GL_LINE_SMOOTH_HINT,hint);
+    glHint(GL_POINT_SMOOTH_HINT,hint);
 
     // Z-buffer test on
     glEnable(GL_DEPTH_TEST);
@@ -482,9 +483,9 @@ void FXGLViewer::glsetup(){
 
     // Simplest and fastest drawing is default
     glShadeModel(GL_FLAT);
-    glDisable(GL_BLEND);
-    glDisable(GL_LINE_SMOOTH);
-    glDisable(GL_POINT_SMOOTH);
+    ((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_BLEND);
+	((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_LINE_SMOOTH);
+    ((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_POINT_SMOOTH);
     glDisable(GL_COLOR_MATERIAL);
 
     // Lighting
@@ -513,11 +514,13 @@ void FXGLViewer::drawWorld(FXViewport& wv){
   glPolygonMode(GL_FRONT_AND_BACK,GL_FILL);
   glDisable(GL_LIGHTING);
   glDisable(GL_ALPHA_TEST);
-  glDisable(GL_BLEND);
+  ((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_BLEND);
   glDisable(GL_DITHER);
   glDisable(GL_FOG);
   glDisable(GL_LOGIC_OP);
-  glDisable(GL_POLYGON_SMOOTH);
+  ((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_LINE_SMOOTH);
+  ((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_POINT_SMOOTH);
+  ((options & VIEWER_SMOOTH) ? glEnable : glDisable)(GL_POLYGON_SMOOTH);
   glDisable(GL_POLYGON_STIPPLE);
   glDisable(GL_STENCIL_TEST);
   glDisable(GL_CULL_FACE);
@@ -1490,7 +1493,7 @@ long FXGLViewer::onLeftBtnPress(FXObject*,FXSelector,void* ptr){
     grab();
     flags&=~FLAG_UPDATE;
     if(target && target->tryHandle(this,FXSEL(SEL_LEFTBUTTONPRESS,message),ptr)) return 1;
-    if(event->state&RIGHTBUTTONMASK){
+    if(event->state&RIGHTBUTTONMASK||(options&VIEWER_LEFTZOOMS)){
       if(event->state&SHIFTMASK)
         setOp(TRUCKING);
       else

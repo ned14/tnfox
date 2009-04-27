@@ -104,13 +104,13 @@ public:
 		FXVerticalFrame *canvasFrames = new FXVerticalFrame(frame, LAYOUT_FILL);
 		canvas3dFrames = new FXHorizontalFrame(canvasFrames, LAYOUT_FILL, 0,0,0,0, 0,0,0,0);
 		canvasFrame1 = new FXPacker(canvas3dFrames, FRAME_THICK | FRAME_SUNKEN | LAYOUT_FILL | LAYOUT_SIDE_LEFT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-		graphviewer1 = new FXGLViewer(canvasFrame1, PtrPtr(vis1), (FXObject *) 0, 0, LAYOUT_FILL_X | LAYOUT_FILL_Y | VIEWER_FOG);
+		graphviewer1 = new FXGLViewer(canvasFrame1, PtrPtr(vis1), (FXObject *) 0, 0, LAYOUT_FILL_X | LAYOUT_FILL_Y | VIEWER_FOG | VIEWER_NICEST);
 		graphviewer1->setBackgroundColor(FXGLColor(0,0,0));
 		canvasFrame2 = new FXPacker(canvas3dFrames, FRAME_THICK | FRAME_SUNKEN | LAYOUT_FILL | LAYOUT_SIDE_RIGHT, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-		graphviewer2 = new FXGLViewer(canvasFrame2, PtrPtr(vis2), (FXObject *) 0, 0, LAYOUT_FILL_X | LAYOUT_FILL_Y);
+		graphviewer2 = new FXGLViewer(canvasFrame2, PtrPtr(vis2), (FXObject *) 0, 0, LAYOUT_FILL_X | LAYOUT_FILL_Y | VIEWER_NICEST);
 		graphviewer2->setBackgroundColor(FXGLColor(0,0,0));
 		canvasFrame3 = new FXPacker(canvasFrames, FRAME_THICK | FRAME_SUNKEN | LAYOUT_FILL | LAYOUT_SIDE_BOTTOM, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-		graphviewer3 = new FXGLViewer(canvasFrame3, PtrPtr(vis3), (FXObject *) 0, 0, LAYOUT_FILL);
+		graphviewer3 = new FXGLViewer(canvasFrame3, PtrPtr(vis3), (FXObject *) 0, 0, LAYOUT_FILL | VIEWER_NICEST | VIEWER_LEFTZOOMS);
 		graphviewer3->setBackgroundColor(FXGLColor(1,1,1));
 		graphviewer3->setProjection(FXGLViewer::PARALLEL);
 
