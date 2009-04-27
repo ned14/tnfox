@@ -3,7 +3,7 @@
 *                                 Tools for maths                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2006-2008 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2006-2009 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -27,6 +27,13 @@
 #include "FXStream.h"
 #include "qmemarray.h"
 #include <math.h>
+#if _M_IX86_FP>=3 || defined(__SSE3__)
+#include "pmmintrin.h"
+#endif
+#if _M_IX86_FP>=4 || defined(__SSE4__)
+#include "smmintrin.h"
+//#include "nmmintrin.h"	// We only use the SSE4.1 dot product so this is unneeded
+#endif
 
 namespace FX {
 
@@ -440,7 +447,9 @@ namespace Maths {
 	on Intel SSE platforms four floats will map to a \c __m128 SSE register. Where the
 	size is a power of two up to 1Kb, the compiler is asked to memory align
 	the vector and an assert is added to ensure instantiation will not succeed without
-	correct alignment.
+	correct alignment. If doing your own memory allocation, make sure to align to sixteen
+	bytes: FX::malloc and FX::calloc both have an alignment parameter, and you can use
+	FX::aligned_allocator<T, 16> for STL containers.
 
 	\warning GCC on x86 and x64 cannot currently align stack allocated variables any
 	better than 16 bytes. Therefore the assertion checks are reduced to a check for
@@ -503,7 +512,7 @@ namespace Maths {
 	member. \em Usually, you want this. \b Only bit shifts which are multiples of
 	eight are accelerated on SSE2.
 
-	See FX::Maths::VectorArray for an array of vectors letting you easily implement
+	See FX::Maths::Array and FX::Maths::Matrix for a static array letting you easily implement
 	a matrix. See also the FXVECTOROFVECTORS macro for how to declare to the compiler
 	when a vector should be implemented as a sequence of other vectors (this is how
 	the SSE specialisations overload specialisations for two power increments) - if
@@ -645,7 +654,8 @@ namespace Maths {
 		friend TYPE sum(const Vector &a)
 		{
 #if _M_IX86_FP>=3 || defined(__SSE3__)
-			return int_extract(_mm_hadd_ps(_mm_hadd_ps(a.v, _mm_setzero_ps())));
+			SSETYPE v=_mm_hadd_ps(a.v, a.v);
+			return int_extract(_mm_hadd_ps(v, v), 0);
 #else
 			FXMEMALIGNED(16) TYPE f[DIMENSION];
 			_mm_store_ps(f, a.v);
@@ -656,7 +666,7 @@ namespace Maths {
 		{
 #if _M_IX86_FP>=4 || defined(__SSE4__)
 			// Use the SSE4.1 instruction
-			return int_extract(_mm_dp_ps(a.v, b.v, 0xf1));
+			return int_extract(_mm_dp_ps(a.v, b.v, 0xf1), 0);
 #else
 			// SSE implementation
 			return sum(a*b);
@@ -771,7 +781,7 @@ namespace Maths {
 		friend TYPE sum(const Vector &a)
 		{
 #if _M_IX86_FP>=3 || defined(__SSE3__)
-			return int_extract(_mm_hadd_pd(_mm_hadd_pd(a.v, _mm_setzero_pd())));
+			return int_extract(_mm_hadd_pd(a.v, a.v), 0);
 #else
 			FXMEMALIGNED(16) TYPE f[DIMENSION];
 			_mm_store_pd(f, a.v);
@@ -782,7 +792,7 @@ namespace Maths {
 		{
 #if _M_IX86_FP>=4 || defined(__SSE4__)
 			// Use the SSE4.1 instruction
-			return int_extract(_mm_dp_pd(a.v, b.v, 0xf1));
+			return int_extract(_mm_dp_pd(a.v, b.v, 0xf1), 0);
 #else
 			// SSE implementation
 			return sum(a*b);
@@ -966,26 +976,73 @@ VECTORINTEGER(FXint,    4)
 #endif
 #endif
 #endif
-	/*! \class VectorArray
-	\brief A static array of vectors
+
+	/*! \class Array
+	\brief A fixed-length array
+
+	This is useful for denoting arrays consisting of FX::Maths::Vector or anywhere
+	else where a compile-time fixed length array is useful. It emulates the STL
+	vector class so you can iterate it. See also FX::Maths::Matrix.
 	*/
-	template<typename type, unsigned int A, unsigned int B> class VectorArray
+	template<typename type, unsigned int A> class Array
 	{
 	protected:
-		Vector<type, A> data[B];
+		type data[A];
 	public:
-		//! The base type
-		typedef type BASETYPE;
-		//! The base dimension
-		static const unsigned int BASEDIMENSION=A;
-		//! The container type
-		typedef Vector<type, A> VECTORTYPE;
-		//! The base dimension
-		static const unsigned int VECTORDIMENSION=B;
-		VectorArray() { }
-		explicit VectorArray(const type **d) { for(FXuint b=0; b<B; b++) data[b]=TYPE(d ? d[b] : 0); }
-		Vector<type, A> &operator[](unsigned int i) { assert(i<B); return data[i]; }
-		const Vector<type, A> &operator[](unsigned int i) const { assert(i<B); return data[i]; }
+		typedef type value_type;
+		typedef value_type &reference;
+		typedef const value_type &const_reference;
+		typedef value_type *iterator;
+		typedef const value_type *const_iterator;
+		size_t max_size() const { return A; }
+
+		Array() { }
+		explicit Array(const type *d) { for(FXuint b=0; b<A; b++) data[b]=TYPE(d ? d[b] : 0); }
+		reference at(int i) { assert(i<A); return data[i]; }
+		const_reference at(int i) const { assert(i<A); return data[i]; }
+		reference operator[](int i) { return at(i); }
+		const_reference operator[](int i) const { return at(i); }
+
+		reference front() { return data[0]; }
+		const_reference front() const { return data[0]; }
+		reference back() { return data[A-1]; }
+		const_reference back() const { return data[A-1]; }
+		iterator begin() { return &data[0]; }
+		const_iterator begin() const { return &data[0]; }
+		iterator end() { return &data[A]; }
+		const_iterator end() const { return &data[A]; }
+	};
+	/*! \class Matrix
+	\brief A fixed-length matrix
+
+	This is useful for denoting matrices consisting of FX::Maths::Vector or anywhere
+	else where a compile-time fixed length array is useful. It emulates the STL
+	vector class so you can iterate it. See also FX::Maths::Array.
+	*/
+	template<typename type, unsigned int A, unsigned int B> class Matrix
+	{
+		Array<type, A> data[B];
+	public:
+		typedef type value_type;
+		typedef value_type &reference;
+		typedef const value_type &const_reference;
+		typedef value_type *iterator;
+		typedef const value_type *const_iterator;
+		size_t max_size() const { return A*B; }
+
+		Matrix() { }
+		explicit Matrix(const type **d) { for(FXuint b=0; b<A; b++) data[b]=TYPE(d ? d[b] : 0); }
+		reference at(int a, int b) { assert(a<A && b<B); return data[b][a]; }
+		const_reference at(int a, int b) const { assert(a<A && b<B); return data[b][a]; }
+
+		reference front() { return data[0]; }
+		const_reference front() const { return data[0]; }
+		reference back() { return data[B-1][A-1]; }
+		const_reference back() const { return data[B-1][A-1]; }
+		iterator begin() { return &data[0]; }
+		const_iterator begin() const { return &data[0]; }
+		iterator end() { return &data[B][0]; }
+		const_iterator end() const { return &data[B][0]; }
 	};
 
 	/*! \class FRandomness
@@ -1158,19 +1215,19 @@ VECTORINTEGER(FXint,    4)
 				((FXulong *)d)[n]=int64();
 		}
 
-		//! generates a random number on [0,1]-real-interval by division of 2^53-1
+		//! generates a random number between 0.0 and 1.0
 		double real1() throw()
 		{
 			return (int64() >> 11) * (1.0/9007199254740991.0);
 		}
 
-		//! generates a random number on [0,1)-real-interval by division of 2^53
+		//! generates a random number between 0.0 and 0.99999999999999988897769753748435
 		double real2() throw()
 		{
 			return (int64() >> 11) * (1.0/9007199254740992.0);
 		}
 
-		//! generates a random number on (0,1)-real-interval by division of 2^52
+		//! generates a random number between 1.1102230246251565404236316680908e-16 and 0.99999999999999988897769753748435
 		double real3() throw()
 		{
 			return ((int64() >> 12) + 0.5) * (1.0/4503599627370496.0);
@@ -1401,19 +1458,19 @@ VECTORINTEGER(FXint,    4)
 			gen_rand_array((w128_t *) d, (FXuint)(len/sizeof(w128_t)));
 		}
 
-		//! generates a random number on [0,1]-real-interval by division of 2^53-1
+		//! generates a random number between 0.0 and 1.0
 		double real1() throw()
 		{
 			return (int64() >> 11) * (1.0/9007199254740991.0);
 		}
 
-		//! generates a random number on [0,1)-real-interval by division of 2^53
+		//! generates a random number between 0.0 and 0.99999999999999988897769753748435
 		double real2() throw()
 		{
 			return (int64() >> 11) * (1.0/9007199254740992.0);
 		}
 
-		//! generates a random number on (0,1)-real-interval by division of 2^52
+		//! generates a random number between 1.1102230246251565404236316680908e-16 and 0.99999999999999988897769753748435
 		double real3() throw()
 		{
 			return ((int64() >> 12) + 0.5) * (1.0/4503599627370496.0);
@@ -1503,7 +1560,7 @@ VECTORINTEGER(FXint,    4)
 		}
 		return m/len;
 	}
-	template<typename type> inline type mean(const QMemArray<type> &array, FXuint stride=1, type *FXRESTRICT min=0, type *FXRESTRICT max=0, type *FXRESTRICT mode=0) throw()
+	template<typename type, class allocator> inline type mean(const QMemArray<type, allocator> &array, FXuint stride=1, type *FXRESTRICT min=0, type *FXRESTRICT max=0, type *FXRESTRICT mode=0) throw()
 	{
 		return mean(array.data(), array.count(), stride, max, min, mode);
 	}
@@ -1519,7 +1576,7 @@ VECTORINTEGER(FXint,    4)
 		}
 		return v/((len/stride)-1);
 	}
-	template<typename type> inline type variance(const QMemArray<type> &array, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
+	template<typename type, class allocator> inline type variance(const QMemArray<type, allocator> &array, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
 	{
 		return variance(array.data(), array.count(), stride, _mean);
 	}
@@ -1529,7 +1586,7 @@ VECTORINTEGER(FXint,    4)
 	{
 		return sqrt(variance(array, len, stride, _mean));
 	}
-	template<typename type> inline type stddev(const QMemArray<type> &array, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
+	template<typename type, class allocator> inline type stddev(const QMemArray<type, allocator> &array, FXuint stride=1, const type *FXRESTRICT _mean=0) throw()
 	{
 		return stddev(array.data(), array.count(), stride, _mean);
 	}
@@ -1553,7 +1610,7 @@ VECTORINTEGER(FXint,    4)
 		}
 		return ret;
 	}
-	template<unsigned int buckets, typename type> inline Vector<type, buckets+3> distribution(const QMemArray<type> &array, FXuint stride=1, const type *FXRESTRICT min=0, const type *FXRESTRICT max=0) throw()
+	template<unsigned int buckets, typename type, class allocator> inline Vector<type, buckets+3> distribution(const QMemArray<type, allocator> &array, FXuint stride=1, const type *FXRESTRICT min=0, const type *FXRESTRICT max=0) throw()
 	{
 		return distribution<type, buckets>(array.data(), array.count(), stride, min, max);
 	}

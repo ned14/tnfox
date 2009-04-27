@@ -104,12 +104,12 @@ namespace FX
 	// STDC export "C" versions. Also more convenient to use from C++.
 	/*! \ingroup fxmemoryops
 	Allocates memory */
-	template<typename T> inline FXMALLOCATTR T *malloc(size_t size, FXMemoryPool *heap=0) throw();
-	template<typename T> inline T *malloc(size_t size, FXMemoryPool *heap) throw() { return (T *) FX::malloc(size, heap); }
+	template<typename T> inline FXMALLOCATTR T *malloc(size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+	template<typename T> inline T *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) FX::malloc(size, heap, alignment); }
 	/*! \ingroup fxmemoryops
 	Allocates memory */
-	template<typename T> inline FXMALLOCATTR T *calloc(size_t no, size_t size, FXMemoryPool *heap=0) throw();
-	template<typename T> inline T *calloc(size_t no, size_t size, FXMemoryPool *heap) throw() { return (T *) FX::calloc(no, size, heap); }
+	template<typename T> inline FXMALLOCATTR T *calloc(size_t no, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+	template<typename T> inline T *calloc(size_t no, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) FX::calloc(no, size, heap, alignment); }
 	/*! \ingroup fxmemoryops
 	Resizes memory */
 	template<typename T> inline FXMALLOCATTR T *realloc(T *p, size_t size, FXMemoryPool *heap=0) throw();
@@ -130,6 +130,57 @@ namespace FX
 		memcpy(ret, str, len+1);
 		return (char *) ret;
 	}
+
+	/*! \class aligned_allocator
+	\ingroup fxmemoryops
+	\brief An aligning memory allocator for the STL
+
+	Working with SIMD data (e.g. FX::Maths::Vector) can need memory aligned data.
+	This custom STL allocator ensures that STL containers only use aligned allocations.
+	*/
+	template<typename T, int alignment> class aligned_allocator {
+	public:
+		typedef T *pointer;
+		typedef const T *const_pointer;
+		typedef T &reference;
+		typedef const T &const_reference;
+		typedef T value_type;
+		typedef size_t size_type;
+		typedef ptrdiff_t difference_type;
+		T *address(T &r) const { return &r; }
+		const T *address(const T &s) const { return &s; }
+		size_t max_size() const { return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(T); }
+		template <typename U> struct rebind {
+			typedef aligned_allocator<U, alignment> other;
+		};
+		bool operator!=(const aligned_allocator &other) const { return !(*this == other); }
+		bool operator==(const aligned_allocator &other) const { return true; }
+
+		void construct(T *const p, const T &t) const {
+			void * const pv = static_cast<void *>(p);
+			new (pv) T(t);
+		}
+		void destroy(T *const p) const {
+			p->~T();
+		}
+		aligned_allocator() { }
+		aligned_allocator(const aligned_allocator &) { }
+		template <typename U> aligned_allocator(const aligned_allocator<U, alignment> &) { }
+
+		T *allocate(const size_t n) const {
+			void *pv = malloc(n * sizeof(T), 0, alignment);
+			if (pv == NULL) throw std::bad_alloc();
+			return static_cast<T *>(pv);
+		}
+		void deallocate(T *p, const size_t n) const {
+			free(p, 0, alignment);
+		}
+		template <typename U> T * allocate(const size_t n, const U * /* const hint */) const {
+			return allocate(n);
+		}
+	private:
+		aligned_allocator &operator=(const aligned_allocator &);
+	};
 }
 
 #ifndef FXDISABLE_GLOBALALLOCATORREPLACEMENTS

@@ -34,22 +34,23 @@ namespace FX {
 /*! \file FXMemoryPool.h
 \brief Defines classes used to implement custom memory pools
 */
-template<class type> class QMemArray;
+template<typename T, int alignment> class aligned_allocator;
+template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
 class FXMemoryPool;
 class QThread;
 
 /*! \ingroup fxmemoryops
 Allocates memory */
-extern FXAPI FXMALLOCATTR void *malloc(size_t size, FXMemoryPool *heap=0) throw();
+extern FXAPI FXMALLOCATTR void *malloc(size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
 /*! \ingroup fxmemoryops
 Allocates memory */
-extern FXAPI FXMALLOCATTR void *calloc(size_t no, size_t size, FXMemoryPool *heap=0) throw();
+extern FXAPI FXMALLOCATTR void *calloc(size_t no, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
 /*! \ingroup fxmemoryops
 Resizes memory */
 extern FXAPI FXMALLOCATTR void *realloc(void *p, size_t size, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
 Frees memory */
-extern FXAPI void free(void *p, FXMemoryPool *heap=0) throw();
+extern FXAPI void free(void *p, FXMemoryPool *heap=0, FXuint alignment=0) throw();
 #if defined(DEBUG) && defined(_MSC_VER)
 extern FXAPI FXMALLOCATTR void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw();
 #endif
@@ -151,10 +152,10 @@ parameter.
 struct FXMemoryPoolPrivate;
 class FXAPI FXMemoryPool
 {
-	friend FXAPI void *malloc(size_t size, FXMemoryPool *heap) throw();
-	friend FXAPI void *calloc(size_t no, size_t _size, FXMemoryPool *heap) throw();
+	friend FXAPI void *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw();
+	friend FXAPI void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) throw();
 	friend FXAPI void *realloc(void *p, size_t size, FXMemoryPool *heap) throw();
-	friend FXAPI void free(void *p, FXMemoryPool *heap) throw();
+	friend FXAPI void free(void *p, FXMemoryPool *heap, FXuint alignment) throw();
 	FXMemoryPoolPrivate *p;
 	FXMemoryPool(const FXMemoryPool &);
 	FXMemoryPool &operator=(const FXMemoryPool &);
@@ -192,11 +193,11 @@ public:
 	//! Returns the maximum size of the pool
 	FXuval maxsize() const throw();
 	//! Allocates a block, returning zero if unable
-	FXMALLOCATTR void *malloc(FXuval size) throw();
+	FXMALLOCATTR void *malloc(FXuval size, FXuint alignment=0) throw();
 	//! Allocates a zero initialised block, returning zero if unable
-	FXMALLOCATTR void *calloc(FXuint no, FXuval size) throw();
+	FXMALLOCATTR void *calloc(FXuint no, FXuval size, FXuint alignment=0) throw();
 	//! Frees a block
-	void free(void *blk) throw();
+	void free(void *blk, FXuint alignment=0) throw();
 	/*! Extends a block, returning zero if unable. Note that like the
 	ANSI \c realloc() you must still free \em blk on failure.
 	*/
@@ -205,12 +206,12 @@ public:
 	static FXMemoryPool *poolFromBlk(void *blk) throw();
 public:
 	//! Allocates a block from the global heap, returning zero if unable
-	static FXMALLOCATTR void *glmalloc(FXuval size) throw();
+	static FXMALLOCATTR void *glmalloc(FXuval size, FXuint alignment=0) throw();
 	/*! Allocates zero-filled \em no of blocks of size \em size from the
 	global heap, returning zero if unable */
-	static FXMALLOCATTR void *glcalloc(FXuval no, FXuval size) throw();
+	static FXMALLOCATTR void *glcalloc(FXuval no, FXuval size, FXuint alignment=0) throw();
 	//! Frees a block from the global heap
-	static void glfree(void *blk) throw();
+	static void glfree(void *blk, FXuint alignment=0) throw();
 	/*! Extends a block in the global heap, returning zero if unable.
 	Note that like the ANSI \c realloc() you must still free \em blk on failure.
 	*/

@@ -58,25 +58,29 @@ in a standard amendment, so it shall be very soon).
 entirely (some methods aren't implemented).
 \li Useful functions such as push_back() and pop_back() are implemented
 */
-template<typename type> class QMemArray : private std::vector<type>
+template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
+template<typename type, class allocator> class QMemArray : private std::vector<type, allocator>
 {
+	typedef std::vector<type, allocator> Base;
 private:
 	type *extArray;
 	uint extArrayLen;
 	bool noDeleteExtArray;
-	typename std::vector<type>::const_iterator int_retIndex(const type &d) const
+	typename Base::const_iterator int_retIndex(const type &d) const
 	{
-		typename std::vector<type>::const_iterator it;
+		typename Base::const_iterator it;
 		for(it=begin(); it!=end(); ++it)
 			if(*it==d) return it;
 		return it;
 	}
 public:
 	typedef type * Iterator;
+	typedef type * iterator;
 	typedef const type * ConstIterator;
+	typedef const type * const_iterator;
 	typedef type ValueType;
 	//! Constructs an empty array of \em type
-	QMemArray() : extArray(0), extArrayLen(0), noDeleteExtArray(false), std::vector<type>() { }
+	QMemArray() : extArray(0), extArrayLen(0), noDeleteExtArray(false), Base() { }
 	~QMemArray()
 	{
 		if(extArray && !noDeleteExtArray)
@@ -86,40 +90,40 @@ public:
 		}
 	}
 	//! Constructs an array of \em type \em size long
-	QMemArray(FXuval size) : extArray(0), extArrayLen(0), noDeleteExtArray(false), std::vector<type>(size) { }
+	QMemArray(FXuval size) : extArray(0), extArrayLen(0), noDeleteExtArray(false), Base(size) { }
 	//! Constructs an array using an external array
 	QMemArray(type *a, uint n, bool _noDeleteExtArray=true) : extArray(a), extArrayLen(n), noDeleteExtArray(_noDeleteExtArray) { }
-	QMemArray(const QMemArray<type> &o) : extArray(o.extArray), extArrayLen(o.extArrayLen), noDeleteExtArray(o.noDeleteExtArray), std::vector<type>(o) { }
-	QMemArray<type> &operator=(const QMemArray<type> &o) { extArray=o.extArray; extArrayLen=o.extArrayLen; noDeleteExtArray=o.noDeleteExtArray; std::vector<type>::operator=(o); return *this; }
-	FXADDMOVEBASECLASS(QMemArray, std::vector<type>)
+	QMemArray(const QMemArray<type, allocator> &o) : extArray(o.extArray), extArrayLen(o.extArrayLen), noDeleteExtArray(o.noDeleteExtArray), Base(o) { }
+	QMemArray<type, allocator> &operator=(const QMemArray<type, allocator> &o) { extArray=o.extArray; extArrayLen=o.extArrayLen; noDeleteExtArray=o.noDeleteExtArray; Base::operator=(o); return *this; }
+	FXADDMOVEBASECLASS(QMemArray, Base)
 
-	using std::vector<type>::capacity;
-	//using std::vector<type>::clear;
-	using std::vector<type>::empty;
-	using std::vector<type>::reserve;
+	using Base::capacity;
+	//using Base::clear;
+	using Base::empty;
+	using Base::reserve;
 
 	//! Returns a pointer to the array
-	type *data() const { return (extArray) ? extArray : const_cast<type *>(&std::vector<type>::front()); }
+	type *data() const { return (extArray) ? extArray : const_cast<type *>(&Base::front()); }
 	//! \overload
 	operator const type *() const { return data(); }
 	//! Returns the number of elements in the array
-	uint size() const { return (extArray) ? extArrayLen : (uint) std::vector<type>::size(); }
+	uint size() const { return (extArray) ? extArrayLen : (uint) Base::size(); }
 	//! \overload
-	uint count() const { return (extArray) ? extArrayLen : (uint) std::vector<type>::size(); }
+	uint count() const { return (extArray) ? extArrayLen : (uint) Base::size(); }
 	//! Returns true if the array is empty
 	bool isEmpty() const { return isNull(); }
 	//! Returns true if the array is empty
-	bool isNull() const { return (extArray) ? extArrayLen!=0 : std::vector<type>::empty(); }
+	bool isNull() const { return (extArray) ? extArrayLen!=0 : Base::empty(); }
 	//! Resizes the array
-	bool resize(uint size) { FXEXCEPTION_STL1 { std::vector<type>::resize(size); } FXEXCEPTION_STL2; return true; }
+	bool resize(uint size) { FXEXCEPTION_STL1 { Base::resize(size); } FXEXCEPTION_STL2; return true; }
 	//! \overload
-	bool resize(uint size, QGArray::Optimization optim) { std::vector<type>::resize(size); return true; }
+	bool resize(uint size, QGArray::Optimization optim) { Base::resize(size); return true; }
 	//! \overload
-	bool truncate(uint pos) { FXEXCEPTION_STL1 { std::vector<type>::resize(pos); } FXEXCEPTION_STL2; return true; }
+	bool truncate(uint pos) { FXEXCEPTION_STL1 { Base::resize(pos); } FXEXCEPTION_STL2; return true; }
 	//! Swaps the contents of two arrays
-	void swap(QMemArray<type> &o)
+	void swap(QMemArray<type, allocator> &o)
 	{
-		std::vector<type>::swap(o);
+		Base::swap(o);
 		type *_extArray=o.extArray;
 		uint _extArrayLen=o.extArrayLen;
 		bool _noDeleteExtArray=o.noDeleteExtArray;
@@ -143,21 +147,21 @@ public:
 	//! \deprecated For Qt compatibility only
 	FXDEPRECATEDEXT void detach() { }
 	//! \deprecated For Qt compatibility only
-	FXDEPRECATEDEXT QMemArray<type> copy() const { return *this; }
+	FXDEPRECATEDEXT QMemArray<type, allocator> copy() const { return *this; }
 	//! \deprecated For Qt compatibility only
-	FXDEPRECATEDEXT QMemArray<type> &assign(const QMemArray<type> &o) { std::vector<type>::operator=(o); return *this; }
+	FXDEPRECATEDEXT QMemArray<type, allocator> &assign(const QMemArray<type, allocator> &o) { Base::operator=(o); return *this; }
 	//! \overload
-	FXDEPRECATEDEXT QMemArray<type> &assign(const type *a, uint n) { return setRawData(a, n); }
+	FXDEPRECATEDEXT QMemArray<type, allocator> &assign(const type *a, uint n) { return setRawData(a, n); }
 	//! \deprecated For Qt compatibility only
-	FXDEPRECATEDEXT QMemArray<type> &duplicate(const QMemArray<type> &o) { std::vector<type>::operator=(o); return *this; }
+	FXDEPRECATEDEXT QMemArray<type, allocator> &duplicate(const QMemArray<type, allocator> &o) { Base::operator=(o); return *this; }
 	//! \overload
-	FXDEPRECATEDEXT QMemArray<type> &duplicate(const type *a, uint n) { return setRawData(a, n); }
+	FXDEPRECATEDEXT QMemArray<type, allocator> &duplicate(const type *a, uint n) { return setRawData(a, n); }
 	/*! Sets QMemArray<> to use an external array. Note that not all methods are implemented for this
 	(see the header file). Note also that like Qt's version, you must not resize or reassign the array
 	when in this state. Failure to call resetRawData() before destruction causes \c delete on the data
 	unless you set \em _noDeleteExtArray.
 	*/
-	QMemArray<type> &setRawData(const type *a, uint n, bool _noDeleteExtArray=false)
+	QMemArray<type, allocator> &setRawData(const type *a, uint n, bool _noDeleteExtArray=false)
 	{
 		extArray=const_cast<type *>(a); extArrayLen=n;
 		noDeleteExtArray=_noDeleteExtArray;
@@ -194,7 +198,7 @@ public:
 	void sort()
 	{
 		if(extArray) throw "Not implemented for external arrays";
-		std::sort(std::vector<type>::begin(), std::vector<type>::end(), sortPredicate);		
+		std::sort(Base::begin(), Base::end(), sortPredicate);		
 	}
 	//! Performs a binary search to find an item (needs a numerically sorted array), returning -1 if not found
 	int bsearch(const type &val) const
@@ -214,21 +218,21 @@ public:
 		return -1;
 	}
 	//! Returns a reference to the element at index \em i in the array
-	type &at(uint i) const { return (extArray) ? extArray[i] : const_cast<type &>(std::vector<type>::at(i)); }
+	type &at(uint i) const { return (extArray) ? extArray[i] : const_cast<type &>(Base::at(i)); }
 	//! \overload
 	type &operator[](uint i) const { return at(i); }
 	//! \overload
 	type &operator[](int i) const { return at((uint) i); }
-	bool operator==(const QMemArray<type> &o) const
+	bool operator==(const QMemArray<type, allocator> &o) const
 	{
 		if(extArray) throw "Not implemented for external arrays";
-		const std::vector<type> &me=*this;
+		const Base &me=*this;
 		return me==o;
 	}
-	bool operator!=(const QMemArray<type> &o) const
+	bool operator!=(const QMemArray<type, allocator> &o) const
 	{
 		if(extArray) throw "Not implemented for external arrays";
-		const std::vector<type> &me=*this;
+		const Base &me=*this;
 		return me!=o;
 	}
 	//! Returns an iterator pointing to the first element
@@ -241,18 +245,18 @@ public:
 	ConstIterator end() const { return data()+size(); }
 
 	//! Appends an item onto the end
-	void push_back(const type &v) { FXEXCEPTION_STL1 { std::vector<type>::push_back(v); } FXEXCEPTION_STL2; }
+	void push_back(const type &v) { FXEXCEPTION_STL1 { Base::push_back(v); } FXEXCEPTION_STL2; }
 	//! \overload
 	void append(const type &v) { push_back(v); }
 	//! Removes an item from the end
-	using std::vector<type>::pop_back;
+	using Base::pop_back;
 };
 
 namespace QMemArrayImpl
 {
-	template<bool isPOD, typename type> struct Serialise
+	template<bool isPOD, typename type, class allocator> struct Serialise
 	{
-		Serialise(FXStream &s, const QMemArray<type> &a)
+		Serialise(FXStream &s, const QMemArray<type, allocator> &a)
 		{
 			FXuint mysize=a.size();
 			s << mysize;
@@ -260,18 +264,18 @@ namespace QMemArrayImpl
 				s << a.at(i);
 		}
 	};
-	template<typename type> struct Serialise<true, type>
+	template<typename type, class allocator> struct Serialise<true, type, allocator>
 	{
-		Serialise(FXStream &s, const QMemArray<type> &a)
+		Serialise(FXStream &s, const QMemArray<type, allocator> &a)
 		{
 			FXuint mysize=a.size();
 			s << mysize;
 			s.save(a.data(), mysize);
 		}
 	};
-	template<bool isPOD, typename type> struct Deserialise
+	template<bool isPOD, typename type, class allocator> struct Deserialise
 	{
-		Deserialise(FXStream &s, QMemArray<type> &a)
+		Deserialise(FXStream &s, QMemArray<type, allocator> &a)
 		{
 			FXuint mysize;
 			s >> mysize;
@@ -280,9 +284,9 @@ namespace QMemArrayImpl
 				s >> a.at(i);
 		}
 	};
-	template<typename type> struct Deserialise<true, type>
+	template<typename type, class allocator> struct Deserialise<true, type, allocator>
 	{
-		Deserialise(FXStream &s, QMemArray<type> &a)
+		Deserialise(FXStream &s, QMemArray<type, allocator> &a)
 		{
 			FXuint mysize;
 			s >> mysize;
@@ -293,15 +297,15 @@ namespace QMemArrayImpl
 }
 
 //! Writes the contents of the array to stream \em s
-template<typename type> FXStream &operator<<(FXStream &s, const QMemArray<type> &a)
+template<typename type, class allocator> FXStream &operator<<(FXStream &s, const QMemArray<type, allocator> &a)
 {
-	QMemArrayImpl::Serialise<Generic::TraitsBasic<type>::isPOD, type>(s, a);
+	QMemArrayImpl::Serialise<Generic::TraitsBasic<type>::isPOD, type, allocator>(s, a);
 	return s;
 }
 //! Reads an array from stream \em s
-template<typename type> FXStream &operator>>(FXStream &s, QMemArray<type> &a)
+template<typename type, class allocator> FXStream &operator>>(FXStream &s, QMemArray<type, allocator> &a)
 {
-	QMemArrayImpl::Deserialise<Generic::TraitsBasic<type>::isPOD, type>(s, a);
+	QMemArrayImpl::Deserialise<Generic::TraitsBasic<type>::isPOD, type, allocator>(s, a);
 	return s;
 }
 

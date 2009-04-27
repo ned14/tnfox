@@ -130,8 +130,9 @@ acting like root). Of course, users may not agree with this :)
 struct FXProcessPrivate;
 class FXProcess_StaticInitBase;
 class FXProcess_StaticDepend;
+template<typename T, int alignment> class aligned_allocator;
 template<class type> class QValueList;
-template<class type> class QMemArray;
+template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
 class FXAPI FXProcess
 {
 	FXProcessPrivate *p;

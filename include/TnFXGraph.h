@@ -76,8 +76,9 @@ VTK application.
 
 class FXGLVertices;
 class FXVec3d;
+template<typename T, int alignment> class aligned_allocator;
 template<class type> class QPtrVector;
-template<class type> class QMemArray;
+template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
 
 
 /*! \class TnFXGraph

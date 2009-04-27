@@ -75,7 +75,7 @@ public:
 		FXRBOp unh=FXRBFunc(&CloseHandle, myprocessh);
 		pssize=sizeof(PRIVILEGE_SET)+1*sizeof(LUID_AND_ATTRIBUTES);
 		FXERRHM(ps=(PRIVILEGE_SET *) malloc(pssize));
-		FXRBOp unps=FXRBFunc(&free, ps, (FXMemoryPool *) 0);
+		FXRBOp unps=FXRBFunc(&free, ps, (FXMemoryPool *) 0, (FXuint) 0);
 		ps->PrivilegeCount=1;
 		ps->Control=0;
 		ps->Privilege[0].Attributes=0;

@@ -70,20 +70,26 @@ purposes (especially memory leak checking) */
 #endif
 
 /* Customise global allocator replacements according to system.
-On all systems except Linux, replace system allocator with our own
+On all systems except Linux and Mac OS X, replace system allocator with our own
 superior implementation (which is the same as Linux's) */
-#ifndef __linux__
- #define MYMALLOC(size)       nedalloc::nedmalloc(size)
- #define MYREALLOC(ptr, size) nedalloc::nedrealloc(ptr, size)
- #define MYFREE(ptr)          nedalloc::nedfree(ptr)
+#if !defined(__linux__) && !defined(__APPLE__)
+#define MYMALLOC(size, alignment) (alignment ? nedalloc::nedmemalign(alignment, size) : nedalloc::nedmalloc(size))
+ #define MYREALLOC(ptr, size)      nedalloc::nedrealloc(ptr, size)
+ #define MYFREE(ptr, alignment)    nedalloc::nedfree(ptr)
  #ifndef _MSC_VER
   // Python bindings need this on POSIX
   #define FXDISABLE_GLOBAL_MARKER 0
  #endif
 #else
- #define MYMALLOC(size)       ::malloc(size)
- #define MYREALLOC(ptr, size) ::realloc(ptr, size)
- #define MYFREE(ptr)          ::free(ptr)
+ #ifdef _MSC_VER
+  #define MYMALLOC(size, alignment) (alignment ? ::_aligned_malloc(size, alignment) : ::malloc(size))
+  #define MYREALLOC(ptr, size)      ::realloc(ptr, size)
+  #define MYFREE(ptr, alignment)    (alignment ? ::_aligned_free(ptr) : ::free(ptr))
+ #else
+  #define MYMALLOC(size, alignment) (alignment ? ::memalign(alignment, size) : ::malloc(size))
+  #define MYREALLOC(ptr, size)      ::realloc(ptr, size)
+  #define MYFREE(ptr, alignment)    ::free(ptr)
+ #endif
 #endif
 
 /* Defining this saves the four or eight byte overhead used to mark a block
@@ -199,28 +205,29 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 	{
 		return allocated;
 	}
-	void *malloc(FXuval size) throw()
+	void *malloc(FXuval size, FXuint alignment=0) throw()
 	{
 		if((FXuval)-1!=maxsize)
 		{
 			if(allocated+size>maxsize) return 0;
 		}
-		void *ret=nedalloc::nedpmalloc(heap, size);
+		void *ret=alignment ? nedalloc::nedpmemalign(heap, alignment, size) : nedalloc::nedpmalloc(heap, size);
 		if(ret && (FXuval)-1!=maxsize) allocated+=(int) nedalloc::nedblksize(ret);
 		return ret;
 	}
-	void *calloc(FXuint no, FXuval esize) throw()
+	void *calloc(FXuint no, FXuval esize, FXuint alignment=0) throw()
 	{
 		FXuval size=esize*no;
 		if((FXuval)-1!=maxsize)
 		{
 			if(allocated+size>maxsize) return 0;
 		}
-		void *ret=nedalloc::nedpcalloc(heap, no, esize);
+		void *ret=alignment ? nedalloc::nedpmemalign(heap, alignment, size) : nedalloc::nedpmalloc(heap, size);
+		memset(ret, 0, size);
 		if(ret && (FXuval)-1!=maxsize) allocated+=(int) nedalloc::nedblksize(ret);
 		return ret;
 	}
-	void free(void *blk) throw()
+	void free(void *blk, FXuint alignment) throw()
 	{
 		if((FXuval)-1!=maxsize)
 			allocated-=(int) nedalloc::nedblksize(blk);
@@ -314,17 +321,17 @@ FXuval FXMemoryPool::maxsize() const throw()
 {
 	return p->maxsize;
 }
-void *FXMemoryPool::malloc(FXuval size) throw()
+void *FXMemoryPool::malloc(FXuval size, FXuint alignment) throw()
 {
-	return p->malloc(size);
+	return p->malloc(size, alignment);
 }
-void *FXMemoryPool::calloc(FXuint no, FXuval esize) throw()
+void *FXMemoryPool::calloc(FXuint no, FXuval esize, FXuint alignment) throw()
 {
-	return p->calloc(no, esize);
+	return p->calloc(no, esize, alignment);
 }
-void FXMemoryPool::free(void *blk) throw()
+void FXMemoryPool::free(void *blk, FXuint alignment) throw()
 {
-	return p->free(blk);
+	return p->free(blk, alignment);
 }
 void *FXMemoryPool::realloc(void *blk, FXuval size) throw()
 {
@@ -340,16 +347,16 @@ FXMemoryPool *FXMemoryPool::poolFromBlk(void *blk) throw()
 
 
 
-void *FXMemoryPool::glmalloc(FXuval size) throw()
+void *FXMemoryPool::glmalloc(FXuval size, FXuint alignment) throw()
 {
-	void *ret=nedalloc::nedmalloc(size);
+	void *ret=alignment ? nedalloc::nedmemalign(alignment, size) : nedalloc::nedmalloc(size);
 	return ret;
 }
-void *FXMemoryPool::glcalloc(FXuval no, FXuval size) throw()
+void *FXMemoryPool::glcalloc(FXuval no, FXuval size, FXuint alignment) throw()
 {
-	return nedalloc::nedcalloc(no, size);
+	return alignment ? memset(nedalloc::nedmemalign(alignment, size), 0, size) : nedalloc::nedcalloc(no, size);
 }
-void FXMemoryPool::glfree(void *blk) throw()
+void FXMemoryPool::glfree(void *blk, FXuint alignment) throw()
 {
 	nedalloc::nedfree(blk);
 }
@@ -443,7 +450,7 @@ static struct FailOnFreeEntry
 static QMutex failOnFreesLock;
 #endif
 
-void *malloc(size_t size, FXMemoryPool *heap) throw()
+void *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw()
 {
 	void *ret;
 	FXMemoryPoolPrivate *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
@@ -452,39 +459,42 @@ void *malloc(size_t size, FXMemoryPool *heap) throw()
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
-		size+=sizeof(FXuval);
+		size+=alignment+sizeof(FXuval);
 		if(!(ret=mp->malloc(size))) return 0;
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
-		_ret[0]=*(FXuval *) "FXMPFXMP";
+		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
+		for(; _ret<ret; _ret++) *_ret=*(FXuval *) "FXMPFXMP";
 	}
 	else
 	{
 #if !FXDISABLE_GLOBAL_MARKER
-		size+=sizeof(FXuval);
-#endif
-		if(!(ret=MYMALLOC(size))) return 0;
-#if !FXDISABLE_GLOBAL_MARKER
+		size+=alignment+sizeof(FXuval);
+		if(!(ret=MYMALLOC(size, 0))) return 0;
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
-		_ret[0]=*(FXuval *) "FYMPFYMP";
+		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
+		for(; _ret<ret; _ret++) *_ret=*(FXuval *) "FYMPFYMP";
+#else
+		if(!(ret=MYMALLOC(size, alignment))) return 0;
 #endif
 	}
-#else
-	size+=sizeof(FXuval)*3;
+#else //!FXDISABLE_SEPARATE_POOLS
+	size+=alignment+sizeof(FXuval)*3;
 	if(mp && mp->allocated+size>mp->maxsize) return 0;
 	if(!(ret=::malloc(size))) return 0;
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
-	_ret[0]=*(FXuval *) "FXMPFXMP";
-	_ret[1]=(FXuval) mp;
-	_ret[2]=(FXuval) size;
+	if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
+	for(; _ret<(FXuval *)ret-2; _ret++) *_ret=*(FXuval *) "FXMPFXMP";
+	_ret[0]=(FXuval) mp;
+	_ret[1]=(FXuval) size;
 	if(mp) mp->allocated+=(int) size;
 #endif
 	//fxmessage("=%p\n", ret);
 	return ret;
 }
-void *calloc(size_t no, size_t _size, FXMemoryPool *heap) throw()
+void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) throw()
 {
 	FXuval size=no*_size;
 	void *ret;
@@ -494,36 +504,40 @@ void *calloc(size_t no, size_t _size, FXMemoryPool *heap) throw()
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
-		size+=sizeof(FXuval);
+		size+=alignment+sizeof(FXuval);
 		if(!(ret=mp->malloc(size))) return 0;
 		memset(ret, 0, size);
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
-		_ret[0]=*(FXuval *) "FXMPFXMP";
+		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
+		for(; _ret<ret; _ret++) *_ret=*(FXuval *) "FXMPFXMP";
 	}
 	else
 	{
 #if !FXDISABLE_GLOBAL_MARKER
-		size+=sizeof(FXuval);
-#endif
-		if(!(ret=MYMALLOC(size))) return 0;
+		size+=alignment+sizeof(FXuval);
+		if(!(ret=MYMALLOC(size, 0))) return 0;
 		memset(ret, 0, size);
-#if !FXDISABLE_GLOBAL_MARKER
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
-		_ret[0]=*(FXuval *) "FYMPFYMP";
+		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
+		for(; _ret<ret; _ret++) *_ret=*(FXuval *) "FYMPFYMP";
+#else
+		if(!(ret=MYMALLOC(size, alignment))) return 0;
+		memset(ret, 0, size);
 #endif
 	}
 #else
-	size+=sizeof(FXuval)*3;
+	size+=alignment+sizeof(FXuval)*3;
 	if(mp && mp->allocated+size>mp->maxsize) return 0;
 	ret=::malloc(size);
 	memset(ret, 0, size);
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
-	_ret[0]=*(FXuval *) "FXMPFXMP";
-	_ret[1]=(FXuval) mp;
-	_ret[2]=(FXuval) size;
+	if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
+	for(; _ret<(FXuval *)ret-2; _ret++) *_ret=*(FXuval *) "FXMPFXMP";
+	_ret[0]=(FXuval) mp;
+	_ret[1]=(FXuval) size;
 	if(mp) mp->allocated+=(int) size;
 #endif
 	//fxmessage("=%p\n", ret);
@@ -540,7 +554,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #if !FXDISABLE_SEPARATE_POOLS
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
-		_p-=1;
+		for(_p-=1;*_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
 		realmp=FXMemoryPoolPrivate::poolFromBlk(_p);
 		assert((FXMemoryPoolPrivate *)-1!=realmp);
 	}
@@ -567,7 +581,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #ifdef DEBUG
 			fxmessage("*** FX::realloc(%p) of block not allocated by FX::malloc()\n", p);
 #endif
-			if(!(ret=MYMALLOC(size))) return 0;
+			if(!(ret=MYMALLOC(size, 0))) return 0;
 			memcpy(ret, p, size);
 			::free(p);
 		}
@@ -575,7 +589,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #endif
 		{
 #if !FXDISABLE_GLOBAL_MARKER
-			_p-=1;
+			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=0);
 #endif
 			if(!(ret=MYREALLOC(_p, size))) return 0;
 		}
@@ -592,11 +606,12 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 		::free(p);
 		return ret;
 	}
-	else p=(void *) _p;
 	size+=3*sizeof(FXuval);
 	realmp=(FXMemoryPoolPrivate *) _p[1];
 	FXuval oldsize=_p[2];
 	if(mp && mp->allocated-(mp==realmp ? oldsize : 0)+size>mp->maxsize) return 0;
+	for(_p-=1; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+	p=(void *) _p;
 	if(!(ret=::realloc(p, size)))
 		return 0;
 	FXuval *_ret=(FXuval *) ret;
@@ -610,7 +625,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	//fxmessage("=%p\n", ret);
 	return ret;
 }
-void free(void *p, FXMemoryPool *) throw()
+void free(void *p, FXMemoryPool *, FXuint alignment) throw()
 {
 	if(!p) return;
 	FXMemoryPoolPrivate *realmp=0;
@@ -625,7 +640,7 @@ void free(void *p, FXMemoryPool *) throw()
 #if !FXDISABLE_SEPARATE_POOLS
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
-		_p-=1;
+		for(_p-=1;*_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
 		realmp=FXMemoryPoolPrivate::poolFromBlk(_p);
 		assert((FXMemoryPoolPrivate *)-1!=realmp);
 	}
@@ -646,10 +661,10 @@ void free(void *p, FXMemoryPool *) throw()
 #endif
 		{
 #if !FXDISABLE_GLOBAL_MARKER
-			_p-=1;
-			*_p=0;
+			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=0);
+			alignment=0;
 #endif
-			MYFREE(_p);
+			MYFREE(_p, alignment);
 		}
 	}
 	if(realmp && realmp->deleted && realmp->size()==0)
@@ -669,9 +684,10 @@ void free(void *p, FXMemoryPool *) throw()
 		::free(p);
 		return;
 	}
-	else p=(void *) _p;
 	realmp=(FXMemoryPoolPrivate *) _p[1];
 	if(realmp) realmp->allocated-=(int) _p[2];
+	for(_p-=1; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+	p=(void *) _p;
 	::free(p);
 	if(realmp && realmp->deleted && realmp->allocated==0)
 	{
@@ -703,7 +719,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 #if !FXDISABLE_GLOBAL_MARKER
 		size+=sizeof(FXuval);
 #endif
-		if(!(ret=MYMALLOC(size))) return 0;
+		if(!(ret=MYMALLOC(size, 0))) return 0;
 #if !FXDISABLE_GLOBAL_MARKER
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));

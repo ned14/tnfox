@@ -1654,7 +1654,7 @@ FXString QSSLDevice::cipherDescription() const
 	if(p->dev->isSynchronous())
 	{
 		char buffer[256];
-		return FXString(SSL_CIPHER_description(SSL_get_current_cipher(p->handle), buffer, sizeof(buffer)));
+		return FXString(SSL_CIPHER_description(const_cast<SSL_CIPHER *>(SSL_get_current_cipher(p->handle)), buffer, sizeof(buffer)));
 	}
 	else
 		return FXString("%1(%2)").arg(p->key.typeAsString()).arg(p->key.bitsLen());

@@ -1023,7 +1023,7 @@ void QTrans::refresh()
 		fxwarning("QTrans: setlocale() did not return ISO639 language id - setting to 'en' instead of '%s'\n", iso639.text());
 		iso639="en";
 	}
-	if(iso3166.length()!=2)
+	if(!iso3166.length())
 	{
 		fxwarning("QTrans: setlocale() did not return ISO3166 country id - setting to 'eu' instead of '%s'\n", iso3166.text());
 		iso3166="eu";
