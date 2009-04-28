@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLSPHERE_H
 #define FXGLSPHERE_H
 
@@ -34,7 +36,7 @@ namespace FX {
 
 
 /// OpenGL Sphere Object
-class FXAPI FXGLSphere : public FXGLShape {
+class FXGRAPHINGMODULEAPI FXGLSphere : public FXGLShape {
   FXDECLARE(FXGLSphere)
 public:
   FXfloat radius;   // Radius of sphere
@@ -85,5 +87,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

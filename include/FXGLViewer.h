@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLVIEWER_H
 #define FXGLVIEWER_H
 
@@ -70,7 +72,7 @@ struct FXViewport {
 
 
 // OpenGL Light Source
-struct FXAPI FXLight {
+struct FXGRAPHINGMODULEAPI FXLight {
   FXGLColor  ambient;           // Ambient light color
   FXGLColor  diffuse;           // Diffuse light color
   FXGLColor  specular;          // Specular light color
@@ -85,7 +87,7 @@ struct FXAPI FXLight {
 
 
 // OpenGL Material Description
-struct FXAPI FXMaterial {
+struct FXGRAPHINGMODULEAPI FXMaterial {
   FXGLColor  ambient;           // Ambient material color
   FXGLColor  diffuse;           // Diffuse material color
   FXGLColor  specular;          // Specular material color
@@ -102,7 +104,7 @@ typedef FXbool (*FXZSortFunc)(FXfloat*& buffer,FXint& used,FXint& size);
 
 
 /// OpenGL viewer widget
-class FXAPI FXGLViewer : public FXGLCanvas {
+class FXGRAPHINGMODULEAPI FXGLViewer : public FXGLCanvas {
   FXDECLARE(FXGLViewer)
   friend class FXGLObject;
 protected:
@@ -565,5 +567,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

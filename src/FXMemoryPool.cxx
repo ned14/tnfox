@@ -22,6 +22,7 @@
 //#define DEBUG
 //#define FXDISABLE_GLOBAL_MARKER 0
 //#define FXDISABLE_SEPARATE_POOLS 1
+//#define FXENABLE_DEBUG_PRINTING
 
 
 
@@ -452,15 +453,17 @@ static QMutex failOnFreesLock;
 
 void *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw()
 {
-	void *ret;
+	void *ret, *trueret;
 	FXMemoryPoolPrivate *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
-	//fxmessage("FX::malloc(%u, %p)", size, mp);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("FX::malloc(%u, %p, %u)", size, mp, alignment);
+#endif
 	if(!size) size=1;	// BSD allocator doesn't like zero allocations
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
 		size+=alignment+sizeof(FXuval);
-		if(!(ret=mp->malloc(size))) return 0;
+		if(!(trueret=ret=mp->malloc(size))) return 0;
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
 		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
@@ -470,19 +473,19 @@ void *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw()
 	{
 #if !FXDISABLE_GLOBAL_MARKER
 		size+=alignment+sizeof(FXuval);
-		if(!(ret=MYMALLOC(size, 0))) return 0;
+		if(!(trueret=ret=MYMALLOC(size, 0))) return 0;
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
 		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
 		for(; _ret<ret; _ret++) *_ret=*(FXuval *) "FYMPFYMP";
 #else
-		if(!(ret=MYMALLOC(size, alignment))) return 0;
+		if(!(trueret=ret=MYMALLOC(size, alignment))) return 0;
 #endif
 	}
 #else //!FXDISABLE_SEPARATE_POOLS
 	size+=alignment+sizeof(FXuval)*3;
 	if(mp && mp->allocated+size>mp->maxsize) return 0;
-	if(!(ret=::malloc(size))) return 0;
+	if(!(trueret=ret=::malloc(size))) return 0;
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
 	if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
@@ -491,21 +494,25 @@ void *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw()
 	_ret[1]=(FXuval) size;
 	if(mp) mp->allocated+=(int) size;
 #endif
-	//fxmessage("=%p\n", ret);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("=%p (%p)\n", ret, trueret);
+#endif
 	return ret;
 }
 void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) throw()
 {
 	FXuval size=no*_size;
-	void *ret;
+	void *ret, *trueret;
 	FXMemoryPoolPrivate *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
-	//fxmessage("FX::calloc(%u, %p)", size, mp);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("FX::calloc(%u, %p, %u)", size, mp, alignment);
+#endif
 	if(!size) size=1;	// BSD allocator doesn't like zero allocations
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
 		size+=alignment+sizeof(FXuval);
-		if(!(ret=mp->malloc(size))) return 0;
+		if(!(trueret=ret=mp->malloc(size))) return 0;
 		memset(ret, 0, size);
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
@@ -516,21 +523,21 @@ void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) thro
 	{
 #if !FXDISABLE_GLOBAL_MARKER
 		size+=alignment+sizeof(FXuval);
-		if(!(ret=MYMALLOC(size, 0))) return 0;
+		if(!(trueret=ret=MYMALLOC(size, 0))) return 0;
 		memset(ret, 0, size);
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
 		if(alignment) ret=(void *)(((FXuval) ret+alignment-1)&~(alignment-1));
 		for(; _ret<ret; _ret++) *_ret=*(FXuval *) "FYMPFYMP";
 #else
-		if(!(ret=MYMALLOC(size, alignment))) return 0;
+		if(!(trueret=ret=MYMALLOC(size, alignment))) return 0;
 		memset(ret, 0, size);
 #endif
 	}
 #else
 	size+=alignment+sizeof(FXuval)*3;
 	if(mp && mp->allocated+size>mp->maxsize) return 0;
-	ret=::malloc(size);
+	trueret=ret=::malloc(size);
 	memset(ret, 0, size);
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
@@ -540,16 +547,20 @@ void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) thro
 	_ret[1]=(FXuval) size;
 	if(mp) mp->allocated+=(int) size;
 #endif
-	//fxmessage("=%p\n", ret);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("=%p (%p)\n", ret, trueret);
+#endif
 	return ret;
 }
 void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 {
 	if(!p) return malloc(size, heap);
-	void *ret;
+	void *ret, *trueret;
 	FXMemoryPoolPrivate *realmp=0, *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
 	FXuval *_p=(FXuval *) p;
-	//fxmessage("FX::realloc(%p, %u, %p)", p, size, mp);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("FX::realloc(%p, %u, %p)", p, size, mp);
+#endif
 	if(!size) size=1;	// BSD allocator doesn't like zero allocations
 #if !FXDISABLE_SEPARATE_POOLS
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
@@ -560,7 +571,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	}
 	if(realmp!=mp)
 	{	// Reparent
-		if(!(ret=malloc(size, heap))) return 0;
+		if(!(trueret=ret=malloc(size, heap))) return 0;
 		memcpy(ret, p, size);
 		free(p);
 		return ret;
@@ -569,7 +580,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	if(realmp)
 	{
 		size+=sizeof(FXuval);
-		if(!(ret=realmp->realloc(p, size))) return 0;
+		if(!(trueret=ret=realmp->realloc(p, size))) return 0;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
 	}
 	else
@@ -581,7 +592,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #ifdef DEBUG
 			fxmessage("*** FX::realloc(%p) of block not allocated by FX::malloc()\n", p);
 #endif
-			if(!(ret=MYMALLOC(size, 0))) return 0;
+			if(!(trueret=ret=MYMALLOC(size, 0))) return 0;
 			memcpy(ret, p, size);
 			::free(p);
 		}
@@ -591,7 +602,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #if !FXDISABLE_GLOBAL_MARKER
 			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=0);
 #endif
-			if(!(ret=MYREALLOC(_p, size))) return 0;
+			if(!(trueret=ret=MYREALLOC(_p, size))) return 0;
 		}
 #if !FXDISABLE_GLOBAL_MARKER
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
@@ -601,36 +612,41 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	_p-=3;
 	if(_p[0]!=*(FXuval *) "FXMPFXMP")
 	{	// Transfer
-		ret=malloc(size, heap);
+		trueret=ret=malloc(size, heap);
 		memcpy(ret, p, size);
 		::free(p);
-		return ret;
+		goto end;
 	}
 	size+=3*sizeof(FXuval);
 	realmp=(FXMemoryPoolPrivate *) _p[1];
 	FXuval oldsize=_p[2];
-	if(mp && mp->allocated-(mp==realmp ? oldsize : 0)+size>mp->maxsize) return 0;
-	for(_p-=1; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
-	p=(void *) _p;
-	if(!(ret=::realloc(p, size)))
-		return 0;
+	if(mp && mp->allocated-(mp==realmp ? oldsize : 0)+size>mp->maxsize) goto end;
+	for(; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+	p=(void *)(++_p);
+	if(!(trueret=ret=::realloc(p, size)))
+		goto end;
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
-	//_ret[0]=*(FXuval *) "FXMPFXMP";
+	_ret[0]=*(FXuval *) "FXMPFXMP";
 	_ret[1]=(FXuval) mp;
 	_ret[2]=(FXuval) size;
 	if(realmp) realmp->allocated-=(int) oldsize;
 	if(mp) mp->allocated+=(int) size;
 #endif
-	//fxmessage("=%p\n", ret);
+end:
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("=%p (%p)\n", ret, trueret);
+#endif
 	return ret;
 }
-void free(void *p, FXMemoryPool *, FXuint alignment) throw()
+void free(void *p, FXMemoryPool *heap, FXuint alignment) throw()
 {
 	if(!p) return;
 	FXMemoryPoolPrivate *realmp=0;
 	FXuval *_p=(FXuval *) p;
-	//fxmessage("FX::free(%p)\n", p);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("FX::free(%p, %p, %u)=", p, heap, alignment);
+#endif
 #if FXFAILONFREESLOTS>0
 	for(int n=0; n<FXFAILONFREESLOTS; n++)
 	{
@@ -646,7 +662,12 @@ void free(void *p, FXMemoryPool *, FXuint alignment) throw()
 	}
 	p=(void *) _p;
 	if(realmp)
+	{
+#ifdef FXENABLE_DEBUG_PRINTING
+		fxmessage("=%p\n", p);
+#endif
 		realmp->free(p);
+	}
 	else
 	{
 #if !FXDISABLE_GLOBAL_MARKER
@@ -654,6 +675,9 @@ void free(void *p, FXMemoryPool *, FXuint alignment) throw()
 		{
 #ifdef DEBUG
 			fxmessage("*** FX::free(%p) of block not allocated by FX::malloc()\n", p);
+#endif
+#ifdef FXENABLE_DEBUG_PRINTING
+			fxmessage("=%p\n", p);
 #endif
 			::free(p);
 		}
@@ -663,6 +687,9 @@ void free(void *p, FXMemoryPool *, FXuint alignment) throw()
 #if !FXDISABLE_GLOBAL_MARKER
 			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=0);
 			alignment=0;
+#endif
+#ifdef FXENABLE_DEBUG_PRINTING
+			fxmessage("=%p\n", _p);
 #endif
 			MYFREE(_p, alignment);
 		}
@@ -681,13 +708,19 @@ void free(void *p, FXMemoryPool *, FXuint alignment) throw()
 #ifdef DEBUG
 		fxmessage("*** FX::free(%p) of block not allocated by FX::malloc()\n", p);
 #endif
+#ifdef FXENABLE_DEBUG_PRINTING
+		fxmessage("=%p\n", p);
+#endif
 		::free(p);
 		return;
 	}
 	realmp=(FXMemoryPoolPrivate *) _p[1];
 	if(realmp) realmp->allocated-=(int) _p[2];
-	for(_p-=1; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
-	p=(void *) _p;
+	for(; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+	p=(void *)(++_p);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("=%p\n", p);
+#endif
 	::free(p);
 	if(realmp && realmp->deleted && realmp->allocated==0)
 	{
@@ -702,14 +735,16 @@ void free(void *p, FXMemoryPool *, FXuint alignment) throw()
 #if defined(DEBUG) && defined(_MSC_VER)
 void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw()
 {
-	void *ret;
+	void *ret, *trueret;
 	FXMemoryPoolPrivate *mp=!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current;
-	//fxmessage("FX::malloc_dbg(%u, %p, %s, %d)", size, mp, file, lineno);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("FX::malloc_dbg(%u, %p, %s, %d)", size, mp, file, lineno);
+#endif
 #if !FXDISABLE_SEPARATE_POOLS
 	if(mp)
 	{
 		size+=sizeof(FXuval);
-		if(!(ret=mp->malloc(size))) return 0;
+		if(!(trueret=ret=mp->malloc(size))) return 0;
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
 		_ret[0]=*(FXuval *) "FXMPFXMP";
@@ -719,7 +754,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 #if !FXDISABLE_GLOBAL_MARKER
 		size+=sizeof(FXuval);
 #endif
-		if(!(ret=MYMALLOC(size, 0))) return 0;
+		if(!(trueret=ret=MYMALLOC(size, 0))) return 0;
 #if !FXDISABLE_GLOBAL_MARKER
 		FXuval *_ret=(FXuval *) ret;
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
@@ -729,7 +764,7 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 #else
 	size+=sizeof(FXuval)*3;
 	if(mp && mp->allocated+size>mp->maxsize) return 0;
-	if(!(ret=::_malloc_dbg(size, blockuse, file, lineno))) return 0;
+	if(!(trueret=ret=::_malloc_dbg(size, blockuse, file, lineno))) return 0;
 	FXuval *_ret=(FXuval *) ret;
 	ret=FXOFFSETPTR(ret, 3*sizeof(FXuval));
 	_ret[0]=*(FXuval *) "FXMPFXMP";
@@ -737,7 +772,9 @@ void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw
 	_ret[2]=(FXuval) size;
 	if(mp) mp->allocated+=(int) size;
 #endif
-	//fxmessage("=%p\n", ret);
+#ifdef FXENABLE_DEBUG_PRINTING
+	fxmessage("=%p (%p)\n", ret, trueret);
+#endif
 	return ret;
 }
 #endif

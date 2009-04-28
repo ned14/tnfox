@@ -451,11 +451,11 @@ def getSQLModuleIncludes(prefix=""):
     return filelist
 def getGraphingModuleSources(prefix=""):
     filelist=os.listdir(prefix+"src")
-    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
+    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src or "FXGL" in src, filelist)
     return filelist
 def getGraphingModuleIncludes(prefix=""):
     filelist=os.listdir(prefix+"include")
-    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src, filelist)
+    filelist=filter(lambda src: "TnFXVTKCanvas" in src or "TnFXGraph" in src or "FXGL" in src, filelist)
     return filelist
    
 def doConfTests(env, prefixpath=""):

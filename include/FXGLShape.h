@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLSHAPE_H
 #define FXGLSHAPE_H
 
@@ -55,7 +57,7 @@ enum {
 
 
 /// OpenGL Shape Object
-class FXAPI FXGLShape : public FXGLObject {
+class FXGRAPHINGMODULEAPI FXGLShape : public FXGLObject {
   FXDECLARE_ABSTRACT(FXGLShape)
 protected:
   FXVec3f       position;             // Middle of the Bounding Box
@@ -164,5 +166,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

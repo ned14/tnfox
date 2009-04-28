@@ -231,6 +231,8 @@ inline void FXGLVertices::renderLines(FXGLViewer *viewer, bool isHit, bool compl
 
 inline void FXGLVertices::render(FXGLViewer *viewer, bool isHit, bool complex){
 #ifdef HAVE_GL_H
+  bool olddepthtest=!!glIsEnabled(GL_DEPTH_TEST);
+  if(options & VERTICES_NODEPTHTEST) glDisable(GL_DEPTH_TEST);
   if(!displayLists) displayLists=glGenLists(3);
   if(modified & (1<<viewer->doesTurbo())){
     //fxmessage("modified=%u\n", modified);
@@ -271,6 +273,7 @@ inline void FXGLVertices::render(FXGLViewer *viewer, bool isHit, bool complex){
     modified&=~(1<<viewer->doesTurbo());
     }
   glCallList(displayLists+viewer->doesTurbo());
+  if((options & VERTICES_NODEPTHTEST) && olddepthtest) glEnable(GL_DEPTH_TEST);
 #endif
   }
 
@@ -281,6 +284,7 @@ void FXGLVertices::drawshape(FXGLViewer *viewer){
 
 // Draw this object in a viewer
 void FXGLVertices::draw(FXGLViewer* viewer){
+#ifdef HAVE_GL_H
   // If we need lighting, set that up otherwise render directly
   if((options & STYLE_SURFACE) && !viewer->doesTurbo())
     FXGLShape::draw(viewer);
@@ -297,11 +301,13 @@ void FXGLVertices::draw(FXGLViewer* viewer){
     glPopMatrix();
     glPopAttrib();
     }
+#endif
   }
 
 
 // Draw this object for hit-testing purposes
 void FXGLVertices::hit(FXGLViewer* viewer){
+#ifdef HAVE_GL_H
   glPushAttrib(GL_CURRENT_BIT|GL_POINT_BIT|GL_LINE_BIT);
   glPushMatrix();
 
@@ -313,6 +319,7 @@ void FXGLVertices::hit(FXGLViewer* viewer){
   // Restore attributes and matrix
   glPopMatrix();
   glPopAttrib();
+#endif
   }
 
 
@@ -387,6 +394,86 @@ void FXGLVertices::DarkerGenerator(FXGLColor &color, FXGLVertices *obj, FXGLView
   color.a=base.a;
   }
 
+
+
+
+static class FXGLCircleSource : public FXGLVertices
+{
+	FXVec3f *vertices;
+public:
+	FXGLCircleSource() : FXGLVertices(0,0,0, VERTICES_LINES|VERTICES_LOOPLINES|VERTICES_NODEPTHTEST), vertices(0)
+	{
+		static const FXuint no=128;
+		FXERRHM(vertices=new FXVec3f[no]);
+		for(FXuint n=0; n<no; n++)
+			vertices[n]=FXVec3f(sin((float)PI*2/no*n), cos((float)PI*2/no*n), 0);
+		setVertices(vertices, no);
+		setLineSize(0.1f);
+		setColor(FXGLColor(0,0,0));
+	}
+	~FXGLCircleSource() { FXDELETE(vertices); }
+} fxglcirclesource;
+
+
+FXGLCircle::FXGLCircle(float _x, float _y, float _z, float _r, FXuint options)
+	: FXGLShape(_x,_y,_z, options), radius(_r), transformation(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+{
+}
+
+void FXGLCircle::drawshape(FXGLViewer *viewer)
+{
+#ifdef HAVE_GL_H
+	glScalef(radius, radius, radius);
+	glMultMatrixf((const GLfloat *) transformation);
+	fxglcirclesource.draw(viewer);
+#endif
+}
+
+void FXGLCircle::bounds(FXRangef& box){
+	FXRangef range(-radius, +radius, -radius, +radius, 0, 0);
+	range.lower=range.lower*transformation;
+	range.upper=range.upper*transformation;
+	box.lower.x=position.x+range.lower.x; box.upper.x=position.x+range.upper.x;
+	box.lower.y=position.y+range.lower.y; box.upper.y=position.y+range.upper.y;
+	box.lower.z=position.z+range.lower.z; box.upper.z=position.z+range.upper.z;
+}
+
+void FXGLCircle::draw(FXGLViewer* viewer)
+{
+#ifdef HAVE_GL_H
+	// If we need lighting, set that up otherwise render directly
+	if((options & STYLE_SURFACE) && !viewer->doesTurbo())
+		FXGLShape::draw(viewer);
+	else{
+		glPushAttrib(GL_CURRENT_BIT|GL_POINT_BIT|GL_LINE_BIT);
+		glPushMatrix();
+
+		// Object position
+		glTranslatef(position[0],position[1],position[2]);
+
+		drawshape(viewer);
+
+		// Restore attributes and matrix
+		glPopMatrix();
+		glPopAttrib();
+	}
+#endif
+}
+
+FXGLObject* FXGLCircle::copy()
+{
+	return new FXGLCircle(*this);
+}
+void FXGLCircle::save(FXStream& store) const
+{
+	FXGLShape::save(store);
+	store << radius << transformation;
+}
+void FXGLCircle::load(FXStream& store)
+{
+	FXGLShape::load(store);
+	store >> radius >> transformation;
+}
 
 }
 

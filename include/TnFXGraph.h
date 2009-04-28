@@ -30,20 +30,6 @@
 #include "FXVec4f.h"
 #include "qmemarray.h"
 
-#if FX_GRAPHINGMODULE==1
- #define FXGRAPHINGMODULEAPI FXAPI
-#elif FX_GRAPHINGMODULE==2
- #ifdef FOXDLL
-  #ifdef FX_GRAPHINGMODULE_EXPORTS
-   #define FXGRAPHINGMODULEAPI FXEXPORT
-  #else
-   #define FXGRAPHINGMODULEAPI FXIMPORT
-  #endif
- #else
-  #define FXGRAPHINGMODULEAPI
- #endif
-#endif
-
 namespace FX {
 
 /*! \file TnFXGraph.h

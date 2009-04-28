@@ -138,7 +138,8 @@ namespace FX
 	Working with SIMD data (e.g. FX::Maths::Vector) can need memory aligned data.
 	This custom STL allocator ensures that STL containers only use aligned allocations.
 	*/
-	template<typename T, int alignment> class aligned_allocator {
+	template<typename T, int alignment> class aligned_allocator
+	{
 	public:
 		typedef T *pointer;
 		typedef const T *const_pointer;
@@ -237,20 +238,20 @@ inline FXDLLPUBLIC void *operator new[](size_t size, int blockuse, const char *f
 
 /*! \ingroup fxmemoryops
 operator new with a specific pool */
-inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc);
-inline FXDLLPUBLIC void *operator new(size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc)
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment=0) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new(size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
 {
 	void *ret;
-	if(!(ret=FX::malloc(size, heap))) throw std::bad_alloc();
+	if(!(ret=FX::malloc(size, heap, alignment))) throw std::bad_alloc();
 	return ret;
 }
 /*! \ingroup fxmemoryops
 operator new with a specific pool */
-inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc);
-inline FXDLLPUBLIC void *operator new[](size_t size, FX::FXMemoryPool *heap) throw(std::bad_alloc)
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment=0) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new[](size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
 {
 	void *ret;
-	if(!(ret=FX::malloc(size, heap))) throw std::bad_alloc();
+	if(!(ret=FX::malloc(size, heap, alignment))) throw std::bad_alloc();
 	return ret;
 }
 /*! \ingroup fxmemoryops
@@ -264,6 +265,18 @@ operator delete with a specific pool */
 inline FXDLLPUBLIC void operator delete[](void *p, FX::FXMemoryPool *heap) throw()
 {
 	if(p) FX::free(p, heap);
+}
+/*! \ingroup fxmemoryops
+operator delete with a specific pool */
+inline FXDLLPUBLIC void operator delete(void *p, FX::FXMemoryPool *heap, FX::FXuint alignment) throw()
+{
+	if(p) FX::free(p, heap, alignment);
+}
+/*! \ingroup fxmemoryops
+operator delete with a specific pool */
+inline FXDLLPUBLIC void operator delete[](void *p, FX::FXMemoryPool *heap, FX::FXuint alignment) throw()
+{
+	if(p) FX::free(p, heap, alignment);
 }
 
 #endif

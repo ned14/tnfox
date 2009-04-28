@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLCYLINDER_H
 #define FXGLCYLINDER_H
 
@@ -34,7 +36,7 @@ namespace FX {
 
 
 /// OpenGL Cylinder Object
-class FXAPI FXGLCylinder : public FXGLShape {
+class FXGRAPHINGMODULEAPI FXGLCylinder : public FXGLShape {
   FXDECLARE(FXGLCylinder)
 public:
   FXfloat height;
@@ -75,5 +77,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

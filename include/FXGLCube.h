@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLCUBE_H
 #define FXGLCUBE_H
 
@@ -34,7 +36,7 @@ namespace FX {
 
 
 /// OpenGL Cube Object
-class FXAPI FXGLCube : public FXGLShape {
+class FXGRAPHINGMODULEAPI FXGLCube : public FXGLShape {
   FXDECLARE(FXGLCube)
 public:
   FXfloat width;
@@ -81,5 +83,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

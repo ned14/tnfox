@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLCANVAS_H
 #define FXGLCANVAS_H
 
@@ -37,7 +39,7 @@ class FXGLVisual;
 
 
 /// GLCanvas, an area drawn by another object
-class FXAPI FXGLCanvas : public FXCanvas {
+class FXGRAPHINGMODULEAPI FXGLCanvas : public FXCanvas {
   FXDECLARE(FXGLCanvas)
 private:
   FXGLCanvas  *sgnext;  // Share group next in share list
@@ -117,4 +119,4 @@ public:
 
 #endif
 #endif
-
+#endif

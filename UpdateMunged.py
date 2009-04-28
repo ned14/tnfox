@@ -85,7 +85,7 @@ if options.svnrevisionheader:
                         line=line[idx+1:]
                     idx=line.find('M')
                     if idx!=-1:
-                        line=line[:idx]+line[idx+1:]
+                        line=line[:idx]	          #+line[idx+1:]
                     fh.write(line)
                     print "\nThis is built from SVN revision",line
                 childinh.close()

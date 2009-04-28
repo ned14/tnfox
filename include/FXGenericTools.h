@@ -146,6 +146,7 @@ template<typename T> struct sameType<T, T>
 template<typename type> struct addRef { typedef type &value; };
 template<typename type> struct addRef<type &> { typedef type value; };
 template<> struct addRef<void> { typedef void value; };
+template<> struct addRef<const void> { typedef const void value; };
 /*! \struct addConstRef
 \ingroup generic
 \brief Ensures a type is a const reference

@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLTRIANGLEMESH_H
 #define FXGLTRIANGLEMESH_H
 
@@ -44,7 +46,7 @@ namespace FX {
 
 
 /// OpenGL Triangle Mesh Object
-class FXAPI FXGLTriangleMesh : public FXGLShape {
+class FXGRAPHINGMODULEAPI FXGLTriangleMesh : public FXGLShape {
   FXDECLARE(FXGLTriangleMesh)
 private:
   FXfloat   *vertexBuffer;
@@ -113,5 +115,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLCONE_H
 #define FXGLCONE_H
 
@@ -34,7 +36,7 @@ namespace FX {
 
 
 /// OpenGL Cone Object
-class FXAPI FXGLCone : public FXGLShape {
+class FXGRAPHINGMODULEAPI FXGLCone : public FXGLShape {
   FXDECLARE(FXGLCone)
 public:
   FXfloat height;
@@ -76,5 +78,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

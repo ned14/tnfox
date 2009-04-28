@@ -152,6 +152,22 @@
   #define FXEXCEPTIONAPI(api)
 #endif
 
+#ifdef FX_GRAPHINGMODULE
+#if FX_GRAPHINGMODULE==1
+ #define FXGRAPHINGMODULEAPI FXAPI
+#elif FX_GRAPHINGMODULE==2
+ #ifdef FOXDLL
+  #ifdef FX_GRAPHINGMODULE_EXPORTS
+   #define FXGRAPHINGMODULEAPI FXEXPORT
+  #else
+   #define FXGRAPHINGMODULEAPI FXIMPORT
+  #endif
+ #else
+  #define FXGRAPHINGMODULEAPI
+ #endif
+#endif
+#endif
+
 // Forcing inlines, marking deprecation and restricting are non-portable extensions
 #if defined(_MSC_VER) && !defined(__GCCXML__)
  #define FXFORCEINLINE __forceinline
@@ -188,7 +204,7 @@
  #undef FXFORCEINLINE
  #define FXFORCEINLINE
 #endif
-#if defined(FOXDLL_EXPORTS) || defined(FOXPYTHONDLL_EXPORTS) || defined(FX_FOXCOMPAT)
+#if defined(FOXDLL_EXPORTS) || defined(FOXPYTHONDLL_EXPORTS) || defined(FX_GRAPHINGMODULE_EXPORTS) || defined(FX_FOXCOMPAT)
  #define FXDEPRECATEDEXT
 #else
  #define FXDEPRECATEDEXT FXDEPRECATED

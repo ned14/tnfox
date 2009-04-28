@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLVISUAL_H
 #define FXGLVISUAL_H
 
@@ -43,7 +45,7 @@ class FXGLCanvas;
 
 
 /// Visual describes pixel format of a drawable
-class FXAPI FXGLVisual : public FXVisual {
+class FXGRAPHINGMODULEAPI FXGLVisual : public FXVisual {
   FXDECLARE(FXGLVisual)
   friend class FXWindow;
   friend class FXImage;
@@ -150,9 +152,10 @@ public:
 
 
 /// Create a display list of bitmaps from font glyphs in a font
-extern FXAPI void glUseFXFont(FXFont* font,int first,int count,int list);
+extern FXGRAPHINGMODULEAPI void glUseFXFont(FXFont* font,int first,int count,int list);
 
 }
 
+#endif
 #endif
 #endif

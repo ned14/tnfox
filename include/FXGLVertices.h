@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLVERTICES_H
 #define FXGLVERTICES_H
 
@@ -38,7 +40,8 @@ enum {
   VERTICES_POINTS          = 0x00000100,     // Draw each point
   VERTICES_LINES           = 0x00000200,     // Draw as set of connected lines
   VERTICES_LOOPLINES       = 0x00000400,     // Connect start to end
-  VERTICES_LINEITEMS       = 0x00000800      // Draw as set of separate lines
+  VERTICES_LINEITEMS       = 0x00000800,     // Draw as set of separate lines
+  VERTICES_NODEPTHTEST     = 0x00001000      // Disable the depth test during rendition
   };
 
 
@@ -47,7 +50,7 @@ enum {
 * If STYLE_SURFACE is enabled, renders points as spheres and lines as cylinders
 * thus allowing full shading and material use.
 */
-class FXAPI FXGLVertices : public FXGLShape {
+class FXGRAPHINGMODULEAPI FXGLVertices : public FXGLShape {
   FXDECLARE(FXGLVertices)
 public:
   typedef void (*ColorGeneratorFunc)(FXGLColor &color, FXGLVertices *obj, FXGLViewer *viewer, FXuint vertex, void *&data);
@@ -64,6 +67,7 @@ protected:
 protected:
   FXGLVertices();
 private:
+  friend class FXGLCircle;
   inline void renderPoints(FXGLViewer *viewer, bool isHit, bool complex);
   inline void renderLines(FXGLViewer *viewer, bool isHit, bool complex);
   inline void render(FXGLViewer *viewer, bool isHit, bool complex);
@@ -143,7 +147,35 @@ public:
 
   };
 
+
+/**
+* OpenGL Circle Object. Renders a set of vertices to draw a circle.
+* Transforms a single set of statically created vertices for each
+* instance, so rendition is very fast.
+*/
+class FXGRAPHINGMODULEAPI FXGLCircle : public FXGLShape {
+	float radius;
+	FXMat4f transformation;
+protected:
+	virtual void drawshape(FXGLViewer*);
+public:
+	FXGLCircle() { }
+	/// Construct with specified origin and radius
+	FXGLCircle(float x, float y, float z, float r, FXuint options=0);
+	/// Get transformation
+	const FXMat4f &getTransformation() const { return transformation; }
+	/// Set transformation
+	void setTransformation(const FXMat4f &t) { transformation=t; }
+
+	virtual void bounds(FXRangef& box);
+	virtual void draw(FXGLViewer* viewer);
+	virtual FXGLObject* copy();
+	virtual void save(FXStream& store) const;
+	virtual void load(FXStream& store);
+};
+
 }
 
+#endif
 #endif
 #endif

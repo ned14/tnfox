@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLCONTEXT_H
 #define FXGLCONTEXT_H
 
@@ -45,7 +47,7 @@ class FXGLVisual;
 * GL visual.
 * However, display lists may be shared between different GL contexts.
 */
-class FXAPI FXGLContext : public FXId {
+class FXGRAPHINGMODULEAPI FXGLContext : public FXId {
   FXDECLARE(FXGLContext)
 private:
   FXGLVisual     *visual;     // Visual for this context
@@ -112,4 +114,4 @@ public:
 
 #endif
 #endif
-
+#endif

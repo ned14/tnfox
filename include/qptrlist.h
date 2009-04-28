@@ -57,67 +57,69 @@ they are used, I may not have caught all the compile errors yet :(
 \warning This list is much less forgiving of range errors than Qt. Where Qt returns
 false and prints a message, this list like the STL throws an exception!
 */
-template<class type> class QPtrListIterator;
-template<class type> class QPtrList : protected std::list<type *>
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrListIterator;
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrList;
+template<class type, class allocator> class QPtrList : protected std::list<type *, allocator>
 {
+	typedef std::list<type *, allocator> Base;
 	bool autodel;
-	typename std::list<type *>::iterator int_idx(uint i)
+	typename Base::iterator int_idx(uint i)
 	{
-		typename std::list<type *>::iterator it=std::list<type *>::begin();
+		typename Base::iterator it=Base::begin();
 		while(i--) ++it;
 		return it;
 	}
 public:
-	explicit QPtrList(bool wantAutoDel=false) : autodel(wantAutoDel), std::list<type *>() {}
-	explicit QPtrList(std::list<type *> &l) : autodel(false), std::list<type *>(l) {}
+	explicit QPtrList(bool wantAutoDel=false) : autodel(wantAutoDel), Base() {}
+	explicit QPtrList(Base &l) : autodel(false), Base(l) {}
 	~QPtrList()	{ clear(); }
-	FXADDMOVEBASECLASS(QPtrList, std::list<type *>)
+	FXADDMOVEBASECLASS(QPtrList, Base)
 	//! Returns if auto-deletion is enabled
 	bool autoDelete() const { return autodel; }
 	//! Sets if auto-deletion is enabled
 	void setAutoDelete(bool a) { autodel=a; }
 
 	//! Returns the number of items in the list
-	uint count() const { return (uint) std::list<type *>::size(); }
+	uint count() const { return (uint) Base::size(); }
 	//! Returns true if the list is empty
-	bool isEmpty() const { return std::list<type *>::empty(); }
+	bool isEmpty() const { return Base::empty(); }
 	//! Inserts item \em d into the list at index \em i
-	bool insert(uint i, const type *d) { FXEXCEPTION_STL1 { std::list<type *>::insert(int_idx(i), d); } FXEXCEPTION_STL2; return true; }
+	bool insert(uint i, const type *d) { FXEXCEPTION_STL1 { Base::insert(int_idx(i), d); } FXEXCEPTION_STL2; return true; }
 	//! Inserts item \em d into the list at where iterator \em it points
-	bool insertAtIter(QPtrListIterator<type> &it, const type *d);
+	bool insertAtIter(QPtrListIterator<type, allocator> &it, const type *d);
 	//! Inserts item \em d into the list in its correct sorted order
 	void inSort(const type *d)
 	{
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(compareItems(*it, d)>=0)
 			{
-				FXEXCEPTION_STL1 { std::list<type *>::insert(it, d); } FXEXCEPTION_STL2;
+				FXEXCEPTION_STL1 { Base::insert(it, d); } FXEXCEPTION_STL2;
 			}
 		}
 	}
 	//! Prepends item \em d onto the list
-	void prepend(const type *d) { FXEXCEPTION_STL1 { std::list<type *>::push_front(const_cast<type *>(d)); } FXEXCEPTION_STL2; }
+	void prepend(const type *d) { FXEXCEPTION_STL1 { Base::push_front(const_cast<type *>(d)); } FXEXCEPTION_STL2; }
 	//! Appends the item \em d onto the list
-	void append(const type *d) { FXEXCEPTION_STL1 { std::list<type *>::push_back(const_cast<type *>(d)); } FXEXCEPTION_STL2; }
+	void append(const type *d) { FXEXCEPTION_STL1 { Base::push_back(const_cast<type *>(d)); } FXEXCEPTION_STL2; }
 	//! Removes the item at index \em i
 	bool remove(uint i)
 	{
 		if(isEmpty()) return false;
-		typename std::list<type *>::iterator it=int_idx(i);
+		typename Base::iterator it=int_idx(i);
 		deleteItem(*it);
-		std::list<type *>::erase(it);
+		Base::erase(it);
 		return true;
 	}
 	//! Removes the specified item \em d via compareItems()
 	bool remove(const type *d)
 	{
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(0==compareItems(*it, const_cast<type *>(d)))
 			{
 				deleteItem(*it);
-				std::list<type *>::erase(it);
+				Base::erase(it);
 				return true;
 			}
 		}
@@ -126,69 +128,69 @@ public:
 	//! Removes the specified item \em d via pointer compare (quicker)
 	bool removeRef(const type *d)
 	{
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(*it==d)
 			{
 				deleteItem(*it);
-				std::list<type *>::erase(it);
+				Base::erase(it);
 				return true;
 			}
 		}
 		return false;
 	}
 	//! Removes the item pointed to by \em it (quickest)
-	bool removeByIter(QPtrListIterator<type> &it);
+	bool removeByIter(QPtrListIterator<type, allocator> &it);
 	//! Removes the first item
 	bool removeFirst()
 	{
 		if(isEmpty()) return false;
-		typename std::list<type *>::iterator it=std::list<type *>::begin();
+		typename Base::iterator it=Base::begin();
 		deleteItem(*it);
-		std::list<type *>::pop_front();
+		Base::pop_front();
 		return true;
 	}
 	//! Removes the last item
 	bool removeLast()
 	{
 		if(isEmpty()) return false;
-		typename std::list<type *>::iterator it=--std::list<type *>::end();
+		typename Base::iterator it=--Base::end();
 		deleteItem(*it);
-		std::list<type *>::pop_back();
+		Base::pop_back();
 		return true;
 	}
 	//! Removes the item at index \em i without auto-deletion
 	type *take(uint i)
 	{
 		if(isEmpty()) return 0; // Fails for non-pointer types
-		typename std::list<type *>::iterator it=int_idx(i);
+		typename Base::iterator it=int_idx(i);
 		type *ret=*it;
-		std::list<type *>::erase(it);
+		Base::erase(it);
 		return ret;
 	}
 	//! Removes the specified item \em d via compareItems() without auto-deletion
 	bool take(const type *d)
 	{
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(0==compareItems(*it, const_cast<type *>(d)))
 			{
-				std::list<type *>::erase(it);
+				Base::erase(it);
 				return true;
 			}
 		}
 		return false;
 	}
 	//! Removes the item pointed to by \em it without auto-deletion (quickest)
-	bool takeByIter(QPtrListIterator<type> &it);
+	bool takeByIter(QPtrListIterator<type, allocator> &it);
 	//! Removes the specified item \em d via pointer compare (quicker) without auto-deletion
 	bool takeRef(const type *d)
 	{
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(*it==d)
 			{
-				std::list<type *>::erase(it);
+				Base::erase(it);
 				return true;
 			}
 		}
@@ -198,26 +200,26 @@ public:
 	bool takeFirst()
 	{
 		if(isEmpty()) return false;
-		typename std::list<type *>::iterator it=std::list<type *>::begin();
-		std::list<type *>::pop_front();
+		typename Base::iterator it=Base::begin();
+		Base::pop_front();
 		return true;
 	}
 	//! Removes the last item without auto-deletion
 	bool takeLast()
 	{
 		if(isEmpty()) return false;
-		typename std::list<type *>::iterator it=--std::list<type *>::end();
-		std::list<type *>::pop_back();
+		typename Base::iterator it=--Base::end();
+		Base::pop_back();
 		return true;
 	}
 	//! Clears the list
 	void clear()
 	{
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			deleteItem(*it);
 		}
-		std::list<type *>::clear();
+		Base::clear();
 	}
 private:
 	template<class type2> struct swapPolicy
@@ -247,7 +249,7 @@ private:
 public:
 	//! Sorts the list using a user supplied callable entity taking two pointers of type \em type
 	template<typename SortFuncSpec> void sort(SortFuncSpec sortfunc)
-	{	// Would use std::list<type *>::sort but this is faster
+	{	// Would use Base::sort but this is faster
 		QValueListQSort<type *, Pol::itMove, swapPolicy, comparePolicyFunc> sorter((QValueList<type *> &) *this);
 		//sorter.comparer=sortfunc;
 		sorter.run();
@@ -262,7 +264,7 @@ public:
 	int find(const type *d)
 	{
 		int idx=0;
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it, ++idx)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it, ++idx)
 		{
 			if(0==compareItems(*it, d)) return idx;
 		}
@@ -272,7 +274,7 @@ public:
 	int findRef(const type *d)
 	{
 		int idx=0;
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it, ++idx)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it, ++idx)
 		{
 			if(*it==d) return idx;
 		}
@@ -282,7 +284,7 @@ public:
 	uint contains(const type *d) const
 	{
 		uint count=0;
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(0==compareItems(*it, d)) count++;
 		}
@@ -292,7 +294,7 @@ public:
 	uint containsRef(const type *d) const
 	{
 		uint count=0;
-		for(typename std::list<type *>::iterator it=std::list<type *>::begin(); it!=std::list<type *>::end(); ++it)
+		for(typename Base::iterator it=Base::begin(); it!=Base::end(); ++it)
 		{
 			if(*it==d) count++;
 		}
@@ -302,30 +304,30 @@ public:
 	bool replace(uint i, const type *d)
 	{
 		if(isEmpty()) return false;
-		typename std::list<type *>::iterator it=int_idx(i);
+		typename Base::iterator it=int_idx(i);
 		*it=d;
 		//list<type *>::erase(list<type *>::begin()+i);
 		//list<type *>::insert(list<type *>::begin()+i, d);
 		return true;
 	}
 	//! Replaces item at iterator with \em d
-	bool replaceAtIter(QPtrListIterator<type> &it, const type *d);
+	bool replaceAtIter(QPtrListIterator<type, allocator> &it, const type *d);
 	//! Returns the item at index \em i
-	type *at(uint i) { return std::list<type *>::empty() ? 0 : *int_idx(i); }
+	type *at(uint i) { return Base::empty() ? 0 : *int_idx(i); }
 	//! Returns the first item in the list
-	type *getFirst() const { return std::list<type *>::empty() ? 0 : std::list<type *>::front(); }
+	type *getFirst() const { return Base::empty() ? 0 : Base::front(); }
 	//! Returns the last item in the list
-	type *getLast() const { return std::list<type *>::empty() ? 0 : std::list<type *>::back(); }
+	type *getLast() const { return Base::empty() ? 0 : Base::back(); }
 	//! Returns the first item in the list
-	type *first() { return std::list<type *>::empty() ? 0 : std::list<type *>::front(); }
+	type *first() { return Base::empty() ? 0 : Base::front(); }
 	//! Returns the last item in the list
-	type *last() { return std::list<type *>::empty() ? 0 : std::list<type *>::back(); }
+	type *last() { return Base::empty() ? 0 : Base::back(); }
 	//! Compares two items (used by many methods above). Default returns -1 if a < b, +1 if a > b and 0 if a==b
     virtual int compareItems(type *a, type *b) const { return (a<b) ? -1 : (a==b) ? 0 : -1; }
 
-	typename std::list<type *> &int_list() { return static_cast<std::list<type *> &>(*this); }
-	typename std::list<type *>::iterator int_begin() { return std::list<type *>::begin(); }
-	typename std::list<type *>::iterator int_end() { return std::list<type *>::end(); }
+	typename Base &int_list() { return static_cast<Base &>(*this); }
+	typename Base::iterator int_begin() { return Base::begin(); }
+	typename Base::iterator int_end() { return Base::end(); }
 
 protected:
 	virtual void deleteItem(type *d);
@@ -336,7 +338,7 @@ template<> inline void QPtrList<void>::deleteItem(void *)
 {
 }
 
-template<class type> inline void QPtrList<type>::deleteItem(type *d)
+template<class type, class allocator> inline void QPtrList<type, allocator>::deleteItem(type *d)
 {
     if(autodel) delete d;
 }
@@ -345,35 +347,36 @@ template<class type> inline void QPtrList<type>::deleteItem(type *d)
 \ingroup QTL
 \brief An iterator for a QPtrList
 */
-template<class type> class QPtrListIterator : private std::list<type *>::iterator
+template<class type, class allocator> class QPtrListIterator : private std::list<type *, allocator>::iterator
 {
+	typedef std::list<type *, allocator> Base;
 	mutable bool dead;
-	QPtrList<type> *mylist;
+	QPtrList<type, allocator> *mylist;
 protected:
 	type *retptr() const
 	{
 		if(dead) return 0;
-		typename std::list<type *>::iterator &me=const_cast<QPtrListIterator<type> &>(*this);
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this);
 		if(mylist->int_end()==me) { dead=true; return 0; }
 		return *me;
 	}
 public:
-	typename std::list<type *>::iterator &int_getIterator() { return static_cast<typename std::list<type *>::iterator &>(*this); }
+	typename Base::iterator &int_getIterator() { return static_cast<typename Base::iterator &>(*this); }
 	QPtrListIterator() : dead(true), mylist(0) { }
 	//! Construct an iterator to the specified QPtrList
-	QPtrListIterator(const QPtrList<type> &l) : dead(false), mylist(&const_cast<QPtrList<type> &>(l)), std::list<type *>::iterator(const_cast<QPtrList<type> &>(l).int_begin()) { retptr(); }
-	QPtrListIterator(const QPtrListIterator<type> &l) : dead(l.dead), mylist(l.mylist), std::list<type *>::iterator(l) { }
-	QPtrListIterator<type> &operator=(const QPtrListIterator<type> &it)
+	QPtrListIterator(const QPtrList<type, allocator> &l) : dead(false), mylist(&const_cast<QPtrList<type, allocator> &>(l)), Base::iterator(const_cast<QPtrList<type, allocator> &>(l).int_begin()) { retptr(); }
+	QPtrListIterator(const QPtrListIterator<type, allocator> &l) : dead(l.dead), mylist(l.mylist), Base::iterator(l) { }
+	QPtrListIterator<type, allocator> &operator=(const QPtrListIterator<type, allocator> &it)
 	{
 		dead=it.dead; mylist=it.mylist;
-		typename std::list<type *>::iterator &me=*this;
+		typename Base::iterator &me=*this;
 		me=it;
 		return *this;
 	}
-	bool operator==(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)==o; }
-	bool operator!=(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)!=o; }
-	bool operator<(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)<o; }
-	bool operator>(const QPtrListIterator &o) const { return static_cast<typename std::list<type *>::iterator const &>(*this)>o; }
+	bool operator==(const QPtrListIterator &o) const { return static_cast<typename Base::iterator const &>(*this)==o; }
+	bool operator!=(const QPtrListIterator &o) const { return static_cast<typename Base::iterator const &>(*this)!=o; }
+	bool operator<(const QPtrListIterator &o) const { return static_cast<typename Base::iterator const &>(*this)<o; }
+	bool operator>(const QPtrListIterator &o) const { return static_cast<typename Base::iterator const &>(*this)>o; }
 	//! Returns the number of items in the list this iterator references
 	uint count() const   { return mylist->count(); }
 	//! Returns true if the list this iterator references is empty
@@ -381,35 +384,35 @@ public:
 	//! Returns true if this iterator is at the start of its list
 	bool atFirst() const
 	{
-		typename std::list<type *>::iterator &me=const_cast<QPtrListIterator<type> &>(*this); 
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this); 
 		return mylist->int_begin()==me;
 	}
 	//! Returns true if this iterator is at the end of its list
 	bool atLast() const
 	{
-		typename std::list<type *>::iterator next=*this;
+		typename Base::iterator next=*this;
 		++next;
 		return mylist->int_end()==next;
 	}
 	//! Sets the iterator to point to the first item in the list, then returns that item
 	type *toFirst()
 	{
-		typename std::list<type *>::iterator &me=const_cast<QPtrListIterator<type> &>(*this); 
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this); 
 		me=mylist->int_begin(); dead=false;
 		return retptr();
 	}
 	//! Sets the iterator to point to the last item in the list, then returns that item
 	type *toLast()
 	{
-		typename std::list<type *>::iterator &me=const_cast<QPtrListIterator<type> &>(*this); 
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this); 
 		me=mylist->int_end(); dead=false;
 		if(!mylist->isEmpty()) --me;
 		return retptr();
 	}
 	//! Makes the iterator dead (ie; point to nothing)
-	QPtrListIterator<type> &makeDead()
+	QPtrListIterator<type, allocator> &makeDead()
 	{
-		typename std::list<type *>::iterator &me=const_cast<QPtrListIterator<type> &>(*this);
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this);
 		me=mylist->int_end();
 		dead=true;
 		return *this;
@@ -423,7 +426,7 @@ public:
 	{
 		if(!dead)
 		{
-			typename std::list<type *>::iterator &me=int_getIterator(); ++me;
+			typename Base::iterator &me=int_getIterator(); ++me;
 		}
 		return retptr();
 	}
@@ -432,8 +435,8 @@ public:
 	{
 		if(!dead)
 		{
-			typename std::list<type *>::iterator &me=*this;
-			typename std::list<type *>::iterator myend=mylist->int_end();
+			typename Base::iterator &me=*this;
+			typename Base::iterator myend=mylist->int_end();
 			for(uint n=0; n<j && me!=myend; n++)
 				++me;
 		}
@@ -444,7 +447,7 @@ public:
 	{
 		if(!dead)
 		{
-			typename std::list<type *>::iterator &me=*this;
+			typename Base::iterator &me=*this;
 			if(mylist->int_begin()==me)
 			{
 				me=mylist->int_end();
@@ -459,8 +462,8 @@ public:
 	{
 		if(!dead)
 		{
-			typename std::list<type *>::iterator &me=*this;
-			typename std::list<type *>::iterator myend=mylist->int_begin();
+			typename Base::iterator &me=*this;
+			typename Base::iterator myend=mylist->int_begin();
 			for(uint n=0; n<j && !dead; n++)
 			{
 				if(myend==me)
@@ -475,26 +478,26 @@ public:
 	}
 };
 
-template<class type> inline bool QPtrList<type>::insertAtIter(QPtrListIterator<type> &it, const type *d)
+template<class type, class allocator> inline bool QPtrList<type, allocator>::insertAtIter(QPtrListIterator<type, allocator> &it, const type *d)
 {
-	FXEXCEPTION_STL1 { std::list<type *>::insert(it.int_getIterator(), const_cast<type *>(d));} FXEXCEPTION_STL2;
+	FXEXCEPTION_STL1 { Base::insert(it.int_getIterator(), const_cast<type *>(d));} FXEXCEPTION_STL2;
 	return true;
 }
 
-template<class type> inline bool QPtrList<type>::removeByIter(QPtrListIterator<type> &it)
+template<class type, class allocator> inline bool QPtrList<type, allocator>::removeByIter(QPtrListIterator<type, allocator> &it)
 {
 	deleteItem(*it.int_getIterator());
-	std::list<type *>::erase(it.int_getIterator());
+	Base::erase(it.int_getIterator());
 	return true;
 }
 
-template<class type> inline bool QPtrList<type>::takeByIter(QPtrListIterator<type> &it)
+template<class type, class allocator> inline bool QPtrList<type, allocator>::takeByIter(QPtrListIterator<type, allocator> &it)
 {
-	std::list<type *>::erase(it.int_getIterator());
+	Base::erase(it.int_getIterator());
 	return true;
 }
 
-template<class type> inline bool QPtrList<type>::replaceAtIter(QPtrListIterator<type> &it, const type *d)
+template<class type, class allocator> inline bool QPtrList<type, allocator>::replaceAtIter(QPtrListIterator<type, allocator> &it, const type *d)
 {
 	*it.int_getIterator()=const_cast<type *>(d);
 	return true;
@@ -506,18 +509,18 @@ template<class type> inline bool QPtrList<type>::replaceAtIter(QPtrListIterator<
 #define QListIterator QPtrListIterator
 
 //! Writes the contents of the list to stream \em s
-template<class type> FXStream &operator<<(FXStream &s, const QPtrList<type> &i)
+template<class type, class allocator> FXStream &operator<<(FXStream &s, const QPtrList<type, allocator> &i)
 {
 	FXuint mysize=i.count();
 	s << mysize;
-	for(QPtrListIterator<type> it(i); it.current(); ++it)
+	for(QPtrListIterator<type, allocator> it(i); it.current(); ++it)
 	{
 		s << *it.current();
 	}
 	return s;
 }
 //! Reads in a list from stream \em s
-template<class type> FXStream &operator>>(FXStream &s, QPtrList<type> &i)
+template<class type, class allocator> FXStream &operator>>(FXStream &s, QPtrList<type, allocator> &i)
 {
 	FXuint mysize;
 	s >> mysize;
@@ -538,31 +541,32 @@ template<class type> FXStream &operator>>(FXStream &s, QPtrList<type> &i)
 This is a low overhead list which copies destructively and always has
 auto-deletion enabled. Ideal for a list being passed around a lot.
 */
-template<class type> class QQuickListIterator;
-template<class type> class QQuickList : protected QPtrList<type>
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QQuickListIterator;
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QQuickList;
+template<class type, class allocator> class QQuickList : protected QPtrList<type, allocator>
 {
-	friend class QQuickListIterator<type>;
+	friend class QQuickListIterator<type, allocator>;
 public:
 	//! Creates an instance
-	QQuickList() : QPtrList<type>(true) { }
+	QQuickList() : QPtrList<type, allocator>(true) { }
 	//! Destructively copies a list very quickly
 #ifndef HAVE_CPP0XRVALUEREFS
 #ifdef HAVE_CONSTTEMPORARIES
-	QQuickList(const QQuickList &_o) : QPtrList<type>(true)
+	QQuickList(const QQuickList &_o) : QPtrList<type, allocator>(true)
 	{
 		QQuickList &o=const_cast<QQuickList &>(_o);
 #else
-	QQuickList(QQuickList &o) : QPtrList<type>(true)
+	QQuickList(QQuickList &o) : QPtrList<type, allocator>(true)
 	{
 #endif
 #else
 private:
 	QQuickList(const QQuickList &);		// disable copy constructor
 public:
-	QQuickList(QQuickList &&o) : QPtrList<type>(true)
+	QQuickList(QQuickList &&o) : QPtrList<type, allocator>(true)
 	{
 #endif
-		std::list<type *>::splice(std::list<type *>::begin(), o, o.begin(), o.end());
+		Base::splice(Base::begin(), o, o.begin(), o.end());
 	}
 #ifndef HAVE_CPP0XRVALUEREFS
 	QQuickList &operator=(QQuickList &o)
@@ -574,70 +578,70 @@ public:
 #endif
 	{
 		clear();
-		std::list<type *>::splice(std::list<type *>::begin(), o, o.begin(), o.end());
+		Base::splice(Base::begin(), o, o.begin(), o.end());
 		return *this;
 	}
 	//! Destructively copies a FX::QPtrList very quickly
 #ifndef HAVE_CPP0XRVALUEREFS
 #ifdef HAVE_CONSTTEMPORARIES
-	explicit QQuickList(const QPtrList<type> &_o) : QPtrList<type>(true)
+	explicit QQuickList(const QPtrList<type, allocator> &_o) : QPtrList<type, allocator>(true)
 	{
-		QPtrList<type> &o=const_cast<QPtrList<type> &>(_o);
+		QPtrList<type, allocator> &o=const_cast<QPtrList<type, allocator> &>(_o);
 #else
-	explicit QQuickList(QPtrList<type> &o) : QPtrList<type>(true)
+	explicit QQuickList(QPtrList<type, allocator> &o) : QPtrList<type, allocator>(true)
 	{
 #endif
 #else
-	explicit QQuickList(QPtrList<type> &&o) : QPtrList<type>(true)
+	explicit QQuickList(QPtrList<type, allocator> &&o) : QPtrList<type, allocator>(true)
 	{
 #endif
-		std::list<type *>::splice(std::list<type *>::begin(), o, o.begin(), o.end());
+		Base::splice(Base::begin(), o, o.begin(), o.end());
 	}
 	//! Returns the list as a FX::QPtrList
-	const QPtrList<type> &asPtrList() const throw()
+	const QPtrList<type, allocator> &asPtrList() const throw()
 	{
-		return static_cast<QPtrList<type> &>(*this);
+		return static_cast<QPtrList<type, allocator> &>(*this);
 	}
-	using QPtrList<type>::count;
-	using QPtrList<type>::isEmpty;
-	using QPtrList<type>::insert;
-	using QPtrList<type>::insertAtIter;
-	using QPtrList<type>::inSort;
-	using QPtrList<type>::prepend;
-	using QPtrList<type>::append;
-	using QPtrList<type>::remove;
-	using QPtrList<type>::removeRef;
-	using QPtrList<type>::removeByIter;
-	using QPtrList<type>::removeFirst;
-	using QPtrList<type>::removeLast;
-	using QPtrList<type>::take;
-	using QPtrList<type>::takeRef;
-	using QPtrList<type>::clear;
-	using QPtrList<type>::sort;
-	using QPtrList<type>::find;
-	using QPtrList<type>::findRef;
-	using QPtrList<type>::contains;
-	using QPtrList<type>::containsRef;
-	using QPtrList<type>::replace;
-	using QPtrList<type>::at;
-	using QPtrList<type>::getFirst;
-	using QPtrList<type>::getLast;
-	using QPtrList<type>::first;
-	using QPtrList<type>::last;
-	using QPtrList<type>::compareItems;
-	using QPtrList<type>::int_list;
-	using QPtrList<type>::int_begin;
-	using QPtrList<type>::int_end;
+	using QPtrList<type, allocator>::count;
+	using QPtrList<type, allocator>::isEmpty;
+	using QPtrList<type, allocator>::insert;
+	using QPtrList<type, allocator>::insertAtIter;
+	using QPtrList<type, allocator>::inSort;
+	using QPtrList<type, allocator>::prepend;
+	using QPtrList<type, allocator>::append;
+	using QPtrList<type, allocator>::remove;
+	using QPtrList<type, allocator>::removeRef;
+	using QPtrList<type, allocator>::removeByIter;
+	using QPtrList<type, allocator>::removeFirst;
+	using QPtrList<type, allocator>::removeLast;
+	using QPtrList<type, allocator>::take;
+	using QPtrList<type, allocator>::takeRef;
+	using QPtrList<type, allocator>::clear;
+	using QPtrList<type, allocator>::sort;
+	using QPtrList<type, allocator>::find;
+	using QPtrList<type, allocator>::findRef;
+	using QPtrList<type, allocator>::contains;
+	using QPtrList<type, allocator>::containsRef;
+	using QPtrList<type, allocator>::replace;
+	using QPtrList<type, allocator>::at;
+	using QPtrList<type, allocator>::getFirst;
+	using QPtrList<type, allocator>::getLast;
+	using QPtrList<type, allocator>::first;
+	using QPtrList<type, allocator>::last;
+	using QPtrList<type, allocator>::compareItems;
+	using QPtrList<type, allocator>::int_list;
+	using QPtrList<type, allocator>::int_begin;
+	using QPtrList<type, allocator>::int_end;
 
 	friend FXStream &operator<<(FXStream &s, const QQuickList<type> &_i)
 	{
-		const QPtrList<type> &i=_i;
+		const QPtrList<type, allocator> &i=_i;
 		s << i;
 		return s;
 	}
 	friend FXStream &operator>>(FXStream &s, QQuickList<type> &_i)
 	{
-		QPtrList<type> &i=_i;
+		QPtrList<type, allocator> &i=_i;
 		s >> i;
 		return s;
 	}
@@ -646,10 +650,10 @@ public:
 /*! \class QQuickListIterator
 \brief An iterator for a FX::QQuickList
 */
-template<class type> class QQuickListIterator : public QPtrListIterator<type>
+template<class type, class allocator> class QQuickListIterator : public QPtrListIterator<type, allocator>
 {
 public:
-	QQuickListIterator(const QQuickList<type> &l) : QPtrListIterator<type>(l) { }
+	QQuickListIterator(const QQuickList<type, allocator> &l) : QPtrListIterator<type, allocator>(l) { }
 };
 
 } // namespace

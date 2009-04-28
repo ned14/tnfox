@@ -23,6 +23,8 @@
 ********************************************************************************/
 #ifndef FX_DISABLEGL
 
+#if FX_GRAPHINGMODULE
+
 #ifndef FXGLOBJECT_H
 #define FXGLOBJECT_H
 
@@ -38,7 +40,7 @@ class FXGLObject;
 
 
 /// OpenGL color object
-class FXAPI FXGLColor
+class FXGRAPHINGMODULEAPI FXGLColor
 {
 public:
   FXfloat r,g,b,a;
@@ -56,13 +58,13 @@ public:
   /// True if color is black
   bool isBlack() const { return 0==r && 0==g && 0==b; }
 
-  friend FXAPI FXStream &operator<<(FXStream &s, const FXGLColor &o);
-  friend FXAPI FXStream &operator>>(FXStream &s, FXGLColor &o);
+  friend FXGRAPHINGMODULEAPI FXStream &operator<<(FXStream &s, const FXGLColor &o);
+  friend FXGRAPHINGMODULEAPI FXStream &operator>>(FXStream &s, FXGLColor &o);
 };
 
 
 /// Basic OpenGL object
-class FXAPI FXGLObject : public FXObject {
+class FXGRAPHINGMODULEAPI FXGLObject : public FXObject {
   FXDECLARE(FXGLObject)
 public:
   enum {
@@ -115,7 +117,7 @@ typedef FXObjectListOf<FXGLObject> FXGLObjectList;
 #endif
 
 /// Group object
-class FXAPI FXGLGroup : public FXGLObject {
+class FXGRAPHINGMODULEAPI FXGLGroup : public FXGLObject {
   FXDECLARE(FXGLGroup)
 protected:
   FXGLObjectList list;    // List of all objects
@@ -192,5 +194,6 @@ public:
 
 }
 
+#endif
 #endif
 #endif

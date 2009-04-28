@@ -1,4 +1,5 @@
 Add elliptic curve crypto to FXSSLDevice encryption options
+Patch in FTGL library to handle OpenGL font rendering
 
 Platform-specific issues:
 -=-=-=-=-=-=-=-=-=-=-=-=-
