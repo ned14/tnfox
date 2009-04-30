@@ -373,7 +373,9 @@ like normal try blocks, they work subtly differently (more like a filter than a 
 */
 struct FXExceptionPrivate;
 template<class type> class QValueList;
-class FXEXCEPTIONAPI(FXAPI) FXException
+class FXException;	// For stupid doxygen parsing bug
+#define FXEXCEPTIONAPI_STUPIDDOXYGEN FXEXCEPTIONAPI(FXAPI)
+class FXEXCEPTIONAPI_STUPIDDOXYGEN FXException
 {
   FXExceptionPrivate *p;
 private:

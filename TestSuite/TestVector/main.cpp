@@ -230,26 +230,26 @@ static const FXuint MersenneTwisterProof[]={
 static const FXuint TOTALITEMS=72000;
 namespace FP
 {
-	typedef VectorArray<float, 18, TOTALITEMS/18> SlowArray;
-	typedef VectorArray<float, 16, TOTALITEMS/16> FastArray;
+	typedef Array<Vector<float, 18>, TOTALITEMS/18> SlowArray;
+	typedef Array<Vector<float, 16>, TOTALITEMS/16> FastArray;
 	static SlowArray slowA, slowB, slowC;
 	static FastArray fastA, fastB, fastC;
 }
 namespace Int
 {
-	typedef VectorArray<int, 18, TOTALITEMS/18> SlowArray;
-	typedef VectorArray<int, 16, TOTALITEMS/16> FastArray;
+	typedef Array<Vector<int, 18>, TOTALITEMS/18> SlowArray;
+	typedef Array<Vector<int, 16>, TOTALITEMS/16> FastArray;
 	static SlowArray slowA, slowB, slowC;
 	static FastArray fastA, fastB, fastC;
 }
 
-template<class type> static void fill(type *FXRESTRICT array, typename type::BASETYPE *FXRESTRICT what)
+template<class type> static void fill(type *FXRESTRICT array, typename type::value_type::TYPE *FXRESTRICT what)
 {
 	//for(FXuint a=0; a<1000; a++)
 	{
-		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::VECTORTYPE); n++)
+		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::value_type); n++)
 		{
-			(*array)[n]=typename type::VECTORTYPE(what);
+			(*array)[n]=typename type::value_type(what);
 		}
 	}
 }
@@ -258,9 +258,9 @@ template<class type> static void sqrtmulacc(type *FXRESTRICT dest, type *FXRESTR
 {
 	//for(FXuint a=0; a<1000; a++)
 	{
-		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::VECTORTYPE); n++)
+		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::value_type); n++)
 		{
-			typename type::VECTORTYPE &d=(*dest)[n], &a=(*A)[n], &b=(*B)[n];
+			typename type::value_type &d=(*dest)[n], &a=(*A)[n], &b=(*B)[n];
 			d=sqrt(d+a*b);
 		}
 	}
@@ -270,9 +270,9 @@ template<class type> static void acc(type *FXRESTRICT dest, type *FXRESTRICT A, 
 {
 	//for(FXuint a=0; a<1000; a++)
 	{
-		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::VECTORTYPE); n++)
+		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::value_type); n++)
 		{
-			typename type::VECTORTYPE &d=(*dest)[n], &a=(*A)[n], &b=(*B)[n];
+			typename type::value_type &d=(*dest)[n], &a=(*A)[n], &b=(*B)[n];
 			d=d+a+b;
 		}
 	}
@@ -282,7 +282,7 @@ template<class type> static void dotsum(type *FXRESTRICT dest, type *FXRESTRICT 
 {
 	//for(FXuint a=0; a<1000; a++)
 	{
-		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::VECTORTYPE); n++)
+		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::value_type); n++)
 		{
 			(*dest)[n].set(0, dot((*A)[n], (*B)[n]));
 			(*dest)[n].set(1, sum((*A)[n])+sum((*B)[n]));
@@ -294,7 +294,7 @@ template<class type> static void logic(type *FXRESTRICT dest, type *FXRESTRICT A
 {
 	//for(FXuint a=0; a<1000; a++)
 	{
-		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::VECTORTYPE); n++)
+		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::value_type); n++)
 		{
 			(*dest)[n]=(*dest)[n] ^ ((*A)[n]|(*B)[n]);
 		}
@@ -305,10 +305,20 @@ template<class type> static void compare(type *FXRESTRICT dest, type *FXRESTRICT
 {
 	//for(FXuint a=0; a<1000; a++)
 	{
-		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::VECTORTYPE); n++)
+		for(FXuint n=0; n<4*TOTALITEMS/sizeof(typename type::value_type); n++)
 		{
 			(*dest)[n]=(*dest)[n] >= (*A)[n] || (*dest)[n] <= (*B)[n] || !((*dest)[n] != (*A)[n]);
 		}
+	}
+}
+
+template<class type> static void matrixmult(type *FXRESTRICT A, type *FXRESTRICT B, type *FXRESTRICT C)
+{
+#ifndef DEBUG
+	for(FXuint a=0; a<10000; a++)
+#endif
+	{
+		(*A)=(*B)*(*C);
 	}
 }
 
@@ -329,7 +339,12 @@ template<typename A, typename B> static bool verify(A &a, B &b)
 	int z=TOTALITEMS;
 	for(FXuint n=0; n<TOTALITEMS/18; n++)
 		if(a[n][0]!=b[n][0] || a[n][1]!=b[n][1] || a[n][2]!=b[n][2] || a[n][3]!=b[n][3])
+		{
+			fxmessage("Failed at index %u:\n%f, %f, %f, %f\n%f, %f, %f, %f\n", n,
+				a[n][0], a[n][1], a[n][2], a[n][3],
+				b[n][0], b[n][1], b[n][2], b[n][3]);
 			return false;
+		}
 	return true;
 }
 
@@ -337,17 +352,18 @@ int main( int argc, char *argv[] )
 {
 	double slowt, fastt;
 	FXProcess myprocess(argc, argv);
+
 	fxmessage("Floating-Point SIMD vector tests\n"
 		      "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
 	if(1)
 	{	// FP tests
 		using namespace FP;
-		float foo1[]={ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
-		float foo2[]={ 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.6f, 1.7f, 1.8f, 1.9f, 2.0f };
-		fxmessage("sizeof(Vector<float, 18>)=%d\n", (int)sizeof(SlowArray::VECTORTYPE));
-		fxmessage("sizeof(Vector<float, 16>)=%d\n", (int)sizeof(FastArray::VECTORTYPE));
-		if(sizeof(SlowArray::VECTORTYPE)!=18*4) fxerror("sizeof(Vector<float, 18>) is not 72 bytes!\n");
-		if(sizeof(FastArray::VECTORTYPE)!=16*4) fxerror("sizeof(Vector<float, 16>) is not 64 bytes!\n");
+		float foo1[]={ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 0 };
+		float foo2[]={ 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.6f, 1.7f, 1.8f, 0.0f, 0.0f };
+		fxmessage("sizeof(Vector<float, 18>)=%d\n", (int)sizeof(SlowArray::value_type));
+		fxmessage("sizeof(Vector<float, 16>)=%d\n", (int)sizeof(FastArray::value_type));
+		if(sizeof(SlowArray::value_type)!=18*4) fxerror("sizeof(Vector<float, 18>) is not 72 bytes!\n");
+		if(sizeof(FastArray::value_type)!=16*4) fxerror("sizeof(Vector<float, 16>) is not 64 bytes!\n");
 		fill(&slowA, foo1);
 		fill(&fastA, foo1);
 		fill(&slowB, foo1);
@@ -372,10 +388,18 @@ int main( int argc, char *argv[] )
 		fxmessage("Comparisons vector<16> was %f times faster than vector<18>\n\n", fastt/slowt);
 
 		// Dot & sum test
-		//slowt=Time("   vector<5>", Generic::BindFunc(dotsum<SlowArray>, &slowC, &slowA, &slowB));
-		//fastt=Time("   vector<4>", Generic::BindFunc(dotsum<FastArray>, &fastC, &fastA, &fastB));
-		//if(!verify(slowC, fastC)) { fxmessage("Buffer contents not the same! Comparisons failed!\n"); return 1; }
-		//fxmessage("Dotsum vector<4> was %f times faster than vector<5>\n\n", fastt/slowt);
+		fill(&slowA, foo1);
+		fill(&fastA, foo1);
+		fill(&slowB, foo2);
+		fill(&fastB, foo2);
+		fill(&slowC, foo1);
+		fill(&fastC, foo1);
+		fastt=Time("   vector<16>", Generic::BindFunc(dotsum<FastArray>, &fastC, &fastA, &fastB));
+		slowt=Time("   vector<18>", Generic::BindFunc(dotsum<SlowArray>, &slowC, &slowA, &slowB));
+		const float sC[]={ 210.799988f, 187.000000f, 4.000000f, 5.000000f };
+		const float fC[]={ 178.399994f, 167.199997f, 4.000000f, 5.000000f };
+		if(slowC[0][0]!=sC[0] || slowC[0][1]!=sC[1] || fastC[0][0]!=fC[0] || fastC[0][1]!=fC[1]) { fxmessage("Buffer contents not the same! Comparisons failed!\n"); return 1; }
+		fxmessage("Dotsum vector<16> was %f times faster than vector<18>\n\n", fastt/slowt);
 	}
 	fxmessage("\n\nInteger SIMD vector tests\n"
 		          "-=-=-=-=-=-=-=-=-=-=-=-=-\n");
@@ -384,10 +408,10 @@ int main( int argc, char *argv[] )
 		using namespace Int;
 		int foo1[]={ 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 };
 		int foo2[]={ 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119 };
-		fxmessage("sizeof(Vector<int, 18>)=%d\n", (int)sizeof(SlowArray::VECTORTYPE));
-		fxmessage("sizeof(Vector<int, 16>)=%d\n", (int)sizeof(FastArray::VECTORTYPE));
-		if(sizeof(SlowArray::VECTORTYPE)!=18*4) fxerror("sizeof(Vector<int, 18>) is not 72 bytes!\n");
-		if(sizeof(FastArray::VECTORTYPE)!=16*4) fxerror("sizeof(Vector<int, 16>) is not 64 bytes!\n");
+		fxmessage("sizeof(Vector<int, 18>)=%d\n", (int)sizeof(SlowArray::value_type));
+		fxmessage("sizeof(Vector<int, 16>)=%d\n", (int)sizeof(FastArray::value_type));
+		if(sizeof(SlowArray::value_type)!=18*4) fxerror("sizeof(Vector<int, 18>) is not 72 bytes!\n");
+		if(sizeof(FastArray::value_type)!=16*4) fxerror("sizeof(Vector<int, 16>) is not 64 bytes!\n");
 		fill(&slowA, foo1);
 		fill(&fastA, foo1);
 		fill(&slowB, foo1);
@@ -413,6 +437,35 @@ int main( int argc, char *argv[] )
 		if(!verify(slowC, fastC)) { fxmessage("Buffer contents not the same! Logical failed!\n"); return 1; }
 		fxmessage("Logic vector<16> was %f times faster than vector<18>\n\n", fastt/slowt);
 	}
+	fxmessage("Floating-Point SIMD matrix tests\n"
+		      "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
+	if(1)
+	{
+		float foo1[4][4]={ {0.2f, 0.3f, 0.4f, 0.5f}, {0.6f, 0.7f, 0.8f, 0.9f}, {1.0f, 1.1f, 1.2f, 1.3f}, {1.4f, 1.5f, 1.6f, 1.7f} };
+		float foo2[4][4]={ {2.0f, 3.0f, 4.0f, 5.0f}, {6.0f, 7.0f, 8.0f, 9.0f}, {10.0f, 11.0f, 12.0f, 13.0f}, {14.0f, 15.0f, 16.0f, 17.0f} };
+		float (*foo)[4]=foo2;
+		FXMat4f slowA, slowB, slowC;
+		Matrix4f fastA(foo1), fastB(foo2), fastC;
+		slowA=fastA;
+		slowB=fastB;
+		if(Matrix4f(slowA)!=fastA || Matrix4f(slowB)!=fastB) { fxmessage("Buffer contents not the same! Comparisons failed!\n"); return 1; }
+		//assert(Matrix4f(slowB.transpose())==transpose(fastB));
+		fastt=Time("   vector<4>", Generic::BindFunc(matrixmult<Matrix4f>, &fastC, &fastA, &fastB));
+		slowt=Time("     FXMat4f", Generic::BindFunc(matrixmult<FXMat4f>, &slowC, &slowA, &slowB));
+		if(Matrix4f(slowC)!=fastC)
+		{
+			fxmessage("Buffer contents not the same! Comparisons failed!\n");
+			for(int b=0; b<4; b++) for(int a=0; a<4; a++)
+				fxmessage("%c%f", (a&3) ? ' ' : 10, slowC[b][a]);
+			fxmessage("\n");
+			for(int a=0; a<16; a++)
+				fxmessage("%c%f", (a&3) ? ' ' : 10, fastC[a]);
+			fxmessage("\n");
+			return 1;
+		}
+		fxmessage("Matrix multiply vector<4> was %f times faster than FXMat4\n\n", fastt/slowt);
+	}
+
 	fxmessage("\n\nMaths::FRandomness test\n"
 		          "-=-=-=-=-=-=-=-=-=-=-=-\n");
 	if(FRandomness::usingSIMD)

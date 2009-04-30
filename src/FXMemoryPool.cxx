@@ -666,7 +666,7 @@ void free(void *p, FXMemoryPool *heap, FXuint alignment) throw()
 #ifdef FXENABLE_DEBUG_PRINTING
 		fxmessage("=%p\n", p);
 #endif
-		realmp->free(p);
+		realmp->free(p, 0);
 	}
 	else
 	{

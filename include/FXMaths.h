@@ -27,6 +27,16 @@
 #include "FXStream.h"
 #include "qmemarray.h"
 #include <math.h>
+#include "FXVec2f.h"
+#include "FXVec2d.h"
+#include "FXVec3f.h"
+#include "FXVec3d.h"
+#include "FXMat3f.h"
+#include "FXMat3d.h"
+#include "FXVec4f.h"
+#include "FXVec4d.h"
+#include "FXMat4f.h"
+#include "FXMat4d.h"
 #if _M_IX86_FP>=3 || defined(__SSE3__)
 #include "pmmintrin.h"
 #endif
@@ -252,7 +262,7 @@ namespace Maths {
 			{
 				bool iszero=true;
 				for(FXuint n=0; n<A && iszero; n++)
-					iszero&=!a;
+					iszero=iszero && !a.data[n];
 				return iszero;
 			}
 			//! Returns the sum of the elements
@@ -313,7 +323,24 @@ namespace Maths {
 #undef VECTORFUNC
 #undef VECTOR2FUNC
 
+		// Used to provide implicit conversions between these and FOX classes
+		template<class base, typename type, class equivtype> class EquivType : public base
+		{
+		public:
+			EquivType() { }
+			template<typename F> explicit EquivType(const F &d) : base(d) { }
+			EquivType &operator=(const equivtype &o) { return *this=*((const EquivType *)&o); }
+			operator equivtype &() { return *((equivtype *)this); }
+			operator const equivtype &() const { return *((const equivtype *)this); }
+		};
+		template<class base, typename type> class EquivType<base, type, void> : public base
+		{
+		public:
+			EquivType() { }
+			template<typename F> explicit EquivType(const F &d) : base(d) { }
+		};
 
+		// Used to conglomerate multiple SIMD vector ops
 		template<class vectortype, unsigned int N, class supertype, bool _isArithmetic=vectortype::isArithmetic, bool _isInteger=vectortype::isInteger> class VectorOfVectors
 		{
 		protected:
@@ -519,16 +546,36 @@ namespace Maths {
 	you want a non-two power size, you'll need to declare the VectorOfVectors
 	specialisation manually.
 	*/
-	template<typename type, unsigned int A> class Vector : public Impl::VectorBase<type, A, Vector<type, A>, Generic::Traits<type>::isArithmetical, Generic::Traits<type>::isInt>
+	template<typename type, unsigned int A> class Vector : public Impl::EquivType<Impl::VectorBase<type, A, Vector<type, A>, Generic::Traits<type>::isArithmetical, Generic::Traits<type>::isInt>, type, void>
 	{
-		typedef Impl::VectorBase<type, A, Vector<type, A>, Generic::Traits<type>::isArithmetical, Generic::Traits<type>::isInt> Base;
+		typedef Impl::EquivType<Impl::VectorBase<type, A, Vector<type, A>, Generic::Traits<type>::isArithmetical, Generic::Traits<type>::isInt>, type, void> Base;
 	public:
 		Vector() { }
-		//! Use \em d =0 to initialise to zero
+		//! Initialises from an array
 		explicit Vector(const type *d) : Base(d) { }
 		//! Initialises all members to a certain value
 		explicit Vector(const type &d) : Base(d) { }
 	};
+	// Map to FOX types
+#define DEFINEVECTOREQUIV(type, A, equivtype) \
+	template<> class Vector<type, A> : public Impl::EquivType<Impl::VectorBase<type, A, Vector<type, A>, Generic::Traits<type>::isArithmetical, Generic::Traits<type>::isInt>, type, void> \
+	{ \
+		typedef Impl::EquivType<Impl::VectorBase<type, A, Vector<type, A>, Generic::Traits<type>::isArithmetical, Generic::Traits<type>::isInt>, type, void> Base; \
+	public: \
+		Vector() { } \
+		explicit Vector(const type *d) : Base(d) { } \
+		explicit Vector(const type &d) : Base(d) { } \
+	};
+	DEFINEVECTOREQUIV(float, 2, FXVec2f)
+	DEFINEVECTOREQUIV(float, 3, FXVec3f)
+	typedef Vector<float, 2> Vector2f;
+	typedef Vector<float, 3> Vector3f;
+	typedef Vector<float, 4> Vector4f;
+	DEFINEVECTOREQUIV(double, 3, FXVec3d)
+	typedef Vector<double, 2> Vector2d;
+	typedef Vector<double, 3> Vector3d;
+	typedef Vector<double, 4> Vector4d;
+
 	template<typename type, unsigned int A> FXStream &operator<<(FXStream &s, const Vector<type, A> &v)
 	{
 		for(FXuint n=0; n<A; n++) s << v[n];
@@ -541,18 +588,21 @@ namespace Maths {
 		return s;
 	}
 //! Specialises a FX::Maths::Vector to be implemented as another vector
-#define FXVECTOROFVECTORS(VECTORTYPE, ELEMENTS) template<> class Vector<VECTORTYPE::TYPE, ELEMENTS> : public Impl::VectorOfVectors<VECTORTYPE, ELEMENTS/VECTORTYPE::DIMENSION, Vector<VECTORTYPE::TYPE, ELEMENTS> > \
+#define FXVECTOROFVECTORS(VECTORTYPE, ELEMENTS, equivtype) template<> class Vector<VECTORTYPE::TYPE, ELEMENTS> : public Impl::EquivType<Impl::VectorOfVectors<VECTORTYPE, ELEMENTS/VECTORTYPE::DIMENSION, Vector<VECTORTYPE::TYPE, ELEMENTS> >, VECTORTYPE::TYPE, equivtype> \
 	{ \
-		typedef Impl::VectorOfVectors<VECTORTYPE, ELEMENTS/VECTORTYPE::DIMENSION, Vector<VECTORTYPE::TYPE, ELEMENTS> > Base; \
+		typedef Impl::EquivType<Impl::VectorOfVectors<VECTORTYPE, ELEMENTS/VECTORTYPE::DIMENSION, Vector<VECTORTYPE::TYPE, ELEMENTS> >, VECTORTYPE::TYPE, equivtype> Base; \
 	public: \
 		Vector() { } \
 		explicit Vector(const VECTORTYPE::TYPE *d) : Base(d) { } \
 		explicit Vector(const VECTORTYPE::TYPE &d) : Base(d) { } \
 	};
+
+
 #if 1	// Use to disable SIMD optimised versions
 #if (defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))) || (defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__)))
 	// The x86 and x64 SSE specialisations
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=1) || (defined(__i386__) && defined(__SSE__))
+#define FXVECTOR_SPECIALISEDFLOAT4
 	template<> class FXVECTOR_BUGGYGCCALIGNMENTHACK Vector<float, 4> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
@@ -569,7 +619,7 @@ namespace Maths {
 			switch(i)
 			{
 			case 0:
-				t=_mm_shuffle_ps(v, v, 0); break;
+				t=v; /*t=_mm_shuffle_ps(v, v, 0);*/ break;
 			case 1:
 				t=_mm_shuffle_ps(v, v, 1); break;
 			case 2:
@@ -601,6 +651,12 @@ namespace Maths {
 		Vector(const SSETYPE &_v) { v=_v; }
 		Vector(const Vector &o) { v=o.v; }
 		Vector &operator=(const Vector &o) { v=o.v; return *this; }
+
+		Vector(const FXVec4f &o) { v=_mm_loadu_ps((float*)&o); }
+		Vector &operator=(const FXVec4f &o) { v=_mm_loadu_ps((float*)&o); }
+		operator FXVec4f &() { return *((FXVec4f *)this); }
+		operator const FXVec4f &() const { return *((const FXVec4f *)this); }
+
 		explicit Vector(const TYPE *d)
 		{
 			if(!d) v=_mm_setzero_ps();
@@ -649,13 +705,23 @@ namespace Maths {
 #undef VECTOR2FUNC
 		friend bool isZero(const Vector &a)
 		{	// We can use a cunning trick here
-			return _mm_movemask_ps(a.v)||_mm_movemask_ps(_mm_sub_ps(_mm_setzero_ps(), a.v));
+			return !_mm_movemask_ps(a.v)&&!_mm_movemask_ps(_mm_sub_ps(_mm_setzero_ps(), a.v));
 		}
 		friend TYPE sum(const Vector &a)
 		{
 #if _M_IX86_FP>=3 || defined(__SSE3__)
 			SSETYPE v=_mm_hadd_ps(a.v, a.v);
 			return int_extract(_mm_hadd_ps(v, v), 0);
+#elif 1
+			// This is actually the same speed as two hadd's on my machine, but
+			// hadd is supposed to be quicker on newer processors
+			SSETYPE tempA = _mm_shuffle_ps(a.v,a.v, _MM_SHUFFLE(2,0,2,0));
+			SSETYPE tempB = _mm_shuffle_ps(a.v,a.v, _MM_SHUFFLE(3,1,3,1));
+			SSETYPE tempC = _mm_add_ps(tempB, tempA);
+			tempA = _mm_shuffle_ps(tempC,tempC, _MM_SHUFFLE(2,0,2,0));
+			tempB = _mm_shuffle_ps(tempC,tempC, _MM_SHUFFLE(3,1,3,1));
+			tempC = _mm_add_ss(tempB, tempA);
+			return int_extract(tempC, 0);
 #else
 			FXMEMALIGNED(16) TYPE f[DIMENSION];
 			_mm_store_ps(f, a.v);
@@ -672,16 +738,19 @@ namespace Maths {
 			return sum(a*b);
 #endif
 		}
+		friend inline SSETYPE &GetSSEVal(Vector &a) { return a.v; }
+		friend inline const SSETYPE &GetSSEVal(const Vector &a) { return a.v; }
 	};
 	typedef Vector<float, 4> int_SSEOptimised_float4;	// Needed as macros don't understand template types :(
-	FXVECTOROFVECTORS(int_SSEOptimised_float4, 8);
-	FXVECTOROFVECTORS(int_SSEOptimised_float4, 16);
-	FXVECTOROFVECTORS(int_SSEOptimised_float4, 32);
-	FXVECTOROFVECTORS(int_SSEOptimised_float4, 64);
-	FXVECTOROFVECTORS(int_SSEOptimised_float4, 128);
-	FXVECTOROFVECTORS(int_SSEOptimised_float4, 256);
+	FXVECTOROFVECTORS(int_SSEOptimised_float4, 8, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_float4, 16, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_float4, 32, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_float4, 64, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_float4, 128, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_float4, 256, void);
 #endif
 #if defined(_M_X64) || defined(__x86_64__) || (defined(_M_IX86) && _M_IX86_FP>=2) || (defined(__i386__) && defined(__SSE2__))
+#define FXVECTOR_SPECIALISEDDOUBLE2
 	template<> class FXVECTOR_BUGGYGCCALIGNMENTHACK Vector<double, 2> : private Impl::TwoPowerMemAligner<16>
 	{
 	public:
@@ -698,7 +767,7 @@ namespace Maths {
 			switch(i)
 			{
 			case 0:
-				t=_mm_shuffle_pd(v, v, 0); break;
+				t=v; /*_mm_shuffle_pd(v, v, 0);*/ break;
 			case 1:
 				t=_mm_shuffle_pd(v, v, 1); break;
 			}
@@ -726,6 +795,12 @@ namespace Maths {
 		Vector(const SSETYPE &_v) { v=_v; }
 		Vector(const Vector &o) { v=o.v; }
 		Vector &operator=(const Vector &o) { v=o.v; return *this; }
+
+		Vector(const FXVec2d &o) { v=_mm_loadu_pd((double*)&o); }
+		Vector &operator=(const FXVec2d &o) { v=_mm_loadu_pd((double*)&o); }
+		operator FXVec2d &() { return *((FXVec2d *)this); }
+		operator const FXVec2d &() const { return *((const FXVec2d *)this); }
+
 		explicit Vector(const TYPE *d)
 		{
 			if(!d) v=_mm_setzero_pd();
@@ -776,12 +851,16 @@ namespace Maths {
 		friend Vector rsqrt(const Vector &o) { return _mm_div_pd(_mm_set1_pd(1), _mm_sqrt_pd(o.v)); }
 		friend bool isZero(const Vector &a)
 		{	// We can use a cunning trick here
-			return _mm_movemask_pd(a.v)||_mm_movemask_pd(_mm_sub_pd(_mm_setzero_pd(), a.v));
+			return !_mm_movemask_pd(a.v)&&!_mm_movemask_pd(_mm_sub_pd(_mm_setzero_pd(), a.v));
 		}
 		friend TYPE sum(const Vector &a)
 		{
 #if _M_IX86_FP>=3 || defined(__SSE3__)
 			return int_extract(_mm_hadd_pd(a.v, a.v), 0);
+#elif 1
+			SSETYPE tempA = _mm_shuffle_pd(a.v,a.v, _MM_SHUFFLE2(0,0));
+			SSETYPE tempB = _mm_shuffle_pd(a.v,a.v, _MM_SHUFFLE2(1,1));
+			return int_extract(_mm_add_sd(tempB, tempA), 0);
 #else
 			FXMEMALIGNED(16) TYPE f[DIMENSION];
 			_mm_store_pd(f, a.v);
@@ -798,14 +877,16 @@ namespace Maths {
 			return sum(a*b);
 #endif
 		}
+		friend inline SSETYPE &GetSSEVal(Vector &a) { return a.v; }
+		friend inline const SSETYPE &GetSSEVal(const Vector &a) { return a.v; }
 	};
 	typedef Vector<double, 2> int_SSEOptimised_double2;	// Needed as macros don't understand template types :(
-	FXVECTOROFVECTORS(int_SSEOptimised_double2, 4);
-	FXVECTOROFVECTORS(int_SSEOptimised_double2, 8);
-	FXVECTOROFVECTORS(int_SSEOptimised_double2, 16);
-	FXVECTOROFVECTORS(int_SSEOptimised_double2, 32);
-	FXVECTOROFVECTORS(int_SSEOptimised_double2, 64);
-	FXVECTOROFVECTORS(int_SSEOptimised_double2, 128);
+	FXVECTOROFVECTORS(int_SSEOptimised_double2, 4, FXVec4d);
+	FXVECTOROFVECTORS(int_SSEOptimised_double2, 8, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_double2, 16, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_double2, 32, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_double2, 64, void);
+	FXVECTOROFVECTORS(int_SSEOptimised_double2, 128, void);
 
 
 	// Now for the integer vectors, we can save ourselves some work by reusing Impl::VectorBase
@@ -936,6 +1017,8 @@ namespace Maths {
 			} \
 			return _mm_setzero_si128(); \
 		} \
+		friend inline SSETYPE &GetSSEVal(Vector &a) { return a.v; } \
+		friend inline const SSETYPE &GetSSEVal(const Vector &a) { return a.v; } \
 	};
 //VECTORINTEGER(FXuchar, 16, epi8)
 //VECTORINTEGER(FXchar,  16, epi8)
@@ -962,12 +1045,12 @@ VECTORINTEGER(FXint,    4, epi32, a, epi32)
 #undef VECTORINTEGER
 #define VECTORINTEGER(vint, vsize) \
 	typedef Vector<vint, vsize> int_SSEOptimised_##vint; \
-	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*2); \
-	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*4); \
-	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*8); \
-	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*16); \
-	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*32); \
-	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*64);
+	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*2, void); \
+	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*4, void); \
+	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*8, void); \
+	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*16, void); \
+	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*32, void); \
+	FXVECTOROFVECTORS(int_SSEOptimised_##vint, vsize*64, void);
 VECTORINTEGER(FXushort, 8)
 VECTORINTEGER(FXshort,  8)
 VECTORINTEGER(FXuint,   4)
@@ -977,16 +1060,26 @@ VECTORINTEGER(FXint,    4)
 #endif
 #endif
 
+#ifndef FXVECTOR_SPECIALISEDFLOAT4
+	DEFINEVECTOREQUIV(float, 4, FXVec4f)
+#endif
+#ifndef FXVECTOR_SPECIALISEDDOUBLE2
+	DEFINEVECTOREQUIV(double, 2, FXVec2d)
+	DEFINEVECTOREQUIV(double, 4, FXVec4d)
+#endif
+#undef DEFINEVECTOREQUIV
+
 	/*! \class Array
 	\brief A fixed-length array
 
-	This is useful for denoting arrays consisting of FX::Maths::Vector or anywhere
-	else where a compile-time fixed length array is useful. It emulates the STL
-	vector class so you can iterate it. See also FX::Maths::Matrix.
+	This is useful for denoting compile-time fixed length arrays. It emulates the STL
+	vector class so you can iterate it. If you are thinking of a vector, use
+	FX::Maths::Vector instead and if you are thinking of a matrix, use FX::Maths::Matrix
+	instead. That said, an Array<Vector<float, 64>, 64> can make sense in certain
+	circumstances.
 	*/
 	template<typename type, unsigned int A> class Array
 	{
-	protected:
 		type data[A];
 	public:
 		typedef type value_type;
@@ -997,7 +1090,10 @@ VECTORINTEGER(FXint,    4)
 		size_t max_size() const { return A; }
 
 		Array() { }
-		explicit Array(const type *d) { for(FXuint b=0; b<A; b++) data[b]=TYPE(d ? d[b] : 0); }
+		explicit Array(const type *d) { for(FXuint b=0; b<A; b++) data[b]=d ? type(d[b]) : type(); }
+		bool operator==(const Array &o) const { for(FXuint b=0; b<A; b++) if(data[b]!=o.data[b]) return false; return true; }
+		bool operator!=(const Array &o) const { for(FXuint b=0; b<A; b++) if(data[b]!=o.data[b]) return true; return false; }
+
 		reference at(int i) { assert(i<A); return data[i]; }
 		const_reference at(int i) const { assert(i<A); return data[i]; }
 		reference operator[](int i) { return at(i); }
@@ -1012,38 +1108,178 @@ VECTORINTEGER(FXint,    4)
 		iterator end() { return &data[A]; }
 		const_iterator end() const { return &data[A]; }
 	};
+
 	/*! \class Matrix
 	\brief A fixed-length matrix
 
-	This is useful for denoting matrices consisting of FX::Maths::Vector or anywhere
-	else where a compile-time fixed length array is useful. It emulates the STL
-	vector class so you can iterate it. See also FX::Maths::Array.
+	This is the class to use when you want a SIMD optimised matrix. Internally it
+	will specialise itself for when it is two power items wide (not high) to the same level
+	as FX::Maths::Vector. If you don't want the constraints of SIMD, you can always
+	use a FX::FXMat3f etc. It emulates the STL vector class so you can iterate it.
+
+	Note that a Matrix<Vector<float, 4>, 4, 4> works and is good for working with tensors.
 	*/
-	template<typename type, unsigned int A, unsigned int B> class Matrix
+	namespace Impl {
+		template<typename type, unsigned int A, unsigned int B, bool isFP> class MatrixIt;
+		// Yet to be implemented
+		template<typename type, unsigned int N, unsigned int A, unsigned int B> class MatrixIt<Vector<type, N>, A, B, false>;
+		// The floating point specialisation
+		template<typename type, unsigned int A, unsigned int B> class MatrixIt<type, A, B, true>
+		{
+		protected:
+			Vector<type, A> data[B];
+		public:
+			typedef Vector<type, A> VECTORTYPE;
+			static const unsigned int WIDTH=A, HEIGHT=B;
+			MatrixIt() { }
+			explicit MatrixIt(const type *d)
+			{
+				for(FXuint b=0; b<B; b++)
+					data[b]=VECTORTYPE(d ? d+b*A : 0);
+			}
+			explicit MatrixIt(const type (*d)[A])
+			{
+				for(FXuint b=0; b<B; b++)
+					data[b]=VECTORTYPE(d ? d[b] : 0);
+			}
+			bool operator==(const MatrixIt &o) const
+			{
+				for(FXuint b=0; b<B; b++)
+					if(isZero(data[b]==o.data[b]))
+						return false;
+				return true;
+			}
+			bool operator!=(const MatrixIt &o) const
+			{
+				for(FXuint b=0; b<B; b++)
+					if(isZero(data[b]==o.data[b]))
+						return true;
+				return false;
+			}
+			MatrixIt inline operator *(const MatrixIt &_x) const;
+			template<typename type2, unsigned int A2, unsigned int B2> friend inline MatrixIt<type2, A2, B2, true> transpose(const MatrixIt<type2, A2, B2, true> &v);
+		};
+		template<typename type, unsigned int A, unsigned int B> MatrixIt<type, A, B, true> inline MatrixIt<type, A, B, true>::operator *(const MatrixIt<type, A, B, true> &_x) const
+		{	// We can make heavy use of the dot product here
+			MatrixIt<type, A, B, true> ret, x(transpose(_x));
+			for(FXuint b=0; b<B; b++)
+				for(FXuint a=0; a<A; a++)
+					ret.data[b].set(a, dot(data[b], x.data[a]));
+			return ret;
+		}
+		template<typename type, unsigned int A, unsigned int B> inline MatrixIt<type, A, B, true> transpose(const MatrixIt<type, A, B, true> &v)
+		{	// No SIMD available to swap bytes around and endian conversion isn't big enough :(
+			MatrixIt<type, A, B, true> ret;
+			for(FXuint b=0; b<B; b++)
+				for(FXuint a=0; a<A; a++)
+					ret.data[b].set(a, v.data[a][b]);
+			return ret;
+		}
+#ifdef FXVECTOR_SPECIALISEDFLOAT4
+		template<> inline MatrixIt<float, 4, 4, true> transpose(const MatrixIt<float, 4, 4, true> &v)
+		{
+			MatrixIt<float, 4, 4, true> ret(v);
+			_MM_TRANSPOSE4_PS(GetSSEVal(ret.data[0]), GetSSEVal(ret.data[1]), GetSSEVal(ret.data[2]), GetSSEVal(ret.data[3]));
+			return ret;
+		}
+#if _M_IX86_FP>=4 || defined(__SSE4__)
+		template<> MatrixIt<float, 4, 4, true> inline MatrixIt<float, 4, 4, true>::operator *(const MatrixIt<float, 4, 4, true> &_x) const
+		{	// The SSE4 fast dot() makes the normal algorithm worthwhile
+			MatrixIt<float, 4, 4, true> ret;
+			__m128 x[4];
+			for(FXuint b=0; b<4; b++)
+				x[b]=GetSSEVal(_x.data[b]);
+			_MM_TRANSPOSE4_PS(x[0], x[1], x[2], x[3]);
+			for(FXuint b=0; b<4; b++)
+				for(FXuint a=0; a<4; a++)
+					ret.data[b].set(a, dot(data[b], x[a]));
+			return ret;
+		}
+#else
+		template<> MatrixIt<float, 4, 4, true> inline MatrixIt<float, 4, 4, true>::operator *(const MatrixIt<float, 4, 4, true> &_x) const
+		{	// In pure SSE
+			MatrixIt<float, 4, 4, true> ret;
+			__m128 acc, temp, row, x[4];
+			for(FXuint b=0; b<4; b++)
+				x[b]=GetSSEVal(_x.data[b]);
+			// To avoid horizontal adding, accumulate vertically
+			for(FXuint b=0; b<4; b++)
+			{
+				row=GetSSEVal(data[b]);
+				temp=_mm_shuffle_ps(row, row, _MM_SHUFFLE(0,0,0,0)); acc=_mm_mul_ps(temp, x[0]);
+				temp=_mm_shuffle_ps(row, row, _MM_SHUFFLE(1,1,1,1)); acc=_mm_add_ps(acc, _mm_mul_ps(temp, x[1]));
+				temp=_mm_shuffle_ps(row, row, _MM_SHUFFLE(2,2,2,2)); acc=_mm_add_ps(acc, _mm_mul_ps(temp, x[2]));
+				temp=_mm_shuffle_ps(row, row, _MM_SHUFFLE(3,3,3,3)); acc=_mm_add_ps(acc, _mm_mul_ps(temp, x[3]));
+				ret.data[b]=acc;
+			}
+			return ret;
+		}
+#endif
+#endif
+		template<typename type, unsigned int A, unsigned int B> class MatrixI : public MatrixIt<type, A, B, Generic::Traits<type>::isFloat>
+		{
+		protected:
+			typedef MatrixIt<type, A, B, Generic::Traits<type>::isFloat> Base;
+		public:
+			typedef type value_type;
+			typedef value_type &reference;
+			typedef const value_type &const_reference;
+			typedef value_type *iterator;
+			typedef const value_type *const_iterator;
+			size_t max_size() const { return A*B; }
+
+			MatrixI() { }
+			MatrixI(const Base &o) : Base(o) { }
+			explicit MatrixI(const type *d) : Base(d) { }
+			explicit MatrixI(const type (*d)[A]) : Base(d) { }
+
+			value_type at(int a, int b) { assert(a<A && b<B); return data[b][a]; }
+			value_type at(int a, int b) const { assert(a<A && b<B); return data[b][a]; }
+			value_type operator[](int i) { return at(i%A, i/A); }
+			value_type operator[](int i) const { return at(i%A, i/A); }
+
+			reference front() { return data[0]; }
+			const_reference front() const { return data[0]; }
+			reference back() { return data[B-1][A-1]; }
+			const_reference back() const { return data[B-1][A-1]; }
+			iterator begin() { return &data[0]; }
+			const_iterator begin() const { return &data[0]; }
+			iterator end() { return &data[B][0]; }
+			const_iterator end() const { return &data[B][0]; }
+		};
+	}
+	template<typename type, unsigned int A, unsigned int B> class Matrix : public Impl::EquivType<Impl::MatrixI<type, A, B>, type, void>
 	{
-		Array<type, A> data[B];
+	protected:
+		typedef Impl::EquivType<Impl::MatrixI<type, A, B>, type, void> Base;
 	public:
-		typedef type value_type;
-		typedef value_type &reference;
-		typedef const value_type &const_reference;
-		typedef value_type *iterator;
-		typedef const value_type *const_iterator;
-		size_t max_size() const { return A*B; }
-
 		Matrix() { }
-		explicit Matrix(const type **d) { for(FXuint b=0; b<A; b++) data[b]=TYPE(d ? d[b] : 0); }
-		reference at(int a, int b) { assert(a<A && b<B); return data[b][a]; }
-		const_reference at(int a, int b) const { assert(a<A && b<B); return data[b][a]; }
-
-		reference front() { return data[0]; }
-		const_reference front() const { return data[0]; }
-		reference back() { return data[B-1][A-1]; }
-		const_reference back() const { return data[B-1][A-1]; }
-		iterator begin() { return &data[0]; }
-		const_iterator begin() const { return &data[0]; }
-		iterator end() { return &data[B][0]; }
-		const_iterator end() const { return &data[B][0]; }
+		Matrix(const Base &o) : Base(o) { }
+		Matrix(const typename Base::Base &o) : Base(o) { }
+		explicit Matrix(const type *d) : Base(d) { }
+		explicit Matrix(const type (*d)[A]) : Base(d) { }
 	};
+#define DEFINEMATRIXEQUIV(type, no, equivtype) \
+	template<> class Matrix<type, no, no> : public Impl::EquivType<Impl::MatrixI<type, no, no>, type, equivtype> \
+	{ \
+		typedef Impl::EquivType<Impl::MatrixI<type, no, no>, type, equivtype> Base; \
+	public: \
+		Matrix() { } \
+		Matrix(const Base &o) : Base(o) { } \
+		Matrix(const Base::Base &o) : Base(o) { } \
+		explicit Matrix(const type *d) : Base(d) { } \
+		explicit Matrix(const type (*d)[no]) : Base(d) { } \
+		Matrix(const equivtype &o) : Base((const type *)&o) { } \
+	};
+	DEFINEMATRIXEQUIV(float, 3, FXMat3f)
+	DEFINEMATRIXEQUIV(float, 4, FXMat4f)
+	typedef Matrix<float, 3, 3> Matrix3f;
+	typedef Matrix<float, 4, 4> Matrix4f;
+	DEFINEMATRIXEQUIV(double, 3, FXMat3d)
+	DEFINEMATRIXEQUIV(double, 4, FXMat4d)
+	typedef Matrix<double, 3, 3> Matrix3d;
+	typedef Matrix<double, 4, 4> Matrix4d;
+#undef DEFINEMATRIXEQUIV
 
 	/*! \class FRandomness
 	\brief A fast quality source of pseudo entropy
