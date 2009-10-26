@@ -33,6 +33,7 @@ namespace FX {
 
 /*! \class QChildProcess
 \ingroup siodevices
+\ingroup IPC
 \brief A child process i/o device
 
 This handy class allows one process to portably communicate with a child process

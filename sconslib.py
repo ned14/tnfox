@@ -253,6 +253,11 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     #env['ENV']['LIB']=os.environ['LIB']
     #env['ENV']['PATH']=os.environ['PATH']
     #platformconfig=platprefix+"config/intelc.py"
+    
+    # Force scons to always use absolute paths in everything (helps debuggers to find source files)
+    #print env.Dump()
+    env['CCCOMFLAGS']= env['CCCOMFLAGS'].replace('$SOURCES','$SOURCES.abspath')
+    #env['LINKCOM']   = env['LINKCOM'].replace('$SOURCES','$SOURCES.abspath')
 
     print "Using platform configuration",platformconfig,"..."
     onWindows=(env['PLATFORM']=="win32" or env['PLATFORM']=="win64")

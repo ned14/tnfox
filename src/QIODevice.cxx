@@ -118,7 +118,7 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 	for(int u=UTF32LE; u!=NoTranslation; u--)
 	{
 		int &good=goods[u], &bad=bads[u];
-		FXuval inc=u & 6;
+		FXuint inc=u & 6;
 		if(!inc) inc=1;
 		good=bad=0;
 		s.setBigEndian(!(u & 1));

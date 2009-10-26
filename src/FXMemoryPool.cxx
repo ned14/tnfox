@@ -555,7 +555,7 @@ void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) thro
 void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 {
 	if(!p) return malloc(size, heap);
-	void *ret, *trueret;
+	void *ret=0, *trueret;
 	FXMemoryPoolPrivate *realmp=0, *mp=!heap ? (!mempools.enabled ? (FXMemoryPoolPrivate *) 0 : (FXMemoryPoolPrivate *) mempools.current) : heap->p;
 	FXuval *_p=(FXuval *) p;
 #ifdef FXENABLE_DEBUG_PRINTING

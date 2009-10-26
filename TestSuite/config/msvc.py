@@ -1,7 +1,8 @@
 # MSVC config
 
 env['CPPDEFINES']+=["WIN32",
-                    "_WINDOWS"
+                    "_WINDOWS",
+                    "UNICODE"
                     ]
 if debugmode:
     env['CPPDEFINES']+=["_DEBUG"]
@@ -18,18 +19,19 @@ def CheckMSVC80(cc):
     result=cc.TryCompile('#if !defined(_MSC_VER) || _MSC_VER<1400\n#error Too old!\n#endif\n', '.cpp')
     cc.Result(result)
     return result
-conf=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
+confM=Configure(env, { "CheckMSVC71" : CheckMSVC71, "CheckMSVC80" : CheckMSVC80 } )
 MSVCVersion=0
-if conf.CheckMSVC71():
+if confM.CheckMSVC71():
     MSVCVersion=710
-if conf.CheckMSVC80():
+if confM.CheckMSVC80():
     MSVCVersion=800
 assert MSVCVersion>0
-env=conf.Finish()
+env=confM.Finish()
+del confM
 # Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping, wchar_t native
 cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t')
 if MSVCVersion==710:
-    cppflags+=[ "/Ow",                        # Only functions may alias
+    cppflags+=[ "/Ow",                         # Only functions may alias
                 "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
               ]
     if architecture=="x86":
@@ -76,7 +78,7 @@ env['LINKFLAGS']=["/version:"+tnfoxversion,
                   "/STACK:524288,65536"
                   ]
 if MSVCVersion>=800:
-    env['LINKFLAGS']+=["/NXCOMPAT"]
+    env['LINKFLAGS']+=["/NXCOMPAT", "/DYNAMICBASE", "/TSAWARE"]
 if architecture=="x86" or architecture=="x64":
     if make64bit:
         env['LINKFLAGS']+=["/MACHINE:X64"]

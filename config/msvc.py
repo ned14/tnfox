@@ -95,7 +95,7 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/STACK:524288,65536"
                   ]
 if MSVCVersion>=800:
-    env['LINKFLAGS']+=["/NXCOMPAT"]
+    env['LINKFLAGS']+=["/NXCOMPAT", "/DYNAMICBASE"]
 if architecture=="x86" or architecture=="x64":
     if make64bit:
         env['LINKFLAGS']+=["/MACHINE:X64"]

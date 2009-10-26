@@ -1540,8 +1540,8 @@ public:
 	struct void_ {};
 	/*! Constructs a functor from a raw address calling a C-style function. This
 	uses <tt>Functor::void_ *</tt> to avoid the pointer consuming qualities of <tt>void *</tt> */
-	explicit Functor(void_ *fnptr) : fnimpl(0)
-	{ FXERRHM((fnimpl=new FunctorHelper::ImplFn<Functor, ParsListAsFnType>((ParsListAsFnType) fnptr))); }
+	Functor(void_ *fnptr) : fnimpl(0)
+	{ if(fnptr) FXERRHM((fnimpl=new FunctorHelper::ImplFn<Functor, ParsListAsFnType>((ParsListAsFnType) fnptr))); }
 	//! Constructs a functor with a predefined implementation. Note: takes ownership of pointer.
 	explicit Functor(ImplBase *_fnimpl) : fnimpl(_fnimpl) { }
 #ifndef HAVE_CPP0XRVALUEREFS

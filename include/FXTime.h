@@ -47,6 +47,12 @@ struct FXAPI FXTime		// NOTE: Defined in FXProcess.cxx
 {
 	//! The number of microseconds per second
 	static const FXulong micsPerSecond=1000000;
+	//! The number of microseconds per minute
+	static const FXulong micsPerMinute=micsPerSecond*60;
+	//! The number of microseconds per hour
+	static const FXulong micsPerHour=micsPerMinute*60;
+	//! The number of microseconds per day
+	static const FXulong micsPerDay=micsPerHour*24;
 	//! The number of microseconds per year
 	static const FXulong micsPerYear=31556839024390LL;
 	//! The number of microseconds that was midnight 1st January 1601 UTC

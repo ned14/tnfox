@@ -76,7 +76,8 @@ semantics are enabled, auto-deletion becomes always enabled.
 If dynamic mode is enabled, maxCost() is shifted right by
 FXProcess::memoryFull(). By default dynamic mode is enabled.
 */
-template<class dictbase, class type=Generic::NullType> class FXLRUCache : protected dictbase
+template<class dictbase, class type=Generic::NullType> class FXLRUCache;
+template<class dictbase, class type> class FXLRUCache : protected dictbase
 {
 	template<class cache> friend class FXLRUCacheIterator;
 public:
@@ -100,8 +101,8 @@ protected:
 		CacheItem(FXint _cost, KeyTypeAsParam _key, TypeAsParam _item)
 			: CacheItemBase(_item), cost(_cost), key(_key) { }
 	};
-	std::list<CacheItem> cache;
-	struct stats_t
+	mutable std::list<CacheItem> cache;
+	mutable struct stats_t
 	{
 		FXuint inserted, removed, flushed, hits, misses;
 		stats_t() : inserted(0), removed(0), flushed(0), hits(0), misses(0) { }

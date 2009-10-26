@@ -566,6 +566,12 @@ namespace Maths {
 		explicit Vector(const type *d) : Base(d) { } \
 		explicit Vector(const type &d) : Base(d) { } \
 	};
+	DEFINEVECTOREQUIV(FXuchar,  8, FXulong)
+	DEFINEVECTOREQUIV(FXushort, 4, FXulong)
+	DEFINEVECTOREQUIV(FXuint,   2, FXulong)
+	DEFINEVECTOREQUIV(FXuchar,  4, FXuint)
+	DEFINEVECTOREQUIV(FXushort, 2, FXuint)
+	DEFINEVECTOREQUIV(FXuchar,  2, FXushort)
 	DEFINEVECTOREQUIV(float, 2, FXVec2f)
 	DEFINEVECTOREQUIV(float, 3, FXVec3f)
 	typedef Vector<float, 2> Vector2f;
@@ -581,7 +587,7 @@ namespace Maths {
 		for(FXuint n=0; n<A; n++) s << v[n];
 		return s;
 	}
-	template<typename type, unsigned int A> FXStream &operator<<(FXStream &s, Vector<type, A> &v)
+	template<typename type, unsigned int A> FXStream &operator>>(FXStream &s, Vector<type, A> &v)
 	{
 		type t;
 		for(FXuint n=0; n<A; n++) { s >> t; v.set(n, t); }
