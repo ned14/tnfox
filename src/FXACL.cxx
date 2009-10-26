@@ -267,6 +267,7 @@ FXString FXACLEntity::asString(bool withId, bool withMachine) const
 	DWORD accsize=sizeof(account)/sizeof(TCHAR), compsize=sizeof(computer)/sizeof(TCHAR);
 	SID_NAME_USE use;
 	FXUnicodify<> machine2(p->machine);
+	account[0]=computer[0]=0;
 	if(!LookupAccountSid(p->machine.empty() ? 0 : machine2.buffer(), p->sid, account, &accsize, computer, &compsize, &use))
 	{
 		if(ERROR_NONE_MAPPED==GetLastError())

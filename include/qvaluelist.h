@@ -298,6 +298,7 @@ public:
 	//! Runs the sort
 	void run(int _sorttype=QVLQSortDefault)
 	{
+		if(mylist.empty()) return;
 		if(QVLQSortDefault!=sorttype) sorttype=_sorttype;
 		if(!sorttype) sorttype=QVLQSortInsertion|QVLQSortMerge|QVLQSortQuick;
 		int s=(int) mylist.size();

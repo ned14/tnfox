@@ -288,7 +288,9 @@ public:
 #else
 #error Method of demangling RTTI unknown
 #endif
-		{ }
+		{
+			assert(!decorated.empty());
+		}
 	//! Returns true if empty
 	bool operator!() const throw() { return !!decorated.empty(); }
 	//! Returns true if identical to the other
