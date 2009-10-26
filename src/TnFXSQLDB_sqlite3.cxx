@@ -426,11 +426,11 @@ namespace TnFXSQLDB_sqlite3Impl
 					stmt.columns=sqlite3_column_count(stmt.h);
 					stmt.parameters=sqlite3_bind_parameter_count(stmt.h);
 					// The one which returns results is the main sth
-					if(stmt.parameters) mainstmth=stmths.count()-1;
+					if(stmt.parameters) mainstmth=(FXuint)stmths.count()-1;
 				}
 			}
 			if(-1==mainstmth)
-				mainstmth=stmths.count()-1;
+				mainstmth=(FXuint)stmths.count()-1;
 		}
 		inline void checkForReset()
 		{
@@ -566,7 +566,7 @@ namespace TnFXSQLDB_sqlite3Impl
 			case TnFXSQLDB::BLOB:
 				{
 					QByteArray *ba=(QByteArray *) data;
-					while(!FXERRHSQLITE3(sqlite3_bind_blob(stmths[mainstmth].h, idx+1, ba->data(), ba->size(), SQLITE_STATIC)));
+					while(!FXERRHSQLITE3(sqlite3_bind_blob(stmths[mainstmth].h, idx+1, ba->data(), (FXuint) ba->size(), SQLITE_STATIC)));
 					break;
 				}
 			}

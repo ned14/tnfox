@@ -102,7 +102,7 @@ void FXMemoryStream::takeBuffer(FXuchar*& data,FXuval& size)
 	if(owns)
 	{	// Make a copy
 		size=buffer->buffer().size();
-		FXMALLOC(&data, FXuchar, size);
+		FXMALLOC(&data, FXuchar, (FXuint)size);
 		memcpy(data, buffer->buffer().data(), size);
 	}
 	else

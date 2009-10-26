@@ -2400,7 +2400,7 @@ QMemArray<void *> FXProcess::lockedPages()
 	void *page;
 	for(QSortedListIterator<void> it(lockedMem->lockedPages); (page=it.current()); ++it)
 	{
-		FXuint size=ret.size();
+		FXuint size=(FXuint)ret.size();
 		ret.resize(size+1);
 		ret[size]=page;
 	}

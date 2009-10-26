@@ -272,7 +272,7 @@ void TnFX2DGraph::int_prepareItems(FXGLViewer *viewer)
 			Expand(*i->temp, *i->plotData2d);
 		}
 		if(i->vertices->getVertices()!=i->temp->data() || i->vertices->getNumberOfVertices()!=i->temp->count())
-			i->vertices->setVertices(i->temp->data(), i->temp->count());
+			i->vertices->setVertices(i->temp->data(), (FXuint)i->temp->count());
 		replace(end++, i->vertices);
 	}
 	// Add axes and labels if wanted
@@ -332,7 +332,7 @@ void TnFX2DGraph::int_prepareItems(FXGLViewer *viewer)
 			*data++=FXVec3f(mr, total.upper.y, 0);
 			p->majors.data.resize(no*2);
 			if(p->majors.vertices->getVertices()!=p->majors.data.data() || p->majors.vertices->getNumberOfVertices()!=p->majors.data.count())
-				p->majors.vertices->setVertices(p->majors.data.data(), p->majors.data.count());
+				p->majors.vertices->setVertices(p->majors.data.data(), (FXuint)p->majors.data.count());
 			p->majors.vertices->setModified();
 			replace(end++, p->majors.vertices);
 			// We may need to generate fonts for the axis labels
@@ -538,7 +538,7 @@ void TnFX3DGraph::int_prepareItems(FXGLViewer *viewer)
 			plotData=PtrPtr(i->temp);
 		}
 		if(i->vertices->getVertices()!=plotData->data() || i->vertices->getNumberOfVertices()!=plotData->count())
-			i->vertices->setVertices(plotData->data(), plotData->count());
+			i->vertices->setVertices(plotData->data(), (FXuint)plotData->count());
 	}
 }
 

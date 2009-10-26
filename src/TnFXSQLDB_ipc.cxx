@@ -571,7 +571,7 @@ struct TnFXSQLDB_ipc::Statement : public TnFXSQLDBStatement
 		while(!stmth && !p->acksPending.empty())
 			o->pollAcks(true);
 		assert(stmth);
-		return parNames.count();
+		return (FXint)parNames.count();
 	}
 	virtual FXint parameterIdx(const FXString &name) const
 	{
@@ -651,7 +651,7 @@ struct TnFXSQLDB_ipc::Statement : public TnFXSQLDBStatement
 		case TnFXSQLDB::BLOB:
 			{
 				QByteArray *ba=(QByteArray *) data;
-				i->par.data.length=ba->size();
+				i->par.data.length=(FXuint)ba->size();
 				i->par.data.blob=ba->data();
 				break;
 			}

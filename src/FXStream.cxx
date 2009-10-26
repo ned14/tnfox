@@ -163,7 +163,7 @@ bool FXStream::open(FXStreamDirection save_or_load,FXuval size,FXuchar* data){
 
     // Use internal buffer space
     else{
-      if(!FXCALLOC(&begptr,FXuchar,size)){ code=FXStreamAlloc; return FALSE; }
+      if(!FXCALLOC(&begptr,FXuchar,(FXuint)size)){ code=FXStreamAlloc; return FALSE; }
       endptr=begptr+size;
       wrptr=begptr;
       rdptr=begptr;
@@ -419,7 +419,7 @@ FXStream& FXStream::saveObject(const FXObject* v){
     hash->insert((void*)v,(void*)(FXuval)seq++); // Add to table
     cls=v->getMetaClass();
     name=cls->getClassName();
-    tag=strlen(name)+1;
+    tag=(FXuint)strlen(name)+1;
     if(tag>MAXCLASSNAME){                       // Class name too long
       code=FXStreamFormat;
       return *this;

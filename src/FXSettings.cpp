@@ -127,7 +127,7 @@ static bool readString(FXFile& file,FXchar *buffer,FXint& bol,FXint& eol,FXint& 
       end=end-bol;
       bol=0;
       eol=end;
-      n=file.readBlock(buffer+end,MAXBUFFER-end);
+      n=(FXint)file.readBlock(buffer+end,MAXBUFFER-end);
       if(n<0) return false;
       end+=n;
       }
@@ -219,7 +219,7 @@ next: bol=eol;
 
 // Write string
 static bool writeString(FXFile& file,const FXchar* string){
-  register FXint len=strlen(string);
+  register FXint len=(FXint)strlen(string);
   return file.writeBlock(string,len)==len;
   }
 

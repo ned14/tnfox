@@ -146,7 +146,7 @@ bool QBZip2Device::open(FXuint mode)
 					do
 					{
 						p->inh.next_in=p->inbuffer;
-						p->inh.avail_in+=p->src->readBlock(p->inbuffer+p->inh.avail_in, sizeof(p->inbuffer)-p->inh.avail_in);
+						p->inh.avail_in+=(FXuint)p->src->readBlock(p->inbuffer+p->inh.avail_in, sizeof(p->inbuffer)-p->inh.avail_in);
 						p->uncomp.buffer().resize(offset+BlockSize);
 						p->inh.next_out=(char *) p->uncomp.buffer().data()+offset;
 						p->inh.avail_out=BlockSize;
@@ -262,12 +262,12 @@ void QBZip2Device::flush()
 			{
 				in=datalen-offset;
 				p->outh.next_in=buffer;
-				p->outh.avail_in=applyCRLF((FXuchar *) buffer, (FXuchar *) data+offset, sizeof(buffer), in, crlfFormat(), unicodeTranslation());
+				p->outh.avail_in=(FXuint)applyCRLF((FXuchar *) buffer, (FXuchar *) data+offset, sizeof(buffer), in, crlfFormat(), unicodeTranslation());
 			}
 			else
 			{
 				p->outh.next_in=data+offset;
-				p->outh.avail_in=datalen-offset;
+				p->outh.avail_in=(FXuint)(datalen-offset);
 			}
 			do
 			{
@@ -367,11 +367,11 @@ FXuval QBZip2Device::readBlock(char *data, FXuval maxlen)
 		return p->uncomp.readBlock(data, maxlen);
 	int ret;
 	p->inh.next_out=data;
-	p->inh.avail_out=maxlen;
+	p->inh.avail_out=(FXuint)maxlen;
 	do
 	{
 		p->inh.next_in=p->inbuffer;
-		p->inh.avail_in+=p->src->readBlock(p->inbuffer+p->inh.avail_in, sizeof(p->inbuffer)-p->inh.avail_in);
+		p->inh.avail_in+=(FXuint)p->src->readBlock(p->inbuffer+p->inh.avail_in, sizeof(p->inbuffer)-p->inh.avail_in);
 		FXERRHBZ2(ret=BZ2_bzDecompress(&p->inh));
 		memmove(p->inbuffer, p->inh.next_in, p->inh.avail_in);
 	} while(BZ_STREAM_END!=ret && p->inh.avail_out);
@@ -391,7 +391,7 @@ FXuval QBZip2Device::writeBlock(const char *data, FXuval maxlen)
 	int ret;
 	char outbuffer[16384];
 	p->outh.next_in=(char *) data;
-	p->outh.avail_in=maxlen;
+	p->outh.avail_in=(FXuint)maxlen;
 	do
 	{
 		p->outh.next_out=outbuffer;

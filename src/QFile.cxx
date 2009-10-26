@@ -531,9 +531,9 @@ int QFile::ungetch(int c)
 	QMtxHold h(p);
 	if(isOpen())
 	{
-		uint size=p->ungetchbuffer.size();
+		FXuval size=p->ungetchbuffer.size();
 		p->ungetchbuffer.resize(size+1);
-		p->ungetchbuffer[size]=(char) c;
+		p->ungetchbuffer[(FXuint)size]=(char) c;
 		ioIndex-=1;
 		return c;
 	}

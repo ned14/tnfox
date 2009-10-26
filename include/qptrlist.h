@@ -61,7 +61,9 @@ template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QP
 template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrList;
 template<class type, class allocator> class QPtrList : protected std::list<type *, allocator>
 {
+public:		// For other stuff to access
 	typedef std::list<type *, allocator> Base;
+private:
 	bool autodel;
 	typename Base::iterator int_idx(uint i)
 	{

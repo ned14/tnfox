@@ -47,19 +47,20 @@ function which means if your comparator is loose for easier searching, often the
 item will get deleted. Use removeRef() and takeRef() for these situations - you still get
 most of the speed of the binary search but with guaranteed removal of a particular pointer.
 */
-template<class type> class QSortedListIterator;
-template<class type> class QSortedList : private QPtrList<type>
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QSortedListIterator;
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QSortedList;
+template<class type, class allocator> class QSortedList : private QPtrList<type, allocator>
 {
-	bool findInternal(QSortedListIterator<type> *itout, int *idx, const type *d) const;
-	QSortedListIterator<type> findRefInternal(const type *d) const;
+	bool findInternal(QSortedListIterator<type, allocator> *itout, int *idx, const type *d) const;
+	QSortedListIterator<type, allocator> findRefInternal(const type *d) const;
 public:
 	explicit QSortedList(bool wantAutoDel=false) : QPtrList<type>(wantAutoDel) {}
-	QSortedList(const QSortedList<type> &o) : QPtrList<type>(o) {}
+	QSortedList(const QSortedList<type, allocator> &o) : QPtrList<type>(o) {}
 	~QSortedList()				{ clear(); }
-	QSortedList<type> &operator=(const QSortedList<type> &l)
-			{ return (QSortedList<type>&)QPtrList<type>::operator=(l); }
+	QSortedList<type, allocator> &operator=(const QSortedList<type, allocator> &l)
+			{ return (QSortedList<type, allocator>&)QPtrList<type>::operator=(l); }
 	FXADDMOVEBASECLASS(QSortedList, QPtrList<type>)
-	bool operator==( const QSortedList<type> &list ) const
+	bool operator==( const QSortedList<type, allocator> &list ) const
 	{ return QPtrList<type>::operator==( list ); }
 
 	using QPtrList<type>::autoDelete;
@@ -96,7 +97,7 @@ public:
 	//! Same as QList::find() except a much more efficient binary search is used
 	int find(const type *d) const { int idx; if(findInternal(0, &idx, d)) return idx; else return -1; }
 	//! Finds \em d by binary searching, returning an iterator pointing to it or a null iterator if not found.
-	QSortedListIterator<type> findIter(const type *d) const;
+	QSortedListIterator<type, allocator> findIter(const type *d) const;
 	//! Returns a pointer to the item matching \em d or zero if not found
 	type *findP(const type *d) const;
 	/*! Returns the record after which an insert() would place d if called. This method
@@ -106,7 +107,7 @@ public:
 	int findClosest(const type *d) const { int idx; findInternal(0, &idx, d); return idx; }
 	/*! Returns an iterator pointing to the closest item to \em d. Note that the closest
 	item can be after the last item causing a null iterator to be returned */
-	QSortedListIterator<type> findClosestIter(const type *d) const;
+	QSortedListIterator<type, allocator> findClosestIter(const type *d) const;
 	/*! Returns a pointer to the closest item. Note that the closest item can be after
 	the last item causing a null pointer to be returned */
 	type *findClosestP(const type *d) const;
@@ -118,10 +119,10 @@ public:
 	/*! Merges the specified list into this list, emptying the source list. If
 	\em exclusive is set, if the item being merged equals an already existing item,
 	it is thrown away. */
-	void merge(QSortedList<type> &list, bool exclusive=false);
+	void merge(QSortedList<type, allocator> &list, bool exclusive=false);
 };
 
-template<class type> inline int QSortedList<type>::compareItems(type *a, type *b) const
+template<class type, class allocator> inline int QSortedList<type, allocator>::compareItems(type *a, type *b) const
 {
 	if(*a==*b) return 0;
 	return (*a<*b) ? -1 : 1;
@@ -143,24 +144,24 @@ This iterator works identically to Qt's ones. See their documentation.
 \sa QSortedList
 \sa QListIterator
 */
-template<class type> class QSortedListIterator : public QPtrListIterator<type>
+template<class type, class allocator> class QSortedListIterator : public QPtrListIterator<type, allocator>
 {
 public:
 	QSortedListIterator() { }
-	QSortedListIterator(const QSortedList<type> &l)
-		: QPtrListIterator<type>((const QPtrList<type> &) l) {}
+	QSortedListIterator(const QSortedList<type, allocator> &l)
+		: QPtrListIterator<type, allocator>((const QPtrList<type, allocator> &) l) {}
 	//! Makes the iterator dead (ie; point to nothing)
-	QSortedListIterator<type> &makeDead()
+	QSortedListIterator<type, allocator> &makeDead()
 	{
-		return static_cast<QSortedListIterator<type> &>(QPtrListIterator<type>::makeDead());
+		return static_cast<QSortedListIterator<type, allocator> &>(QPtrListIterator<type, allocator>::makeDead());
 	}
 };
 
-template<class type> inline QSortedListIterator<type> QSortedList<type>::findRefInternal(const type *d) const
+template<class type, class allocator> inline QSortedListIterator<type, allocator> QSortedList<type, allocator>::findRefInternal(const type *d) const
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	if(!findInternal(&it, 0, d)) return it.makeDead();
-	QSortedListIterator<type> it1(it), it2(it);
+	QSortedListIterator<type, allocator> it1(it), it2(it);
 	type *a;
 	// Step backwards while comparitor is equal
 	for(--it; (a=it.current()) && !compareItems(const_cast<type *>(d), a); it1=it, --it);
@@ -177,74 +178,74 @@ template<class type> inline QSortedListIterator<type> QSortedList<type>::findRef
 	return it.makeDead();
 }
 
-template<class type> inline bool QSortedList<type>::remove(const type *d)
+template<class type, class allocator> inline bool QSortedList<type, allocator>::remove(const type *d)
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	if(!findInternal(&it, 0, d)) return false;
 	return QPtrList<type>::removeByIter(it);
 }
 
-template<class type> inline bool QSortedList<type>::removeRef(const type *d)
+template<class type, class allocator> inline bool QSortedList<type, allocator>::removeRef(const type *d)
 {
-	QSortedListIterator<type> it(findRefInternal(d));
+	QSortedListIterator<type, allocator> it(findRefInternal(d));
 	if(!it.current()) return false;
 	return QPtrList<type>::removeByIter(it);
 }
 
-template<class type> inline bool QSortedList<type>::take(const type *d)
+template<class type, class allocator> inline bool QSortedList<type, allocator>::take(const type *d)
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	if(!findInternal(&it, 0, d)) return false;
 	return QPtrList<type>::takeByIter(it);
 }
 
-template<class type> inline bool QSortedList<type>::takeRef(const type *d)
+template<class type, class allocator> inline bool QSortedList<type, allocator>::takeRef(const type *d)
 {
-	QSortedListIterator<type> it(findRefInternal(d));
+	QSortedListIterator<type, allocator> it(findRefInternal(d));
 	if(!it.current()) return false;
 	return QPtrList<type>::takeByIter(it);
 }
 
-template<class type> inline QSortedListIterator<type> QSortedList<type>::findIter(const type *d) const
+template<class type, class allocator> inline QSortedListIterator<type, allocator> QSortedList<type, allocator>::findIter(const type *d) const
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	if(!findInternal(&it, 0, d))
 		it.makeDead();
 	return it;
 }
 
-template<class type> inline type *QSortedList<type>::findP(const type *d) const
+template<class type, class allocator> inline type *QSortedList<type, allocator>::findP(const type *d) const
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	if(!findInternal(&it, 0, d)) return 0;
 	return it.current();
 }
 
-template<class type> inline QSortedListIterator<type> QSortedList<type>::findClosestIter(const type *d) const
+template<class type, class allocator> inline QSortedListIterator<type, allocator> QSortedList<type, allocator>::findClosestIter(const type *d) const
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	findInternal(&it, 0, d);
 	return it;
 }
 
-template<class type> inline type *QSortedList<type>::findClosestP(const type *d) const
+template<class type, class allocator> inline type *QSortedList<type, allocator>::findClosestP(const type *d) const
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	findInternal(&it, 0, d);
 	return it.current();
 }
 
-template<class type> inline bool QSortedList<type>::insert(const type *d)
+template<class type, class allocator> inline bool QSortedList<type, allocator>::insert(const type *d)
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	findInternal(&it, 0, d);
 	return QPtrList<type>::insertAtIter(it, d);
 }
 
-template<class type> inline bool QSortedList<type>::findInternal(QSortedListIterator<type> *itout, int *idx, const type *d) const
+template<class type, class allocator> inline bool QSortedList<type, allocator>::findInternal(QSortedListIterator<type, allocator> *itout, int *idx, const type *d) const
 {
 	int n=0;
-	QSortedListIterator<type> it(*this); it.toFirst();
+	QSortedListIterator<type, allocator> it(*this); it.toFirst();
 	int lbound=0, ubound=count()-1, c;
 	//if(lbound<0) lbound=0;
 	while(lbound<=ubound)
@@ -256,7 +257,7 @@ template<class type> inline bool QSortedList<type>::findInternal(QSortedListIter
 		else if(c-n<0) { testpoint=it-=(n-c); n=c; }
 		else testpoint=it.current();
 		// Unfortunate that I have to do this, but compareItems() should really be const
-		QSortedList<type> *t=const_cast<QSortedList<type> *>(this);
+		QSortedList<type, allocator> *t=const_cast<QSortedList<type, allocator> *>(this);
 		result=t->compareItems(const_cast<type *>(d), const_cast<type *>(testpoint));
 		if(result<0)
 			ubound=c-1;
@@ -278,18 +279,18 @@ template<class type> inline bool QSortedList<type>::findInternal(QSortedListIter
 	return false;
 }
 
-template<class type> inline void QSortedList<type>::merge(QSortedList<type> &list, bool exclusive)
+template<class type, class allocator> inline void QSortedList<type, allocator>::merge(QSortedList<type, allocator> &list, bool exclusive)
 {
-	QSortedListIterator<type> it;
+	QSortedListIterator<type, allocator> it;
 	type *ne;
-	for(QSortedListIterator<type> nit(list); (ne=nit.current());)
+	for(QSortedListIterator<type, allocator> nit(list); (ne=nit.current());)
 	{
-		QSortedListIterator<type> nit2(nit); ++nit;
+		QSortedListIterator<type, allocator> nit2(nit); ++nit;
 		if(findInternal(&it, 0, ne) && exclusive)
 			QPtrList<type>::removeByIter(nit2);
 		else
 		{	// Might as well splice as it avoids malloc
-			std::list<type *>::splice(it.int_getIterator(), list, nit2.int_getIterator());
+			std::list<type *, allocator>::splice(it.int_getIterator(), static_cast<std::list<type *, allocator> &>(list), nit2.int_getIterator());
 			//QPtrList<type>::insertAtIter(it, ne);
 			//list.takeByIter(nit2);
 		}
@@ -297,20 +298,20 @@ template<class type> inline void QSortedList<type>::merge(QSortedList<type> &lis
 }
 
 //! Writes the contents of the list to stream \em s
-template<class type> FXStream &operator<<(FXStream &s, const QSortedList<type> &i)
+template<class type, class allocator> FXStream &operator<<(FXStream &s, const QSortedList<type, allocator> &i)
 {
 	FXuint mysize=i.count();
 	s << mysize;
-	for(QSortedListIterator<type> it(i); it.current(); ++it)
+	for(QSortedListIterator<type, allocator> it(i); it.current(); ++it)
 	{
 		s << *it.current();
 	}
 	return s;
 }
 //! Reads in a list from stream \em s
-template<class type> FXStream &operator>>(FXStream &s, QSortedList<type> &i)
+template<class type, class allocator> FXStream &operator>>(FXStream &s, QSortedList<type, allocator> &i)
 {
-	QPtrList<type> &ii=(QPtrList<type> &) i;
+	QPtrList<type, allocator> &ii=(QPtrList<type, allocator> &) i;
 	FXuint mysize;
 	s >> mysize;
 	i.clear();
