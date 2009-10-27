@@ -256,7 +256,7 @@ namespace QMemArrayImpl
 	{
 		Serialise(FXStream &s, const QMemArray<type, allocator> &a)
 		{
-			FXuval mysize=a.size();
+			FXulong mysize=a.size();
 			s << mysize;
 			for(FXuval i=0; i<mysize; i++)
 				s << a.at(i);
@@ -266,7 +266,7 @@ namespace QMemArrayImpl
 	{
 		Serialise(FXStream &s, const QMemArray<type, allocator> &a)
 		{
-			FXuval mysize=a.size();
+			FXulong mysize=a.size();
 			s << mysize;
 			s.save(a.data(), (unsigned long) mysize);
 		}
@@ -275,9 +275,9 @@ namespace QMemArrayImpl
 	{
 		Deserialise(FXStream &s, QMemArray<type, allocator> &a)
 		{
-			FXuval mysize;
+			FXulong mysize;
 			s >> mysize;
-			a.resize(mysize);
+			a.resize((FXuval)mysize);
 			for(FXuval i=0; i<mysize; i++)
 				s >> a.at(i);
 		}
@@ -286,9 +286,9 @@ namespace QMemArrayImpl
 	{
 		Deserialise(FXStream &s, QMemArray<type, allocator> &a)
 		{
-			FXuval mysize;
+			FXulong mysize;
 			s >> mysize;
-			a.resize(mysize);
+			a.resize((FXuval)mysize);
 			s.load(a.data(), (unsigned long) mysize);
 		}
 	};
