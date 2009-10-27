@@ -121,7 +121,7 @@ block causes an assertion failure. Only really has a point in debug builds */
 #define ABORT_ON_ASSERT_FAILURE 0
 #ifdef NDEBUG
 // Some speed increase options
-#define INSECURE 1
+//#define INSECURE 1
 #endif
 #include "nedmalloc/nedmalloc.c"
 #undef malloc
@@ -565,7 +565,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #if !FXDISABLE_SEPARATE_POOLS
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
-		for(_p-=1;*_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+		for(_p-=1;*_p==*(FXuval *) "FXMPFXMP"; *_p--=*(FXuval *) "RLOCRLOC"); _p++;
 		realmp=FXMemoryPoolPrivate::poolFromBlk(_p);
 		assert((FXMemoryPoolPrivate *)-1!=realmp);
 	}
@@ -578,13 +578,14 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	}
 	p=(void *) _p;
 	if(realmp)
-	{
+	{	// i.e. this is the path when the realloc is within a specified pool (mp==realmp)
 		size+=sizeof(FXuval);
 		if(!(trueret=ret=realmp->realloc(p, size))) return 0;
+		*(FXuval *)ret=*(FXuval *) "FXMPFXMP";
 		ret=FXOFFSETPTR(ret, sizeof(FXuval));
 	}
 	else
-	{
+	{	// this is the path when the realloc is within the system pool
 #if !FXDISABLE_GLOBAL_MARKER
 		size+=sizeof(FXuval);
 		if(_p[-1]!=*(FXuval *) "FYMPFYMP")
@@ -600,7 +601,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #endif
 		{
 #if !FXDISABLE_GLOBAL_MARKER
-			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=0);
+			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=*(FXuval *) "RLOCRLOC"); _p++;
 #endif
 			if(!(trueret=ret=MYREALLOC(_p, size))) return 0;
 		}
@@ -621,7 +622,7 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 	realmp=(FXMemoryPoolPrivate *) _p[1];
 	FXuval oldsize=_p[2];
 	if(mp && mp->allocated-(mp==realmp ? oldsize : 0)+size>mp->maxsize) goto end;
-	for(; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+	for(; *_p==*(FXuval *) "FXMPFXMP"; *_p--=*(FXuval *) "RLOCRLOC");
 	p=(void *)(++_p);
 	if(!(trueret=ret=::realloc(p, size)))
 		goto end;
@@ -656,7 +657,7 @@ void free(void *p, FXMemoryPool *heap, FXuint alignment) throw()
 #if !FXDISABLE_SEPARATE_POOLS
 	if(_p[-1]==*(FXuval *) "FXMPFXMP")
 	{
-		for(_p-=1;*_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+		for(_p-=1;*_p==*(FXuval *) "FXMPFXMP"; *_p--=*(FXuval *) "FREEFREE"); _p++;
 		realmp=FXMemoryPoolPrivate::poolFromBlk(_p);
 		assert((FXMemoryPoolPrivate *)-1!=realmp);
 	}
@@ -685,7 +686,7 @@ void free(void *p, FXMemoryPool *heap, FXuint alignment) throw()
 #endif
 		{
 #if !FXDISABLE_GLOBAL_MARKER
-			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=0);
+			for(_p-=1;*_p==*(FXuval *) "FYMPFYMP"; *_p--=*(FXuval *) "FREEFREE"); _p++;
 			alignment=0;
 #endif
 #ifdef FXENABLE_DEBUG_PRINTING
@@ -716,7 +717,7 @@ void free(void *p, FXMemoryPool *heap, FXuint alignment) throw()
 	}
 	realmp=(FXMemoryPoolPrivate *) _p[1];
 	if(realmp) realmp->allocated-=(int) _p[2];
-	for(; *_p==*(FXuval *) "FXMPFXMP"; *_p--=0);
+	for(; *_p==*(FXuval *) "FXMPFXMP"; *_p--=*(FXuval *) "FREEFREE");
 	p=(void *)(++_p);
 #ifdef FXENABLE_DEBUG_PRINTING
 	fxmessage("=%p\n", p);

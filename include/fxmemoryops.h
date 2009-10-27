@@ -226,12 +226,20 @@ inline FXDLLPUBLIC void *operator new(size_t size, int blockuse, const char *fil
 	if(!(ret=FX::_malloc_dbg(size, blockuse, file, lineno))) throw std::bad_alloc();
 	return ret;
 }
+inline FXDLLPUBLIC void operator delete(void *p, int blockuse, const char *file, int lineno)
+{
+	if(p) FX::free(p, heap);
+}
 inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, int blockuse, const char *file, int lineno);
 inline FXDLLPUBLIC void *operator new[](size_t size, int blockuse, const char *file, int lineno)
 {
 	void *ret;
 	if(!(ret=FX::_malloc_dbg(size, blockuse, file, lineno))) throw std::bad_alloc();
 	return ret;
+}
+inline FXDLLPUBLIC void operator delete[](void *p, int blockuse, const char *file, int lineno)
+{
+	if(p) FX::free(p, heap);
 }
 #endif
 #endif
