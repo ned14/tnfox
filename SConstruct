@@ -3,7 +3,7 @@
 #                                 TnFOX make file                               *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003-2007 by Niall Douglas.   All Rights Reserved.       *
+#        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -40,6 +40,8 @@ objects=[]
 if not disableGUI:
     objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", False)]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", True)]
+objects.append(nedmalloclib)
+
 if SQLModule==1: objects.append(sqlmoduleobjs)
 if GraphingModule==1: objects.append(graphingmoduleobjs)
 for object in objects:
@@ -55,7 +57,13 @@ if onWindows:
         linkflags+=[ternary(make64bit, "/BASE:0x7ff06200000", "/BASE:0x62000000")]
 Clean(targetname, objects)
 DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib, LINKFLAGS=linkflags)
+if MSVCVersion>=800:
+    env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
 env.Precious(DLL)
+AddPostAction(DLL, [Delete("lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX']),
+    Copy("lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX'], nedmallocpath+nedmallocbuildpath+env['SHLIBSUFFIX'])])
+#    ternary(onWindows, "fsutil hardlink create lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX']+" "+nedmallocpath+nedmallocbuildpath+env['SHLIBSUFFIX'],
+#        "ln "+nedmallocpath+nedmallocbuildpath+env['SHLIBSUFFIX']+" "+"lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX'])])
 addBind(DLL)
 linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+ternary(onWindows, ".lib", libtnfoxsuffix))
 if SQLModule==2:
@@ -68,6 +76,8 @@ if SQLModule==2:
     SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LINKFLAGS=mylinkflags)
     env.Depends(SQLDLL, DLL)
     DLL=SQLDLL
+    if MSVCVersion>=800:
+        env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
     env.Precious(DLL)
     addBind(DLL)
     linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxsql+ternary(onWindows, ".lib", libtnfoxsqlsuffix))
@@ -81,11 +91,13 @@ if GraphingModule==2:
     GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LINKFLAGS=mylinkflags)
     env.Depends(GraphingDLL, DLL)
     DLL=GraphingDLL
+    if MSVCVersion>=800:
+        env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
     env.Precious(DLL)
     addBind(DLL)
     linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfoxgraphing+ternary(onWindows, ".lib", libtnfoxgraphingsuffix))
 
-if onWindows:
+if onWindows and tool=="msvc":
     env.MSVSProject("windows/TnFOXProject"+env['MSVSPROJECTSUFFIX'],
                 srcs=["../src/"+x for x in getTnFOXSources()]
                     + ["../src/"+x for x in getSQLModuleSources("")]

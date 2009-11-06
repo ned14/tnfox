@@ -36,7 +36,7 @@ if not os.path.exists(builddir):
 
 # Warnings, synchronous exceptions, enable RTTI, pool strings, separate COMDAT per function,
 # ANSI for scoping, wchar_t native, types defined before pointers to members used
-cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Gy /Zc:forScope /Zc:wchar_t /vmb /vmm')
+cppflags=Split('/W3 /EHsc /GR /GF /Gy /Zc:forScope /Zc:wchar_t /vmb /vmm')
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                         # Only functions may alias
                 "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
@@ -95,7 +95,7 @@ env['LINKFLAGS']=["/version:"+targetversion,
                   "/STACK:524288,65536"
                   ]
 if MSVCVersion>=800:
-    env['LINKFLAGS']+=["/NXCOMPAT", "/DYNAMICBASE"]
+    env['LINKFLAGS']+=["/NXCOMPAT", "/DYNAMICBASE", "/MANIFEST"]
 if architecture=="x86" or architecture=="x64":
     if make64bit:
         env['LINKFLAGS']+=["/MACHINE:X64"]

@@ -90,7 +90,7 @@ toolsprefix=''           # Useful for cross compiling eg; 'arm9tdmi'
 
 # The default, unless overriden below, is to choose x86 or x64
 if sys.platform=="win32":
-    if os.environ.has_key('PROCESSOR_ARCHITECTURE') and os.environ['PROCESSOR_ARCHITECTURE']=="AMD64":
+    if os.environ.has_key('LIBPATH') and -1!=os.environ['LIBPATH'].find("\\amd64"):
         architecture="x64"
         architecture_version=0
     else:

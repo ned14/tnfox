@@ -3,7 +3,7 @@
 #                              TnFOX scons library                              *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2003-2006 by Niall Douglas.   All Rights Reserved.       *
+#        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -256,7 +256,10 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     
     # Force scons to always use absolute paths in everything (helps debuggers to find source files)
     #print env.Dump()
-    env['CCCOMFLAGS']= env['CCCOMFLAGS'].replace('$SOURCES','$SOURCES.abspath')
+    env['CCCOM']   =    env['CCCOM'].replace('$CHANGED_SOURCES','$SOURCES.abspath')
+    env['SHCCCOM'] =  env['SHCCCOM'].replace('$CHANGED_SOURCES','$SOURCES.abspath')
+    env['CXXCOM']  =   env['CXXCOM'].replace('$CHANGED_SOURCES','$SOURCES.abspath')
+    env['SHCXXCOM']= env['SHCXXCOM'].replace('$CHANGED_SOURCES','$SOURCES.abspath')
     #env['LINKCOM']   = env['LINKCOM'].replace('$SOURCES','$SOURCES.abspath')
 
     print "Using platform configuration",platformconfig,"..."
@@ -284,6 +287,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         env['ENV']['LIB']=os.environ['LIB']
         #print "Resetting $(PATH) to",os.environ['PATH']
         env['ENV']['PATH']=os.environ['PATH']
+
     if tcommonopts:
         libtcommon,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
         libtcommon2,libtcommonsuffix=VersionedSharedLibraryName(env, tncommonname+"Tn"+ternary(disableGUI, "_noGUI", ""), tncommonversioninfo, debug=debugmode)
@@ -359,6 +363,23 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     if onWindows:
         # Seems to need this on some installations
         env['ENV']['TMP']=os.environ['TMP']
+    
+    # Build and include nedmalloc
+    #oldenv=env
+    #env=os.environ
+    #nedmalloclib=SConscript("src/nedmalloc/SConstruct", exports="env", duplicate=False)
+    #env=oldenv
+    #print nedmalloclib
+    #nedmallocobjs=nedmalloclib
+    #if onWindows: nedmallocobjs=nedmallocobjs[1]
+    
+    # Build and include nedmalloc. Can't use SConscript() as it wants to import the build
+    # environment from here rather than set its own one up :(
+    nedmallocpath=prefixpath+"src/nedmalloc/"
+    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/nedmalloc"
+    nedmallocbuildcmd="scons --tolerant --largepages --useallocator=1 "+ternary(debugmode, " --debugbuild", "")+" "+nedmallocbuildpath+env['SHLIBSUFFIX']
+    if architecture=="x86" and x86_SSE: nedmallocbuildcmd+=" --sse="+x86_SSE
+    nedmalloclib=env.Command(nedmallocpath+nedmallocbuildpath+ternary(onWindows, ".lib", env['SHLIBSUFFIX']), '', nedmallocbuildcmd, chdir=nedmallocpath, ENV=os.environ)
 
     if SQLModule:
         env['CPPDEFINES']+=[("FX_SQLMODULE", SQLModule)]
