@@ -1939,6 +1939,47 @@ FXfloat FXProcess::hostOSMemoryLoad(FXuval *totalPhysMem)
 	return lastret;
 }
 
+FXProcess::MemoryUsageInfo FXProcess::processMemoryUsage(FXuint processId)
+{
+	FXProcess::MemoryUsageInfo mui;
+#ifdef USE_WINAPI
+	PROCESS_MEMORY_COUNTERS_EX pmc={ sizeof(PROCESS_MEMORY_COUNTERS_EX) };
+	MEMORYSTATUSEX ms={ sizeof(MEMORYSTATUSEX) };
+	HANDLE processh=0;
+	if(FXProcess::id()==processId)
+		processh=GetCurrentProcess();
+	else
+		FXERRHWIN(processh=OpenProcess(PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, FALSE, processId));
+	FXRBOp unprocessh=FXRBFunc(&CloseHandle, processh);
+	if(GetCurrentProcess()==processh) unprocessh.dismiss();
+	FXERRHWIN(GetProcessMemoryInfo(processh, (PROCESS_MEMORY_COUNTERS *) &pmc, pmc.cb));
+	FXERRHWIN(GlobalMemoryStatusEx(&ms));
+	mui.virtualUsage=ms.ullTotalVirtual-ms.ullAvailVirtual;
+	mui.workingSet=pmc.WorkingSetSize;
+	mui.privateSet=pmc.PrivateUsage;
+#endif
+#ifdef USE_POSIX
+#error Need to implement!
+#ifdef __linux__
+	/* /proc/<pid>/smaps format:
+		0812a000-0814b000 rw-p 000e1000 08:02 25723682   /usr/local/Plone/Python-2.4/bin/python
+		Size:                132 kB
+		Rss:                 116 kB
+		Pss:                  98 kB
+		Shared_Clean:         24 kB
+		Shared_Dirty:          0 kB
+		Private_Clean:         0 kB
+		Private_Dirty:        92 kB  <== private used
+		Referenced:           96 kB
+		Swap:                  0 kB
+		KernelPageSize:        4 kB
+		MMUPageSize:           4 kB
+	*/
+#endif
+#endif
+	return mui;
+}
+
 FXfloat FXProcess::hostOSDiscIOLoad(const FXString &path)
 {
     if(myprocess->p->overrides.discio>=0) return myprocess->p->overrides.discio;

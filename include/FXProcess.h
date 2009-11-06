@@ -3,7 +3,7 @@
 *                         P r o c e s s   S u p p o r t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -329,6 +329,16 @@ public:
 		else if(v<1.0) return 2;
 		else return 3;
 	}
+	//! Holds information about a process' memory usage
+	struct MemoryUsageInfo
+	{
+		FXuval virtualUsage;	//!< How much virtual address space this process is using
+		FXuval workingSet;		//!< How much of this process's virtual address usage is currently in physical RAM
+		FXuval privateSet;		//!< How much of this process's virtual address usage is storing data but is unshareable with other processes
+		MemoryUsageInfo() : virtualUsage(0), workingSet(0), privateSet(0) { }
+	};
+	/*! Returns information about a process' memory usage. */
+	static MemoryUsageInfo processMemoryUsage(FXuint processId=FXProcess::id());
 	/*! Returns a normalised floating-point value whereby \c 1.0 means full.
 	\note Currently not implemented
 	*/
