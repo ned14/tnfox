@@ -19,23 +19,12 @@
 * $Id:                                                                          *
 ********************************************************************************/
 
-#ifndef FXMEMDBG_H
-#define FXMEMDBG_H
-
 /*! \file FXMemDbg.h
-\brief Redefines the memory allocation routines on MSVC
+\brief Redefines the memory allocation routines
 
-GNU/Linux has the extremely useful valgrind so if you're on that platform I
-suggest you go use that. If you're on MacOS X or FreeBSD, you're probably the
-least supported by me (but only because I don't have access to such a system).
-
-MSVC, to Microsoft's credit, actually comes with plenty of memory leak and
-corruption detection code in its debug heap - it's just not fully enabled by
-default. This of course comes with the price
-of the debug heap not behaving like the release one (which famously in MSVC5 (or
-was it v4?) realloc() just plain didn't work) but nevertheless, with a small
-amount of extra work from you you can get most of the functionality of valgrind
-with less than a 5% loss in performance.
+Most libraries don't bother with trapping memory leaks - not so with TnFOX! Of
+course this is no substitute for valgrind on Linux, but it's good enough to catch
+most leaks. 
 
 <h3>Usage:</h3>
 If you wish to trap memory leaks, include this code after all other #include's
@@ -47,40 +36,46 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 \endcode
 In debug mode only, before your program quits, you'll get a list of all unfreed
-memory blocks and where they were allocated. The ones with source file names
-are your ones or ones within TnFOX itself. All extension code by me uses FXMemDbg
-and it's easy to modify fxdefs.h to have FXMALLOC() use it too.
+memory blocks and where they were allocated if the allocation occurred within
+a file covered by the code declaration above.
 
-Lastly, MSVC's debug heap runs a heap validation check every 1024 allocations
-and frees and this will usually catch memory corruption, though somewhat belatedly.
-You can force a check while trying to localise the cause during debugging using
-FXMEMDBG_TESTHEAP. I'd also look into _CrtSetDbgFlag() if you want more enhanced
-control (FXProcess sets it for the application).
+If you need to undo the allocator macro definitions, simply wrap the relevant
+code with #include <FXMemDbg.h> e.g.
+\code
+#include <FXMemDbg.h>
+#if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
+static const char *_fxmemdbg_current_file_ = __FILE__;
+#endif
+... redefinitions are turned on ...
+#include <FXMemDbg.h>
+// Redefinitions are now turned off
+obj = new(heap, 32) AlignedObject;
+#include <FXMemDbg.h>
+// Redefinitions are now turned on again
+\endcode
+FXMemDbg.h is a pure C preprocessor file and hence can be included anywhere safely.
 
 \note If you wish to disable this facility, define FXMEMDBG_DISABLE. Note that
 it is disabled when compiled as release anyway.
 */
 
-#if defined(_MSC_VER) && defined(_DEBUG) && !defined(FXMEMDBG_DISABLE)
-// Set up memory tracking (emulates MFC with the MSVC CRT lib)
-#include <crtdbg.h>
+#undef new
+#undef malloc
+#undef calloc
+#undef realloc
+#undef free
 
-#define _FXMEMDBG_NEW_ new(1, _fxmemdbg_current_file_, __LINE__)
-#define _FXMEMDBG_MALLOC_(x) _malloc_dbg(x, 1, _fxmemdbg_current_file_, __LINE__)
-
-#define new _FXMEMDBG_NEW_
-#define malloc(x) _FXMEMDBG_MALLOC_(x)
-
-//! When running under MSVC's debug heap, performs a heap scan and validation
-#define FXMEMDBG_TESTHEAP { _ASSERTE(_CrtCheckMemory()); }
-
-#else
-
-#define FXMEMDBG_TESTHEAP
-
-#define FXMEMDBG_DISABLE
-
+#ifdef FXMEMDBG_H
 #undef FXMEMDBG_H
+#else
+#define FXMEMDBG_H
+
+#if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
+#define new new(_fxmemdbg_current_file_, __FUNCTION__, __LINE__, 0, 0)
+//#define new(...)		new          (_fxmemdbg_current_file_, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define malloc(...)		malloc_dbg   (_fxmemdbg_current_file_, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define calloc(...)		calloc_dbg   (_fxmemdbg_current_file_, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define realloc(...)	realloc_dbg  (_fxmemdbg_current_file_, __FUNCTION__, __LINE__, __VA_ARGS__)
 
 #endif
 

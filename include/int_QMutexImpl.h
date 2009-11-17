@@ -38,17 +38,7 @@
   #define USE_WINAPI
   #define USE_OURMUTEX
   #include "WindowsGubbins.h"
-  #if !(defined(_M_AMD64) || defined(_M_X64))
-// These are already defined on AMD64 builds
-extern "C"
-{
-	LONG __cdecl _InterlockedCompareExchange(LPLONG volatile Dest, LONG Exchange, LONG Comp);
-	LONG __cdecl _InterlockedExchange(LPLONG volatile Target, LONG Value);
-	LONG __cdecl _InterlockedExchangeAdd(LPLONG volatile Addend, LONG Value);
-	LONG __cdecl _InterlockedIncrement(LONG volatile *Addend);
-	LONG __cdecl _InterlockedDecrement(LONG volatile *Addend);
-}
-  #endif
+  #include <intrin.h>
  #endif
  #ifdef USE_POSIX
   // POSIX threads for the Unices
@@ -376,15 +366,15 @@ QMUTEX_INLINEI int FXAtomicInt::spinI(int count) throw()
 
 QMUTEX_INLINEP void QShrdMemMutex::lock()
 {
-	FXuint start=(FXINFINITE==timeout) ? 0 : FXProcess::getMsCount();
-	while(lockvar.swapI(1) && (FXINFINITE==timeout || FXProcess::getMsCount()-start<timeout))
+	FXuint start=!timeout ? 0 : FXProcess::getMsCount();
+	while(lockvar.swapI(1) && (!timeout || FXProcess::getMsCount()-start<timeout-1))
 #ifndef FX_SMPBUILD
 		QThread::yield()
 #endif
 		;
 }
 
-QMUTEX_INLINEP bool QShrdMemMutex::tryLock()
+QMUTEX_INLINEP bool QShrdMemMutex::tryLock() throw()
 {
 	return !lockvar.swapI(1);
 }

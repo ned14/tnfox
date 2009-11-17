@@ -28,7 +28,7 @@ multiply is several times faster than FOX's FXMat4f.
 replace the system allocator.
 + (1142) Added FXProcess::processMemoryUsage()
 + (1144) Added typeof() implementation for MSVC.
-* (xxxx) Ripped out much of the former allocator support code now that nedmalloc
+* (1145) Ripped out much of the former allocator support code now that nedmalloc
 can patch itself in instead of the system allocator. Added new memory leak detection
 and reporting under debug builds.
 * (xxxx) Added Maths::Vector support to QHostAddress in order to speed IP compares.

@@ -3,7 +3,7 @@
 *                              Custom Memory Pool                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2005 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -26,14 +26,48 @@
 #ifndef FXMEMORYPOOL_H
 #define FXMEMORYPOOL_H
 
-// included by fxdefs.h/fxmemoryops.h
-#include <new>
-
-namespace FX {
-
 /*! \file FXMemoryPool.h
 \brief Defines classes used to implement custom memory pools
 */
+
+#ifdef _MSC_VER
+// This is a totally braindead warning :(
+#pragma warning(disable: 4290) // C++ exception specification ignored except it's not nothrow
+#endif
+
+#include <string.h>
+#include <new>
+
+
+/*! \defgroup fxmemoryops Custom memory allocation infrastructure
+
+Tn for security reasons requires a substantially more enhanced dynamic memory
+allocation system - in particular, threads performing operations by remote instruction
+must ensure that resource depletion attacks are prevented. This is done by running
+a separate memory pool per remote client which can either be chosen explicitly or
+via a TLS variable.
+
+Concurrent with this is the need to replace the system allocator on Win32 with TnFOX's
+one which typically yields a 6x speed increase for multithreaded C++ programs. A
+unified system is required for all this as there is only one global new and delete
+operator. <b>It is rather important that you read and understand the following
+discussion</b>.
+
+Due to how C++ (and C) works, there is one global \c new and \c delete operator which supposedly
+can be wholly replaced by any program according to the standard. This isn't actually
+true - on Win32, you can only replace per binary (DLL or EXE) and on GNU/ELF/POSIX your operator
+replacements get happily overrided by any shared objects loaded after your binary.
+It gets worse - when working with containers or any code which speculatively allocates
+memory (eg; buffering), a container can quickly come to consist of blocks allocated
+from a multitude of memory pools all at once leaving us with no choice other than to
+permit any thread with any memory pool currently set to be able to free any other
+allocation, no matter where it was allocated. Furthermore, we must also tolerate
+other parts of the C library or STL allocating with the default allocator and freeing
+using ours (GCC is particularly bad for this when optimisation is turned on).
+*/
+
+namespace FX {
+
 template<typename T, int alignment> class aligned_allocator;
 template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
 class FXMemoryPool;
@@ -50,16 +84,171 @@ Resizes memory */
 extern FXAPI FXMALLOCATTR void *realloc(void *p, size_t size, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
 Frees memory */
-extern FXAPI void free(void *p, FXMemoryPool *heap=0, FXuint alignment=0) throw();
-#if defined(DEBUG) && defined(_MSC_VER)
-extern FXAPI FXMALLOCATTR void *_malloc_dbg(size_t size, int blockuse, const char *file, int lineno) throw();
+extern FXAPI void free(void *p, FXMemoryPool *heap=0) throw();
+
+/*! \ingroup fxmemoryops
+Allocates memory */
+template<typename T> inline FXMALLOCATTR T *malloc(size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+template<typename T> inline T *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) FX::malloc(size, heap, alignment); }
+/*! \ingroup fxmemoryops
+Allocates memory */
+template<typename T> inline FXMALLOCATTR T *calloc(size_t no, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+template<typename T> inline T *calloc(size_t no, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) FX::calloc(no, size, heap, alignment); }
+/*! \ingroup fxmemoryops
+Allocates memory */
+template<typename T> inline FXMALLOCATTR T *realloc(T *p, size_t size, FXMemoryPool *heap=0) throw();
+template<typename T> inline T *realloc(T *p, size_t size, FXMemoryPool *heap) throw() { return (T *) FX::realloc((void *) p, size, heap); }
+/*! \ingroup fxmemoryops
+Frees memory */
+template<typename T> inline void free(T *p, FXMemoryPool *heap=0) throw() { FX::free((void *) p, heap); }
+#if defined(DEBUG)
+extern FXAPI FXMALLOCATTR void *malloc_dbg(const char *file, const char *function, int lineno, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+extern FXAPI FXMALLOCATTR void *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+extern FXAPI FXMALLOCATTR void *realloc_dbg(const char *file, const char *function, int lineno, void *p, size_t size, FXMemoryPool *heap=0) throw();
+
+template<typename T> inline FXMALLOCATTR T *malloc_dbg(const char *file, const char *function, int lineno, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+template<typename T> inline T *malloc_dbg(const char *file, const char *function, int lineno, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) malloc_dbg(file, function, lineno, size, heap, alignment); };
+template<typename T> inline FXMALLOCATTR void *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
+template<typename T> inline T *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { (T *) return calloc_dbg(file, function, lineno, no, size, heap, alignment); };
+template<typename T> inline FXMALLOCATTR T *realloc_dbg(const char *file, const char *function, int lineno, T *ptr, size_t size, FXMemoryPool *heap=0) throw();
+template<typename T> inline T *realloc_dbg(const char *file, const char *function, int lineno, T *ptr, size_t size, FXMemoryPool *heap) throw() { return (T *) realloc_dbg(file, function, lineno, (void *) ptr, size, heap); };
+}
+// Just to keep non FX namespace users happy
+inline FXMALLOCATTR void *malloc_dbg(const char *file, const char *function, int lineno, size_t size) throw() { return malloc(size); }
+inline FXMALLOCATTR void *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size) throw() { return calloc(no, size); }
+inline FXMALLOCATTR void *realloc_dbg(const char *file, const char *function, int lineno, void *ptr, size_t size) throw() { return realloc(ptr, size); }
+namespace FX {
+extern FXAPI bool printLeakedBlocks() throw();
 #endif
+// This one caught me out for a while
+/*! \ingroup fxmemoryops
+Duplicates a string */
+inline FXMALLOCATTR char *strdup(const char *str) throw();
+inline char *strdup(const char *str) throw()
+{
+	size_t len=strlen(str);
+	void *ret=FX::malloc(len+1);
+	if(!ret) return NULL;
+	memcpy(ret, str, len+1);
+	return (char *) ret;
+}
 /*! \ingroup fxmemoryops
 Causes an assertion failure when the specified memory block is freed */
 extern FXAPI void failonfree(void *p, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
 Removes a previous FX::failonfree() */
 extern FXAPI void unfailonfree(void *p, FXMemoryPool *heap=0) throw();
+
+/*! \class aligned_allocator
+\ingroup fxmemoryops
+\brief An aligning memory allocator for the STL
+
+Working with SIMD data (e.g. FX::Maths::Vector) can need memory aligned data.
+This custom STL allocator ensures that STL containers only use aligned allocations.
+*/
+template<typename T, int alignment> class aligned_allocator
+{
+public:
+	typedef T *pointer;
+	typedef const T *const_pointer;
+	typedef T &reference;
+	typedef const T &const_reference;
+	typedef T value_type;
+	typedef size_t size_type;
+	typedef ptrdiff_t difference_type;
+	T *address(T &r) const { return &r; }
+	const T *address(const T &s) const { return &s; }
+	size_t max_size() const { return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(T); }
+	template <typename U> struct rebind {
+		typedef aligned_allocator<U, alignment> other;
+	};
+	bool operator!=(const aligned_allocator &other) const { return !(*this == other); }
+	bool operator==(const aligned_allocator &other) const { return true; }
+
+	void construct(T *const p, const T &t) const {
+		void * const pv = static_cast<void *>(p);
+		new (pv) T(t);
+	}
+	void destroy(T *const p) const {
+		p->~T();
+	}
+	aligned_allocator() { }
+	aligned_allocator(const aligned_allocator &) { }
+	template <typename U> aligned_allocator(const aligned_allocator<U, alignment> &) { }
+
+	T *allocate(const size_t n) const {
+		void *pv = malloc(n * sizeof(T), 0, alignment);
+		if (pv == NULL) throw std::bad_alloc();
+		return static_cast<T *>(pv);
+	}
+	void deallocate(T *p, const size_t n) const {
+		free(p, 0);
+	}
+	template <typename U> T * allocate(const size_t n, const U * /* const hint */) const {
+		return allocate(n);
+	}
+private:
+	aligned_allocator &operator=(const aligned_allocator &);
+};
+
+/*! \ingroup fxmemoryops
+operator new with a specific pool */
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment=0) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new(size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
+{
+	void *ret;
+	if(!(ret=FX::malloc(size, heap, alignment))) throw std::bad_alloc();
+	return ret;
+}
+/*! \ingroup fxmemoryops
+operator new with a specific pool */
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment=0) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new[](size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
+{
+	void *ret;
+	if(!(ret=FX::malloc(size, heap, alignment))) throw std::bad_alloc();
+	return ret;
+}
+/*! \ingroup fxmemoryops
+operator delete with a specific pool */
+inline FXDLLPUBLIC void operator delete(void *p, FX::FXMemoryPool *heap) throw()
+{
+	if(p) FX::free(p, heap);
+}
+/*! \ingroup fxmemoryops
+operator delete with a specific pool */
+inline FXDLLPUBLIC void operator delete[](void *p, FX::FXMemoryPool *heap) throw()
+{
+	if(p) FX::free(p, heap);
+}
+#ifdef DEBUG
+} // namespace
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new(size_t size, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
+{
+	void *ret;
+	if(!(ret=FX::malloc_dbg(file, function, lineno, size, heap, alignment))) throw std::bad_alloc();
+	return ret;
+}
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new[](size_t size, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
+{
+	void *ret;
+	if(!(ret=FX::malloc_dbg(file, function, lineno, size, heap, alignment))) throw std::bad_alloc();
+	return ret;
+}
+inline FXDLLPUBLIC void operator delete(void *ptr, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw()
+{
+	if(ptr) FX::free(ptr, heap);
+}
+inline FXDLLPUBLIC void operator delete[](void *ptr, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw()
+{
+	if(ptr) FX::free(ptr, heap);
+}
+namespace FX {
+#endif
+
+
 
 /*! \class FXMemoryPool
 \ingroup fxmemoryops
@@ -124,12 +313,6 @@ If you'd like to know more in general about heap algorithms, implementations and
 performance, please see <a href="ftp://ftp.cs.utexas.edu/pub/garbage/allocsrv.ps">
 ftp://ftp.cs.utexas.edu/pub/garbage/allocsrv.ps</a>
 
-\note In debug modes, by default the system allocator is used exclusively with
-extensive additional sanity checks. Please consult \link fxmemoryops
-the custom memory infrastructure
-\endlink
-page for more information.
-
 <h3>Usage:</h3>
 You are guaranteed that irrespective of which memory pool you allocate from,
 you can free it with any other memory pool in effect. This is a requirement for any
@@ -153,9 +336,12 @@ struct FXMemoryPoolPrivate;
 class FXAPI FXMemoryPool
 {
 	friend FXAPI void *malloc(size_t size, FXMemoryPool *heap, FXuint alignment) throw();
+	friend FXAPI void *malloc_dbg(const char *file, const char *function, int lineno, size_t size, FXMemoryPool *heap, FXuint alignment) throw();
 	friend FXAPI void *calloc(size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) throw();
+	friend FXAPI void *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) throw();
 	friend FXAPI void *realloc(void *p, size_t size, FXMemoryPool *heap) throw();
-	friend FXAPI void free(void *p, FXMemoryPool *heap, FXuint alignment) throw();
+	friend FXAPI void *realloc_dbg(const char *file, const char *function, int lineno, void *p, size_t size, FXMemoryPool *heap) throw();
+	friend FXAPI void free(void *p, FXMemoryPool *heap) throw();
 	FXMemoryPoolPrivate *p;
 	FXMemoryPool(const FXMemoryPool &);
 	FXMemoryPool &operator=(const FXMemoryPool &);
@@ -268,6 +454,41 @@ extern "C" FXAPI FXMALLOCATTR void *tnfxrealloc(void *p, size_t size);
 /*! \ingroup fxmemoryops
 Frees memory */
 extern "C" FXAPI void tnfxfree(void *p);
+
+// Okay back in the global namespace. Define replacement new/delete but weakly
+// (side effect of inline) so the linker can elide all duplicates and leave one
+// in each binary. Ensure it's public visibility on ELF.
+/*! \ingroup fxmemoryops
+Global operator new replacement */
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new(size_t size) throw(std::bad_alloc)
+{
+	void *ret;
+	if(!(ret=FX::malloc(size))) throw std::bad_alloc();
+	return ret;
+}
+/*! \ingroup fxmemoryops
+Global operator new replacement */
+inline FXDLLPUBLIC FXMALLOCATTR void *operator new[](size_t size) throw(std::bad_alloc);
+inline FXDLLPUBLIC void *operator new[](size_t size) throw(std::bad_alloc)
+{
+	void *ret;
+	if(!(ret=FX::malloc(size))) throw std::bad_alloc();
+	return ret;
+}
+/*! \ingroup fxmemoryops
+Global operator delete replacement */
+inline FXDLLPUBLIC void operator delete(void *p) throw()
+{
+	if(p) FX::free(p);
+}
+/*! \ingroup fxmemoryops
+Global operator delete replacement */
+inline FXDLLPUBLIC void operator delete[](void *p) throw()
+{
+	if(p) FX::free(p);
+}
+
 
 #endif
 #endif

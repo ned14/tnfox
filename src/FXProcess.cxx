@@ -1954,7 +1954,7 @@ FXProcess::MemoryUsageInfo FXProcess::processMemoryUsage(FXuint processId)
 	if(GetCurrentProcess()==processh) unprocessh.dismiss();
 	FXERRHWIN(GetProcessMemoryInfo(processh, (PROCESS_MEMORY_COUNTERS *) &pmc, pmc.cb));
 	FXERRHWIN(GlobalMemoryStatusEx(&ms));
-	mui.virtualUsage=ms.ullTotalVirtual-ms.ullAvailVirtual;
+	mui.virtualUsage=(FXuval)(ms.ullTotalVirtual-ms.ullAvailVirtual);
 	mui.workingSet=pmc.WorkingSetSize;
 	mui.privateSet=pmc.PrivateUsage;
 #endif

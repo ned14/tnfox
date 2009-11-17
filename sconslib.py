@@ -377,8 +377,11 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     # environment from here rather than set its own one up :(
     nedmallocpath=prefixpath+"src/nedmalloc/"
     nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/nedmalloc"
-    nedmallocbuildcmd="scons --tolerant --largepages --useallocator=1 "+ternary(debugmode, " --debugbuild", "")+" "+nedmallocbuildpath+env['SHLIBSUFFIX']
-    if architecture=="x86" and x86_SSE: nedmallocbuildcmd+=" --sse="+x86_SSE
+    nedmallocbuildcmd="scons --tolerant --useallocator=1 "+ternary(debugmode, " --debugbuild", "")
+    #nedmallocbuildcmd+=" --largepages"
+    #nedmallocbuildcmd+=" --fastheapdetection"
+    nedmallocbuildcmd+=" "+nedmallocbuildpath+env['SHLIBSUFFIX']
+    if architecture=="x86" and x86_SSE: nedmallocbuildcmd+=" --sse="+str(x86_SSE)
     nedmalloclib=env.Command(nedmallocpath+nedmallocbuildpath+ternary(onWindows, ".lib", env['SHLIBSUFFIX']), '', nedmallocbuildcmd, chdir=nedmallocpath, ENV=os.environ)
 
     if SQLModule:

@@ -3,7 +3,7 @@
 *                          Differences documentation                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2008 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -36,9 +36,9 @@ TnFOX-specific acknowledgements here
 \endlink
 
 TnFOX absorbs the latest improvements to the core FOX library on a regular basis (this version is derived
-from v1.6.33), and the extensions listed below are designed to not interfere with that process where
+from v1.6.34), and the extensions listed below are designed to not interfere with that process where
 possible (hence some functionality has not been folded into FOX where it otherwise would). All extension code
-is (C) 2001-2008 Niall Douglas and all code rests under the same licence as FOX but with
+is (C) 2001-2009 Niall Douglas and all code rests under the same licence as FOX but with
 one extra restriction - <b>I do not permit any code copyrighted to me to be "promoted" to the GPL</b>
 so therefore <b>section 3 of the LGPL does not apply to code (C) Niall Douglas</b>. If you want to know more
 about the licensing implications of the FOX licence, see Jeroen's useful comments about the matter in the
@@ -293,7 +293,8 @@ get started immediately. For more information, see \link IPC
 the page about Inter Process Communication
 \endlink
 For running traditional command line programs such as compilers whilst redirecting standard
-input and output, FX::QChildProcess is provided.
+input and output, FX::QChildProcess is provided. If you would like to use TnFOX to write
+web services then FX::FXFCGI provides a FastCGI interface.
 
 <li><b>\link sqldb
 SQL Database support
