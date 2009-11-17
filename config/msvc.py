@@ -6,7 +6,7 @@ env['CPPDEFINES']+=["WIN32",
                     "_USRDLL"
                     ]
 if debugmode:
-    env['CPPDEFINES']+=["_DEBUG"]
+    env['CPPDEFINES']+=["_DEBUG", "DEBUG"]
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
@@ -53,7 +53,7 @@ else:
     if not debugmode:
         # Prevent checked iterators on release builds
         env['CPPDEFINES']+=[("_SECURE_SCL",0)]
-        cppflags+=["/GS-",       # Disable buffer overrun check
+        cppflags+=[#"/GS-",       # Disable buffer overrun check (disabled as code is actually faster with it on)
                    ]
 if architecture=="x86":
     if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]

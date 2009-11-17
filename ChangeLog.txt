@@ -19,7 +19,7 @@ B (1088) nedmalloc aborted on Mac OS X when thread id had high bit set
 fixed some silly SSE3 and SSE4 compilation errors :( Disabled global memory
 allocator replacement on Mac OS X as the 10.5 system allocator is faster in
 every way. Added aligned memory allocation plus aligned_allocator<> STL allocator.
-+ (1091) Added VIEWER_NICEST and VIEWER_LEFTZOOMS options to FXGLViewer
++ (1091) Added VIEWER_NICEST and VIEWER_LEFTZOOMS options to FXGLViewer.
 + (1092) Moved all the OpenGL FOX code into the graphing module. Added FXGLCircle.
 + (1093) Added FOX FXVecXX and FXMatXX interoperability to Maths::Vector and
 Maths::Matrix. SSE but non-SSE3 sum() now runs much faster, and Maths::Matrix<float,4>
@@ -27,8 +27,10 @@ multiply is several times faster than FOX's FXMat4f.
 * (1094-1117) Much work invested into nedmalloc which can now patch itself in to
 replace the system allocator.
 + (1142) Added FXProcess::processMemoryUsage()
++ (1144) Added typeof() implementation for MSVC.
 * (xxxx) Ripped out much of the former allocator support code now that nedmalloc
-can patch itself in instead of the system allocator. 
+can patch itself in instead of the system allocator. Added new memory leak detection
+and reporting under debug builds.
 * (xxxx) Added Maths::Vector support to QHostAddress in order to speed IP compares.
 * (xxxx) Added a dispatch upcall to the QThreadPool. Also significantly reworked
 its implementation.

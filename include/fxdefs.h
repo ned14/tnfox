@@ -229,6 +229,9 @@
 #pragma warning(disable: 4512)		// Assignment operator could not be generated
 #pragma warning(disable: 4610)		// Constructor required to instance
 #pragma warning(disable: 4706)		// Assignment within conditional expression
+
+#define _MFC_OVERRIDES_NEW			// Stop crtdbg.h defining its own debug operator new's
+#include <crtdbg.h>					// Include now to prevent inclusion later
 #endif
 
 // We need std::move et al for move semantics
@@ -969,6 +972,6 @@ extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src) throw();
 }
 
 #include "fxassemblerops.h"
-#include "fxmemoryops.h"
+#include "FXMemoryPool.h"
 
 #endif
