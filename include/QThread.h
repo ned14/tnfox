@@ -155,7 +155,7 @@ public:
 /*! \class QShrdMemMutex
 \brief A very lightweight mutex object to synchronise access to shared memory regions
 
-What goes for FX::QMutex goes for this. However, there are further FXRESTRICTions: because
+What goes for FX::QMutex goes for this. However, there are further restrictions: because
 inter-process mutex support is not available on all platforms, this object provides
 a working alternative based on FX::FXAtomicInt. It however does not invoke kernel waits
 so hence your process will waste processor time spinning on the lock if it is held by
@@ -173,6 +173,14 @@ FX::FXDoUndo.
 Because of all these problems, it is advisable that for anything more than trivial
 use of shared memory, another synchronisation method should be used eg; IPC messaging.
 
+QShrdMemMutex can safely be used without construction which makes it very useful
+during process initialisation or destruction. If unconstructed it has a state identical
+to:
+\code
+static QShrdMemMutex lock(FXINFINITE);
+\endcode
+... which is why you should always declare it as above.
+
 As of v0.86, defining FXINLINE_MUTEX_IMPLEMENTATION defines this class inline
 to all code including QThread.h. This can cause substantial performance
 improvement at the cost of code size.
@@ -180,20 +188,20 @@ improvement at the cost of code size.
 class QMUTEX_FXAPI QShrdMemMutex
 {
 	FXAtomicInt lockvar;
-	FXuint timeout;
+	FXuint timeout;		// =0 for infinite, =timeout+1 otherwise
 public:
 	//! Constructs an instance. Using FXINFINITE means infinite waits
-	QMUTEX_INLINEP QShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout) { }
+	QMUTEX_INLINEP QShrdMemMutex(FXuint _timeout=1000) : timeout(_timeout+1) { }
 	//! Returns the time after which a lock succeeds anyway
-	QMUTEX_INLINEP FXuint timeOut() const throw() { return timeout; }
+	QMUTEX_INLINEP FXuint timeOut() const throw() { return timeout-1; }
 	//! Sets the time after which a lock succeeds anyway
-	QMUTEX_INLINEP void setTimeOut(FXuint to) throw() { timeout=to; }
+	QMUTEX_INLINEP void setTimeOut(FXuint to) throw() { timeout=to+1; }
 	//! Locks the shared memory mutex
 	QMUTEX_INLINEP void lock();
 	//! Unlocks the shared memory mutex
 	QMUTEX_INLINEP void unlock() throw() { lockvar=0; }
 	//! Tries the shared memory mutex
-	QMUTEX_INLINEP bool tryLock();
+	QMUTEX_INLINEP bool tryLock() throw();
 };
 
 /*! \class QMutex
@@ -504,11 +512,9 @@ private:
 /*! \class QMtxHold
 \brief Helper class for using mutexes
 
-QMtxHold simply takes a FX::QMutex or FX::QRWMutex (or pointers to the same) as an argument
-to its constructor and locks the mutex for you. Hence then when QMtxHold is destructed,
+QMtxHold simply takes a FX::QMutex, FX::QRWMutex or FX::QShrdMemMutex (or pointers to the same)
+as an argument to its constructor and locks the mutex for you. Hence then when QMtxHold is destructed,
 the mutex is guaranteed to be freed.
-
-A QMutex or QRWMutex can also be specified via passing a FX::FXPol_lockable policy.
 
 A rarely used other possibility is to pass QMtxHold::UnlockAndRelock as the second argument to the
 constructor - this unlocks the mutex and relocks it on destruction.
@@ -517,8 +523,11 @@ class QMtxHold
 {
 	FXuint flags;
 	bool locklost;
-	QMutex *mutex;
-	QRWMutex *rwmutex;
+	union {
+		QMutex *mutex;
+		QRWMutex *rwmutex;
+		QShrdMemMutex *shrdmutex;
+	};
 
 	QMtxHold(const QMtxHold &);
 	QMtxHold &operator=(const QMtxHold &);
@@ -530,46 +539,74 @@ public:
 		UnlockAndRelock=1,		//!< The opposite (very rarely used)
 		AcceptNullMutex=2,		//!< Accepts a null mutex pointer
 
+		IsShrdMutex=(1<<26),
 		IsRWMutex=(1<<27),
 		IsLocked=(1<<28),
 		IsRWMutexWrite=(1<<29)
 	};
 	//! Constructs an instance holding the lock to mutex \em m
 	FXFORCEINLINE QMtxHold(const QMutex *m, FXuint _flags=LockAndUnlock)
-		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(m)), rwmutex(0)
+		: flags(_flags), locklost(false)
 	{
+		mutex=const_cast<QMutex *>(m);
 		if((flags & AcceptNullMutex) && !mutex) return;
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 		flags|=IsLocked;
 	}
 	//! \overload
 	FXFORCEINLINE QMtxHold(const QMutex &m, FXuint _flags=LockAndUnlock)
-		: flags(_flags), locklost(false), mutex(const_cast<QMutex *>(&m)), rwmutex(0)
+		: flags(_flags), locklost(false)
 	{
+		mutex=const_cast<QMutex *>(&m);
 		if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
 		flags|=IsLocked;
 	}
 	//! Constructs and instance holding the lock to read/write mutex \em m
-	FXFORCEINLINE QMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), mutex(0), rwmutex(const_cast<QRWMutex *>(m))
+	FXFORCEINLINE QMtxHold(const QRWMutex *m, bool write=true, FXuint _flags=LockAndUnlock)
+		: flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false)
 	{
+		rwmutex=const_cast<QRWMutex *>(m);
 		if((flags & AcceptNullMutex) && !rwmutex) return;
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
 		flags|=IsLocked;
 	}
 	//! \overload
-	FXFORCEINLINE QMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock) : flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false), mutex(0), rwmutex(const_cast<QRWMutex *>(&m))
+	FXFORCEINLINE QMtxHold(const QRWMutex &m, bool write=true, FXuint _flags=LockAndUnlock)
+		: flags(_flags|IsRWMutex|(write ? IsRWMutexWrite : 0)), locklost(false)
 	{
+		rwmutex=const_cast<QRWMutex *>(&m);
 		locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
+		flags|=IsLocked;
+	}
+	//! Constructs an instance holding the lock to mutex \em m
+	FXFORCEINLINE QMtxHold(const QShrdMemMutex *m, FXuint _flags=LockAndUnlock)
+		: flags(_flags|IsShrdMutex), locklost(false)
+	{
+		shrdmutex=const_cast<QShrdMemMutex *>(m);
+		if((flags & AcceptNullMutex) && !shrdmutex) return;
+		if(flags & UnlockAndRelock) shrdmutex->unlock(); else shrdmutex->lock();
+		flags|=IsLocked;
+	}
+	//! \overload
+	FXFORCEINLINE QMtxHold(const QShrdMemMutex &m, FXuint _flags=LockAndUnlock)
+		: flags(_flags|IsShrdMutex), locklost(false)
+	{
+		shrdmutex=const_cast<QShrdMemMutex *>(&m);
+		if(flags & UnlockAndRelock) shrdmutex->unlock(); else shrdmutex->lock();
 		flags|=IsLocked;
 	}
 	//! Used to unlock the held mutex earlier than destruction.
 	FXFORCEINLINE void unlock()
 	{
-		if((flags & AcceptNullMutex) && !mutex && !rwmutex) return;
+		if((flags & AcceptNullMutex) && !mutex) return;
 		if(flags & IsLocked)
 		{
 			if(flags & IsRWMutex)
 				rwmutex->unlock(!!(flags & IsRWMutexWrite));
+			else if(flags & IsShrdMutex)
+			{
+				if(flags & UnlockAndRelock) shrdmutex->lock(); else shrdmutex->unlock();
+			}
 			else
 			{
 				if(flags & UnlockAndRelock) mutex->lock(); else mutex->unlock();
@@ -585,6 +622,10 @@ public:
 		{
 			if(flags & IsRWMutex)
 				locklost=rwmutex->lock(!!(flags & IsRWMutexWrite));
+			else if(flags & IsShrdMutex)
+			{
+				if(flags & UnlockAndRelock) shrdmutex->unlock(); else shrdmutex->lock();
+			}
 			else
 			{
 				if(flags & UnlockAndRelock) mutex->unlock(); else mutex->lock();
@@ -1214,9 +1255,18 @@ public:
 	bool dynamic() const throw();
 	//! Sets if the pool is dynamic
 	void setDynamic(bool v);
+	//! Dispatch Upcall Type
+	enum DispatchUpcallType
+	{
+		PreDispatch=0,			//!< This upcall is occurring predispatch
+		PostDispatch=1,			//!< This upcall is occurring postdispatch
+		CancelledPreDispatch=2	//!< This upcall is occurring due to a cancellation predispatch
+	};
+	//! A dispatch upcall
+	typedef Generic::Functor<Generic::TL::create<bool, QThreadPool *, handle, DispatchUpcallType>::value> DispatchUpcallSpec;
 	/*! Dispatches a worker thread to execute this job, delaying by \em delay
 	milliseconds */
-	handle dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay=0);
+	handle dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay=0, DispatchUpcallSpec *upcallv=0);
 	//! Cancelled state
 	enum CancelledState
 	{

@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2008 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -68,7 +68,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #endif
 
 namespace FX {
-	
+
 #if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
 static inline void LatchWaiter(int *waiter)
 {	// Mustn't overfill the pipe
@@ -81,11 +81,11 @@ static inline void LatchWaiter(int *waiter)
 	FD_ZERO(&exceptfds);
 	delta.tv_usec=0;
 	delta.tv_sec=0;
-	
+
 	// poll() would be easier here, but it's non-standard
 	FD_SET(waiter[0], &readfds);
 	if(::select(waiter[0]+1,&readfds,&writefds,&exceptfds,&delta)) return;
-	
+
 	char c=0;
 	FXERRHOS(::write(waiter[1], &c, 1));
 }
@@ -102,17 +102,17 @@ static inline void ResetWaiter(int *waiter)
 		FD_ZERO(&exceptfds);
 		delta.tv_usec=0;
 		delta.tv_sec=0;
-		
+
 		// poll() would be easier here, but it's non-standard
 		FD_SET(waiter[0], &readfds);
 		if(!::select(waiter[0]+1,&readfds,&writefds,&exceptfds,&delta)) break;
-		
+
 		char buffer[4];
 		FXERRHOS(::read(waiter[0], buffer, 4));
 	}
 }
 #endif
-	
+
 class QWaitConditionPrivate : public QMutex
 {
 public:
@@ -840,6 +840,36 @@ static DWORD WINAPI start_threadwin(void *p)
 {
 	return (DWORD) start_thread(p);
 }
+
+/* Handy little function which sets the name of a Win32 thread in the MSVC debugger */
+#define MS_VC_EXCEPTION 0x406D1388
+
+#pragma pack(push,8)
+typedef struct tagTHREADNAME_INFO
+{
+   DWORD dwType; // Must be 0x1000.
+   LPCSTR szName; // Pointer to name (in user addr space).
+   DWORD dwThreadID; // Thread ID (-1=caller thread).
+   DWORD dwFlags; // Reserved for future use, must be zero.
+} THREADNAME_INFO;
+#pragma pack(pop)
+
+static void SetThreadName(DWORD dwThreadID, const char* threadName)
+{
+   THREADNAME_INFO info;
+   info.dwType = 0x1000;
+   info.szName = threadName;
+   info.dwThreadID = dwThreadID;
+   info.dwFlags = 0;
+
+   __try
+   {
+      RaiseException( MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(ULONG_PTR), (ULONG_PTR*)&info );
+   }
+   __except(EXCEPTION_EXECUTE_HANDLER)
+   {
+   }
+}
 #endif
 
 #ifdef USE_POSIX
@@ -954,12 +984,13 @@ namespace FX {
 void QThreadPrivate::run(QThread *t)
 {
 #ifdef USE_POSIX
-	FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)); 
+	FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL));
 	FXERRHOS(pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL));
 #endif
-	// Before doing anything else, set my affinity and ensure I'm only on allowed processors
+	// Before doing anything else, set my name, my affinity and ensure I'm only on allowed processors
 	{
 #ifdef USE_WINAPI
+		SetThreadName(-1, t->name());
 		DWORD_PTR _mask=(DWORD_PTR) t->p->processorAffinity;
 		FXERRHWIN(SetThreadAffinityMask(GetCurrentThread(), _mask));
 		t->p->id=QThread::id();
@@ -1301,7 +1332,7 @@ void QThread::requestTermination()
 		p->plsCancel=true;
 #ifdef USE_WINAPI
 		QMtxHold h(p);
-		if(!p->plsCancelDisabled) FXERRHWIN(SetEvent(p->plsCancelWaiter)); 
+		if(!p->plsCancelDisabled) FXERRHWIN(SetEvent(p->plsCancelWaiter));
 #endif
 #ifdef USE_POSIX
 #if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
@@ -1541,7 +1572,7 @@ void QThread::disableTermination()
 #ifdef USE_WINAPI
 			QMtxHold h(p);
 			p->plsCancelDisabled=true;
-			FXERRHWIN(ResetEvent(p->plsCancelWaiter)); 
+			FXERRHWIN(ResetEvent(p->plsCancelWaiter));
 #endif
 #ifdef USE_POSIX
 #if defined(__APPLE__) && defined(_APPLE_C_SOURCE)
@@ -1585,7 +1616,7 @@ void QThread::enableTermination()
 #ifdef USE_WINAPI
 			QMtxHold h(p);
 			p->plsCancelDisabled=false;
-			if(p->plsCancel) FXERRHWIN(SetEvent(p->plsCancelWaiter)); 
+			if(p->plsCancel) FXERRHWIN(SetEvent(p->plsCancelWaiter));
 #endif
 #ifdef USE_POSIX
 			FXERRHOS(pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL));
@@ -1689,20 +1720,62 @@ void QThread::int_enableSignals(void *oldmask)
 }
 
 /**************************************************************************************************************/
+#ifdef __GNUC__
+#warning QThreadPool is under construction!
+#endif
+#ifdef _MSC_VER
+#pragma message(__FILE__ ": WARNING: QThreadPool is under construction!")
+#endif
 struct FXDLLLOCAL QThreadPoolPrivate : public QMutex
 {
+	QThreadPool *parent;
 	FXuint total, maximum;
 	FXAtomicInt free;
 	bool dynamic;
+	struct CodeItem
+	{
+		FXAutoPtr<Generic::BoundFunctorV> code;
+		QThreadPool::DispatchUpcallSpec upcallv;
+		CodeItem() { }
+		CodeItem(FXAutoPtr<Generic::BoundFunctorV> _code, QThreadPool::DispatchUpcallSpec *_upcallv) : code(_code)
+		{
+			if(_upcallv) upcallv=*_upcallv;
+		}
+#ifndef HAVE_CPP0XRVALUEREFS
+#ifdef HAVE_CONSTTEMPORARIES
+		CodeItem(const CodeItem &other)
+		{
+			CodeItem &o=const_cast<CodeItem &>(other);
+#else
+		CodeItem(CodeItem &o)
+		{
+#endif
+			code=o.code;
+			upcallv=o.upcallv;
+		}
+#else
+private:
+		CodeItem(const CodeItem &);		// disable copy constructor
+public:
+		CodeItem(CodeItem &&o) : code(std::move(o.code)), upcallv(std::move(o.upcallv))
+		{
+		}
+#endif
+	private:
+		CodeItem &operator=(const CodeItem &);
+	public:
+		bool operator<(const CodeItem &o) const { return PtrPtr(code)<PtrPtr(o.code); }
+		bool operator==(const CodeItem &o) const { return PtrPtr(code)==PtrPtr(o.code); }
+	};
 	struct Thread : public QMutex, public QThread
 	{
 		QThreadPoolPrivate *parent;
 		volatile bool free;
 		QWaitCondition wc;
-		Generic::BoundFunctorV *volatile code;
+		FXAutoPtr<CodeItem> codeitem;
 		Thread(QThreadPoolPrivate *_parent)
-			: parent(_parent), free(true), wc(true), code(0), QThread("Pool thread", true) { }
-		~Thread() { parent=0; assert(!code); code=0; }
+			: parent(_parent), free(true), wc(true), QThread("Pool thread", true) { }
+		~Thread() { parent=0; assert(!codeitem->code); }
 		void run();
 		void *cleanup() { return 0; }
 		void selfDestruct()
@@ -1715,11 +1788,11 @@ struct FXDLLLOCAL QThreadPoolPrivate : public QMutex
 		}
 	};
 	QPtrList<Thread> threads;
-	QPtrList<Generic::BoundFunctorV> timed, waiting;
+	QPtrList<CodeItem> timed, waiting;
 	QPtrDict<QWaitCondition> waitingwcs;
 	QPtrDict<FXuint> timedtimes;
 
-	QThreadPoolPrivate(bool _dynamic) : total(0), maximum(0), free(0), dynamic(_dynamic), threads(true), timed(true), waiting(true), waitingwcs(7, true), QMutex() { }
+	QThreadPoolPrivate(QThreadPool *_parent, bool _dynamic) : parent(_parent), total(0), maximum(0), free(0), dynamic(_dynamic), threads(true), waitingwcs(7, true), QMutex() { }
 	~QThreadPoolPrivate()
 	{
 		QMtxHold h(this);
@@ -1744,53 +1817,55 @@ void QThreadPoolPrivate::Thread::run()
 	{
 		FXERRH_TRY
 		{
+			QMtxHold h(parent);
 			for(;;)
 			{
 				bool goFree=true;
+				assert(parent->isLocked());			// Parent threadpool is currently locked
 				if(!parent->waiting.isEmpty())
 				{
-					QMtxHold h(parent);
-					if(!parent->waiting.isEmpty())
-					{
-						code=parent->waiting.getFirst();
-						parent->waiting.takeFirst();
-						assert(code);
-						lock();		// I am now busy
-						goFree=false;
-					}
+					codeitem=parent->waiting.getFirst();
+					parent->waiting.takeFirst();
+					assert(codeitem && codeitem->code);
+					lock();		// I am now busy
+					goFree=false;
 				}
+				h.unlock();	// Release parent threadpool
 				if(goFree)
 				{
-					free=true;
-					assert(!code);
+					free=true;	// Mark myself as free
+					assert(!codeitem);
+					// parent->free is atomic so don't need lock
 					if(++parent->free>(int) parent->total)
 					{
-						QMtxHold h(parent);
-						if(parent->free>(int) parent->total) 
-						{
-							free=false;
-							--parent->free;
-							return;	// Exit thread
-						}
+						free=false;
+						--parent->free;
+						return;	// Exit thread
 					}
-					wc.wait();
+					wc.wait();	// Wait for new job
 					free=false;
-					lock();
+					lock();		// I am now busy
 				}
 
 				FXRBOp unlockme=FXRBObj(*this, &QThreadPoolPrivate::Thread::unlock);
 				QThread_DTHold dth(this);
-				assert(code);
+				assert(codeitem && codeitem->code);
 				//fxmessage("Thread pool calling %p\n", code);
-				Generic::BoundFunctorV *_code=code;
+				Generic::BoundFunctorV *_code=PtrPtr(codeitem->code);
 				assert(dynamic_cast<void *>(_code));
-				(*_code)();
-				FXDELETE(code);
-				unlockme.dismiss();
-				unlock();
-				//if(!parent->waitingwcs.isEmpty())
+				if(!codeitem->upcallv || codeitem->upcallv(parent->parent, (QThreadPool::handle) codeitem->code, QThreadPool::PreDispatch))
 				{
-					QMtxHold h(parent);
+					(*_code)();
+					if(codeitem->upcallv) codeitem->upcallv(parent->parent, (QThreadPool::handle) codeitem->code, QThreadPool::PostDispatch);
+				}
+				// Reset everything
+				codeitem->code=0;
+				codeitem->upcallv=QThreadPool::DispatchUpcallSpec((QThreadPool::DispatchUpcallSpec::void_ *) 0);
+				codeitem=0;
+				h.relock();				// Relock parent threadpool
+				unlockme.dismiss();
+				unlock();				// I am no longer busy
+				{
 					QWaitCondition *codewc=parent->waitingwcs.find(_code);
 					if(codewc)
 					{
@@ -1816,14 +1891,18 @@ public:
 	{
 		FXuint when;
 		QThreadPool *which;
-		FXAutoPtr<Generic::BoundFunctorV> code;
-		Entry(FXuint _when, QThreadPool *creator, FXAutoPtr<Generic::BoundFunctorV> _code) : when(_when), which(creator), code(_code) { }
+		QThreadPoolPrivate::CodeItem codeitem;
+		Entry(FXuint _when, QThreadPool *creator, QThreadPoolPrivate::CodeItem _codeitem) : when(_when), which(creator), codeitem(std::move(_codeitem)) { }
 		~Entry()
 		{
-			assert(!code);
+			if(codeitem.code)
+			{
+				fxmessage("WARNING: QThreadPool %p timed job %p firing in %d ms was not cancelled!\n", which, PtrPtr(codeitem.code), when-FXProcess::getMsCount());
+				codeitem.code=0;
+			}
 		}
 		bool operator<(const Entry &o) const { return o.when-when<0x80000000; }
-		bool operator==(const Entry &o) const { return when==o.when && which==o.which && code==o.code; }
+		bool operator==(const Entry &o) const { return when==o.when && which==o.which && codeitem.code==o.codeitem.code; }
 	};
 	QWaitCondition wc;
 	QSortedList<Entry> entries;
@@ -1857,8 +1936,8 @@ public:
 					{
 						FXPtrHold<Entry> entryh(entry);
 						entries.takeFirst();
-						entryh->which->dispatch(entryh->code);
-						assert(!entryh->code);
+						entryh->which->dispatch(entryh->codeitem.code, 0, &entryh->codeitem.upcallv);
+						assert(!entryh->codeitem.code);
 					}
 					if(!entries.isEmpty())
 					{
@@ -1879,10 +1958,7 @@ public:
 		Entry *entry;
 		//assert(entries.isEmpty());	// Otherwise it's probably a memory leak
 		while((entry=entries.getFirst()))
-		{
-			PtrRelease(entry->code);
 			entries.removeFirst();
-		}
 		return 0;
 	}
 };
@@ -1896,7 +1972,7 @@ static void DestroyThreadPoolTimeKeeper()
 QThreadPool::QThreadPool(FXuint total, bool dynamic) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
-	FXERRHM(p=new QThreadPoolPrivate(dynamic));
+	FXERRHM(p=new QThreadPoolPrivate(this, dynamic));
 	setTotal(total);
 	unconstr.dismiss();
 }
@@ -1972,7 +2048,7 @@ void QThreadPool::setDynamic(bool v)
 	p->dynamic=v;
 }
 
-QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay)
+QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code, FXuint delay, DispatchUpcallSpec *upcallv)
 {
 	Generic::BoundFunctorV *_code=0;
 	//fxmessage("Thread pool dispatch %p in %d ms\n", PtrPtr(code), delay);
@@ -1989,7 +2065,7 @@ QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code
 		}
 		QThreadPoolTimeKeeper::Entry *entry;
 		_code=PtrPtr(code);
-		FXERRHM(entry=new QThreadPoolTimeKeeper::Entry(FXProcess::getMsCount()+delay, this, code));
+		FXERRHM(entry=new QThreadPoolTimeKeeper::Entry(FXProcess::getMsCount()+delay, this, QThreadPoolPrivate::CodeItem(code, upcallv)));
 		FXRBOp unnew=FXRBNew(entry);
 		mastertimekeeper->entries.insert(entry);
 		unnew.dismiss();
@@ -1998,16 +2074,18 @@ QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code
 	}
 	else
 	{
+		FXAutoPtr<QThreadPoolPrivate::CodeItem> ci=new QThreadPoolPrivate::CodeItem(code, upcallv);
 		QMtxHold h(p);
 		if(p->free)
 		{
 			QThreadPoolPrivate::Thread *t;
 			for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 			{
-				if(t->free && !t->code)
+				if(t->free && !t->codeitem)
 				{
 					--p->free;
-					t->code=_code=PtrRelease(code);
+					t->codeitem=ci;
+					_code=PtrPtr(t->codeitem->code);
 					t->wc.wakeAll();
 					//fxmessage("waking %p\n", t);
 					break;
@@ -2015,9 +2093,11 @@ QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code
 			}
 			assert(t);
 		}
-		else
+		if(!_code)
 		{
-			p->waiting.append((_code=PtrRelease(code)));
+			_code=PtrPtr(ci->code);
+			p->waiting.append(PtrPtr(ci));
+			PtrRelease(ci);
 			//fxmessage("appending\n");
 			if(p->dynamic && p->total<p->maximum)
 			{
@@ -2025,7 +2105,6 @@ QThreadPool::handle QThreadPool::dispatch(FXAutoPtr<Generic::BoundFunctorV> code
 			}
 		}
 	}
-	assert(!code);
 	return (handle) _code;
 }
 
@@ -2035,23 +2114,40 @@ QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool 
 	if(!code) return NotFound;
 	QMtxHold h(p);
 	//fxmessage("Thread pool cancel %p\n", code);
-	if(!p->waiting.takeRef(code))
+	QThreadPoolPrivate::CodeItem *ci;
+	for(QPtrListIterator<QThreadPoolPrivate::CodeItem> it=p->waiting; (ci=it.current()); ++it)
+	{
+		if(PtrPtr(ci->code)==code)
+		{
+			p->waiting.removeByIter(it);
+			break;
+		}
+	}
+	if(!ci)
 	{
 		h.unlock();
 		QMtxHold h2(mastertimekeeperlock);
 		h.relock();
-		if(!p->waiting.takeRef(code))
+		for(QPtrListIterator<QThreadPoolPrivate::CodeItem> it=p->waiting; (ci=it.current()); ++it)
+		{
+			if(PtrPtr(ci->code)==code)
+			{
+				p->waiting.removeByIter(it);
+				break;
+			}
+		}
+		if(!ci)
 		{
 			QThreadPoolTimeKeeper::Entry *entry;
 			if(mastertimekeeper)
 			{
 				for(QSortedListIterator<QThreadPoolTimeKeeper::Entry> it(mastertimekeeper->entries); (entry=it.current()); ++it)
 				{
-					if(this==entry->which && PtrPtr(entry->code)==code)
+					if(this==entry->which && PtrPtr(entry->codeitem.code)==code)
 					{
-						PtrReset(entry->code, 0);		// deletes functor
-						mastertimekeeper->entries.removeRef(entry);
 						//fxmessage("Thread pool cancel %p found\n", code);
+						entry->codeitem.code=0;
+						mastertimekeeper->entries.removeRef(entry);
 						return Cancelled;
 					}
 				}
@@ -2061,7 +2157,7 @@ QThreadPool::CancelledState QThreadPool::cancel(QThreadPool::handle _code, bool 
 				QThreadPoolPrivate::Thread *t;
 				for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 				{
-					if(t->code==code)
+					if(t->codeitem && PtrPtr(t->codeitem->code)==code)
 					{	// Wait for it to complete
 						if(QThread::id()==t->myId())
 						{
@@ -2093,10 +2189,10 @@ bool QThreadPool::reset(QThreadPool::handle _code, FXuint delay)
 	{
 #if defined(__GNUC__) && __GNUC__==3 && __GNUC_MINOR__<=2
 		// Assuming GCC v3.4 will fix this
-		Generic::BoundFunctorV *codeentry=PtrRef(entry->code);
+		Generic::BoundFunctorV *codeentry=PtrRef(entry->codeitem.code);
 		if(codeentry==code) break;
 #else
-		if(entry->code==code) break;
+		if(entry->codeitem.code==code) break;
 #endif
 	}
 	if(!entry) return false;
@@ -2111,15 +2207,22 @@ bool QThreadPool::wait(QThreadPool::handle _code, FXuint period)
 {
 	Generic::BoundFunctorV *code=(Generic::BoundFunctorV *) _code;
 	QMtxHold h(p);
-	if(-1==p->waiting.findRef(code))
+	QThreadPoolPrivate::CodeItem *ci;
+	// Search the waiting list
+	for(QPtrListIterator<QThreadPoolPrivate::CodeItem> it=p->waiting; (ci=it.current()); ++it)
 	{
+		if(PtrPtr(ci->code)==code)
+			break;
+	}
+	if(!ci)
+	{	// Search the running jobs
 		QThreadPoolPrivate::Thread *t;
 		for(QPtrListIterator<QThreadPoolPrivate::Thread> it(p->threads); (t=it.current()); ++it)
 		{
-			if(t->code==code) break;
+			if(t->codeitem && PtrPtr(t->codeitem->code)==code) break;
 		}
 		if(!t)
-		{
+		{	// Search the timed jobs
 			if(mastertimekeeper)
 			{
 				QThreadPoolTimeKeeper::Entry *e;
@@ -2127,10 +2230,10 @@ bool QThreadPool::wait(QThreadPool::handle _code, FXuint period)
 				{
 #if defined(__GNUC__) && __GNUC__==3 && __GNUC_MINOR__<=2
 					// Assuming GCC v3.4 will fix this
-					Generic::BoundFunctorV *codeentry=PtrRef(e->code);
+					Generic::BoundFunctorV *codeentry=PtrRef(e->codeitem.code);
 					if(codeentry==code) break;
 #else
-					if(e->code==code) break;
+					if(e->codeitem.code==code) break;
 #endif
 				}
 				if(!e) return true;

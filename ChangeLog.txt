@@ -1,10 +1,13 @@
-Streamline nedmalloc usage now we can patch system allocator
-Replace Tn's network service with FXNetworkService
+* FINISH FXNetworkService and associated changes
+* FINISH FCGI and brethern
+* FINISH memory leak reporting - need to trigger print out when CRT static
+uses exit which no doubt will be tricky to get right
+* Replace Tn's network service with FXNetworkService
 
-Add elliptic curve crypto to FXSSLDevice encryption options
-Patch in FTGL library to handle OpenGL font rendering
-Add vector sin, cos routine implementation
-Add support for OpenCL - Mandelbrot demo
+* Add elliptic curve crypto to FXSSLDevice encryption options
+* Patch in FTGL library to handle OpenGL font rendering
+* Add vector sin, cos routine implementation
+* Add support for OpenCL - Mandelbrot demo
 
 v0.89 ?
 -=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -31,9 +34,12 @@ replace the system allocator.
 * (1145) Ripped out much of the former allocator support code now that nedmalloc
 can patch itself in instead of the system allocator. Added new memory leak detection
 and reporting under debug builds.
-* (xxxx) Added Maths::Vector support to QHostAddress in order to speed IP compares.
-* (xxxx) Added a dispatch upcall to the QThreadPool. Also significantly reworked
+* (1146) Added loads of minor fixes with GCC v4.4 and Ubuntu 9.1. Lots of stuff had
+silently ceased to work :(
+* (1147) Added a dispatch upcall to the QThreadPool. Also significantly reworked
 its implementation.
+* (1148) Added Maths::Vector support to QHostAddress in order to speed IP compares.
+
 
 v0.88.1 31st October 2008:
 -=-=-=-=-=-=-=-=-=-=-=-=-=
