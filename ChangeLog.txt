@@ -37,8 +37,11 @@ and reporting under debug builds.
 * (1146) Added loads of minor fixes with GCC v4.4 and Ubuntu 9.1. Lots of stuff had
 silently ceased to work :(
 * (1147) Added a dispatch upcall to the QThreadPool. Also significantly reworked
-its implementation.
+its implementation. Also revamped QShrdMemMutex to handle being used before static
+init has kicked in.
 * (1148) Added Maths::Vector support to QHostAddress in order to speed IP compares.
+Also added unfinished new FXNetworkService class which will be finished later when
+I get the time.
 
 
 v0.88.1 31st October 2008:

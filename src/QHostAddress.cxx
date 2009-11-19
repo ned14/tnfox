@@ -3,7 +3,7 @@
 *                             IP address container                              *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -27,6 +27,17 @@
 #include "FXRollback.h"
 #include <string.h>
 #include <stdio.h>
+#include "FXMemDbg.h"
+#if defined(DEBUG) && !defined(FXMEMDBG_DISABLE)
+static const char *_fxmemdbg_current_file_ = __FILE__;
+#endif
+
+#ifdef __GNUC__
+#warning QHostAddress and QHostAddressDict are under construction!
+#endif
+#ifdef _MSC_VER
+#pragma message(__FILE__ ": WARNING: QHostAddress and QHostAddressDict are under construction!")
+#endif
 
 namespace FX {
 
@@ -34,12 +45,11 @@ struct FXDLLLOCAL QHostAddressPrivate
 {
 	bool isIPv6, isLoopback, isNull;
 	FXuint IPv4;
-	FXuchar IPv6[16];
-	QHostAddressPrivate() : isIPv6(false), isLoopback(false), isNull(true), IPv4(0)
-	{
-		memset(IPv6, 0, sizeof(IPv6));
-	}
+	Maths::Vector<FXuchar, 16> IPv6;
+	QHostAddressPrivate() : isIPv6(false), isLoopback(false), isNull(true), IPv4(0), IPv6((FXuchar *) 0) { }
 };
+static FXuchar IPv6LoopbackData[]={ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 };
+static Maths::Vector<FXuchar, 16> IPv6Zero((FXuchar *) 0), IPv6Loopback(IPv6LoopbackData);
 
 QHostAddress::QHostAddress() : p(0)
 {
@@ -51,6 +61,14 @@ QHostAddress::QHostAddress(FXuint ip4addr) : p(0)
 	FXRBOp unconstr=FXRBConstruct(this);
 	FXERRHM(p=new QHostAddressPrivate);
 	setAddress(ip4addr);
+	unconstr.dismiss();
+}
+
+QHostAddress::QHostAddress(const Maths::Vector<FXuchar, 16> &ip6addr) : p(0)
+{
+	FXRBOp unconstr=FXRBConstruct(this);
+	FXERRHM(p=new QHostAddressPrivate);
+	setAddress(ip6addr);
 	unconstr.dismiss();
 }
 
@@ -80,10 +98,46 @@ QHostAddress::~QHostAddress()
 
 bool QHostAddress::operator==(const QHostAddress &o) const
 {
-	if((p->isLoopback || p->isNull) && (o.p->isLoopback || o.p->isNull)) return true;
+	if(p->isNull || o.p->isNull) return (p->isNull && o.p->isNull);
+	if(p->isLoopback || o.p->isLoopback) return (p->isLoopback && o.p->isLoopback);
 	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4==o.p->IPv4);
 	// Compare the IPv6 as IPv4 sets the IPv6
-	return (0==memcmp(p->IPv6, o.p->IPv6, sizeof(p->IPv6)));
+	return 4==sum(p->IPv6==o.p->IPv6);
+}
+
+bool QHostAddress::operator<(const QHostAddress &o) const
+{
+	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4<o.p->IPv4);
+	// Compare the IPv6 as IPv4 sets the IPv6
+	return memcmp(&p->IPv6, &o.p->IPv6, sizeof(p->IPv6))<0;
+}
+
+bool QHostAddress::operator>(const QHostAddress &o) const
+{
+	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4>o.p->IPv4);
+	// Compare the IPv6 as IPv4 sets the IPv6
+	return memcmp(&p->IPv6, &o.p->IPv6, sizeof(p->IPv6))>0;
+}
+
+QHostAddress QHostAddress::operator&(const QHostAddress &o) const
+{
+	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4 & o.p->IPv4);
+	// Compare the IPv6 as IPv4 sets the IPv6
+	return QHostAddress(p->IPv6 & o.p->IPv6);
+}
+
+QHostAddress QHostAddress::operator|(const QHostAddress &o) const
+{
+	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4 | o.p->IPv4);
+	// Compare the IPv6 as IPv4 sets the IPv6
+	return QHostAddress(p->IPv6 | o.p->IPv6);
+}
+
+QHostAddress QHostAddress::operator^(const QHostAddress &o) const
+{
+	if(!p->isIPv6 && !o.p->isIPv6) return (p->IPv4 ^ o.p->IPv4);
+	// Compare the IPv6 as IPv4 sets the IPv6
+	return QHostAddress(p->IPv6 ^ o.p->IPv6);
 }
 
 void QHostAddress::setAddress(FXuint ip4addr)
@@ -92,17 +146,31 @@ void QHostAddress::setAddress(FXuint ip4addr)
 	p->isLoopback=(0x7f000001==ip4addr);
 	p->isNull=(0==ip4addr);
 	p->IPv4=ip4addr;
-	memset(p->IPv6, 0, sizeof(p->IPv6));
-	if(p->isLoopback)
-		p->IPv6[15]=1;
-	else
+	p->IPv6=p->isLoopback ? IPv6Loopback : IPv6Zero;
+	if(!p->isLoopback)
 	{
-		p->IPv6[10]=0xff; p->IPv6[11]=0xff;
-		p->IPv6[12]=(FXuchar)((ip4addr>>24) & 0xff);
-		p->IPv6[13]=(FXuchar)((ip4addr>>16) & 0xff);
-		p->IPv6[14]=(FXuchar)((ip4addr>>8) & 0xff);
-		p->IPv6[15]=(FXuchar)((ip4addr) & 0xff);
+		p->IPv6.set(10, 0xff); p->IPv6.set(11, 0xff);
+		p->IPv6.set(12, (FXuchar)((ip4addr>>24) & 0xff));
+		p->IPv6.set(13, (FXuchar)((ip4addr>>16) & 0xff));
+		p->IPv6.set(14, (FXuchar)((ip4addr>>8) & 0xff));
+		p->IPv6.set(15, (FXuchar)((ip4addr) & 0xff));
 	}
+}
+
+void QHostAddress::setAddress(const Maths::Vector<FXuchar, 16> &ip6addr)
+{
+	p->isIPv6=true;
+	p->isLoopback=true;
+	p->isNull=true;
+	p->IPv6=ip6addr;
+	p->isNull=isZero(p->IPv6);
+	p->isLoopback=(4==sum(ip6addr==IPv6Loopback));
+	if(p->isLoopback) p->IPv4=0x7f000001;
+	else if(0xff==p->IPv6[10] && 0xff==p->IPv6[11])
+	{	// A IPv6 to IPv4 mapping
+		p->IPv4=(p->IPv6[12]<<24)|(p->IPv6[13]<<16)|(p->IPv6[14]<<8)|(p->IPv6[15]);
+	}
+	else p->IPv4=0;
 }
 
 void QHostAddress::setAddress(const FXuchar *ip6addr)
@@ -122,7 +190,7 @@ void QHostAddress::setAddress(const FXuchar *ip6addr)
 			else if(1!=c) p->isLoopback=false;
 		}
 		if(c) p->isNull=false;
-		p->IPv6[n]=c;
+		p->IPv6.set(n, c);
 	}
 	if(p->isLoopback) p->IPv4=0x7f000001;
 	else if(0xff==p->IPv6[10] && 0xff==p->IPv6[11])
@@ -148,7 +216,7 @@ bool QHostAddress::setAddress(const FXString &str)
 	}
 	else
 	{	// IPv6
-		FXuchar buffer[8];
+		FXuchar buffer[16];
 		memset(buffer, 0, sizeof(buffer));
 		int doublecolons=str.find("::");
 		FXString before, after;
@@ -163,7 +231,7 @@ bool QHostAddress::setAddress(const FXString &str)
 		for(int bidx=0; bidx<before.length();)
 		{
 			FXuint val=before.mid(bidx, before.length()).toUInt(&ok, 16);
-			if(!ok) return false;
+			if(!ok || idx>14) return false;
 			buffer[idx++]=(FXuchar)((val>>8) & 0xff); buffer[idx++]=(FXuchar)((val) & 0xff);
 			bidx=before.find(':', bidx); if(-1==bidx) bidx=before.length();
 		}
@@ -200,9 +268,14 @@ bool QHostAddress::isIp6Addr() const
 	return p->isIPv6;
 }
 
-const FXuchar *QHostAddress::ip6Addr() const
+const Maths::Vector<FXuchar, 16> &QHostAddress::ip6Addr() const
 {
 	return p->IPv6;
+}
+
+const FXuchar *QHostAddress::ip6AddrData() const
+{
+	return (const FXuchar *) &p->IPv6;
 }
 
 FXString QHostAddress::toString() const
@@ -248,7 +321,7 @@ FXStream &operator<<(FXStream &s, const QHostAddress &i)
 	FXuchar v6=i.p->isIPv6;
 	s << v6;
 	if(v6)
-		s.writeRawBytes(i.p->IPv6, sizeof(i.p->IPv6));
+		s << i.p->IPv6;
 	else
 		s << i.p->IPv4;
 	return s;
@@ -260,7 +333,7 @@ FXStream &operator>>(FXStream &s, QHostAddress &i)
 	s >> v6;
 	if(v6)
 	{
-		s.readRawBytes(i.p->IPv6, sizeof(i.p->IPv6));
+		s >> i.p->IPv6;
 		i.setAddress(i.p->IPv6);
 	}
 	else

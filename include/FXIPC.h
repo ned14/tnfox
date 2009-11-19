@@ -3,7 +3,7 @@
 *                        Inter Process Communication                            *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.            *
+*        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -69,6 +69,11 @@ While only a subset of CORBA's functionality is provided directly here, these
 classes along with the rest of TnFOX make it easy to build a CORBA-like
 system whilst remaining much more efficient and easier to use. Indeed, Tn does
 precisely this and benchmarks have shown a roughly 20-50% improvement over CORBA.
+
+If you want to interoperate with a web server, you might find the FX::FXFCGI
+class useful - this implements a FastCGI interface suitable for a web service
+providing daemon. If you would like to work with a child process, FX::QChildProcess
+provides a standard Unix-style simple i/o interface.
 
 <h3>Implementation:</h3>
 TnFOX uses a rather unconventional mechanism of defining IPC messages -

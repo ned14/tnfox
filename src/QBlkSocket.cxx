@@ -589,7 +589,7 @@ static inline sockaddr *makeSockAddr(int &salen, sockaddr_in6 &sa6, const QHostA
 		sa6.sin6_family=AF_INET6;
 		sa6.sin6_port=htons(port);
 		sa6.sin6_flowinfo=0;
-		memcpy(sa6.sin6_addr.s6_addr, addr.ip6Addr(), 16);
+		memcpy(sa6.sin6_addr.s6_addr, addr.ip6AddrData(), 16);
 		//sa6.sin6_scope_id=0;
 		// Some systems define a sin6_len member at the top of the structure
 		if((void *) &sa6.sin6_family>(void *) &sa6)
