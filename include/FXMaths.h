@@ -514,7 +514,7 @@ namespace Maths {
 	FX::FXVec3f, FX::FXVec3d, FX::FXVec4f, FX::FXVec4d. These are nothing like as fast,
 	and also they are designed in a highly SIMD unfriendly way - FX::Maths::Vector was
 	deliberately designed with an inconvenient API to force high performance programming.
-	
+
 	<h3>Implementation:</h3>
 	The following combinations have been optimised:
 	\li When compiled with SSE support, Vector<float, 4> uses \c __m128
@@ -659,7 +659,7 @@ namespace Maths {
 		Vector &operator=(const Vector &o) { v=o.v; return *this; }
 
 		Vector(const FXVec4f &o) { v=_mm_loadu_ps((float*)&o); }
-		Vector &operator=(const FXVec4f &o) { v=_mm_loadu_ps((float*)&o); }
+		Vector &operator=(const FXVec4f &o) { v=_mm_loadu_ps((float*)&o); return *this; }
 		operator FXVec4f &() { return *((FXVec4f *)this); }
 		operator const FXVec4f &() const { return *((const FXVec4f *)this); }
 
@@ -703,7 +703,7 @@ namespace Maths {
 		VECTOR2OP( && , and) VECTOR2OP( || , or)
 
 		VECTORFUNC(sqrt) VECTORFUNC(rcp) VECTORFUNC(rsqrt)
-		VECTOR2FUNC(min) VECTOR2FUNC(max) 
+		VECTOR2FUNC(min) VECTOR2FUNC(max)
 #undef VECTOR1OP
 #undef VECTOR2OP
 #undef VECTORP2OP
@@ -803,7 +803,7 @@ namespace Maths {
 		Vector &operator=(const Vector &o) { v=o.v; return *this; }
 
 		Vector(const FXVec2d &o) { v=_mm_loadu_pd((double*)&o); }
-		Vector &operator=(const FXVec2d &o) { v=_mm_loadu_pd((double*)&o); }
+		Vector &operator=(const FXVec2d &o) { v=_mm_loadu_pd((double*)&o); return *this; }
 		operator FXVec2d &() { return *((FXVec2d *)this); }
 		operator const FXVec2d &() const { return *((const FXVec2d *)this); }
 
@@ -847,7 +847,7 @@ namespace Maths {
 		VECTOR2OP( && , and) VECTOR2OP( || , or)
 
 		VECTORFUNC(sqrt)
-		VECTOR2FUNC(min) VECTOR2FUNC(max) 
+		VECTOR2FUNC(min) VECTOR2FUNC(max)
 #undef VECTOR1OP
 #undef VECTOR2OP
 #undef VECTORP2OP
@@ -913,7 +913,7 @@ namespace Maths {
 #define VECTORISZERO 1==_mm_testc_si128(a.v, _mm_setzero_si128())
 #else
 #define VECTOR2OP_A_SSE4ONLY(op, sseop, sseending)
-#define VECTORP2OP_A_SSE4ONLY(op, sseop, sseending) 
+#define VECTORP2OP_A_SSE4ONLY(op, sseop, sseending)
 #define VECTOR2FUNC_SSE4ONLY(op, sseop, sseending)
 #define VECTORISZERO 65535==_mm_movemask_epi8(_mm_cmpeq_epi8(_mm_setzero_si128(), a.v))
 #endif
@@ -1239,19 +1239,19 @@ VECTORINTEGER(FXint,    4)
 			explicit MatrixI(const type *d) : Base(d) { }
 			explicit MatrixI(const type (*d)[A]) : Base(d) { }
 
-			value_type at(int a, int b) { assert(a<A && b<B); return data[b][a]; }
-			value_type at(int a, int b) const { assert(a<A && b<B); return data[b][a]; }
+			value_type at(int a, int b) { assert(a<A && b<B); return Base::data[b][a]; }
+			value_type at(int a, int b) const { assert(a<A && b<B); return Base::data[b][a]; }
 			value_type operator[](int i) { return at(i%A, i/A); }
 			value_type operator[](int i) const { return at(i%A, i/A); }
 
-			reference front() { return data[0]; }
-			const_reference front() const { return data[0]; }
-			reference back() { return data[B-1][A-1]; }
-			const_reference back() const { return data[B-1][A-1]; }
-			iterator begin() { return &data[0]; }
-			const_iterator begin() const { return &data[0]; }
-			iterator end() { return &data[B][0]; }
-			const_iterator end() const { return &data[B][0]; }
+			reference front() { return Base::data[0]; }
+			const_reference front() const { return Base::data[0]; }
+			reference back() { return Base::data[B-1][A-1]; }
+			const_reference back() const { return Base::data[B-1][A-1]; }
+			iterator begin() { return &Base::data[0]; }
+			const_iterator begin() const { return &Base::data[0]; }
+			iterator end() { return &Base::data[B][0]; }
+			const_iterator end() const { return &Base::data[B][0]; }
 		};
 	}
 	template<typename type, unsigned int A, unsigned int B> class Matrix : public Impl::EquivType<Impl::MatrixI<type, A, B>, type, void>
@@ -1323,11 +1323,11 @@ VECTORINTEGER(FXint,    4)
    This is a 64-bit version of Mersenne Twister pseudorandom number
    generator.
 
-   Before using, initialize the state by using init_genrand64(seed)  
+   Before using, initialize the state by using init_genrand64(seed)
    or init_by_array64(init_key, key_length).
 
    Copyright (C) 2004, Makoto Matsumoto and Takuji Nishimura,
-   All rights reserved.                          
+   All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
@@ -1340,8 +1340,8 @@ VECTORINTEGER(FXint,    4)
         notice, this list of conditions and the following disclaimer in the
         documentation and/or other materials provided with the distribution.
 
-     3. The names of its contributors may not be used to endorse or promote 
-        products derived from this software without specific prior written 
+     3. The names of its contributors may not be used to endorse or promote
+        products derived from this software without specific prior written
         permission.
 
    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -1358,12 +1358,12 @@ VECTORINTEGER(FXint,    4)
 
    References:
    T. Nishimura, ``Tables of 64-bit Mersenne Twisters''
-     ACM Transactions on Modeling and 
+     ACM Transactions on Modeling and
      Computer Simulation 10. (2000) 348--357.
    M. Matsumoto and T. Nishimura,
      ``Mersenne Twister: a 623-dimensionally equidistributed
        uniform pseudorandom number generator''
-     ACM Transactions on Modeling and 
+     ACM Transactions on Modeling and
      Computer Simulation 8. (Jan. 1998) 3--30.
 
    Any feedback is very welcome.
@@ -1387,7 +1387,7 @@ VECTORINTEGER(FXint,    4)
 		FRandomness(FXulong seed) throw() : mti(NN+1)
 		{
 			mt[0] = seed;
-			for (mti=1; mti<NN; mti++) 
+			for (mti=1; mti<NN; mti++)
 				mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
 		}
 
@@ -1396,7 +1396,7 @@ VECTORINTEGER(FXint,    4)
 			FXulong *init_key=(FXulong *) _seed, key_length=len;
 			unsigned long long i, j, k;
 			mt[0] = 19650218ULL;
-			for (mti=1; mti<NN; mti++) 
+			for (mti=1; mti<NN; mti++)
 				mt[mti] =  (6364136223846793005ULL * (mt[mti-1] ^ (mt[mti-1] >> 62)) + mti);
 			i=1; j=0;
 			k = (NN>key_length ? NN : key_length);
@@ -1413,8 +1413,8 @@ VECTORINTEGER(FXint,    4)
 				i++;
 				if (i>=NN) { mt[0] = mt[NN-1]; i=1; }
 			}
-			
-			mt[0] = 1ULL << 63; /* MSB is 1; assuring non-zero initial array */ 
+
+			mt[0] = 1ULL << 63; /* MSB is 1; assuring non-zero initial array */
 		}
 
 		//! Generates a random number on [0, 2^64-1]-interval
@@ -1439,7 +1439,7 @@ VECTORINTEGER(FXint,    4)
 
 				mti = 0;
 			}
-		  
+
 			x = mt[mti++];
 
 			x ^= (x >> 29) & 0x5555555555555555ULL;
@@ -1449,7 +1449,7 @@ VECTORINTEGER(FXint,    4)
 
 			return x;
 		}
-		
+
 		//! Generates lots of random data (make sure it's 16 byte aligned!)
 		void fill(FXuchar *d, FXuval len) throw()
 		{
@@ -1693,7 +1693,7 @@ VECTORINTEGER(FXint,    4)
 			idx += 2;
 			return r;
 		}
-		
+
 		//! Generates lots of random data (make sure it's 16 byte aligned!)
 		void fill(FXuchar *d, FXuval len) throw()
 		{

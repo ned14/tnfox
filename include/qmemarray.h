@@ -56,7 +56,6 @@ in a standard amendment, so it shall be very soon).
 entirely (some methods aren't implemented).
 \li Useful functions such as push_back() and pop_back() are implemented
 */
-template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
 template<typename type, class allocator> class QMemArray : private std::vector<type, allocator>
 {
 	typedef std::vector<type, allocator> Base;
@@ -196,7 +195,7 @@ public:
 	void sort()
 	{
 		if(extArray) throw "Not implemented for external arrays";
-		std::sort(Base::begin(), Base::end(), sortPredicate);		
+		std::sort(Base::begin(), Base::end(), sortPredicate);
 	}
 	//! Performs a binary search to find an item (needs a numerically sorted array), returning -1 if not found
 	int bsearch(const type &val) const

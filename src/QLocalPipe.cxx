@@ -49,7 +49,7 @@ struct Buffer
 	void newChunk(FXuval chunksize)
 	{
 		FXuchar *chunk;
-		FXERRHM(chunk=(FXuchar *) malloc(chunksize));
+		FXERRHM(chunk=malloc<FXuchar>(chunksize));
 		FXRBOp unalloc=FXRBAlloc(chunk);
 		data.append(chunk);
 		unalloc.dismiss();

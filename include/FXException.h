@@ -259,7 +259,7 @@ FXERRH_ISFATAL flags. Thus by default the program will report the error, clean u
 It \em is possible to write restartable destructors in C++ - however, they won't always be of use
 to you eg; if the object is created on the stack. In that situation, an exception thrown implies
 unwinding the rest of the stack before it can be handled which clearly implies that that object
-can no longer exist in any useful sense. 
+can no longer exist in any useful sense.
 
 An important point is that the next issue (time of writing: June 2003) of the C++ standard is
 likely to make all exception throwing from destructors illegal, so if you wish to future-proof
@@ -316,7 +316,7 @@ FXException.h defines the convenience macro FXDELETE() which does exactly the ab
 meticulously stick to this approach throughout all your code, you can recall <tt>delete</tt>
 on an object which previously threw an exception (obviously after fixing whatever caused the
 problem in the first place).
-\li A special case is correctly handling when constructors throw an exception (dragons 
+\li A special case is correctly handling when constructors throw an exception (dragons
 traditionally live here which is probably why so many people dislike exceptions). The C++ spec says that
 unless it was being constructed via a placement new, no destructor is called (which is
 somewhat inconsistent IMHO since placement new's include everything \em except the vanilla
@@ -389,11 +389,11 @@ public:
   */
   FXException(const char *_filename, const char *_function, int _lineno, const FXString &_msg, FXuint _code, FXuint _flags) : p(0)
   { init(_filename, _function, _lineno, _msg, _code, _flags); }
-  /*! \overload 
+  /*! \overload
   */
   FXException() : p(0) { }
   //! \deprecated For backward code compatibility only
-  FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init(0, 0, 0, msg, 0, 0); }
+  FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init((const char *) 0, (const char *) 0, 0, FXString(msg), 0, 0); }
 #ifndef HAVE_CPP0XRVALUEREFS
   FXException &operator=(FXException &o);
 #ifdef HAVE_CONSTTEMPORARIES
@@ -510,7 +510,7 @@ public:
 		: FXException(_filename, _function, _lineno, _msg, FXEXCEPTION_BADRANGE, 0) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXRangeException(const FXchar *msg)
-		: FXException(0, 0, 0, msg, FXEXCEPTION_BADRANGE, FXERRH_ISFOXEXCEPTION) { }
+		: FXException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_BADRANGE, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXRangeException, FXException)
 };
 /*! \return A FX::FXRangeException
@@ -532,7 +532,7 @@ public:
 		: FXException(_filename, _function, _lineno, "Null pointer", FXEXCEPTION_NULLPOINTER, _flags) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXPointerException(const FXchar *msg)
-		: FXException(0, 0, 0, msg, FXEXCEPTION_NULLPOINTER, FXERRH_ISFOXEXCEPTION) { }
+		: FXException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_NULLPOINTER, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXPointerException, FXException)
 };
 #define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_FUNCTION(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
@@ -558,7 +558,7 @@ public:
 		: FXException(_filename, _function, _lineno, _msg, _code, _flags) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXResourceException(const FXchar *msg)
-		: FXException(0, 0, 0, msg, FXEXCEPTION_NORESOURCE, FXERRH_ISFOXEXCEPTION) { }
+		: FXException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_NORESOURCE, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXResourceException, FXException)
 };
 
@@ -573,7 +573,7 @@ public:
 		: FXResourceException(_filename, _function, _lineno, "Out of memory", FXEXCEPTION_NOMEMORY, 0) { }
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXMemoryException(const FXchar *msg)
-		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_NOMEMORY, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_NOMEMORY, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXMemoryException, FXResourceException)
 };
 #define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
@@ -690,7 +690,7 @@ class FXEXCEPTIONAPI(FXAPI) FXWindowException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXWindowException(const FXchar *msg)
-		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXWindowException, FXResourceException)
 };
 
@@ -705,7 +705,7 @@ class FXEXCEPTIONAPI(FXAPI) FXImageException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXImageException(const FXchar *msg)
-		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXImageException, FXResourceException)
 };
 
@@ -720,7 +720,7 @@ class FXEXCEPTIONAPI(FXAPI) FXFontException : public FXResourceException
 public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXFontException(const FXchar *msg)
-		: FXResourceException(0, 0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFOXEXCEPTION) { }
+		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFOXEXCEPTION) { }
 	FXMOVEBASECLASS(FXFontException, FXResourceException)
 };
 

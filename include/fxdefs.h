@@ -969,6 +969,17 @@ extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src,FXint n) throw();
 extern FXAPI FXint nc2utfs(FXchar* dst,const FXnchar *src) throw();
 
 
+
+// Have to put all forward declarations of all template types with default parameters here
+// as recent compilers no longer allow multiple declarations of default parameterised templates
+//
+// Personally I think that ISO C++ decision sucks, however I must admit things are now much
+// easier to maintain should I ever change the template spec.
+namespace Generic { struct NullType; }
+template<typename T, int alignment> class aligned_allocator;
+template<class dictbase, class type=Generic::NullType> class FXLRUCache;
+template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
+
 }
 
 #include "fxassemblerops.h"

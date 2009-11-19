@@ -57,7 +57,7 @@ if onWindows:
         linkflags+=[ternary(make64bit, "/BASE:0x7ff06200000", "/BASE:0x62000000")]
 Clean(targetname, objects)
 DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), objects, debugmode, GenStaticLib, LINKFLAGS=linkflags)
-if MSVCVersion>=800:
+if onWindows and MSVCVersion>=800:
     env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
 env.Precious(DLL)
 AddPostAction(DLL, [Delete("lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX']),
@@ -76,7 +76,7 @@ if SQLModule==2:
     SQLDLL=VersionedSharedLibrary(env, targetname+"_sql", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), sqlmoduleobjs, debugmode, GenStaticLib, LINKFLAGS=mylinkflags)
     env.Depends(SQLDLL, DLL)
     DLL=SQLDLL
-    if MSVCVersion>=800:
+    if onWindows and MSVCVersion>=800:
         env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
     env.Precious(DLL)
     addBind(DLL)
@@ -91,7 +91,7 @@ if GraphingModule==2:
     GraphingDLL=VersionedSharedLibrary(env, targetname+"_graphing", tnfoxversioninfo, "/usr/local/"+libPathSpec(make64bit), graphingmoduleobjs, debugmode, GenStaticLib, LINKFLAGS=mylinkflags)
     env.Depends(GraphingDLL, DLL)
     DLL=GraphingDLL
-    if MSVCVersion>=800:
+    if onWindows and MSVCVersion>=800:
         env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
     env.Precious(DLL)
     addBind(DLL)

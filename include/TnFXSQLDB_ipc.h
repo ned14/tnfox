@@ -174,7 +174,7 @@ public:
 			case TnFXSQLDB::Timestamp:
 			case TnFXSQLDB::Date:
 			case TnFXSQLDB::Time:
-				s << *(FXTime *) i.data.timestamp;
+				s << *(FXTime *)(void *) i.data.timestamp;
 				break;
 
 			case TnFXSQLDB::BLOB:
@@ -228,7 +228,7 @@ public:
 			case TnFXSQLDB::Timestamp:
 			case TnFXSQLDB::Date:
 			case TnFXSQLDB::Time:
-				s >> *(FXTime *) i.data.timestamp;
+				s >> *(FXTime *)(void *) i.data.timestamp;
 				break;
 
 			case TnFXSQLDB::BLOB:
@@ -306,7 +306,7 @@ public:
 		Open() : FXIPCMsg(0) { }
 		Open(const FXString &_driver, const FXString &_dbname, const FXString &_user, const QHostAddress &_host, FXushort _port)
 			: FXIPCMsg(id::code), driver(_driver), dbname(_dbname), user(_user), host(_host), port(_port) { }
-			void   endianise(FXStream &s) const { s << driver << dbname << user << !password.isNull(); if(!password.isNull()) { s << password.buffer().size(); s.writeRawBytes(password.buffer().data(), password.buffer().size()); } s << host << port; }
+		void   endianise(FXStream &s) const { s << driver << dbname << user << !password.isNull(); if(!password.isNull()) { s << (FXuint)password.buffer().size(); s.writeRawBytes(password.buffer().data(), password.buffer().size()); } s << host << port; }
 		void deendianise(FXStream &s)       { s >> driver >> dbname >> user; bool hasp; s >> hasp; if(hasp) { FXuint l; s >> l; password.buffer().resize(l); s.readRawBytes(password.buffer().data(), l); } s >> host >> port; }
 	};
 	struct OpenAck : public FXIPCMsg

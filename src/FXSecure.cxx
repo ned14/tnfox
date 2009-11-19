@@ -1068,13 +1068,13 @@ static const FXulong table[4*256] = {
 }
 
 #define tiger_compress(str, state) \
-  tiger_compress_macro(((FXulong*)str), ((FXulong*)state))
+  tiger_compress_macro(((FXulong*)(void*)str), ((FXulong*)(void*)state))
 
 TigerHashValue TigerHash::calc(FXuchar *buffer, FXuval length) const throw()
 {
 	TigerHashValue ret;
 	FXulong *res=ret.data.longlong;
-	FXulong *str=(FXulong *) buffer;
+	FXulong *str=(FXulong *)(void*) buffer;
 	register FXulong i, j;
 	unsigned char temp[64];
 
@@ -1087,7 +1087,7 @@ TigerHashValue TigerHash::calc(FXuchar *buffer, FXuval length) const throw()
 #if FOX_BIGENDIAN
 		for(j=0; j<64; j++)
 			temp[j^7] = ((FXuchar *)str)[j];
-		tiger_compress(((FXulong *)temp), res);
+		tiger_compress(temp, res);
 #else
 		tiger_compress(str, res);
 #endif
@@ -1114,14 +1114,14 @@ TigerHashValue TigerHash::calc(FXuchar *buffer, FXuval length) const throw()
 	{
 		for(; j<64; j++)
 			temp[j] = 0;
-		tiger_compress(((FXulong*)temp), res);
+		tiger_compress(temp, res);
 		j=0;
 	}
 
 	for(; j<56; j++)
 		temp[j] = 0;
-	((FXulong*)(&(temp[56])))[0] = ((FXulong)length)<<3;
-	tiger_compress(((FXulong*)temp), res);
+	((FXulong*)(void*)(&(temp[56])))[0] = ((FXulong)length)<<3;
+	tiger_compress(temp, res);
 
 	return ret;
 }

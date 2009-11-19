@@ -68,8 +68,6 @@ using ours (GCC is particularly bad for this when optimisation is turned on).
 
 namespace FX {
 
-template<typename T, int alignment> class aligned_allocator;
-template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
 class FXMemoryPool;
 class QThread;
 
@@ -109,7 +107,7 @@ extern FXAPI FXMALLOCATTR void *realloc_dbg(const char *file, const char *functi
 template<typename T> inline FXMALLOCATTR T *malloc_dbg(const char *file, const char *function, int lineno, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
 template<typename T> inline T *malloc_dbg(const char *file, const char *function, int lineno, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) malloc_dbg(file, function, lineno, size, heap, alignment); };
 template<typename T> inline FXMALLOCATTR void *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size, FXMemoryPool *heap=0, FXuint alignment=0) throw();
-template<typename T> inline T *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { (T *) return calloc_dbg(file, function, lineno, no, size, heap, alignment); };
+template<typename T> inline T *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t size, FXMemoryPool *heap, FXuint alignment) throw() { return (T *) calloc_dbg(file, function, lineno, no, size, heap, alignment); };
 template<typename T> inline FXMALLOCATTR T *realloc_dbg(const char *file, const char *function, int lineno, T *ptr, size_t size, FXMemoryPool *heap=0) throw();
 template<typename T> inline T *realloc_dbg(const char *file, const char *function, int lineno, T *ptr, size_t size, FXMemoryPool *heap) throw() { return (T *) realloc_dbg(file, function, lineno, (void *) ptr, size, heap); };
 }
@@ -191,6 +189,9 @@ private:
 	aligned_allocator &operator=(const aligned_allocator &);
 };
 
+
+} // namespace
+
 /*! \ingroup fxmemoryops
 operator new with a specific pool */
 inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, FX::FXMemoryPool *heap, FX::FXuint alignment=0) throw(std::bad_alloc);
@@ -222,7 +223,6 @@ inline FXDLLPUBLIC void operator delete[](void *p, FX::FXMemoryPool *heap) throw
 	if(p) FX::free(p, heap);
 }
 #ifdef DEBUG
-} // namespace
 inline FXDLLPUBLIC FXMALLOCATTR void *operator new(size_t size, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc);
 inline FXDLLPUBLIC void *operator new(size_t size, const char *file, const char *function, int lineno, FX::FXMemoryPool *heap, FX::FXuint alignment) throw(std::bad_alloc)
 {
@@ -245,9 +245,9 @@ inline FXDLLPUBLIC void operator delete[](void *ptr, const char *file, const cha
 {
 	if(ptr) FX::free(ptr, heap);
 }
-namespace FX {
 #endif
 
+namespace FX {
 
 
 /*! \class FXMemoryPool

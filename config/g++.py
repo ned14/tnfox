@@ -181,7 +181,12 @@ if not disableGUI:
     else:
         print "Disabling 32 bit colour cursor support"
     
-    conf.env.ParseConfig("/usr/X11R6/bin/xft-config --cflags --libs")
+    if os.path.exists("/usr/X11R6/bin/xft-config"):
+        conf.env.ParseConfig("/usr/X11R6/bin/xft-config --cflags --libs")
+    elif os.path.exists("/usr/bin/xft-config"):
+        conf.env.ParseConfig("/usr/bin/xft-config --cflags --libs")
+    else:
+        raise AssertionError, "Cannot find xft-config!"
     if not make64bit:
         # Annoyingly xft-config adds lib64 on 64 bit platforms
         for n in range(0, len(conf.env['LIBPATH'])):

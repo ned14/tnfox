@@ -201,7 +201,7 @@ bool EventLoopP::dispatchEvent(FXRawEvent& ev)
 		}
 #ifdef DEBUG
 		if(KeymapNotify!=ev.xany.type)
-			fxmessage("WARNING: Failed to find event loop for msg %d to window %d, repaints=%p, refresher=%p\n", ev.xany.type, ev.xany.window, repaints, refresher);
+			fxmessage("WARNING: Failed to find event loop for msg %d to window %d, repaints=%p, refresher=%p\n", ev.xany.type, (int) ev.xany.window, repaints, refresher);
 #endif
 		return true;
 #endif

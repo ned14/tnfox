@@ -132,7 +132,7 @@ QIODevice::UnicodeType QIODevice::determineUnicodeType(FXuchar *data, FXuval len
 			   UTF invalid character seen. good is incremented by charsize*2 for
 			   every non-invalid character seen. Furthermore, good gets a big bump
 			   when a valid UTF escape sequence denoting a multicharacter glyph.
-			   
+
 			   A slight bias is provided for high bytes to be null for UTF-16 as
 			   that's how Latin1 appears and it is very common. A further bias
 			   is provided against UTF characters inside the private use space as
@@ -342,8 +342,8 @@ FXuval QIODevice::removeCRLF(FXuchar *FXRESTRICT output, const FXuchar *FXRESTRI
 			nextchar=((FXwchar *)(input+i))[1];
 			if(FOX_BIGENDIAN==(utftype & 1))
 			{
-				fxendianswap(*(FXuint *)&thischar);
-				fxendianswap(*(FXuint *)&nextchar);
+				fxendianswap(*(FXuint *)(void*)&thischar);
+				fxendianswap(*(FXuint *)(void*)&nextchar);
 			}
 			thischarlen=sizeof(FXwchar);
 			if(i+thischarlen>inputlen) break;

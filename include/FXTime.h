@@ -22,6 +22,7 @@
 #ifndef _FXTime_h_
 #define _FXTime_h_
 
+#include "fxdefs.h"
 #include "FXString.h"
 #include <time.h>
 

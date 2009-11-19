@@ -3,7 +3,7 @@
 *                         P r o c e s s   S u p p o r t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002-2007 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -260,7 +260,7 @@ namespace Generic {
 	const double SmallestValue<double, true >::value=-2.2250738585072014e-308;
 }
 #endif
-	
+
 /* FXTime implementation, see FXTime.h */
 #ifdef WIN32
 static QMutex gmtimelock;
@@ -808,6 +808,10 @@ void FXProcess::init(int &argc, char *argv[])
 				else
 					temp=QTrans::tr("FXProcess", "    who will experience a right-handed interface\n");
 				sstdio << temp.text();
+				MemoryUsageInfo mui=FXProcess::processMemoryUsage();
+				temp=QTrans::tr("FXProcess", "This process is using %1Mb of virtual address space and %2Mb private data\n")
+					.arg(mui.virtualUsage/1048576.0, 0, 'f', 2).arg(mui.privateSet/1048576.0, 0, 'f', 2);
+				sstdio << temp.text();
 				temp=QTrans::tr("FXProcess", "There are the following files mapped into this process' memory:\n");
 				sstdio << temp.text();
 				{
@@ -1336,40 +1340,40 @@ QValueList<FXProcess::MappedFileInfo> FXProcess::mappedFiles(bool forceRefresh)
 	{	// sscanf seems to have thread safety issues on FreeBSD :( - so we parse manually
 		long start, end, objptr; char r,w,x; int refcnt, shadcnt, flags;
 		char cow[8], nc[8], type[32], *sp; bool ok;
-		
+
 		// Start
 		assert('0'==ptr[0] && 'x'==ptr[1]);
 		if((sp=strchr(ptr, ' '))) *sp=0; assert(sp);
 		bi.startaddr=FXString(ptr+2, sp-ptr-2).toULong(&ok, 16); assert(ok);
 		if(sp) ptr=sp+1;
-		
+
 		// End
 		assert('0'==ptr[0] && 'x'==ptr[1]);
 		if((sp=strchr(ptr, ' '))) *sp=0; assert(sp);
 		bi.endaddr=FXString(ptr+2, sp-ptr-2).toULong(&ok, 16); assert(ok);
 		if(sp) ptr=sp+1;
-		
+
 		bi.length=bi.endaddr-bi.startaddr;
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// resident
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// privresident
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// obj
-		
+
 		// rwx
 		bi.read='r'==ptr[0];
 		bi.write='w'==ptr[1];
 		bi.execute='x'==ptr[2];
 		ptr+=4;
-		
+
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// refcnt
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// shadcnt
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// flags
-		
+
 		// COW
 		//fxmessage("Processing %s\n", FXString(ptr, 32).text());
 		assert(!strncmp("NCOW", ptr, 4) || !strncmp("COW", ptr, 3));
 		bi.copyonwrite='C'==ptr[0];
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;
-		
+
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// NNC
 		sp=strchr(ptr, ' '); assert(sp); if(sp) ptr=sp+1;	// type
 		bi.offset=0;
@@ -1756,7 +1760,7 @@ FXString FXProcess::hostOSDescription(FXString *myapi, FXString *kernelname, FXS
 	FILE *ih=0;
 	char buffer[256];
 	int len;
-	
+
 	ih=fopen("/proc/sys/kernel/ostype", "rt");
 	if(!ih) FXERRGOS(errno, 0);
 	len=fread(buffer, 1, 64, ih);
@@ -1959,7 +1963,6 @@ FXProcess::MemoryUsageInfo FXProcess::processMemoryUsage(FXuint processId)
 	mui.privateSet=pmc.PrivateUsage;
 #endif
 #ifdef USE_POSIX
-#error Need to implement!
 #ifdef __linux__
 	/* /proc/<pid>/smaps format:
 		0812a000-0814b000 rw-p 000e1000 08:02 25723682   /usr/local/Plone/Python-2.4/bin/python
@@ -1975,6 +1978,58 @@ FXProcess::MemoryUsageInfo FXProcess::processMemoryUsage(FXuint processId)
 		KernelPageSize:        4 kB
 		MMUPageSize:           4 kB
 	*/
+	FXString procpath=FXString("/proc/%1/smaps").arg(FXProcess::id());
+	QFile fh(procpath, QFile::WantLightQFile());
+	fh.open(IO_ReadOnly);
+	char rawbuffer[16384];
+	FXuval read=0;
+	static const char *items[]={ "Size:", "Private_Clean:", "Private_Dirty:", "Swap:" };
+	int searchstate=0;
+	while((read=fh.readBlock(rawbuffer+read, sizeof(rawbuffer)-read)))
+	{
+		char *end=rawbuffer+read, *ptr=rawbuffer;
+		*end=0;
+		for(;;)
+		{
+			FXuint value=0;
+			char _item[32], unit[4];
+			if(!(ptr=strstr(ptr, items[searchstate])) || end-ptr<28)
+			{
+				end=ptr;
+				break;
+			}
+			sscanf(ptr, "%s %u %s", _item, &value, unit);
+			assert(!strcmp(_item, items[searchstate]));
+			assert(!strcmp(unit, "kB"));
+			if('k'==unit[0]) value*=1024;
+			switch(searchstate)
+			{
+			case 0:
+				mui.virtualUsage+=value;
+				break;
+			case 1:
+				mui.privateSet+=value;
+				break;
+			case 2:
+				mui.privateSet+=value;
+				break;
+			case 3:
+				mui.workingSet+=value;
+				break;
+			}
+			if(4==++searchstate) searchstate=0;
+		}
+		read-=end-rawbuffer;
+		memmove(rawbuffer, end, read);
+	}
+	fh.close();
+	mui.workingSet=mui.virtualUsage-mui.workingSet;
+#endif
+#if defined(__FreeBSD__)
+#error Need to implement!
+#endif
+#ifdef __APPLE__
+#error Need to implement!
 #endif
 #endif
 	return mui;

@@ -645,7 +645,7 @@ struct TnFXSQLDB_ipc::Statement : public TnFXSQLDBStatement
 		case TnFXSQLDB::Date:
 		case TnFXSQLDB::Time:
 			i->par.data.length=sizeof(FXTime);
-			*(FXTime *)&i->par.data.timestamp=*(FXTime *) data;
+			*(FXTime *)(void *) i->par.data.timestamp=*(FXTime *) data;
 			break;
 
 		case TnFXSQLDB::BLOB:

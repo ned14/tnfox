@@ -69,6 +69,9 @@ block causes an assertion failure. Only really has a point in debug builds */
 #undef realloc
 
 /* Set uthash to use nedmalloc */
+#ifdef __GNUC__
+#define typeof(x) __typeof__(x)
+#endif
 #include "nedmalloc/uthash/src/uthash.h"
 #undef uthash_malloc
 #undef uthash_free
@@ -412,7 +415,7 @@ static void DebugExpanded(UT_hash_table *tbl) throw()
 #undef uthash_expand_fyi
 #define uthash_expand_fyi(tbl) DebugExpanded(tbl)
 #undef uthash_noexpand_fyi
-#define uthash_noexpand_fyi(tbl) fxmessage("FXMemoryPool: WARNING: AllocatedBlocks bucket expansion inhibited\n", tbl->num_buckets)
+#define uthash_noexpand_fyi(tbl) fxmessage("FXMemoryPool: WARNING: AllocatedBlocks bucket expansion inhibited\n")
 static void AddAllocatedBlock(AllocatedBlock::AllocatedBlockType type, void *ret, FXMemoryPoolPrivate *mp, const char *file, const char *function, int lineno, size_t size) throw()
 {
 	QMtxHold h(allocatedBlocksLock);

@@ -308,9 +308,6 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     make64bit=(architecture=="x64")
     execfile(platformconfig)
 
-    # WARNING: You must NOT touch FXDISABLE_GLOBALALLOCATORREPLACEMENTS here as it breaks
-    # the python bindings. Alter it at the top of fxmemoryops.h
-
     # Very rarely, scons won't create the object file output directory and
     # thus causes both the following tests to fail. Hence preempt the problem
     if not os.path.exists(builddir):
@@ -376,13 +373,16 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     # Build and include nedmalloc. Can't use SConscript() as it wants to import the build
     # environment from here rather than set its own one up :(
     nedmallocpath=prefixpath+"src/nedmalloc/"
-    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/nedmalloc"
+    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/${SHLIBPREFIX}nedmalloc"
     nedmallocbuildcmd="scons --tolerant --useallocator=1 "+ternary(debugmode, " --debugbuild", "")
     #nedmallocbuildcmd+=" --largepages"
     #nedmallocbuildcmd+=" --fastheapdetection"
     nedmallocbuildcmd+=" "+nedmallocbuildpath+env['SHLIBSUFFIX']
     if architecture=="x86" and x86_SSE: nedmallocbuildcmd+=" --sse="+str(x86_SSE)
-    nedmalloclib=env.Command(nedmallocpath+nedmallocbuildpath+ternary(onWindows, ".lib", env['SHLIBSUFFIX']), '', nedmallocbuildcmd, chdir=nedmallocpath, ENV=os.environ)
+    nedmalloctarget=nedmallocpath+nedmallocbuildpath+ternary(onWindows, ".lib", env['SHLIBSUFFIX'])
+    nedmalloclib=env.Command(nedmalloctarget, '', nedmallocbuildcmd, chdir=nedmallocpath, ENV=os.environ)
+    #print "nedmalloc being linked in from",nedmalloclib,"("+nedmallocpath+nedmallocbuildpath+")"
+    nedmalloclib[0].attributes.shared=True
 
     if SQLModule:
         env['CPPDEFINES']+=[("FX_SQLMODULE", SQLModule)]

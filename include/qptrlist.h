@@ -327,7 +327,7 @@ public:
 	//! Compares two items (used by many methods above). Default returns -1 if a < b, +1 if a > b and 0 if a==b
     virtual int compareItems(type *a, type *b) const { return (a<b) ? -1 : (a==b) ? 0 : -1; }
 
-	typename Base &int_list() { return static_cast<Base &>(*this); }
+	Base &int_list() { return static_cast<Base &>(*this); }
 	typename Base::iterator int_begin() { return Base::begin(); }
 	typename Base::iterator int_end() { return Base::end(); }
 
@@ -386,7 +386,7 @@ public:
 	//! Returns true if this iterator is at the start of its list
 	bool atFirst() const
 	{
-		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this); 
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this);
 		return mylist->int_begin()==me;
 	}
 	//! Returns true if this iterator is at the end of its list
@@ -399,14 +399,14 @@ public:
 	//! Sets the iterator to point to the first item in the list, then returns that item
 	type *toFirst()
 	{
-		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this); 
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this);
 		me=mylist->int_begin(); dead=false;
 		return retptr();
 	}
 	//! Sets the iterator to point to the last item in the list, then returns that item
 	type *toLast()
 	{
-		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this); 
+		typename Base::iterator &me=const_cast<QPtrListIterator<type, allocator> &>(*this);
 		me=mylist->int_end(); dead=false;
 		if(!mylist->isEmpty()) --me;
 		return retptr();
@@ -547,6 +547,7 @@ template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QQ
 template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QQuickList;
 template<class type, class allocator> class QQuickList : protected QPtrList<type, allocator>
 {
+    typedef QPtrList<type, allocator> Base;
 	friend class QQuickListIterator<type, allocator>;
 public:
 	//! Creates an instance
