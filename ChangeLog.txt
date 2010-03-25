@@ -42,6 +42,7 @@ init has kicked in.
 * (1148) Added Maths::Vector support to QHostAddress in order to speed IP compares.
 Also added unfinished new FXNetworkService class which will be finished later when
 I get the time.
+* (xxxxxxx) Migrated Tn and TnFOX SVN repos over to GIT.
 
 
 v0.88.1 31st October 2008:
