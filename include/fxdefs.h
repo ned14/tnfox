@@ -979,6 +979,8 @@ namespace Generic { struct NullType; }
 template<typename T, int alignment> class aligned_allocator;
 template<class dictbase, class type=Generic::NullType> class FXLRUCache;
 template<typename type, class allocator=FX::aligned_allocator<type, 0> > class QMemArray;
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrListIterator;
+template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrList;
 
 }
 

@@ -11,7 +11,7 @@ uses exit which no doubt will be tricky to get right
 
 v0.89 ?
 -=-=-=-=-=-=-=-=-=-=-=-=-=
-T (svnr) description
+T (svnr)|[gitbr gitsha] description
 B (1088) nedmalloc aborted on Mac OS X when thread id had high bit set
 
 * (1089) Bumped TnFOX to v0.89
@@ -42,7 +42,7 @@ init has kicked in.
 * (1148) Added Maths::Vector support to QHostAddress in order to speed IP compares.
 Also added unfinished new FXNetworkService class which will be finished later when
 I get the time.
-* (xxxxxxx) Migrated Tn and TnFOX SVN repos over to GIT.
+* [master f1fa43e] Migrated Tn and TnFOX SVN repos over to GIT.
 
 
 v0.88.1 31st October 2008:
