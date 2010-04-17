@@ -3,7 +3,7 @@
 *                         P r o c e s s   S u p p o r t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2010 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -21,7 +21,7 @@
 
 #include "fxdefs.h"
 #include "fxver.h"
-#include "tnfxsvnrev.h"
+#include "tnfxgitrev.h"
 #include "FXProcess.h"
 #include "FXException.h"
 #include "FXPtrHold.h"
@@ -772,8 +772,8 @@ void FXProcess::init(int &argc, char *argv[])
 			if(0==strcmp(argv[argi], "-help"))
 			{
 				inHelpMode=true;
-				QTransString temp2=QTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3 (SVN rev %4)\n   (derived from FOX v%5.%6.%7) (built: %8 %9)\n");
-				temp2.arg(FXPath::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR).arg(SUBVERSION_REVISION);
+				QTransString temp2=QTrans::tr("FXProcess", "%1 based on the TnFOX portable library v%2.%3 (GIT %4)\n   (derived from FOX v%5.%6.%7) (built: %8 %9)\n");
+				temp2.arg(FXPath::name(FXProcess::execpath()).text()).arg(TNFOX_MAJOR).arg(TNFOX_MINOR).arg(TNFOX_GIT_DESCRIPTION);
 				temp2.arg(FOX_MAJOR).arg(FOX_MINOR).arg(FOX_LEVEL).arg(FXString(__TIME__)).arg(FXString(__DATE__));
 				FXString temp(temp2);
 				sstdio << temp.text();
@@ -1797,9 +1797,10 @@ FXString FXProcess::hostOSDescription(FXString *myapi, FXString *kernelname, FXS
 #endif
 }
 
-void FXProcess::buildInfo(int *svnrev)
+const char *FXProcess::buildInfo(int *gitrev)
 {
-	if(svnrev) *svnrev=SUBVERSION_REVISION;
+	if(gitrev) *gitrev=TNFOX_GIT_REVISION;
+	return TNFOX_GIT_DESCRIPTION;
 }
 
 FXfloat FXProcess::hostOSProcessorLoad()

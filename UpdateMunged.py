@@ -4,7 +4,7 @@
 #                           TnFOX munged files updater                          *
 #                                                                               *
 #********************************************************************************
-#        Copyright (C) 2002,2003 by Niall Douglas.   All Rights Reserved.       *
+#        Copyright (C) 2002-2010 by Niall Douglas.   All Rights Reserved.       *
 #       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 #********************************************************************************
 # This code is free software; you can redistribute it and/or modify it under    *
@@ -20,7 +20,7 @@
 # $Id:                                                                          *
 #*******************************************************************************/
 
-myversion="0.21"
+myversion="0.22"
 import sys
 import os
 
@@ -29,7 +29,7 @@ if sys.version_info<(2,3,0,'alpha',0):
 from optparse import OptionParser
 
 parser=OptionParser(usage="""%prog -d <directory> -t <timestampfile.h> -c "<command line arguments>"
-      Copyright (C) 2003 by Niall Douglas.   All Rights Reserved.
+      Copyright (C) 2003-2010 by Niall Douglas.   All Rights Reserved.
   NOTE THAT I NIALL DOUGLAS DO NOT PERMIT ANY OF MY CODE USED UNDER THE GPL
 *********************************************************************************
   This code is free software; you can redistribute it and/or modify it under
@@ -43,8 +43,8 @@ parser.add_option("-d", "--directory", default=".",
                   help="Path to the directory of sources")
 parser.add_option("-t", "--timestampfile", default=None,
                   help="Path to the timestamp file")
-parser.add_option("-s", "--svnrevisionheader", default=None,
-                  help="Path to a header file for writing the current SVN revision into")
+parser.add_option("-s", "--gitrevisionheader", default=None,
+                  help="Path to a header file for writing the current GIT revision into")
 parser.add_option("-c", "--commandline", default="",
                   help="The command line arguments to pass to CppMunge.py")
 parser.add_option("-v", "--verbose", action="store_true", default=False,
@@ -66,33 +66,29 @@ try:
     lastmungedmtime=os.path.getmtime(timestampfile)
 except os.error:
     lastmungedmtime=0
-if options.svnrevisionheader:
+if options.gitrevisionheader:
     if "/home/ned" in os.path.abspath(myloc):
         print "Skipping as on Niall's machine"
     else:
-        fh=file(options.svnrevisionheader, "wt")
+        fh=file(options.gitrevisionheader, "wt")
         try:
-            fh.write("#define SUBVERSION_REVISION ")
+            fh.write('#define TNFOX_GIT_DESCRIPTION "')
             try:
-                (childinh, childh)=os.popen4("svnversion")
+                (childinh, childh)=os.popen4("git describe")
                 line=childh.readline()
                 if line:
-                    # Make sure it worked
-                    assert line[0].isdigit()
-                    # We want the bit after any colon present
-                    idx=line.find(':')
-                    if idx!=-1:
-                        line=line[idx+1:]
-                    idx=line.find('M')
-                    if idx!=-1:
-                        line=line[:idx]	          #+line[idx+1:]
+                    fh.write(line[:-1]+'"\n#define TNFOX_GIT_REVISION 0x')
+                    # We want the GIT SHA
+                    idx=line.find('-g')
+                    assert idx>=0;
+                    line=line[idx+2:]
                     fh.write(line)
-                    print "\nThis is built from SVN revision",line
+                    print "\nThis is built from GIT revision",line
                 childinh.close()
                 childh.close()
             except:
-                fh.write("-1\n")
-                print "\nCalling svnversion FAILED due to",sys.exc_info()
+                fh.write('<error>"\n#define TNFOX_GIT_REVISION -1\n')
+                print "\nCalling git describe FAILED due to",sys.exc_info()
         finally:
             fh.close()
 

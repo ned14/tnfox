@@ -35,7 +35,7 @@ if onDarwin:
                        "-current_version", targetversion
                       ]
 
-updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -s include/tnfxsvnrev.h -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
+updmunged=env.Command("dont exist", None, ternary(onWindows, "", "python ")+'UpdateMunged.py -d src -s include/tnfxgitrev.h -c "-f 4 -c include/FXErrCodes.h -t TnFOXTrans.txt"')
 objects=[]
 if not disableGUI:
     objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", False)]

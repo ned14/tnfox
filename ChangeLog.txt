@@ -43,10 +43,11 @@ init has kicked in.
 Also added unfinished new FXNetworkService class which will be finished later when
 I get the time.
 * [master f1fa43e] Migrated Tn and TnFOX SVN repos over to GIT.
-+ [master xxxxxxx] Added memsize() to all memory functions.
-* [master xxxxxxx] Updated SQLite3 to v3.6.23.1 and now have TnFXSQLDB_sqlite3 call
++ [master d3aede0] Added memsize() to all memory functions.
+* [master d9bfa8f] Updated SQLite3 to v3.6.23.1 and now have TnFXSQLDB_sqlite3 call
 sqlite3_config in order to replace memory allocator rather than applying patch to
 source.
+* [master xxxxxxx] Fixed up UpdateMunged.py and FXProcess::buildInfo() to use GIT.
 
 
 v0.88.1 31st October 2008:

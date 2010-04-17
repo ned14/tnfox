@@ -3,7 +3,7 @@
 *                         P r o c e s s   S u p p o r t                         *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2010 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -294,10 +294,10 @@ public:
 	*/
 	static FXString hostOSDescription(FXString *myapi=0, FXString *kernelname=0, FXString *kernelversion=0,
 		FXString *apiversion=0, FXString *architecture=0);
-	/*! Returns build information for TnFOX. \em svnrev is the latest SVN revision of the
-	repository from which TnFOX was checked out. Note this can be -1 if \c svnversion wasn't
+	/*! Returns build information for TnFOX. \em gitrev is the latest GIT revision of the
+	repository from which TnFOX was checked out. Note this can be -1 if \c git \c describe wasn't
 	available during build */
-	static void buildInfo(int *svnrev=0);
+	static const char *buildInfo(int *gitrev=0);
 	/*! Returns a normalised floating-point value whereby \c 1.0 means full. System processors
 	are combined so that CPU A at 100% and CPU B at 0% yields the same return as both CPU's
 	being at 50%

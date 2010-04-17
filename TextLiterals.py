@@ -240,7 +240,7 @@ class TextLiterals:
         else:
             for lang in self.__langids:
                 if not self.__translations.has(ltext, '"'+self.__inputname+'"', lclass, lhint, lang):
-                    self.__translations.add(ltext, '"'+slef.__inputname+'"', lclass, lhint, lang, "\"!TODO! enter translation here\"")
+                    self.__translations.add(ltext, '"'+self.__inputname+'"', lclass, lhint, lang, "\"!TODO! enter translation here\"")
                     self.__altered=True
                     self.__needsupdate=True
     def addLang(self, lang):
