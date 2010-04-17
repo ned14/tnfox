@@ -3,7 +3,7 @@
 *                              Custom Memory Pool                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2010 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -178,6 +178,10 @@ struct FXDLLLOCAL FXMemoryPoolPrivate
 		if(ret && (FXuval)-1!=maxsize) allocated+=(int) nedblksize(0, ret);
 		return ret;
 	}
+	FXuval memsize(void *blk) throw()
+	{
+		return nedblksize(0, blk);
+	}
 	void free(void *blk, FXuint alignment) throw()
 	{
 		if((FXuval)-1!=maxsize)
@@ -280,6 +284,10 @@ void *FXMemoryPool::calloc(FXuint no, FXuval esize, FXuint alignment) throw()
 {
 	return p->calloc(no, esize, alignment);
 }
+FXuval FXMemoryPool::memsize(void *blk) throw()
+{
+	return p->memsize(blk);
+}
 void FXMemoryPool::free(void *blk, FXuint alignment) throw()
 {
 	return p->free(blk, alignment);
@@ -306,6 +314,10 @@ void *FXMemoryPool::glmalloc(FXuval size, FXuint alignment) throw()
 void *FXMemoryPool::glcalloc(FXuval no, FXuval size, FXuint alignment) throw()
 {
 	return alignment ? memset(nedmemalign(alignment, size), 0, size) : nedcalloc(no, size);
+}
+FXuval FXMemoryPool::glmemsize(void *blk) throw()
+{
+	return nedblksize(0, blk);
 }
 void FXMemoryPool::glfree(void *blk, FXuint alignment) throw()
 {
@@ -578,6 +590,11 @@ void *realloc(void *p, size_t size, FXMemoryPool *heap) throw()
 #endif
 	return ret;
 }
+size_t memsize(void *p) throw()
+{
+	if(!p) return 0;
+	return nedblksize(0, p);
+}
 void free(void *p, FXMemoryPool *heap) throw()
 {
 	if(!p) return;
@@ -707,6 +724,9 @@ extern "C" void *tnfxcalloc(size_t no, size_t size) { return FX::calloc(no, size
 /*! \ingroup fxmemoryops
 Resizes memory */
 extern "C" void *tnfxrealloc(void *p, size_t size) { return FX::realloc(p, size); }
+/*! \ingroup fxmemoryops
+Returns memory size */
+extern "C" size_t tnfxmemsize(void *p) { return FX::memsize(p); }
 /*! \ingroup fxmemoryops
 Frees memory */
 extern "C" void tnfxfree(void *p) { return FX::free(p); }

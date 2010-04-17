@@ -3,7 +3,7 @@
 *                              Custom Memory Pool                               *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2003-2009 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2003-2010 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -81,6 +81,9 @@ extern FXAPI FXMALLOCATTR void *calloc(size_t no, size_t size, FXMemoryPool *hea
 Resizes memory */
 extern FXAPI FXMALLOCATTR void *realloc(void *p, size_t size, FXMemoryPool *heap=0) throw();
 /*! \ingroup fxmemoryops
+Returns memory size */
+extern FXAPI size_t memsize(void *p) throw();
+/*! \ingroup fxmemoryops
 Frees memory */
 extern FXAPI void free(void *p, FXMemoryPool *heap=0) throw();
 
@@ -96,6 +99,9 @@ template<typename T> inline T *calloc(size_t no, size_t size, FXMemoryPool *heap
 Allocates memory */
 template<typename T> inline FXMALLOCATTR T *realloc(T *p, size_t size, FXMemoryPool *heap=0) throw();
 template<typename T> inline T *realloc(T *p, size_t size, FXMemoryPool *heap) throw() { return (T *) FX::realloc((void *) p, size, heap); }
+/*! \ingroup fxmemoryops
+Returns memory size */
+template<typename T> inline size_t memsize(T *p) throw() { return FX::memsize((void *) p); }
 /*! \ingroup fxmemoryops
 Frees memory */
 template<typename T> inline void free(T *p, FXMemoryPool *heap=0) throw() { FX::free((void *) p, heap); }
@@ -341,6 +347,7 @@ class FXAPI FXMemoryPool
 	friend FXAPI void *calloc_dbg(const char *file, const char *function, int lineno, size_t no, size_t _size, FXMemoryPool *heap, FXuint alignment) throw();
 	friend FXAPI void *realloc(void *p, size_t size, FXMemoryPool *heap) throw();
 	friend FXAPI void *realloc_dbg(const char *file, const char *function, int lineno, void *p, size_t size, FXMemoryPool *heap) throw();
+	friend FXAPI size_t memsize(void *p) throw();
 	friend FXAPI void free(void *p, FXMemoryPool *heap) throw();
 	FXMemoryPoolPrivate *p;
 	FXMemoryPool(const FXMemoryPool &);
@@ -382,6 +389,8 @@ public:
 	FXMALLOCATTR void *malloc(FXuval size, FXuint alignment=0) throw();
 	//! Allocates a zero initialised block, returning zero if unable
 	FXMALLOCATTR void *calloc(FXuint no, FXuval size, FXuint alignment=0) throw();
+	//! Returns size of block
+	FXuval memsize(void *blk) throw();
 	//! Frees a block
 	void free(void *blk, FXuint alignment=0) throw();
 	/*! Extends a block, returning zero if unable. Note that like the
@@ -396,6 +405,8 @@ public:
 	/*! Allocates zero-filled \em no of blocks of size \em size from the
 	global heap, returning zero if unable */
 	static FXMALLOCATTR void *glcalloc(FXuval no, FXuval size, FXuint alignment=0) throw();
+	//! Returns size of block
+	static FXuval glmemsize(void *blk) throw();
 	//! Frees a block from the global heap
 	static void glfree(void *blk, FXuint alignment=0) throw();
 	/*! Extends a block in the global heap, returning zero if unable.
@@ -451,6 +462,9 @@ extern "C" FXAPI FXMALLOCATTR void *tnfxcalloc(size_t no, size_t size);
 /*! \ingroup fxmemoryops
 Resizes memory */
 extern "C" FXAPI FXMALLOCATTR void *tnfxrealloc(void *p, size_t size);
+/*! \ingroup fxmemoryops
+Returns memory size */
+extern "C" FXAPI size_t tnfxmemsize(void *p);
 /*! \ingroup fxmemoryops
 Frees memory */
 extern "C" FXAPI void tnfxfree(void *p);
