@@ -3,7 +3,7 @@
 *                            SQLite3 Database Support                           *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2005-2008 by Niall Douglas.   All Rights Reserved.                   *
+* Copyright (C) 2005-2010 by Niall Douglas.   All Rights Reserved.                   *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -96,9 +96,33 @@ inline bool TnFXSQLDB_sqlite3::fxerrhsqlite3(int retcode, const char *file, cons
 }
 #define FXERRHSQLITE3(st) fxerrhsqlite3(st, FXEXCEPTION_FILE(st), FXEXCEPTION_FUNCTION(st), FXEXCEPTION_LINE(st))
 
-
+static FXAtomicInt sqlite3initialised;
 TnFXSQLDB_sqlite3::TnFXSQLDB_sqlite3(const FXString &dbpath, const FXString &user, const QHostAddress &host, FXushort port) : TnFXSQLDB(Capabilities().setTransactions().setNoTypeConstraints(), MyName, dbpath, user, host, port), p(0)
 {
+	if(!sqlite3initialised)
+	{
+		if(!sqlite3initialised.cmpX(0, 1))
+		{
+			{	// Using nedmalloc makes a huge difference to SQLite3 speed.
+				struct sqlite3_mem_methods mm={0};
+				struct MemFunctions { static int roundup(int n) { return n ? (n+7)&~7 : 8; } static int init(void *) { return 0; } static void shutdown(void *) { } } memfns;
+				mm.xMalloc=(void *(*)(int))&tnfxmalloc;
+				mm.xFree=&tnfxfree;
+				mm.xRealloc=(void *(*)(void *, int))&tnfxrealloc;
+				mm.xSize=(int (*)(void *))&tnfxmemsize;
+				mm.xRoundup=&memfns.roundup;
+				mm.xInit=&memfns.init;
+				mm.xShutdown=&memfns.shutdown;
+				FXERRHSQLITE3(sqlite3_config(SQLITE_CONFIG_MALLOC, &mm));
+			}
+			/*{	// Benchmarking shows negligible difference when using QMutex. Not replaced.
+				struct sqlite3_mutex_methods mm={0};
+				FXERRHSQLITE3(sqlite3_config(SQLITE_CONFIG_MUTEX, &mm));
+			}*/
+			// Puke here if you're going to puke
+			FXERRHSQLITE3(sqlite3_initialize());
+		}
+	}
 	FXERRHM(p=new TnFXSQLDB_sqlite3Private);
 }
 TnFXSQLDB_sqlite3::~TnFXSQLDB_sqlite3()
