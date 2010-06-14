@@ -48,6 +48,7 @@ I get the time.
 sqlite3_config in order to replace memory allocator rather than applying patch to
 source.
 * [master 6e720fd] Fixed up UpdateMunged.py and FXProcess::buildInfo() to use GIT.
+* [master xxxxxxx] Replaced all remaining inlined x86 assembler with GCC intrinsics.
 
 
 v0.88.1 31st October 2008:

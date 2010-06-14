@@ -155,14 +155,14 @@ static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
     else
     {
         MEMORY_BASIC_INFORMATION stMBI ;
-        if ( 0 != VirtualQueryEx ( hProcess, (LPCVOID)dwAddr, &stMBI, sizeof(stMBI)))
+        if ( 0 != VirtualQueryEx ( hProcess, (LPCVOID)(size_t)dwAddr, &stMBI, sizeof(stMBI)))
         {
             DWORD dwPathLen=0, dwNameLen=0 ;
             TCHAR szFile[ MAX_PATH ], szModuleName[ MAX_PATH ] ;
 			MODULEINFO mi={0};
             dwPathLen = GetModuleFileName ( (HMODULE) stMBI.AllocationBase , szFile, MAX_PATH );
             dwNameLen = GetModuleBaseName (hProcess, (HMODULE) stMBI.AllocationBase , szModuleName, MAX_PATH );
-			for(int n=dwNameLen; n>0; n--)
+			for(n=dwNameLen; n>0; n--)
 			{
 				if(szModuleName[n]=='.')
 				{
@@ -188,7 +188,7 @@ static DWORD64 __stdcall GetModBase(HANDLE hProcess, DWORD64 dwAddr)
 }
 
 static HANDLE myprocess;
-static void DeinitSym()
+static void DeinitSym(void)
 {
 	if(myprocess)
 	{
@@ -204,6 +204,7 @@ void FXException::doStackWalk() throw()
 	HANDLE mythread=(HANDLE) GetCurrentThread();
 	STACKFRAME64 sf={ 0 };
 	CONTEXT ct={ 0 };
+	static VOID (WINAPI *RtlCaptureContextAddr)(PCONTEXT)=(VOID (WINAPI *)(PCONTEXT)) -1;
 	if(!myprocess)
 	{
 		DWORD symopts;
@@ -216,7 +217,6 @@ void FXException::doStackWalk() throw()
 	ct.ContextFlags=CONTEXT_FULL;
 
 	// Use RtlCaptureContext() if we have it as it saves an exception throw
-	static VOID (WINAPI *RtlCaptureContextAddr)(PCONTEXT)=(VOID (WINAPI *)(PCONTEXT)) -1;
 	if((VOID (WINAPI *)(PCONTEXT)) -1==RtlCaptureContextAddr)
 		RtlCaptureContextAddr=(VOID (WINAPI *)(PCONTEXT)) GetProcAddress(GetModuleHandle(L"kernel32"), "RtlCaptureContext");
 	if(RtlCaptureContextAddr)
@@ -263,7 +263,8 @@ void FXException::doStackWalk() throw()
 		i=i2;
 		if(i)	// Skip first entry relating to this function
 		{
-			p->stack[i-1].pc=(void *) sf.AddrPC.Offset;
+			DWORD lineoffset=0;
+			p->stack[i-1].pc=(void *)(size_t) sf.AddrPC.Offset;
 			if(SymGetModuleInfo64(myprocess, sf.AddrPC.Offset, &ihm))
 			{
 				char *leaf;
@@ -289,7 +290,6 @@ void FXException::doStackWalk() throw()
 			}
 			else
 				strcpy(p->stack[i-1].functname, "<unknown>");
-			DWORD lineoffset=0;
 			if(SymGetLineFromAddr64(myprocess, sf.AddrPC.Offset, &lineoffset, &ihl))
 			{
 				char *leaf;

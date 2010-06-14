@@ -94,12 +94,6 @@ inline FXuint fxbitscan(FXuint x) throw()
 	unsigned long _m;
 	BitScanForward(&_m, x);
 	m=(unsigned int) _m;
-#elif defined(_M_IX86)
-	__asm
-	{
-		bsf eax, [x]
-		mov [m], eax
-	}
 #else
 #error Unknown implementation
 #endif
@@ -126,12 +120,6 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	unsigned long _m;
 	BitScanReverse(&_m, x);
 	m=(unsigned int) _m;
-#elif defined(_M_IX86)
-	__asm
-	{
-		bsr eax, [x]
-		mov [m], eax
-	}
 #else
 #error Unknown implementation
 #endif
@@ -183,57 +171,19 @@ inline void fxprefetchmemNT(const void *ptr) throw()
 }
 inline FXuint fxbitscan(FXuint x) throw()
 {
-	FXuint m;
-	__asm__("bsfl %1,%0\n\t"
-			: "=r" (m) 
-			: "rm" (x));
-	return m;
+	return (FXuint) __builtin_ctz(x);
 }
 inline FXuint fxbitscan(FXulong x) throw()
 {
-	FXulong m;
-#if defined(__x86_64__)
-	__asm__("bsfq %1,%0\n\t"
-			: "=r" (m) 
-			: "rm" (x));
-#else
-	union
-	{
-		FXulong l;
-		FXuint i[2];
-	} _x;
-	_x.l=x;
-	m=fxbitscan(_x.i[!FOX_BIGENDIAN]);
-	if(32==m) m=32+fxbitscan(_x.i[!!FOX_BIGENDIAN]);
-#endif
-	return (FXuint) m;
+	return (FXuint) __builtin_ctzl(x);
 }
 inline FXuint fxbitscanrev(FXuint x) throw()
 {
-	FXuint m;
-	__asm__("bsrl %1,%0\n\t"
-			: "=r" (m) 
-			: "rm" (x));
-	return m;
+	return (FXuint) sizeof(x)*__CHAR_BIT__ - 1 - (unsigned) __builtin_clz(x);
 }
 inline FXuint fxbitscanrev(FXulong x) throw()
 {
-	FXulong m;
-#if defined(__x86_64__)
-	__asm__("bsrq %1,%0\n\t"
-			: "=r" (m) 
-			: "rm" (x));
-#else
-	union
-	{
-		FXulong l;
-		FXuint i[2];
-	} _x;
-	_x.l=x;
-	m=32+fxbitscanrev(_x.i[!!FOX_BIGENDIAN]);
-	if(64==m) { m=fxbitscanrev(_x.i[!FOX_BIGENDIAN]); if(32==m) m=64; }
-#endif
-	return (FXuint) m;
+	return (FXuint) sizeof(x)*__CHAR_BIT__ - 1 - (unsigned) __builtin_clzl(x);
 }
 inline void fxendianswap(FXushort &v) throw()
 {	// Can't improve on this
@@ -241,26 +191,11 @@ inline void fxendianswap(FXushort &v) throw()
 }
 inline void fxendianswap(FXuint &v) throw()
 {
-	__asm__("bswapl %0\n\t"
-			: "=r" (v)
-			: "0"  (v));
+	v=__builtin_bswap32(v);
 }
 inline void fxendianswap(FXulong &v) throw()
 {
-#if defined(__x86_64__)
-	__asm__("bswapq %0\n\t"
-			: "=r" (v)
-			: "0"  (v));
-#else
-	__asm__("bswapl %%eax\n\t"
-			"bswapl %%edx\n\t"
-			"movl %%eax, %%ecx\n\t"
-			"movl %%edx, %%eax\n\t"
-			"movl %%ecx, %%edx\n\t"
-			: "=A" (v)
-			: "0"  (v)
-			: "%ecx");
-#endif
+	v=__builtin_bswap64(v);
 }
 #else
 namespace FX {
