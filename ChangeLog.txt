@@ -48,7 +48,10 @@ I get the time.
 sqlite3_config in order to replace memory allocator rather than applying patch to
 source.
 * [master 6e720fd] Fixed up UpdateMunged.py and FXProcess::buildInfo() to use GIT.
-* [master xxxxxxx] Replaced all remaining inlined x86 assembler with GCC intrinsics.
+* [master 2af8fdb] Replaced all remaining inlined x86 assembler with GCC intrinsics.
+* [master 067ca0c] Hatched nedmalloc out into its own GIT repo (at long last! And
+thanks EVER so much to the git subtree split tool at
+http://github.com/apenwarr/git-subtree/)
 
 
 v0.88.1 31st October 2008:

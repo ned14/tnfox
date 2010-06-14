@@ -1,0 +1,3 @@
+[submodule "src/nedmalloc"]
+	path = src/nedmalloc
+	url = ssh://ned@mediacentre/Repositories/Git/nedmalloc.git
