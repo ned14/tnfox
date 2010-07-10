@@ -76,6 +76,7 @@
  #endif
 #else
  #include <sys/time.h>
+ #include <time.h>
  #include <unistd.h>
  #include <errno.h>
  #include <signal.h>
@@ -1138,11 +1139,18 @@ FXulong FXProcess::getNsCount()
 	return (FXulong) (val.QuadPart/scalefactor);
 #endif
 #ifdef USE_POSIX
+#ifdef CLOCK_MONOTONIC
+	// Finally CLOCK_MONOTONIC has become fairly well supported
+	struct timespec ts;
+	FXERRHOS(clock_gettime(CLOCK_MONOTONIC, &ts));
+	return ((FXulong) ts.tv_sec*1000000000LL)+ts.tv_nsec;
+#else
 	// It's only as good as POSIX can make it, which is pretty good on most
 	// x86 based platforms which have a RTDSC
 	struct timeval tv;
 	FXERRHOS(gettimeofday((::timeval *) &tv, 0));
 	return ((FXulong) tv.tv_sec*1000000000LL)+tv.tv_usec*1000;
+#endif
 #endif
 }
 
