@@ -260,32 +260,35 @@ inline FXuint fxbitscanrev(FXuint x) throw()
 	n = (asInt[!FOX_BIGENDIAN] >> 20) - 1023;
 	return n;
 #else
+	const FXuint allbits1=~(FXuint)0;
 	x = x | (x >> 1);
 	x = x | (x >> 2);
 	x = x | (x >> 4);
 	x = x | (x >> 8);
 	x = x | (x >>16);
 	x = ~x;
-	x = x - ((x >> 1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-	x = (x + (x >> 4)) & 0x0F0F0F0F;
-	x = x + (x << 8);
-	x = x + (x << 16);
-	return x >> 24;
+	x = x - ((x >> 1) & (allbits1/3));
+	x = (x & (allbits1/15*3)) + ((x >> 2) & (allbits1/15*3));
+	x = ((x + (x >> 4)) & (allbits1/255*15)) * (allbits1/255);
+	x = (8*sizeof(x)-1) - (x >> (8*(sizeof(x)-1)));
+	return (unsigned) x;
 #endif
 }
 inline FXuint fxbitscanrev(FXulong x) throw()
 {
-	FXuint m;
-	union
-	{
-		FXulong l;
-		FXuint i[2];
-	} _x;
-	_x.l=x;
-	m=32+fxbitscanrev(_x.i[!!FOX_BIGENDIAN]);
-	if(64==m) { m=fxbitscanrev(_x.i[!FOX_BIGENDIAN]); if(32==m) m=64; }
-	return m;
+  const FXulong allbits1=~(FXulong)0;
+	x = x | (x >> 1);
+	x = x | (x >> 2);
+	x = x | (x >> 4);
+	x = x | (x >> 8);
+	x = x | (x >>16);
+  x = x | (x >>32);
+	x = ~x;
+  x = x - ((x >> 1) & (allbits1/3));
+  x = (x & (allbits1/15*3)) + ((x >> 2) & (allbits1/15*3));
+  x = ((x + (x >> 4)) & (allbits1/255*15)) * (allbits1/255);
+  x = (8*sizeof(x)-1) - (x >> (8*(sizeof(x)-1)));
+  return (unsigned) x;
 }
 
 /*! \ingroup fxassemblerops
