@@ -8,6 +8,15 @@ incorporates a number of third party libraries into itself (especially on
 Windows - see its build page in the documentation for details). On all
 platforms, it includes v3.3.17 of SQLite3.
 
+How to check out the full source tree:
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+If you are checking this out from GIT HEAD rather than a source archive,
+please be aware that GIT is unusual in not automatically fetching subprojects
+for you when you do the "git clone". As a result, you will get errors about
+src/nedmalloc/SConstruct being missing. To fix this, do "git clone --recursive"
+instead or if you have already cloned, do "git submodule update --init
+--recursive" to have GIT recursively fetch the submodules for you.
+
 Issues:
 -=-=-=-
 1: THE PYTHON BINDINGS WERE RECENTLY REIMPLEMENTED
