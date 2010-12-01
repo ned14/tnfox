@@ -224,7 +224,7 @@ public:
 private:
 		dllHandle &operator=(dllHandle &o);
 public:
-		dllHandle &&operator=(dllHandle &&o)
+		dllHandle &operator=(dllHandle &&o)
 #endif
 		{
 			if(h)

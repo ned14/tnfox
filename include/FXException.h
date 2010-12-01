@@ -32,6 +32,18 @@ namespace FX {
 \brief Defines macros and classes used in implementation of FOX exception generation & handling
 */
 
+#ifdef HAVE_CPP0XRVALUEREFS
+// VS2010 can't handle throwing exceptions with only move constructors :(
+#if defined(_MSC_VER) && _MSC_VER==1600
+#define FXEXCEPTION_FXADDMOVEBASECLASS(_class, _baseclass)
+#define FXEXCEPTION_FXMOVEBASECLASS(_class, _baseclass)
+#else
+#define FXEXCEPTION_HAVE_CPP0XRVALUEREFS
+#define FXEXCEPTION_FXADDMOVEBASECLASS(_class, _baseclass) FXADDMOVEBASECLASS(_class, _baseclass)
+#define FXEXCEPTION_FXMOVEBASECLASS(_class, _baseclass) FXMOVEBASECLASS(_class, _baseclass)
+#endif
+#endif
+
 /*!
 A bitwise combination of these flags is passed to anything using FXERRHMAKE()
 */
@@ -394,7 +406,7 @@ public:
   FXException() : p(0) { }
   //! \deprecated For backward code compatibility only
   FXDEPRECATEDEXT FXException(const FXchar *msg) : p(0) { init((const char *) 0, (const char *) 0, 0, FXString(msg), 0, 0); }
-#ifndef HAVE_CPP0XRVALUEREFS
+#ifndef FXEXCEPTION_HAVE_CPP0XRVALUEREFS
   FXException &operator=(FXException &o);
 #ifdef HAVE_CONSTTEMPORARIES
   FXException(const FXException &other) : p(other.p)
@@ -405,7 +417,7 @@ public:
   {
 #endif
 #else
-  FXException &&operator=(FXException &&o);
+  FXException &operator=(FXException &&o);
 private:
   FXException(const FXException &);		// disable copy constructor
 public:
@@ -511,7 +523,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXRangeException(const FXchar *msg)
 		: FXException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_BADRANGE, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXRangeException, FXException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXRangeException, FXException)
 };
 /*! \return A FX::FXRangeException
 
@@ -533,7 +545,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXPointerException(const FXchar *msg)
 		: FXException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_NULLPOINTER, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXPointerException, FXException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXPointerException, FXException)
 };
 #define FXERRGPTR(flags)			{ FX::FXPointerException _int_temp_e(FXEXCEPTION_FILE(flags), FXEXCEPTION_FUNCTION(flags), FXEXCEPTION_LINE(flags), flags); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXPointerException
@@ -559,7 +571,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXResourceException(const FXchar *msg)
 		: FXException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_NORESOURCE, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXResourceException, FXException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXResourceException, FXException)
 };
 
 /*! \class FXMemoryException
@@ -574,7 +586,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXMemoryException(const FXchar *msg)
 		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_NOMEMORY, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXMemoryException, FXResourceException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXMemoryException, FXResourceException)
 };
 #define FXERRGM				{ FX::FXMemoryException _int_temp_e(FXEXCEPTION_FILE(0), FXEXCEPTION_FUNCTION(0), FXEXCEPTION_LINE(0)); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXMemoryException
@@ -601,7 +613,7 @@ public:
 	//! Use FXERRGNOTSUPP() to instantiate
 	FXNotSupportedException(const char *_filename, const char *_function, int _lineno, const FXString &msg)
 		: FXException(_filename, _function, _lineno, msg, FXEXCEPTION_NOTSUPPORTED, FXERRH_ISNORETRY|FXERRH_ISDEBUG) { }
-	FXMOVEBASECLASS(FXNotSupportedException, FXException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXNotSupportedException, FXException)
 };
 /*! \return A FX::FXNotSupportedException
 
@@ -618,7 +630,7 @@ public:
 	//! Use FXERRGNF() to instantiate
 	FXNotFoundException(const char *_filename, const char *_function, int _lineno, const FXString &_msg, FXint flags)
 		: FXResourceException(_filename, _function, _lineno, _msg, FXEXCEPTION_NOTFOUND, flags|FXERRH_ISINFORMATIONAL) { }
-	FXMOVEBASECLASS(FXNotFoundException, FXResourceException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXNotFoundException, FXResourceException)
 };
 /*! \return A FX::FXNotFoundException
 
@@ -637,7 +649,7 @@ public:
 	//! Use FXERRHIO() to instantiate
 	FXIOException(const char *_filename, const char *_function, int _lineno, const FXString &msg, FXuint code=FXEXCEPTION_IOERROR, FXuint flags=0)
 		: FXResourceException(_filename, _function, _lineno, msg, code, flags) { }
-	FXMOVEBASECLASS(FXIOException, FXResourceException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXIOException, FXResourceException)
 };
 #define FXERRGIO(msg)		{ FX::FXIOException _int_temp_e(FXEXCEPTION_FILE(msg), FXEXCEPTION_FUNCTION(msg), FXEXCEPTION_LINE(msg), msg); FXERRH_THROW(_int_temp_e); }
 /*! \return A FX::FXIOException
@@ -662,7 +674,7 @@ public:
 	//! Use FXERRGCONLOST() to instantiate
 	FXConnectionLostException(const FXString &msg, FXuint flags)
 		: FXIOException(0, 0, 0, msg, FXEXCEPTION_CONNECTIONLOST, flags|FXERRH_ISINFORMATIONAL) { }
-	FXMOVEBASECLASS(FXConnectionLostException, FXIOException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXConnectionLostException, FXIOException)
 };
 #define FXERRGCONLOST(msg, flags)		{ FX::FXConnectionLostException _int_temp_e(msg, flags); FXERRH_THROW(_int_temp_e); }
 
@@ -675,7 +687,7 @@ public:
 	//! Use FXERRGNOPERM() to instantiate
 	FXNoPermissionException(const FXString &msg, FXuint code=FXEXCEPTION_NOPERMISSION, FXuint flags=0)
 		: FXException(0, 0, 0, msg, code, flags|FXERRH_ISINFORMATIONAL) { }
-	FXMOVEBASECLASS(FXNoPermissionException, FXException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXNoPermissionException, FXException)
 };
 #define FXERRGNOPERM(msg, flags)		{ FX::FXNoPermissionException _int_temp_e(msg, FXEXCEPTION_NOPERMISSION, flags); FXERRH_THROW(_int_temp_e); }
 
@@ -691,7 +703,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXWindowException(const FXchar *msg)
 		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_WINDOW, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXWindowException, FXResourceException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXWindowException, FXResourceException)
 };
 
 /*! \class FXImageException
@@ -706,7 +718,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXImageException(const FXchar *msg)
 		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_IMAGE, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXImageException, FXResourceException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXImageException, FXResourceException)
 };
 
 /*! \class FXFontException
@@ -721,7 +733,7 @@ public:
 	//! \deprecated For backward code compatibility only
 	FXDEPRECATEDEXT FXFontException(const FXchar *msg)
 		: FXResourceException((const char *) 0, (const char *) 0, 0, msg, FXEXCEPTION_FONT, FXERRH_ISFOXEXCEPTION) { }
-	FXMOVEBASECLASS(FXFontException, FXResourceException)
+	FXEXCEPTION_FXMOVEBASECLASS(FXFontException, FXResourceException)
 };
 
 

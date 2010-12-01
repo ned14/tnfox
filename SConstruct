@@ -40,6 +40,9 @@ objects=[]
 if not disableGUI:
     objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", False)]
 objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPFLAGS']+env['CCWPOOPTS'], CPPDEFINES=env['CPPDEFINES']+["FOXDLL_EXPORTS"]) for x in getTnFOXSources("", True)]
+if env.GetOption("num_jobs")>1:
+    print "*** WARNING: nedmalloc has to be built separately which causes a current directory"
+    print "             change. This can cause parallel builds to fail, so simply rerun scons."
 objects.append(nedmalloclib)
 
 if SQLModule==1: objects.append(sqlmoduleobjs)
@@ -60,10 +63,6 @@ DLL=VersionedSharedLibrary(env, targetname+ternary(disableGUI, "_noGUI", ""), tn
 if onWindows and MSVCVersion>=800:
     env.AddPostAction(DLL, 'mt.exe -nologo -manifest ${TARGET}.manifest -outputresource:$TARGET;2')
 env.Precious(DLL)
-AddPostAction(DLL, [Delete("lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX']),
-    Copy("lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX'], nedmallocpath+nedmallocbuildpath+env['SHLIBSUFFIX'])])
-#    ternary(onWindows, "fsutil hardlink create lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX']+" "+nedmallocpath+nedmallocbuildpath+env['SHLIBSUFFIX'],
-#        "ln "+nedmallocpath+nedmallocbuildpath+env['SHLIBSUFFIX']+" "+"lib/"+architectureSpec()+"/nedmalloc"+env['SHLIBSUFFIX'])])
 addBind(DLL)
 linkflags.append(os.getcwd()+"/lib/"+architectureSpec()+"/"+env['LIBPREFIX']+libtnfox+ternary(onWindows, ".lib", libtnfoxsuffix))
 if SQLModule==2:

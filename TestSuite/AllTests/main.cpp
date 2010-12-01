@@ -665,7 +665,7 @@ void TestWindow::appendOutput(QChildProcess &child, bool terminate)
 			read=QIODevice::removeCRLF(output, (FXuchar *) buffer, sizeof(output), inputlen);
 			memmove(buffer, buffer+inputlen, sizeof(buffer)-inputlen);
 			buff=buffer+sizeof(buffer)-inputlen;
-			testresults.output->appendText((FXchar *) output, read);
+			testresults.output->appendText((FXchar *) output, (FXint) read);
 			testresults.output->makePositionVisible(testresults.output->getLength());
 			getApp()->runModalWhileEvents();
 		}
@@ -837,7 +837,7 @@ long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 			}
 		}
 		QFile oh(htmlpath);
-		FXuint div=100/(items.count()+1);
+		FXuint div=100/((FXuint) items.count()+1);
 		oh.open(IO_WriteOnly);
 		WRTXT("<html>\n<body>\n");
 		{

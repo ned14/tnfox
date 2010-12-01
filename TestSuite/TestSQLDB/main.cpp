@@ -50,7 +50,7 @@ static void ForceDLLDeinit(const char *module)
 	try
 	{
 		typedef BOOL (WINAPI *dllMainSpec)(HINSTANCE, DWORD, LPVOID);
-		HMODULE moduleaddr=GetModuleHandle(module);
+		HMODULE moduleaddr=GetModuleHandleA(module);
 		FXERRHWIN(moduleaddr);
 		PIMAGE_DOS_HEADER dosHeader=(PIMAGE_DOS_HEADER) moduleaddr;
 		PIMAGE_NT_HEADERS ntHeader=(PIMAGE_NT_HEADERS) FXOFFSETPTR(dosHeader, dosHeader->e_lfanew);
@@ -250,11 +250,9 @@ int main( int argc, char** argv)
 				copy.replace(s, e, "%"+FXString::number(n));
 			}
 			FXString fixd(copy);
-			FXMEMDBG_TESTHEAP;
 			for(int n=0; n<argsno; n++)
 			{
 				fixd.arg(args[n]);
-				FXMEMDBG_TESTHEAP;
 			}
 			if(orig!=fixd)
 			{
@@ -347,7 +345,6 @@ int main( int argc, char** argv)
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, n/((end-begin)/1000000000.0));
 		printdbsize();
 
-		FXMEMDBG_TESTHEAP;
 		fxmessage("\nInserting ReadMe.txt ...\n");
 		QFile fh("../../ReadMe.txt");
 		fh.open(IO_ReadOnly);
@@ -361,7 +358,6 @@ int main( int argc, char** argv)
 		fxmessage("Took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 5000/((end-begin)/1000000000.0));
 		printdbsize();
 
-		FXMEMDBG_TESTHEAP;
 		fxmessage("\nReading and comparing to ReadMe.txt (size=%u bytes)...\n", (FXuint) fh.size());
 		fh.at(0);
 		{
@@ -378,8 +374,8 @@ int main( int argc, char** argv)
 				TnFXSQLDBColumnRef data=c->data(n);
 				end=FXProcess::getNsCount();
 				fxmessage("\nGetting header & data took %lf secs (%lf per second)\n", (end-begin)/1000000000.0, 1/((end-begin)/1000000000.0));
-				fxmessage("Column %u,%d is called '%s' SQL type %s size=%d\n    C++ type=", header->column(), header->row(),
-					header->get<const char *>(), TnFXSQLDB::sql92TypeAsString(data->type()), data->size());
+				fxmessage("Column %u,%d is called '%s' SQL type %s size=%u\n    C++ type=", header->column(), header->row(),
+					header->get<const char *>(), TnFXSQLDB::sql92TypeAsString(data->type()), (FXuint) data->size());
 				TnFXSQLDB::toCPPType<PrintCPPType>(data->type());
 				switch(data->type())
 				{
@@ -408,7 +404,6 @@ int main( int argc, char** argv)
 			}
 		}
 		//mychannel.setPrintStatistics(true);
-		FXMEMDBG_TESTHEAP;
 	}
 	FXERRH_CATCH(FXException &e)
 	{

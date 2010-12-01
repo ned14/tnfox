@@ -1655,7 +1655,7 @@ public:
 #ifndef HAVE_CPP0XRVALUEREFS
 	Functor &operator=(Functor &o)
 #else
-	Functor &&operator=(Functor &&o)
+	Functor &operator=(Functor &&o)
 #endif
 	{
 		FXDELETE(fnimpl);

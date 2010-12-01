@@ -117,7 +117,7 @@ public:
 private:
 		DataContainer &operator=(const DataContainer &_o);
 public:
-		DataContainer &&operator=(const DataContainer &&_o)
+		DataContainer &operator=(const DataContainer &&_o)
 #endif
 		{	// Moves
 			DataContainer &o=const_cast<DataContainer &>(_o);

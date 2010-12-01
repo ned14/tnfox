@@ -66,7 +66,7 @@ public:
   FXString(FXString && s) : str(std::move(s.str)), inserts(std::move(s.inserts)) { s.str=nullStr().str; s.inserts=0; }
 
   /// Move assignment
-  FXString &&operator=(FXString && s) { str=std::move(s.str); inserts=std::move(s.inserts); s.str=nullStr().str; s.inserts=0; return *this; }
+  FXString &operator=(FXString && s) { str=std::move(s.str); inserts=std::move(s.inserts); s.str=nullStr().str; s.inserts=0; return *this; }
 #endif
 
   /// Construct and init from string

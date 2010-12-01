@@ -49,7 +49,7 @@ else:
                 "/Fd"+builddir+"/vc80.pdb"     # Set PDB location
               ]
     # Stop the stupid STDC function deprecated warnings
-    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1), ("_SECURE_SCL_THROWS", 1)]
+    env['CPPDEFINES']+=[("_CRT_SECURE_NO_DEPRECATE",1)]
     if not debugmode:
         # Prevent checked iterators on release builds
         env['CPPDEFINES']+=[("_SECURE_SCL",0)]

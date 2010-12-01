@@ -295,14 +295,14 @@ inline void TFileBySyncDev::channelInstall() const
 {
 	FXERRHM(p->chunk=new TFBSDMsgChunk(&p->ctrl->registry()));
 	FXIPCChannel::MsgFilterSpec mfs(p, &TFileBySyncDevPrivate::msgReceived);
-	p->ctrl->installPreMsgReceivedFilter(mfs);
+	p->ctrl->installPreMsgReceivedFilter(std::move(mfs));
 }
 inline void TFileBySyncDev::channelUninstall() const
 {
 	if(p->chunk)
 	{
 		FXIPCChannel::MsgFilterSpec mfs(p, &TFileBySyncDevPrivate::msgReceived);
-		p->ctrl->removePreMsgReceivedFilter(mfs);
+		p->ctrl->removePreMsgReceivedFilter(std::move(mfs));
 		FXDELETE(p->chunk);
 	}
 }

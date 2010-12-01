@@ -341,8 +341,8 @@ template<typename A, typename B> static bool verify(A &a, B &b)
 		if(a[n][0]!=b[n][0] || a[n][1]!=b[n][1] || a[n][2]!=b[n][2] || a[n][3]!=b[n][3])
 		{
 			fxmessage("Failed at index %u:\n%f, %f, %f, %f\n%f, %f, %f, %f\n", n,
-				a[n][0], a[n][1], a[n][2], a[n][3],
-				b[n][0], b[n][1], b[n][2], b[n][3]);
+				(double) a[n][0], (double) a[n][1], (double) a[n][2], (double) a[n][3],
+				(double) b[n][0], (double) b[n][1], (double) b[n][2], (double) b[n][3]);
 			return false;
 		}
 	return true;

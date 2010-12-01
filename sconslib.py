@@ -361,27 +361,34 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
         # Seems to need this on some installations
         env['ENV']['TMP']=os.environ['TMP']
     
-    # Build and include nedmalloc
-    #oldenv=env
-    #env=os.environ
-    #nedmalloclib=SConscript("src/nedmalloc/SConstruct", exports="env", duplicate=False)
-    #env=oldenv
-    #print nedmalloclib
-    #nedmallocobjs=nedmalloclib
-    #if onWindows: nedmallocobjs=nedmallocobjs[1]
+#    # Build and include nedmalloc
+#    nedmallocenv=DefaultEnvironment()
+#    oldenv=env
+#    env=DefaultEnvironment("--debugbuild")
+#    nedmalloclib=SConscript("src/nedmalloc/SConstruct", exports="env")
+#    env=oldenv
+#    if onWindows: nedmalloclib=nedmalloclib[1]
     
     # Build and include nedmalloc. Can't use SConscript() as it wants to import the build
     # environment from here rather than set its own one up :(
     nedmallocpath=prefixpath+"src/nedmalloc/"
-    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/${SHLIBPREFIX}nedmalloc"
-    nedmallocbuildcmd="scons --tolerant --useallocator=1 "+ternary(debugmode, " --debugbuild", "")
+    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/${SHLIBPREFIX}nedmalloc_tnfox"
+    nedmallocbuildcmd="scons --tolerant --useallocator=1 --postfix=_tnfox --static "+ternary(debugmode, " --debugbuild", "")
     #nedmallocbuildcmd+=" --largepages"
     #nedmallocbuildcmd+=" --fastheapdetection"
-    nedmallocbuildcmd+=" "+nedmallocbuildpath+env['SHLIBSUFFIX']
     if architecture=="x86" and x86_SSE: nedmallocbuildcmd+=" --sse="+str(x86_SSE)
-    nedmalloctarget=nedmallocpath+nedmallocbuildpath+ternary(onWindows, ".lib", env['SHLIBSUFFIX'])
-    nedmalloclib=env.Command(nedmalloctarget, '', nedmallocbuildcmd, chdir=nedmallocpath, ENV=os.environ)
-    #print "nedmalloc being linked in from",nedmalloclib,"("+nedmallocpath+nedmallocbuildpath+")"
+#    nedmallocbuildcmd+=" "+nedmallocbuildpath+env['SHLIBSUFFIX']
+#    nedmalloctargetS=os.path.abspath(nedmallocpath+nedmallocbuildpath)
+#    nedmalloctargetD=os.path.abspath(prefixpath+"lib/"+architectureSpec()+"/${SHLIBPREFIX}nedmalloc_tnfox")
+#    nedmalloclib=env.Command('', '', [nedmallocbuildcmd, Delete(nedmalloctargetD),
+#                 Copy(nedmalloctargetD+"${SHLIBSUFFIX}", nedmalloctargetS+"${SHLIBSUFFIX}")],
+#                 chdir=nedmallocpath, ENV=os.environ)
+#    # Link to original .lib on Windows, else to copied SO
+#    if onWindows: nedmalloclib=nedmallocpath+nedmallocbuildpath+".lib"
+#    else: nedmalloclib=prefixpath+"lib/"+architectureSpec()+"/${SHLIBPREFIX}nedmalloc_tnfox"+ternary(onWindows, ".lib", env['SHLIBSUFFIX'])
+    nedmallocbuildcmd+=" "+nedmallocbuildpath+env['LIBSUFFIX']
+    nedmalloclib=env.Command(nedmallocpath+nedmallocbuildpath+env['LIBSUFFIX'], '', nedmallocbuildcmd,
+                 chdir=nedmallocpath, ENV=os.environ)
     nedmalloclib[0].attributes.shared=True
 
     if SQLModule:

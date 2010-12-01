@@ -52,8 +52,12 @@ source.
 * [master 50b7c9d] Hatched nedmalloc out into its own GIT repo (at long last! And
 thanks EVER so much to the git subtree split tool at
 http://github.com/apenwarr/git-subtree/)
-+ [master xxxxxxx] Added CLOCK_MONOTONIC based POSIX nanosecond timer support to
++ [master c1142ea] Added CLOCK_MONOTONIC based POSIX nanosecond timer support to
 FXProcess::getNsCount().
+* [master xxxxxxx] Fixed Visual Studio 2010 support (it was very broken) as well as
+fixing compilation errors on POSIX for GCC v4.4.5. For some odd reason there is
+still a segfault on process init on Linux whereas on Windows there are checked
+iterator exceptions tripping due to new checking in VS2010.
 
 
 v0.88.1 31st October 2008:

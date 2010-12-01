@@ -240,7 +240,7 @@
 // Helper macro for move-enabled subclasses
 #define FXADDMOVEBASECLASS(_class, _baseclass) \
   _class (_class &&o) : _baseclass(std::forward<_baseclass>(o)) { } \
-  _class &&operator=(_class &&o) { _baseclass::operator=(std::forward<_baseclass>(o)); return *this; }
+  _class &operator=(_class &&o) { _baseclass::operator=(std::forward<_baseclass>(o)); return *this; }
 // Helper macro for move-only subclasses
 #define FXMOVEBASECLASS(_class, _baseclass) \
 private: \

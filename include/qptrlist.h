@@ -57,8 +57,6 @@ they are used, I may not have caught all the compile errors yet :(
 \warning This list is much less forgiving of range errors than Qt. Where Qt returns
 false and prints a message, this list like the STL throws an exception!
 */
-template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrListIterator;
-template<class type, class allocator=FX::aligned_allocator<type *, 0> > class QPtrList;
 template<class type, class allocator> class QPtrList : protected std::list<type *, allocator>
 {
 public:		// For other stuff to access

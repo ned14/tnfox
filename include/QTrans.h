@@ -87,7 +87,7 @@ private:
 	QTransString &operator=(const QTransString &);
 public:
 	QTransString(QTransString &&o);
-	QTransString &&operator=(QTransString &&o);
+	QTransString &operator=(QTransString &&o);
 #endif
 	~QTransString();
 	/*! Inserts an argument into the lowest numbered %x. Specifying a negative number

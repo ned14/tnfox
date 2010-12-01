@@ -317,7 +317,7 @@ QTransString &QTransString::operator=(QTransString &o)
 {
 #endif
 #else
-QTransString &&QTransString::operator=(QTransString &&o)
+QTransString &QTransString::operator=(QTransString &&o)
 {
 #endif
 	FXDELETE(p);

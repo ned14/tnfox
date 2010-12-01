@@ -72,11 +72,11 @@ block causes an assertion failure. Only really has a point in debug builds */
 #ifdef __GNUC__
 #define typeof(x) __typeof__(x)
 #endif
-#include "nedmalloc/uthash/src/uthash.h"
+#include "nedmalloc/nedtries/uthash/src/uthash.h"
 #undef uthash_malloc
 #undef uthash_free
 #define uthash_malloc(sz) nedpmalloc(0, sz)
-#define uthash_free(ptr) nedpfree(0, ptr)
+#define uthash_free(ptr, sz) nedpfree(0, ptr)
 #define HASH_FIND_PTR(head,findptr,out)                                         \
     HASH_FIND(hh,head,findptr,sizeof(void *),out)
 #define HASH_ADD_PTR(head,ptrfield,add)                                         \
@@ -659,7 +659,7 @@ bool printLeakedBlocks() throw()
 	while((ab=freeBlocks))
 	{
 		freeBlocks=(AllocatedBlock *) freeBlocks->hh.next;
-		uthash_free(ab);
+		uthash_free(ab, sizeof(AllocatedBlock));
 	}
 	if(allocatedBlocks)
 	{

@@ -49,7 +49,6 @@ cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
            "-fargument-noalias",        # Arguments may alias globals but not each other
            "-Wstrict-aliasing",         # Warn about bad aliasing
-           "-ffast-math",               # Lose FP precision in favour of speed
            #"-pg",                       # Perform profiling
            #"-finstrument-functions",    # Other form of profiling
            "-pipe"                      # Use faster pipes
