@@ -100,7 +100,7 @@ public:
 	using Base::reserve;
 
 	//! Returns a pointer to the array
-	type *data() const { return (extArray) ? extArray : const_cast<type *>(&Base::front()); }
+	type *data() const { return (extArray) ? extArray : (Base::empty() ? (type *) 0 : const_cast<type *>(&Base::front())); }
 	//! \overload
 	operator const type *() const { return data(); }
 	//! Returns the number of elements in the array

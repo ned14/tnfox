@@ -122,7 +122,7 @@ public:
 	/*! Returns the contents in IPv6 format. If the contents are in IPv4 format,
 	returns the IPv4 address mapped as an IPv6 using the 6to4 protocol.
 	*/
-	const Maths::Vector<FXuchar, 16> &ip6Addr() const;
+	Maths::Vector<FXuchar, 16> ip6Addr() const;
 	/*! Returns the contents in IPv6 format. If the contents are in IPv4 format,
 	returns the IPv4 address mapped as an IPv6 using the 6to4 protocol.
 	*/
