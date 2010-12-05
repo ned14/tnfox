@@ -480,6 +480,7 @@ bool QIODeviceS::waitForData(QIODeviceS **signalled, FXuint no, QIODeviceS **lis
 			}
 			for(FXuint n=oidx; n<no; n++)
 				signalled[n]=0;
+			return oidx>0;
 		}
 		return true;
 	}

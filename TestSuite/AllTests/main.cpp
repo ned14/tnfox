@@ -182,7 +182,7 @@ public:
 	struct TestResults
 	{
 		FXText *info;
-        FXText *output;
+		FXText *output;
 		FXFont *monospaced;
 	} testresults;
 	FXPrimaryButton *trim, *ashtml, *runtests;
@@ -688,8 +688,11 @@ void TestWindow::appendOutput(QChildProcess &child)
 		// Replace shown output
 		testresults.output->setText(stdoutput.text(), stdoutput.length());
 		testresults.output->appendText("\n\n\nStdErr:\n\n", 12);
-		testresults.output->makePositionVisible(testresults.output->getLength());
 		testresults.output->appendText(erroutput.text(), erroutput.length());
+		FXint pos=testresults.output->getLength();
+		testresults.output->setCursorPos(pos, TRUE);
+		testresults.output->makePositionVisible(pos);
+		getApp()->runModalWhileEvents();
 		if(!totalread) break;
 	}
 	if(timedout)

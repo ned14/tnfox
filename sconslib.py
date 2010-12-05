@@ -383,7 +383,7 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     nedmalloclib=env.Command(nedmallocpath+nedmallocbuildpath+env['LIBSUFFIX'], '', nedmallocbuildcmd,
                  chdir=nedmallocpath, ENV=os.environ)
     nedmalloclib[0].attributes.shared=True
-    env.Depends(nedmalloclib, [nedmallocpath+"nedmalloc.h", nedmallocpath+"malloc.c.h", nedmallocpath+"nedmalloc.c", nedmallocpath+"winpatcher.c"])
+    env.Depends(nedmalloclib, [nedmallocpath+"nedmalloc.h", nedmallocpath+"malloc.c.h", nedmallocpath+"nedmalloc.c", nedmallocpath+"winpatcher.c", nedmallocpath+"SConscript"])
     nedmallocdestpath=prefixpath+"lib/"+architectureSpec()+"/"+nedmallocDLLname+ternary(onWindows, env['SHLIBSUFFIX'], env['LIBSUFFIX'])
     env.AddPostAction(nedmalloclib, [Delete(nedmallocdestpath), Copy(nedmallocdestpath, nedmallocpath+nedmallocbuildpath+ternary(onWindows, env['SHLIBSUFFIX'], env['LIBSUFFIX']))])
 
