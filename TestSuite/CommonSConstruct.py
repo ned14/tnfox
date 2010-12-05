@@ -90,5 +90,8 @@ if onWindows:
                 variant=["Release","Debug"][debugmode])
     env.Alias("msvcproj", "project"+env['MSVSPROJECTSUFFIX'])
 Default(EXE)
+try:
+    env.Execute(postbuildexecute)
+except: pass
 targetfrombase=targetname[3:]
 Return("targetfrombase")
