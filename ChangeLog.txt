@@ -13,6 +13,14 @@ v0.89 ?
 -=-=-=-=-=-=-=-=-=-=-=-=-=
 T (svnr)|[gitbr gitsha] description
 B (1088) nedmalloc aborted on Mac OS X when thread id had high bit set
+B [master 933d227] Fixed Visual Studio 2010 support (it was very broken) as well as
+fixing compilation errors on POSIX for GCC v4.4.5. For some odd reason there is
+still a segfault on process init on Linux whereas on Windows there are checked
+iterator exceptions tripping due to new checking in VS2010.
+B [master xxxxxxx] Fixed a long standing bug in AllTests, the automated test runner,
+whereby it choked if the test apps outputted more data than fitted into pipe's buffer.
+A handy side effect is that running the automated test suite is now VERY considerably
+faster!
 
 * (1089) Bumped TnFOX to v0.89
 * (1089) Updated to use OpenSSL v1.0
@@ -54,10 +62,6 @@ thanks EVER so much to the git subtree split tool at
 http://github.com/apenwarr/git-subtree/)
 + [master c1142ea] Added CLOCK_MONOTONIC based POSIX nanosecond timer support to
 FXProcess::getNsCount().
-* [master xxxxxxx] Fixed Visual Studio 2010 support (it was very broken) as well as
-fixing compilation errors on POSIX for GCC v4.4.5. For some odd reason there is
-still a segfault on process init on Linux whereas on Windows there are checked
-iterator exceptions tripping due to new checking in VS2010.
 
 
 v0.88.1 31st October 2008:

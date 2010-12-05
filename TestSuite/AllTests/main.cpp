@@ -163,7 +163,7 @@ class TestWindow : public FXMainWindow
 {
 	FXDECLARE(TestWindow)
 public:
-	int svnrev;
+	int gitrev;
 	FXString mypath, TnFOXpath, TnFOXver, FOXver, hostOS, hostOSDescription;
 	FXString kernelname, kernelversion, architecture;
 	struct Platform
@@ -201,7 +201,7 @@ protected:
 public:
 	TestWindow(FXApp *app) : FXMainWindow(app, QTrans::tr("TestWindow", "TnFOX Automated Tester"), NULL, NULL, DECOR_ALL, 50, 50, 800, 800)
 	{
-		FXProcess::buildInfo(&svnrev);
+		FXProcess::buildInfo(&gitrev);
 		mypath=FXProcess::execpath();
 		TnFOXpath=mypath.left(mypath.find("lib")-1);
 		TnFOXver=FXString("v%1.%2"); TnFOXver.arg(TNFOX_MAJOR).arg(TNFOX_MINOR);
@@ -261,7 +261,7 @@ public:
 		new FXLabel(si, tr("TnFOX version:"), 0, JUSTIFY_RIGHT|LAYOUT_FILL_X);
 		FXText *tnfoxver=new FXText(si, 0, 0, TEXT_READONLY|LAYOUT_FILL|LAYOUT_FILL_COLUMN);
 		tnfoxver->setVisibleRows(1);
-		tnfoxver->setText(TnFOXver+" (SVN rev: "+FXString::number(svnrev)+")");
+		tnfoxver->setText(TnFOXver+" (GIT rev: "+FXString::number(gitrev, 16)+")");
 		new FXLabel(si, tr("Based on FOX version:"), 0, JUSTIFY_RIGHT|LAYOUT_FILL_X);
 		FXText *foxver=new FXText(si, 0, 0, TEXT_READONLY|LAYOUT_FILL|LAYOUT_FILL_COLUMN);
 		foxver->setVisibleRows(1);
@@ -333,7 +333,7 @@ public:
 
 	long onCmdFillInTests(FXObject *from, FXSelector sel, void *ptr);
 	long onCmdChangeTest(FXObject *from, FXSelector sel, void *ptr);
-	void appendOutput(QChildProcess &child, bool terminate);
+	void appendOutput(QChildProcess &child);
 	long onCmdRunTests(FXObject *from, FXSelector sel, void *ptr);
 	long onCmdTrim(FXObject *from, FXSelector sel, void *ptr);
 	long onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr);
@@ -359,7 +359,7 @@ struct TestResult
 	struct Version
 	{
 		FXString TnFOX, FOX;
-		FXuint svnrev;
+		FXuint gitrev;
 	} version;
 	FXString architecture, kernelname, kernelversion;
 	FXlong returncode;
@@ -377,7 +377,7 @@ public:
 	{
 		version.TnFOX=base->TnFOXver;
 		version.FOX=base->FOXver;
-		version.svnrev=base->svnrev;
+		version.gitrev=base->gitrev;
 	}
 
 
@@ -409,7 +409,7 @@ public:
 		cur->data(2)->get<>(started);
 		cur->data(3)->get<>(ended);
 		cur->data(4)->get<>(myPlatformId);
-		cur->data(5)->get<>(version.svnrev);
+		cur->data(5)->get<>(version.gitrev);
 		cur->data(6)->get<>(returncode);
 		if(loadOutput)
 		{
@@ -442,7 +442,7 @@ public:
 		st->bind(":started", started);
 		st->bind(":ended", ended);
 		st->bind(":platform", myPlatformId);
-		st->bind(":svnrev", version.svnrev);
+		st->bind(":svnrev", version.gitrev);
 		st->bind(":returncode", returncode);
 
 		// Write the output bz2 compressed to save (lots of) space
@@ -528,7 +528,7 @@ CREATE TABLE 'results'('id' INTEGER PRIMARY KEY, 'testname' VARCHAR(32), 'starte
 		columns.push_back(pf);
 		tests->insertColumns(n);
 		tests->setColumnText(n, pf.description());
-		tests->setColumnWidth(n, 130);
+		tests->setColumnWidth(n, 160);
 		n++;
 	}
 	for(TnFXSQLDBCursorRef c=mydb->execute("SELECT * FROM 'platforms' WHERE tnfoxver='"+TnFOXver+"' ORDER BY kernelname+kernelversion, architecture, foxver;"); !c->atEnd(); c->next())
@@ -595,7 +595,7 @@ CREATE TABLE 'results'('id' INTEGER PRIMARY KEY, 'testname' VARCHAR(32), 'starte
 					FXTime ended=test.ended;
 					tests->setItemText(n, col, ended.toLocalTime().asString("%Y/%m/%d %H:%M:%S")
 						+"\n"+FXString::number(test.returncode)
-						+"\nRecords: "+FXString::number(test.totalRecords)+" (rev "+FXString::number(test.version.svnrev)+")");
+						+"\nRecords: "+FXString::number(test.totalRecords)+" (rev "+FXString::number(test.version.gitrev, 16)+")");
 					tests->setItemIcon(n, col, test.returncode ? redexclamation : greentick);
 					tests->setItemIconPosition(n, col, FXTableItem::AFTER);
 				}
@@ -643,44 +643,62 @@ long TestWindow::onCmdChangeTest(FXObject *from, FXSelector sel, void *ptr)
 	return 1;
 }
 
-void TestWindow::appendOutput(QChildProcess &child, bool terminate)
+void TestWindow::appendOutput(QChildProcess &child)
 {
 	char buffer[4096], *buff;
+	FXString stdoutput, erroutput;
 	QIODeviceS *dev=&child;
 	bool timedout;
 	FXuint start=FXProcess::getMsCount();
 	while(!(timedout=(FXProcess::getMsCount()-start>=120*1000)))
 	{
+		FXuval totalread=0;
+		QChildProcess::ReadChannel channel;
+		// Wait for some data on either stdout or stderr while keeping the GUI up to date
+		child.setReadChannel((channel=QChildProcess::StdOut));
 		if(!QIODeviceS::waitForData(0, 1, &dev, 50))
 		{
 			getApp()->runModalWhileEvents();
-			continue;
+			child.setReadChannel((channel=QChildProcess::StdErr));
+			if(!QIODeviceS::waitForData(0, 1, &dev, 50))
+			{
+				getApp()->runModalWhileEvents();
+				continue;
+			}
 		}
-		FXuval read;
+		// Suck data from child process
+		FXuval read, toread;
 		buff=buffer;
-		if((read=child.readBlock(buff, sizeof(buffer)-(buff-buffer))))
+		do
 		{
+			read=child.readBlock(buff, (toread=sizeof(buffer)-(buff-buffer)));
+			toread=(read==toread);
 			FXuval inputlen=read+(buff-buffer);
 			FXuchar output[4096];
 			read=QIODevice::removeCRLF(output, (FXuchar *) buffer, sizeof(output), inputlen);
 			memmove(buffer, buffer+inputlen, sizeof(buffer)-inputlen);
 			buff=buffer+sizeof(buffer)-inputlen;
-			testresults.output->appendText((FXchar *) output, (FXint) read);
-			testresults.output->makePositionVisible(testresults.output->getLength());
+			if(QChildProcess::StdOut==channel)
+				stdoutput.append((FXchar *) output, (FXint) read);
+			else if(QChildProcess::StdErr==channel)
+				erroutput.append((FXchar *) output, (FXint) read);
 			getApp()->runModalWhileEvents();
-		}
-		else break;
+			totalread+=read;
+		} while(toread);
+		// Replace shown output
+		testresults.output->setText(stdoutput.text(), stdoutput.length());
+		testresults.output->appendText("\n\n\nStdErr:\n\n", 12);
+		testresults.output->makePositionVisible(testresults.output->getLength());
+		testresults.output->appendText(erroutput.text(), erroutput.length());
+		if(!totalread) break;
 	}
 	if(timedout)
 	{
 		FXString msg("<timed out>\n");
 		testresults.output->appendText(msg.text(), msg.length());
-		if(terminate)
-		{
-			child.terminate();
-			FXString msg("<terminated>\n");
-			testresults.output->appendText(msg.text(), msg.length());
-		}
+		child.terminate();
+		msg="<terminated>\n";
+		testresults.output->appendText(msg.text(), msg.length());
 	}
 }
 
@@ -704,12 +722,8 @@ long TestWindow::onCmdRunTests(FXObject *from, FXSelector sel, void *ptr)
 			{
 				child.open();
 				testresults.info->setText(tr("Started: %1").arg(test.started.asString()));
-				child.setReadChannel(QChildProcess::StdOut);
 				testresults.output->setText(FXString::nullStr());
-				appendOutput(child, false);
-				testresults.output->appendText("\n\n\nStdErr:\n\n", 12);
-				child.setReadChannel(QChildProcess::StdErr);
-				appendOutput(child, true);
+				appendOutput(child);
 			}
 			FXERRH_CATCH(FXException &e)
 			{
@@ -731,7 +745,7 @@ long TestWindow::onCmdRunTests(FXObject *from, FXSelector sel, void *ptr)
 			}
 			getApp()->endWaitCursor();
 
-			tests->setItemText(row, col, FXString::number(test.returncode)+"\n(rev "+FXString::number(test.version.svnrev)+")");
+			tests->setItemText(row, col, FXString::number(test.returncode)+"\n(rev "+FXString::number(test.version.gitrev, 16)+")");
 			tests->setItemIcon(row, col, test.returncode ? redexclamation : greentick);
 			tests->setItemIconPosition(row, col, FXTableItem::AFTER);
 		}
@@ -841,7 +855,7 @@ long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 		oh.open(IO_WriteOnly);
 		WRTXT("<html>\n<body>\n");
 		{
-			FXString t(tr("<h1>TnFOX version: %1 (latest SVN rev %2)</h1>\n").arg(TnFOXver).arg(svnrev));
+			FXString t(tr("<h1>TnFOX version: %1 (latest GIT rev %2)</h1>\n").arg(TnFOXver).arg(gitrev, 16));
 			oh.writeBlock(t.text(), t.length());
 		}
 		{
@@ -876,8 +890,8 @@ long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 					if(i.results[r].testname==tests->getItemText(y, 0))
 					{
 						assert(i.results[r].myPlatformId==i.pf.id);
-						FXString t("      (svn rev %1) <img src=\"%2\" width=\"18\" height=\"18\" />\n");
-						t.arg(i.results[r].version.svnrev).arg(i.results[r].returncode ? "RedExclamation.gif" : "GreenTick.gif");
+						FXString t("      (git rev %1) <img src=\"%2\" width=\"18\" height=\"18\" />\n");
+						t.arg(i.results[r].version.gitrev, 16).arg(i.results[r].returncode ? "RedExclamation.gif" : "GreenTick.gif");
 						oh.writeBlock(t.text(), t.length());
 						break;
 					}

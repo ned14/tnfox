@@ -371,25 +371,21 @@ def init(cglobals, prefixpath="", platprefix="", targetversion=0, tcommonopts=0)
     
     # Build and include nedmalloc. Can't use SConscript() as it wants to import the build
     # environment from here rather than set its own one up :(
+    nedmallocDLLname="${SHLIBPREFIX}nedmalloc_tnfox"
     nedmallocpath=prefixpath+"src/nedmalloc/"
-    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/${SHLIBPREFIX}nedmalloc_tnfox"
-    nedmallocbuildcmd="scons --tolerant --useallocator=1 --postfix=_tnfox --static "+ternary(debugmode, " --debugbuild", "")
+    nedmallocbuildpath=architecture+"/"+ternary(debugmode, "Debug", "Release")+"/"+nedmallocDLLname
+    nedmallocbuildcmd="scons --tolerant --useallocator=1 --postfix=_tnfox "+ternary(debugmode, " --debugbuild", "")
     #nedmallocbuildcmd+=" --largepages"
     #nedmallocbuildcmd+=" --fastheapdetection"
     if architecture=="x86" and x86_SSE: nedmallocbuildcmd+=" --sse="+str(x86_SSE)
-#    nedmallocbuildcmd+=" "+nedmallocbuildpath+env['SHLIBSUFFIX']
-#    nedmalloctargetS=os.path.abspath(nedmallocpath+nedmallocbuildpath)
-#    nedmalloctargetD=os.path.abspath(prefixpath+"lib/"+architectureSpec()+"/${SHLIBPREFIX}nedmalloc_tnfox")
-#    nedmalloclib=env.Command('', '', [nedmallocbuildcmd, Delete(nedmalloctargetD),
-#                 Copy(nedmalloctargetD+"${SHLIBSUFFIX}", nedmalloctargetS+"${SHLIBSUFFIX}")],
-#                 chdir=nedmallocpath, ENV=os.environ)
-#    # Link to original .lib on Windows, else to copied SO
-#    if onWindows: nedmalloclib=nedmallocpath+nedmallocbuildpath+".lib"
-#    else: nedmalloclib=prefixpath+"lib/"+architectureSpec()+"/${SHLIBPREFIX}nedmalloc_tnfox"+ternary(onWindows, ".lib", env['SHLIBSUFFIX'])
-    nedmallocbuildcmd+=" "+nedmallocbuildpath+env['LIBSUFFIX']
+    nedmallocbuildcmd+=ternary(onWindows, "", " --static")
+    nedmallocbuildcmd+=" "+nedmallocbuildpath+ternary(onWindows, env['SHLIBSUFFIX'], env['LIBSUFFIX'])
     nedmalloclib=env.Command(nedmallocpath+nedmallocbuildpath+env['LIBSUFFIX'], '', nedmallocbuildcmd,
                  chdir=nedmallocpath, ENV=os.environ)
     nedmalloclib[0].attributes.shared=True
+    env.Depends(nedmalloclib, [nedmallocpath+"nedmalloc.h", nedmallocpath+"malloc.c.h", nedmallocpath+"nedmalloc.c", nedmallocpath+"winpatcher.c"])
+    nedmallocdestpath=prefixpath+"lib/"+architectureSpec()+"/"+nedmallocDLLname+ternary(onWindows, env['SHLIBSUFFIX'], env['LIBSUFFIX'])
+    env.AddPostAction(nedmalloclib, [Delete(nedmallocdestpath), Copy(nedmallocdestpath, nedmallocpath+nedmallocbuildpath+ternary(onWindows, env['SHLIBSUFFIX'], env['LIBSUFFIX']))])
 
     if SQLModule:
         env['CPPDEFINES']+=[("FX_SQLMODULE", SQLModule)]

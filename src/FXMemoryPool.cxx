@@ -89,7 +89,9 @@ static struct nedmalloc_init_t
 	nedmalloc_init_t()
 	{
 #ifdef WIN32
+#ifndef _DEBUG /* Defined when /MDd (Debug run-time DLL) is used */
 		PatchInNedmallocDLL();
+#endif
 
 		ULONG data=2;
 		if(!HeapSetInformation(GetProcessHeap(), HeapCompatibilityInformation, &data, sizeof(data)))

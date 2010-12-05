@@ -6,7 +6,7 @@ env['CPPDEFINES']+=["WIN32",
                     "_USRDLL"
                     ]
 if debugmode:
-    env['CPPDEFINES']+=["_DEBUG", "DEBUG"]
+    env['CPPDEFINES']+=["DEBUG"]
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
