@@ -126,7 +126,7 @@ bool QChildProcess::int_suckPipesDry(bool block)
 		{
 			if(*dev==&p->childinout[0] && !(p->connectionBroken & 1))
 			{
-				fxmessage("Child stdout is signalled. atEnd=%d\n", p->childinout[0].atEnd());
+				//fxmessage("Child stdout is signalled. atEnd=%d\n", p->childinout[0].atEnd());
 				FXERRH_TRY
 				{
 					do
@@ -137,7 +137,7 @@ bool QChildProcess::int_suckPipesDry(bool block)
 							p->connectionBroken|=1;
 							break;
 						}
-						fxmessage("Read %u from child stdout\n", read);
+						//fxmessage("Read %u from child stdout\n", read);
 						p->outlog.writeBlock(buffer, read);
 					} while(!p->childinout[0].atEnd());
 				}
@@ -149,7 +149,7 @@ bool QChildProcess::int_suckPipesDry(bool block)
 			}
 			else if(*dev==&p->childerr[0] && !(p->connectionBroken & 2))
 			{
-				fxmessage("Child stderr is signalled. atEnd=%d\n", p->childerr[0].atEnd());
+				//fxmessage("Child stderr is signalled. atEnd=%d\n", p->childerr[0].atEnd());
 				FXERRH_TRY
 				{
 					do
@@ -160,7 +160,7 @@ bool QChildProcess::int_suckPipesDry(bool block)
 							p->connectionBroken|=2;
 							break;
 						}
-						fxmessage("Read %u from child stderr\n", read);
+						//fxmessage("Read %u from child stderr\n", read);
 						p->errlog.writeBlock(buffer, read);
 					} while(!p->childerr[0].atEnd());
 				}

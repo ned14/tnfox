@@ -405,6 +405,14 @@ QHostAddress::QHostAddress(FXuint ip4addr) : p(0)
 	unconstr.dismiss();
 }
 
+QHostAddress::QHostAddress(const Maths::Vector<FXuchar, 16> &ip6addr) : p(0)
+{
+	FXRBOp unconstr=FXRBConstruct(this);
+	FXERRHM(p=new QHostAddressPrivate);
+	setAddress(ip6addr);
+	unconstr.dismiss();
+}
+
 QHostAddress::QHostAddress(const FXuchar *ip6addr) : p(0)
 {
 	FXRBOp unconstr=FXRBConstruct(this);
@@ -498,6 +506,11 @@ void QHostAddress::setAddress(FXuint ip4addr)
 		p->IPv6[14]=(FXuchar)((ip4addr>>8) & 0xff);
 		p->IPv6[15]=(FXuchar)((ip4addr) & 0xff);
 	}
+}
+
+void QHostAddress::setAddress(const Maths::Vector<FXuchar, 16> &ip6addr)
+{
+	setAddress((const FXuchar *) &ip6addr);
 }
 
 void QHostAddress::setAddress(const FXuchar *ip6addr)

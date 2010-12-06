@@ -858,7 +858,7 @@ long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 		oh.open(IO_WriteOnly);
 		WRTXT("<html>\n<body>\n");
 		{
-			FXString t(tr("<h1>TnFOX version: %1 (latest GIT rev %2)</h1>\n").arg(TnFOXver).arg(gitrev, 16));
+			FXString t(tr("<h1>TnFOX version: %1 (latest GIT rev %2)</h1>\n").arg(TnFOXver).arg(gitrev, 0, 16));
 			oh.writeBlock(t.text(), t.length());
 		}
 		{
@@ -894,7 +894,7 @@ long TestWindow::onCmdAsHtml(FXObject *from, FXSelector sel, void *ptr)
 					{
 						assert(i.results[r].myPlatformId==i.pf.id);
 						FXString t("      (git rev %1) <img src=\"%2\" width=\"18\" height=\"18\" />\n");
-						t.arg(i.results[r].version.gitrev, 16).arg(i.results[r].returncode ? "RedExclamation.gif" : "GreenTick.gif");
+						t.arg(i.results[r].version.gitrev, 0, 16).arg(i.results[r].returncode ? "RedExclamation.gif" : "GreenTick.gif");
 						oh.writeBlock(t.text(), t.length());
 						break;
 					}

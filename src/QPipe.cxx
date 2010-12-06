@@ -620,13 +620,16 @@ doread:
 					}
 				}
 				p->connected=false;
+				SetEvent(p->ol.hEvent);
 			}
 			FXERRGWIN(errcode, 0);
 		}
 		readed=(FXuval) bread;
-		// Need to always be running an async read to keep p->ol.hEvent correct
-		ret=ReadFile(p->readh, NULL, 0, NULL, &p->ol);
-		p->inprogress=3;
+		if(p->connected)
+		{ // Need to always be running an async read to keep p->ol.hEvent correct
+			ret=ReadFile(p->readh, NULL, 0, NULL, &p->ol);
+			p->inprogress=3;
+		}
 #endif
 #ifdef USE_POSIX
 		fd_set rfds, efds;
