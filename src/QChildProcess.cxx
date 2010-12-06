@@ -88,7 +88,8 @@ struct QChildProcessPrivate : public QMutex
 void *QChildProcess::int_getOSHandle() const
 {
 	if(isOpen())
-	{
+	{ // Suck data now for later. Only way to avoid race condition.
+		const_cast<QChildProcess *>(this)->int_suckPipesDry();
 		if((QChildProcess::StdOut & p->readChannel) && ((p->connectionBroken & 1) || p->outlog.size()))
 		{	// Return something which is always signalled
 			return (void *)(FXuval) p->alwayssignalled;
@@ -110,6 +111,69 @@ void *QChildProcess::int_getOSHandle() const
 void QChildProcess::int_killChildI(bool)
 {
 	terminate();
+}
+
+bool QChildProcess::int_suckPipesDry(bool block)
+{
+	FXuval read=0;
+	QIODeviceS *devs[2], *ready[3];
+	devs[0]=&p->childinout[0];
+	devs[1]=&p->childerr[0];
+	ready[2]=0;
+	if(QIODeviceS::waitForData(ready, 2, devs, block ? FXINFINITE : 0))
+	{
+		for(QIODeviceS **dev=ready; *dev; dev++)
+		{
+			if(*dev==&p->childinout[0] && !(p->connectionBroken & 1))
+			{
+				fxmessage("Child stdout is signalled. atEnd=%d\n", p->childinout[0].atEnd());
+				FXERRH_TRY
+				{
+					do
+					{
+						char buffer[4096];
+						if(!(read=p->childinout[0].readBlock(buffer, sizeof(buffer))))
+						{
+							p->connectionBroken|=1;
+							break;
+						}
+						fxmessage("Read %u from child stdout\n", read);
+						p->outlog.writeBlock(buffer, read);
+					} while(!p->childinout[0].atEnd());
+				}
+				FXERRH_CATCH(FXConnectionLostException &)
+				{	// Sink this error - QPipe will return zero bytes read from now on
+					p->connectionBroken|=1;
+				}
+				FXERRH_ENDTRY
+			}
+			else if(*dev==&p->childerr[0] && !(p->connectionBroken & 2))
+			{
+				fxmessage("Child stderr is signalled. atEnd=%d\n", p->childerr[0].atEnd());
+				FXERRH_TRY
+				{
+					do
+					{
+						char buffer[4096];
+						if(!(read=p->childerr[0].readBlock(buffer, sizeof(buffer))))
+						{
+							p->connectionBroken|=2;
+							break;
+						}
+						fxmessage("Read %u from child stderr\n", read);
+						p->errlog.writeBlock(buffer, read);
+					} while(!p->childerr[0].atEnd());
+				}
+				FXERRH_CATCH(FXConnectionLostException &)
+				{	// Sink this error - QPipe will return zero bytes read from now on
+					p->connectionBroken|=2;
+				}
+				FXERRH_ENDTRY
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 QChildProcess::QChildProcess() : p(0)
@@ -493,68 +557,8 @@ FXuval QChildProcess::readBlock(char *data, FXuval maxlen)
 				}
 			}
 			if(3==p->connectionBroken) break;
-			// Do a speculative read if we already have stuff to return, otherwise block
-			if(maxlen)
-			{
-				h.unlock();
-				QIODeviceS *devs[2], *ready[3];
-				devs[0]=&p->childinout[0];
-				devs[1]=&p->childerr[0];
-				ready[2]=0;
-				if(QIODeviceS::waitForData(ready, 2, devs, readed ? 0 : FXINFINITE))
-				{
-					for(QIODeviceS **dev=ready; *dev; dev++)
-					{
-						if(*dev==&p->childinout[0] && !(p->connectionBroken & 1))
-						{
-							FXERRH_TRY
-							{
-								do
-								{
-									char buffer[4096];
-									if(!(read=p->childinout[0].readBlock(buffer, sizeof(buffer))))
-									{
-										p->connectionBroken|=1;
-										break;
-									}
-									h.relock();
-									p->outlog.writeBlock(buffer, read);
-									h.unlock();
-								} while(!p->childinout[0].atEnd());
-							}
-							FXERRH_CATCH(FXConnectionLostException &)
-							{	// Sink this error - QPipe will return zero bytes read from now on
-								p->connectionBroken|=1;
-							}
-							FXERRH_ENDTRY
-						}
-						else if(*dev==&p->childerr[0] && !(p->connectionBroken & 2))
-						{
-							FXERRH_TRY
-							{
-								do
-								{
-									char buffer[4096];
-									if(!(read=p->childerr[0].readBlock(buffer, sizeof(buffer))))
-									{
-										p->connectionBroken|=2;
-										break;
-									}
-									h.relock();
-									p->errlog.writeBlock(buffer, read);
-									h.unlock();
-								} while(!p->childerr[0].atEnd());
-							}
-							FXERRH_CATCH(FXConnectionLostException &)
-							{	// Sink this error - QPipe will return zero bytes read from now on
-								p->connectionBroken|=2;
-							}
-							FXERRH_ENDTRY
-						}
-					}
-				}
-				h.relock();
-			}
+			// If there is no data, block until there is. Even if there is data, it's more efficient to suck pipes dry now.
+			if(int_suckPipesDry(!readed) && maxlen) continue;
 		} while(!readed);
 		return readed;
 	}

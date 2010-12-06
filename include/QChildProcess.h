@@ -47,7 +47,8 @@ allocated a special thread whose sole purpose is to wait on incoming data and
 asynchronously do something useful with it. One action could be to post a message
 to some control in the GUI for example. You should note that if you don't empty
 the output stream from the child process regularly, most operating systems will
-suspend the child thread until you do.
+suspend the child thread until you do - to achieve this, at a minimum you need
+to call FX::QIODeviceS::waitForData() regularly.
 
 The two readable streams, \c stdout and \c stderr, are read simultaneously and
 stored internally by QChildProcess. This allows you to read say only \c stdout
@@ -79,6 +80,7 @@ class FXAPIR QChildProcess : public QIODeviceS
 	QChildProcess &operator=(const QChildProcess &);
 	virtual FXDLLLOCAL void *int_getOSHandle() const;
 	FXDLLLOCAL void int_killChildI(bool);
+	FXDLLLOCAL bool int_suckPipesDry(bool block=false);
 public:
 	//! The types of read channel
 	enum ReadChannel
