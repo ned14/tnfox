@@ -17,10 +17,18 @@ B [master 933d227] Fixed Visual Studio 2010 support (it was very broken) as well
 fixing compilation errors on POSIX for GCC v4.4.5. For some odd reason there is
 still a segfault on process init on Linux whereas on Windows there are checked
 iterator exceptions tripping due to new checking in VS2010.
-B [master xxxxxxx] Fixed a long standing bug in AllTests, the automated test runner,
+B [master 2cc9f3e] Fixed a long standing bug in AllTests, the automated test runner,
 whereby it choked if the test apps outputted more data than fitted into pipe's buffer.
 A handy side effect is that running the automated test suite is now VERY considerably
 faster!
+B [master xxxxxxx] Stunningly enough, QPipe - the oldest code in TnFOX not touched since
+2002 - somehow STILL had a bug in it. Due to Windows pipes being badly implemented,
+you can't wait on them to signal like everything else in Windows or POSIX so you have
+to run them via async i/o. This means leaving a null byte read running most of time so
+the event object is correctly anchored to there being data available. Somehow or other
+I managed to delete the crucial line which fires this null byte async read during my
+last surgery on QPipe, so occasionally QIODeviceS::waitForData() was returning when
+there was no data, thus causing a hang during QPipe::readBlock(). 
 
 * (1089) Bumped TnFOX to v0.89
 * (1089) Updated to use OpenSSL v1.0

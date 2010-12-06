@@ -66,7 +66,7 @@ struct FXDLLLOCAL QPipePrivate : public QMutex
 	FXint bufferLength;
 #ifdef USE_WINAPI
 	bool connected, inheritable;
-	int inprogress;			// =0 not in progress, =1 connecting =2 reading =3 just opened
+	int inprogress;			// =0 not in progress, =1 connecting =2 reading =3 hanging async read
 	HANDLE readh, writeh;
 	OVERLAPPED ol;
 	QPipePrivate(bool deepPipe, bool _inheritable=false) : acl(FXACL::Pipe), bufferLength(deepPipe ? WINDEEPPIPELEN : WINMAXATOMICLEN), inheritable(_inheritable), readh(0), writeh(0), QMutex() { memset(&ol, 0, sizeof(ol)); }
@@ -475,7 +475,7 @@ FXfval QPipe::size() const
 #ifdef USE_WINAPI
 	if(!p->connected) return 0;
 	DWORD dwaiting=0;
-	FXERRHWIN(PeekNamedPipe(p->readh, NULL, 0, NULL, &dwaiting, NULL));
+	PeekNamedPipe(p->readh, NULL, 0, NULL, &dwaiting, NULL); // Deliberately ignore errors as sometimes the pipe is closed
 	waiting=(FXfval) dwaiting;
 #endif
 #ifdef USE_POSIX
@@ -624,6 +624,9 @@ doread:
 			FXERRGWIN(errcode, 0);
 		}
 		readed=(FXuval) bread;
+		// Need to always be running an async read to keep p->ol.hEvent correct
+		ret=ReadFile(p->readh, NULL, 0, NULL, &p->ol);
+		p->inprogress=3;
 #endif
 #ifdef USE_POSIX
 		fd_set rfds, efds;
