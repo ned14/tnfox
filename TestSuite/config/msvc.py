@@ -5,7 +5,7 @@ env['CPPDEFINES']+=["WIN32",
                     "UNICODE"
                     ]
 if debugmode:
-    env['CPPDEFINES']+=["_DEBUG"]
+    env['CPPDEFINES']+=["DEBUG"]
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
@@ -28,8 +28,9 @@ if confM.CheckMSVC80():
 assert MSVCVersion>0
 env=confM.Finish()
 del confM
-# Warnings, synchronous exceptions, enable RTTI, pool strings and ANSI for scoping, wchar_t native
-cppflags=Split('/c /nologo /W3 /EHsc /GR /GF /Zc:forScope /Zc:wchar_t')
+# Warnings, synchronous exceptions, enable RTTI, pool strings, separate COMDAT per function,
+# ANSI for scoping, wchar_t native, types defined before pointers to members used
+cppflags=Split('/W3 /EHsc /GR /GF /Gy /Zc:forScope /Zc:wchar_t /vmb /vmm')
 if MSVCVersion==710:
     cppflags+=[ "/Ow",                         # Only functions may alias
                 "/Fd"+builddir+"/vc70.pdb"     # Set PDB location
@@ -46,7 +47,7 @@ else:
     if not debugmode:
         # Prevent checked iterators on release builds
         env['CPPDEFINES']+=[("_SECURE_SCL",0)]
-        cppflags+=["/GS-",       # Disable buffer overrun check
+        cppflags+=[#"/GS-",       # Disable buffer overrun check (disabled as code is actually faster with it on)
                    ]
 if architecture=="x86":
     if   x86_SSE==1: cppflags+=[ "/arch:SSE" ]
@@ -54,15 +55,23 @@ if architecture=="x86":
     if x86_SSE>=3: env['CPPDEFINES']+=[("__SSE3__", 1)]
     if x86_SSE>=4: env['CPPDEFINES']+=[("__SSE4__", 1)]
 if debugmode:
-    cppflags+=["/Od",        # Optimisation off
-               "/Zi",        # Program database debug info
+    if env.GetOption('num_jobs')>1:
+        cppflags+=["/Z7"]    # Put debug info into .obj files
+    else:
+        cppflags+=["/Zi"]    # Program database debug info
+    cppflags+=["/w34701",    # Report uninitialized variable use
+               "/Od",        # Optimisation off
                #"/O2", "/Oy-",
                "/RTC1",      # Stack and uninit run time checks
                "/RTCc",      # Smaller data type without cast run time check
-               "/MDd",       # Select MSVCRTD.dll
-               "/GS"         # Buffer overrun check
+               "/GS",        # Buffer overrun check
+               "/MDd"        # Select MSVCRTD.dll
                ]
 else:
+    if env.GetOption('num_jobs')>1:
+        cppflags+=["/Z7"]    # Put debug info into .obj files
+    else:
+        cppflags+=["/Zi"]    # Program database debug info
     cppflags+=["/O2",        # Optimise for fast code
                "/Zi",
                "/Ob2",       # Inline all suitable
@@ -78,7 +87,7 @@ env['LINKFLAGS']=["/version:"+tnfoxversion,
                   "/STACK:524288,65536"
                   ]
 if MSVCVersion>=800:
-    env['LINKFLAGS']+=["/NXCOMPAT", "/DYNAMICBASE", "/TSAWARE"]
+    env['LINKFLAGS']+=["/NXCOMPAT", "/DYNAMICBASE", "/MANIFEST", "/TSAWARE"]
 if architecture=="x86" or architecture=="x64":
     if make64bit:
         env['LINKFLAGS']+=["/MACHINE:X64"]

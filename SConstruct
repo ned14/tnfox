@@ -55,6 +55,8 @@ if SQLModule==1: objects.append(sqlmoduleobjs)
 if GraphingModule==1: objects.append(graphingmoduleobjs)
 for object in objects:
     env.Depends(object, updmunged)
+    env.SideEffect(str(object)+".nedmalloc", updmunged)
+    env.SideEffect(str(object)+".nedmalloc", nedmalloclib)
 
 # Unfortunately some stuff is per output DLL and so can't live in config/<tool>.py
 linkflags=env['LINKFLAGS'][:]

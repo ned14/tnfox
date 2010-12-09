@@ -18,7 +18,7 @@ env['CPPPATH']+=["/usr/kerberos/include"]
 env['CPPPATH']+=["/usr/X11R6/include"]
 
 # Warnings
-cppflags=Split('-Wformat -Wno-reorder -Wno-non-virtual-dtor')
+cppflags=Split('-Wall -Wno-reorder -Wno-non-virtual-dtor -Wno-unused-variable')
 if architecture=="x86":
     if x86_3dnow!=0:
           cppflagsopts=["i486", "k6-2",    "athlon",     "athlon-4" ]
@@ -46,7 +46,6 @@ cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
            "-fargument-noalias",        # Arguments may alias globals but not each other
            "-Wstrict-aliasing",         # Warn about bad aliasing
-           "-ffast-math",               # Lose FP precision in favour of speed
            #"-pg",                       # Perform profiling
            #"-finstrument-functions",    # Other form of profiling
            "-pipe"                      # Use faster pipes
@@ -152,7 +151,8 @@ conf=Configure(env, { "CheckGCCHasVisibility" : CheckGCCHasVisibility, "CheckGCC
 
 if enableCPP0xFeaturesIfAvailable and conf.CheckGCCHasCPP0xFeatures():
     env['CPPFLAGS']+=["-std=c++0x"]
-env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
+else:
+    env['CPPDEFINES']+=["HAVE_CONSTTEMPORARIES"]
 
 env=conf.Finish()
 

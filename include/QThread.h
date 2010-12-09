@@ -760,8 +760,9 @@ class FXZeroedWait
 		{
 			if(nc<0) FXERRG("Count should not be below zero", 0, FXERRH_ISDEBUG);
 		}
-		if(nc>0) wc.reset();
-		else if(!nc) wc.wakeAll();
+		if(nc>0) { wc.reset(); assert(!wc.signalled()); }
+		else if(!nc) { wc.wakeAll(); assert(wc.signalled()); }
+		else { assert(nc>=0); }
 	}
 public:
 	//! Constructs a FXZeroedWait with initial count \em initcount
@@ -784,7 +785,21 @@ public:
 	int operator-=(int i)	{ int c=(count-=i);	handleCount(c);		return c; }
 
 	//! Waits for the count to become zero, returning true if wait succeeds
-	bool wait(FXuint time=FXINFINITE) { return wc.wait(time); }
+	bool wait(FXuint time=FXINFINITE)
+	{
+		assert((!count && wc.signalled()) || (count && !wc.signalled()));
+#ifdef DEBUG
+		FXuint end=FXProcess::getMsCount()+time;
+		while(FXINFINITE==time || FXProcess::getMsCount()<=end)
+		{
+			if(wc.wait(FXMIN(end-FXProcess::getMsCount(), 1000))) return true;
+			assert(count>0);
+		}
+		return false;
+#else
+		return wc.wait(time);
+#endif
+	}
 	//! Sets if run-time checks are performed on the count value
 	void setChecks(bool d) { doChecks=d; }
 };

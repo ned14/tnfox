@@ -7,6 +7,7 @@ uses exit which no doubt will be tricky to get right
 * Take account of GCC's new typeinfo comparison for exception type visibility when
 supported
 * Make FXNOTHROW = noexcept on supported platforms
+* Replace entropy collecting thread on Windows with Windows secure random data
 
 * Add elliptic curve crypto to FXSSLDevice encryption options
 * Patch in FTGL library to handle OpenGL font rendering
@@ -26,6 +27,8 @@ B [master 2cc9f3e] Fixed a long standing bug in AllTests, the automated test run
 whereby it choked if the test apps outputted more data than fitted into pipe's buffer.
 A handy side effect is that running the automated test suite is now VERY considerably
 faster!
+B [master 8305220] Fixed race condition in QChildProcess where both pipes weren't being
+fully drained on QIODeviceS::waitForData() - this could cause one pipe to stall.
 B [master 76758fe] Stunningly enough, QPipe - the oldest code in TnFOX not touched since
 2002 - somehow STILL had a bug in it. Due to Windows pipes being badly implemented,
 you can't wait on them to signal like everything else in Windows or POSIX so you have
@@ -34,8 +37,10 @@ the event object is correctly anchored to there being data available. Somehow or
 I managed to delete the crucial line which fires this null byte async read during my
 last surgery on QPipe, so occasionally QIODeviceS::waitForData() was returning when
 there was no data, thus causing a hang during QPipe::readBlock().
-B [master xxxxxxx] Fixed race condition in QChildProcess where both pipes weren't being
-fully drained on QIODeviceS::waitForData() - this could cause one pipe to stall.
+B [master xxxxxxx] Fixed spurious exception throw when a QSSLDevice was opened and
+shut without transferring any data. Also fixed an earlier botched replacement of the
+atomic integer implementation on POSIX - this fixes all but one test in the test suite
+on POSIX.
 
 * (1089) Bumped TnFOX to v0.89
 * (1089) Updated to use OpenSSL v1.0
@@ -77,7 +82,7 @@ thanks EVER so much to the git subtree split tool at
 http://github.com/apenwarr/git-subtree/)
 + [master c1142ea] Added CLOCK_MONOTONIC based POSIX nanosecond timer support to
 FXProcess::getNsCount().
-+ [master xxxxxxx] Added QThread::isBeingCancelled().
++ [master 03d83af] Added QThread::isBeingCancelled().
 
 
 v0.88.1 31st October 2008:

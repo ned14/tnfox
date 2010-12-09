@@ -68,7 +68,7 @@ static const char *_fxmemdbg_current_file_ = __FILE__;
 #define FXERRHSSL(exp) { int __res=(int)(FXuval)(exp); if(__res<=0) { int __errorcode=ERR_get_error(); \
 	char __buffer[1024]; ERR_error_string_n(__errorcode, __buffer, sizeof(__buffer)); \
 	ERR_clear_error(); \
-	if(SSL_R_NO_SHARED_CIPHER==__errorcode) { FXERRG(__buffer, QSSLDEVICE_NOSHAREDCIPHER, 0); } \
+	if(SSL_R_NO_SHARED_CIPHER==ERR_GET_REASON(__errorcode)) { FXERRG(__buffer, QSSLDEVICE_NOSHAREDCIPHER, 0); } \
 	else FXERRGIO(__buffer); } }
 
 namespace FX {
@@ -1984,7 +1984,8 @@ void QSSLDevice::close()
 			h.unlock();
 			int ret=SSL_shutdown(p->handle);
 			if(0==ret) ret=SSL_shutdown(p->handle);
-			if(-1==ret) FXERRHSSL(ret);
+			int sslerror=ERR_peek_error();
+			if(-1==ret && sslerror && SSL_R_UNINITIALIZED!=ERR_GET_REASON(sslerror)) FXERRHSSL(ret);
 			h.relock();
 			SSL_free(p->handle);
 			ERR_clear_error();

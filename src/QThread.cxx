@@ -240,9 +240,7 @@ void QWaitCondition::wakeOne()
 			ret=SetEvent(p->wc);
 #endif
 #ifdef USE_POSIX
-			pthread_mutex_lock(&p->m);
 			ret=pthread_cond_signal(&p->wc);
-			pthread_mutex_unlock(&p->m);
 #endif
 		}
 		ERRCHK;
@@ -257,25 +255,24 @@ void QWaitCondition::wakeAll()
 	{
 		DECLARERET;
 		QMtxHold h(p);
+		// Let all subsequent threads through
+		if(!isAutoReset)
+			isSignalled=true;
 		if(p->waitcnt)
 		{
-#ifdef USE_WINAPI
 			int waitcnt=p->waitcnt;
 			for(int n=0; n<waitcnt; n++)
 			{
+#ifdef USE_WINAPI
 				if(!(ret=SetEvent(p->wc))) goto exit;
-			}
 #endif
 #ifdef USE_POSIX
-			pthread_mutex_lock(&p->m);
-			ret=pthread_cond_broadcast(&p->wc);
-			pthread_mutex_unlock(&p->m);
-			if(ret) goto exit;
+				if((ret=pthread_cond_signal(&p->wc))) goto exit;
 #endif
+			}
 		}
+		else isSignalled=true; // Let next thread through
 exit:
-		if(!p->waitcnt || !isAutoReset)
-			isSignalled=true;	// Let next thread through
 		ERRCHK;
 	}
 #endif
@@ -287,6 +284,8 @@ void QWaitCondition::reset()
 	if(p)
 	{
 		QMtxHold h(p);
+		//fxmessage("QWaitCondition::reset waitcnt=%d\n", p->waitcnt);
+		assert(!isSignalled || !p->waitcnt);
 		isSignalled=false;
 	}
 #endif
@@ -1780,7 +1779,7 @@ public:
 		FXAutoPtr<CodeItem> codeitem;
 		Thread(QThreadPoolPrivate *_parent)
 			: parent(_parent), free(true), wc(true), QThread("Pool thread", true) { }
-		~Thread() { parent=0; assert(!codeitem->code); }
+		~Thread() { parent=0; assert(!codeitem || !codeitem->code); }
 		void run();
 		void *cleanup() { return 0; }
 		void selfDestruct()

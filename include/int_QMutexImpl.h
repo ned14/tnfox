@@ -121,7 +121,7 @@ QMUTEX_INLINEP int FXAtomicInt::fastinc() throw() { return finc(); }
 QMUTEX_INLINEI int FXAtomicInt::inc(int i) throw()
 {
 #ifdef __GNUC__
-	return __sync_add_and_fetch(&value, i);
+	return __sync_add_and_fetch(&value, i)+i;
 #elif defined(USE_WINAPI)
 	return _InterlockedExchangeAdd((PLONG) &value, i)+i;
 #endif
@@ -153,7 +153,7 @@ QMUTEX_INLINEP int FXAtomicInt::fastdec() throw() { return fdec(); }
 QMUTEX_INLINEI int FXAtomicInt::dec(int i) throw()
 {
 #ifdef __GNUC__
-	return __sync_fetch_and_sub(&value, i);
+	return __sync_fetch_and_sub(&value, i)-i;
 #elif defined(USE_WINAPI)
 	return _InterlockedExchangeAdd((PLONG) &value, -i)-i;
 #endif
