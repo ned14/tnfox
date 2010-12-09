@@ -43,6 +43,12 @@ namespace FX {
 #define FXEXCEPTION_FXMOVEBASECLASS(_class, _baseclass) FXMOVEBASECLASS(_class, _baseclass)
 #endif
 #endif
+#ifndef FXEXCEPTION_FXADDMOVEBASECLASS
+#define FXEXCEPTION_FXADDMOVEBASECLASS(_class, _baseclass)
+#endif
+#ifndef FXEXCEPTION_FXMOVEBASECLASS
+#define FXEXCEPTION_FXMOVEBASECLASS(_class, _baseclass)
+#endif
 
 /*!
 A bitwise combination of these flags is passed to anything using FXERRHMAKE()

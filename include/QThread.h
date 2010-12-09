@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2006 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2010 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -1033,6 +1033,8 @@ public:
 	bool running () const  throw(){ return isRunning; }
 	//! Returns true if the thread is in the process of finishing (in its cleanup handler)
 	bool inCleanup() const  throw(){ return isInCleanup; }
+	//! Returns true if the thread has been asked to be cancelled
+	bool isBeingCancelled() const throw();
 	//! Returns true if this object is valid (ie; not deleted)
 	bool isValid() const throw();
 	/*! Sets if this thread object deletes itself when the thread terminates. Returns the former setting

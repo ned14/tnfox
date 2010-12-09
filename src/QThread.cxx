@@ -3,7 +3,7 @@
 *                 M u l i t h r e a d i n g   S u p p o r t                     *
 *                                                                               *
 *********************************************************************************
-*        Copyright (C) 2002-2009 by Niall Douglas.   All Rights Reserved.       *
+*        Copyright (C) 2002-2010 by Niall Douglas.   All Rights Reserved.       *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -642,7 +642,7 @@ public:
 	static void cleanup(QThread *t);
 	static void forceCleanup(QThread *t);
 	QThreadPrivate(bool autodel, FXuval stksize, QThread::ThreadScheduler threadloc)
-		: autodelete(autodel), plsCancel(false), recursiveProcessorAffinity(false),
+		: plsCancel(false), autodelete(autodel), recursiveProcessorAffinity(false),
 		stackSize(stksize), threadLocation(threadloc), id(0), processorAffinity((1<<QMutexImpl::systemProcessors)-1),
 		creator(0), startedwc(0), stoppedwc(0), cleanupcalls(true), QMutex()
 #ifdef USE_POSIX
@@ -1247,6 +1247,7 @@ void QThread::start(bool waitTillStarted)
 		p->processorAffinity=1;
 	}
 #endif
+	p->plsCancel=false;
 	if(waitTillStarted && !p->startedwc)
 	{
 		FXERRHM(p->startedwc=new QWaitCondition(false, false));
@@ -1254,7 +1255,6 @@ void QThread::start(bool waitTillStarted)
 #ifdef USE_WINAPI
 	{
 		DWORD threadId;
-		p->plsCancel=false;
 		FXERRHWIN(ResetEvent(p->plsCancelWaiter));
 		FXERRHWIN(NULL!=(p->threadh=CreateThread(NULL, p->stackSize, start_threadwin, (void *) this, 0, &threadId)));
 	}
@@ -1310,6 +1310,11 @@ void QThread::start(bool waitTillStarted)
 		FXERRH(p->startedwc->wait(10000), QTrans::tr("QThread", "Failed to start thread"), QTHREAD_STARTFAILED, 0);
 		FXDELETE(p->startedwc);
 	}
+}
+
+bool QThread::isBeingCancelled() const throw()
+{
+	return p->plsCancel;
 }
 
 bool QThread::isValid() const throw()
@@ -1860,7 +1865,7 @@ void QThreadPoolPrivate::Thread::run()
 				}
 				// Reset everything
 				codeitem->code=0;
-				codeitem->upcallv=QThreadPool::DispatchUpcallSpec((QThreadPool::DispatchUpcallSpec::void_ *) 0);
+				codeitem->upcallv=std::move(QThreadPool::DispatchUpcallSpec((QThreadPool::DispatchUpcallSpec::void_ *) 0));
 				codeitem=0;
 				h.relock();				// Relock parent threadpool
 				unlockme.dismiss();

@@ -3,7 +3,7 @@
 *                     E x c e p t i o n  H a n d l i n g                        *
 *                                                                               *
 *********************************************************************************
-* Copyright (C) 2002-2008 by Niall Douglas.   All Rights Reserved.              *
+* Copyright (C) 2002-2010 by Niall Douglas.   All Rights Reserved.              *
 *       NOTE THAT I DO NOT PERMIT ANY OF MY CODE TO BE PROMOTED TO THE GPL      *
 *********************************************************************************
 * This code is free software; you can redistribute it and/or modify it under    *
@@ -859,6 +859,12 @@ bool FXException::setConstructionBreak(bool v)
 
 void FXException::int_throwOSError(const char *file, const char *function, int lineno, int code, FXuint flags, const FXString &filename)
 {
+	if(EINTR==code && QThread::current()->isBeingCancelled())
+	{	/* Some POSIX implementation have badly written pthread support which unpredictably returns
+		an interrupted system call error rather than actually cancelling the thread. */
+		fxmessage("WARNING: Your pthread implementation caused an interrupted system call error rather than properly cancelling a thread. You should report this to your libc maintainer!\n");
+		QThread::current()->checkForTerminate();
+	}
 	FXString errstr(strerror(code));
 	errstr.append(" ("+FXString::number(code)+")");
 	if(ENOENT==code || ENOTDIR==code)

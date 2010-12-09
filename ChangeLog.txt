@@ -3,11 +3,16 @@
 * FINISH memory leak reporting - need to trigger print out when CRT static
 uses exit which no doubt will be tricky to get right
 * Replace Tn's network service with FXNetworkService
+* Replace those wait objects which can be with Linux's new super-light wait object
+* Take account of GCC's new typeinfo comparison for exception type visibility when
+supported
+* Make FXNOTHROW = noexcept on supported platforms
 
 * Add elliptic curve crypto to FXSSLDevice encryption options
 * Patch in FTGL library to handle OpenGL font rendering
 * Add vector sin, cos routine implementation
 * Add support for OpenCL - Mandelbrot demo
+* Add support for AVX to vector classes
 
 v0.89 ?
 -=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -72,6 +77,7 @@ thanks EVER so much to the git subtree split tool at
 http://github.com/apenwarr/git-subtree/)
 + [master c1142ea] Added CLOCK_MONOTONIC based POSIX nanosecond timer support to
 FXProcess::getNsCount().
++ [master xxxxxxx] Added QThread::isBeingCancelled().
 
 
 v0.88.1 31st October 2008:
