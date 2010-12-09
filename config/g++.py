@@ -7,7 +7,7 @@ if onDarwin:
         # You only get the thread cancelling pthread implementation on 10.4 this way
         env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
 if debugmode:
-    env['CPPDEFINES']+=["_DEBUG"]
+    env['CPPDEFINES']+=["_DEBUG", "DEBUG"]
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 

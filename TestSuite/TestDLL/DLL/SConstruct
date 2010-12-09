@@ -39,9 +39,9 @@ env['LIBS']=[ libtnfox ]
 
 dir+="/.."    # So the libtool hack finds the right place
 if "freebsd" in sys.platform:
-    env['LINK']="libtool --tag=CXX --mode=link gcc" # Force always dynamic linking
+    env['LINK']="libtool --tag=CXX --mode=link g++" # Force always dynamic linking
 elif "linux" in sys.platform:
-    env['LINK']="libtool --mode=link gcc" # Force always dynamic linking
+    env['LINK']="libtool --mode=link g++ -Xcompiler -shared" # Force always dynamic linking
 objects=[env.SharedObject(builddir+"/maindll", "maindll.cpp")]
 Clean(targetname, objects)
 if onWindows:

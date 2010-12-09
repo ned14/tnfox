@@ -70,7 +70,10 @@ except: pass
 assert os.path.exists("../../include/fxdefs.h")
 conf=Configure(env, { "CheckTnFOXIsBigEndian" : CheckTnFOXIsBigEndian, "CheckTnFOXIsLittleEndian" : CheckTnFOXIsLittleEndian } )
 foxbigendiandef=filter(lambda defn: defn[0]=="FOX_BIGENDIAN", env['CPPDEFINES'])[0]
-if not ternary(foxbigendiandef[1], conf.CheckTnFOXIsBigEndian, conf.CheckTnFOXIsLittleEndian)():
+TnFOXIsBigEndian=conf.CheckTnFOXIsBigEndian()
+TnFOXIsLittleEndian=conf.CheckTnFOXIsLittleEndian()
+assert TnFOXIsBigEndian or TnFOXIsLittleEndian
+if not ternary(foxbigendiandef[1], TnFOXIsBigEndian, TnFOXIsLittleEndian):
     # Hmm our FOX_BIGENDIAN test is wrong! This happens on coLinux due to a bug in cofs not running executables properly
     print "WARNING: FOX_BIGENDIAN definition does not match that of TnFOX library! Fixing ..."
     env['CPPDEFINES'].remove(foxbigendiandef)

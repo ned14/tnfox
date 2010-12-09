@@ -43,7 +43,13 @@ objects+=[env.SharedObject(builddir+"/"+getBase(x), "src/"+x, CPPFLAGS=env['CPPF
 if env.GetOption("num_jobs")>1:
     print "*** WARNING: nedmalloc has to be built separately which causes a current directory"
     print "             change. This can cause parallel builds to fail, so simply rerun scons."
-objects.append(nedmalloclib)
+#objects.append(nedmalloclib)
+env['LIBS']+=["nedmalloc_tnfox"]
+# Hopefully this should serialise the running of the nedmalloc build
+for object in objects:
+    env.Depends(object, nedmalloclib)
+    env.SideEffect(str(object)+".nedmalloc", object)
+    env.SideEffect(str(object)+".nedmalloc", nedmalloclib)
 
 if SQLModule==1: objects.append(sqlmoduleobjs)
 if GraphingModule==1: objects.append(graphingmoduleobjs)

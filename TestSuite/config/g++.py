@@ -7,7 +7,7 @@ if onDarwin:
         # You only get the thread cancelling pthread implementation on 10.4 this way
         env['CPPDEFINES']+=[("_APPLE_C_SOURCE", 1)]
 if debugmode:
-    env['CPPDEFINES']+=["_DEBUG"]
+    env['CPPDEFINES']+=["_DEBUG", "DEBUG"]
 else:
     env['CPPDEFINES']+=["NDEBUG"]
 
@@ -26,7 +26,7 @@ if architecture=="x86":
     cppflags+=["-m32", "-march="+cppflagsopts[architecture_version-4] ]
     if x86_SSE!=0:
         cppflags+=["-mfpmath="+ ["387", "sse"][x86_SSE!=0] ]
-        if x86_SSE>1: cppflags+=["-msse%d" % x86_SSE]
+        if x86_SSE>1: cppflags+=["-msse%s" % str(x86_SSE)]
         else: cppflags+=["-msse"]
 elif architecture=="x64":
     #cppflagsopts=["athlon64"]
@@ -38,6 +38,9 @@ elif architecture=="macosx-ppc":
     cppflags+=["-arch", "ppc"]
 elif architecture=="macosx-i386":
     cppflags+=["-arch", "i386"]
+elif architecture=="arm":
+    cppflagsopts=["armv2", "armv3", "armv4", "armv5", "armv6"]
+    cppflags+=["-march="+cppflagsopts[architecture_version-2] ]
 
 cppflags+=["-fexceptions",              # Enable exceptions
            "-fstrict-aliasing",         # Always enable strict aliasing
@@ -111,7 +114,7 @@ env['CPPDEFINES']+=[("STDC_HEADERS",1),
                     ("HAVE_SYS_PARAM_H",1),
                     ("HAVE_SYS_SELECT_H",1)
                     ]
-env['LIBS']+=["m"]
+env['LIBS']+=["m", "X11"]
 
 
 def CheckGCCHasVisibility(cc):
